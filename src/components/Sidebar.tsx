@@ -3,7 +3,13 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
-import { LayoutDashboard, CheckSquare, FolderKanban, Users, Settings } from 'lucide-react';
+import { 
+  LayoutDashboard, 
+  CheckSquare, 
+  FolderKanban,  // We'll use this icon for Projects
+  Users, 
+  Settings 
+} from 'lucide-react';
 
 const Sidebar = () => {
   const location = useLocation();
@@ -21,16 +27,16 @@ const Sidebar = () => {
       allowed: true,
     },
     {
+      name: 'Projects',  // New Projects menu item
+      path: '/dashboard/projects',
+      icon: <FolderKanban className="h-5 w-5" />,
+      allowed: true,  // Making it available to all users
+    },
+    {
       name: 'My Tasks',
       path: '/dashboard/tasks',
       icon: <CheckSquare className="h-5 w-5" />,
       allowed: true,
-    },
-    {
-      name: 'Projects',
-      path: '/dashboard/projects',
-      icon: <FolderKanban className="h-5 w-5" />,
-      allowed: user?.role === 'manager',
     },
     {
       name: 'Team',
