@@ -55,22 +55,22 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onAssign }) => {
   
   return (
     <Card className={cn("card-hover", isTaskOverdue() && "border-red-500")}>
-      <CardHeader className="pb-2 flex flex-row justify-between items-start">
-        <div>
-          <CardTitle className="text-base">{task.title}</CardTitle>
+      <CardHeader className="pb-1 md:pb-2 flex flex-row justify-between items-start">
+        <div className="min-w-0">
+          <CardTitle className="text-sm md:text-base truncate">{task.title}</CardTitle>
         </div>
-        <div className="flex items-center space-x-2">
-          <Badge className={getPriorityColor(task.priority)}>
+        <div className="flex items-center space-x-1 md:space-x-2">
+          <Badge className={cn(getPriorityColor(task.priority), "text-xs md:text-sm px-1.5 py-0.5")}>
             {task.priority}
           </Badge>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+              <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
                 <span className="sr-only">Open menu</span>
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="text-xs md:text-sm">
               <DropdownMenuItem onClick={() => onEdit && onEdit(task)}>
                 Edit
               </DropdownMenuItem>
@@ -101,31 +101,31 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onAssign }) => {
           </DropdownMenu>
         </div>
       </CardHeader>
-      <CardContent className="space-y-2">
-        <p className="text-sm text-gray-600 line-clamp-2">{task.description}</p>
+      <CardContent className="space-y-2 pt-0 md:pt-1 px-4 md:px-6 pb-4">
+        <p className="text-xs md:text-sm text-gray-600 line-clamp-2">{task.description}</p>
         
-        <div className="flex items-center justify-between pt-2">
+        <div className="flex items-center justify-between pt-1 md:pt-2">
           <div className="flex items-center text-xs text-gray-500 gap-1">
-            <Clock className="h-3 w-3" />
-            <span>
+            <Clock className="h-3 w-3 flex-shrink-0" />
+            <span className="truncate">
               {format(task.deadline, 'MMM d')} at {format(task.deadline, 'h:mm a')}
             </span>
           </div>
           
           {task.assignedToName && (
             <div className="flex items-center text-xs text-gray-500 gap-1">
-              <User className="h-3 w-3" />
-              <span>{task.assignedToName}</span>
+              <User className="h-3 w-3 flex-shrink-0" />
+              <span className="truncate max-w-[100px]">{task.assignedToName}</span>
             </div>
           )}
         </div>
         
-        <div className="pt-2">
-          <Badge className={getStatusColor(task.status)}>
+        <div className="pt-1 md:pt-2 flex flex-wrap gap-1">
+          <Badge className={cn(getStatusColor(task.status), "text-xs md:text-sm")}>
             {task.status}
           </Badge>
           {isTaskOverdue() && (
-            <Badge variant="destructive" className="ml-2">
+            <Badge variant="destructive" className="ml-1 text-xs md:text-sm">
               Overdue
             </Badge>
           )}

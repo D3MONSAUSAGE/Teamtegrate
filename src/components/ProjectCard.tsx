@@ -89,18 +89,18 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   
   return (
     <Card className="card-hover relative overflow-hidden">
-      <CardHeader className="pb-2 flex flex-row justify-between items-start gap-2">
+      <CardHeader className="pb-1 md:pb-2 flex flex-row justify-between items-start gap-2">
         <div className="min-w-0">
-          <CardTitle className="text-base text-ellipsis overflow-hidden whitespace-nowrap">{project.title}</CardTitle>
+          <CardTitle className="text-sm md:text-base text-ellipsis overflow-hidden whitespace-nowrap">{project.title}</CardTitle>
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 flex-shrink-0">
+            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 flex-shrink-0">
               <span className="sr-only">Open menu</span>
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent align="end" className="text-xs md:text-sm">
             <DropdownMenuItem onClick={() => onEdit && onEdit(project)}>
               Edit
             </DropdownMenuItem>
@@ -116,10 +116,10 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
           </DropdownMenuContent>
         </DropdownMenu>
       </CardHeader>
-      <CardContent className="space-y-2">
-        <p className="text-sm text-gray-600 line-clamp-2 min-h-[2.5rem]">{project.description}</p>
+      <CardContent className="space-y-2 pt-0 md:pt-1 px-4 md:px-6 pb-4">
+        <p className="text-xs md:text-sm text-gray-600 line-clamp-2 min-h-[2rem]">{project.description}</p>
         
-        <div className="flex flex-wrap items-center justify-between pt-2 gap-y-2">
+        <div className="flex flex-wrap items-center justify-between pt-1 md:pt-2 gap-y-1">
           <div className="flex items-center text-xs text-gray-500 gap-1">
             <Calendar className="h-3 w-3 flex-shrink-0" />
             <span className="truncate">
@@ -133,27 +133,27 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
           </div>
         </div>
         
-        <div className="pt-3 space-y-1">
+        <div className="pt-1 md:pt-3 space-y-1">
           <div className="flex justify-between items-center">
             <div className="flex items-center text-xs font-medium">
-              <ListTodo className="h-4 w-4 mr-1 text-blue-500 flex-shrink-0" />
+              <ListTodo className="h-3 w-3 mr-1 text-blue-500 flex-shrink-0" />
               <span>{totalTasks} {totalTasks === 1 ? 'Task' : 'Tasks'}</span>
             </div>
-            <Badge variant="outline" className="ml-1">{progress}%</Badge>
+            <Badge variant="outline" className="ml-1 text-xs">{progress}%</Badge>
           </div>
           <div className="flex justify-between items-center text-xs text-gray-500">
             <span>{completedTasks} of {totalTasks} completed</span>
           </div>
-          <Progress value={progress} className="h-2" />
+          <Progress value={progress} className="h-1.5 md:h-2" />
         </div>
         
         <Button 
           variant="outline" 
           size="sm" 
-          className="w-full mt-2 text-xs" 
+          className="w-full mt-1 md:mt-2 text-xs" 
           onClick={() => onCreateTask && onCreateTask(project)}
         >
-          <Plus className="h-4 w-4 mr-1 flex-shrink-0" /> Add Task
+          <Plus className="h-3 w-3 mr-1 flex-shrink-0" /> Add Task
         </Button>
       </CardContent>
     </Card>

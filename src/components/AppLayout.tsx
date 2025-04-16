@@ -7,10 +7,12 @@ import Sidebar from './Sidebar';
 import { Menu } from 'lucide-react';
 import { Button } from './ui/button';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const AppLayout = () => {
   const { user, loading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const isMobile = useIsMobile();
   
   if (loading) {
     return (
@@ -25,12 +27,16 @@ const AppLayout = () => {
   }
   
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-background">
       {/* Mobile sidebar with Sheet component */}
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
         <SheetTrigger asChild>
-          <Button variant="ghost" size="icon" className="fixed top-3 left-3 z-10 md:hidden">
-            <Menu className="h-6 w-6" />
+          <Button 
+            variant="outline" 
+            size="icon" 
+            className="fixed top-4 left-4 z-50 md:hidden bg-white shadow-md"
+          >
+            <Menu className="h-5 w-5" />
             <span className="sr-only">Toggle Sidebar</span>
           </Button>
         </SheetTrigger>
@@ -39,14 +45,14 @@ const AppLayout = () => {
         </SheetContent>
       </Sheet>
       
-      {/* Desktop sidebar - hidden by default, toggleable with button */}
-      <div className="hidden">
+      {/* Desktop sidebar - visible on medium screens and larger */}
+      <div className="hidden md:block w-64 flex-shrink-0">
         <Sidebar />
       </div>
       
       <div className="flex flex-col flex-1 overflow-hidden">
         <Navbar />
-        <main className="flex-1 overflow-y-auto p-4 md:p-6">
+        <main className="flex-1 overflow-y-auto p-3 md:p-6">
           <Outlet />
         </main>
       </div>

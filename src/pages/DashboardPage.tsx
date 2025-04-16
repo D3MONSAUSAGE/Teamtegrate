@@ -12,6 +12,7 @@ import DailyTasksSection from '@/components/dashboard/DailyTasksSection';
 import UpcomingTasksSection from '@/components/dashboard/UpcomingTasksSection';
 import RecentProjects from '@/components/dashboard/RecentProjects';
 import TeamManagement from '@/components/dashboard/TeamManagement';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const DashboardPage = () => {
   const { user } = useAuth();
@@ -19,6 +20,7 @@ const DashboardPage = () => {
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const isMobile = useIsMobile();
   
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -59,16 +61,16 @@ const DashboardPage = () => {
   };
   
   return (
-    <div className="p-6">
-      <div className="flex flex-col gap-8">
-        <div className="flex items-center justify-between">
+    <div className="p-2 md:p-6">
+      <div className="flex flex-col gap-4 md:gap-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold">Welcome, {user?.name}!</h1>
-            <p className="text-gray-600">
-              {format(new Date(), "EEEE, MMMM d")} · Here's your daily overview
+            <h1 className="text-xl md:text-2xl font-bold">Welcome, {user?.name}!</h1>
+            <p className="text-sm md:text-base text-gray-600">
+              {format(new Date(), "EEEE, MMMM d")} · Here's your overview
             </p>
           </div>
-          <Button onClick={() => handleCreateTask()}>
+          <Button onClick={() => handleCreateTask()} size={isMobile ? "sm" : "default"} className="self-start sm:self-auto">
             <Plus className="h-4 w-4 mr-2" /> New Task
           </Button>
         </div>

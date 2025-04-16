@@ -10,6 +10,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ProjectToolbarProps {
   searchQuery: string;
@@ -26,11 +27,13 @@ const ProjectToolbar: React.FC<ProjectToolbarProps> = ({
   setSortBy,
   onCreateProject,
 }) => {
+  const isMobile = useIsMobile();
+  
   return (
-    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
-      <h1 className="text-2xl font-bold">Projects</h1>
-      <div className="flex flex-col md:flex-row items-center w-full md:w-auto gap-2">
-        <div className="relative w-full md:w-64">
+    <div className="flex flex-col gap-3 mb-4 md:mb-8">
+      <h1 className="text-xl md:text-2xl font-bold">Projects</h1>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+        <div className="relative w-full sm:w-64">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
             placeholder="Search projects..."
@@ -40,25 +43,27 @@ const ProjectToolbar: React.FC<ProjectToolbarProps> = ({
           />
         </div>
         
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="gap-2">
-              <Filter className="h-4 w-4" /> Sort by
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuRadioGroup value={sortBy} onValueChange={setSortBy}>
-              <DropdownMenuRadioItem value="date">Creation Date</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="start">Start Date</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="end">End Date</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="title">Title</DropdownMenuRadioItem>
-            </DropdownMenuRadioGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
-        
-        <Button onClick={onCreateProject}>
-          <Plus className="h-4 w-4 mr-2" /> New Project
-        </Button>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size={isMobile ? "sm" : "default"} className="gap-2">
+                <Filter className="h-4 w-4" /> Sort
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuRadioGroup value={sortBy} onValueChange={setSortBy}>
+                <DropdownMenuRadioItem value="date">Creation Date</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="start">Start Date</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="end">End Date</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="title">Title</DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
+          <Button onClick={onCreateProject} size={isMobile ? "sm" : "default"} className="ml-auto sm:ml-0">
+            <Plus className="h-4 w-4 mr-2" /> New Project
+          </Button>
+        </div>
       </div>
     </div>
   );

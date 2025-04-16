@@ -5,6 +5,7 @@ import { Project } from '@/types';
 import { Plus, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import ProjectCard from '@/components/ProjectCard';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface RecentProjectsProps {
   projects: Project[];
@@ -17,10 +18,12 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({
   onViewTasks,
   onCreateTask
 }) => {
+  const isMobile = useIsMobile();
+  
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-semibold">Recent Projects</h2>
+      <div className="flex items-center justify-between mb-3 md:mb-4">
+        <h2 className="text-lg md:text-xl font-semibold">Recent Projects</h2>
         <Link to="/dashboard/projects">
           <Button variant="ghost" size="sm" className="text-primary">
             View all <ChevronRight className="h-4 w-4 ml-1" />
@@ -29,8 +32,8 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({
       </div>
       
       {projects.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {projects.map((project) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+          {projects.slice(0, isMobile ? 1 : 3).map((project) => (
             <ProjectCard 
               key={project.id} 
               project={project} 
@@ -40,10 +43,10 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({
           ))}
         </div>
       ) : (
-        <div className="bg-white p-6 rounded-lg border text-center">
-          <p className="text-gray-500">No projects created yet</p>
+        <div className="bg-white p-4 md:p-6 rounded-lg border text-center">
+          <p className="text-gray-500 text-sm md:text-base">No projects created yet</p>
           <Link to="/dashboard/projects">
-            <Button variant="outline" size="sm" className="mt-2">
+            <Button variant="outline" size={isMobile ? "sm" : "default"} className="mt-2">
               <Plus className="h-4 w-4 mr-2" /> Create Project
             </Button>
           </Link>
