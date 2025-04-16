@@ -15,6 +15,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { MoreHorizontal } from 'lucide-react';
 import { useTask } from '@/contexts/TaskContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useEffect, useState } from 'react';
 
 interface ProjectCardProps {
   project: Project;
@@ -30,6 +32,32 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   onCreateTask 
 }) => {
   const { deleteProject } = useTask();
+  const [projectTasks, setProjectTasks] = useState<Task[]>([]);
+  
+  useEffect(() => {
+    // Fetch tasks related to this project from Supabase
+    const fetchProjectTasks = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('tasks')
+          .select('*')
+          .eq('project_id', project.id);
+          
+        if (error) {
+          console.error('Error fetching project tasks:', error);
+          return;
+        }
+        
+        if (data) {
+          setProjectTasks(data);
+        }
+      } catch (error) {
+        console.error('Error fetching project tasks:', error);
+      }
+    };
+    
+    fetchProjectTasks();
+  }, [project.id]);
   
   const calculateProgress = (tasks: Task[]) => {
     if (tasks.length === 0) return 0;
@@ -37,9 +65,10 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
     return Math.round((completed / tasks.length) * 100);
   };
   
-  const totalTasks = project.tasks.length;
-  const completedTasks = project.tasks.filter(task => task.status === 'Completed').length;
-  const progress = calculateProgress(project.tasks);
+  // Use tasks from Supabase to calculate progress
+  const totalTasks = projectTasks.length;
+  const completedTasks = projectTasks.filter(task => task.status === 'Completed').length;
+  const progress = calculateProgress(projectTasks);
   
   return (
     <Card className="card-hover relative">
@@ -81,7 +110,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
           
           <div className="flex items-center text-xs text-gray-500 gap-1">
             <Users className="h-3 w-3" />
-            <span>{project.tasks.filter(task => task.assignedToId).length} assigned</span>
+            <span>{projectTasks.filter(task => task.assignedToId).length} assigned</span>
           </div>
         </div>
         
