@@ -49,7 +49,24 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
         }
         
         if (data) {
-          setProjectTasks(data);
+          // Map Supabase data to our Task interface
+          const mappedTasks: Task[] = data.map(task => ({
+            id: task.id,
+            userId: task.user_id || '',
+            projectId: task.project_id || undefined,
+            title: task.title || '',
+            description: task.description || '',
+            deadline: new Date(task.deadline || new Date()),
+            priority: task.priority as Task['priority'] || 'Medium',
+            status: task.status as Task['status'] || 'To Do',
+            createdAt: new Date(task.created_at || new Date()),
+            updatedAt: new Date(task.updated_at || new Date()),
+            completedAt: task.completed_at ? new Date(task.completed_at) : undefined,
+            assignedToId: task.assigned_to_id || undefined,
+            tags: [],
+            comments: []
+          }));
+          setProjectTasks(mappedTasks);
         }
       } catch (error) {
         console.error('Error fetching project tasks:', error);
