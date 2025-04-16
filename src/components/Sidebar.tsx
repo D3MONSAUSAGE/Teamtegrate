@@ -1,0 +1,94 @@
+
+import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
+import { LayoutDashboard, CheckSquare, FolderKanban, Users, Settings } from 'lucide-react';
+
+const Sidebar = () => {
+  const location = useLocation();
+  const { user } = useAuth();
+  
+  const isActive = (path: string) => {
+    return location.pathname === path;
+  };
+  
+  const navItems = [
+    {
+      name: 'Dashboard',
+      path: '/',
+      icon: <LayoutDashboard className="h-5 w-5" />,
+      allowed: true,
+    },
+    {
+      name: 'My Tasks',
+      path: '/tasks',
+      icon: <CheckSquare className="h-5 w-5" />,
+      allowed: true,
+    },
+    {
+      name: 'Projects',
+      path: '/projects',
+      icon: <FolderKanban className="h-5 w-5" />,
+      allowed: user?.role === 'manager',
+    },
+    {
+      name: 'Team',
+      path: '/team',
+      icon: <Users className="h-5 w-5" />,
+      allowed: user?.role === 'manager',
+    },
+    {
+      name: 'Settings',
+      path: '/settings',
+      icon: <Settings className="h-5 w-5" />,
+      allowed: true,
+    },
+  ];
+  
+  if (!user) return null;
+  
+  return (
+    <div className="h-screen w-64 bg-white border-r border-gray-200 flex flex-col">
+      <div className="p-6">
+        <h2 className="text-lg font-bold">Daily Team Sync</h2>
+        <p className="text-sm text-gray-600">Manage your tasks & projects</p>
+      </div>
+      
+      <div className="flex-1 px-4">
+        <ul className="space-y-2">
+          {navItems.map((item) => {
+            if (!item.allowed) return null;
+            
+            return (
+              <li key={item.path}>
+                <Link
+                  to={item.path}
+                  className={cn(
+                    "flex items-center gap-3 px-4 py-2.5 rounded-md text-sm font-medium transition-colors",
+                    isActive(item.path)
+                      ? "bg-primary text-white"
+                      : "text-gray-600 hover:bg-gray-100"
+                  )}
+                >
+                  {item.icon}
+                  {item.name}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+      
+      <div className="p-4 border-t border-gray-200">
+        <div className="text-xs text-gray-500">
+          <p>Logged in as</p>
+          <p className="font-semibold">{user.name}</p>
+          <p>{user.email}</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Sidebar;
