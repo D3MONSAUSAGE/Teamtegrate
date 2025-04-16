@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Project, Task } from '@/types';
 import { Badge } from "@/components/ui/badge";
 import { format } from 'date-fns';
-import { Calendar, Users } from 'lucide-react';
+import { Calendar, Users, Plus } from 'lucide-react';
 import { Progress } from "@/components/ui/progress";
 import {
   DropdownMenu,
@@ -20,9 +20,15 @@ interface ProjectCardProps {
   project: Project;
   onEdit?: (project: Project) => void;
   onViewTasks?: (project: Project) => void;
+  onCreateTask?: (project: Project) => void;
 }
 
-const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit, onViewTasks }) => {
+const ProjectCard: React.FC<ProjectCardProps> = ({ 
+  project, 
+  onEdit, 
+  onViewTasks, 
+  onCreateTask 
+}) => {
   const { deleteProject } = useTask();
   
   const calculateProgress = (tasks: Task[]) => {
@@ -34,7 +40,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit, onViewTasks 
   const progress = calculateProgress(project.tasks);
   
   return (
-    <Card className="card-hover">
+    <Card className="card-hover relative">
       <CardHeader className="pb-2 flex flex-row justify-between items-start">
         <div>
           <CardTitle className="text-base">{project.title}</CardTitle>
@@ -86,6 +92,15 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit, onViewTasks 
           </div>
           <Progress value={progress} className="h-2" />
         </div>
+        
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="w-full mt-2" 
+          onClick={() => onCreateTask && onCreateTask(project)}
+        >
+          <Plus className="h-4 w-4 mr-2" /> Add Task
+        </Button>
       </CardContent>
     </Card>
   );

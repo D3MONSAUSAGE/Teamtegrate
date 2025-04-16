@@ -11,6 +11,7 @@ interface ProjectListProps {
   onEditProject: (project: Project) => void;
   onViewTasks: (project: Project) => void;
   onCreateProject: () => void;
+  onCreateTask: (project: Project) => void;
 }
 
 const ProjectList: React.FC<ProjectListProps> = ({
@@ -19,6 +20,7 @@ const ProjectList: React.FC<ProjectListProps> = ({
   onEditProject,
   onViewTasks,
   onCreateProject,
+  onCreateTask,
 }) => {
   // Filter projects based on search query if needed
   const filteredProjects = projects.filter(project => 
@@ -52,6 +54,7 @@ const ProjectList: React.FC<ProjectListProps> = ({
           project={project} 
           onEdit={onEditProject} 
           onViewTasks={() => onViewTasks(project)}
+          onCreateTask={() => onCreateTask(project)}
         />
       ))}
     </div>

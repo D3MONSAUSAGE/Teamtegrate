@@ -32,8 +32,9 @@ const ProjectsPage = () => {
     setIsViewTasksOpen(true);
   };
   
-  const handleCreateTask = () => {
+  const handleCreateTask = (project?: Project) => {
     setEditingTask(undefined);
+    setSelectedProject(project || null);
     setIsCreateTaskOpen(true);
   };
   
@@ -92,6 +93,7 @@ const ProjectsPage = () => {
         onEditProject={handleEditProject}
         onViewTasks={handleViewTasks}
         onCreateProject={handleCreateProject}
+        onCreateTask={handleCreateTask}
       />
       
       <CreateProjectDialog 
@@ -104,7 +106,7 @@ const ProjectsPage = () => {
         open={isViewTasksOpen}
         onOpenChange={setIsViewTasksOpen}
         project={selectedProject}
-        onCreateTask={handleCreateTask}
+        onCreateTask={() => handleCreateTask(selectedProject)}
         onEditTask={handleEditTask}
         onAssignTask={handleAssignTask}
       />

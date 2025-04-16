@@ -9,11 +9,13 @@ import ProjectCard from '@/components/ProjectCard';
 interface RecentProjectsProps {
   projects: Project[];
   onViewTasks: (project: Project) => void;
+  onCreateTask: (project: Project) => void;
 }
 
 const RecentProjects: React.FC<RecentProjectsProps> = ({
   projects,
-  onViewTasks
+  onViewTasks,
+  onCreateTask
 }) => {
   return (
     <div>
@@ -33,6 +35,7 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({
               key={project.id} 
               project={project} 
               onViewTasks={() => onViewTasks(project)} 
+              onCreateTask={() => onCreateTask(project)}
             />
           ))}
         </div>
