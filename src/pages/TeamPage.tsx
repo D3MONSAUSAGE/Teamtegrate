@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2 } from 'lucide-react';
@@ -157,9 +157,12 @@ const TeamPage = () => {
               <CardContent className="p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center">
-                    <Avatar className="h-10 w-10 mr-4">
-                      <AvatarFallback>{member.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-                    </Avatar>
+                    {/* Remove AvatarFallback and adjust styling */}
+                    <div 
+                      className="h-10 w-10 mr-4 rounded-full bg-gray-200 flex items-center justify-center font-semibold text-gray-600"
+                    >
+                      {member.name.substring(0, 1).toUpperCase()}
+                    </div>
                     <div>
                       <h3 className="font-semibold">{member.name}</h3>
                       <div className="flex items-center space-x-2">
@@ -218,3 +221,4 @@ const TeamPage = () => {
 };
 
 export default TeamPage;
+
