@@ -29,12 +29,8 @@ const AppLayout = () => {
       {/* Mobile sidebar with Sheet component */}
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
         <SheetTrigger asChild>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="fixed top-4 left-4 z-50 md:hidden bg-background shadow-sm"
-          >
-            <Menu className="h-5 w-5" />
+          <Button variant="ghost" size="icon" className="fixed top-3 left-3 z-10 md:hidden">
+            <Menu className="h-6 w-6" />
             <span className="sr-only">Toggle Sidebar</span>
           </Button>
         </SheetTrigger>
@@ -44,7 +40,7 @@ const AppLayout = () => {
       </Sheet>
       
       {/* Desktop sidebar - hidden by default, toggleable with button */}
-      <div className="hidden md:block">
+      <div className="hidden">
         <Sidebar />
       </div>
       
