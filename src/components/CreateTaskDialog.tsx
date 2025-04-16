@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,13 +26,13 @@ interface CreateTaskDialogProps {
   currentProjectId?: string;
 }
 
-// Mock team members data (in a real app, this would come from an API)
-const mockTeamMembers = [
-  { id: '1', name: 'John Doe', email: 'john@example.com' },
-  { id: '2', name: 'Jane Smith', email: 'jane@example.com' },
-  { id: '3', name: 'Robert Johnson', email: 'robert@example.com' },
-  { id: '4', name: 'Emily Davis', email: 'emily@example.com' },
-];
+interface TeamMember {
+  id: string;
+  name: string;
+  email: string;
+  role?: string;
+  managerId?: string;
+}
 
 const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({ 
   open, 
@@ -46,6 +46,15 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
   const [selectedMember, setSelectedMember] = useState<string | undefined>(
     editingTask?.assignedToId
   );
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  
+  // Load team members from localStorage on mount
+  useEffect(() => {
+    const storedMembers = localStorage.getItem('teamMembers');
+    if (storedMembers) {
+      setTeamMembers(JSON.parse(storedMembers));
+    }
+  }, []);
   
   const { register, handleSubmit, formState: { errors }, reset, setValue } = useForm({
     defaultValues: {
@@ -80,7 +89,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
         deadline: new Date(data.deadline),
         assignedToId: selectedMember,
         assignedToName: selectedMember ? 
-          mockTeamMembers.find(m => m.id === selectedMember)?.name : undefined
+          teamMembers.find(m => m.id === selectedMember)?.name : undefined
       });
     } else {
       addTask({
@@ -93,7 +102,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
         projectId: data.projectId || undefined,
         assignedToId: selectedMember,
         assignedToName: selectedMember ? 
-          mockTeamMembers.find(m => m.id === selectedMember)?.name : undefined
+          teamMembers.find(m => m.id === selectedMember)?.name : undefined
       });
     }
     onOpenChange(false);
@@ -161,11 +170,17 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="unassigned">Unassigned</SelectItem>
-                {mockTeamMembers.map(member => (
-                  <SelectItem key={member.id} value={member.id}>
-                    {member.name}
+                {teamMembers.length > 0 ? (
+                  teamMembers.map(member => (
+                    <SelectItem key={member.id} value={member.id}>
+                      {member.name}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="no-members" disabled>
+                    No team members added yet
                   </SelectItem>
-                ))}
+                )}
               </SelectContent>
             </Select>
           </div>
