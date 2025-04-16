@@ -37,9 +37,9 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
     return Math.round((completed / tasks.length) * 100);
   };
   
-  const progress = calculateProgress(project.tasks);
   const totalTasks = project.tasks.length;
   const completedTasks = project.tasks.filter(task => task.status === 'Completed').length;
+  const progress = calculateProgress(project.tasks);
   
   return (
     <Card className="card-hover relative">
@@ -76,7 +76,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
         <div className="flex items-center justify-between pt-2">
           <div className="flex items-center text-xs text-gray-500 gap-1">
             <Calendar className="h-3 w-3" />
-            <span>{format(project.startDate, 'MMM d')} - {format(project.endDate, 'MMM d')}</span>
+            <span>{format(new Date(project.startDate), 'MMM d')} - {format(new Date(project.endDate), 'MMM d')}</span>
           </div>
           
           <div className="flex items-center text-xs text-gray-500 gap-1">
