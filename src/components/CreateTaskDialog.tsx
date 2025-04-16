@@ -140,7 +140,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
                 <SelectValue placeholder="Select project (optional)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No Project</SelectItem>
+                <SelectItem value="none">No Project</SelectItem>
                 {projects.map(project => (
                   <SelectItem key={project.id} value={project.id}>
                     {project.title}
@@ -160,7 +160,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
                 <SelectValue placeholder="Assign to team member (optional)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Unassigned</SelectItem>
+                <SelectItem value="unassigned">Unassigned</SelectItem>
                 {mockTeamMembers.map(member => (
                   <SelectItem key={member.id} value={member.id}>
                     {member.name}
