@@ -17,7 +17,8 @@ import { Task, TaskPriority, TaskStatus } from '@/types';
 import { useTask } from '@/contexts/task';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
-import { Users } from 'lucide-react';
+import { Loader2, Users } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface CreateTaskDialogProps {
   open: boolean;
@@ -30,8 +31,7 @@ interface TeamMember {
   id: string;
   name: string;
   email: string;
-  role?: string;
-  managerId?: string;
+  role: string;
 }
 
 const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({ 
@@ -47,14 +47,38 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
     editingTask?.assignedToId
   );
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [isLoadingTeamMembers, setIsLoadingTeamMembers] = useState(false);
   
-  // Load team members from localStorage on mount
+  // Load team members from Supabase when dialog opens
   useEffect(() => {
-    const storedMembers = localStorage.getItem('teamMembers');
-    if (storedMembers) {
-      setTeamMembers(JSON.parse(storedMembers));
+    const fetchTeamMembers = async () => {
+      if (!user) return;
+      
+      setIsLoadingTeamMembers(true);
+      try {
+        const { data, error } = await supabase
+          .from('team_members')
+          .select('*')
+          .eq('manager_id', user.id);
+          
+        if (error) {
+          console.error('Error loading team members:', error);
+          return;
+        }
+        
+        setTeamMembers(data || []);
+      } catch (error) {
+        console.error('Error fetching team members:', error);
+      } finally {
+        setIsLoadingTeamMembers(false);
+      }
+    };
+
+    // Fetch team members when dialog opens
+    if (open) {
+      fetchTeamMembers();
     }
-  }, []);
+  }, [user, open]);
   
   const { register, handleSubmit, formState: { errors }, reset, setValue } = useForm({
     defaultValues: {
@@ -79,6 +103,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
         setValue('projectId', currentProjectId);
       }
       reset();
+      setSelectedMember(undefined);
     }
   }, [editingTask, currentProjectId, setValue, reset]);
   
@@ -87,8 +112,8 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
       updateTask(editingTask.id, {
         ...data,
         deadline: new Date(data.deadline),
-        assignedToId: selectedMember,
-        assignedToName: selectedMember ? 
+        assignedToId: selectedMember === "unassigned" ? undefined : selectedMember,
+        assignedToName: selectedMember && selectedMember !== "unassigned" ? 
           teamMembers.find(m => m.id === selectedMember)?.name : undefined
       });
     } else {
@@ -99,9 +124,9 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
         deadline: new Date(data.deadline),
         status: 'To Do' as TaskStatus,
         userId: user?.id || '',
-        projectId: data.projectId || undefined,
-        assignedToId: selectedMember,
-        assignedToName: selectedMember ? 
+        projectId: data.projectId === "none" ? undefined : data.projectId,
+        assignedToId: selectedMember === "unassigned" ? undefined : selectedMember,
+        assignedToName: selectedMember && selectedMember !== "unassigned" ? 
           teamMembers.find(m => m.id === selectedMember)?.name : undefined
       });
     }
@@ -170,7 +195,13 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="unassigned">Unassigned</SelectItem>
-                {teamMembers.length > 0 ? (
+                
+                {isLoadingTeamMembers ? (
+                  <div className="flex items-center justify-center py-2">
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" /> 
+                    <span className="text-sm">Loading team members...</span>
+                  </div>
+                ) : teamMembers.length > 0 ? (
                   teamMembers.map(member => (
                     <SelectItem key={member.id} value={member.id}>
                       {member.name}
