@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { useTask } from '@/contexts/TaskContext';
@@ -19,12 +18,14 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const TasksPage = () => {
   const { tasks } = useTask();
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [sortBy, setSortBy] = useState('deadline');
+  const isMobile = useIsMobile();
   
   const handleEditTask = (task: Task) => {
     setEditingTask(task);
@@ -89,20 +90,22 @@ const TasksPage = () => {
       </div>
       
       <Tabs defaultValue="todo" className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="todo">
-            To Do ({todoTasks.length})
-          </TabsTrigger>
-          <TabsTrigger value="inprogress">
-            In Progress ({inProgressTasks.length})
-          </TabsTrigger>
-          <TabsTrigger value="pending">
-            Pending ({pendingTasks.length})
-          </TabsTrigger>
-          <TabsTrigger value="completed">
-            Completed ({completedTasks.length})
-          </TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto pb-2">
+          <TabsList className="mb-4 w-full flex-nowrap">
+            <TabsTrigger value="todo" className={`${isMobile ? 'text-xs' : ''}`}>
+              To Do ({todoTasks.length})
+            </TabsTrigger>
+            <TabsTrigger value="inprogress" className={`${isMobile ? 'text-xs' : ''}`}>
+              In Progress ({inProgressTasks.length})
+            </TabsTrigger>
+            <TabsTrigger value="pending" className={`${isMobile ? 'text-xs' : ''}`}>
+              Pending ({pendingTasks.length})
+            </TabsTrigger>
+            <TabsTrigger value="completed" className={`${isMobile ? 'text-xs' : ''}`}>
+              Completed ({completedTasks.length})
+            </TabsTrigger>
+          </TabsList>
+        </div>
         
         <TabsContent value="todo">
           {sortedTodo.length > 0 ? (
