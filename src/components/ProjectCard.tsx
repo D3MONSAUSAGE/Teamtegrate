@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Project, Task } from '@/types';
 import { Badge } from "@/components/ui/badge";
 import { format } from 'date-fns';
-import { Calendar, Users, Plus } from 'lucide-react';
+import { Calendar, Users, Plus, ListTodo } from 'lucide-react';
 import { Progress } from "@/components/ui/progress";
 import {
   DropdownMenu,
@@ -38,6 +38,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   };
   
   const progress = calculateProgress(project.tasks);
+  const totalTasks = project.tasks.length;
+  const completedTasks = project.tasks.filter(task => task.status === 'Completed').length;
   
   return (
     <Card className="card-hover relative">
@@ -85,10 +87,14 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
         
         <div className="pt-3 space-y-1">
           <div className="flex justify-between items-center">
-            <span className="text-xs text-gray-500">
-              {project.tasks.filter(task => task.status === 'Completed').length} of {project.tasks.length} tasks
-            </span>
+            <div className="flex items-center text-xs font-medium">
+              <ListTodo className="h-4 w-4 mr-1 text-blue-500" />
+              <span>{totalTasks} {totalTasks === 1 ? 'Task' : 'Tasks'}</span>
+            </div>
             <Badge variant="outline">{progress}%</Badge>
+          </div>
+          <div className="flex justify-between items-center text-xs text-gray-500">
+            <span>{completedTasks} of {totalTasks} completed</span>
           </div>
           <Progress value={progress} className="h-2" />
         </div>

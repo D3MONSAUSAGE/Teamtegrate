@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { useTask } from '@/contexts/TaskContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { Task } from '@/types';
+import { Task, Project } from '@/types';
 import { Plus } from 'lucide-react';
 import CreateTaskDialog from '@/components/CreateTaskDialog';
 import { format } from 'date-fns';
@@ -18,6 +18,7 @@ const DashboardPage = () => {
   const { tasks, projects, dailyScore } = useTask();
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -46,9 +47,15 @@ const DashboardPage = () => {
     setIsCreateTaskOpen(true);
   };
 
-  const handleCreateTask = () => {
+  const handleCreateTask = (project?: Project) => {
     setEditingTask(undefined);
+    setSelectedProject(project || null);
     setIsCreateTaskOpen(true);
+  };
+
+  const handleViewTasks = (project: Project) => {
+    // Placeholder for viewing tasks
+    console.log("View tasks for project:", project.title);
   };
   
   return (
@@ -61,7 +68,7 @@ const DashboardPage = () => {
               {format(new Date(), "EEEE, MMMM d")} · Here's your daily overview
             </p>
           </div>
-          <Button onClick={handleCreateTask}>
+          <Button onClick={() => handleCreateTask()}>
             <Plus className="h-4 w-4 mr-2" /> New Task
           </Button>
         </div>
@@ -74,20 +81,21 @@ const DashboardPage = () => {
         
         <DailyTasksSection 
           tasks={todaysTasks}
-          onCreateTask={handleCreateTask}
+          onCreateTask={() => handleCreateTask()}
           onEditTask={handleEditTask}
         />
         
         <UpcomingTasksSection 
           tasks={upcomingTasks}
-          onCreateTask={handleCreateTask}
+          onCreateTask={() => handleCreateTask()}
           onEditTask={handleEditTask}
         />
         
         {user?.role === 'manager' && (
           <RecentProjects 
             projects={recentProjects}
-            onViewTasks={() => {}}
+            onViewTasks={handleViewTasks}
+            onCreateTask={handleCreateTask}
           />
         )}
         
@@ -100,6 +108,7 @@ const DashboardPage = () => {
         open={isCreateTaskOpen} 
         onOpenChange={setIsCreateTaskOpen}
         editingTask={editingTask}
+        currentProjectId={selectedProject?.id}
       />
     </div>
   );
