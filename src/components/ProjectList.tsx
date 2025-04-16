@@ -20,7 +20,13 @@ const ProjectList: React.FC<ProjectListProps> = ({
   onViewTasks,
   onCreateProject,
 }) => {
-  if (projects.length === 0) {
+  // Filter projects based on search query if needed
+  const filteredProjects = projects.filter(project => 
+    project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    project.description.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  if (filteredProjects.length === 0) {
     return (
       <div className="bg-white p-6 rounded-lg border text-center">
         <p className="text-gray-500">
@@ -40,7 +46,7 @@ const ProjectList: React.FC<ProjectListProps> = ({
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {projects.map((project) => (
+      {filteredProjects.map((project) => (
         <ProjectCard 
           key={project.id} 
           project={project} 

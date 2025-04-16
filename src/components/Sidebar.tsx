@@ -85,6 +85,7 @@ const Sidebar = () => {
           <p>Logged in as</p>
           <p className="font-semibold">{user.name}</p>
           <p>{user.email}</p>
+          <p className="mt-1 font-medium">{user.role === 'manager' ? 'Manager' : 'Team Member'}</p>
         </div>
       </div>
     </div>

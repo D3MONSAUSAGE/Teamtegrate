@@ -36,7 +36,7 @@ const ProjectTasksDialog: React.FC<ProjectTasksDialogProps> = ({
           </Button>
         </div>
         
-        {project && project.tasks.length > 0 ? (
+        {project.tasks && project.tasks.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto p-1">
             {project.tasks.map((task) => (
               <TaskCard 
