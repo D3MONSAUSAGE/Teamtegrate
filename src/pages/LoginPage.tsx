@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,8 +23,15 @@ const LoginPage = () => {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [role, setRole] = useState<UserRole>('user');
-  const { login, signup } = useAuth();
+  const { login, signup, isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
+  
+  // Redirect if already logged in
+  useEffect(() => {
+    if (isAuthenticated && !loading) {
+      navigate('/dashboard');
+    }
+  }, [isAuthenticated, loading, navigate]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,13 +41,16 @@ const LoginPage = () => {
         await login(email, password);
         toast.success('Logged in successfully!');
       } else {
+        if (!name.trim()) {
+          toast.error('Please enter your name');
+          return;
+        }
         await signup(email, password, name, role);
-        toast.success('Account created successfully!');
       }
-      navigate('/');
+      // The redirect will be handled by the useEffect above
     } catch (error) {
       console.error('Authentication error:', error);
-      toast.error(isLogin ? 'Login failed. Please try again.' : 'Signup failed. Please try again.');
+      // Toast is already handled in the auth context
     }
   };
   
@@ -108,8 +118,8 @@ const LoginPage = () => {
               </div>
             )}
             
-            <Button type="submit" className="w-full">
-              {isLogin ? 'Login' : 'Sign Up'}
+            <Button type="submit" className="w-full" disabled={loading}>
+              {isLogin ? (loading ? 'Logging in...' : 'Login') : (loading ? 'Signing Up...' : 'Sign Up')}
             </Button>
           </form>
         </CardContent>
@@ -118,6 +128,7 @@ const LoginPage = () => {
             variant="link"
             className="w-full"
             onClick={() => setIsLogin(!isLogin)}
+            disabled={loading}
           >
             {isLogin ? "Don't have an account? Sign Up" : "Already have an account? Login"}
           </Button>
