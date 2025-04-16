@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { 
   LayoutDashboard, 
   CheckSquare, 
-  FolderKanban,  // We'll use this icon for Projects
+  FolderKanban,  
   Users, 
   Settings 
 } from 'lucide-react';
@@ -57,7 +57,7 @@ const Sidebar = () => {
   return (
     <div className="h-screen w-64 bg-white border-r border-gray-200 flex flex-col">
       <div className="p-6">
-        <h2 className="text-lg font-bold">Daily Team Sync</h2>
+        <h2 className="text-lg font-bold">TeamStream</h2>
         <p className="text-sm text-gray-600">Manage your tasks & projects</p>
       </div>
       
@@ -99,3 +99,4 @@ const Sidebar = () => {
 };
 
 export default Sidebar;
+
