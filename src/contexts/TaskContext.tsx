@@ -1,7 +1,9 @@
+
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { Task, Project, TaskStatus, TaskPriority, DailyScore, Comment } from '@/types';
 import { useAuth } from './AuthContext';
 import { toast } from '@/components/ui/sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface TaskContextType {
   tasks: Task[];
@@ -52,56 +54,123 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     date: new Date(),
   });
 
+  // Load tasks and projects from Supabase when user is authenticated
   useEffect(() => {
     if (user) {
-      const storedTasks = localStorage.getItem(`tasks-${user.id}`);
-      const storedProjects = localStorage.getItem(`projects-${user.id}`);
-      
-      if (storedTasks) {
-        const parsedTasks = JSON.parse(storedTasks).map((task: any) => ({
-          ...task,
-          deadline: new Date(task.deadline),
-          createdAt: new Date(task.createdAt),
-          updatedAt: new Date(task.updatedAt),
-          completedAt: task.completedAt ? new Date(task.completedAt) : undefined,
-        }));
-        setTasks(parsedTasks);
-      }
-      
-      if (storedProjects) {
-        const parsedProjects = JSON.parse(storedProjects).map((project: any) => ({
-          ...project,
-          startDate: new Date(project.startDate),
-          endDate: new Date(project.endDate),
-          createdAt: new Date(project.createdAt),
-          updatedAt: new Date(project.updatedAt),
-          tasks: project.tasks.map((task: any) => ({
-            ...task,
-            deadline: new Date(task.deadline),
-            createdAt: new Date(task.createdAt),
-            updatedAt: new Date(task.updatedAt),
-            completedAt: task.completedAt ? new Date(task.completedAt) : undefined,
-          })),
-        }));
-        setProjects(parsedProjects);
-      }
-
-      calculateDailyScore();
+      fetchTasks();
+      fetchProjects();
+    } else {
+      setTasks([]);
+      setProjects([]);
     }
   }, [user]);
 
+  // Recalculate daily score when tasks change
   useEffect(() => {
     if (user) {
-      localStorage.setItem(`tasks-${user.id}`, JSON.stringify(tasks));
       calculateDailyScore();
     }
   }, [tasks, user]);
 
-  useEffect(() => {
-    if (user) {
-      localStorage.setItem(`projects-${user.id}`, JSON.stringify(projects));
+  const fetchTasks = async () => {
+    try {
+      if (!user) return;
+      
+      const { data, error } = await supabase
+        .from('tasks')
+        .select('*')
+        .eq('user_id', user.id);
+      
+      if (error) {
+        console.error('Error fetching tasks:', error);
+        toast.error('Failed to load tasks');
+        return;
+      }
+      
+      if (data) {
+        const formattedTasks = data.map(task => ({
+          ...task,
+          id: task.id,
+          userId: task.user_id,
+          projectId: task.project_id,
+          title: task.title || '',
+          description: task.description || '',
+          deadline: new Date(task.deadline || Date.now()),
+          priority: (task.priority as TaskPriority) || 'Medium',
+          status: (task.status as TaskStatus) || 'To Do',
+          createdAt: new Date(task.created_at || Date.now()),
+          updatedAt: new Date(task.updated_at || Date.now()),
+          completedAt: task.completed_at ? new Date(task.completed_at) : undefined,
+          assignedToId: task.assigned_to_id,
+        }));
+        
+        setTasks(formattedTasks);
+      }
+    } catch (error) {
+      console.error('Error in fetchTasks:', error);
     }
-  }, [projects, user]);
+  };
+
+  const fetchProjects = async () => {
+    try {
+      if (!user) return;
+      
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .eq('manager_id', user.id);
+      
+      if (error) {
+        console.error('Error fetching projects:', error);
+        toast.error('Failed to load projects');
+        return;
+      }
+      
+      if (data) {
+        const formattedProjects = await Promise.all(data.map(async (project) => {
+          // For each project, get its tasks
+          const { data: projectTasks } = await supabase
+            .from('tasks')
+            .select('*')
+            .eq('project_id', project.id);
+          
+          const formattedProjectTasks = projectTasks ? projectTasks.map(task => ({
+            ...task,
+            id: task.id,
+            userId: task.user_id,
+            projectId: task.project_id,
+            title: task.title || '',
+            description: task.description || '',
+            deadline: new Date(task.deadline || Date.now()),
+            priority: (task.priority as TaskPriority) || 'Medium',
+            status: (task.status as TaskStatus) || 'To Do',
+            createdAt: new Date(task.created_at || Date.now()),
+            updatedAt: new Date(task.updated_at || Date.now()),
+            completedAt: task.completed_at ? new Date(task.completed_at) : undefined,
+            assignedToId: task.assigned_to_id,
+          })) : [];
+          
+          return {
+            id: project.id,
+            title: project.title || '',
+            description: project.description || '',
+            startDate: new Date(project.start_date || Date.now()),
+            endDate: new Date(project.end_date || Date.now()),
+            managerId: project.manager_id || '',
+            createdAt: new Date(project.created_at || Date.now()),
+            updatedAt: new Date(project.updated_at || Date.now()),
+            tasks: formattedProjectTasks,
+            teamMembers: [],
+            tags: [],
+          };
+        }));
+        
+        setProjects(formattedProjects);
+      }
+    } catch (error) {
+      console.error('Error in fetchProjects:', error);
+    }
+  };
 
   const calculateDailyScore = () => {
     if (!tasks.length) {
@@ -137,190 +206,406 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
-  const addTask = (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const newTask: Task = {
-      ...task,
-      id: Math.random().toString(36).substring(2, 11),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    setTasks([...tasks, newTask]);
-    toast.success('Task created successfully!');
-  };
-
-  const updateTask = (taskId: string, updates: Partial<Task>) => {
-    const updatedTasks = tasks.map((task) => {
-      if (task.id === taskId) {
-        return { ...task, ...updates, updatedAt: new Date() };
-      }
-      return task;
-    });
-
-    setTasks(updatedTasks);
-    
-    if (updates.projectId) {
-      const updatedProjects = projects.map((project) => {
-        if (project.id === updates.projectId) {
-          const projectTasks = project.tasks.map((task) => {
-            if (task.id === taskId) {
-              return { ...task, ...updates, updatedAt: new Date() };
-            }
-            return task;
-          });
-          
-          const taskExists = projectTasks.some((task) => task.id === taskId);
-          if (!taskExists) {
-            const taskToAdd = updatedTasks.find((task) => task.id === taskId);
-            if (taskToAdd) {
-              projectTasks.push(taskToAdd);
-            }
-          }
-          
-          return { ...project, tasks: projectTasks };
-        }
-        return project;
-      });
+  const addTask = async (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
+    try {
+      if (!user) return;
       
-      setProjects(updatedProjects);
+      const now = new Date();
+      const taskToInsert = {
+        user_id: user.id,
+        project_id: task.projectId,
+        title: task.title,
+        description: task.description,
+        deadline: task.deadline.toISOString(),
+        priority: task.priority,
+        status: task.status,
+        created_at: now.toISOString(),
+        updated_at: now.toISOString(),
+        assigned_to_id: task.assignedToId
+      };
+      
+      const { data, error } = await supabase
+        .from('tasks')
+        .insert(taskToInsert)
+        .select('*')
+        .single();
+      
+      if (error) {
+        console.error('Error adding task:', error);
+        toast.error('Failed to create task');
+        return;
+      }
+      
+      if (data) {
+        const newTask: Task = {
+          id: data.id,
+          userId: data.user_id,
+          projectId: data.project_id,
+          title: data.title,
+          description: data.description,
+          deadline: new Date(data.deadline),
+          priority: data.priority as TaskPriority,
+          status: data.status as TaskStatus,
+          createdAt: new Date(data.created_at),
+          updatedAt: new Date(data.updated_at),
+          assignedToId: data.assigned_to_id,
+          assignedToName: task.assignedToName
+        };
+        
+        setTasks(prevTasks => [...prevTasks, newTask]);
+        
+        // Update project tasks if this task is associated with a project
+        if (task.projectId) {
+          setProjects(prevProjects => prevProjects.map(project => {
+            if (project.id === task.projectId) {
+              return {
+                ...project,
+                tasks: [...project.tasks, newTask]
+              };
+            }
+            return project;
+          }));
+        }
+        
+        toast.success('Task created successfully!');
+      }
+    } catch (error) {
+      console.error('Error in addTask:', error);
+      toast.error('Failed to create task');
     }
-    
-    toast.success('Task updated successfully!');
   };
 
-  const updateTaskStatus = (taskId: string, status: TaskStatus) => {
-    const updatedTasks = tasks.map((task) => {
-      if (task.id === taskId) {
-        const completedAt = status === 'Completed' ? new Date() : undefined;
-        return { ...task, status, completedAt, updatedAt: new Date() };
+  const updateTask = async (taskId: string, updates: Partial<Task>) => {
+    try {
+      if (!user) return;
+      
+      const taskToUpdate = tasks.find(t => t.id === taskId);
+      if (!taskToUpdate) return;
+      
+      const now = new Date();
+      const updatedFields: any = {
+        updated_at: now.toISOString()
+      };
+      
+      // Map Task properties to database column names
+      if (updates.title !== undefined) updatedFields.title = updates.title;
+      if (updates.description !== undefined) updatedFields.description = updates.description;
+      if (updates.deadline !== undefined) updatedFields.deadline = updates.deadline.toISOString();
+      if (updates.priority !== undefined) updatedFields.priority = updates.priority;
+      if (updates.status !== undefined) updatedFields.status = updates.status;
+      if (updates.projectId !== undefined) updatedFields.project_id = updates.projectId;
+      if (updates.assignedToId !== undefined) updatedFields.assigned_to_id = updates.assignedToId;
+      if (updates.completedAt !== undefined) updatedFields.completed_at = updates.completedAt ? updates.completedAt.toISOString() : null;
+      
+      const { error } = await supabase
+        .from('tasks')
+        .update(updatedFields)
+        .eq('id', taskId);
+      
+      if (error) {
+        console.error('Error updating task:', error);
+        toast.error('Failed to update task');
+        return;
       }
-      return task;
-    });
-
-    setTasks(updatedTasks);
-    
-    const updatedProjects = projects.map((project) => {
-      const projectTasks = project.tasks.map((task) => {
+      
+      // Update local state
+      setTasks(prevTasks => prevTasks.map(task => {
         if (task.id === taskId) {
-          const completedAt = status === 'Completed' ? new Date() : undefined;
-          return { ...task, status, completedAt, updatedAt: new Date() };
+          return { ...task, ...updates, updatedAt: now };
         }
         return task;
-      });
+      }));
       
-      return { ...project, tasks: projectTasks };
-    });
-    
-    setProjects(updatedProjects);
-    
-    toast.success(`Task status updated to ${status}!`);
-    calculateDailyScore();
-  };
-
-  const deleteTask = (taskId: string) => {
-    const filteredTasks = tasks.filter((task) => task.id !== taskId);
-    setTasks(filteredTasks);
-    
-    const updatedProjects = projects.map((project) => {
-      const projectTasks = project.tasks.filter((task) => task.id !== taskId);
-      return { ...project, tasks: projectTasks };
-    });
-    
-    setProjects(updatedProjects);
-    
-    toast.success('Task deleted successfully!');
-  };
-
-  const addProject = (project: Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'tasks'>) => {
-    const newProject: Project = {
-      ...project,
-      id: Math.random().toString(36).substring(2, 11),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      tasks: [],
-    };
-
-    setProjects([...projects, newProject]);
-    toast.success('Project created successfully!');
-  };
-
-  const updateProject = (projectId: string, updates: Partial<Project>) => {
-    const updatedProjects = projects.map((project) => {
-      if (project.id === projectId) {
-        return { ...project, ...updates, updatedAt: new Date() };
-      }
-      return project;
-    });
-
-    setProjects(updatedProjects);
-    toast.success('Project updated successfully!');
-  };
-
-  const deleteProject = (projectId: string) => {
-    const filteredProjects = projects.filter((project) => project.id !== projectId);
-    setProjects(filteredProjects);
-    
-    const updatedTasks = tasks.map((task) => {
-      if (task.projectId === projectId) {
-        return { ...task, projectId: undefined };
-      }
-      return task;
-    });
-    
-    setTasks(updatedTasks);
-    
-    toast.success('Project deleted successfully!');
-  };
-
-  const assignTaskToProject = (taskId: string, projectId: string) => {
-    const taskToAssign = tasks.find((task) => task.id === taskId);
-    if (!taskToAssign) return;
-    
-    updateTask(taskId, { projectId });
-    
-    const updatedProjects = projects.map((project) => {
-      if (project.id === projectId) {
-        const taskExists = project.tasks.some((task) => task.id === taskId);
-        if (!taskExists) {
-          return { 
-            ...project, 
-            tasks: [...project.tasks, { ...taskToAssign, projectId }],
-            updatedAt: new Date()
-          };
-        }
-      }
-      return project;
-    });
-    
-    setProjects(updatedProjects);
-    toast.success('Task assigned to project successfully!');
-  };
-
-  const assignTaskToUser = (taskId: string, userId: string, userName: string) => {
-    updateTask(taskId, { assignedToId: userId, assignedToName: userName });
-    
-    const taskToUpdate = tasks.find((task) => task.id === taskId);
-    if (taskToUpdate?.projectId) {
-      const updatedProjects = projects.map((project) => {
-        if (project.id === taskToUpdate.projectId) {
-          const projectTasks = project.tasks.map((task) => {
+      // Update project tasks if this task is associated with a project
+      setProjects(prevProjects => prevProjects.map(project => {
+        const projectContainsTask = project.tasks.some(t => t.id === taskId);
+        
+        if (projectContainsTask || updates.projectId === project.id) {
+          const updatedTasks = project.tasks.map(task => {
             if (task.id === taskId) {
-              return { ...task, assignedToId: userId, assignedToName: userName };
+              return { ...task, ...updates, updatedAt: now };
             }
             return task;
           });
           
-          return { ...project, tasks: projectTasks };
+          // If task is being moved to this project and wasn't there before
+          if (updates.projectId === project.id && !projectContainsTask) {
+            const taskToAdd = { ...taskToUpdate, ...updates, updatedAt: now };
+            return {
+              ...project,
+              tasks: [...updatedTasks, taskToAdd]
+            };
+          }
+          
+          return {
+            ...project,
+            tasks: updatedTasks
+          };
+        } else if (project.id === taskToUpdate.projectId && updates.projectId !== undefined) {
+          // Remove task from project if it's being moved elsewhere
+          return {
+            ...project,
+            tasks: project.tasks.filter(t => t.id !== taskId)
+          };
         }
+        
         return project;
-      });
+      }));
       
-      setProjects(updatedProjects);
+      toast.success('Task updated successfully!');
+    } catch (error) {
+      console.error('Error in updateTask:', error);
+      toast.error('Failed to update task');
     }
-    
-    toast.success(`Task assigned to ${userName}!`);
   };
 
+  const updateTaskStatus = async (taskId: string, status: TaskStatus) => {
+    try {
+      if (!user) return;
+      
+      const now = new Date();
+      const completedAt = status === 'Completed' ? now : null;
+      
+      const { error } = await supabase
+        .from('tasks')
+        .update({
+          status,
+          completed_at: completedAt ? completedAt.toISOString() : null,
+          updated_at: now.toISOString()
+        })
+        .eq('id', taskId);
+      
+      if (error) {
+        console.error('Error updating task status:', error);
+        toast.error('Failed to update task status');
+        return;
+      }
+      
+      // Update local state
+      setTasks(prevTasks => prevTasks.map(task => {
+        if (task.id === taskId) {
+          return {
+            ...task,
+            status,
+            completedAt: completedAt || undefined,
+            updatedAt: now
+          };
+        }
+        return task;
+      }));
+      
+      // Update project tasks
+      setProjects(prevProjects => prevProjects.map(project => {
+        return {
+          ...project,
+          tasks: project.tasks.map(task => {
+            if (task.id === taskId) {
+              return {
+                ...task,
+                status,
+                completedAt: completedAt || undefined,
+                updatedAt: now
+              };
+            }
+            return task;
+          })
+        };
+      }));
+      
+      toast.success(`Task status updated to ${status}!`);
+      calculateDailyScore();
+    } catch (error) {
+      console.error('Error in updateTaskStatus:', error);
+      toast.error('Failed to update task status');
+    }
+  };
+
+  const deleteTask = async (taskId: string) => {
+    try {
+      if (!user) return;
+      
+      const { error } = await supabase
+        .from('tasks')
+        .delete()
+        .eq('id', taskId);
+      
+      if (error) {
+        console.error('Error deleting task:', error);
+        toast.error('Failed to delete task');
+        return;
+      }
+      
+      // Update local state
+      setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
+      
+      // Update project tasks
+      setProjects(prevProjects => prevProjects.map(project => {
+        return {
+          ...project,
+          tasks: project.tasks.filter(task => task.id !== taskId)
+        };
+      }));
+      
+      toast.success('Task deleted successfully!');
+    } catch (error) {
+      console.error('Error in deleteTask:', error);
+      toast.error('Failed to delete task');
+    }
+  };
+
+  const addProject = async (project: Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'tasks'>) => {
+    try {
+      if (!user) return;
+      
+      const now = new Date();
+      const projectToInsert = {
+        title: project.title,
+        description: project.description,
+        start_date: project.startDate.toISOString(),
+        end_date: project.endDate.toISOString(),
+        manager_id: user.id,
+        created_at: now.toISOString(),
+        updated_at: now.toISOString()
+      };
+      
+      const { data, error } = await supabase
+        .from('projects')
+        .insert(projectToInsert)
+        .select('*')
+        .single();
+      
+      if (error) {
+        console.error('Error adding project:', error);
+        toast.error('Failed to create project');
+        return;
+      }
+      
+      if (data) {
+        const newProject: Project = {
+          id: data.id,
+          title: data.title,
+          description: data.description,
+          startDate: new Date(data.start_date),
+          endDate: new Date(data.end_date),
+          managerId: data.manager_id,
+          createdAt: new Date(data.created_at),
+          updatedAt: new Date(data.updated_at),
+          tasks: [],
+          teamMembers: [],
+          tags: []
+        };
+        
+        setProjects(prevProjects => [...prevProjects, newProject]);
+        toast.success('Project created successfully!');
+      }
+    } catch (error) {
+      console.error('Error in addProject:', error);
+      toast.error('Failed to create project');
+    }
+  };
+
+  const updateProject = async (projectId: string, updates: Partial<Project>) => {
+    try {
+      if (!user) return;
+      
+      const now = new Date();
+      const updatedFields: any = {
+        updated_at: now.toISOString()
+      };
+      
+      // Map Project properties to database column names
+      if (updates.title !== undefined) updatedFields.title = updates.title;
+      if (updates.description !== undefined) updatedFields.description = updates.description;
+      if (updates.startDate !== undefined) updatedFields.start_date = updates.startDate.toISOString();
+      if (updates.endDate !== undefined) updatedFields.end_date = updates.endDate.toISOString();
+      
+      const { error } = await supabase
+        .from('projects')
+        .update(updatedFields)
+        .eq('id', projectId);
+      
+      if (error) {
+        console.error('Error updating project:', error);
+        toast.error('Failed to update project');
+        return;
+      }
+      
+      // Update local state
+      setProjects(prevProjects => prevProjects.map(project => {
+        if (project.id === projectId) {
+          return { ...project, ...updates, updatedAt: now };
+        }
+        return project;
+      }));
+      
+      toast.success('Project updated successfully!');
+    } catch (error) {
+      console.error('Error in updateProject:', error);
+      toast.error('Failed to update project');
+    }
+  };
+
+  const deleteProject = async (projectId: string) => {
+    try {
+      if (!user) return;
+      
+      // First update all tasks associated with this project to remove the project reference
+      const projectTasks = tasks.filter(task => task.projectId === projectId);
+      for (const task of projectTasks) {
+        await supabase
+          .from('tasks')
+          .update({ project_id: null })
+          .eq('id', task.id);
+      }
+      
+      // Then delete the project
+      const { error } = await supabase
+        .from('projects')
+        .delete()
+        .eq('id', projectId);
+      
+      if (error) {
+        console.error('Error deleting project:', error);
+        toast.error('Failed to delete project');
+        return;
+      }
+      
+      // Update local state
+      setProjects(prevProjects => prevProjects.filter(project => project.id !== projectId));
+      
+      // Update tasks to remove project references
+      setTasks(prevTasks => prevTasks.map(task => {
+        if (task.projectId === projectId) {
+          return { ...task, projectId: undefined };
+        }
+        return task;
+      }));
+      
+      toast.success('Project deleted successfully!');
+    } catch (error) {
+      console.error('Error in deleteProject:', error);
+      toast.error('Failed to delete project');
+    }
+  };
+
+  const assignTaskToProject = async (taskId: string, projectId: string) => {
+    try {
+      await updateTask(taskId, { projectId });
+    } catch (error) {
+      console.error('Error in assignTaskToProject:', error);
+    }
+  };
+
+  const assignTaskToUser = async (taskId: string, userId: string, userName: string) => {
+    try {
+      await updateTask(taskId, { assignedToId: userId, assignedToName: userName });
+    } catch (error) {
+      console.error('Error in assignTaskToUser:', error);
+    }
+  };
+
+  // These functions would need additional tables in Supabase to be fully implemented
+  // For now, they'll only update the local state
   const addCommentToTask = (taskId: string, comment: Omit<Comment, 'id' | 'createdAt'>) => {
     const newComment: Comment = {
       ...comment,
