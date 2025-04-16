@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Trash2 } from 'lucide-react';
+import { Loader2, Trash2 } from 'lucide-react';
 
 interface TeamMemberCardProps {
   member: {
@@ -18,9 +18,14 @@ interface TeamMemberCardProps {
     projects: number;
   };
   onRemove: (memberId: string) => void;
+  isRemoving?: boolean;
 }
 
-const TeamMemberCard: React.FC<TeamMemberCardProps> = ({ member, onRemove }) => {
+const TeamMemberCard: React.FC<TeamMemberCardProps> = ({ 
+  member, 
+  onRemove, 
+  isRemoving = false 
+}) => {
   return (
     <Card key={member.id}>
       <CardContent className="p-6">
@@ -46,8 +51,13 @@ const TeamMemberCard: React.FC<TeamMemberCardProps> = ({ member, onRemove }) => 
               size="icon"
               className="text-red-500 hover:text-red-700 hover:bg-red-50 ml-2"
               onClick={() => onRemove(member.id)}
+              disabled={isRemoving}
             >
-              <Trash2 className="h-4 w-4" />
+              {isRemoving ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Trash2 className="h-4 w-4" />
+              )}
             </Button>
           </div>
         </div>

@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { DialogFooter } from "@/components/ui/dialog";
 import useTeamMemberForm from '@/hooks/useTeamMemberForm';
+import { Loader2 } from 'lucide-react';
 
 interface TeamMemberFormProps {
   onCancel: () => void;
@@ -13,7 +14,7 @@ interface TeamMemberFormProps {
 }
 
 const TeamMemberForm: React.FC<TeamMemberFormProps> = ({ onCancel, onSuccess }) => {
-  const { formData, handleInputChange, handleSubmit } = useTeamMemberForm({
+  const { formData, handleInputChange, handleSubmit, isLoading } = useTeamMemberForm({
     onSuccess,
     onCancel,
   });
@@ -27,6 +28,7 @@ const TeamMemberForm: React.FC<TeamMemberFormProps> = ({ onCancel, onSuccess }) 
           value={formData.name} 
           onChange={(e) => handleInputChange('name', e.target.value)}
           placeholder="John Doe" 
+          disabled={isLoading}
         />
       </div>
       
@@ -38,6 +40,7 @@ const TeamMemberForm: React.FC<TeamMemberFormProps> = ({ onCancel, onSuccess }) 
           value={formData.email} 
           onChange={(e) => handleInputChange('email', e.target.value)}
           placeholder="johndoe@example.com" 
+          disabled={isLoading}
         />
       </div>
       
@@ -46,6 +49,7 @@ const TeamMemberForm: React.FC<TeamMemberFormProps> = ({ onCancel, onSuccess }) 
         <Select 
           value={formData.role} 
           onValueChange={(value) => handleInputChange('role', value)}
+          disabled={isLoading}
         >
           <SelectTrigger>
             <SelectValue placeholder="Select a role" />
@@ -62,10 +66,18 @@ const TeamMemberForm: React.FC<TeamMemberFormProps> = ({ onCancel, onSuccess }) 
       </div>
       
       <DialogFooter className="pt-4">
-        <Button variant="outline" type="button" onClick={onCancel}>
+        <Button variant="outline" type="button" onClick={onCancel} disabled={isLoading}>
           Cancel
         </Button>
-        <Button type="submit">Add Team Member</Button>
+        <Button type="submit" disabled={isLoading}>
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Adding...
+            </>
+          ) : (
+            'Add Team Member'
+          )}
+        </Button>
       </DialogFooter>
     </form>
   );

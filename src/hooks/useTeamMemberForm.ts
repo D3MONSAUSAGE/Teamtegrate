@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { toast } from '@/components/ui/sonner';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 interface TeamMemberFormData {
   name: string;
@@ -16,6 +17,7 @@ interface UseTeamMemberFormProps {
 
 export const useTeamMemberForm = ({ onSuccess, onCancel }: UseTeamMemberFormProps) => {
   const { user } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<TeamMemberFormData>({
     name: '',
     email: '',
@@ -34,7 +36,7 @@ export const useTeamMemberForm = ({ onSuccess, onCancel }: UseTeamMemberFormProp
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Validate inputs
@@ -43,37 +45,66 @@ export const useTeamMemberForm = ({ onSuccess, onCancel }: UseTeamMemberFormProp
       return;
     }
 
-    // Generate a simple ID - in a real app this would come from the database
-    const teamMember = {
-      id: `tm-${Date.now()}`, // Simple ID generation for demonstration
-      name: formData.name.trim(),
-      email: formData.email.trim(),
-      role: formData.role,
-      managerId: user?.id || ''
-    };
-
-    // Get existing team members from localStorage or initialize empty array
-    const existingMembers = JSON.parse(localStorage.getItem('teamMembers') || '[]');
-    
-    // Check if email already exists
-    if (existingMembers.some((member: any) => member.email.toLowerCase() === formData.email.toLowerCase())) {
-      toast.error('A team member with this email already exists');
+    if (!user) {
+      toast.error('You must be logged in to add team members');
       return;
     }
-    
-    // Add new team member
-    const updatedMembers = [...existingMembers, teamMember];
-    localStorage.setItem('teamMembers', JSON.stringify(updatedMembers));
-    
-    // Clear form
-    resetForm();
-    
-    toast.success('Team member added successfully');
-    onSuccess();
+
+    setIsLoading(true);
+
+    try {
+      // Check if email already exists by querying the database
+      const { data: existingMember, error: checkError } = await supabase
+        .from('team_members')
+        .select('id')
+        .eq('email', formData.email.toLowerCase())
+        .maybeSingle();
+
+      if (checkError) {
+        console.error('Error checking for existing team member:', checkError);
+        toast.error('An error occurred while checking email');
+        setIsLoading(false);
+        return;
+      }
+
+      if (existingMember) {
+        toast.error('A team member with this email already exists');
+        setIsLoading(false);
+        return;
+      }
+
+      // Insert new team member into Supabase
+      const { error: insertError } = await supabase
+        .from('team_members')
+        .insert({
+          name: formData.name.trim(),
+          email: formData.email.trim().toLowerCase(),
+          role: formData.role,
+          manager_id: user.id
+        });
+
+      if (insertError) {
+        console.error('Error adding team member:', insertError);
+        toast.error('Failed to add team member');
+        setIsLoading(false);
+        return;
+      }
+
+      // Success
+      resetForm();
+      toast.success('Team member added successfully');
+      onSuccess();
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      toast.error('An unexpected error occurred');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return {
     formData,
+    isLoading,
     handleInputChange,
     handleSubmit,
     resetForm,
