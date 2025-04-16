@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,7 @@ interface TeamMember {
   id: string;
   name: string;
   email: string;
+  role: string;
 }
 
 interface AssignTaskDialogProps {
@@ -20,22 +21,24 @@ interface AssignTaskDialogProps {
   task: Task;
 }
 
-// In a real app, this would come from an API
-const mockTeamMembers: TeamMember[] = [
-  { id: '1', name: 'John Doe', email: 'john@example.com' },
-  { id: '2', name: 'Jane Smith', email: 'jane@example.com' },
-  { id: '3', name: 'Robert Johnson', email: 'robert@example.com' },
-  { id: '4', name: 'Emily Davis', email: 'emily@example.com' },
-];
-
 const AssignTaskDialog: React.FC<AssignTaskDialogProps> = ({ open, onOpenChange, task }) => {
   const [search, setSearch] = useState('');
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const { assignTaskToUser } = useTask();
   
-  const filteredMembers = mockTeamMembers.filter((member) => {
+  // Load team members from localStorage
+  useEffect(() => {
+    const storedMembers = localStorage.getItem('teamMembers');
+    if (storedMembers) {
+      setTeamMembers(JSON.parse(storedMembers));
+    }
+  }, [open]); // Reload when dialog opens
+  
+  const filteredMembers = teamMembers.filter((member) => {
     return (
       member.name.toLowerCase().includes(search.toLowerCase()) ||
-      member.email.toLowerCase().includes(search.toLowerCase())
+      member.email.toLowerCase().includes(search.toLowerCase()) ||
+      member.role.toLowerCase().includes(search.toLowerCase())
     );
   });
   
@@ -66,26 +69,37 @@ const AssignTaskDialog: React.FC<AssignTaskDialogProps> = ({ open, onOpenChange,
           
           <div className="mt-4 max-h-60 overflow-y-auto">
             <Label className="text-xs text-gray-500 mb-2 block">Select a team member</Label>
-            <ul className="space-y-2">
-              {filteredMembers.map((member) => (
-                <li 
-                  key={member.id} 
-                  className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-md cursor-pointer"
-                  onClick={() => handleAssign(member.id, member.name)}
-                >
-                  <div>
-                    <p className="font-medium">{member.name}</p>
-                    <p className="text-xs text-gray-500">{member.email}</p>
-                  </div>
-                  {task.assignedToId === member.id && (
-                    <Check className="h-5 w-5 text-green-500" />
-                  )}
-                </li>
-              ))}
-              {filteredMembers.length === 0 && (
-                <li className="p-4 text-center text-gray-500">No team members found</li>
-              )}
-            </ul>
+            {teamMembers.length === 0 ? (
+              <div className="py-8 text-center text-gray-500">
+                <p>No team members found</p>
+                <p className="text-sm mt-2">Add team members in the Team page</p>
+              </div>
+            ) : (
+              <ul className="space-y-2">
+                {filteredMembers.map((member) => (
+                  <li 
+                    key={member.id} 
+                    className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-md cursor-pointer"
+                    onClick={() => handleAssign(member.id, member.name)}
+                  >
+                    <div>
+                      <p className="font-medium">{member.name}</p>
+                      <div className="flex items-center">
+                        <p className="text-xs text-gray-500">{member.email}</p>
+                        <span className="mx-1 text-gray-300">•</span>
+                        <p className="text-xs text-gray-500">{member.role}</p>
+                      </div>
+                    </div>
+                    {task.assignedToId === member.id && (
+                      <Check className="h-5 w-5 text-green-500" />
+                    )}
+                  </li>
+                ))}
+                {filteredMembers.length === 0 && (
+                  <li className="p-4 text-center text-gray-500">No team members found</li>
+                )}
+              </ul>
+            )}
           </div>
           
           <div className="flex justify-end mt-4">
