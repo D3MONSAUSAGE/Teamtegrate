@@ -11,7 +11,11 @@ import {
   Settings 
 } from 'lucide-react';
 
-const Sidebar = () => {
+interface SidebarProps {
+  onNavigation?: () => void;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
   const location = useLocation();
   const { user } = useAuth();
   
@@ -27,10 +31,10 @@ const Sidebar = () => {
       allowed: true,
     },
     {
-      name: 'Projects',  // New Projects menu item
+      name: 'Projects',
       path: '/dashboard/projects',
       icon: <FolderKanban className="h-5 w-5" />,
-      allowed: true,  // Making it available to all users
+      allowed: true,
     },
     {
       name: 'My Tasks',
@@ -53,9 +57,13 @@ const Sidebar = () => {
   ];
   
   if (!user) return null;
+
+  const handleNavClick = () => {
+    if (onNavigation) onNavigation();
+  };
   
   return (
-    <div className="h-screen w-64 bg-white border-r border-gray-200 flex flex-col">
+    <div className="h-full w-64 bg-white border-r border-gray-200 flex flex-col">
       <div className="p-6">
         <h2 className="text-lg font-bold">TeamStream</h2>
         <p className="text-sm text-gray-600">Manage your tasks & projects</p>
@@ -70,6 +78,7 @@ const Sidebar = () => {
               <li key={item.path}>
                 <Link
                   to={item.path}
+                  onClick={handleNavClick}
                   className={cn(
                     "flex items-center gap-3 px-4 py-2.5 rounded-md text-sm font-medium transition-colors",
                     isActive(item.path)
@@ -99,4 +108,3 @@ const Sidebar = () => {
 };
 
 export default Sidebar;
-
