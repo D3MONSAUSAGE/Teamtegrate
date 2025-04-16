@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import DailyScoreCard from '@/components/DailyScoreCard';
@@ -18,7 +17,6 @@ const DashboardPage = () => {
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   
-  // Filter tasks for today
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const tomorrow = new Date(today);
@@ -30,7 +28,6 @@ const DashboardPage = () => {
     return taskDate.getTime() === today.getTime();
   });
   
-  // Filter upcoming tasks (next 7 days excluding today)
   const nextWeek = new Date(today);
   nextWeek.setDate(nextWeek.getDate() + 7);
   
@@ -40,7 +37,6 @@ const DashboardPage = () => {
     return taskDate > today && taskDate <= nextWeek;
   }).sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime());
   
-  // Get recent projects (for managers)
   const recentProjects = projects.slice(0, 3);
   
   const handleEditTask = (task: Task) => {
@@ -51,7 +47,6 @@ const DashboardPage = () => {
   return (
     <div className="p-6">
       <div className="flex flex-col gap-8">
-        {/* Welcome and Actions */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">Welcome, {user?.name}!</h1>
@@ -67,7 +62,6 @@ const DashboardPage = () => {
           </Button>
         </div>
         
-        {/* Daily Score and Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <DailyScoreCard score={dailyScore} />
           
@@ -87,11 +81,10 @@ const DashboardPage = () => {
           </div>
         </div>
         
-        {/* Today's Tasks */}
         <div>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold">Today's Tasks</h2>
-            <Link to="/tasks">
+            <Link to="/dashboard/tasks">
               <Button variant="ghost" size="sm" className="text-primary">
                 View all <ChevronRight className="h-4 w-4 ml-1" />
               </Button>
@@ -122,11 +115,10 @@ const DashboardPage = () => {
           )}
         </div>
         
-        {/* Upcoming Tasks */}
         <div>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold">Upcoming Tasks</h2>
-            <Link to="/tasks">
+            <Link to="/dashboard/tasks">
               <Button variant="ghost" size="sm" className="text-primary">
                 View all <ChevronRight className="h-4 w-4 ml-1" />
               </Button>
@@ -157,12 +149,11 @@ const DashboardPage = () => {
           )}
         </div>
         
-        {/* Projects (Only for managers) */}
         {user?.role === 'manager' && (
           <div>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold">Recent Projects</h2>
-              <Link to="/projects">
+              <Link to="/dashboard/projects">
                 <Button variant="ghost" size="sm" className="text-primary">
                   View all <ChevronRight className="h-4 w-4 ml-1" />
                 </Button>
@@ -182,7 +173,7 @@ const DashboardPage = () => {
             ) : (
               <div className="bg-white p-6 rounded-lg border text-center">
                 <p className="text-gray-500">No projects created yet</p>
-                <Link to="/projects">
+                <Link to="/dashboard/projects">
                   <Button variant="outline" size="sm" className="mt-2">
                     <Plus className="h-4 w-4 mr-2" /> Create Project
                   </Button>
@@ -192,12 +183,11 @@ const DashboardPage = () => {
           </div>
         )}
         
-        {/* Team Section (Only for managers) */}
         {user?.role === 'manager' && (
           <div>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold">Team Management</h2>
-              <Link to="/team">
+              <Link to="/dashboard/team">
                 <Button variant="ghost" size="sm" className="text-primary">
                   View team <ChevronRight className="h-4 w-4 ml-1" />
                 </Button>
@@ -209,7 +199,7 @@ const DashboardPage = () => {
                 <h3 className="font-semibold">Manage Your Team</h3>
                 <p className="text-gray-500">Assign tasks to team members and track their progress</p>
               </div>
-              <Link to="/team">
+              <Link to="/dashboard/team">
                 <Button className="gap-2">
                   <Users className="h-4 w-4" /> Team Dashboard
                 </Button>

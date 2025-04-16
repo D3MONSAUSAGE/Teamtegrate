@@ -16,31 +16,31 @@ const Sidebar = () => {
   const navItems = [
     {
       name: 'Dashboard',
-      path: '/',
+      path: '/dashboard',
       icon: <LayoutDashboard className="h-5 w-5" />,
       allowed: true,
     },
     {
       name: 'My Tasks',
-      path: '/tasks',
+      path: '/dashboard/tasks',
       icon: <CheckSquare className="h-5 w-5" />,
       allowed: true,
     },
     {
       name: 'Projects',
-      path: '/projects',
+      path: '/dashboard/projects',
       icon: <FolderKanban className="h-5 w-5" />,
       allowed: user?.role === 'manager',
     },
     {
       name: 'Team',
-      path: '/team',
+      path: '/dashboard/team',
       icon: <Users className="h-5 w-5" />,
       allowed: user?.role === 'manager',
     },
     {
       name: 'Settings',
-      path: '/settings',
+      path: '/dashboard/settings',
       icon: <Settings className="h-5 w-5" />,
       allowed: true,
     },
