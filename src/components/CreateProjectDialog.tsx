@@ -52,6 +52,7 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({ open, onOpenC
         endDate: new Date(data.endDate),
       });
     } else {
+      console.log('Adding project with user ID:', user.id);
       addProject({
         title: data.title,
         description: data.description,

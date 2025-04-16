@@ -21,10 +21,12 @@ export const addProject = async (
       description: project.description,
       start_date: project.startDate.toISOString(),
       end_date: project.endDate.toISOString(),
-      manager_id: user.id,
+      manager_id: user.id,  // This should match the auth.uid() format
       created_at: now.toISOString(),
       updated_at: now.toISOString()
     };
+    
+    console.log('Inserting project with manager_id:', projectToInsert.manager_id);
     
     const { data, error } = await supabase
       .from('projects')
