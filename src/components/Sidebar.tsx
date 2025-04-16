@@ -46,7 +46,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
       name: 'Team',
       path: '/dashboard/team',
       icon: <Users className="h-5 w-5" />,
-      allowed: user?.role === 'manager',
+      allowed: true, // Changed from user?.role === 'manager' to true
     },
     {
       name: 'Settings',
