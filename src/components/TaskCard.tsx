@@ -19,9 +19,10 @@ import { cn } from '@/lib/utils';
 interface TaskCardProps {
   task: Task;
   onEdit?: (task: Task) => void;
+  onAssign?: (task: Task) => void;
 }
 
-const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit }) => {
+const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onAssign }) => {
   const { updateTaskStatus, deleteTask } = useTask();
   
   const getPriorityColor = (priority: string) => {
@@ -73,6 +74,11 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit }) => {
               <DropdownMenuItem onClick={() => onEdit && onEdit(task)}>
                 Edit
               </DropdownMenuItem>
+              {onAssign && (
+                <DropdownMenuItem onClick={() => onAssign(task)}>
+                  Assign Member
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem onClick={() => handleStatusChange('To Do')}>
                 Mark as To Do
               </DropdownMenuItem>

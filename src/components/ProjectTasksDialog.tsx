@@ -15,6 +15,7 @@ interface ProjectTasksDialogProps {
   project: Project | null;
   onCreateTask: () => void;
   onEditTask: (task: Task) => void;
+  onAssignTask: (task: Task) => void;
 }
 
 const ProjectTasksDialog: React.FC<ProjectTasksDialogProps> = ({
@@ -23,6 +24,7 @@ const ProjectTasksDialog: React.FC<ProjectTasksDialogProps> = ({
   project,
   onCreateTask,
   onEditTask,
+  onAssignTask,
 }) => {
   if (!project) return null;
   
@@ -71,7 +73,8 @@ const ProjectTasksDialog: React.FC<ProjectTasksDialogProps> = ({
               <TaskCard 
                 key={task.id} 
                 task={task} 
-                onEdit={onEditTask} 
+                onEdit={onEditTask}
+                onAssign={() => onAssignTask(task)}
               />
             ))}
           </div>

@@ -106,12 +106,14 @@ const ProjectsPage = () => {
         project={selectedProject}
         onCreateTask={handleCreateTask}
         onEditTask={handleEditTask}
+        onAssignTask={handleAssignTask}
       />
       
       <CreateTaskDialog 
         open={isCreateTaskOpen} 
         onOpenChange={setIsCreateTaskOpen}
         editingTask={editingTask}
+        currentProjectId={selectedProject?.id}
       />
       
       {selectedTask && (
