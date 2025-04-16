@@ -1,10 +1,9 @@
-
 import { Task, Project, Comment } from '@/types';
 import { toast } from '@/components/ui/sonner';
 
 export const addCommentToTask = (
   taskId: string,
-  comment: Omit<Comment, 'id' | 'createdAt'>,
+  comment: { userId: string; userName: string; text: string },
   tasks: Task[],
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>,
   projects: Project[],

@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select";
 import { useForm } from "react-hook-form";
 import { Task, TaskPriority, TaskStatus } from '@/types';
-import { useTask } from '@/contexts/TaskContext';
+import { useTask } from '@/contexts/task';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
 import { Users } from 'lucide-react';

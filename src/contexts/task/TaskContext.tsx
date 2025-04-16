@@ -1,6 +1,6 @@
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { Task, Project, TaskStatus, TaskPriority, DailyScore } from '@/types';
+import { Task, Project, TaskStatus, TaskPriority, DailyScore, Comment } from '@/types';
 import { useAuth } from '../AuthContext';
 import { fetchTasks, fetchProjects } from './taskApi';
 import { calculateDailyScore } from './taskMetrics';
@@ -48,7 +48,7 @@ interface TaskContextType {
   deleteProject: (projectId: string) => void;
   assignTaskToProject: (taskId: string, projectId: string) => void;
   assignTaskToUser: (taskId: string, userId: string, userName: string) => void;
-  addCommentToTask: (taskId: string, comment: Omit<Comment, 'id' | 'createdAt'>) => void;
+  addCommentToTask: (taskId: string, comment: { userId: string; userName: string; text: string }) => void;
   addTagToTask: (taskId: string, tag: string) => void;
   removeTagFromTask: (taskId: string, tag: string) => void;
   addTagToProject: (projectId: string, tag: string) => void;
@@ -124,7 +124,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       assignTaskToProject(taskId, projectId, user, tasks, setTasks, projects, setProjects),
     assignTaskToUser: (taskId: string, userId: string, userName: string) => 
       assignTaskToUser(taskId, userId, userName, user, tasks, setTasks, projects, setProjects),
-    addCommentToTask: (taskId: string, comment: Omit<Comment, 'id' | 'createdAt'>) =>
+    addCommentToTask: (taskId: string, comment: { userId: string; userName: string; text: string }) =>
       addCommentToTask(taskId, comment, tasks, setTasks, projects, setProjects),
     addTagToTask: (taskId: string, tag: string) =>
       addTagToTask(taskId, tag, tasks, setTasks, projects, setProjects),

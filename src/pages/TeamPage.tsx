@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { useTask } from '@/contexts/TaskContext';
+import { useTask } from '@/contexts/task';
 import { Task } from '@/types';
 
 // Mock team members data (in a real app, this would come from an API)

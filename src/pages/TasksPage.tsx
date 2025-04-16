@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { useTask } from '@/contexts/TaskContext';
+import { useTask } from '@/contexts/task';
 import TaskCard from '@/components/TaskCard';
 import { Task } from '@/types';
 import { Plus, Filter } from 'lucide-react';

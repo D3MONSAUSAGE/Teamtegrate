@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { MoreHorizontal } from 'lucide-react';
-import { useTask } from '@/contexts/TaskContext';
+import { useTask } from '@/contexts/task';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffect, useState } from 'react';
 

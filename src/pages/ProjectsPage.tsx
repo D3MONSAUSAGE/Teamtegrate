@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { useTask } from '@/contexts/TaskContext';
+import { useTask } from '@/contexts/task';
 import { Project, Task } from '@/types';
 import CreateProjectDialog from '@/components/CreateProjectDialog';
 import CreateTaskDialog from '@/components/CreateTaskDialog';
