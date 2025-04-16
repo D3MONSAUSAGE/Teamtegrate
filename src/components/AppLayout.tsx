@@ -27,22 +27,20 @@ const AppLayout = () => {
   return (
     <div className="flex min-h-screen">
       {/* Mobile sidebar with Sheet component */}
-      <div className="md:hidden">
-        <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-10 w-10 fixed top-3 left-3 z-10">
-              <Menu className="h-6 w-6" />
-              <span className="sr-only">Toggle Sidebar</span>
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="p-0 w-64">
-            <Sidebar onNavigation={() => setSidebarOpen(false)} />
-          </SheetContent>
-        </Sheet>
-      </div>
+      <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+        <SheetTrigger asChild>
+          <Button variant="ghost" size="icon" className="fixed top-3 left-3 z-10 md:hidden">
+            <Menu className="h-6 w-6" />
+            <span className="sr-only">Toggle Sidebar</span>
+          </Button>
+        </SheetTrigger>
+        <SheetContent side="left" className="p-0 w-64">
+          <Sidebar onNavigation={() => setSidebarOpen(false)} />
+        </SheetContent>
+      </Sheet>
       
-      {/* Desktop sidebar that starts collapsed */}
-      <div className="hidden md:block">
+      {/* Desktop sidebar - hidden by default, toggleable with button */}
+      <div className="hidden">
         <Sidebar />
       </div>
       
