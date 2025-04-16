@@ -1,9 +1,9 @@
-
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { Task, Project, TaskStatus, TaskPriority, DailyScore, Comment } from '@/types';
 import { useAuth } from './AuthContext';
 import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { v4 as uuidv4 } from 'uuid';
 
 interface TaskContextType {
   tasks: Task[];
@@ -54,7 +54,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     date: new Date(),
   });
 
-  // Load tasks and projects from Supabase when user is authenticated
   useEffect(() => {
     if (user) {
       fetchTasks();
@@ -65,7 +64,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [user]);
 
-  // Recalculate daily score when tasks change
   useEffect(() => {
     if (user) {
       calculateDailyScore();
@@ -128,7 +126,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (data) {
         const formattedProjects = await Promise.all(data.map(async (project) => {
-          // For each project, get its tasks
           const { data: projectTasks } = await supabase
             .from('tasks')
             .select('*')
@@ -211,7 +208,10 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!user) return;
       
       const now = new Date();
+      const taskId = uuidv4();
+      
       const taskToInsert = {
+        id: taskId,
         user_id: user.id,
         project_id: task.projectId,
         title: task.title,
@@ -254,7 +254,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         setTasks(prevTasks => [...prevTasks, newTask]);
         
-        // Update project tasks if this task is associated with a project
         if (task.projectId) {
           setProjects(prevProjects => prevProjects.map(project => {
             if (project.id === task.projectId) {
@@ -287,7 +286,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updated_at: now.toISOString()
       };
       
-      // Map Task properties to database column names
       if (updates.title !== undefined) updatedFields.title = updates.title;
       if (updates.description !== undefined) updatedFields.description = updates.description;
       if (updates.deadline !== undefined) updatedFields.deadline = updates.deadline.toISOString();
@@ -308,7 +306,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
       
-      // Update local state
       setTasks(prevTasks => prevTasks.map(task => {
         if (task.id === taskId) {
           return { ...task, ...updates, updatedAt: now };
@@ -316,7 +313,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return task;
       }));
       
-      // Update project tasks if this task is associated with a project
       setProjects(prevProjects => prevProjects.map(project => {
         const projectContainsTask = project.tasks.some(t => t.id === taskId);
         
@@ -328,7 +324,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
             return task;
           });
           
-          // If task is being moved to this project and wasn't there before
           if (updates.projectId === project.id && !projectContainsTask) {
             const taskToAdd = { ...taskToUpdate, ...updates, updatedAt: now };
             return {
@@ -342,7 +337,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
             tasks: updatedTasks
           };
         } else if (project.id === taskToUpdate.projectId && updates.projectId !== undefined) {
-          // Remove task from project if it's being moved elsewhere
           return {
             ...project,
             tasks: project.tasks.filter(t => t.id !== taskId)
@@ -381,7 +375,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
       
-      // Update local state
       setTasks(prevTasks => prevTasks.map(task => {
         if (task.id === taskId) {
           return {
@@ -394,7 +387,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return task;
       }));
       
-      // Update project tasks
       setProjects(prevProjects => prevProjects.map(project => {
         return {
           ...project,
@@ -435,10 +427,8 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
       
-      // Update local state
       setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
       
-      // Update project tasks
       setProjects(prevProjects => prevProjects.map(project => {
         return {
           ...project,
@@ -458,7 +448,10 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!user) return;
       
       const now = new Date();
+      const projectId = uuidv4();
+      
       const projectToInsert = {
+        id: projectId,
         title: project.title,
         description: project.description,
         start_date: project.startDate.toISOString(),
@@ -513,7 +506,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updated_at: now.toISOString()
       };
       
-      // Map Project properties to database column names
       if (updates.title !== undefined) updatedFields.title = updates.title;
       if (updates.description !== undefined) updatedFields.description = updates.description;
       if (updates.startDate !== undefined) updatedFields.start_date = updates.startDate.toISOString();
@@ -530,7 +522,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
       
-      // Update local state
       setProjects(prevProjects => prevProjects.map(project => {
         if (project.id === projectId) {
           return { ...project, ...updates, updatedAt: now };
@@ -549,7 +540,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       if (!user) return;
       
-      // First update all tasks associated with this project to remove the project reference
       const projectTasks = tasks.filter(task => task.projectId === projectId);
       for (const task of projectTasks) {
         await supabase
@@ -558,7 +548,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .eq('id', task.id);
       }
       
-      // Then delete the project
       const { error } = await supabase
         .from('projects')
         .delete()
@@ -570,10 +559,8 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
       
-      // Update local state
       setProjects(prevProjects => prevProjects.filter(project => project.id !== projectId));
       
-      // Update tasks to remove project references
       setTasks(prevTasks => prevTasks.map(task => {
         if (task.projectId === projectId) {
           return { ...task, projectId: undefined };
@@ -604,8 +591,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // These functions would need additional tables in Supabase to be fully implemented
-  // For now, they'll only update the local state
   const addCommentToTask = (taskId: string, comment: Omit<Comment, 'id' | 'createdAt'>) => {
     const newComment: Comment = {
       ...comment,
