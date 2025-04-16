@@ -25,8 +25,8 @@ const Navbar = () => {
   
   return (
     <nav className="bg-white border-b border-gray-200 py-4 px-6 flex items-center justify-between">
-      <div className="flex items-center">
-        <Link to="/" className="text-xl font-bold text-primary">TeamStream</Link>
+      <div className="flex items-center space-x-4 md:space-x-0">
+        <Link to="/" className="text-xl font-bold text-primary ml-10 md:ml-0">TeamStream</Link>
       </div>
       
       <div className="flex items-center space-x-4">
@@ -61,4 +61,3 @@ const Navbar = () => {
 };
 
 export default Navbar;
-
