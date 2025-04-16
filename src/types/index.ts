@@ -27,6 +27,16 @@ export interface Task {
   completedAt?: Date;
   assignedToId?: string;
   assignedToName?: string;
+  tags?: string[];
+  comments?: Comment[];
+}
+
+export interface Comment {
+  id: string;
+  userId: string;
+  userName: string;
+  text: string;
+  createdAt: Date;
 }
 
 export interface Project {
@@ -39,6 +49,8 @@ export interface Project {
   createdAt: Date;
   updatedAt: Date;
   tasks: Task[];
+  teamMembers?: string[];
+  tags?: string[];
 }
 
 export interface DailyScore {

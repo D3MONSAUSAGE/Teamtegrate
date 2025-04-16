@@ -1,6 +1,5 @@
-
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { Task, Project, TaskStatus, TaskPriority, DailyScore } from '@/types';
+import { Task, Project, TaskStatus, TaskPriority, DailyScore, Comment } from '@/types';
 import { useAuth } from './AuthContext';
 import { toast } from '@/components/ui/sonner';
 
@@ -17,6 +16,19 @@ interface TaskContextType {
   deleteProject: (projectId: string) => void;
   assignTaskToProject: (taskId: string, projectId: string) => void;
   assignTaskToUser: (taskId: string, userId: string, userName: string) => void;
+  addCommentToTask: (taskId: string, comment: Omit<Comment, 'id' | 'createdAt'>) => void;
+  addTagToTask: (taskId: string, tag: string) => void;
+  removeTagFromTask: (taskId: string, tag: string) => void;
+  addTagToProject: (projectId: string, tag: string) => void;
+  removeTagFromProject: (projectId: string, tag: string) => void;
+  addTeamMemberToProject: (projectId: string, userId: string) => void;
+  removeTeamMemberFromProject: (projectId: string, userId: string) => void;
+  getTasksWithTag: (tag: string) => Task[];
+  getProjectsWithTag: (tag: string) => Project[];
+  getTasksByStatus: (status: TaskStatus) => Task[];
+  getTasksByPriority: (priority: TaskPriority) => Task[];
+  getTasksByDate: (date: Date) => Task[];
+  getOverdueTasks: () => Task[];
 }
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
@@ -40,7 +52,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     date: new Date(),
   });
 
-  // Load tasks and projects from localStorage
   useEffect(() => {
     if (user) {
       const storedTasks = localStorage.getItem(`tasks-${user.id}`);
@@ -79,7 +90,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [user]);
 
-  // Save tasks and projects to localStorage whenever they change
   useEffect(() => {
     if (user) {
       localStorage.setItem(`tasks-${user.id}`, JSON.stringify(tasks));
@@ -149,7 +159,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     setTasks(updatedTasks);
     
-    // Also update in projects if the task is part of a project
     if (updates.projectId) {
       const updatedProjects = projects.map((project) => {
         if (project.id === updates.projectId) {
@@ -160,7 +169,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
             return task;
           });
           
-          // Check if the task is not already in the project
           const taskExists = projectTasks.some((task) => task.id === taskId);
           if (!taskExists) {
             const taskToAdd = updatedTasks.find((task) => task.id === taskId);
@@ -191,7 +199,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     setTasks(updatedTasks);
     
-    // Also update in projects if the task is part of a project
     const updatedProjects = projects.map((project) => {
       const projectTasks = project.tasks.map((task) => {
         if (task.id === taskId) {
@@ -214,7 +221,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const filteredTasks = tasks.filter((task) => task.id !== taskId);
     setTasks(filteredTasks);
     
-    // Also remove from projects if the task is part of a project
     const updatedProjects = projects.map((project) => {
       const projectTasks = project.tasks.filter((task) => task.id !== taskId);
       return { ...project, tasks: projectTasks };
@@ -254,7 +260,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const filteredProjects = projects.filter((project) => project.id !== projectId);
     setProjects(filteredProjects);
     
-    // Also update tasks that were part of this project
     const updatedTasks = tasks.map((task) => {
       if (task.projectId === projectId) {
         return { ...task, projectId: undefined };
@@ -271,10 +276,8 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const taskToAssign = tasks.find((task) => task.id === taskId);
     if (!taskToAssign) return;
     
-    // Update the task
     updateTask(taskId, { projectId });
     
-    // Add the task to the project
     const updatedProjects = projects.map((project) => {
       if (project.id === projectId) {
         const taskExists = project.tasks.some((task) => task.id === taskId);
@@ -296,7 +299,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const assignTaskToUser = (taskId: string, userId: string, userName: string) => {
     updateTask(taskId, { assignedToId: userId, assignedToName: userName });
     
-    // Also update in projects if the task is part of a project
     const taskToUpdate = tasks.find((task) => task.id === taskId);
     if (taskToUpdate?.projectId) {
       const updatedProjects = projects.map((project) => {
@@ -319,6 +321,244 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     toast.success(`Task assigned to ${userName}!`);
   };
 
+  const addCommentToTask = (taskId: string, comment: Omit<Comment, 'id' | 'createdAt'>) => {
+    const newComment: Comment = {
+      ...comment,
+      id: Math.random().toString(36).substring(2, 11),
+      createdAt: new Date(),
+    };
+
+    const updatedTasks = tasks.map((task) => {
+      if (task.id === taskId) {
+        const comments = task.comments || [];
+        return { 
+          ...task, 
+          comments: [...comments, newComment],
+          updatedAt: new Date() 
+        };
+      }
+      return task;
+    });
+
+    setTasks(updatedTasks);
+    
+    const taskToUpdate = tasks.find(task => task.id === taskId);
+    if (taskToUpdate?.projectId) {
+      const updatedProjects = projects.map((project) => {
+        if (project.id === taskToUpdate.projectId) {
+          const projectTasks = project.tasks.map((task) => {
+            if (task.id === taskId) {
+              const comments = task.comments || [];
+              return { 
+                ...task, 
+                comments: [...comments, newComment],
+                updatedAt: new Date() 
+              };
+            }
+            return task;
+          });
+          
+          return { ...project, tasks: projectTasks };
+        }
+        return project;
+      });
+      
+      setProjects(updatedProjects);
+    }
+    
+    toast.success('Comment added successfully!');
+  };
+
+  const addTagToTask = (taskId: string, tag: string) => {
+    const updatedTasks = tasks.map((task) => {
+      if (task.id === taskId) {
+        const tags = task.tags || [];
+        if (!tags.includes(tag)) {
+          return { 
+            ...task, 
+            tags: [...tags, tag],
+            updatedAt: new Date() 
+          };
+        }
+      }
+      return task;
+    });
+
+    setTasks(updatedTasks);
+    
+    const taskToUpdate = tasks.find(task => task.id === taskId);
+    if (taskToUpdate?.projectId) {
+      const updatedProjects = projects.map((project) => {
+        if (project.id === taskToUpdate.projectId) {
+          const projectTasks = project.tasks.map((task) => {
+            if (task.id === taskId) {
+              const tags = task.tags || [];
+              if (!tags.includes(tag)) {
+                return { 
+                  ...task, 
+                  tags: [...tags, tag],
+                  updatedAt: new Date() 
+                };
+              }
+            }
+            return task;
+          });
+          
+          return { ...project, tasks: projectTasks };
+        }
+        return project;
+      });
+      
+      setProjects(updatedProjects);
+    }
+    
+    toast.success('Tag added to task successfully!');
+  };
+
+  const removeTagFromTask = (taskId: string, tag: string) => {
+    const updatedTasks = tasks.map((task) => {
+      if (task.id === taskId && task.tags) {
+        return { 
+          ...task, 
+          tags: task.tags.filter(t => t !== tag),
+          updatedAt: new Date() 
+        };
+      }
+      return task;
+    });
+
+    setTasks(updatedTasks);
+    
+    const taskToUpdate = tasks.find(task => task.id === taskId);
+    if (taskToUpdate?.projectId) {
+      const updatedProjects = projects.map((project) => {
+        if (project.id === taskToUpdate.projectId) {
+          const projectTasks = project.tasks.map((task) => {
+            if (task.id === taskId && task.tags) {
+              return { 
+                ...task, 
+                tags: task.tags.filter(t => t !== tag),
+                updatedAt: new Date() 
+              };
+            }
+            return task;
+          });
+          
+          return { ...project, tasks: projectTasks };
+        }
+        return project;
+      });
+      
+      setProjects(updatedProjects);
+    }
+    
+    toast.success('Tag removed from task successfully!');
+  };
+
+  const addTagToProject = (projectId: string, tag: string) => {
+    const updatedProjects = projects.map((project) => {
+      if (project.id === projectId) {
+        const tags = project.tags || [];
+        if (!tags.includes(tag)) {
+          return { 
+            ...project, 
+            tags: [...tags, tag],
+            updatedAt: new Date() 
+          };
+        }
+      }
+      return project;
+    });
+
+    setProjects(updatedProjects);
+    toast.success('Tag added to project successfully!');
+  };
+
+  const removeTagFromProject = (projectId: string, tag: string) => {
+    const updatedProjects = projects.map((project) => {
+      if (project.id === projectId && project.tags) {
+        return { 
+          ...project, 
+          tags: project.tags.filter(t => t !== tag),
+          updatedAt: new Date() 
+        };
+      }
+      return project;
+    });
+
+    setProjects(updatedProjects);
+    toast.success('Tag removed from project successfully!');
+  };
+
+  const addTeamMemberToProject = (projectId: string, userId: string) => {
+    const updatedProjects = projects.map((project) => {
+      if (project.id === projectId) {
+        const teamMembers = project.teamMembers || [];
+        if (!teamMembers.includes(userId)) {
+          return { 
+            ...project, 
+            teamMembers: [...teamMembers, userId],
+            updatedAt: new Date() 
+          };
+        }
+      }
+      return project;
+    });
+
+    setProjects(updatedProjects);
+    toast.success('Team member added to project successfully!');
+  };
+
+  const removeTeamMemberFromProject = (projectId: string, userId: string) => {
+    const updatedProjects = projects.map((project) => {
+      if (project.id === projectId && project.teamMembers) {
+        return { 
+          ...project, 
+          teamMembers: project.teamMembers.filter(id => id !== userId),
+          updatedAt: new Date() 
+        };
+      }
+      return project;
+    });
+
+    setProjects(updatedProjects);
+    toast.success('Team member removed from project successfully!');
+  };
+
+  const getTasksWithTag = (tag: string) => {
+    return tasks.filter(task => task.tags?.includes(tag));
+  };
+
+  const getProjectsWithTag = (tag: string) => {
+    return projects.filter(project => project.tags?.includes(tag));
+  };
+
+  const getTasksByStatus = (status: TaskStatus) => {
+    return tasks.filter(task => task.status === status);
+  };
+
+  const getTasksByPriority = (priority: TaskPriority) => {
+    return tasks.filter(task => task.priority === priority);
+  };
+
+  const getTasksByDate = (date: Date) => {
+    const targetDate = new Date(date);
+    targetDate.setHours(0, 0, 0, 0);
+    
+    return tasks.filter(task => {
+      const taskDate = new Date(task.deadline);
+      taskDate.setHours(0, 0, 0, 0);
+      return taskDate.getTime() === targetDate.getTime();
+    });
+  };
+
+  const getOverdueTasks = () => {
+    const now = new Date();
+    return tasks.filter(task => 
+      task.status !== 'Completed' && new Date(task.deadline) < now
+    );
+  };
+
   const value = {
     tasks,
     projects,
@@ -332,6 +572,19 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     deleteProject,
     assignTaskToProject,
     assignTaskToUser,
+    addCommentToTask,
+    addTagToTask,
+    removeTagFromTask,
+    addTagToProject,
+    removeTagFromProject,
+    addTeamMemberToProject,
+    removeTeamMemberFromProject,
+    getTasksWithTag,
+    getProjectsWithTag,
+    getTasksByStatus,
+    getTasksByPriority,
+    getTasksByDate,
+    getOverdueTasks,
   };
 
   return <TaskContext.Provider value={value}>{children}</TaskContext.Provider>;
