@@ -88,14 +88,14 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   const progress = calculateProgress(projectTasks);
   
   return (
-    <Card className="card-hover relative">
-      <CardHeader className="pb-2 flex flex-row justify-between items-start">
-        <div>
-          <CardTitle className="text-base">{project.title}</CardTitle>
+    <Card className="card-hover relative overflow-hidden">
+      <CardHeader className="pb-2 flex flex-row justify-between items-start gap-2">
+        <div className="min-w-0">
+          <CardTitle className="text-base text-ellipsis overflow-hidden whitespace-nowrap">{project.title}</CardTitle>
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 flex-shrink-0">
               <span className="sr-only">Open menu</span>
               <MoreHorizontal className="h-4 w-4" />
             </Button>
@@ -117,16 +117,18 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
         </DropdownMenu>
       </CardHeader>
       <CardContent className="space-y-2">
-        <p className="text-sm text-gray-600 line-clamp-2">{project.description}</p>
+        <p className="text-sm text-gray-600 line-clamp-2 min-h-[2.5rem]">{project.description}</p>
         
-        <div className="flex items-center justify-between pt-2">
+        <div className="flex flex-wrap items-center justify-between pt-2 gap-y-2">
           <div className="flex items-center text-xs text-gray-500 gap-1">
-            <Calendar className="h-3 w-3" />
-            <span>{format(new Date(project.startDate), 'MMM d')} - {format(new Date(project.endDate), 'MMM d')}</span>
+            <Calendar className="h-3 w-3 flex-shrink-0" />
+            <span className="truncate">
+              {format(new Date(project.startDate), 'MMM d')} - {format(new Date(project.endDate), 'MMM d')}
+            </span>
           </div>
           
           <div className="flex items-center text-xs text-gray-500 gap-1">
-            <Users className="h-3 w-3" />
+            <Users className="h-3 w-3 flex-shrink-0" />
             <span>{projectTasks.filter(task => task.assignedToId).length} assigned</span>
           </div>
         </div>
@@ -134,10 +136,10 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
         <div className="pt-3 space-y-1">
           <div className="flex justify-between items-center">
             <div className="flex items-center text-xs font-medium">
-              <ListTodo className="h-4 w-4 mr-1 text-blue-500" />
+              <ListTodo className="h-4 w-4 mr-1 text-blue-500 flex-shrink-0" />
               <span>{totalTasks} {totalTasks === 1 ? 'Task' : 'Tasks'}</span>
             </div>
-            <Badge variant="outline">{progress}%</Badge>
+            <Badge variant="outline" className="ml-1">{progress}%</Badge>
           </div>
           <div className="flex justify-between items-center text-xs text-gray-500">
             <span>{completedTasks} of {totalTasks} completed</span>
@@ -148,10 +150,10 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
         <Button 
           variant="outline" 
           size="sm" 
-          className="w-full mt-2" 
+          className="w-full mt-2 text-xs" 
           onClick={() => onCreateTask && onCreateTask(project)}
         >
-          <Plus className="h-4 w-4 mr-2" /> Add Task
+          <Plus className="h-4 w-4 mr-1 flex-shrink-0" /> Add Task
         </Button>
       </CardContent>
     </Card>
