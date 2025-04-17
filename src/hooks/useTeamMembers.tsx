@@ -27,6 +27,7 @@ const useTeamMembers = () => {
   const { user } = useAuth();
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   // Load team members from Supabase on hook initialization
   useEffect(() => {
@@ -37,18 +38,25 @@ const useTeamMembers = () => {
       }
 
       setIsLoading(true);
+      setError(null);
+      
       try {
+        console.log("Fetching team members for manager ID:", user.id);
+        
         const { data, error } = await supabase
           .from('team_members')
           .select('*')
           .eq('manager_id', user.id);
 
         if (error) {
+          console.error("Supabase error:", error);
           throw error;
         }
 
+        console.log("Team members data received:", data);
+
         // Transform the data to match our TeamMember interface
-        const formattedMembers: TeamMember[] = data.map((member) => ({
+        const formattedMembers: TeamMember[] = (data || []).map((member) => ({
           id: member.id,
           name: member.name,
           email: member.email,
@@ -57,9 +65,11 @@ const useTeamMembers = () => {
         }));
 
         setTeamMembers(formattedMembers);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error loading team members:', error);
-        toast.error('Failed to load team members');
+        setError(error.message || 'Failed to load team members');
+        // Still set teamMembers to empty array to avoid showing loading forever
+        setTeamMembers([]);
       } finally {
         setIsLoading(false);
       }
@@ -96,6 +106,8 @@ const useTeamMembers = () => {
     if (!user) return;
 
     setIsLoading(true);
+    setError(null);
+    
     try {
       const { data, error } = await supabase
         .from('team_members')
@@ -107,7 +119,7 @@ const useTeamMembers = () => {
       }
 
       // Transform the data to match our TeamMember interface
-      const formattedMembers: TeamMember[] = data.map((member) => ({
+      const formattedMembers: TeamMember[] = (data || []).map((member) => ({
         id: member.id,
         name: member.name,
         email: member.email,
@@ -116,9 +128,10 @@ const useTeamMembers = () => {
       }));
 
       setTeamMembers(formattedMembers);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error refreshing team members:', error);
-      toast.error('Failed to refresh team members');
+      setError(error.message || 'Failed to refresh team members');
+      setTeamMembers([]);
     } finally {
       setIsLoading(false);
     }
@@ -173,6 +186,7 @@ const useTeamMembers = () => {
     teamMembers,
     teamMembersPerformance,
     isLoading,
+    error,
     removeTeamMember,
     refreshTeamMembers,
     totalTasksAssigned,

@@ -1,7 +1,7 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Loader2, Plus } from 'lucide-react';
+import { Loader2, Plus, AlertCircle, RefreshCw } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 import AddTeamMemberDialog from '@/components/AddTeamMemberDialog';
 import TeamStatsCards from '@/components/team/TeamStatsCards';
@@ -26,12 +26,27 @@ const TeamPage = () => {
     removeTeamMember,
     refreshTeamMembers,
     isLoading,
+    error
   } = useTeamMembers();
+  
+  // Effect to ensure user profile is loaded
+  useEffect(() => {
+    if (user && user.role !== 'manager') {
+      console.log("User is not a manager:", user);
+    } else if (user) {
+      console.log("Manager role detected:", user);
+    }
+  }, [user]);
   
   const handleRemoveMember = async (memberId: string) => {
     setRemovingMemberId(memberId);
     await removeTeamMember(memberId);
     setRemovingMemberId(null);
+  };
+
+  const handleRefresh = () => {
+    refreshTeamMembers();
+    toast.info("Refreshing team members");
   };
 
   if (!user) {
@@ -47,6 +62,9 @@ const TeamPage = () => {
     return (
       <div className="p-6 text-center">
         <p className="text-gray-500">Only managers can access the team management page.</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Your current role: {user.role || "Unknown"}
+        </p>
       </div>
     );
   }
@@ -55,9 +73,19 @@ const TeamPage = () => {
     <div className={`p-3 sm:p-6`}>
       <div className="flex items-center justify-between mb-8 flex-wrap gap-3">
         <h1 className="text-xl sm:text-2xl font-bold">Team Management</h1>
-        <Button onClick={() => setIsAddMemberOpen(true)} disabled={isLoading} size={isMobile ? "sm" : "default"}>
-          <Plus className="h-4 w-4 mr-2" /> Add Team Member
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size={isMobile ? "sm" : "default"} 
+            onClick={handleRefresh}
+            disabled={isLoading}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} /> Refresh
+          </Button>
+          <Button onClick={() => setIsAddMemberOpen(true)} disabled={isLoading} size={isMobile ? "sm" : "default"}>
+            <Plus className="h-4 w-4 mr-2" /> Add Team Member
+          </Button>
+        </div>
       </div>
       
       <TeamStatsCards 
@@ -70,9 +98,17 @@ const TeamPage = () => {
       <h2 className="text-xl font-semibold mb-4">Team Members</h2>
       
       {isLoading ? (
-        <div className="flex items-center justify-center py-8">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <span className="ml-2 text-gray-500">Loading team members...</span>
+        <div className="flex items-center justify-center py-12 bg-white rounded-lg border">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mr-2" />
+          <span className="text-gray-500">Loading team members...</span>
+        </div>
+      ) : error ? (
+        <div className="p-6 text-center bg-white rounded-lg border">
+          <AlertCircle className="h-8 w-8 text-red-500 mx-auto mb-2" />
+          <p className="text-gray-500 mb-4">Error loading team members: {error}</p>
+          <Button onClick={handleRefresh} variant="outline">
+            <RefreshCw className="h-4 w-4 mr-2" /> Try Again
+          </Button>
         </div>
       ) : teamMembersCount === 0 ? (
         <NoTeamMembers onAddMember={() => setIsAddMemberOpen(true)} />
