@@ -14,11 +14,19 @@ interface StatusDistributionChartProps {
 const StatusDistributionChart: React.FC<StatusDistributionChartProps> = ({ data }) => {
   const isMobile = useIsMobile();
 
+  // Chart configuration for different statuses
   const chartConfig = {
     'To Do': { color: COLORS[0] },
     'In Progress': { color: COLORS[1] },
     'Pending': { color: COLORS[2] },
     'Completed': { color: COLORS[3] },
+  };
+
+  // Render pie chart cells based on data
+  const renderPieChartCells = () => {
+    return data.map((entry, index) => (
+      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+    ));
   };
 
   // Responsive label rendering function for the pie chart
@@ -29,6 +37,51 @@ const StatusDistributionChart: React.FC<StatusDistributionChartProps> = ({ data 
     }
     return null;
   };
+  
+  // Get chart dimensions based on device
+  const getChartDimensions = () => {
+    if (isMobile) {
+      return {
+        outerRadius: 50,
+        innerRadius: 20
+      };
+    }
+    return {
+      outerRadius: 80,
+      innerRadius: 30
+    };
+  };
+  
+  // Get legend configuration based on device
+  const getLegendConfig = () => {
+    const baseFontSize = isMobile ? '11px' : '12px';
+    
+    if (isMobile) {
+      return {
+        layout: 'horizontal',
+        verticalAlign: 'bottom', 
+        align: 'center',
+        wrapperStyle: {
+          fontSize: baseFontSize, 
+          width: '100%', 
+          display: 'flex', 
+          justifyContent: 'center'
+        }
+      };
+    }
+    
+    return {
+      layout: 'vertical',
+      verticalAlign: 'middle',
+      align: 'right',
+      wrapperStyle: {
+        fontSize: baseFontSize
+      }
+    };
+  };
+
+  const dimensions = getChartDimensions();
+  const legendConfig = getLegendConfig();
 
   return (
     <Card>
@@ -47,27 +100,23 @@ const StatusDistributionChart: React.FC<StatusDistributionChartProps> = ({ data 
               cx="50%"
               cy="50%"
               labelLine={!isMobile}
-              outerRadius={isMobile ? 50 : 80}
-              innerRadius={isMobile ? 20 : 30}
+              outerRadius={dimensions.outerRadius}
+              innerRadius={dimensions.innerRadius}
               fill="#8884d8"
               dataKey="value"
               nameKey="name"
               label={renderPieChartLabel}
             >
-              {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-              ))}
+              {renderPieChartCells()}
             </Pie>
             <ChartTooltip
               content={<ChartTooltipContent />}
             />
             <Legend 
-              layout={isMobile ? "horizontal" : "vertical"} 
-              verticalAlign={isMobile ? "bottom" : "middle"} 
-              align={isMobile ? "center" : "right"}
-              wrapperStyle={{
-                ...(isMobile ? { fontSize: '11px', width: '100%', display: 'flex', justifyContent: 'center' } : { fontSize: '12px' })
-              }}
+              layout={legendConfig.layout}
+              verticalAlign={legendConfig.verticalAlign} 
+              align={legendConfig.align}
+              wrapperStyle={legendConfig.wrapperStyle}
             />
           </PieChart>
         </ChartContainer>
@@ -77,4 +126,3 @@ const StatusDistributionChart: React.FC<StatusDistributionChartProps> = ({ data 
 };
 
 export default StatusDistributionChart;
-
