@@ -20,6 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useIsMobile } from '@/hooks/use-mobile';
+import TaskCommentsDialog from '@/components/TaskCommentsDialog';
 
 const TasksPage = () => {
   const { tasks } = useTask();
@@ -27,10 +28,17 @@ const TasksPage = () => {
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [sortBy, setSortBy] = useState('deadline');
   const isMobile = useIsMobile();
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [showComments, setShowComments] = useState(false);
   
   const handleEditTask = (task: Task) => {
     setEditingTask(task);
     setIsCreateTaskOpen(true);
+  };
+  
+  const handleViewComments = (task: Task) => {
+    setSelectedTask(task);
+    setShowComments(true);
   };
   
   // Filter tasks by status
@@ -180,6 +188,12 @@ const TasksPage = () => {
         open={isCreateTaskOpen} 
         onOpenChange={setIsCreateTaskOpen}
         editingTask={editingTask}
+      />
+      
+      <TaskCommentsDialog
+        open={showComments}
+        onOpenChange={setShowComments}
+        task={selectedTask}
       />
     </div>
   );

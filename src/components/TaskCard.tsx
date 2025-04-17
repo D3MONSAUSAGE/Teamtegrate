@@ -1,10 +1,9 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Task, TaskStatus } from '@/types';
 import { Badge } from "@/components/ui/badge";
 import { format } from 'date-fns';
-import { Clock, User } from 'lucide-react';
+import { Clock, User, MessageCircle } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { MoreHorizontal } from 'lucide-react';
 import { useTask } from '@/contexts/task';
 import { cn } from '@/lib/utils';
+import TaskCommentsDialog from './TaskCommentsDialog';
 
 interface TaskCardProps {
   task: Task;
@@ -24,6 +24,7 @@ interface TaskCardProps {
 
 const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onAssign }) => {
   const { updateTaskStatus, deleteTask } = useTask();
+  const [showComments, setShowComments] = useState(false);
   
   const getPriorityColor = (priority: string) => {
     switch(priority) {
@@ -53,85 +54,112 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onAssign }) => {
     return task.status !== 'Completed' && task.deadline < now;
   };
   
+  const commentCount = task.comments?.length || 0;
+  
   return (
-    <Card className={cn("card-hover", isTaskOverdue() && "border-red-500")}>
-      <CardHeader className="pb-1 md:pb-2 flex flex-row justify-between items-start">
-        <div className="min-w-0">
-          <CardTitle className="text-sm md:text-base truncate">{task.title}</CardTitle>
-        </div>
-        <div className="flex items-center space-x-1 md:space-x-2">
-          <Badge className={cn(getPriorityColor(task.priority), "text-xs md:text-sm px-1.5 py-0.5")}>
-            {task.priority}
-          </Badge>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
-                <span className="sr-only">Open menu</span>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="text-xs md:text-sm">
-              <DropdownMenuItem onClick={() => onEdit && onEdit(task)}>
-                Edit
-              </DropdownMenuItem>
-              {onAssign && (
-                <DropdownMenuItem onClick={() => onAssign(task)}>
-                  Assign Member
+    <>
+      <Card className={cn("card-hover", isTaskOverdue() && "border-red-500")}>
+        <CardHeader className="pb-1 md:pb-2 flex flex-row justify-between items-start">
+          <div className="min-w-0">
+            <CardTitle className="text-sm md:text-base truncate">{task.title}</CardTitle>
+          </div>
+          <div className="flex items-center space-x-1 md:space-x-2">
+            <Badge className={cn(getPriorityColor(task.priority), "text-xs md:text-sm px-1.5 py-0.5")}>
+              {task.priority}
+            </Badge>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                  <span className="sr-only">Open menu</span>
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="text-xs md:text-sm">
+                <DropdownMenuItem onClick={() => onEdit && onEdit(task)}>
+                  Edit
                 </DropdownMenuItem>
-              )}
-              <DropdownMenuItem onClick={() => handleStatusChange('To Do')}>
-                Mark as To Do
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleStatusChange('In Progress')}>
-                Mark as In Progress
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleStatusChange('Pending')}>
-                Mark as Pending
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleStatusChange('Completed')}>
-                Mark as Completed
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                className="text-red-500" 
-                onClick={() => deleteTask(task.id)}
-              >
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-2 pt-0 md:pt-1 px-4 md:px-6 pb-4">
-        <p className="text-xs md:text-sm text-gray-600 line-clamp-2">{task.description}</p>
-        
-        <div className="flex items-center justify-between pt-1 md:pt-2">
-          <div className="flex items-center text-xs text-gray-500 gap-1">
-            <Clock className="h-3 w-3 flex-shrink-0" />
-            <span className="truncate">
-              {format(task.deadline, 'MMM d')} at {format(task.deadline, 'h:mm a')}
-            </span>
+                {onAssign && (
+                  <DropdownMenuItem onClick={() => onAssign(task)}>
+                    Assign Member
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem onClick={() => handleStatusChange('To Do')}>
+                  Mark as To Do
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleStatusChange('In Progress')}>
+                  Mark as In Progress
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleStatusChange('Pending')}>
+                  Mark as Pending
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleStatusChange('Completed')}>
+                  Mark as Completed
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowComments(true)}>
+                  View Comments
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  className="text-red-500" 
+                  onClick={() => deleteTask(task.id)}
+                >
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-2 pt-0 md:pt-1 px-4 md:px-6 pb-4">
+          <p className="text-xs md:text-sm text-gray-600 line-clamp-2">{task.description}</p>
+          
+          <div className="flex items-center justify-between pt-1 md:pt-2">
+            <div className="flex items-center text-xs text-gray-500 gap-1">
+              <Clock className="h-3 w-3 flex-shrink-0" />
+              <span className="truncate">
+                {format(task.deadline, 'MMM d')} at {format(task.deadline, 'h:mm a')}
+              </span>
+            </div>
+            
+            {task.assignedToName && (
+              <div className="flex items-center text-xs text-gray-500 gap-1">
+                <User className="h-3 w-3 flex-shrink-0" />
+                <span className="truncate max-w-[100px]">{task.assignedToName}</span>
+              </div>
+            )}
           </div>
           
-          {task.assignedToName && (
-            <div className="flex items-center text-xs text-gray-500 gap-1">
-              <User className="h-3 w-3 flex-shrink-0" />
-              <span className="truncate max-w-[100px]">{task.assignedToName}</span>
+          <div className="pt-1 md:pt-2 flex justify-between items-center">
+            <div className="flex flex-wrap gap-1">
+              <Badge className={cn(getStatusColor(task.status), "text-xs md:text-sm")}>
+                {task.status}
+              </Badge>
+              {isTaskOverdue() && (
+                <Badge variant="destructive" className="ml-1 text-xs md:text-sm">
+                  Overdue
+                </Badge>
+              )}
             </div>
-          )}
-        </div>
-        
-        <div className="pt-1 md:pt-2 flex flex-wrap gap-1">
-          <Badge className={cn(getStatusColor(task.status), "text-xs md:text-sm")}>
-            {task.status}
-          </Badge>
-          {isTaskOverdue() && (
-            <Badge variant="destructive" className="ml-1 text-xs md:text-sm">
-              Overdue
-            </Badge>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+            
+            {commentCount > 0 && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="flex items-center gap-1 h-6 px-2 py-0"
+                onClick={() => setShowComments(true)}
+              >
+                <MessageCircle className="h-3.5 w-3.5" />
+                <span className="text-xs">{commentCount}</span>
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+      
+      <TaskCommentsDialog 
+        open={showComments}
+        onOpenChange={setShowComments}
+        task={task}
+      />
+    </>
   );
 };
 
