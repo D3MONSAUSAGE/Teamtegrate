@@ -21,6 +21,9 @@ export interface TaskComment {
   createdAt: Date;
 }
 
+// Alias for TaskComment to fix existing imports
+export type Comment = TaskComment;
+
 export interface Task {
   id: string;
   userId: string;

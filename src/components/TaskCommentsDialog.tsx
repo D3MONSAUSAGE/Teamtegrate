@@ -30,7 +30,7 @@ const TaskCommentsDialog: React.FC<TaskCommentsDialogProps> = ({
         </DialogHeader>
         
         <div className="max-h-[60vh] overflow-y-auto p-1">
-          <TaskCommentsList comments={task.comments} />
+          <TaskCommentsList taskComments={task.comments || []} />
           <TaskCommentForm taskId={task.id} />
         </div>
       </DialogContent>

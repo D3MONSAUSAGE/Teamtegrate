@@ -20,22 +20,25 @@ export const fetchTasks = async (user: User | null, setTasks: React.Dispatch<Rea
     }
     
     if (data) {
-      const formattedTasks = data.map(task => ({
-        ...task,
-        id: task.id,
-        userId: task.user_id,
-        projectId: task.project_id,
-        title: task.title || '',
-        description: task.description || '',
-        deadline: new Date(task.deadline || Date.now()),
-        priority: (task.priority as any) || 'Medium',
-        status: (task.status as any) || 'To Do',
-        createdAt: new Date(task.created_at || Date.now()),
-        updatedAt: new Date(task.updated_at || Date.now()),
-        completedAt: task.completed_at ? new Date(task.completed_at) : undefined,
-        assignedToId: task.assigned_to_id,
-        cost: task.cost || 0,
-      }));
+      const formattedTasks = data.map(task => {
+        const formattedTask: Task = {
+          id: task.id,
+          userId: task.user_id,
+          projectId: task.project_id,
+          title: task.title || '',
+          description: task.description || '',
+          deadline: new Date(task.deadline || Date.now()),
+          priority: (task.priority as any) || 'Medium',
+          status: (task.status as any) || 'To Do',
+          createdAt: new Date(task.created_at || Date.now()),
+          updatedAt: new Date(task.updated_at || Date.now()),
+          completedAt: task.completed_at ? new Date(task.completed_at) : undefined,
+          assignedToId: task.assigned_to_id,
+          cost: task.cost || 0,
+          comments: [] // Initialize as empty array
+        };
+        return formattedTask;
+      });
       
       // Fetch comments for each task
       for (const task of formattedTasks) {
@@ -78,8 +81,7 @@ export const fetchProjects = async (user: User | null, setProjects: React.Dispat
           // For each task, fetch its comments
           const comments = await fetchTaskComments(task.id);
           
-          return {
-            ...task,
+          const formattedTask: Task = {
             id: task.id,
             userId: task.user_id,
             projectId: task.project_id,
@@ -95,6 +97,7 @@ export const fetchProjects = async (user: User | null, setProjects: React.Dispat
             comments: comments || [],
             cost: task.cost || 0,
           };
+          return formattedTask;
         })) : [];
         
         return {

@@ -22,7 +22,7 @@ const ProfileSection = () => {
       const fetchProfile = async () => {
         try {
           const { data, error } = await supabase
-            .from('profiles')
+            .from('users')
             .select('avatar_url')
             .eq('id', user.id)
             .maybeSingle();
@@ -77,7 +77,7 @@ const ProfileSection = () => {
         .getPublicUrl(filePath);
       
       const { error: updateError } = await supabase
-        .from('profiles')
+        .from('users')
         .update({ avatar_url: publicUrl })
         .eq('id', user?.id);
         

@@ -21,18 +21,17 @@ const Navbar = () => {
   
   useEffect(() => {
     if (user) {
-      // Fetch profile data including avatar
+      // Fetch user data including avatar
       const fetchAvatar = async () => {
         try {
-          // Use maybeSingle() instead of single() to prevent errors when no record is found
           const { data, error } = await supabase
-            .from('profiles')
+            .from('users')
             .select('avatar_url')
             .eq('id', user.id)
             .maybeSingle();
             
           if (error) {
-            console.error('Error fetching profile avatar:', error);
+            console.error('Error fetching user avatar:', error);
             return;
           }
           
