@@ -1,14 +1,14 @@
 
 import React from 'react';
 import { useTask } from '@/contexts/task';
-import StatusDistributionChart from './tasks/StatusDistributionChart';
-import PriorityDistributionChart from './tasks/PriorityDistributionChart';
-import CompletionTrendChart from './tasks/CompletionTrendChart';
 import { 
-  useStatusDistributionData, 
-  usePriorityDistributionData, 
-  useCompletionTrendData 
-} from './tasks/hooks/useTaskReportsData';
+  StatusDistributionChart,
+  PriorityDistributionChart,
+  CompletionTrendChart,
+  useStatusDistributionData,
+  usePriorityDistributionData,
+  useCompletionTrendData
+} from './tasks';
 
 const TaskReports: React.FC = () => {
   const { tasks } = useTask();
