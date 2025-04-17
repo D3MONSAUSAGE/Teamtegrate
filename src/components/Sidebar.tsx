@@ -9,7 +9,8 @@ import {
   FolderKanban,  
   Users, 
   Settings,
-  BarChart3
+  BarChart3,
+  Calendar
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -41,6 +42,12 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
       name: 'My Tasks',
       path: '/dashboard/tasks',
       icon: <CheckSquare className="h-5 w-5" />,
+      allowed: true,
+    },
+    {
+      name: 'Calendar',
+      path: '/dashboard/calendar',
+      icon: <Calendar className="h-5 w-5" />,
       allowed: true,
     },
     {

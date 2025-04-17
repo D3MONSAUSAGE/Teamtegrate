@@ -13,6 +13,14 @@ export type TaskPriority = 'Low' | 'Medium' | 'High';
 
 export type TaskStatus = 'To Do' | 'In Progress' | 'Pending' | 'Completed';
 
+export interface TaskComment {
+  id: string;
+  userId: string;
+  userName: string;
+  text: string;
+  createdAt: Date;
+}
+
 export interface Task {
   id: string;
   userId: string;
@@ -28,15 +36,8 @@ export interface Task {
   assignedToId?: string;
   assignedToName?: string;
   tags?: string[];
-  comments?: Comment[];
-}
-
-export interface Comment {
-  id: string;
-  userId: string;
-  userName: string;
-  text: string;
-  createdAt: Date;
+  comments?: TaskComment[];
+  cost?: number;
 }
 
 export interface Project {
@@ -51,6 +52,8 @@ export interface Project {
   tasks: Task[];
   teamMembers?: string[];
   tags?: string[];
+  budget?: number;
+  budgetSpent?: number;
 }
 
 export interface DailyScore {
