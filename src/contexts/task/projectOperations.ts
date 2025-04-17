@@ -1,3 +1,4 @@
+
 import { User, Project, Task } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
@@ -20,12 +21,12 @@ export const addProject = async (
       description: project.description,
       start_date: project.startDate.toISOString(),
       end_date: project.endDate.toISOString(),
-      manager_id: user.id,
-      budget: project.budget,
-      budget_spent: 0,
+      manager_id: user.id,  // This should match the auth.uid() format
       created_at: now.toISOString(),
       updated_at: now.toISOString()
     };
+    
+    console.log('Inserting project with manager_id:', projectToInsert.manager_id);
     
     const { data, error } = await supabase
       .from('projects')
@@ -49,8 +50,6 @@ export const addProject = async (
         managerId: data.manager_id,
         createdAt: new Date(data.created_at),
         updatedAt: new Date(data.updated_at),
-        budget: data.budget,
-        budgetSpent: data.budget_spent,
         tasks: [],
         teamMembers: [],
         tags: []
@@ -83,7 +82,6 @@ export const updateProject = async (
     if (updates.description !== undefined) updatedFields.description = updates.description;
     if (updates.startDate !== undefined) updatedFields.start_date = updates.startDate.toISOString();
     if (updates.endDate !== undefined) updatedFields.end_date = updates.endDate.toISOString();
-    if (updates.budget !== undefined) updatedFields.budget = updates.budget;
     
     const { error } = await supabase
       .from('projects')

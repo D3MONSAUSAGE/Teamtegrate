@@ -35,8 +35,6 @@ export type Database = {
       }
       projects: {
         Row: {
-          budget: number | null
-          budget_spent: number | null
           created_at: string | null
           description: string | null
           end_date: string | null
@@ -47,8 +45,6 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
-          budget?: number | null
-          budget_spent?: number | null
           created_at?: string | null
           description?: string | null
           end_date?: string | null
@@ -59,8 +55,6 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
-          budget?: number | null
-          budget_spent?: number | null
           created_at?: string | null
           description?: string | null
           end_date?: string | null
@@ -76,7 +70,6 @@ export type Database = {
         Row: {
           assigned_to_id: string | null
           completed_at: string | null
-          cost: number | null
           created_at: string | null
           deadline: string | null
           description: string | null
@@ -91,7 +84,6 @@ export type Database = {
         Insert: {
           assigned_to_id?: string | null
           completed_at?: string | null
-          cost?: number | null
           created_at?: string | null
           deadline?: string | null
           description?: string | null
@@ -106,7 +98,6 @@ export type Database = {
         Update: {
           assigned_to_id?: string | null
           completed_at?: string | null
-          cost?: number | null
           created_at?: string | null
           deadline?: string | null
           description?: string | null

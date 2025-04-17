@@ -1,3 +1,4 @@
+
 import { User, Task, Project, TaskStatus } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
@@ -29,8 +30,7 @@ export const addTask = async (
       status: task.status,
       created_at: now.toISOString(),
       updated_at: now.toISOString(),
-      assigned_to_id: task.assignedToId,
-      cost: task.cost
+      assigned_to_id: task.assignedToId
     };
     
     const { data, error } = await supabase
@@ -58,8 +58,7 @@ export const addTask = async (
         createdAt: new Date(data.created_at),
         updatedAt: new Date(data.updated_at),
         assignedToId: data.assigned_to_id,
-        assignedToName: task.assignedToName,
-        cost: data.cost
+        assignedToName: task.assignedToName
       };
       
       setTasks(prevTasks => [...prevTasks, newTask]);
@@ -112,7 +111,6 @@ export const updateTask = async (
     if (updates.projectId !== undefined) updatedFields.project_id = updates.projectId;
     if (updates.assignedToId !== undefined) updatedFields.assigned_to_id = updates.assignedToId;
     if (updates.completedAt !== undefined) updatedFields.completed_at = updates.completedAt ? updates.completedAt.toISOString() : null;
-    if (updates.cost !== undefined) updatedFields.cost = updates.cost;
     
     const { error } = await supabase
       .from('tasks')

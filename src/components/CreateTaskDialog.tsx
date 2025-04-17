@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -48,6 +49,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [isLoadingTeamMembers, setIsLoadingTeamMembers] = useState(false);
   
+  // Load team members from Supabase when dialog opens
   useEffect(() => {
     const fetchTeamMembers = async () => {
       if (!user) return;
@@ -72,6 +74,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
       }
     };
 
+    // Fetch team members when dialog opens
     if (open) {
       fetchTeamMembers();
     }
@@ -84,7 +87,6 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
       priority: editingTask?.priority || 'Medium' as TaskPriority,
       deadline: editingTask ? format(new Date(editingTask.deadline), "yyyy-MM-dd'T'HH:mm") : '',
       projectId: editingTask?.projectId || currentProjectId || '',
-      cost: editingTask?.cost || '',
     },
   });
   
@@ -95,7 +97,6 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
       setValue('priority', editingTask.priority);
       setValue('deadline', format(new Date(editingTask.deadline), "yyyy-MM-dd'T'HH:mm"));
       setValue('projectId', editingTask.projectId || '');
-      setValue('cost', editingTask.cost || '');
       setSelectedMember(editingTask.assignedToId);
     } else {
       if (currentProjectId) {
@@ -111,7 +112,6 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
       updateTask(editingTask.id, {
         ...data,
         deadline: new Date(data.deadline),
-        cost: data.cost ? parseFloat(data.cost) : undefined,
         assignedToId: selectedMember === "unassigned" ? undefined : selectedMember,
         assignedToName: selectedMember && selectedMember !== "unassigned" ? 
           teamMembers.find(m => m.id === selectedMember)?.name : undefined
@@ -127,8 +127,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
         projectId: data.projectId === "none" ? undefined : data.projectId,
         assignedToId: selectedMember === "unassigned" ? undefined : selectedMember,
         assignedToName: selectedMember && selectedMember !== "unassigned" ? 
-          teamMembers.find(m => m.id === selectedMember)?.name : undefined,
-        cost: data.cost ? parseFloat(data.cost) : undefined
+          teamMembers.find(m => m.id === selectedMember)?.name : undefined
       });
     }
     onOpenChange(false);
@@ -243,23 +242,6 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
             />
             {errors.deadline && (
               <span className="text-xs text-red-500">{errors.deadline.message}</span>
-            )}
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="cost">Task Cost (Optional)</Label>
-            <Input
-              id="cost"
-              type="number"
-              step="0.01"
-              placeholder="Enter task cost"
-              {...register('cost', { 
-                setValueAs: (v) => v === '' ? undefined : parseFloat(v),
-                validate: (v) => v === undefined || v >= 0 || 'Cost must be non-negative'
-              })}
-            />
-            {errors.cost && (
-              <span className="text-xs text-red-500">{errors.cost.message}</span>
             )}
           </div>
           

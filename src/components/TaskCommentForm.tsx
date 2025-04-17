@@ -5,33 +5,28 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from '@/contexts/AuthContext';
 import { useTask } from '@/contexts/task';
 import { MessageCirclePlus } from 'lucide-react';
-import { TaskComment } from '@/types';
 
 interface TaskCommentFormProps {
   taskId: string;
-  onCommentAdded?: (comment: TaskComment) => void;
 }
 
-const TaskCommentForm: React.FC<TaskCommentFormProps> = ({ taskId, onCommentAdded }) => {
+const TaskCommentForm: React.FC<TaskCommentFormProps> = ({ taskId }) => {
   const [comment, setComment] = useState('');
   const { user } = useAuth();
   const { addCommentToTask } = useTask();
   
-  const handleSubmitComment = async (e: React.FormEvent) => {
+  const handleSubmitComment = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!comment.trim() || !user) return;
     
-    const newComment = await addCommentToTask(taskId, {
+    addCommentToTask(taskId, {
       userId: user.id,
       userName: user.name || user.email,
       text: comment
     });
     
-    if (newComment) {
-      setComment('');
-      onCommentAdded?.(newComment);
-    }
+    setComment('');
   };
   
   return (

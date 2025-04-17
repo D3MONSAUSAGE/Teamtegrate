@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -27,7 +28,6 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({ open, onOpenC
       description: editingProject?.description || '',
       startDate: editingProject ? format(new Date(editingProject.startDate), 'yyyy-MM-dd') : '',
       endDate: editingProject ? format(new Date(editingProject.endDate), 'yyyy-MM-dd') : '',
-      budget: editingProject?.budget || '',
     },
   });
   
@@ -37,7 +37,6 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({ open, onOpenC
       setValue('description', editingProject.description);
       setValue('startDate', format(new Date(editingProject.startDate), 'yyyy-MM-dd'));
       setValue('endDate', format(new Date(editingProject.endDate), 'yyyy-MM-dd'));
-      setValue('budget', editingProject.budget);
     } else {
       reset();
     }
@@ -46,18 +45,21 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({ open, onOpenC
   const onSubmit = (data: any) => {
     if (!user) return;
     
-    const projectData = {
-      ...data,
-      budget: data.budget ? parseFloat(data.budget) : undefined,
-      startDate: new Date(data.startDate),
-      endDate: new Date(data.endDate),
-      managerId: user.id,
-    };
-
     if (isEditMode && editingProject) {
-      updateProject(editingProject.id, projectData);
+      updateProject(editingProject.id, {
+        ...data,
+        startDate: new Date(data.startDate),
+        endDate: new Date(data.endDate),
+      });
     } else {
-      addProject(projectData);
+      console.log('Adding project with user ID:', user.id);
+      addProject({
+        title: data.title,
+        description: data.description,
+        startDate: new Date(data.startDate),
+        endDate: new Date(data.endDate),
+        managerId: user.id,
+      });
     }
     onOpenChange(false);
     reset();
@@ -116,23 +118,6 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({ open, onOpenC
                 <span className="text-xs text-red-500">{errors.endDate.message}</span>
               )}
             </div>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="budget">Budget (Optional)</Label>
-            <Input
-              id="budget"
-              type="number"
-              step="0.01"
-              placeholder="Enter project budget"
-              {...register('budget', { 
-                setValueAs: (v) => v === '' ? undefined : parseFloat(v),
-                validate: (v) => v === undefined || v >= 0 || 'Budget must be non-negative'
-              })}
-            />
-            {errors.budget && (
-              <span className="text-xs text-red-500">{errors.budget.message}</span>
-            )}
           </div>
           
           <div className="flex justify-end gap-2 pt-4">

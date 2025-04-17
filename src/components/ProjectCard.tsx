@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Project, Task } from '@/types';
@@ -34,6 +35,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   const [projectTasks, setProjectTasks] = useState<Task[]>([]);
   
   useEffect(() => {
+    // Fetch tasks related to this project from Supabase
     const fetchProjectTasks = async () => {
       try {
         const { data, error } = await supabase
@@ -47,6 +49,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
         }
         
         if (data) {
+          // Map Supabase data to our Task interface
           const mappedTasks: Task[] = data.map(task => ({
             id: task.id,
             userId: task.user_id || '',
@@ -79,6 +82,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
     return Math.round((completed / tasks.length) * 100);
   };
   
+  // Use tasks from Supabase to calculate progress
   const totalTasks = projectTasks.length;
   const completedTasks = projectTasks.filter(task => task.status === 'Completed').length;
   const progress = calculateProgress(projectTasks);
@@ -142,25 +146,6 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
           </div>
           <Progress value={progress} className="h-1.5 md:h-2" />
         </div>
-        
-        {project.budget !== undefined && (
-          <div className="pt-2 space-y-1">
-            <div className="flex justify-between items-center">
-              <span className="text-xs font-medium">Budget Tracking</span>
-              <Badge variant="outline">
-                {((project.budgetSpent || 0) / (project.budget || 1) * 100).toFixed(0)}%
-              </Badge>
-            </div>
-            <div className="flex justify-between items-center text-xs text-gray-500">
-              <span>Spent: ${(project.budgetSpent || 0).toFixed(2)}</span>
-              <span>Budget: ${(project.budget || 0).toFixed(2)}</span>
-            </div>
-            <Progress 
-              value={((project.budgetSpent || 0) / (project.budget || 1) * 100)} 
-              className="h-1.5 md:h-2" 
-            />
-          </div>
-        )}
         
         <Button 
           variant="outline" 

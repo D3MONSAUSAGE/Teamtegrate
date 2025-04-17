@@ -1,13 +1,8 @@
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { Task, Project, TaskStatus, TaskPriority, TaskComment } from '@/types';
+import { Task, Project, TaskStatus, TaskPriority, DailyScore, Comment } from '@/types';
 import { useAuth } from '../AuthContext';
-import { 
-  fetchTasks, 
-  fetchProjects, 
-  fetchTaskComments,
-  addCommentToTask as addCommentToTaskApi 
-} from './taskApi';
+import { fetchTasks, fetchProjects } from './taskApi';
 import { calculateDailyScore } from './taskMetrics';
 import { 
   addTask, 
@@ -43,7 +38,7 @@ import {
 interface TaskContextType {
   tasks: Task[];
   projects: Project[];
-  dailyScore: any;
+  dailyScore: DailyScore;
   addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateTask: (taskId: string, updates: Partial<Task>) => void;
   updateTaskStatus: (taskId: string, status: TaskStatus) => void;
@@ -53,7 +48,7 @@ interface TaskContextType {
   deleteProject: (projectId: string) => void;
   assignTaskToProject: (taskId: string, projectId: string) => void;
   assignTaskToUser: (taskId: string, userId: string, userName: string) => void;
-  addCommentToTask: (taskId: string, comment: { userId: string; userName: string; text: string }) => Promise<TaskComment | null>;
+  addCommentToTask: (taskId: string, comment: { userId: string; userName: string; text: string }) => void;
   addTagToTask: (taskId: string, tag: string) => void;
   removeTagFromTask: (taskId: string, tag: string) => void;
   addTagToProject: (projectId: string, tag: string) => void;
@@ -66,7 +61,6 @@ interface TaskContextType {
   getTasksByPriority: (priority: TaskPriority) => Task[];
   getTasksByDate: (date: Date) => Task[];
   getOverdueTasks: () => Task[];
-  fetchComments: (taskId: string) => Promise<TaskComment[]>;
 }
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
@@ -107,6 +101,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [tasks, user]);
 
+  // Create context value object with all the functions
   const value = {
     tasks,
     projects,
@@ -129,10 +124,8 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       assignTaskToProject(taskId, projectId, user, tasks, setTasks, projects, setProjects),
     assignTaskToUser: (taskId: string, userId: string, userName: string) => 
       assignTaskToUser(taskId, userId, userName, user, tasks, setTasks, projects, setProjects),
-    addCommentToTask: async (taskId: string, comment: { userId: string; userName: string; text: string }) => {
-      const addedComment = await addCommentToTaskApi(taskId, comment.userId, comment.text);
-      return addedComment;
-    },
+    addCommentToTask: (taskId: string, comment: { userId: string; userName: string; text: string }) =>
+      addCommentToTask(taskId, comment, tasks, setTasks, projects, setProjects),
     addTagToTask: (taskId: string, tag: string) =>
       addTagToTask(taskId, tag, tasks, setTasks, projects, setProjects),
     removeTagFromTask: (taskId: string, tag: string) =>
@@ -151,7 +144,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     getTasksByPriority: (priority: TaskPriority) => getTasksByPriority(priority, tasks),
     getTasksByDate: (date: Date) => getTasksByDate(date, tasks),
     getOverdueTasks: () => getOverdueTasks(tasks),
-    fetchComments: fetchTaskComments,
   };
 
   return <TaskContext.Provider value={value}>{children}</TaskContext.Provider>;
