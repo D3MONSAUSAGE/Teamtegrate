@@ -15,6 +15,7 @@ import TeamPage from "./pages/TeamPage";
 import SettingsPage from "./pages/SettingsPage";
 import ReportsPage from "./pages/ReportsPage";
 import CalendarPage from "./pages/CalendarPage";
+import TimeTrackingPage from "./pages/TimeTrackingPage";
 import NotFound from "./pages/NotFound";
 import Index from "./pages/Index";
 
@@ -39,6 +40,7 @@ const App = () => (
                 <Route path="team" element={<TeamPage />} />
                 <Route path="reports" element={<ReportsPage />} />
                 <Route path="settings" element={<SettingsPage />} />
+                <Route path="time-tracking" element={<TimeTrackingPage />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -10,7 +9,8 @@ import {
   Users, 
   Settings,
   BarChart3,
-  Calendar
+  Calendar,
+  Timer
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -42,6 +42,12 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
       name: 'My Tasks',
       path: '/dashboard/tasks',
       icon: <CheckSquare className="h-5 w-5" />,
+      allowed: true,
+    },
+    {
+      name: 'Time Tracking',
+      path: '/dashboard/time-tracking',
+      icon: <Timer className="h-5 w-5" />,
       allowed: true,
     },
     {
