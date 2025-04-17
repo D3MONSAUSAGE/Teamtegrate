@@ -13,6 +13,7 @@ import UpcomingTasksSection from '@/components/dashboard/UpcomingTasksSection';
 import RecentProjects from '@/components/dashboard/RecentProjects';
 import TeamManagement from '@/components/dashboard/TeamManagement';
 import { useIsMobile } from '@/hooks/use-mobile';
+import AnalyticsSection from '@/components/dashboard/AnalyticsSection';
 
 const DashboardPage = () => {
   const { user } = useAuth();
@@ -79,6 +80,12 @@ const DashboardPage = () => {
           dailyScore={dailyScore}
           todaysTasks={todaysTasks}
           upcomingTasks={upcomingTasks}
+        />
+
+        {/* Analytics Section */}
+        <AnalyticsSection 
+          tasks={tasks} 
+          projects={projects}
         />
         
         <DailyTasksSection 
