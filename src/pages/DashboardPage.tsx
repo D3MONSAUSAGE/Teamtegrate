@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { useTask } from '@/contexts/task';
@@ -14,6 +13,7 @@ import RecentProjects from '@/components/dashboard/RecentProjects';
 import TeamManagement from '@/components/dashboard/TeamManagement';
 import { useIsMobile } from '@/hooks/use-mobile';
 import AnalyticsSection from '@/components/dashboard/AnalyticsSection';
+import TimeTracking from '@/components/dashboard/TimeTracking';
 
 const DashboardPage = () => {
   const { user } = useAuth();
@@ -57,7 +57,6 @@ const DashboardPage = () => {
   };
 
   const handleViewTasks = (project: Project) => {
-    // Placeholder for viewing tasks
     console.log("View tasks for project:", project.title);
   };
   
@@ -82,7 +81,8 @@ const DashboardPage = () => {
           upcomingTasks={upcomingTasks}
         />
 
-        {/* Analytics Section */}
+        <TimeTracking />
+
         <AnalyticsSection 
           tasks={tasks} 
           projects={projects}
@@ -101,15 +101,15 @@ const DashboardPage = () => {
         />
         
         {user?.role === 'manager' && (
-          <RecentProjects 
-            projects={recentProjects}
-            onViewTasks={handleViewTasks}
-            onCreateTask={handleCreateTask}
-          />
-        )}
-        
-        {user?.role === 'manager' && (
-          <TeamManagement />
+          <>
+            <RecentProjects 
+              projects={recentProjects}
+              onViewTasks={handleViewTasks}
+              onCreateTask={handleCreateTask}
+            />
+            
+            <TeamManagement />
+          </>
         )}
       </div>
       

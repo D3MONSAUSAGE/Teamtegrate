@@ -9,30 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      profiles: {
-        Row: {
-          avatar_url: string | null
-          created_at: string
-          id: string
-          name: string | null
-          role: string | null
-        }
-        Insert: {
-          avatar_url?: string | null
-          created_at?: string
-          id: string
-          name?: string | null
-          role?: string | null
-        }
-        Update: {
-          avatar_url?: string | null
-          created_at?: string
-          id?: string
-          name?: string | null
-          role?: string | null
-        }
-        Relationships: []
-      }
       projects: {
         Row: {
           budget: number | null
@@ -147,36 +123,60 @@ export type Database = {
         }
         Relationships: []
       }
-      users: {
+      time_entries: {
         Row: {
-          created_at: string | null
-          description: string | null
-          end_date: string | null
+          clock_in: string
+          clock_out: string | null
+          created_at: string
+          duration_minutes: number | null
           id: string
-          manager_id: string | null
-          start_date: string | null
-          title: string | null
-          updated_at: string | null
+          notes: string | null
+          user_id: string
         }
         Insert: {
-          created_at?: string | null
-          description?: string | null
-          end_date?: string | null
-          id: string
-          manager_id?: string | null
-          start_date?: string | null
-          title?: string | null
-          updated_at?: string | null
+          clock_in?: string
+          clock_out?: string | null
+          created_at?: string
+          duration_minutes?: number | null
+          id?: string
+          notes?: string | null
+          user_id: string
         }
         Update: {
-          created_at?: string | null
-          description?: string | null
-          end_date?: string | null
+          clock_in?: string
+          clock_out?: string | null
+          created_at?: string
+          duration_minutes?: number | null
           id?: string
-          manager_id?: string | null
-          start_date?: string | null
-          title?: string | null
-          updated_at?: string | null
+          notes?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      users: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string
+          id: string
+          name: string
+          role: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email: string
+          id: string
+          name: string
+          role: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          role?: string
         }
         Relationships: []
       }
@@ -185,7 +185,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      create_user_admin: {
+        Args: {
+          email: string
+          password: string
+          user_name: string
+          user_role: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
