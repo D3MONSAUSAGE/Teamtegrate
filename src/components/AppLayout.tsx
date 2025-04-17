@@ -8,6 +8,7 @@ import { Menu } from 'lucide-react';
 import { Button } from './ui/button';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
 import { useIsMobile } from '@/hooks/use-mobile';
+import FloatingChatButton from './chatbot/FloatingChatButton';
 
 const AppLayout = () => {
   const { user, loading } = useAuth();
@@ -56,6 +57,9 @@ const AppLayout = () => {
           <Outlet />
         </main>
       </div>
+      
+      {/* Floating chat button */}
+      <FloatingChatButton />
     </div>
   );
 };
