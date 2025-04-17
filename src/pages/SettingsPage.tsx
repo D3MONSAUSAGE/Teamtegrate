@@ -8,9 +8,17 @@ import { Separator } from "@/components/ui/separator";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from '@/components/ui/sonner';
 import { useAuth } from '@/contexts/AuthContext';
-import { Save, Upload, Loader2 } from 'lucide-react';
+import { Save, Upload, Loader2, Camera } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 const SettingsPage = () => {
   const { user } = useAuth();
@@ -18,6 +26,7 @@ const SettingsPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
   
   useEffect(() => {
     if (user) {
@@ -46,6 +55,13 @@ const SettingsPage = () => {
       fetchProfile();
     }
   }, [user]);
+  
+  const triggerFileInput = () => {
+    // Programmatically click the hidden file input
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
   
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
@@ -134,7 +150,7 @@ const SettingsPage = () => {
           <h2 className="text-xl font-semibold mb-4">Profile Settings</h2>
           <div className="bg-white p-6 rounded-lg border space-y-6">
             <div className="flex flex-col items-center sm:flex-row sm:items-start gap-6">
-              <div className="flex flex-col items-center gap-2">
+              <div className="flex flex-col items-center gap-4">
                 <Avatar className="h-24 w-24 border-2 border-gray-200">
                   <AvatarImage src={avatarUrl || undefined} alt={user?.name || 'User'} />
                   <AvatarFallback className="text-xl">
@@ -142,20 +158,24 @@ const SettingsPage = () => {
                   </AvatarFallback>
                 </Avatar>
                 
-                <div className="relative">
-                  <Input
+                <div>
+                  {/* Hidden file input */}
+                  <input
+                    ref={fileInputRef}
                     id="avatar"
                     type="file"
                     accept="image/*"
-                    className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                    className="hidden"
                     onChange={handleAvatarUpload}
                     disabled={uploading}
                   />
+                  
                   <Button 
                     variant="outline" 
-                    size="sm" 
-                    className="relative"
+                    size="sm"
+                    onClick={triggerFileInput}
                     disabled={uploading}
+                    className="flex items-center"
                   >
                     {uploading ? (
                       <>
@@ -164,7 +184,7 @@ const SettingsPage = () => {
                       </>
                     ) : (
                       <>
-                        <Upload className="mr-2 h-4 w-4" />
+                        <Camera className="mr-2 h-4 w-4" />
                         Change Avatar
                       </>
                     )}
