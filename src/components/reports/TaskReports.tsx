@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useTask } from '@/contexts/task';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,7 +18,11 @@ import { TaskStatus, TaskPriority } from '@/types';
 import { format } from 'date-fns';
 import { getTasksCompletionByDate } from '@/contexts/task/taskMetrics';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { 
+  ChartContainer, 
+  ChartTooltip, 
+  ChartTooltipContent 
+} from '@/components/ui/chart';
 import { BarChartIcon, PieChartIcon, LineChartIcon } from 'lucide-react';
 
 const TaskReports: React.FC = () => {
