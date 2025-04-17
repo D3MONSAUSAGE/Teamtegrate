@@ -28,6 +28,7 @@ export interface Task {
   assignedToName?: string;
   tags?: string[];
   comments?: Comment[];
+  cost?: number;  // New field for task cost
 }
 
 export interface Comment {
@@ -51,6 +52,8 @@ export interface Project {
   tasks: Task[];
   teamMembers?: string[];
   tags?: string[];
+  budget?: number;  // New field
+  budgetSpent?: number;  // New field
 }
 
 export interface DailyScore {
