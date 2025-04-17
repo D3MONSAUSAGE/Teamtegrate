@@ -13,9 +13,10 @@ import {
 } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useAuth } from '@/contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from '@/components/ui/sonner';
 import { UserRole } from '@/types';
+import { supabase } from '@/integrations/supabase/client';
 
 const LoginPage = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -25,6 +26,56 @@ const LoginPage = () => {
   const [role, setRole] = useState<UserRole>('user');
   const { login, signup, isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Handle auth redirect from email verification
+  useEffect(() => {
+    // Check if we have a hash in the URL (from Supabase auth redirect)
+    const handleAuthRedirect = async () => {
+      if (window.location.hash) {
+        const hashParams = new URLSearchParams(
+          window.location.hash.substring(1) // remove the # character
+        );
+        
+        // Check if this is an access token from Supabase auth
+        const accessToken = hashParams.get('access_token');
+        const refreshToken = hashParams.get('refresh_token');
+        const type = hashParams.get('type');
+        
+        if (accessToken && refreshToken) {
+          try {
+            // Set the session in Supabase
+            const { data, error } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            });
+            
+            if (error) {
+              throw error;
+            }
+            
+            // Show success message based on auth type
+            if (type === 'signup') {
+              toast.success('Email verified! You are now signed in.');
+            } else {
+              toast.success('You are now signed in.');
+            }
+            
+            // Remove the hash from the URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+            
+            // Navigate to dashboard
+            navigate('/dashboard');
+          } catch (error) {
+            console.error('Error setting session:', error);
+            toast.error('Authentication failed. Please try again.');
+          }
+        }
+      }
+    };
+    
+    handleAuthRedirect();
+  }, [navigate]);
   
   // Redirect if already logged in
   useEffect(() => {
