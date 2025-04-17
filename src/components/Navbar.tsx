@@ -24,11 +24,12 @@ const Navbar = () => {
       // Fetch profile data including avatar
       const fetchAvatar = async () => {
         try {
+          // Use maybeSingle() instead of single() to prevent errors when no record is found
           const { data, error } = await supabase
             .from('profiles')
             .select('avatar_url')
             .eq('id', user.id)
-            .single();
+            .maybeSingle();
             
           if (error) {
             console.error('Error fetching profile avatar:', error);
@@ -75,7 +76,7 @@ const Navbar = () => {
               <Avatar className="h-10 w-10">
                 <AvatarImage src={avatarUrl || undefined} alt={user.name} />
                 <AvatarFallback className="bg-primary text-white">
-                  {user.name.substring(0, 2).toUpperCase()}
+                  {user.name?.substring(0, 2).toUpperCase() || 'US'}
                 </AvatarFallback>
               </Avatar>
             </Button>
