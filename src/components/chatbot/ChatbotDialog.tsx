@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -98,6 +98,9 @@ const ChatbotDialog: React.FC<ChatbotDialogProps> = ({ open, onOpenChange }) => 
             <Bot className="h-5 w-5 text-primary" />
             TaskAssistant AI
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Chat with TaskAssistant AI to get help with your tasks and calendar
+          </DialogDescription>
         </DialogHeader>
         
         <ScrollArea ref={scrollAreaRef} className="flex-grow p-4 h-[50vh]">
@@ -179,3 +182,4 @@ const ChatbotDialog: React.FC<ChatbotDialogProps> = ({ open, onOpenChange }) => 
 };
 
 export default ChatbotDialog;
+
