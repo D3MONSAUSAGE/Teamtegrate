@@ -29,21 +29,53 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Load user profile data including role from the profiles table
+  const loadUserProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('name, role')
+        .eq('id', userId)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching user profile:', error);
+        return null;
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Unexpected error loading profile:', error);
+      return null;
+    }
+  };
+
+  // Update user with profile data
+  const updateUserWithProfile = async (sessionUser: any) => {
+    if (!sessionUser) return null;
+    
+    const profile = await loadUserProfile(sessionUser.id);
+    
+    const userData: User = {
+      id: sessionUser.id,
+      email: sessionUser.email || '',
+      name: profile?.name || sessionUser.user_metadata?.name || sessionUser.email?.split('@')[0] || '',
+      role: (profile?.role as UserRole) || sessionUser.user_metadata?.role as UserRole || 'user',
+      createdAt: new Date(sessionUser.created_at),
+    };
+    
+    setUser(userData);
+    return userData;
+  };
+
   // Check if user is logged in on mount and set up auth state listener
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         setSession(session);
         if (session?.user) {
-          const userData: User = {
-            id: session.user.id,
-            email: session.user.email || '',
-            name: session.user.user_metadata.name || session.user.email?.split('@')[0] || '',
-            role: session.user.user_metadata.role as UserRole || 'user',
-            createdAt: new Date(session.user.created_at),
-          };
-          setUser(userData);
+          await updateUserWithProfile(session.user);
         } else {
           setUser(null);
         }
@@ -51,17 +83,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       if (session?.user) {
-        const userData: User = {
-          id: session.user.id,
-          email: session.user.email || '',
-          name: session.user.user_metadata.name || session.user.email?.split('@')[0] || '',
-          role: session.user.user_metadata.role as UserRole || 'user',
-          createdAt: new Date(session.user.created_at),
-        };
-        setUser(userData);
+        await updateUserWithProfile(session.user);
       }
       setLoading(false);
     });
