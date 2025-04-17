@@ -39,8 +39,8 @@ const StatusDistributionChart: React.FC<StatusDistributionChartProps> = ({ data 
         </div>
         <CardDescription>Breakdown of tasks by status</CardDescription>
       </CardHeader>
-      <CardContent className={isMobile ? "h-64" : "h-80"}>
-        <ChartContainer config={chartConfig} className="h-full">
+      <CardContent className={`${isMobile ? "h-64 flex flex-col items-center justify-center" : "h-80"}`}>
+        <ChartContainer config={chartConfig} className="h-full w-full max-w-[300px] mx-auto">
           <PieChart>
             <Pie
               data={data}
@@ -65,7 +65,9 @@ const StatusDistributionChart: React.FC<StatusDistributionChartProps> = ({ data 
               layout={isMobile ? "horizontal" : "vertical"} 
               verticalAlign={isMobile ? "bottom" : "middle"} 
               align={isMobile ? "center" : "right"}
-              wrapperStyle={isMobile ? { fontSize: '11px' } : { fontSize: '12px' }}
+              wrapperStyle={{
+                ...(isMobile ? { fontSize: '11px', width: '100%', display: 'flex', justifyContent: 'center' } : { fontSize: '12px' })
+              }}
             />
           </PieChart>
         </ChartContainer>
@@ -75,3 +77,4 @@ const StatusDistributionChart: React.FC<StatusDistributionChartProps> = ({ data 
 };
 
 export default StatusDistributionChart;
+
