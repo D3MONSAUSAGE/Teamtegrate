@@ -8,25 +8,29 @@ import { MessageCirclePlus } from 'lucide-react';
 
 interface TaskCommentFormProps {
   taskId: string;
+  onCommentAdded?: (comment: Comment) => void;
 }
 
-const TaskCommentForm: React.FC<TaskCommentFormProps> = ({ taskId }) => {
+const TaskCommentForm: React.FC<TaskCommentFormProps> = ({ taskId, onCommentAdded }) => {
   const [comment, setComment] = useState('');
   const { user } = useAuth();
   const { addCommentToTask } = useTask();
   
-  const handleSubmitComment = (e: React.FormEvent) => {
+  const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!comment.trim() || !user) return;
     
-    addCommentToTask(taskId, {
+    const newComment = await addCommentToTask(taskId, {
       userId: user.id,
       userName: user.name || user.email,
       text: comment
     });
     
-    setComment('');
+    if (newComment) {
+      setComment('');
+      onCommentAdded?.(newComment);
+    }
   };
   
   return (

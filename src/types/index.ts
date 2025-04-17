@@ -1,4 +1,3 @@
-
 export type UserRole = 'user' | 'manager';
 
 export interface User {
@@ -33,6 +32,7 @@ export interface Task {
 
 export interface Comment {
   id: string;
+  taskId: string;
   userId: string;
   userName: string;
   text: string;

@@ -1,7 +1,7 @@
-
 import { User, Task, Project } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
+import { Comment } from '@/types';
 
 export const fetchTasks = async (user: User | null, setTasks: React.Dispatch<React.SetStateAction<Task[]>>) => {
   try {
@@ -99,5 +99,86 @@ export const fetchProjects = async (user: User | null, setProjects: React.Dispat
     }
   } catch (error) {
     console.error('Error in fetchProjects:', error);
+  }
+};
+
+export const fetchTaskComments = async (taskId: string): Promise<Comment[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('comments')
+      .select(`
+        id,
+        task_id,
+        user_id,
+        text,
+        created_at,
+        profiles (name)
+      `)
+      .eq('task_id', taskId)
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching comments:', error);
+      toast.error('Failed to load comments');
+      return [];
+    }
+
+    return data.map(comment => ({
+      id: comment.id,
+      taskId: comment.task_id,
+      userId: comment.user_id,
+      userName: comment.profiles?.name || 'Unknown User',
+      text: comment.text,
+      createdAt: new Date(comment.created_at)
+    }));
+  } catch (error) {
+    console.error('Error in fetchTaskComments:', error);
+    return [];
+  }
+};
+
+export const addCommentToTask = async (
+  taskId: string, 
+  userId: string, 
+  text: string
+): Promise<Comment | null> => {
+  try {
+    const { data: userData } = await supabase
+      .from('profiles')
+      .select('name')
+      .eq('id', userId)
+      .single();
+
+    const { data, error } = await supabase
+      .from('comments')
+      .insert({
+        task_id: taskId,
+        user_id: userId,
+        text: text
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error adding comment:', error);
+      toast.error('Failed to add comment');
+      return null;
+    }
+
+    const newComment: Comment = {
+      id: data.id,
+      taskId: data.task_id,
+      userId: data.user_id,
+      userName: userData?.name || 'Unknown User',
+      text: data.text,
+      createdAt: new Date(data.created_at)
+    };
+
+    toast.success('Comment added successfully');
+    return newComment;
+  } catch (error) {
+    console.error('Error in addCommentToTask:', error);
+    toast.error('Failed to add comment');
+    return null;
   }
 };
