@@ -58,10 +58,11 @@ const AppLayout = () => {
         </main>
       </div>
       
-      {/* Floating chat button */}
+      {/* Floating chat button - ensure it's always visible */}
       <FloatingChatButton />
     </div>
   );
 };
 
 export default AppLayout;
+
