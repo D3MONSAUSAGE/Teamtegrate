@@ -25,11 +25,12 @@ const LoginPage = () => {
   const [name, setName] = useState('');
   const [role, setRole] = useState<UserRole>('user');
   const [processingRedirect, setProcessingRedirect] = useState(false);
-  const { login, signup, isAuthenticated, loading } = useAuth();
+  const { login, signup, isAuthenticated, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [localLoading, setLocalLoading] = useState(false);
   
-  console.log('LoginPage Render', { loading, isAuthenticated, processingRedirect });
+  console.log('LoginPage Render', { authLoading, isAuthenticated, processingRedirect, localLoading });
 
   // Handle auth redirect from email verification
   useEffect(() => {
@@ -74,10 +75,12 @@ const LoginPage = () => {
             
             // Redirect to dashboard
             navigate('/dashboard');
+            return;
           }
         } catch (error) {
           console.error('LoginPage: Error setting session:', error);
           toast.error('Authentication failed. Please try again.');
+        } finally {
           setProcessingRedirect(false);
         }
       }
@@ -88,17 +91,18 @@ const LoginPage = () => {
   
   // Redirect if already logged in
   useEffect(() => {
-    console.log('LoginPage: Checking authentication state', { isAuthenticated, loading });
-    if (isAuthenticated && !loading && !processingRedirect) {
+    console.log('LoginPage: Checking authentication state', { isAuthenticated, authLoading });
+    if (isAuthenticated && !authLoading && !processingRedirect) {
       console.log('LoginPage: User is authenticated, redirecting to dashboard');
       navigate('/dashboard');
     }
-  }, [isAuthenticated, loading, navigate, processingRedirect]);
+  }, [isAuthenticated, authLoading, navigate, processingRedirect]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     console.log('LoginPage: Submitting form', { isLogin, email });
+    setLocalLoading(true);
     
     try {
       if (isLogin) {
@@ -106,6 +110,7 @@ const LoginPage = () => {
       } else {
         if (!name.trim()) {
           toast.error('Please enter your name');
+          setLocalLoading(false);
           return;
         }
         await signup(email, password, name, role);
@@ -114,8 +119,13 @@ const LoginPage = () => {
     } catch (error) {
       console.error('LoginPage: Authentication error:', error);
       // Error toasts are already handled in the auth context
+    } finally {
+      setLocalLoading(false);
     }
   };
+  
+  // Show explicit loading state only when processing redirect
+  const isLoading = processingRedirect || (authLoading && isAuthenticated === null) || localLoading;
   
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
@@ -127,73 +137,82 @@ const LoginPage = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {!isLogin && (
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <span className="ml-2 text-sm text-muted-foreground">
+                {processingRedirect ? 'Processing login...' : 'Loading...'}
+              </span>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {!isLogin && (
+                <div className="space-y-2">
+                  <Label htmlFor="name">Name</Label>
+                  <Input
+                    id="name"
+                    placeholder="Your name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                  />
+                </div>
+              )}
+              
               <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
+                <Label htmlFor="email">Email</Label>
                 <Input
-                  id="name"
-                  placeholder="Your name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  id="email"
+                  type="email"
+                  placeholder="your@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                 />
               </div>
-            )}
-            
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="your@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-            
-            {!isLogin && (
+              
               <div className="space-y-2">
-                <Label>Account Type</Label>
-                <RadioGroup value={role} onValueChange={(value) => setRole(value as UserRole)}>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="user" id="user" />
-                    <Label htmlFor="user">User</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="manager" id="manager" />
-                    <Label htmlFor="manager">Manager</Label>
-                  </div>
-                </RadioGroup>
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
               </div>
-            )}
-            
-            <Button type="submit" className="w-full" disabled={loading || processingRedirect}>
-              {isLogin 
-                ? (loading ? 'Logging in...' : 'Login') 
-                : (loading ? 'Signing Up...' : 'Sign Up')}
-            </Button>
-          </form>
+              
+              {!isLogin && (
+                <div className="space-y-2">
+                  <Label>Account Type</Label>
+                  <RadioGroup value={role} onValueChange={(value) => setRole(value as UserRole)}>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="user" id="user" />
+                      <Label htmlFor="user">User</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="manager" id="manager" />
+                      <Label htmlFor="manager">Manager</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+              )}
+              
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLogin 
+                  ? (localLoading ? 'Logging in...' : 'Login') 
+                  : (localLoading ? 'Signing Up...' : 'Sign Up')}
+              </Button>
+            </form>
+          )}
         </CardContent>
         <CardFooter>
           <Button
             variant="link"
             className="w-full"
             onClick={() => setIsLogin(!isLogin)}
-            disabled={loading || processingRedirect}
+            disabled={isLoading}
           >
             {isLogin ? "Don't have an account? Sign Up" : "Already have an account? Login"}
           </Button>
