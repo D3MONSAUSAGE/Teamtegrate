@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { PieChart, Pie, Cell, Legend } from 'recharts';
+import { PieChart, Pie, Cell, Legend, LegendType, VerticalAlignmentType, HorizontalAlignmentType } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChartIcon } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -58,9 +58,9 @@ const StatusDistributionChart: React.FC<StatusDistributionChartProps> = ({ data 
     
     if (isMobile) {
       return {
-        layout: 'horizontal',
-        verticalAlign: 'bottom', 
-        align: 'center',
+        layout: 'horizontal' as LegendType,
+        verticalAlign: 'bottom' as VerticalAlignmentType, 
+        align: 'center' as HorizontalAlignmentType,
         wrapperStyle: {
           fontSize: baseFontSize, 
           width: '100%', 
@@ -71,9 +71,9 @@ const StatusDistributionChart: React.FC<StatusDistributionChartProps> = ({ data 
     }
     
     return {
-      layout: 'vertical',
-      verticalAlign: 'middle',
-      align: 'right',
+      layout: 'vertical' as LegendType,
+      verticalAlign: 'middle' as VerticalAlignmentType,
+      align: 'right' as HorizontalAlignmentType,
       wrapperStyle: {
         fontSize: baseFontSize
       }
