@@ -21,14 +21,15 @@ const ProfileSection = () => {
     if (user) {
       const fetchProfile = async () => {
         try {
+          // Use users table instead of profiles
           const { data, error } = await supabase
-            .from('profiles')
+            .from('users')
             .select('avatar_url')
             .eq('id', user.id)
             .maybeSingle();
             
           if (error) {
-            console.error('Error fetching profile:', error);
+            console.error('Error fetching user data:', error);
             return;
           }
           
@@ -36,7 +37,7 @@ const ProfileSection = () => {
             setAvatarUrl(data.avatar_url);
           }
         } catch (error) {
-          console.error('Error fetching profile:', error);
+          console.error('Error fetching user data:', error);
         }
       };
       
@@ -62,28 +63,44 @@ const ProfileSection = () => {
       const fileExt = file.name.split('.').pop();
       const filePath = `${user?.id}/${Math.random().toString(36).substring(2)}.${fileExt}`;
       
+      // Create the bucket if it doesn't exist
+      const { error: bucketError } = await supabase.storage.createBucket('avatars', {
+        public: true,
+        fileSizeLimit: 1024 * 1024 * 2 // 2MB
+      });
+      
+      if (bucketError && bucketError.message !== 'Bucket already exists') {
+        console.error('Error creating bucket:', bucketError);
+        toast.error('Error setting up storage');
+        setUploading(false);
+        return;
+      }
+      
       const { error: uploadError } = await supabase.storage
-        .from('profiles')
+        .from('avatars')
         .upload(filePath, file);
         
       if (uploadError) {
         toast.error('Error uploading avatar');
         console.error(uploadError);
+        setUploading(false);
         return;
       }
       
       const { data: { publicUrl } } = supabase.storage
-        .from('profiles')
+        .from('avatars')
         .getPublicUrl(filePath);
       
+      // Update users table instead of profiles
       const { error: updateError } = await supabase
-        .from('profiles')
+        .from('users')
         .update({ avatar_url: publicUrl })
         .eq('id', user?.id);
         
       if (updateError) {
         toast.error('Error updating profile');
         console.error(updateError);
+        setUploading(false);
         return;
       }
       
@@ -106,12 +123,26 @@ const ProfileSection = () => {
 
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.updateUser({
+      // Update auth user metadata
+      const { error: authError } = await supabase.auth.updateUser({
         data: { name }
       });
 
-      if (error) {
-        toast.error('Failed to update profile: ' + error.message);
+      if (authError) {
+        toast.error('Failed to update auth profile: ' + authError.message);
+        setIsLoading(false);
+        return;
+      }
+
+      // Update users table
+      const { error: dbError } = await supabase
+        .from('users')
+        .update({ name })
+        .eq('id', user?.id);
+
+      if (dbError) {
+        toast.error('Failed to update database profile: ' + dbError.message);
+        setIsLoading(false);
         return;
       }
 
