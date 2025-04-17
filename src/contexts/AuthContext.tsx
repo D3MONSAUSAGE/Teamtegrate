@@ -29,81 +29,122 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
-  console.log('AuthProvider Initial State', { user, loading });
+  console.log('AuthProvider: Current State', { user, loading, isAuthenticated: !!user });
 
   useEffect(() => {
     console.log('AuthProvider: Setting up auth state listener');
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('AuthProvider: Auth State Changed', { event, session });
-        setSession(session);
-        if (session?.user) {
-          const { data: userData, error } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', session.user.id)
-            .maybeSingle();
+    let authStateSubscription: { unsubscribe: () => void } | null = null;
+    
+    // First set up the auth state change listener
+    try {
+      const { data } = supabase.auth.onAuthStateChange(
+        async (event, session) => {
+          console.log('AuthProvider: Auth State Changed', { event, session });
+          setSession(session);
+          
+          if (session?.user) {
+            try {
+              const { data: userData, error } = await supabase
+                .from('users')
+                .select('*')
+                .eq('id', session.user.id)
+                .maybeSingle();
 
-          console.log('AuthProvider: User Data Fetch', { userData, error });
+              console.log('AuthProvider: User Data Fetch', { userData, error });
 
-          if (error) {
-            console.error('Error fetching user data:', error);
-            setUser(null);
-            return;
-          }
+              if (error) {
+                console.error('Error fetching user data:', error);
+                setUser(null);
+                setLoading(false);
+                return;
+              }
 
-          if (userData) {
-            const user: User = {
-              id: userData.id,
-              email: userData.email,
-              name: userData.name,
-              role: userData.role as UserRole,
-              createdAt: new Date(userData.created_at),
-            };
-            setUser(user);
+              if (userData) {
+                const user: User = {
+                  id: userData.id,
+                  email: userData.email,
+                  name: userData.name,
+                  role: userData.role as UserRole,
+                  createdAt: new Date(userData.created_at),
+                };
+                setUser(user);
+              } else {
+                setUser(null);
+              }
+            } catch (error) {
+              console.error('Error in auth state change handler:', error);
+              setUser(null);
+            }
           } else {
             setUser(null);
           }
-        } else {
-          setUser(null);
+          setLoading(false);
         }
-      }
-    );
-
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      console.log('AuthProvider: Initial Session Check', { session });
-      setSession(session);
-      if (session?.user) {
-        const { data: userData, error } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', session.user.id)
-          .maybeSingle();
-
-        console.log('AuthProvider: Initial User Data Fetch', { userData, error });
-
+      );
+      
+      authStateSubscription = data.subscription;
+    } catch (error) {
+      console.error('Error setting up auth state change listener:', error);
+      setLoading(false);
+    }
+    
+    // Then check for an existing session
+    const initializeAuth = async () => {
+      try {
+        console.log('AuthProvider: Checking for existing session');
+        const { data, error } = await supabase.auth.getSession();
+        
         if (error) {
-          console.error('Error fetching user data:', error);
-          setUser(null);
+          console.error('Error getting session:', error);
+          setLoading(false);
           return;
         }
+        
+        console.log('AuthProvider: Initial Session Check', { session: data.session });
+        
+        if (data.session?.user) {
+          try {
+            const { data: userData, error } = await supabase
+              .from('users')
+              .select('*')
+              .eq('id', data.session.user.id)
+              .maybeSingle();
 
-        if (userData) {
-          const user: User = {
-            id: userData.id,
-            email: userData.email,
-            name: userData.name,
-            role: userData.role as UserRole,
-            createdAt: new Date(userData.created_at),
-          };
-          setUser(user);
+            console.log('AuthProvider: Initial User Data Fetch', { userData, error });
+
+            if (error) {
+              console.error('Error fetching user data:', error);
+              setLoading(false);
+              return;
+            }
+
+            if (userData) {
+              const user: User = {
+                id: userData.id,
+                email: userData.email,
+                name: userData.name,
+                role: userData.role as UserRole,
+                createdAt: new Date(userData.created_at),
+              };
+              setUser(user);
+            }
+          } catch (error) {
+            console.error('Error fetching user data:', error);
+          }
         }
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
-    });
-
+    };
+    
+    initializeAuth();
+    
     return () => {
-      subscription.unsubscribe();
+      if (authStateSubscription) {
+        authStateSubscription.unsubscribe();
+      }
     };
   }, []);
 
@@ -111,14 +152,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     console.log('AuthProvider: Login Attempt', { email });
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      console.log('AuthProvider: Login Result', { error });
+      console.log('AuthProvider: Login Result', { data, error });
 
       if (error) throw error;
+      
+      toast.success('Logged in successfully!');
+      return;
 
     } catch (error: any) {
       console.error('AuthProvider: Error logging in:', error);
@@ -133,7 +177,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     console.log('AuthProvider: Signup Attempt', { email, name, role });
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -144,7 +188,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       });
 
-      console.log('AuthProvider: Signup Result', { error });
+      console.log('AuthProvider: Signup Result', { data, error });
 
       if (error) throw error;
       
@@ -160,14 +204,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
+    setLoading(true);
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       setUser(null);
+      toast.success('Logged out successfully');
     } catch (error: any) {
       console.error('AuthProvider: Error logging out:', error);
       toast.error('Error logging out');
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 

@@ -24,36 +24,40 @@ const LoginPage = () => {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [role, setRole] = useState<UserRole>('user');
+  const [processingRedirect, setProcessingRedirect] = useState(false);
   const { login, signup, isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   
-  console.log('LoginPage Render - Loading:', loading, 'Authenticated:', isAuthenticated);
+  console.log('LoginPage Render', { loading, isAuthenticated, processingRedirect });
 
   // Handle auth redirect from email verification
   useEffect(() => {
-    console.log('LoginPage: Checking auth redirect');
     const handleAuthRedirect = async () => {
-      if (window.location.hash) {
+      // Check if we have hash parameters from a redirect
+      if (window.location.hash && !processingRedirect) {
         console.log('LoginPage: Hash found in URL');
-        const hashParams = new URLSearchParams(
-          window.location.hash.substring(1)
-        );
+        setProcessingRedirect(true);
         
-        const accessToken = hashParams.get('access_token');
-        const refreshToken = hashParams.get('refresh_token');
-        const type = hashParams.get('type');
-        
-        console.log('LoginPage: Tokens', { accessToken, refreshToken, type });
-        
-        if (accessToken && refreshToken) {
-          try {
+        try {
+          const hashParams = new URLSearchParams(
+            window.location.hash.substring(1)
+          );
+          
+          const accessToken = hashParams.get('access_token');
+          const refreshToken = hashParams.get('refresh_token');
+          const type = hashParams.get('type');
+          
+          console.log('LoginPage: Tokens', { accessToken: !!accessToken, refreshToken: !!refreshToken, type });
+          
+          if (accessToken && refreshToken) {
+            console.log('LoginPage: Setting session with tokens');
             const { data, error } = await supabase.auth.setSession({
               access_token: accessToken,
               refresh_token: refreshToken,
             });
             
-            console.log('LoginPage: Session Set Result', { data, error });
+            console.log('LoginPage: Session Set Result', { data: !!data, error });
             
             if (error) {
               throw error;
@@ -65,13 +69,16 @@ const LoginPage = () => {
               toast.success('You are now signed in.');
             }
             
+            // Clean up URL
             window.history.replaceState({}, document.title, window.location.pathname);
             
+            // Redirect to dashboard
             navigate('/dashboard');
-          } catch (error) {
-            console.error('LoginPage: Error setting session:', error);
-            toast.error('Authentication failed. Please try again.');
           }
+        } catch (error) {
+          console.error('LoginPage: Error setting session:', error);
+          toast.error('Authentication failed. Please try again.');
+          setProcessingRedirect(false);
         }
       }
     };
@@ -81,12 +88,12 @@ const LoginPage = () => {
   
   // Redirect if already logged in
   useEffect(() => {
-    console.log('LoginPage: Checking authentication state');
-    if (isAuthenticated && !loading) {
-      console.log('LoginPage: Navigating to dashboard');
+    console.log('LoginPage: Checking authentication state', { isAuthenticated, loading });
+    if (isAuthenticated && !loading && !processingRedirect) {
+      console.log('LoginPage: User is authenticated, redirecting to dashboard');
       navigate('/dashboard');
     }
-  }, [isAuthenticated, loading, navigate]);
+  }, [isAuthenticated, loading, navigate, processingRedirect]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,7 +103,6 @@ const LoginPage = () => {
     try {
       if (isLogin) {
         await login(email, password);
-        toast.success('Logged in successfully!');
       } else {
         if (!name.trim()) {
           toast.error('Please enter your name');
@@ -107,7 +113,7 @@ const LoginPage = () => {
       // The redirect will be handled by the useEffect above
     } catch (error) {
       console.error('LoginPage: Authentication error:', error);
-      // Toast is already handled in the auth context
+      // Error toasts are already handled in the auth context
     }
   };
   
@@ -175,8 +181,10 @@ const LoginPage = () => {
               </div>
             )}
             
-            <Button type="submit" className="w-full" disabled={loading}>
-              {isLogin ? (loading ? 'Logging in...' : 'Login') : (loading ? 'Signing Up...' : 'Sign Up')}
+            <Button type="submit" className="w-full" disabled={loading || processingRedirect}>
+              {isLogin 
+                ? (loading ? 'Logging in...' : 'Login') 
+                : (loading ? 'Signing Up...' : 'Sign Up')}
             </Button>
           </form>
         </CardContent>
@@ -185,7 +193,7 @@ const LoginPage = () => {
             variant="link"
             className="w-full"
             onClick={() => setIsLogin(!isLogin)}
-            disabled={loading}
+            disabled={loading || processingRedirect}
           >
             {isLogin ? "Don't have an account? Sign Up" : "Already have an account? Login"}
           </Button>
