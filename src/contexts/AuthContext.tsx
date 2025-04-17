@@ -28,153 +28,61 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [authInitialized, setAuthInitialized] = useState(false);
 
-  console.log('AuthProvider: Current State', { 
-    user, 
-    loading, 
-    isAuthenticated: !!user, 
-    authInitialized 
-  });
-
+  // Check if user is logged in on mount and set up auth state listener
   useEffect(() => {
-    console.log('AuthProvider: Setting up auth state listener');
-    let authStateSubscription: { unsubscribe: () => void } | null = null;
-    
-    const setupAuth = async () => {
-      try {
-        // First set up the auth state change listener
-        const { data } = supabase.auth.onAuthStateChange(
-          async (event, newSession) => {
-            console.log('AuthProvider: Auth State Changed', { event, newSession: !!newSession });
-            
-            setSession(newSession);
-            
-            if (newSession?.user) {
-              try {
-                const { data: userData, error } = await supabase
-                  .from('users')
-                  .select('*')
-                  .eq('id', newSession.user.id)
-                  .maybeSingle();
-
-                console.log('AuthProvider: User Data Fetch', { userData, error });
-
-                if (error) {
-                  console.error('Error fetching user data:', error);
-                  setUser(null);
-                  setLoading(false);
-                  return;
-                }
-
-                if (userData) {
-                  const user: User = {
-                    id: userData.id,
-                    email: userData.email,
-                    name: userData.name,
-                    role: userData.role as UserRole,
-                    createdAt: new Date(userData.created_at),
-                  };
-                  setUser(user);
-                } else {
-                  // User exists in auth but not in users table
-                  console.warn('User exists in auth but not in users table');
-                  setUser(null);
-                }
-              } catch (error) {
-                console.error('Error in auth state change handler:', error);
-                setUser(null);
-              } finally {
-                setLoading(false);
-              }
-            } else {
-              setUser(null);
-              setLoading(false);
-            }
-          }
-        );
-        
-        authStateSubscription = data.subscription;
-        
-        // Then check for an existing session
-        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-        
-        if (sessionError) {
-          console.error('Error getting session:', sessionError);
-          setLoading(false);
-          setAuthInitialized(true);
-          return;
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setSession(session);
+        if (session?.user) {
+          const userData: User = {
+            id: session.user.id,
+            email: session.user.email || '',
+            name: session.user.user_metadata.name || session.user.email?.split('@')[0] || '',
+            role: session.user.user_metadata.role as UserRole || 'user',
+            createdAt: new Date(session.user.created_at),
+          };
+          setUser(userData);
+        } else {
+          setUser(null);
         }
-        
-        console.log('AuthProvider: Initial Session Check', { session: !!sessionData.session });
-        
-        if (sessionData.session?.user) {
-          try {
-            const { data: userData, error } = await supabase
-              .from('users')
-              .select('*')
-              .eq('id', sessionData.session.user.id)
-              .maybeSingle();
-
-            console.log('AuthProvider: Initial User Data Fetch', { userData, error });
-
-            if (error) {
-              console.error('Error fetching user data:', error);
-              setLoading(false);
-              setAuthInitialized(true);
-              return;
-            }
-
-            if (userData) {
-              const user: User = {
-                id: userData.id,
-                email: userData.email,
-                name: userData.name,
-                role: userData.role as UserRole,
-                createdAt: new Date(userData.created_at),
-              };
-              setUser(user);
-            }
-          } catch (error) {
-            console.error('Error fetching user data:', error);
-          }
-        }
-        
-        setLoading(false);
-        setAuthInitialized(true);
-      } catch (error) {
-        console.error('Error in auth setup:', error);
-        setLoading(false);
-        setAuthInitialized(true);
       }
-    };
-    
-    setupAuth();
-    
+    );
+
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session?.user) {
+        const userData: User = {
+          id: session.user.id,
+          email: session.user.email || '',
+          name: session.user.user_metadata.name || session.user.email?.split('@')[0] || '',
+          role: session.user.user_metadata.role as UserRole || 'user',
+          createdAt: new Date(session.user.created_at),
+        };
+        setUser(userData);
+      }
+      setLoading(false);
+    });
+
     return () => {
-      if (authStateSubscription) {
-        authStateSubscription.unsubscribe();
-      }
+      subscription.unsubscribe();
     };
   }, []);
 
   const login = async (email: string, password: string) => {
-    console.log('AuthProvider: Login Attempt', { email });
     setLoading(true);
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      console.log('AuthProvider: Login Result', { data: !!data, error });
-
       if (error) throw error;
-      
-      toast.success('Logged in successfully!');
-      return;
+
     } catch (error: any) {
-      console.error('AuthProvider: Error logging in:', error);
+      console.error('Error logging in:', error);
       toast.error(error.message || 'Error logging in');
       throw error;
     } finally {
@@ -183,10 +91,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signup = async (email: string, password: string, name: string, role: UserRole) => {
-    console.log('AuthProvider: Signup Attempt', { email, name, role });
     setLoading(true);
     try {
-      const { data, error } = await supabase.auth.signUp({
+      const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -197,13 +104,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       });
 
-      console.log('AuthProvider: Signup Result', { data: !!data, error });
-
       if (error) throw error;
       
       toast.success('Account created successfully! Please check your email for verification.');
+
     } catch (error: any) {
-      console.error('AuthProvider: Error signing up:', error);
+      console.error('Error signing up:', error);
       toast.error(error.message || 'Error creating account');
       throw error;
     } finally {
@@ -212,24 +118,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
-    setLoading(true);
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       setUser(null);
-      toast.success('Logged out successfully');
     } catch (error: any) {
-      console.error('AuthProvider: Error logging out:', error);
+      console.error('Error logging out:', error);
       toast.error('Error logging out');
       throw error;
-    } finally {
-      setLoading(false);
     }
   };
 
   const value = {
     user,
-    loading: loading || !authInitialized,
+    loading,
     login,
     signup,
     logout,

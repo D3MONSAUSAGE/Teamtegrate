@@ -20,25 +20,22 @@ export const fetchTasks = async (user: User | null, setTasks: React.Dispatch<Rea
     }
     
     if (data) {
-      const formattedTasks = data.map(task => {
-        const formattedTask: Task = {
-          id: task.id,
-          userId: task.user_id,
-          projectId: task.project_id,
-          title: task.title || '',
-          description: task.description || '',
-          deadline: new Date(task.deadline || Date.now()),
-          priority: (task.priority as any) || 'Medium',
-          status: (task.status as any) || 'To Do',
-          createdAt: new Date(task.created_at || Date.now()),
-          updatedAt: new Date(task.updated_at || Date.now()),
-          completedAt: task.completed_at ? new Date(task.completed_at) : undefined,
-          assignedToId: task.assigned_to_id,
-          cost: task.cost || 0,
-          comments: []
-        };
-        return formattedTask;
-      });
+      const formattedTasks = data.map(task => ({
+        ...task,
+        id: task.id,
+        userId: task.user_id,
+        projectId: task.project_id,
+        title: task.title || '',
+        description: task.description || '',
+        deadline: new Date(task.deadline || Date.now()),
+        priority: (task.priority as any) || 'Medium',
+        status: (task.status as any) || 'To Do',
+        createdAt: new Date(task.created_at || Date.now()),
+        updatedAt: new Date(task.updated_at || Date.now()),
+        completedAt: task.completed_at ? new Date(task.completed_at) : undefined,
+        assignedToId: task.assigned_to_id,
+        cost: task.cost || 0,
+      }));
       
       // Fetch comments for each task
       for (const task of formattedTasks) {

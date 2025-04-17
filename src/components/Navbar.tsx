@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { useAuth } from '@/contexts/AuthContext';
@@ -20,18 +21,18 @@ const Navbar = () => {
   
   useEffect(() => {
     if (user) {
-      // Fetch user data including avatar
+      // Fetch profile data including avatar
       const fetchAvatar = async () => {
         try {
-          // Use the users table instead of profiles
+          // Use maybeSingle() instead of single() to prevent errors when no record is found
           const { data, error } = await supabase
-            .from('users')
+            .from('profiles')
             .select('avatar_url')
             .eq('id', user.id)
             .maybeSingle();
             
           if (error) {
-            console.error('Error fetching user avatar:', error);
+            console.error('Error fetching profile avatar:', error);
             return;
           }
           
