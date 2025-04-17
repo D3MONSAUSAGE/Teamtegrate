@@ -1,4 +1,5 @@
-import { Task, Project, Comment } from '@/types';
+
+import { Task, Project, TaskComment } from '@/types';
 import { toast } from '@/components/ui/sonner';
 
 export const addCommentToTask = (
@@ -9,7 +10,7 @@ export const addCommentToTask = (
   projects: Project[],
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
 ) => {
-  const newComment: Comment = {
+  const newComment: TaskComment = {
     ...comment,
     id: Math.random().toString(36).substring(2, 11),
     createdAt: new Date(),

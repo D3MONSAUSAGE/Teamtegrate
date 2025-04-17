@@ -1,6 +1,6 @@
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { Task, Project, TaskStatus, TaskPriority, DailyScore, Comment } from '@/types';
+import { Task, Project, TaskStatus, TaskPriority, DailyScore, TaskComment } from '@/types';
 import { useAuth } from '../AuthContext';
 import { fetchTasks, fetchProjects } from './taskApi';
 import { calculateDailyScore } from './taskMetrics';
