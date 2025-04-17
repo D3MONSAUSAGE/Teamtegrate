@@ -13,6 +13,7 @@ import TasksPage from "./pages/TasksPage";
 import ProjectsPage from "./pages/ProjectsPage";
 import TeamPage from "./pages/TeamPage";
 import SettingsPage from "./pages/SettingsPage";
+import ReportsPage from "./pages/ReportsPage";
 import NotFound from "./pages/NotFound";
 import Index from "./pages/Index";
 
@@ -34,6 +35,7 @@ const App = () => (
                 <Route path="tasks" element={<TasksPage />} />
                 <Route path="projects" element={<ProjectsPage />} />
                 <Route path="team" element={<TeamPage />} />
+                <Route path="reports" element={<ReportsPage />} />
                 <Route path="settings" element={<SettingsPage />} />
               </Route>
               <Route path="*" element={<NotFound />} />

@@ -8,7 +8,8 @@ import {
   CheckSquare, 
   FolderKanban,  
   Users, 
-  Settings 
+  Settings,
+  BarChart3
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -46,7 +47,13 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
       name: 'Team',
       path: '/dashboard/team',
       icon: <Users className="h-5 w-5" />,
-      allowed: true, // Changed from user?.role === 'manager' to true
+      allowed: true,
+    },
+    {
+      name: 'Reports',
+      path: '/dashboard/reports',
+      icon: <BarChart3 className="h-5 w-5" />,
+      allowed: true,
     },
     {
       name: 'Settings',

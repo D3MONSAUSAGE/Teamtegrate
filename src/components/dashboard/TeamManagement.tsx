@@ -3,11 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Users, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useBreakpoint } from "@/hooks/use-mobile";
 
 const TeamManagement: React.FC = () => {
   const [teamMembersCount, setTeamMembersCount] = useState(0);
-  const isMobile = useIsMobile();
+  const { isMobile } = useBreakpoint();
   
   useEffect(() => {
     const storedMembers = localStorage.getItem('teamMembers');
