@@ -73,7 +73,7 @@ const CalendarPage = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <div className="lg:col-span-4 xl:col-span-3">
-          <Card>
+          <Card className="w-full">
             <CardContent className="p-4">
               <div className="flex items-center mb-2">
                 <CalendarIcon className="mr-2 h-4 w-4" />
@@ -83,7 +83,7 @@ const CalendarPage = () => {
                 mode="single"
                 selected={selectedDate}
                 onSelect={(date) => date && setSelectedDate(date)}
-                className="rounded-md border"
+                className="rounded-md border w-full"
                 components={{
                   // Fix: Update DayContent to safely handle dates
                   DayContent: (props) => {
