@@ -7,6 +7,11 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { StatusDistributionData, COLORS } from './types';
 
+// Define the specific types needed for Legend component
+type LegendLayout = 'horizontal' | 'vertical';
+type VerticalAlign = 'top' | 'middle' | 'bottom';
+type HorizontalAlign = 'left' | 'center' | 'right';
+
 interface StatusDistributionChartProps {
   data: StatusDistributionData[];
 }
@@ -58,9 +63,9 @@ const StatusDistributionChart: React.FC<StatusDistributionChartProps> = ({ data 
     
     if (isMobile) {
       return {
-        layout: 'horizontal',
-        verticalAlign: 'bottom', 
-        align: 'center',
+        layout: 'horizontal' as LegendLayout,
+        verticalAlign: 'bottom' as VerticalAlign, 
+        align: 'center' as HorizontalAlign,
         wrapperStyle: {
           fontSize: baseFontSize, 
           width: '100%', 
@@ -71,9 +76,9 @@ const StatusDistributionChart: React.FC<StatusDistributionChartProps> = ({ data 
     }
     
     return {
-      layout: 'vertical',
-      verticalAlign: 'middle',
-      align: 'right',
+      layout: 'vertical' as LegendLayout,
+      verticalAlign: 'middle' as VerticalAlign,
+      align: 'right' as HorizontalAlign,
       wrapperStyle: {
         fontSize: baseFontSize
       }
