@@ -62,6 +62,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
       icon: <BarChart3 className="h-5 w-5" />,
       allowed: true,
     },
+    // Moved Settings to the bottom, just before the user info section
     {
       name: 'Settings',
       path: '/dashboard/settings',
