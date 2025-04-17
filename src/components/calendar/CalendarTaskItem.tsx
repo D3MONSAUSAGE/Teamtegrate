@@ -27,8 +27,24 @@ const CalendarTaskItem: React.FC<CalendarTaskItemProps> = ({
   };
   
   const isOverdue = () => {
-    const now = new Date();
-    return task.status !== 'Completed' && task.deadline < now;
+    try {
+      const now = new Date();
+      const deadline = new Date(task.deadline);
+      return task.status !== 'Completed' && deadline < now;
+    } catch (error) {
+      console.error("Invalid deadline date for task:", task.id);
+      return false;
+    }
+  };
+
+  const formatTaskTime = (date: Date | string) => {
+    try {
+      const taskDate = new Date(date);
+      return format(taskDate, 'h:mm a');
+    } catch (error) {
+      console.error("Invalid date for formatting:", date, error);
+      return "Invalid time";
+    }
   };
   
   if (minimal) {
@@ -66,7 +82,7 @@ const CalendarTaskItem: React.FC<CalendarTaskItemProps> = ({
               {task.description}
             </div>
             <div className="text-xs mt-1 font-medium">
-              {format(new Date(task.deadline), 'h:mm a')}
+              {formatTaskTime(task.deadline)}
             </div>
           </>
         )}

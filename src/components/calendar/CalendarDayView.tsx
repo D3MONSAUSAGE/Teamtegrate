@@ -19,20 +19,40 @@ const CalendarDayView: React.FC<CalendarDayViewProps> = ({
   onTaskClick
 }) => {
   const dayStart = startOfDay(selectedDate);
-  const tasksForDay = tasks.filter(task => 
-    isSameDay(new Date(task.deadline), selectedDate)
-  );
+  const tasksForDay = tasks.filter(task => {
+    try {
+      const taskDeadline = new Date(task.deadline);
+      return isSameDay(taskDeadline, selectedDate);
+    } catch (error) {
+      console.error("Invalid date for task in day view:", task.id);
+      return false;
+    }
+  });
   
   // Create time blocks for the day (hourly)
   const timeBlocks = Array.from({ length: 24 }, (_, i) => {
     const hour = addHours(dayStart, i);
     const hourTasks = tasksForDay.filter(task => {
-      const taskDate = new Date(task.deadline);
-      return taskDate.getHours() === hour.getHours();
+      try {
+        const taskDate = new Date(task.deadline);
+        return taskDate.getHours() === hour.getHours();
+      } catch (error) {
+        console.error("Invalid task date in hour filtering:", task.id);
+        return false;
+      }
     });
     
     return { hour, tasks: hourTasks };
   });
+  
+  const formatTimeLabel = (date: Date) => {
+    try {
+      return format(date, 'h:mm a');
+    } catch (error) {
+      console.error("Error formatting time:", error);
+      return "Invalid time";
+    }
+  };
   
   return (
     <Card className="h-[calc(100vh-240px)]">
@@ -47,7 +67,7 @@ const CalendarDayView: React.FC<CalendarDayViewProps> = ({
             <div key={index} className="relative">
               <div className="p-2 sticky top-0 bg-background z-10 border-b">
                 <div className="text-sm font-medium text-muted-foreground">
-                  {format(block.hour, 'h:mm a')}
+                  {formatTimeLabel(block.hour)}
                 </div>
               </div>
               <div className="p-2">

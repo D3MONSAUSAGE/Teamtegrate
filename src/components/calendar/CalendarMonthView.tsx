@@ -53,9 +53,15 @@ const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
         <ScrollArea className="h-[calc(100vh-350px)]">
           <div className="grid grid-cols-7 auto-rows-[minmax(100px,1fr)]">
             {days.map((day, i) => {
-              const dayTasks = tasks.filter(task => 
-                isSameDay(new Date(task.deadline), day)
-              );
+              const dayTasks = tasks.filter(task => {
+                try {
+                  const taskDeadline = new Date(task.deadline);
+                  return isSameDay(taskDeadline, day);
+                } catch (error) {
+                  console.error("Invalid date for task in month view:", task.id);
+                  return false;
+                }
+              });
               
               const withinCurrentMonth = isSameMonth(day, selectedDate);
               

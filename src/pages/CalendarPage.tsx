@@ -23,7 +23,17 @@ const CalendarPage = () => {
   
   // Function to decorate days with task indicators
   const decorateWithTaskCount = (date: Date) => {
-    const tasksOnDay = tasks.filter(task => isSameDay(new Date(task.deadline), date));
+    const tasksOnDay = tasks.filter(task => {
+      // Ensure task.deadline is a valid Date before comparing
+      try {
+        const taskDeadline = new Date(task.deadline);
+        return isSameDay(taskDeadline, date);
+      } catch (error) {
+        console.error("Invalid date for task:", task.id);
+        return false;
+      }
+    });
+    
     return tasksOnDay.length > 0 ? (
       <div className="w-full h-full flex items-center justify-center">
         <Badge variant="secondary" className="w-5 h-5 flex items-center justify-center p-0 text-xs">
@@ -75,15 +85,20 @@ const CalendarPage = () => {
                 onSelect={(date) => date && setSelectedDate(date)}
                 className="rounded-md border"
                 components={{
-                  // Add custom day rendering with task indicators
-                  DayContent: ({ day }) => (
-                    <div className="relative w-full h-full flex items-center justify-center">
-                      <span>{format(day, 'd')}</span>
-                      <div className="absolute bottom-0 left-0 right-0 flex justify-center">
-                        {decorateWithTaskCount(day)}
+                  // Fix: Update DayContent to safely handle dates
+                  DayContent: (props) => {
+                    // Ensure day is a valid Date object
+                    const dayDate = props.date;
+                    
+                    return (
+                      <div className="relative w-full h-full flex items-center justify-center">
+                        <span>{format(dayDate, 'd')}</span>
+                        <div className="absolute bottom-0 left-0 right-0 flex justify-center">
+                          {decorateWithTaskCount(dayDate)}
+                        </div>
                       </div>
-                    </div>
-                  ),
+                    );
+                  },
                 }}
               />
             </CardContent>

@@ -61,8 +61,34 @@ const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
   };
 
   const isOverdue = () => {
-    const now = new Date();
-    return task.status !== 'Completed' && task.deadline < now;
+    try {
+      const now = new Date();
+      const deadline = new Date(task.deadline);
+      return task.status !== 'Completed' && deadline < now;
+    } catch (error) {
+      console.error("Invalid deadline date for task:", task.id);
+      return false;
+    }
+  };
+
+  const formatDate = (date: Date | string) => {
+    try {
+      const formattedDate = new Date(date);
+      return format(formattedDate, 'MMM d, yyyy');
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return "Invalid date";
+    }
+  };
+
+  const formatTime = (date: Date | string) => {
+    try {
+      const formattedDate = new Date(date);
+      return format(formattedDate, 'h:mm a');
+    } catch (error) {
+      console.error("Error formatting time:", error);
+      return "Invalid time";
+    }
   };
 
   const handleStatusChange = (status: 'To Do' | 'In Progress' | 'Pending' | 'Completed') => {
@@ -90,14 +116,14 @@ const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
               <div className="flex items-center">
                 <CalendarIcon className="h-4 w-4 mr-2 text-muted-foreground" />
                 <span className="text-sm">
-                  {format(new Date(task.deadline), 'MMM d, yyyy')}
+                  {formatDate(task.deadline)}
                 </span>
               </div>
               
               <div className="flex items-center">
                 <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
                 <span className="text-sm">
-                  {format(new Date(task.deadline), 'h:mm a')}
+                  {formatTime(task.deadline)}
                 </span>
               </div>
               
@@ -132,7 +158,12 @@ const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
                 Comments
               </div>
               
-              <TaskCommentsList task={task} className="mt-2 max-h-40 overflow-y-auto" />
+              {task.comments && task.comments.length > 0 ? (
+                <TaskCommentsList taskComments={task.comments} className="mt-2 max-h-40 overflow-y-auto" />
+              ) : (
+                <div className="text-sm text-muted-foreground mt-2">No comments yet</div>
+              )}
+              
               <TaskCommentForm taskId={task.id} />
             </div>
           </div>

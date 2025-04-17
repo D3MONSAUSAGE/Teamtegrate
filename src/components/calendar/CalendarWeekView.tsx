@@ -57,9 +57,15 @@ const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
         <ScrollArea className="h-[calc(100vh-350px)]">
           <div className="grid grid-cols-7 divide-x">
             {weekDays.map((day, dayIndex) => {
-              const dayTasks = tasks.filter(task => 
-                isSameDay(new Date(task.deadline), day)
-              );
+              const dayTasks = tasks.filter(task => {
+                try {
+                  const taskDeadline = new Date(task.deadline);
+                  return isSameDay(taskDeadline, day);
+                } catch (error) {
+                  console.error("Invalid date for task in week view:", task.id);
+                  return false;
+                }
+              });
               
               return (
                 <div key={dayIndex} className="min-h-[100px]">
