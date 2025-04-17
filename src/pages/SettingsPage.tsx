@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,12 +7,38 @@ import { Separator } from "@/components/ui/separator";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from '@/components/ui/sonner';
 import { useAuth } from '@/contexts/AuthContext';
+import { Save } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const SettingsPage = () => {
   const { user } = useAuth();
+  const [name, setName] = useState(user?.name || '');
+  const [isLoading, setIsLoading] = useState(false);
   
-  const handleSave = () => {
-    toast.success('Settings saved successfully!');
+  const handleSave = async () => {
+    if (!name.trim()) {
+      toast.error('Name cannot be empty');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        data: { name }
+      });
+
+      if (error) {
+        toast.error('Failed to update profile: ' + error.message);
+        return;
+      }
+
+      toast.success('Profile updated successfully!');
+    } catch (error) {
+      console.error('Profile update error:', error);
+      toast.error('An unexpected error occurred');
+    } finally {
+      setIsLoading(false);
+    }
   };
   
   return (
@@ -28,18 +53,30 @@ const SettingsPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Full Name</Label>
-                <Input id="name" defaultValue={user?.name} />
+                <Input 
+                  id="name" 
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
               </div>
               
               <div className="space-y-2">
                 <Label htmlFor="email">Email Address</Label>
-                <Input id="email" defaultValue={user?.email} readOnly />
+                <Input 
+                  id="email" 
+                  defaultValue={user?.email} 
+                  readOnly 
+                />
               </div>
             </div>
             
             <div className="space-y-2">
               <Label htmlFor="role">Role</Label>
-              <Input id="role" defaultValue={user?.role === 'manager' ? 'Manager' : 'User'} readOnly />
+              <Input 
+                id="role" 
+                defaultValue={user?.role === 'manager' ? 'Manager' : 'User'} 
+                readOnly 
+              />
             </div>
           </div>
         </div>
@@ -113,7 +150,18 @@ const SettingsPage = () => {
         
         <div className="flex justify-end gap-2 pt-4">
           <Button variant="outline">Cancel</Button>
-          <Button onClick={handleSave}>Save Changes</Button>
+          <Button 
+            onClick={handleSave} 
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <>Saving...</>
+            ) : (
+              <>
+                <Save className="mr-2 h-4 w-4" /> Save Changes
+              </>
+            )}
+          </Button>
         </div>
       </div>
     </div>
