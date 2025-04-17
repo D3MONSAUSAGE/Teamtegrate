@@ -62,12 +62,3 @@ export interface DailyScore {
   percentage: number;
   date: Date;
 }
-
-export interface TeamMember {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  managerId: string;
-  createdAt: Date;
-}

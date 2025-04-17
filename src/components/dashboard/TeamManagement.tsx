@@ -4,39 +4,18 @@ import { Button } from "@/components/ui/button";
 import { Users, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useBreakpoint } from "@/hooks/use-mobile";
-import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
 
 const TeamManagement: React.FC = () => {
   const [teamMembersCount, setTeamMembersCount] = useState(0);
   const { isMobile } = useBreakpoint();
-  const { user } = useAuth();
   
   useEffect(() => {
-    const fetchTeamMembers = async () => {
-      if (!user) return;
-      
-      try {
-        const { data, error } = await supabase
-          .from('team_members')
-          .select('id')
-          .eq('manager_id', user.id);
-          
-        if (!error && data) {
-          setTeamMembersCount(data.length);
-        }
-      } catch (error) {
-        console.error('Error fetching team members:', error);
-      }
-    };
-    
-    fetchTeamMembers();
-  }, [user]);
-
-  // If not a manager, don't show team management
-  if (user?.role !== 'manager') {
-    return null;
-  }
+    const storedMembers = localStorage.getItem('teamMembers');
+    if (storedMembers) {
+      const members = JSON.parse(storedMembers);
+      setTeamMembersCount(members.length);
+    }
+  }, []);
 
   return (
     <div>
