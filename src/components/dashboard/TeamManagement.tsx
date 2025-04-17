@@ -3,9 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Users, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const TeamManagement: React.FC = () => {
   const [teamMembersCount, setTeamMembersCount] = useState(0);
+  const isMobile = useIsMobile();
   
   useEffect(() => {
     const storedMembers = localStorage.getItem('teamMembers');
@@ -26,7 +28,7 @@ const TeamManagement: React.FC = () => {
         </Link>
       </div>
       
-      <div className="bg-white p-6 rounded-lg border flex items-center justify-between">
+      <div className="bg-white p-6 rounded-lg border flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-4">
         <div>
           <h3 className="font-semibold">Manage Your Team</h3>
           <p className="text-gray-500">
@@ -37,7 +39,7 @@ const TeamManagement: React.FC = () => {
           </p>
         </div>
         <Link to="/dashboard/team">
-          <Button className="gap-2">
+          <Button className="gap-2 whitespace-nowrap">
             <Users className="h-4 w-4" /> Team Dashboard
           </Button>
         </Link>

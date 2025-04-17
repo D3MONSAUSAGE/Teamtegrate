@@ -9,11 +9,14 @@ import TeamMemberCard from '@/components/team/TeamMemberCard';
 import NoTeamMembers from '@/components/team/NoTeamMembers';
 import useTeamMembers from '@/hooks/useTeamMembers';
 import { useAuth } from '@/contexts/AuthContext';
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const TeamPage = () => {
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
   const [removingMemberId, setRemovingMemberId] = useState<string | null>(null);
   const { user } = useAuth();
+  const isMobile = useIsMobile();
+  
   const {
     teamMembersPerformance,
     teamMembersCount,
@@ -40,10 +43,10 @@ const TeamPage = () => {
   }
   
   return (
-    <div className="p-6">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-2xl font-bold">Team Management</h1>
-        <Button onClick={() => setIsAddMemberOpen(true)} disabled={isLoading}>
+    <div className={`p-3 sm:p-6`}>
+      <div className="flex items-center justify-between mb-8 flex-wrap gap-3">
+        <h1 className="text-xl sm:text-2xl font-bold">Team Management</h1>
+        <Button onClick={() => setIsAddMemberOpen(true)} disabled={isLoading} size={isMobile ? "sm" : "default"}>
           <Plus className="h-4 w-4 mr-2" /> Add Team Member
         </Button>
       </div>
@@ -65,7 +68,7 @@ const TeamPage = () => {
       ) : teamMembersCount === 0 ? (
         <NoTeamMembers onAddMember={() => setIsAddMemberOpen(true)} />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4">
           {teamMembersPerformance.map((member) => (
             <TeamMemberCard 
               key={member.id} 

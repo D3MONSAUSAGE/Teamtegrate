@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Loader2, Trash2 } from 'lucide-react';
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface TeamMemberCardProps {
   member: {
@@ -26,25 +27,27 @@ const TeamMemberCard: React.FC<TeamMemberCardProps> = ({
   onRemove, 
   isRemoving = false 
 }) => {
+  const isMobile = useIsMobile();
+
   return (
     <Card key={member.id}>
       <CardContent className="p-6">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center">
+        <div className={`flex items-start ${isMobile ? 'flex-col' : 'justify-between'} mb-4`}>
+          <div className="flex items-center mb-2">
             <div 
-              className="h-10 w-10 mr-4 rounded-full bg-gray-200 flex items-center justify-center font-semibold text-gray-600"
+              className="h-10 w-10 mr-4 rounded-full bg-gray-200 flex items-center justify-center font-semibold text-gray-600 flex-shrink-0"
             >
               {member.name.substring(0, 1).toUpperCase()}
             </div>
-            <div>
-              <h3 className="font-semibold">{member.name}</h3>
-              <div className="flex items-center space-x-2">
-                <p className="text-sm text-gray-500">{member.role}</p>
-                <p className="text-xs text-gray-400">{member.email}</p>
+            <div className="min-w-0 flex-1">
+              <h3 className="font-semibold truncate">{member.name}</h3>
+              <div className={`flex ${isMobile ? 'flex-col' : 'items-center space-x-2'}`}>
+                <p className="text-sm text-gray-500 truncate">{member.role}</p>
+                <p className={`text-xs text-gray-400 truncate ${isMobile ? 'mt-1' : ''}`}>{member.email}</p>
               </div>
             </div>
           </div>
-          <div className="flex items-center">
+          <div className={`flex items-center ${isMobile ? 'self-end' : ''}`}>
             <Badge variant="outline">{member.totalTasks} Tasks</Badge>
             <Button 
               variant="ghost" 
