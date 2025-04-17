@@ -9,30 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      profiles: {
-        Row: {
-          avatar_url: string | null
-          created_at: string
-          id: string
-          name: string | null
-          role: string | null
-        }
-        Insert: {
-          avatar_url?: string | null
-          created_at?: string
-          id: string
-          name?: string | null
-          role?: string | null
-        }
-        Update: {
-          avatar_url?: string | null
-          created_at?: string
-          id?: string
-          name?: string | null
-          role?: string | null
-        }
-        Relationships: []
-      }
       projects: {
         Row: {
           budget: number | null
@@ -149,34 +125,25 @@ export type Database = {
       }
       users: {
         Row: {
-          created_at: string | null
-          description: string | null
-          end_date: string | null
+          created_at: string
+          email: string
           id: string
-          manager_id: string | null
-          start_date: string | null
-          title: string | null
-          updated_at: string | null
+          name: string
+          role: string
         }
         Insert: {
-          created_at?: string | null
-          description?: string | null
-          end_date?: string | null
+          created_at?: string
+          email: string
           id: string
-          manager_id?: string | null
-          start_date?: string | null
-          title?: string | null
-          updated_at?: string | null
+          name: string
+          role: string
         }
         Update: {
-          created_at?: string | null
-          description?: string | null
-          end_date?: string | null
+          created_at?: string
+          email?: string
           id?: string
-          manager_id?: string | null
-          start_date?: string | null
-          title?: string | null
-          updated_at?: string | null
+          name?: string
+          role?: string
         }
         Relationships: []
       }
