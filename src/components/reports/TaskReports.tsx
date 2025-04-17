@@ -20,6 +20,7 @@ import { format } from 'date-fns';
 import { getTasksCompletionByDate } from '@/contexts/task/taskMetrics';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { BarChartIcon, PieChartIcon, LineChartIcon } from 'lucide-react';
 
 const TaskReports: React.FC = () => {
   const { tasks } = useTask();
@@ -82,9 +83,9 @@ const TaskReports: React.FC = () => {
   
   // Responsive label rendering function for the pie chart
   const renderPieChartLabel = ({ name, percent }: { name: string; percent: number }) => {
-    // Only show labels on desktop or for sections with enough space (more than 10%)
-    if (!isMobile || percent > 0.1) {
-      return `${name}: ${(percent * 100).toFixed(0)}%`;
+    // Only show labels on desktop or for sections with enough space (more than 15%)
+    if (!isMobile || percent > 0.15) {
+      return `${(percent * 100).toFixed(0)}%`;
     }
     return null;
   };
@@ -105,11 +106,14 @@ const TaskReports: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Task Status Distribution */}
         <Card>
-          <CardHeader>
-            <CardTitle>Task Status Distribution</CardTitle>
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <PieChartIcon className="h-5 w-5 text-muted-foreground" />
+              <CardTitle className="text-lg md:text-xl">Task Status Distribution</CardTitle>
+            </div>
             <CardDescription>Breakdown of tasks by status</CardDescription>
           </CardHeader>
-          <CardContent className="h-80">
+          <CardContent className={isMobile ? "h-64" : "h-80"}>
             <ChartContainer config={chartConfig} className="h-full">
               <PieChart>
                 <Pie
@@ -117,7 +121,8 @@ const TaskReports: React.FC = () => {
                   cx="50%"
                   cy="50%"
                   labelLine={!isMobile}
-                  outerRadius={isMobile ? 60 : 80}
+                  outerRadius={isMobile ? 50 : 80}
+                  innerRadius={isMobile ? 20 : 30}
                   fill="#8884d8"
                   dataKey="value"
                   nameKey="name"
@@ -130,7 +135,12 @@ const TaskReports: React.FC = () => {
                 <ChartTooltip
                   content={<ChartTooltipContent />}
                 />
-                <Legend layout={isMobile ? "horizontal" : "vertical"} verticalAlign="bottom" align="center" />
+                <Legend 
+                  layout={isMobile ? "horizontal" : "vertical"} 
+                  verticalAlign={isMobile ? "bottom" : "middle"} 
+                  align={isMobile ? "center" : "right"}
+                  wrapperStyle={isMobile ? { fontSize: '11px' } : { fontSize: '12px' }}
+                />
               </PieChart>
             </ChartContainer>
           </CardContent>
@@ -138,16 +148,19 @@ const TaskReports: React.FC = () => {
         
         {/* Task Priority Distribution */}
         <Card>
-          <CardHeader>
-            <CardTitle>Task Priority Distribution</CardTitle>
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <BarChartIcon className="h-5 w-5 text-muted-foreground" />
+              <CardTitle className="text-lg md:text-xl">Task Priority Distribution</CardTitle>
+            </div>
             <CardDescription>Breakdown of tasks by priority level</CardDescription>
           </CardHeader>
-          <CardContent className="h-80">
+          <CardContent className={isMobile ? "h-64" : "h-80"}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={priorityCounts}
                 margin={isMobile ? 
-                  { top: 20, right: 10, left: 10, bottom: 30 } : 
+                  { top: 10, right: 10, left: 0, bottom: 30 } : 
                   { top: 20, right: 30, left: 20, bottom: 5 }
                 }
                 layout={isMobile ? "vertical" : "horizontal"}
@@ -156,7 +169,7 @@ const TaskReports: React.FC = () => {
                 {isMobile ? (
                   <>
                     <XAxis type="number" />
-                    <YAxis dataKey="name" type="category" width={70} />
+                    <YAxis dataKey="name" type="category" width={60} tick={{ fontSize: 12 }} />
                   </>
                 ) : (
                   <>
@@ -165,6 +178,7 @@ const TaskReports: React.FC = () => {
                   </>
                 )}
                 <Tooltip />
+                <Legend wrapperStyle={isMobile ? { fontSize: '11px', marginTop: '10px' } : {}} />
                 <Bar dataKey="value" name="Tasks">
                   {priorityCounts.map((entry, index) => (
                     <Cell 
@@ -181,16 +195,19 @@ const TaskReports: React.FC = () => {
       
       {/* Task Completion Trend */}
       <Card>
-        <CardHeader>
-          <CardTitle>Task Completion Trend</CardTitle>
+        <CardHeader className="pb-2">
+          <div className="flex items-center gap-2">
+            <LineChartIcon className="h-5 w-5 text-muted-foreground" />
+            <CardTitle className="text-lg md:text-xl">Task Completion Trend</CardTitle>
+          </div>
           <CardDescription>Task completion over the last 14 days</CardDescription>
         </CardHeader>
-        <CardContent className="h-80">
+        <CardContent className={isMobile ? "h-72" : "h-80"}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={completionTrend}
               margin={isMobile ? 
-                { top: 20, right: 10, left: 0, bottom: 50 } : 
+                { top: 10, right: 10, left: -15, bottom: 60 } : 
                 { top: 20, right: 30, left: 20, bottom: 5 }
               }
             >
@@ -199,12 +216,19 @@ const TaskReports: React.FC = () => {
                 dataKey="date" 
                 angle={isMobile ? -45 : 0}
                 textAnchor={isMobile ? "end" : "middle"}
-                height={isMobile ? 60 : 30}
+                height={isMobile ? 70 : 30}
                 tick={{ fontSize: isMobile ? 10 : 12 }}
+                interval={isMobile ? 1 : 0}
               />
-              <YAxis tick={{ fontSize: isMobile ? 10 : 12 }} />
+              <YAxis 
+                tick={{ fontSize: isMobile ? 10 : 12 }}
+                width={isMobile ? 25 : 40}
+              />
               <Tooltip />
-              <Legend wrapperStyle={isMobile ? { position: 'relative', marginTop: '10px' } : undefined} />
+              <Legend 
+                wrapperStyle={isMobile ? { position: 'relative', marginTop: '10px', fontSize: '11px' } : undefined}
+                verticalAlign={isMobile ? "top" : "bottom"}
+              />
               <Bar dataKey="completed" name="Completed Tasks" fill="#00C49F" />
               <Bar dataKey="total" name="Total Tasks" fill="#8884d8" />
             </BarChart>
