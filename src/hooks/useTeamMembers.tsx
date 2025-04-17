@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+
+import { useState, useEffect, useCallback } from 'react';
 import { useTask } from '@/contexts/task';
 import { Task } from '@/types';
 import { toast } from '@/components/ui/sonner';
@@ -29,54 +30,57 @@ const useTeamMembers = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Load team members from Supabase on hook initialization
-  useEffect(() => {
-    const loadTeamMembers = async () => {
-      if (!user) {
-        setIsLoading(false);
-        return;
-      }
+  // Load team members from Supabase
+  const fetchTeamMembers = useCallback(async () => {
+    if (!user?.id) {
+      console.log("No user ID available for team fetch");
+      setTeamMembers([]);
+      setIsLoading(false);
+      return;
+    }
 
-      setIsLoading(true);
-      setError(null);
-      
-      try {
-        console.log("Fetching team members for manager ID:", user.id);
-        
-        const { data, error } = await supabase
-          .from('team_members')
-          .select('*')
-          .eq('manager_id', user.id);
-
-        if (error) {
-          console.error("Supabase error:", error);
-          throw error;
-        }
-
-        console.log("Team members data received:", data);
-
-        // Transform the data to match our TeamMember interface
-        const formattedMembers: TeamMember[] = (data || []).map((member) => ({
-          id: member.id,
-          name: member.name,
-          email: member.email,
-          role: member.role,
-          managerId: member.manager_id
-        }));
-
-        setTeamMembers(formattedMembers);
-      } catch (error: any) {
-        console.error('Error loading team members:', error);
-        setError(error.message || 'Failed to load team members');
-        // Still set teamMembers to empty array to avoid showing loading forever
-        setTeamMembers([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    setIsLoading(true);
+    setError(null);
     
-    loadTeamMembers();
+    try {
+      console.log("Fetching team members for manager ID:", user.id);
+      
+      const { data, error } = await supabase
+        .from('team_members')
+        .select('*')
+        .eq('manager_id', user.id);
+
+      if (error) {
+        console.error("Supabase error:", error);
+        throw error;
+      }
+
+      console.log("Team members data received:", data);
+
+      // Transform the data to match our TeamMember interface
+      const formattedMembers: TeamMember[] = (data || []).map((member) => ({
+        id: member.id,
+        name: member.name,
+        email: member.email,
+        role: member.role,
+        managerId: member.manager_id
+      }));
+
+      setTeamMembers(formattedMembers);
+    } catch (error: any) {
+      console.error('Error loading team members:', error);
+      setError(error.message || 'Failed to load team members');
+      // Still set teamMembers to empty array to avoid showing loading forever
+      setTeamMembers([]);
+    } finally {
+      setIsLoading(false);
+    }
   }, [user]);
+  
+  // Initial load
+  useEffect(() => {
+    fetchTeamMembers();
+  }, [fetchTeamMembers]);
   
   // Function to remove a team member
   const removeTeamMember = async (memberId: string) => {
@@ -102,40 +106,9 @@ const useTeamMembers = () => {
   };
   
   // Function to refresh team members list
-  const refreshTeamMembers = async () => {
-    if (!user) return;
-
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const { data, error } = await supabase
-        .from('team_members')
-        .select('*')
-        .eq('manager_id', user.id);
-
-      if (error) {
-        throw error;
-      }
-
-      // Transform the data to match our TeamMember interface
-      const formattedMembers: TeamMember[] = (data || []).map((member) => ({
-        id: member.id,
-        name: member.name,
-        email: member.email,
-        role: member.role,
-        managerId: member.manager_id
-      }));
-
-      setTeamMembers(formattedMembers);
-    } catch (error: any) {
-      console.error('Error refreshing team members:', error);
-      setError(error.message || 'Failed to refresh team members');
-      setTeamMembers([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const refreshTeamMembers = useCallback(async () => {
+    await fetchTeamMembers();
+  }, [fetchTeamMembers]);
   
   // Calculate completion rates and assigned tasks for each member
   const teamMembersPerformance: TeamMemberPerformance[] = teamMembers.map((member) => {
@@ -152,6 +125,7 @@ const useTeamMembers = () => {
     today.setHours(0, 0, 0, 0);
     
     const dueTodayTasks = assignedTasks.filter((task) => {
+      if (!task.deadline) return false;
       const taskDate = new Date(task.deadline);
       taskDate.setHours(0, 0, 0, 0);
       return taskDate.getTime() === today.getTime();

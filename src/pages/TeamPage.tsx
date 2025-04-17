@@ -29,14 +29,13 @@ const TeamPage = () => {
     error
   } = useTeamMembers();
   
-  // Effect to ensure user profile is loaded
+  // Debug information
   useEffect(() => {
-    if (user && user.role !== 'manager') {
-      console.log("User is not a manager:", user);
-    } else if (user) {
-      console.log("Manager role detected:", user);
-    }
-  }, [user]);
+    console.log("TeamPage rendering with user:", user);
+    console.log("Team members count:", teamMembersCount);
+    console.log("Is loading:", isLoading);
+    console.log("Error:", error);
+  }, [user, teamMembersCount, isLoading, error]);
   
   const handleRemoveMember = async (memberId: string) => {
     setRemovingMemberId(memberId);
@@ -48,6 +47,15 @@ const TeamPage = () => {
     refreshTeamMembers();
     toast.info("Refreshing team members");
   };
+
+  // Force refresh on initial load
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      refreshTeamMembers();
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, []);
 
   if (!user) {
     return (
@@ -65,6 +73,9 @@ const TeamPage = () => {
         <p className="mt-2 text-sm text-muted-foreground">
           Your current role: {user.role || "Unknown"}
         </p>
+        <Button onClick={handleRefresh} variant="outline" className="mt-4">
+          <RefreshCw className="h-4 w-4 mr-2" /> Refresh Role
+        </Button>
       </div>
     );
   }
@@ -110,7 +121,7 @@ const TeamPage = () => {
             <RefreshCw className="h-4 w-4 mr-2" /> Try Again
           </Button>
         </div>
-      ) : teamMembersCount === 0 ? (
+      ) : teamMembersPerformance.length === 0 ? (
         <NoTeamMembers onAddMember={() => setIsAddMemberOpen(true)} />
       ) : (
         <div className="grid grid-cols-1 gap-4">

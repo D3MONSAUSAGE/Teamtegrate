@@ -1,5 +1,5 @@
 
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import { User, UserRole } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
@@ -32,17 +32,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Load user profile data including role from the profiles table
   const loadUserProfile = async (userId: string) => {
     try {
+      console.log('Fetching profile for user:', userId);
       const { data, error } = await supabase
         .from('profiles')
         .select('name, role')
         .eq('id', userId)
-        .maybeSingle(); // Use maybeSingle instead of single to avoid errors when no profile is found
+        .maybeSingle();
       
       if (error) {
         console.error('Error fetching user profile:', error);
         return null;
       }
       
+      console.log('Profile data received:', data);
       return data;
     } catch (error) {
       console.error('Unexpected error loading profile:', error);
@@ -51,10 +53,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   // Update user with profile data
-  const updateUserWithProfile = async (sessionUser: any) => {
-    if (!sessionUser) return null;
+  const updateUserWithProfile = useCallback(async (sessionUser: any) => {
+    if (!sessionUser) {
+      console.log('No session user provided');
+      return null;
+    }
     
     const profile = await loadUserProfile(sessionUser.id);
+    console.log('Loaded profile for user update:', profile);
     
     const userData: User = {
       id: sessionUser.id,
@@ -64,15 +70,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       createdAt: new Date(sessionUser.created_at),
     };
     
+    console.log('Setting user data:', userData);
     setUser(userData);
     return userData;
-  };
+  }, []);
+
+  // Check for profile updates periodically when user is logged in
+  useEffect(() => {
+    if (!session?.user) return;
+    
+    const checkProfileUpdates = async () => {
+      await updateUserWithProfile(session.user);
+    };
+    
+    // Initial check
+    checkProfileUpdates();
+    
+    // Set up periodic checks
+    const interval = setInterval(checkProfileUpdates, 10000);
+    
+    return () => clearInterval(interval);
+  }, [session, updateUserWithProfile]);
 
   // Check if user is logged in on mount and set up auth state listener
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.id);
         setSession(session);
         if (session?.user) {
           await updateUserWithProfile(session.user);
@@ -84,6 +109,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // THEN check for existing session
     supabase.auth.getSession().then(async ({ data: { session } }) => {
+      console.log('Getting existing session:', session?.user?.id);
       setSession(session);
       if (session?.user) {
         await updateUserWithProfile(session.user);
@@ -94,7 +120,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [updateUserWithProfile]);
 
   const login = async (email: string, password: string) => {
     setLoading(true);
