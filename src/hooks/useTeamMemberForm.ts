@@ -3,11 +3,12 @@ import { useState } from 'react';
 import { toast } from '@/components/ui/sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { UserRole } from '@/types';
 
 interface TeamMemberFormData {
   name: string;
   email: string;
-  role: string;
+  role: UserRole;
   password: string;
 }
 
@@ -22,7 +23,7 @@ export const useTeamMemberForm = ({ onSuccess, onCancel }: UseTeamMemberFormProp
   const [formData, setFormData] = useState<TeamMemberFormData>({
     name: '',
     email: '',
-    role: 'Developer',
+    role: 'user',
     password: '',
   });
 
@@ -34,7 +35,7 @@ export const useTeamMemberForm = ({ onSuccess, onCancel }: UseTeamMemberFormProp
     setFormData({
       name: '',
       email: '',
-      role: 'Developer',
+      role: 'user',
       password: '',
     });
   };
@@ -55,6 +56,12 @@ export const useTeamMemberForm = ({ onSuccess, onCancel }: UseTeamMemberFormProp
 
     if (!user) {
       toast.error('You must be logged in to add team members');
+      return;
+    }
+
+    // Only managers can add team members
+    if (user.role !== 'manager') {
+      toast.error('Only managers can add team members');
       return;
     }
 
@@ -81,14 +88,15 @@ export const useTeamMemberForm = ({ onSuccess, onCancel }: UseTeamMemberFormProp
         return;
       }
 
-      // First create user with Supabase Auth
-      const { data: authData, error: signUpError } = await supabase.auth.admin.createUser({
+      // Create user with Supabase Auth
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email: formData.email.toLowerCase(),
         password: formData.password,
-        email_confirm: true,
-        user_metadata: {
-          name: formData.name,
-          role: formData.role
+        options: {
+          data: {
+            name: formData.name,
+            role: formData.role
+          }
         }
       });
 

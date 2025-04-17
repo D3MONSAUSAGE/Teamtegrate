@@ -42,6 +42,15 @@ const TeamPage = () => {
     );
   }
   
+  // Only managers can access the team page
+  if (user.role !== 'manager') {
+    return (
+      <div className="p-6 text-center">
+        <p className="text-gray-500">Only managers can access the team management page.</p>
+      </div>
+    );
+  }
+  
   return (
     <div className={`p-3 sm:p-6`}>
       <div className="flex items-center justify-between mb-8 flex-wrap gap-3">

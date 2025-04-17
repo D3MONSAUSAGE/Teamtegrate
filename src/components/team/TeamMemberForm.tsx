@@ -78,12 +78,8 @@ const TeamMemberForm: React.FC<TeamMemberFormProps> = ({ onCancel, onSuccess }) 
             <SelectValue placeholder="Select a role" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="Developer">Developer</SelectItem>
-            <SelectItem value="Designer">Designer</SelectItem>
-            <SelectItem value="Project Manager">Project Manager</SelectItem>
-            <SelectItem value="QA Engineer">QA Engineer</SelectItem>
-            <SelectItem value="DevOps">DevOps</SelectItem>
-            <SelectItem value="Product Owner">Product Owner</SelectItem>
+            <SelectItem value="user">Team Member</SelectItem>
+            <SelectItem value="manager">Manager</SelectItem>
           </SelectContent>
         </Select>
       </div>
