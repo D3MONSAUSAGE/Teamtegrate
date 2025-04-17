@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTimeTracking } from '@/hooks/useTimeTracking';
 import { formatDistance } from 'date-fns';
-import { Clock, ClockOff } from 'lucide-react';
+import { Clock, TimerOff } from 'lucide-react';
 
 const TimeTracking: React.FC = () => {
   const { currentEntry, clockIn, clockOut, getWeeklyTimeEntries } = useTimeTracking();
@@ -54,7 +54,7 @@ const TimeTracking: React.FC = () => {
               onClick={() => clockOut(notes)}
               className="w-full md:w-auto"
             >
-              <ClockOff className="mr-2 h-4 w-4" /> Clock Out
+              <TimerOff className="mr-2 h-4 w-4" /> Clock Out
             </Button>
           ) : (
             <Button 
