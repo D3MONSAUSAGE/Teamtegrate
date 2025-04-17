@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import { useTask } from '@/contexts/task';
 import { Task } from '@/types';
-import { format, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
-import { Card, CardContent } from '@/components/ui/card';
+import { format, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval, addDays, isAfter, isBefore } from 'date-fns';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import TaskCard from '@/components/TaskCard';
@@ -12,7 +11,8 @@ import TaskDetailDrawer from '@/components/calendar/TaskDetailDrawer';
 import CalendarDayView from '@/components/calendar/CalendarDayView';
 import CalendarWeekView from '@/components/calendar/CalendarWeekView';
 import CalendarMonthView from '@/components/calendar/CalendarMonthView';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, CheckCircle2, Clock, ListTodo } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const CalendarPage = () => {
   const { tasks } = useTask();
@@ -24,7 +24,6 @@ const CalendarPage = () => {
   // Function to decorate days with task indicators
   const decorateWithTaskCount = (date: Date) => {
     const tasksOnDay = tasks.filter(task => {
-      // Ensure task.deadline is a valid Date before comparing
       try {
         const taskDeadline = new Date(task.deadline);
         return isSameDay(taskDeadline, date);
@@ -43,11 +42,32 @@ const CalendarPage = () => {
     ) : null;
   };
 
+  // Get upcoming tasks (next 7 days)
+  const getUpcomingTasks = () => {
+    const now = new Date();
+    const nextWeek = addDays(now, 7);
+    
+    return tasks
+      .filter(task => {
+        try {
+          const taskDate = new Date(task.deadline);
+          return isAfter(taskDate, now) && isBefore(taskDate, nextWeek) && task.status !== 'Completed';
+        } catch (error) {
+          console.error("Invalid date for task:", task.id);
+          return false;
+        }
+      })
+      .sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
+      .slice(0, 5); // Get top 5 upcoming tasks
+  };
+
   // Handle task click to open drawer with details
   const handleTaskClick = (task: Task) => {
     setSelectedTask(task);
     setIsDrawerOpen(true);
   };
+
+  const upcomingTasks = getUpcomingTasks();
 
   return (
     <div className="p-6">
@@ -85,9 +105,7 @@ const CalendarPage = () => {
                 onSelect={(date) => date && setSelectedDate(date)}
                 className="rounded-md border w-full"
                 components={{
-                  // Fix: Update DayContent to safely handle dates
                   DayContent: (props) => {
-                    // Ensure day is a valid Date object
                     const dayDate = props.date;
                     
                     return (
@@ -106,6 +124,54 @@ const CalendarPage = () => {
         </div>
 
         <div className="lg:col-span-8 xl:col-span-9">
+          <Card className="w-full h-full">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center">
+                <ListTodo className="h-4 w-4 mr-2" />
+                Upcoming Tasks
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <ScrollArea className="h-[200px]">
+                {upcomingTasks.length > 0 ? (
+                  <div className="px-4 py-1">
+                    {upcomingTasks.map((task) => (
+                      <div 
+                        key={task.id} 
+                        onClick={() => handleTaskClick(task)} 
+                        className="flex items-center justify-between py-2 px-2 border-b last:border-0 cursor-pointer hover:bg-muted/50 rounded-sm group"
+                      >
+                        <div className="flex items-start">
+                          <div className={`w-2 h-2 mt-1.5 rounded-full mr-2 flex-shrink-0 ${
+                            task.priority === 'High' ? 'bg-red-500' : 
+                            task.priority === 'Medium' ? 'bg-amber-500' : 'bg-blue-500'
+                          }`} />
+                          <div>
+                            <p className="text-sm font-medium line-clamp-1">{task.title}</p>
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <Clock className="h-3 w-3" />
+                              <span>{format(new Date(task.deadline), 'EEE, MMM d • h:mm a')}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <Badge variant="outline" className="text-xs">
+                          {task.status}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+                    <CheckCircle2 className="mr-2 h-4 w-4" />
+                    No upcoming tasks for the next 7 days
+                  </div>
+                )}
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="lg:col-span-12">
           {viewType === 'day' && (
             <CalendarDayView 
               selectedDate={selectedDate} 
