@@ -5,6 +5,8 @@ import { Task } from '@/types';
 import TaskCommentForm from './TaskCommentForm';
 import TaskCommentsList from './TaskCommentsList';
 import { MessageCircle } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
 
 interface TaskCommentsDialogProps {
   open: boolean;
@@ -29,10 +31,15 @@ const TaskCommentsDialog: React.FC<TaskCommentsDialogProps> = ({
           </DialogTitle>
         </DialogHeader>
         
-        <div className="max-h-[60vh] overflow-y-auto p-1">
-          <TaskCommentsList taskComments={task.comments || []} />
-          <TaskCommentForm taskId={task.id} />
-        </div>
+        <Separator className="my-2" />
+        
+        <ScrollArea className="max-h-[60vh] pr-4">
+          <div className="space-y-4">
+            <TaskCommentsList taskComments={task.comments || []} />
+            <Separator className="my-2" />
+            <TaskCommentForm taskId={task.id} />
+          </div>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );
