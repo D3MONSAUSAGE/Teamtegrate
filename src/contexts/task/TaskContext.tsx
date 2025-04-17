@@ -1,5 +1,6 @@
+
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { Task, Project, TaskStatus, TaskPriority, DailyScore, Comment } from '@/types';
+import { Task, Project, TaskStatus, TaskPriority, TaskComment } from '@/types';
 import { useAuth } from '../AuthContext';
 import { 
   fetchTasks, 
@@ -42,7 +43,7 @@ import {
 interface TaskContextType {
   tasks: Task[];
   projects: Project[];
-  dailyScore: DailyScore;
+  dailyScore: any;
   addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateTask: (taskId: string, updates: Partial<Task>) => void;
   updateTaskStatus: (taskId: string, status: TaskStatus) => void;
@@ -52,7 +53,7 @@ interface TaskContextType {
   deleteProject: (projectId: string) => void;
   assignTaskToProject: (taskId: string, projectId: string) => void;
   assignTaskToUser: (taskId: string, userId: string, userName: string) => void;
-  addCommentToTask: (taskId: string, comment: { userId: string; userName: string; text: string }) => Promise<Comment | null>;
+  addCommentToTask: (taskId: string, comment: { userId: string; userName: string; text: string }) => Promise<TaskComment | null>;
   addTagToTask: (taskId: string, tag: string) => void;
   removeTagFromTask: (taskId: string, tag: string) => void;
   addTagToProject: (projectId: string, tag: string) => void;
@@ -65,7 +66,7 @@ interface TaskContextType {
   getTasksByPriority: (priority: TaskPriority) => Task[];
   getTasksByDate: (date: Date) => Task[];
   getOverdueTasks: () => Task[];
-  fetchComments: (taskId: string) => Promise<Comment[]>;
+  fetchComments: (taskId: string) => Promise<TaskComment[]>;
 }
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);

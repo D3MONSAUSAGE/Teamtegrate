@@ -1,7 +1,7 @@
-
 import { User, Project, Task } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
+import { v4 as uuidv4 } from 'uuid';
 
 export const addProject = async (
   project: Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'tasks'>,

@@ -1,3 +1,4 @@
+
 export type UserRole = 'user' | 'manager';
 
 export interface User {
@@ -11,6 +12,15 @@ export interface User {
 export type TaskPriority = 'Low' | 'Medium' | 'High';
 
 export type TaskStatus = 'To Do' | 'In Progress' | 'Pending' | 'Completed';
+
+export interface TaskComment {
+  id: string;
+  taskId: string;
+  userId: string;
+  userName: string;
+  text: string;
+  createdAt: Date;
+}
 
 export interface Task {
   id: string;
@@ -27,7 +37,7 @@ export interface Task {
   assignedToId?: string;
   assignedToName?: string;
   tags?: string[];
-  comments?: Comment[];
+  comments?: TaskComment[];
   cost?: number;  // New field for task cost
 }
 

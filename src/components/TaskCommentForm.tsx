@@ -5,10 +5,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from '@/contexts/AuthContext';
 import { useTask } from '@/contexts/task';
 import { MessageCirclePlus } from 'lucide-react';
+import { TaskComment } from '@/types';
 
 interface TaskCommentFormProps {
   taskId: string;
-  onCommentAdded?: (comment: Comment) => void;
+  onCommentAdded?: (comment: TaskComment) => void;
 }
 
 const TaskCommentForm: React.FC<TaskCommentFormProps> = ({ taskId, onCommentAdded }) => {
