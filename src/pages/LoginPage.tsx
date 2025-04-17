@@ -28,46 +28,48 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
+  console.log('LoginPage Render - Loading:', loading, 'Authenticated:', isAuthenticated);
+
   // Handle auth redirect from email verification
   useEffect(() => {
-    // Check if we have a hash in the URL (from Supabase auth redirect)
+    console.log('LoginPage: Checking auth redirect');
     const handleAuthRedirect = async () => {
       if (window.location.hash) {
+        console.log('LoginPage: Hash found in URL');
         const hashParams = new URLSearchParams(
-          window.location.hash.substring(1) // remove the # character
+          window.location.hash.substring(1)
         );
         
-        // Check if this is an access token from Supabase auth
         const accessToken = hashParams.get('access_token');
         const refreshToken = hashParams.get('refresh_token');
         const type = hashParams.get('type');
         
+        console.log('LoginPage: Tokens', { accessToken, refreshToken, type });
+        
         if (accessToken && refreshToken) {
           try {
-            // Set the session in Supabase
             const { data, error } = await supabase.auth.setSession({
               access_token: accessToken,
               refresh_token: refreshToken,
             });
             
+            console.log('LoginPage: Session Set Result', { data, error });
+            
             if (error) {
               throw error;
             }
             
-            // Show success message based on auth type
             if (type === 'signup') {
               toast.success('Email verified! You are now signed in.');
             } else {
               toast.success('You are now signed in.');
             }
             
-            // Remove the hash from the URL
             window.history.replaceState({}, document.title, window.location.pathname);
             
-            // Navigate to dashboard
             navigate('/dashboard');
           } catch (error) {
-            console.error('Error setting session:', error);
+            console.error('LoginPage: Error setting session:', error);
             toast.error('Authentication failed. Please try again.');
           }
         }
@@ -79,13 +81,17 @@ const LoginPage = () => {
   
   // Redirect if already logged in
   useEffect(() => {
+    console.log('LoginPage: Checking authentication state');
     if (isAuthenticated && !loading) {
+      console.log('LoginPage: Navigating to dashboard');
       navigate('/dashboard');
     }
   }, [isAuthenticated, loading, navigate]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    console.log('LoginPage: Submitting form', { isLogin, email });
     
     try {
       if (isLogin) {
@@ -100,7 +106,7 @@ const LoginPage = () => {
       }
       // The redirect will be handled by the useEffect above
     } catch (error) {
-      console.error('Authentication error:', error);
+      console.error('LoginPage: Authentication error:', error);
       // Toast is already handled in the auth context
     }
   };
