@@ -8,6 +8,7 @@ interface TeamMemberFormData {
   name: string;
   email: string;
   role: string;
+  password: string;
 }
 
 interface UseTeamMemberFormProps {
@@ -22,6 +23,7 @@ export const useTeamMemberForm = ({ onSuccess, onCancel }: UseTeamMemberFormProp
     name: '',
     email: '',
     role: 'Developer',
+    password: '',
   });
 
   const handleInputChange = (field: keyof TeamMemberFormData, value: string) => {
@@ -33,6 +35,7 @@ export const useTeamMemberForm = ({ onSuccess, onCancel }: UseTeamMemberFormProp
       name: '',
       email: '',
       role: 'Developer',
+      password: '',
     });
   };
 
@@ -40,8 +43,13 @@ export const useTeamMemberForm = ({ onSuccess, onCancel }: UseTeamMemberFormProp
     e.preventDefault();
     
     // Validate inputs
-    if (!formData.name.trim() || !formData.email.trim() || !formData.role) {
+    if (!formData.name.trim() || !formData.email.trim() || !formData.role || !formData.password) {
       toast.error('Please fill in all fields');
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      toast.error('Password must be at least 6 characters');
       return;
     }
 
@@ -69,6 +77,24 @@ export const useTeamMemberForm = ({ onSuccess, onCancel }: UseTeamMemberFormProp
 
       if (existingMember) {
         toast.error('A team member with this email already exists');
+        setIsLoading(false);
+        return;
+      }
+
+      // First create user with Supabase Auth
+      const { data: authData, error: signUpError } = await supabase.auth.admin.createUser({
+        email: formData.email.toLowerCase(),
+        password: formData.password,
+        email_confirm: true,
+        user_metadata: {
+          name: formData.name,
+          role: formData.role
+        }
+      });
+
+      if (signUpError) {
+        console.error('Error creating user account:', signUpError);
+        toast.error('Failed to create user account: ' + signUpError.message);
         setIsLoading(false);
         return;
       }
