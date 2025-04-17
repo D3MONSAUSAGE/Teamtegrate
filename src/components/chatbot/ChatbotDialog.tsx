@@ -19,14 +19,39 @@ interface ChatbotDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const SAMPLE_RESPONSES = [
-  "I can help you manage your tasks in the calendar. Try asking me how to create a new task.",
-  "You can filter tasks by priority by clicking on the priority selector in the calendar view.",
-  "To switch between day, week, and month views, use the view selector at the top of the calendar.",
-  "Need to reschedule a task? Simply click on it in the calendar to see more options.",
-  "I notice you have several high-priority tasks due this week. Would you like me to help you organize them?",
-  "You can see all your upcoming tasks in the sidebar of the calendar view.",
-  "To get a better view of your day, try using the day view option in the calendar.",
+// Define specific responses for common user questions
+const COMMON_QUERIES = {
+  'create task': [
+    "To create a new task, click the 'New Task' button at the top of the Dashboard page. You can also create tasks directly from the Calendar or Projects page.",
+    "Creating a task is easy! Click the '+' button or 'New Task' button on the dashboard, then fill in the task details like title, description, deadline, and priority."
+  ],
+  'calendar': [
+    "You can switch between day, week, and month views in the calendar using the view selector at the top of the calendar page.",
+    "To see your tasks in the calendar, navigate to the Calendar page from the sidebar menu."
+  ],
+  'deadline': [
+    "To set a task deadline, use the date picker in the task creation form. You can also edit deadlines later by clicking on a task and updating its details."
+  ],
+  'priority': [
+    "Tasks can be set to Low, Medium, or High priority when creating or editing a task. You can filter tasks by priority in the Tasks page."
+  ],
+  'project': [
+    "To create a new project, go to the Projects page and click the 'New Project' button.",
+    "You can add tasks to projects when creating a new task or by editing an existing task and selecting a project from the dropdown."
+  ],
+  'assign': [
+    "To assign a task to a team member, open the task details and click on the 'Assign' button."
+  ],
+  'help': [
+    "I can help you with creating tasks, managing your calendar, working with projects, and more. What would you like assistance with?"
+  ]
+};
+
+// Fallback responses for when no specific match is found
+const FALLBACK_RESPONSES = [
+  "I'm here to help you manage your tasks and projects. Could you ask more specifically about tasks, calendar, or project management?",
+  "I can assist with task creation, calendar management, project organization, and team coordination. What would you like to know more about?",
+  "If you're looking for help with a specific feature, try asking about tasks, calendar, projects, or team management."
 ];
 
 const ChatbotDialog: React.FC<ChatbotDialogProps> = ({ open, onOpenChange }) => {
@@ -52,6 +77,21 @@ const ChatbotDialog: React.FC<ChatbotDialogProps> = ({ open, onOpenChange }) => 
     }
   }, [messages]);
 
+  // Find a relevant response based on user input
+  const findRelevantResponse = (userInput: string): string => {
+    const lowercaseInput = userInput.toLowerCase();
+    
+    // Check for keyword matches
+    for (const [keyword, responses] of Object.entries(COMMON_QUERIES)) {
+      if (lowercaseInput.includes(keyword)) {
+        return responses[Math.floor(Math.random() * responses.length)];
+      }
+    }
+    
+    // Return fallback response if no match
+    return FALLBACK_RESPONSES[Math.floor(Math.random() * FALLBACK_RESPONSES.length)];
+  };
+
   const handleSend = () => {
     if (!input.trim()) return;
     
@@ -67,13 +107,13 @@ const ChatbotDialog: React.FC<ChatbotDialogProps> = ({ open, onOpenChange }) => 
     setInput('');
     setIsLoading(true);
     
-    // Simulate AI response (would be replaced with actual API call)
+    // Generate AI response based on user input
     setTimeout(() => {
-      const randomResponse = SAMPLE_RESPONSES[Math.floor(Math.random() * SAMPLE_RESPONSES.length)];
+      const relevantResponse = findRelevantResponse(userMessage.content);
       
       const botResponse: Message = {
         id: (Date.now() + 1).toString(),
-        content: randomResponse,
+        content: relevantResponse,
         role: 'assistant',
         timestamp: new Date(),
       };
@@ -182,4 +222,3 @@ const ChatbotDialog: React.FC<ChatbotDialogProps> = ({ open, onOpenChange }) => 
 };
 
 export default ChatbotDialog;
-
