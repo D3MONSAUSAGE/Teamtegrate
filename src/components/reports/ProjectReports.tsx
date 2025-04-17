@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useTask } from '@/contexts/task';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,10 +9,7 @@ import {
   CartesianGrid, 
   Tooltip, 
   Legend, 
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell
+  ResponsiveContainer 
 } from 'recharts';
 import { format, isAfter } from 'date-fns';
 
@@ -64,7 +60,7 @@ const ProjectReports: React.FC = () => {
       });
       
       return {
-        name: project.title,
+        name: project.title.length > 10 ? project.title.substring(0, 10) + '...' : project.title,
         ...statusCounts
       };
     });
@@ -163,7 +159,14 @@ const ProjectReports: React.FC = () => {
                 margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
               >
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" tick={{width: 20}} />
+                <XAxis 
+                  dataKey="name" 
+                  tick={{ fontSize: 10 }} 
+                  interval={0} 
+                  angle={-45} 
+                  textAnchor="end" 
+                  height={60} 
+                />
                 <YAxis />
                 <Tooltip />
                 <Legend />
