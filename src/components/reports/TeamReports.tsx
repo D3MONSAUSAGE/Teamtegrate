@@ -54,7 +54,7 @@ const TeamReports: React.FC = () => {
     const categories = ['Development', 'Design', 'Planning', 'Testing', 'Documentation'];
     
     return teamMembersPerformance.slice(0, 5).map(member => {
-      const data: Record<string, number> = { name: member.name };
+      const data: Record<string, any> = { name: member.name };
       
       categories.forEach(category => {
         // Simulated data for task categories
@@ -102,7 +102,7 @@ const TeamReports: React.FC = () => {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
                 <YAxis yAxisId="left" />
-                <YAxis yAxisId="right" orientation="right" domain={[0, 100]} unit="%" />
+                <YAxis yAxisId="right" orientation="right" domain={[0, 100]} />
                 <Tooltip />
                 <Legend />
                 <Bar yAxisId="left" dataKey="assignedTasks" name="Assigned Tasks" fill="#8884d8" />
