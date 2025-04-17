@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -137,7 +136,10 @@ const ProfileSection = () => {
       // Update users table
       const { error: dbError } = await supabase
         .from('users')
-        .update({ name })
+        .update({ 
+          name, 
+          avatar_url: avatarUrl || undefined 
+        })
         .eq('id', user?.id);
 
       if (dbError) {
