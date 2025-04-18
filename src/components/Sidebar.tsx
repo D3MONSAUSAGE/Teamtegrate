@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -70,15 +71,15 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
       allowed: true,
     },
     {
-      name: 'Settings',
-      path: '/dashboard/settings',
-      icon: <Settings className="h-5 w-5" />,
-      allowed: true,
-    },
-    {
       name: 'Documents',
       path: '/dashboard/documents',
       icon: <FileText className="h-5 w-5" />,
+      allowed: true,
+    },
+    {
+      name: 'Settings',
+      path: '/dashboard/settings',
+      icon: <Settings className="h-5 w-5" />,
       allowed: true,
     },
   ];
