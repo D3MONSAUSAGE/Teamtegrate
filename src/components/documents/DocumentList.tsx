@@ -13,7 +13,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-interface Document {
+// Rename the interface to avoid collision with the DOM Document type
+interface DocumentItem {
   id: string;
   title: string;
   file_path: string;
@@ -23,7 +24,7 @@ interface Document {
 }
 
 interface DocumentListProps {
-  documents: Document[];
+  documents: DocumentItem[];
   onDocumentDeleted: () => void;
 }
 
@@ -43,7 +44,7 @@ const DocumentList: React.FC<DocumentListProps> = ({ documents, onDocumentDelete
     return `${size.toFixed(1)} ${units[unitIndex]}`;
   };
 
-  const handleDownload = async (document: Document) => {
+  const handleDownload = async (document: DocumentItem) => {
     try {
       const { data, error } = await supabase.storage
         .from('documents')
@@ -70,7 +71,7 @@ const DocumentList: React.FC<DocumentListProps> = ({ documents, onDocumentDelete
     }
   };
 
-  const handleDelete = async (document: Document) => {
+  const handleDelete = async (document: DocumentItem) => {
     try {
       // Delete from storage
       const { error: storageError } = await supabase.storage

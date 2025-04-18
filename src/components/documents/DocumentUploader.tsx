@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Upload } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface DocumentUploaderProps {
   onUploadComplete: () => void;
@@ -12,10 +13,20 @@ interface DocumentUploaderProps {
 
 const DocumentUploader: React.FC<DocumentUploaderProps> = ({ onUploadComplete }) => {
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
     if (!file) return;
+    
+    if (!user || !user.id) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to upload documents",
+        variant: "destructive"
+      });
+      return;
+    }
 
     try {
       // Upload to storage
@@ -33,7 +44,8 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({ onUploadComplete })
           file_path: storageData.path,
           file_type: file.type,
           size_bytes: file.size,
-          storage_id: storageData.id
+          storage_id: storageData.id,
+          user_id: user.id // Add the required user_id field
         });
 
       if (dbError) throw dbError;
@@ -52,7 +64,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({ onUploadComplete })
         variant: "destructive"
       });
     }
-  }, [onUploadComplete]);
+  }, [onUploadComplete, user, toast]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
