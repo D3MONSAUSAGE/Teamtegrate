@@ -1,9 +1,9 @@
-
 import React from 'react';
 import { FileText, Download, Trash2, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
 import {
   Table,
   TableBody,
@@ -19,7 +19,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-// Rename the interface to avoid collision with the DOM Document type
 interface DocumentItem {
   id: string;
   title: string;
@@ -38,6 +37,7 @@ const DocumentList: React.FC<DocumentListProps> = ({ documents, onDocumentDelete
   const { toast } = useToast();
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
   const [selectedDocument, setSelectedDocument] = React.useState<DocumentItem | null>(null);
+  const isMobile = useIsMobile();
 
   const formatFileSize = (bytes: number) => {
     const units = ['B', 'KB', 'MB', 'GB'];
@@ -75,7 +75,6 @@ const DocumentList: React.FC<DocumentListProps> = ({ documents, onDocumentDelete
 
   React.useEffect(() => {
     return () => {
-      // Cleanup preview URL when component unmounts
       if (previewUrl) {
         window.URL.revokeObjectURL(previewUrl);
       }
@@ -90,7 +89,6 @@ const DocumentList: React.FC<DocumentListProps> = ({ documents, onDocumentDelete
 
       if (error) throw error;
 
-      // Create download link
       const url = window.URL.createObjectURL(data);
       const link = document.createElement('a');
       link.href = url;
@@ -111,14 +109,12 @@ const DocumentList: React.FC<DocumentListProps> = ({ documents, onDocumentDelete
 
   const handleDelete = async (documentItem: DocumentItem) => {
     try {
-      // Delete from storage
       const { error: storageError } = await supabase.storage
         .from('documents')
         .remove([documentItem.file_path]);
 
       if (storageError) throw storageError;
 
-      // Delete metadata from documents table
       const { error: dbError } = await supabase
         .from('documents')
         .delete()
@@ -148,9 +144,9 @@ const DocumentList: React.FC<DocumentListProps> = ({ documents, onDocumentDelete
         <TableHeader>
           <TableRow>
             <TableHead>Name</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead>Size</TableHead>
-            <TableHead>Uploaded</TableHead>
+            <TableHead className={isMobile ? "hidden" : ""}>Type</TableHead>
+            <TableHead className={isMobile ? "hidden" : ""}>Size</TableHead>
+            <TableHead className={isMobile ? "hidden" : ""}>Uploaded</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -159,12 +155,12 @@ const DocumentList: React.FC<DocumentListProps> = ({ documents, onDocumentDelete
             <TableRow key={document.id}>
               <TableCell className="flex items-center gap-2">
                 <FileText className="h-4 w-4" />
-                {document.title}
+                <span className="line-clamp-1">{document.title}</span>
               </TableCell>
-              <TableCell>{document.file_type.split('/')[1].toUpperCase()}</TableCell>
-              <TableCell>{formatFileSize(document.size_bytes)}</TableCell>
-              <TableCell>{new Date(document.created_at).toLocaleDateString()}</TableCell>
-              <TableCell className="text-right space-x-2">
+              <TableCell className={isMobile ? "hidden" : ""}>{document.file_type.split('/')[1].toUpperCase()}</TableCell>
+              <TableCell className={isMobile ? "hidden" : ""}>{formatFileSize(document.size_bytes)}</TableCell>
+              <TableCell className={isMobile ? "hidden" : ""}>{new Date(document.created_at).toLocaleDateString()}</TableCell>
+              <TableCell className="text-right space-x-1">
                 {document.file_type === 'application/pdf' && (
                   <Button
                     variant="outline"
@@ -193,7 +189,7 @@ const DocumentList: React.FC<DocumentListProps> = ({ documents, onDocumentDelete
           ))}
           {documents.length === 0 && (
             <TableRow>
-              <TableCell colSpan={5} className="text-center text-muted-foreground">
+              <TableCell colSpan={isMobile ? 2 : 5} className="text-center text-muted-foreground">
                 No documents uploaded yet
               </TableCell>
             </TableRow>
@@ -202,12 +198,17 @@ const DocumentList: React.FC<DocumentListProps> = ({ documents, onDocumentDelete
       </Table>
 
       <Dialog open={!!previewUrl} onOpenChange={() => setPreviewUrl(null)}>
-        <DialogContent className="max-w-[90vw] w-[900px] max-h-[90vh] p-0 overflow-hidden">
-          <DialogHeader className="px-6 py-4 border-b">
-            <DialogTitle>{selectedDocument?.title}</DialogTitle>
+        <DialogContent className={`
+          w-full max-h-screen p-0 overflow-hidden
+          ${isMobile ? 'max-w-full h-full' : 'max-w-[90vw] w-[900px] max-h-[90vh]'}
+        `}>
+          <DialogHeader className="px-4 py-3 border-b">
+            <DialogTitle className="text-sm sm:text-base line-clamp-1">
+              {selectedDocument?.title}
+            </DialogTitle>
           </DialogHeader>
           {previewUrl && (
-            <div className="w-full h-[80vh]">
+            <div className={`w-full ${isMobile ? 'h-[calc(100vh-60px)]' : 'h-[80vh]'}`}>
               <iframe
                 src={previewUrl}
                 className="w-full h-full border-0"
