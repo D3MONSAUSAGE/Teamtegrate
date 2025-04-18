@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,11 +5,25 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTimeTracking } from '@/hooks/useTimeTracking';
 import { formatDistance } from 'date-fns';
 import { Clock, TimerOff, Coffee, UtensilsCrossed } from 'lucide-react';
+import DailyTimeReport from './DailyTimeReport';
 
 const TimeTracking: React.FC = () => {
-  const { currentEntry, clockIn, clockOut } = useTimeTracking();
+  const { currentEntry, clockIn, clockOut, getWeeklyTimeEntries } = useTimeTracking();
   const [notes, setNotes] = useState('');
   const [elapsedTime, setElapsedTime] = useState('');
+  const [dailyEntries, setDailyEntries] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchDailyEntries = async () => {
+      const entries = await getWeeklyTimeEntries();
+      const today = new Date().toISOString().split('T')[0];
+      const todayEntries = entries.filter(entry => 
+        entry.clock_in.startsWith(today)
+      );
+      setDailyEntries(todayEntries);
+    };
+    fetchDailyEntries();
+  }, [currentEntry]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -27,7 +40,7 @@ const TimeTracking: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <Card>
         <CardHeader>
           <CardTitle>Time Tracking</CardTitle>
@@ -81,6 +94,8 @@ const TimeTracking: React.FC = () => {
           )}
         </CardContent>
       </Card>
+
+      <DailyTimeReport entries={dailyEntries} />
     </div>
   );
 };
