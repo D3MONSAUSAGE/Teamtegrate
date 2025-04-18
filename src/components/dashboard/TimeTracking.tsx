@@ -6,21 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTimeTracking } from '@/hooks/useTimeTracking';
 import { formatDistance } from 'date-fns';
 import { Clock, TimerOff, Coffee, UtensilsCrossed } from 'lucide-react';
-import WeeklyTimeReport from './WeeklyTimeReport';
 
 const TimeTracking: React.FC = () => {
-  const { currentEntry, clockIn, clockOut, getWeeklyTimeEntries } = useTimeTracking();
+  const { currentEntry, clockIn, clockOut } = useTimeTracking();
   const [notes, setNotes] = useState('');
-  const [weeklyEntries, setWeeklyEntries] = useState<any[]>([]);
   const [elapsedTime, setElapsedTime] = useState('');
-
-  useEffect(() => {
-    const fetchWeeklyEntries = async () => {
-      const entries = await getWeeklyTimeEntries();
-      setWeeklyEntries(entries);
-    };
-    fetchWeeklyEntries();
-  }, [currentEntry]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -91,8 +81,6 @@ const TimeTracking: React.FC = () => {
           )}
         </CardContent>
       </Card>
-
-      <WeeklyTimeReport entries={weeklyEntries} />
     </div>
   );
 };
