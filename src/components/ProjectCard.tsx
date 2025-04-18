@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Project, Task } from '@/types';
@@ -31,11 +30,10 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   onViewTasks, 
   onCreateTask 
 }) => {
-  const { deleteProject } = useTask();
+  const { deleteProject, updateProject } = useTask();
   const [projectTasks, setProjectTasks] = useState<Task[]>([]);
   
   useEffect(() => {
-    // Fetch tasks related to this project from Supabase
     const fetchProjectTasks = async () => {
       try {
         const { data, error } = await supabase
@@ -49,7 +47,6 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
         }
         
         if (data) {
-          // Map Supabase data to our Task interface
           const mappedTasks: Task[] = data.map(task => ({
             id: task.id,
             userId: task.user_id || '',
@@ -82,16 +79,24 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
     return Math.round((completed / tasks.length) * 100);
   };
   
-  // Use tasks from Supabase to calculate progress
   const totalTasks = projectTasks.length;
   const completedTasks = projectTasks.filter(task => task.status === 'Completed').length;
   const progress = calculateProgress(projectTasks);
   
+  const handleToggleCompletion = async () => {
+    await updateProject(project.id, { is_completed: !project.is_completed });
+  };
+  
   return (
-    <Card className="card-hover relative overflow-hidden">
+    <Card className={`card-hover relative overflow-hidden ${project.is_completed ? 'bg-gray-50' : ''}`}>
       <CardHeader className="pb-1 md:pb-2 flex flex-row justify-between items-start gap-2">
-        <div className="min-w-0">
-          <CardTitle className="text-sm md:text-base text-ellipsis overflow-hidden whitespace-nowrap">{project.title}</CardTitle>
+        <div className="min-w-0 flex items-center gap-2">
+          <CardTitle className="text-sm md:text-base text-ellipsis overflow-hidden whitespace-nowrap">
+            {project.title}
+          </CardTitle>
+          {project.is_completed && (
+            <Badge variant="secondary">Completed</Badge>
+          )}
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -106,6 +111,9 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onViewTasks && onViewTasks(project)}>
               View Tasks
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleToggleCompletion}>
+              {project.is_completed ? 'Mark as Active' : 'Mark as Completed'}
             </DropdownMenuItem>
             <DropdownMenuItem 
               className="text-red-500" 

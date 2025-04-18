@@ -1,4 +1,3 @@
-
 export type UserRole = 'user' | 'manager';
 
 export interface User {
@@ -57,6 +56,7 @@ export interface Project {
   tags?: string[];
   budget?: number;
   budgetSpent?: number;
+  is_completed?: boolean;
 }
 
 export interface DailyScore {

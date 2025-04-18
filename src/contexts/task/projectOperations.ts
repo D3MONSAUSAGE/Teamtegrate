@@ -82,6 +82,7 @@ export const updateProject = async (
     if (updates.description !== undefined) updatedFields.description = updates.description;
     if (updates.startDate !== undefined) updatedFields.start_date = updates.startDate.toISOString();
     if (updates.endDate !== undefined) updatedFields.end_date = updates.endDate.toISOString();
+    if (updates.is_completed !== undefined) updatedFields.is_completed = updates.is_completed;
     
     const { error } = await supabase
       .from('projects')
