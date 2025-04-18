@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { FileText, Download, Trash2, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -201,16 +202,19 @@ const DocumentList: React.FC<DocumentListProps> = ({ documents, onDocumentDelete
       </Table>
 
       <Dialog open={!!previewUrl} onOpenChange={() => setPreviewUrl(null)}>
-        <DialogContent className="max-w-4xl h-[80vh]">
-          <DialogHeader>
+        <DialogContent className="max-w-[90vw] w-[900px] max-h-[90vh] p-0 overflow-hidden">
+          <DialogHeader className="px-6 py-4 border-b">
             <DialogTitle>{selectedDocument?.title}</DialogTitle>
           </DialogHeader>
           {previewUrl && (
-            <iframe
-              src={previewUrl}
-              className="w-full h-full rounded-md"
-              title="Document Preview"
-            />
+            <div className="w-full h-[80vh]">
+              <iframe
+                src={previewUrl}
+                className="w-full h-full border-0"
+                title="Document Preview"
+                aria-label={`Preview of ${selectedDocument?.title}`}
+              />
+            </div>
           )}
         </DialogContent>
       </Dialog>
