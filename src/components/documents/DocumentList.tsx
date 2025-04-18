@@ -44,11 +44,11 @@ const DocumentList: React.FC<DocumentListProps> = ({ documents, onDocumentDelete
     return `${size.toFixed(1)} ${units[unitIndex]}`;
   };
 
-  const handleDownload = async (document: DocumentItem) => {
+  const handleDownload = async (documentItem: DocumentItem) => {
     try {
       const { data, error } = await supabase.storage
         .from('documents')
-        .download(document.file_path);
+        .download(documentItem.file_path);
 
       if (error) throw error;
 
@@ -56,7 +56,7 @@ const DocumentList: React.FC<DocumentListProps> = ({ documents, onDocumentDelete
       const url = window.URL.createObjectURL(data);
       const link = document.createElement('a');
       link.href = url;
-      link.download = document.title;
+      link.download = documentItem.title;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -71,12 +71,12 @@ const DocumentList: React.FC<DocumentListProps> = ({ documents, onDocumentDelete
     }
   };
 
-  const handleDelete = async (document: DocumentItem) => {
+  const handleDelete = async (documentItem: DocumentItem) => {
     try {
       // Delete from storage
       const { error: storageError } = await supabase.storage
         .from('documents')
-        .remove([document.file_path]);
+        .remove([documentItem.file_path]);
 
       if (storageError) throw storageError;
 
@@ -84,7 +84,7 @@ const DocumentList: React.FC<DocumentListProps> = ({ documents, onDocumentDelete
       const { error: dbError } = await supabase
         .from('documents')
         .delete()
-        .eq('id', document.id);
+        .eq('id', documentItem.id);
 
       if (dbError) throw dbError;
 
