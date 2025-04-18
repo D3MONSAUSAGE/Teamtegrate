@@ -10,7 +10,8 @@ import {
   Settings,
   BarChart3,
   Calendar,
-  Timer
+  Timer,
+  FileText
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -72,6 +73,12 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
       name: 'Settings',
       path: '/dashboard/settings',
       icon: <Settings className="h-5 w-5" />,
+      allowed: true,
+    },
+    {
+      name: 'Documents',
+      path: '/dashboard/documents',
+      icon: <FileText className="h-5 w-5" />,
       allowed: true,
     },
   ];
