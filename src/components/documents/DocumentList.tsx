@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { FileText, Download, Trash2 } from 'lucide-react';
+import { FileText, Download, Trash2, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -12,6 +11,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 // Rename the interface to avoid collision with the DOM Document type
 interface DocumentItem {
@@ -30,6 +35,8 @@ interface DocumentListProps {
 
 const DocumentList: React.FC<DocumentListProps> = ({ documents, onDocumentDeleted }) => {
   const { toast } = useToast();
+  const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
+  const [selectedDocument, setSelectedDocument] = React.useState<DocumentItem | null>(null);
 
   const formatFileSize = (bytes: number) => {
     const units = ['B', 'KB', 'MB', 'GB'];
@@ -43,6 +50,36 @@ const DocumentList: React.FC<DocumentListProps> = ({ documents, onDocumentDelete
     
     return `${size.toFixed(1)} ${units[unitIndex]}`;
   };
+
+  const handlePreview = async (documentItem: DocumentItem) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('documents')
+        .download(documentItem.file_path);
+
+      if (error) throw error;
+
+      const url = window.URL.createObjectURL(data);
+      setPreviewUrl(url);
+      setSelectedDocument(documentItem);
+    } catch (error) {
+      console.error('Preview error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load document preview",
+        variant: "destructive"
+      });
+    }
+  };
+
+  React.useEffect(() => {
+    return () => {
+      // Cleanup preview URL when component unmounts
+      if (previewUrl) {
+        window.URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
 
   const handleDownload = async (documentItem: DocumentItem) => {
     try {
@@ -105,53 +142,79 @@ const DocumentList: React.FC<DocumentListProps> = ({ documents, onDocumentDelete
   };
 
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Name</TableHead>
-          <TableHead>Type</TableHead>
-          <TableHead>Size</TableHead>
-          <TableHead>Uploaded</TableHead>
-          <TableHead className="text-right">Actions</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {documents.map((document) => (
-          <TableRow key={document.id}>
-            <TableCell className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              {document.title}
-            </TableCell>
-            <TableCell>{document.file_type.split('/')[1].toUpperCase()}</TableCell>
-            <TableCell>{formatFileSize(document.size_bytes)}</TableCell>
-            <TableCell>{new Date(document.created_at).toLocaleDateString()}</TableCell>
-            <TableCell className="text-right space-x-2">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => handleDownload(document)}
-              >
-                <Download className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => handleDelete(document)}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </TableCell>
-          </TableRow>
-        ))}
-        {documents.length === 0 && (
+    <>
+      <Table>
+        <TableHeader>
           <TableRow>
-            <TableCell colSpan={5} className="text-center text-muted-foreground">
-              No documents uploaded yet
-            </TableCell>
+            <TableHead>Name</TableHead>
+            <TableHead>Type</TableHead>
+            <TableHead>Size</TableHead>
+            <TableHead>Uploaded</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
           </TableRow>
-        )}
-      </TableBody>
-    </Table>
+        </TableHeader>
+        <TableBody>
+          {documents.map((document) => (
+            <TableRow key={document.id}>
+              <TableCell className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                {document.title}
+              </TableCell>
+              <TableCell>{document.file_type.split('/')[1].toUpperCase()}</TableCell>
+              <TableCell>{formatFileSize(document.size_bytes)}</TableCell>
+              <TableCell>{new Date(document.created_at).toLocaleDateString()}</TableCell>
+              <TableCell className="text-right space-x-2">
+                {document.file_type === 'application/pdf' && (
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => handlePreview(document)}
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                )}
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => handleDownload(document)}
+                >
+                  <Download className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => handleDelete(document)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </TableCell>
+            </TableRow>
+          ))}
+          {documents.length === 0 && (
+            <TableRow>
+              <TableCell colSpan={5} className="text-center text-muted-foreground">
+                No documents uploaded yet
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
+
+      <Dialog open={!!previewUrl} onOpenChange={() => setPreviewUrl(null)}>
+        <DialogContent className="max-w-4xl h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>{selectedDocument?.title}</DialogTitle>
+          </DialogHeader>
+          {previewUrl && (
+            <iframe
+              src={previewUrl}
+              className="w-full h-full rounded-md"
+              title="Document Preview"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 
