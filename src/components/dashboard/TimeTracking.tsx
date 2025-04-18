@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,23 +7,26 @@ import { useTimeTracking } from '@/hooks/useTimeTracking';
 import { formatDistance } from 'date-fns';
 import { Clock, TimerOff, Coffee, UtensilsCrossed } from 'lucide-react';
 import DailyTimeReport from './DailyTimeReport';
+import WeeklyTimeReport from './WeeklyTimeReport';
 
 const TimeTracking: React.FC = () => {
   const { currentEntry, clockIn, clockOut, getWeeklyTimeEntries } = useTimeTracking();
   const [notes, setNotes] = useState('');
   const [elapsedTime, setElapsedTime] = useState('');
   const [dailyEntries, setDailyEntries] = useState<any[]>([]);
+  const [weeklyEntries, setWeeklyEntries] = useState<any[]>([]);
 
   useEffect(() => {
-    const fetchDailyEntries = async () => {
+    const fetchEntries = async () => {
       const entries = await getWeeklyTimeEntries();
       const today = new Date().toISOString().split('T')[0];
       const todayEntries = entries.filter(entry => 
         entry.clock_in.startsWith(today)
       );
       setDailyEntries(todayEntries);
+      setWeeklyEntries(entries);
     };
-    fetchDailyEntries();
+    fetchEntries();
   }, [currentEntry]);
 
   useEffect(() => {
@@ -96,6 +100,7 @@ const TimeTracking: React.FC = () => {
       </Card>
 
       <DailyTimeReport entries={dailyEntries} />
+      <WeeklyTimeReport entries={weeklyEntries} />
     </div>
   );
 };
