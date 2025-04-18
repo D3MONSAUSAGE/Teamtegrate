@@ -82,7 +82,9 @@ export const updateProject = async (
     if (updates.description !== undefined) updatedFields.description = updates.description;
     if (updates.startDate !== undefined) updatedFields.start_date = updates.startDate.toISOString();
     if (updates.endDate !== undefined) updatedFields.end_date = updates.endDate.toISOString();
-    if (updates.is_completed !== undefined) updatedFields.is_completed = updates.is_completed;
+    
+    // Handle is_completed separately - store it only in local state for now
+    const isCompletedUpdate = updates.is_completed !== undefined;
     
     const { error } = await supabase
       .from('projects')
@@ -95,6 +97,7 @@ export const updateProject = async (
       return;
     }
     
+    // Update local state including the completion status
     setProjects(prevProjects => prevProjects.map(project => {
       if (project.id === projectId) {
         return { ...project, ...updates, updatedAt: now };

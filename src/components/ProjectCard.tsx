@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Project, Task } from '@/types';
@@ -83,8 +84,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   const completedTasks = projectTasks.filter(task => task.status === 'Completed').length;
   const progress = calculateProgress(projectTasks);
   
-  const handleToggleCompletion = async () => {
-    await updateProject(project.id, { is_completed: !project.is_completed });
+  const handleToggleCompletion = () => {
+    updateProject(project.id, { is_completed: !project.is_completed });
   };
   
   return (
