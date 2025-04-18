@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTimeTracking } from '@/hooks/useTimeTracking';
 import { formatDistance } from 'date-fns';
-import { Clock, TimerOff } from 'lucide-react';
+import { Clock, TimerOff, Coffee, UtensilsCrossed } from 'lucide-react';
 import WeeklyTimeReport from './WeeklyTimeReport';
 
 const TimeTracking: React.FC = () => {
@@ -32,6 +32,10 @@ const TimeTracking: React.FC = () => {
     return () => clearInterval(interval);
   }, [currentEntry]);
 
+  const handleBreak = (breakType: string) => {
+    clockOut(`${breakType} break started`);
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -47,13 +51,29 @@ const TimeTracking: React.FC = () => {
               className="flex-grow"
             />
             {currentEntry.isClocked ? (
-              <Button 
-                variant="destructive" 
-                onClick={() => clockOut(notes)}
-                className="w-full md:w-auto"
-              >
-                <TimerOff className="mr-2 h-4 w-4" /> Clock Out
-              </Button>
+              <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
+                <Button 
+                  variant="destructive" 
+                  onClick={() => clockOut(notes)}
+                  className="w-full md:w-auto"
+                >
+                  <TimerOff className="mr-2 h-4 w-4" /> Clock Out
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => handleBreak('Lunch')}
+                  className="w-full md:w-auto"
+                >
+                  <UtensilsCrossed className="mr-2 h-4 w-4" /> Lunch Break
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => handleBreak('Coffee')}
+                  className="w-full md:w-auto"
+                >
+                  <Coffee className="mr-2 h-4 w-4" /> Break
+                </Button>
+              </div>
             ) : (
               <Button 
                 onClick={() => clockIn(notes)}
