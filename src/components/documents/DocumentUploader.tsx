@@ -35,9 +35,10 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({ onUploadComplete })
       console.log("Starting upload for file:", file.name);
       
       // Upload to storage
+      const filePath = `${user.id}/${Date.now()}-${file.name}`;
       const { data: storageData, error: storageError } = await supabase.storage
         .from('documents')
-        .upload(`${user.id}/${Date.now()}-${file.name}`, file, {
+        .upload(filePath, file, {
           cacheControl: '3600',
           upsert: false
         });
@@ -57,7 +58,8 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({ onUploadComplete })
           file_path: storageData.path,
           file_type: file.type,
           size_bytes: file.size,
-          user_id: user.id
+          user_id: user.id,
+          storage_id: storageData.id || filePath // Add the missing storage_id field
         });
 
       if (dbError) {

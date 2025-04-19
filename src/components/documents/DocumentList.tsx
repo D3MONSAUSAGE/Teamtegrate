@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { FileText, Download, Trash2, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -31,9 +32,10 @@ interface DocumentItem {
 interface DocumentListProps {
   documents: DocumentItem[];
   onDocumentDeleted: () => void;
+  isLoading?: boolean; // Add the isLoading prop
 }
 
-const DocumentList: React.FC<DocumentListProps> = ({ documents, onDocumentDeleted }) => {
+const DocumentList: React.FC<DocumentListProps> = ({ documents, onDocumentDeleted, isLoading = false }) => {
   const { toast } = useToast();
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
   const [selectedDocument, setSelectedDocument] = React.useState<DocumentItem | null>(null);
@@ -151,48 +153,55 @@ const DocumentList: React.FC<DocumentListProps> = ({ documents, onDocumentDelete
           </TableRow>
         </TableHeader>
         <TableBody>
-          {documents.map((document) => (
-            <TableRow key={document.id}>
-              <TableCell className="flex items-center gap-2">
-                <FileText className="h-4 w-4" />
-                <span className="line-clamp-1">{document.title}</span>
-              </TableCell>
-              <TableCell className={isMobile ? "hidden" : ""}>{document.file_type.split('/')[1].toUpperCase()}</TableCell>
-              <TableCell className={isMobile ? "hidden" : ""}>{formatFileSize(document.size_bytes)}</TableCell>
-              <TableCell className={isMobile ? "hidden" : ""}>{new Date(document.created_at).toLocaleDateString()}</TableCell>
-              <TableCell className="text-right space-x-1">
-                {document.file_type === 'application/pdf' && (
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => handlePreview(document)}
-                  >
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                )}
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => handleDownload(document)}
-                >
-                  <Download className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => handleDelete(document)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+          {isLoading ? (
+            <TableRow>
+              <TableCell colSpan={isMobile ? 2 : 5} className="text-center py-8 text-muted-foreground">
+                Loading documents...
               </TableCell>
             </TableRow>
-          ))}
-          {documents.length === 0 && (
+          ) : documents.length === 0 ? (
             <TableRow>
               <TableCell colSpan={isMobile ? 2 : 5} className="text-center text-muted-foreground">
                 No documents uploaded yet
               </TableCell>
             </TableRow>
+          ) : (
+            documents.map((document) => (
+              <TableRow key={document.id}>
+                <TableCell className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  <span className="line-clamp-1">{document.title}</span>
+                </TableCell>
+                <TableCell className={isMobile ? "hidden" : ""}>{document.file_type.split('/')[1].toUpperCase()}</TableCell>
+                <TableCell className={isMobile ? "hidden" : ""}>{formatFileSize(document.size_bytes)}</TableCell>
+                <TableCell className={isMobile ? "hidden" : ""}>{new Date(document.created_at).toLocaleDateString()}</TableCell>
+                <TableCell className="text-right space-x-1">
+                  {document.file_type === 'application/pdf' && (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => handlePreview(document)}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  )}
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => handleDownload(document)}
+                  >
+                    <Download className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => handleDelete(document)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))
           )}
         </TableBody>
       </Table>
