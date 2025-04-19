@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -13,7 +14,7 @@ import ProjectsPage from "./pages/ProjectsPage";
 import TeamPage from "./pages/TeamPage";
 import SettingsPage from "./pages/SettingsPage";
 import ReportsPage from "./pages/ReportsPage";
-import CalendarPage from "./pages/CalendarPage";
+import TimelinePage from "./pages/TimelinePage";
 import TimeTrackingPage from "./pages/TimeTrackingPage";
 import NotFound from "./pages/NotFound";
 import Index from "./pages/Index";
@@ -38,7 +39,7 @@ const App = () => (
                 <Route index element={<DashboardPage />} />
                 <Route path="tasks" element={<TasksPage />} />
                 <Route path="projects" element={<ProjectsPage />} />
-                <Route path="calendar" element={<CalendarPage />} />
+                <Route path="timeline" element={<TimelinePage />} />
                 <Route path="team" element={<TeamPage />} />
                 <Route path="chat" element={<ChatPage />} />
                 <Route path="reports" element={<ReportsPage />} />

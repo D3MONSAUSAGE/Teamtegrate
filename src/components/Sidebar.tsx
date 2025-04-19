@@ -9,8 +9,8 @@ import {
   Users, 
   Settings,
   BarChart3,
-  Calendar,
   Timer,
+  Clock,
   FileText,
   DollarSign,
   MessageSquare
@@ -54,9 +54,9 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
       allowed: true,
     },
     {
-      name: 'Calendar',
-      path: '/dashboard/calendar',
-      icon: <Calendar className="h-5 w-5" />,
+      name: 'Timeline',
+      path: '/dashboard/timeline',
+      icon: <Clock className="h-5 w-5" />,
       allowed: true,
     },
     {
