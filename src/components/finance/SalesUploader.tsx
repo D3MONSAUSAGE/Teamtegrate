@@ -21,12 +21,16 @@ const SalesUploader: React.FC<SalesUploaderProps> = ({ onUpload }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [salesDate, setSalesDate] = useState<Date | undefined>(new Date());
   const [location, setLocation] = useState('Santa Clarita');
+  const [files, setFiles] = useState<File[]>([]);
   
-  const { getRootProps, getInputProps, isDragActive, acceptedFiles, setAcceptedFiles } = useDropzone({
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: {
       'application/pdf': ['.pdf']
     },
-    maxFiles: 1
+    maxFiles: 1,
+    onDrop: (acceptedFiles) => {
+      setFiles(acceptedFiles);
+    }
   });
   
   const handleUpload = async () => {
@@ -35,7 +39,7 @@ const SalesUploader: React.FC<SalesUploaderProps> = ({ onUpload }) => {
       return;
     }
     
-    if (acceptedFiles.length === 0) {
+    if (files.length === 0) {
       toast.error("Please select a file");
       return;
     }
@@ -97,8 +101,7 @@ const SalesUploader: React.FC<SalesUploaderProps> = ({ onUpload }) => {
       
       // Reset the form
       setSalesDate(new Date());
-      // Instead of using splice on the readonly array, we'll use setAcceptedFiles to reset
-      setAcceptedFiles([]);
+      setFiles([]);
     } catch (error) {
       console.error('Error uploading sales data:', error);
       toast.error("Error processing file");
@@ -168,12 +171,12 @@ const SalesUploader: React.FC<SalesUploaderProps> = ({ onUpload }) => {
         <p className="text-xs text-gray-500 mt-1">Only PDF files are supported</p>
       </div>
       
-      {acceptedFiles.length > 0 && (
+      {files.length > 0 && (
         <Card>
           <CardContent className="p-4">
             <div className="text-sm">
               <p className="font-medium">Selected File:</p>
-              <p className="text-gray-600">{acceptedFiles[0].name}</p>
+              <p className="text-gray-600">{files[0].name}</p>
             </div>
           </CardContent>
         </Card>
@@ -182,7 +185,7 @@ const SalesUploader: React.FC<SalesUploaderProps> = ({ onUpload }) => {
       <div className="flex justify-end">
         <Button 
           onClick={handleUpload} 
-          disabled={!salesDate || acceptedFiles.length === 0 || isUploading}
+          disabled={!salesDate || files.length === 0 || isUploading}
         >
           {isUploading ? (
             <>
