@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/components/ui/sonner';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
@@ -48,8 +49,15 @@ const Navbar = () => {
   }, [user]);
   
   const handleLogout = async () => {
-    await logout();
-    navigate('/login');
+    try {
+      await logout();
+      navigate('/login');
+      toast.success('Logged out successfully');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Still navigate to login page even if there was an error
+      navigate('/login');
+    }
   };
   
   const handleSettings = () => {
