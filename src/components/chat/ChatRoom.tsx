@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from '@/contexts/AuthContext';
@@ -206,7 +207,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
       </div>
 
       <ScrollArea className="flex-1 p-4">
-        <div className="space-y-4">
+        <div className="space-y-6">
           {messages.map((message) => {
             const isCurrentUser = message.user_id === user?.id;
             return (
@@ -226,10 +227,10 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
                   }`}
                 >
                   <div
-                    className={`px-4 py-2.5 rounded-2xl break-words ${
+                    className={`px-4 py-2.5 rounded-3xl break-words ${
                       isCurrentUser
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted'
+                        ? 'bg-primary text-primary-foreground rounded-br-sm'
+                        : 'bg-muted rounded-bl-sm'
                     }`}
                   >
                     <p className="text-sm">{message.content}</p>
@@ -269,31 +270,35 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
             ref={fileInputRef}
             multiple
           />
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            className="flex-shrink-0"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <Paperclip className="h-4 w-4" />
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            className="flex-shrink-0"
-            onClick={() => toast.info("Voice messages coming soon!")}
-          >
-            <Mic className="h-4 w-4" />
-          </Button>
-          <Input
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="Type your message..."
-            className="flex-1 rounded-full bg-muted border-0"
-          />
-          <Button type="submit" size="icon" className="flex-shrink-0 rounded-full">
+          <div className="flex-1 relative">
+            <Input
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              placeholder="Type your message..."
+              className="pr-24 rounded-full bg-muted border-0"
+            />
+            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Paperclip className="h-4 w-4" />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => toast.info("Voice messages coming soon!")}
+              >
+                <Mic className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+          <Button type="submit" size="icon" className="rounded-full h-10 w-10 flex-shrink-0">
             <Send className="h-4 w-4" />
           </Button>
         </form>
