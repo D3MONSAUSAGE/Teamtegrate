@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Project, Task } from '@/types';
@@ -34,10 +35,16 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
 }) => {
   const { deleteProject, updateProject } = useTask();
   const [projectTasks, setProjectTasks] = useState<Task[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   
   useEffect(() => {
     const fetchProjectTasks = async () => {
+      if (!project.id) return;
+      
+      setIsLoading(true);
       try {
+        console.log(`Fetching tasks for project ${project.id}`);
+        
         const { data, error } = await supabase
           .from('tasks')
           .select('*')
@@ -47,6 +54,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
           console.error('Error fetching project tasks:', error);
           return;
         }
+        
+        console.log(`Found ${data?.length || 0} tasks for project ${project.id}`, data);
         
         if (data) {
           const mappedTasks: Task[] = data.map(task => ({
@@ -70,6 +79,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
         }
       } catch (error) {
         console.error('Error fetching project tasks:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
     
@@ -136,7 +147,11 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
           {project.description}
         </p>
         
-        {projectTasks.length > 0 ? (
+        {isLoading ? (
+          <div className="flex justify-center py-4">
+            <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full"></div>
+          </div>
+        ) : projectTasks.length > 0 ? (
           <div className="mt-3">
             <div className="flex justify-between items-center mb-2">
               <span className="text-xs font-medium">Recent Tasks</span>

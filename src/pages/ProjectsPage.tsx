@@ -26,6 +26,7 @@ const ProjectsPage = () => {
   // Refresh projects when page loads
   useEffect(() => {
     if (fetchProjects) {
+      console.log("Fetching projects on page load");
       fetchProjects();
     }
   }, [fetchProjects]);
@@ -65,6 +66,7 @@ const ProjectsPage = () => {
   const handleTaskDialogChange = (open: boolean) => {
     setIsCreateTaskOpen(open);
     if (!open && fetchProjects) {
+      console.log("Refreshing projects after task dialog closed");
       // Refresh projects data when task dialog closes
       fetchProjects();
     }
@@ -73,7 +75,17 @@ const ProjectsPage = () => {
   const handleViewTasksDialogChange = (open: boolean) => {
     setIsViewTasksOpen(open);
     if (!open && fetchProjects) {
+      console.log("Refreshing projects after task view dialog closed");
       // Refresh projects data when task dialog closes
+      fetchProjects();
+    }
+  };
+  
+  const handleProjectDialogChange = (open: boolean) => {
+    setIsCreateProjectOpen(open);
+    if (!open && fetchProjects) {
+      console.log("Refreshing projects after project dialog closed");
+      // Refresh projects data when project dialog closes
       fetchProjects();
     }
   };
@@ -123,7 +135,7 @@ const ProjectsPage = () => {
       
       <CreateProjectDialog 
         open={isCreateProjectOpen} 
-        onOpenChange={setIsCreateProjectOpen}
+        onOpenChange={handleProjectDialogChange}
         editingProject={editingProject}
       />
       

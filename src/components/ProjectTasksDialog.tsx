@@ -45,6 +45,8 @@ const ProjectTasksDialog: React.FC<ProjectTasksDialogProps> = ({
     
     setIsLoading(true);
     try {
+      console.log(`ProjectTasksDialog: Fetching tasks for project ${project.id}`);
+      
       const { data, error } = await supabase
         .from('tasks')
         .select('*')
@@ -54,6 +56,8 @@ const ProjectTasksDialog: React.FC<ProjectTasksDialogProps> = ({
         console.error('Error fetching project tasks:', error);
         return;
       }
+      
+      console.log(`ProjectTasksDialog: Found ${data?.length || 0} tasks for project ${project.id}`, data);
       
       if (data) {
         const mappedTasks: Task[] = data.map(task => ({
@@ -98,13 +102,13 @@ const ProjectTasksDialog: React.FC<ProjectTasksDialogProps> = ({
         <DialogContent className="sm:max-w-[800px]">
           <DialogHeader>
             <DialogTitle>{project?.title}</DialogTitle>
-            <DialogDescription className="text-sm text-gray-500">
+            <DialogDescription>
               <div className="flex items-center gap-2 mt-2">
                 <Calendar className="h-4 w-4" />
                 <span>{format(new Date(project.startDate), 'MMM d, yyyy')} - {format(new Date(project.endDate), 'MMM d, yyyy')}</span>
               </div>
               <div className="mt-2">
-                <p className="line-clamp-2">{project.description}</p>
+                <p>{project.description}</p>
               </div>
               <div className="mt-3 space-y-1">
                 <div className="flex justify-between items-center">
