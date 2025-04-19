@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -73,26 +74,109 @@ const ProfitAndLoss: React.FC = () => {
     }, 100);
   };
   
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('en-US', { 
+      style: 'currency', 
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(value);
+  };
+  
   const handleExport = (pnl: PnlItem) => {
-    // Create CSV content
+    // Calculate all totals for the export
+    const totalRevenue = Object.values(pnl.data.revenue).reduce((sum, val) => sum + val, 0);
+    const totalCogs = Object.values(pnl.data.cogs).reduce((sum, val) => sum + val, 0);
+    const grossProfit = totalRevenue - totalCogs;
+    
+    const totalOperatingExpenses = Object.values(pnl.data.operatingExpenses).reduce((sum, val) => sum + val, 0);
+    const operatingProfit = grossProfit - totalOperatingExpenses;
+    
+    const totalOtherExpenses = Object.values(pnl.data.otherExpenses).reduce((sum, val) => sum + val, 0);
+    const netProfit = operatingProfit - totalOtherExpenses;
+    
+    // Calculate percentages
+    const grossProfitMargin = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
+    const netProfitMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
+    
+    // Create a more complete CSV with all data
     const rows = [
       ['Profit & Loss Statement', pnl.title],
       ['Period', pnl.period],
+      ['Date Generated', pnl.createdAt.toLocaleDateString()],
       [''],
-      ['REVENUE', ''],
-      ['Food Sales', `$${pnl.data.revenue.foodSales.toFixed(2)}`],
-      ['Beverage Sales', `$${pnl.data.revenue.beverageSales.toFixed(2)}`],
-      ['Merchandise Sales', `$${pnl.data.revenue.merchandiseSales.toFixed(2)}`],
-      ['Catering/Events', `$${pnl.data.revenue.cateringEvents.toFixed(2)}`],
-      ['Other Income', `$${pnl.data.revenue.otherIncome.toFixed(2)}`],
-      ['Total Revenue', `$${Object.values(pnl.data.revenue).reduce((sum, val) => sum + val, 0).toFixed(2)}`],
+      ['REVENUE', 'Amount', '% of Revenue'],
+      ['Food Sales', formatCurrency(pnl.data.revenue.foodSales), `${(totalRevenue > 0 ? (pnl.data.revenue.foodSales / totalRevenue) * 100 : 0).toFixed(1)}%`],
+      ['Beverage Sales', formatCurrency(pnl.data.revenue.beverageSales), `${(totalRevenue > 0 ? (pnl.data.revenue.beverageSales / totalRevenue) * 100 : 0).toFixed(1)}%`],
+      ['Merchandise Sales', formatCurrency(pnl.data.revenue.merchandiseSales), `${(totalRevenue > 0 ? (pnl.data.revenue.merchandiseSales / totalRevenue) * 100 : 0).toFixed(1)}%`],
+      ['Catering/Events', formatCurrency(pnl.data.revenue.cateringEvents), `${(totalRevenue > 0 ? (pnl.data.revenue.cateringEvents / totalRevenue) * 100 : 0).toFixed(1)}%`],
+      ['Other Income', formatCurrency(pnl.data.revenue.otherIncome), `${(totalRevenue > 0 ? (pnl.data.revenue.otherIncome / totalRevenue) * 100 : 0).toFixed(1)}%`],
+      ['Total Revenue', formatCurrency(totalRevenue), '100.0%'],
       [''],
-      ['COST OF GOODS SOLD', ''],
-      // ... continue with all P&L entries
+      ['COST OF GOODS SOLD', 'Amount', '% of Revenue'],
+      ['Food Costs', formatCurrency(pnl.data.cogs.foodCosts), `${(totalRevenue > 0 ? (pnl.data.cogs.foodCosts / totalRevenue) * 100 : 0).toFixed(1)}%`],
+      ['Beverage Costs', formatCurrency(pnl.data.cogs.beverageCosts), `${(totalRevenue > 0 ? (pnl.data.cogs.beverageCosts / totalRevenue) * 100 : 0).toFixed(1)}%`],
+      ['Merchandise Costs', formatCurrency(pnl.data.cogs.merchandiseCosts), `${(totalRevenue > 0 ? (pnl.data.cogs.merchandiseCosts / totalRevenue) * 100 : 0).toFixed(1)}%`],
+      ['Packaging/Supplies', formatCurrency(pnl.data.cogs.packagingSupplies), `${(totalRevenue > 0 ? (pnl.data.cogs.packagingSupplies / totalRevenue) * 100 : 0).toFixed(1)}%`],
+      ['Total COGS', formatCurrency(totalCogs), `${(totalRevenue > 0 ? (totalCogs / totalRevenue) * 100 : 0).toFixed(1)}%`],
+      [''],
+      ['GROSS PROFIT', formatCurrency(grossProfit), `${grossProfitMargin.toFixed(1)}%`],
+      [''],
+      ['OPERATING EXPENSES', 'Amount', '% of Revenue'],
+      ['Labor Costs', '', ''],
+      ['Wages/Salaries', formatCurrency(pnl.data.operatingExpenses.wagesSalaries), `${(totalRevenue > 0 ? (pnl.data.operatingExpenses.wagesSalaries / totalRevenue) * 100 : 0).toFixed(1)}%`],
+      ['Benefits/Payroll Taxes', formatCurrency(pnl.data.operatingExpenses.benefitsPayrollTaxes), `${(totalRevenue > 0 ? (pnl.data.operatingExpenses.benefitsPayrollTaxes / totalRevenue) * 100 : 0).toFixed(1)}%`],
+      [''],
+      ['Facilities', '', ''],
+      ['Rent/Lease', formatCurrency(pnl.data.operatingExpenses.rentLease), `${(totalRevenue > 0 ? (pnl.data.operatingExpenses.rentLease / totalRevenue) * 100 : 0).toFixed(1)}%`],
+      ['Utilities', formatCurrency(pnl.data.operatingExpenses.utilities), `${(totalRevenue > 0 ? (pnl.data.operatingExpenses.utilities / totalRevenue) * 100 : 0).toFixed(1)}%`],
+      [''],
+      ['Marketing & Franchise', '', ''],
+      ['Marketing/Advertising', formatCurrency(pnl.data.operatingExpenses.marketingAdvertising), `${(totalRevenue > 0 ? (pnl.data.operatingExpenses.marketingAdvertising / totalRevenue) * 100 : 0).toFixed(1)}%`],
+      ['Royalty Fees', formatCurrency(pnl.data.operatingExpenses.royaltyFees), `${(totalRevenue > 0 ? (pnl.data.operatingExpenses.royaltyFees / totalRevenue) * 100 : 0).toFixed(1)}%`],
+      ['Advertising Fees', formatCurrency(pnl.data.operatingExpenses.advertisingFees), `${(totalRevenue > 0 ? (pnl.data.operatingExpenses.advertisingFees / totalRevenue) * 100 : 0).toFixed(1)}%`],
+      ['Other Franchise Fees', formatCurrency(pnl.data.operatingExpenses.otherFranchiseFees), `${(totalRevenue > 0 ? (pnl.data.operatingExpenses.otherFranchiseFees / totalRevenue) * 100 : 0).toFixed(1)}%`],
+      [''],
+      ['Other Operating Expenses', '', ''],
+      ['Insurance', formatCurrency(pnl.data.operatingExpenses.insurance), `${(totalRevenue > 0 ? (pnl.data.operatingExpenses.insurance / totalRevenue) * 100 : 0).toFixed(1)}%`],
+      ['Maintenance/Repairs', formatCurrency(pnl.data.operatingExpenses.maintenanceRepairs), `${(totalRevenue > 0 ? (pnl.data.operatingExpenses.maintenanceRepairs / totalRevenue) * 100 : 0).toFixed(1)}%`],
+      ['Non-Food Supplies', formatCurrency(pnl.data.operatingExpenses.nonFoodSupplies), `${(totalRevenue > 0 ? (pnl.data.operatingExpenses.nonFoodSupplies / totalRevenue) * 100 : 0).toFixed(1)}%`],
+      ['Technology', formatCurrency(pnl.data.operatingExpenses.technology), `${(totalRevenue > 0 ? (pnl.data.operatingExpenses.technology / totalRevenue) * 100 : 0).toFixed(1)}%`],
+      ['Professional Fees', formatCurrency(pnl.data.operatingExpenses.professionalFees), `${(totalRevenue > 0 ? (pnl.data.operatingExpenses.professionalFees / totalRevenue) * 100 : 0).toFixed(1)}%`],
+      ['Other Operating Expenses', formatCurrency(pnl.data.operatingExpenses.otherOperatingExpenses), `${(totalRevenue > 0 ? (pnl.data.operatingExpenses.otherOperatingExpenses / totalRevenue) * 100 : 0).toFixed(1)}%`],
+      ['Total Operating Expenses', formatCurrency(totalOperatingExpenses), `${(totalRevenue > 0 ? (totalOperatingExpenses / totalRevenue) * 100 : 0).toFixed(1)}%`],
+      [''],
+      ['OPERATING PROFIT (EBITDA)', formatCurrency(operatingProfit), `${(totalRevenue > 0 ? (operatingProfit / totalRevenue) * 100 : 0).toFixed(1)}%`],
+      [''],
+      ['OTHER EXPENSES', 'Amount', '% of Revenue'],
+      ['Depreciation/Amortization', formatCurrency(pnl.data.otherExpenses.depreciationAmortization), `${(totalRevenue > 0 ? (pnl.data.otherExpenses.depreciationAmortization / totalRevenue) * 100 : 0).toFixed(1)}%`],
+      ['Interest Expense', formatCurrency(pnl.data.otherExpenses.interestExpense), `${(totalRevenue > 0 ? (pnl.data.otherExpenses.interestExpense / totalRevenue) * 100 : 0).toFixed(1)}%`],
+      ['Taxes', formatCurrency(pnl.data.otherExpenses.taxes), `${(totalRevenue > 0 ? (pnl.data.otherExpenses.taxes / totalRevenue) * 100 : 0).toFixed(1)}%`],
+      ['Total Other Expenses', formatCurrency(totalOtherExpenses), `${(totalRevenue > 0 ? (totalOtherExpenses / totalRevenue) * 100 : 0).toFixed(1)}%`],
+      [''],
+      ['NET PROFIT (LOSS)', formatCurrency(netProfit), `${netProfitMargin.toFixed(1)}%`],
     ];
     
-    const csvContent = rows.map(row => row.join(',')).join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv' });
+    // Add notes if they exist
+    if (pnl.data.notes) {
+      rows.push(['']);
+      rows.push(['Notes']);
+      rows.push([pnl.data.notes]);
+    }
+    
+    // Properly escape CSV content and join rows
+    const csvContent = rows.map(row => 
+      row.map(cell => {
+        // Handle commas and quotes in content
+        if (cell && typeof cell === 'string' && (cell.includes(',') || cell.includes('"') || cell.includes('\n'))) {
+          return `"${cell.replace(/"/g, '""')}"`;
+        }
+        return cell;
+      }).join(',')
+    ).join('\n');
+    
+    // Create and download the CSV file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;

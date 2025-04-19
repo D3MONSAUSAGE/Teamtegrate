@@ -21,11 +21,34 @@
     left: 0;
     top: 0;
     width: 100%;
+    background-color: white !important;
   }
   
   /* Adjust page margins and size */
   @page {
     size: auto;
     margin: 10mm;
+  }
+  
+  /* Ensure all text is visible and properly formatted */
+  p, span, h1, h2, h3, h4, h5, h6, div {
+    color: black !important;
+  }
+  
+  /* Remove any unnecessary borders */
+  .border, .border-t, .border-r, .border-b, .border-l {
+    border-color: #ddd !important;
+  }
+  
+  /* Improve table-like structures for printing */
+  .py-1, .py-2 {
+    padding-top: 0.25rem !important;
+    padding-bottom: 0.25rem !important;
+  }
+  
+  /* Ensure backgrounds for highlighted sections are visible */
+  .bg-muted\/30, .bg-primary\/10, .rounded-md {
+    background-color: #f9f9f9 !important;
+    border: 1px solid #eaeaea !important;
   }
 }
