@@ -26,6 +26,7 @@ export const fetchProjects = async (user: User | null, setProjects: React.Dispat
       const formattedProjects = await Promise.all(data.map(async (project) => {
         console.log(`Fetching tasks for project ${project.id}`);
         
+        // Fetch all tasks associated with this project
         const { data: projectTasks } = await supabase
           .from('tasks')
           .select('*')
@@ -33,6 +34,7 @@ export const fetchProjects = async (user: User | null, setProjects: React.Dispat
         
         console.log(`Found ${projectTasks?.length || 0} tasks for project ${project.id}:`, projectTasks);
         
+        // Process all tasks for this project
         const formattedProjectTasks = projectTasks ? await Promise.all(projectTasks.map(async (task) => {
           const comments = await fetchTaskComments(task.id);
 
@@ -76,7 +78,7 @@ export const fetchProjects = async (user: User | null, setProjects: React.Dispat
           managerId: project.manager_id || '',
           createdAt: new Date(project.created_at || Date.now()),
           updatedAt: new Date(project.updated_at || Date.now()),
-          tasks: formattedProjectTasks,
+          tasks: formattedProjectTasks, // This is an array of all tasks for this project
           teamMembers: [],
           tags: [],
           budget: project.budget || 0,

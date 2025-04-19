@@ -84,9 +84,11 @@ export const addTask = async (
       if (task.projectId) {
         setProjects(prevProjects => prevProjects.map(project => {
           if (project.id === task.projectId) {
+            // Ensure we properly append to the existing tasks array
+            const updatedTasks = [...(project.tasks || []), newTask];
             return {
               ...project,
-              tasks: [...(project.tasks || []), newTask]
+              tasks: updatedTasks
             };
           }
           return project;
