@@ -18,6 +18,7 @@ interface UseTeamMemberFormProps {
 export const useTeamMemberForm = ({ onSuccess, onCancel }: UseTeamMemberFormProps) => {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<TeamMemberFormData>({
     email: '',
     role: 'Developer',
@@ -26,22 +27,25 @@ export const useTeamMemberForm = ({ onSuccess, onCancel }: UseTeamMemberFormProp
 
   const handleInputChange = (field: keyof TeamMemberFormData, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    // Clear error when user makes changes
+    if (error) setError(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.email.trim() || !formData.role) {
-      toast.error('Please fill in all required fields');
+      setError('Please fill in all required fields');
       return;
     }
 
     if (!user) {
-      toast.error('You must be logged in to add team members');
+      setError('You must be logged in to add team members');
       return;
     }
 
     setIsLoading(true);
+    setError(null);
 
     try {
       // Check if email exists in the users table
@@ -52,14 +56,18 @@ export const useTeamMemberForm = ({ onSuccess, onCancel }: UseTeamMemberFormProp
         .single();
 
       if (checkError) {
-        console.error('Error checking for existing user:', checkError);
-        toast.error('Error checking email');
+        if (checkError.code === 'PGRST116') {
+          setError('This email is not registered in the system. The user needs to sign up first.');
+        } else {
+          console.error('Error checking for existing user:', checkError);
+          setError('Error checking email. Please try again.');
+        }
         setIsLoading(false);
         return;
       }
 
       if (!existingUser) {
-        toast.error('This email is not registered in the system. The user needs to sign up first.');
+        setError('This email is not registered in the system. The user needs to sign up first.');
         setIsLoading(false);
         return;
       }
@@ -76,10 +84,13 @@ export const useTeamMemberForm = ({ onSuccess, onCancel }: UseTeamMemberFormProp
 
       if (insertError) {
         if (insertError.code === '23505') { // Unique violation
-          toast.error('This user is already a member of your team');
+          setError('This user is already a member of your team');
+        } else if (insertError.code === '42P01') { // Table doesn't exist
+          setError('System error: Team members table not found. Please contact support.');
+          console.error('Database table error:', insertError);
         } else {
           console.error('Error adding team member:', insertError);
-          toast.error('Failed to add team member');
+          setError('Failed to add team member. Please try again.');
         }
         setIsLoading(false);
         return;
@@ -89,7 +100,7 @@ export const useTeamMemberForm = ({ onSuccess, onCancel }: UseTeamMemberFormProp
       onSuccess();
     } catch (error) {
       console.error('Unexpected error:', error);
-      toast.error('An unexpected error occurred');
+      setError('An unexpected error occurred. Please try again later.');
     } finally {
       setIsLoading(false);
     }
@@ -98,6 +109,7 @@ export const useTeamMemberForm = ({ onSuccess, onCancel }: UseTeamMemberFormProp
   return {
     formData,
     isLoading,
+    error,
     handleInputChange,
     handleSubmit,
   };

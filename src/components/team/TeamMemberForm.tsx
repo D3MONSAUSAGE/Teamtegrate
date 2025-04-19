@@ -1,12 +1,13 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { DialogFooter } from "@/components/ui/dialog";
 import useTeamMemberForm from '@/hooks/useTeamMemberForm';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface TeamMemberFormProps {
   onCancel: () => void;
@@ -14,13 +15,22 @@ interface TeamMemberFormProps {
 }
 
 const TeamMemberForm: React.FC<TeamMemberFormProps> = ({ onCancel, onSuccess }) => {
-  const { formData, handleInputChange, handleSubmit, isLoading } = useTeamMemberForm({
+  const { formData, handleInputChange, handleSubmit, isLoading, error } = useTeamMemberForm({
     onSuccess,
     onCancel,
   });
   
+  const [showHelp, setShowHelp] = useState(false);
+  
   return (
     <form onSubmit={handleSubmit} className="space-y-4 mt-2">
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+      
       <div className="space-y-2">
         <Label htmlFor="email">Email *</Label>
         <Input 
@@ -56,6 +66,29 @@ const TeamMemberForm: React.FC<TeamMemberFormProps> = ({ onCancel, onSuccess }) 
             <SelectItem value="Product Owner">Product Owner</SelectItem>
           </SelectContent>
         </Select>
+      </div>
+      
+      {showHelp && (
+        <Alert className="bg-blue-50 text-blue-800 border-blue-200">
+          <AlertDescription className="text-sm">
+            <p className="font-medium mb-1">How to add team members:</p>
+            <ol className="list-decimal pl-4 space-y-1">
+              <li>The user must first create an account in the login page</li>
+              <li>Then you can add them as a team member using their email</li>
+            </ol>
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      <div className="text-center">
+        <Button 
+          type="button" 
+          variant="link" 
+          onClick={() => setShowHelp(!showHelp)} 
+          className="text-xs"
+        >
+          {showHelp ? "Hide help" : "Need help?"}
+        </Button>
       </div>
       
       <DialogFooter className="pt-4">
