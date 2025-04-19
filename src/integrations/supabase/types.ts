@@ -147,6 +147,7 @@ export type Database = {
           description: string | null
           end_date: string | null
           id: string
+          is_completed: boolean | null
           manager_id: string | null
           start_date: string | null
           title: string | null
@@ -159,6 +160,7 @@ export type Database = {
           description?: string | null
           end_date?: string | null
           id: string
+          is_completed?: boolean | null
           manager_id?: string | null
           start_date?: string | null
           title?: string | null
@@ -171,6 +173,7 @@ export type Database = {
           description?: string | null
           end_date?: string | null
           id?: string
+          is_completed?: boolean | null
           manager_id?: string | null
           start_date?: string | null
           title?: string | null
