@@ -1,3 +1,4 @@
+
 import { User, Task, Project, TaskComment } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
@@ -33,9 +34,9 @@ export const fetchTasks = async (user: User | null, setTasks: React.Dispatch<Rea
           updatedAt: new Date(task.updated_at || Date.now()),
           completedAt: task.completed_at ? new Date(task.completed_at) : undefined,
           assignedToId: task.assigned_to_id,
-          assignedToName: task.assigned_to_name,
-          completedById: task.completed_by_id,
-          completedByName: task.completed_by_name,
+          assignedToName: task.assigned_to_id ? fetchTeamMemberName(task.assigned_to_id) : undefined,
+          completedById: user.id, // Default to current user if completed
+          completedByName: user.name,
           cost: task.cost || 0,
           comments: [] // Initialize as empty array
         };
@@ -54,6 +55,26 @@ export const fetchTasks = async (user: User | null, setTasks: React.Dispatch<Rea
     }
   } catch (error) {
     console.error('Error in fetchTasks:', error);
+  }
+};
+
+// Helper function to get team member name from their ID
+const fetchTeamMemberName = async (memberId: string): Promise<string> => {
+  try {
+    const { data, error } = await supabase
+      .from('team_members')
+      .select('name')
+      .eq('id', memberId)
+      .single();
+    
+    if (error || !data) {
+      return 'Unknown';
+    }
+    
+    return data.name;
+  } catch (error) {
+    console.error('Error fetching team member name:', error);
+    return 'Unknown';
   }
 };
 
@@ -82,6 +103,12 @@ export const fetchProjects = async (user: User | null, setProjects: React.Dispat
         const formattedProjectTasks = projectTasks ? await Promise.all(projectTasks.map(async (task) => {
           // For each task, fetch its comments
           const comments = await fetchTaskComments(task.id);
+
+          // Get assignee name if available
+          let assigneeName;
+          if (task.assigned_to_id) {
+            assigneeName = await fetchTeamMemberName(task.assigned_to_id);
+          }
           
           const formattedTask: Task = {
             id: task.id,
@@ -96,9 +123,9 @@ export const fetchProjects = async (user: User | null, setProjects: React.Dispat
             updatedAt: new Date(task.updated_at || Date.now()),
             completedAt: task.completed_at ? new Date(task.completed_at) : undefined,
             assignedToId: task.assigned_to_id,
-            assignedToName: task.assigned_to_name,
-            completedById: task.completed_by_id,
-            completedByName: task.completed_by_name,
+            assignedToName: assigneeName,
+            completedById: user.id, // Default to the project manager
+            completedByName: user.name,
             comments: comments || [],
             cost: task.cost || 0,
           };
