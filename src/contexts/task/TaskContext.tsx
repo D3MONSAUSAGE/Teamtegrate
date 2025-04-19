@@ -1,8 +1,9 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { Task, Project, TaskStatus, TaskPriority, DailyScore } from '@/types';
+import { Task, Project, TaskStatus, TaskPriority, DailyScore, ProjectTask } from '@/types';
 import { useAuth } from '../AuthContext';
 import { fetchTasks, fetchProjects } from './taskApi';
 import { calculateDailyScore } from './taskMetrics';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   addTask, 
   updateTask, 

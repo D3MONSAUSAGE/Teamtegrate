@@ -1,3 +1,4 @@
+
 export type UserRole = 'user' | 'manager';
 
 export interface User {
@@ -69,7 +70,7 @@ export interface Project {
   managerId: string;
   createdAt: Date;
   updatedAt: Date;
-  tasks: Task[];
+  tasks: ProjectTask[]; // Changed from Task[] to ProjectTask[]
   teamMembers?: string[];
   tags?: string[];
   budget?: number;
