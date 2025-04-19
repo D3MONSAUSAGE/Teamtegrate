@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Task, TaskStatus } from '@/types';
@@ -60,10 +61,15 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onAssign }) => {
     <>
       <Card className={cn("card-hover", isTaskOverdue() && "border-red-500")}>
         <CardHeader className="pb-1 md:pb-2 flex flex-row justify-between items-start">
-          <div className="min-w-0">
-            <CardTitle className="text-sm md:text-base truncate">{task.title}</CardTitle>
+          <div className="min-w-0 flex-grow">
+            <CardTitle 
+              className="text-sm md:text-base break-words overflow-wrap-anywhere" 
+              title={task.title}
+            >
+              {task.title}
+            </CardTitle>
           </div>
-          <div className="flex items-center space-x-1 md:space-x-2">
+          <div className="flex items-center space-x-1 md:space-x-2 flex-shrink-0">
             <Badge className={cn(getPriorityColor(task.priority), "text-xs md:text-sm px-1.5 py-0.5")}>
               {task.priority}
             </Badge>
