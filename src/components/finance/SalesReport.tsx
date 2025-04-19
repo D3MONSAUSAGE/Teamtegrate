@@ -1,4 +1,3 @@
-
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -24,7 +23,7 @@ import {
   Legend,
 } from "recharts";
 import { format } from 'date-fns';
-import { ParsedSalesData } from './DailySales';
+import { ParsedSalesData } from '@/types/sales';
 
 interface SalesReportProps {
   data: ParsedSalesData[];

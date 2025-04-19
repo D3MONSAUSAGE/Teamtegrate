@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Button } from '@/components/ui/button';
@@ -11,7 +10,7 @@ import { cn } from '@/lib/utils';
 import { CalendarIcon, Upload, Loader2 } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 import { v4 as uuidv4 } from 'uuid';
-import { SalesData } from './DailySales';
+import { SalesData } from '@/types/sales';
 
 interface SalesUploaderProps {
   onUpload: (data: SalesData) => void;
