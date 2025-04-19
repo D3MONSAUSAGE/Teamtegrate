@@ -136,10 +136,16 @@ const TaskReports: React.FC = () => {
                   content={<ChartTooltipContent />}
                 />
                 <Legend 
-                  layout={isMobile ? "horizontal" : "vertical"} 
-                  verticalAlign={isMobile ? "bottom" : "middle"} 
-                  align={isMobile ? "center" : "right"}
-                  wrapperStyle={isMobile ? { fontSize: '11px' } : { fontSize: '12px' }}
+                  layout="horizontal"
+                  verticalAlign="bottom" 
+                  align="center"
+                  wrapperStyle={{ 
+                    fontSize: isMobile ? '10px' : '12px',
+                    paddingTop: '10px',
+                    width: '100%',
+                    maxWidth: isMobile ? '240px' : 'auto',
+                    margin: '0 auto'
+                  }}
                 />
               </PieChart>
             </ChartContainer>
