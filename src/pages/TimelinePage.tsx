@@ -4,6 +4,7 @@ import { useTask } from '@/contexts/task';
 import { Timeline } from "@/components/ui/timeline";
 import { format } from 'date-fns';
 import { CheckIcon } from 'lucide-react';
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 const TimelinePage = () => {
   const { tasks, projects } = useTask();
@@ -44,19 +45,33 @@ const TimelinePage = () => {
                 <div key={idx} className="bg-card p-4 rounded-lg border">
                   <div className="flex items-start gap-2">
                     <CheckIcon className="h-5 w-5 text-primary mt-0.5" />
-                    <div>
+                    <div className="flex-1">
                       <h4 className="font-medium text-sm text-foreground">
                         {'projectId' in entry ? entry.title : `Project: ${entry.title}`}
                       </h4>
                       <p className="text-xs text-muted-foreground mt-1">
                         {entry.description}
                       </p>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        Completed on {format(
-                          ('completedAt' in entry) ? new Date(entry.completedAt!) : new Date(entry.updatedAt),
-                          'MMM d, yyyy'
+                      <div className="flex items-center justify-between mt-2">
+                        <p className="text-xs text-muted-foreground">
+                          Completed on {format(
+                            ('completedAt' in entry) ? new Date(entry.completedAt!) : new Date(entry.updatedAt),
+                            'MMM d, yyyy'
+                          )}
+                        </p>
+                        {('assignedToName' in entry) && entry.assignedToName && (
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-6 w-6">
+                              <AvatarFallback className="text-xs">
+                                {entry.assignedToName.split(' ').map(n => n[0]).join('')}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="text-xs text-muted-foreground">
+                              {entry.assignedToName}
+                            </span>
+                          </div>
                         )}
-                      </p>
+                      </div>
                     </div>
                   </div>
                 </div>
