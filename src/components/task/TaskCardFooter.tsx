@@ -1,15 +1,23 @@
 
 import React from 'react';
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { MessageCircle } from 'lucide-react';
-import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { TaskStatus } from '@/types';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { cn } from '@/lib/utils';
 
 interface TaskCardFooterProps {
-  status: string;
+  status: TaskStatus;
   isOverdue: boolean;
   commentCount: number;
   onShowComments: () => void;
+  onStatusChange?: (status: TaskStatus) => void;
 }
 
 const TaskCardFooter: React.FC<TaskCardFooterProps> = ({
@@ -17,40 +25,44 @@ const TaskCardFooter: React.FC<TaskCardFooterProps> = ({
   isOverdue,
   commentCount,
   onShowComments,
+  onStatusChange
 }) => {
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: TaskStatus) => {
     switch(status) {
-      case 'To Do': return 'status-todo';
-      case 'In Progress': return 'status-inprogress';
-      case 'Pending': return 'status-pending';
-      case 'Completed': return 'status-completed';
-      default: return 'status-todo';
+      case 'To Do': return 'bg-slate-500';
+      case 'In Progress': return 'bg-blue-500';
+      case 'Pending': return 'bg-yellow-500';
+      case 'Completed': return 'bg-green-500';
+      default: return 'bg-slate-500';
     }
   };
 
   return (
-    <div className="pt-1 md:pt-2 flex justify-between items-center">
-      <div className="flex flex-wrap gap-1">
-        <Badge className={cn(getStatusColor(status), "text-xs md:text-sm")}>
-          {status}
-        </Badge>
-        {isOverdue && (
-          <Badge variant="destructive" className="ml-1 text-xs md:text-sm">
-            Overdue
-          </Badge>
-        )}
-      </div>
-      
+    <div className="flex items-center justify-between pt-2">
+      <Select value={status} onValueChange={onStatusChange}>
+        <SelectTrigger className="w-[140px]">
+          <SelectValue>
+            <Badge className={cn("px-2 py-1", getStatusColor(status))}>
+              {status}
+            </Badge>
+          </SelectValue>
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="To Do">To Do</SelectItem>
+          <SelectItem value="In Progress">In Progress</SelectItem>
+          <SelectItem value="Pending">Pending</SelectItem>
+          <SelectItem value="Completed">Completed</SelectItem>
+        </SelectContent>
+      </Select>
+
       {commentCount > 0 && (
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="flex items-center gap-1 h-6 px-2 py-0"
+        <button
           onClick={onShowComments}
+          className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700"
         >
-          <MessageCircle className="h-3.5 w-3.5" />
-          <span className="text-xs">{commentCount}</span>
-        </Button>
+          <MessageCircle className="h-3 w-3" />
+          {commentCount}
+        </button>
       )}
     </div>
   );

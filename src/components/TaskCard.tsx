@@ -27,6 +27,10 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onAssign }) => {
   };
   
   const commentCount = task.comments?.length || 0;
+
+  const handleStatusChange = (newStatus: TaskStatus) => {
+    updateTaskStatus(task.id, newStatus);
+  };
   
   return (
     <>
@@ -48,6 +52,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onAssign }) => {
             isOverdue={isTaskOverdue()}
             commentCount={commentCount}
             onShowComments={() => setShowComments(true)}
+            onStatusChange={handleStatusChange}
           />
         </CardContent>
 
@@ -56,7 +61,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onAssign }) => {
             task={task}
             onEdit={onEdit}
             onAssign={onAssign}
-            onStatusChange={(status) => updateTaskStatus(task.id, status)}
+            onStatusChange={handleStatusChange}
             onDelete={deleteTask}
             onShowComments={() => setShowComments(true)}
           />
