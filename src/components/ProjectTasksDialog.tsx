@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Project, Task } from '@/types';
+import { Project, Task, ProjectTask } from '@/types';
 import { Plus, Calendar } from 'lucide-react';
 import TaskCard from '@/components/TaskCard';
 import { format } from 'date-fns';
@@ -57,7 +57,7 @@ const ProjectTasksDialog: React.FC<ProjectTasksDialogProps> = ({
       
       fetchData();
     }
-  }, [open, project?.id, fetchProjects]); // Depend on project.id instead of the whole project object
+  }, [open, project?.id, fetchProjects, projectTasks]); // Depend on project.id instead of the whole project object
   
   if (!project) return null;
   
@@ -124,9 +124,9 @@ const ProjectTasksDialog: React.FC<ProjectTasksDialogProps> = ({
               {projectTasks.map((task) => (
                 <TaskCard 
                   key={task.id} 
-                  task={task} 
-                  onEdit={() => onEditTask(task)}
-                  onAssign={() => onAssignTask(task)}
+                  task={task as Task} // Cast ProjectTask to Task for compatibility
+                  onEdit={() => onEditTask(task as Task)} // Cast ProjectTask to Task for compatibility
+                  onAssign={() => onAssignTask(task as Task)} // Cast ProjectTask to Task for compatibility
                 />
               ))}
             </div>

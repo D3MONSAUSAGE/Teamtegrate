@@ -1,5 +1,5 @@
 
-import { Task, Project, Comment } from '@/types';
+import { Task, Project, Comment, ProjectTask } from '@/types';
 import { toast } from '@/components/ui/sonner';
 
 export const addCommentToTask = (
@@ -36,6 +36,7 @@ export const addCommentToTask = (
       if (project.id === taskToUpdate.projectId) {
         const projectTasks = project.tasks.map((task) => {
           if (task.id === taskId) {
+            // Ensure comments exist on the ProjectTask
             const comments = task.comments || [];
             return { 
               ...task, 

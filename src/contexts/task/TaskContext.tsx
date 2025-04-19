@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { Task, Project, TaskStatus, TaskPriority, DailyScore, ProjectTask } from '@/types';
 import { useAuth } from '../AuthContext';
@@ -36,17 +37,18 @@ import {
 } from './taskFilters';
 import { toast } from '@/components/ui/sonner';
 
-interface ProjectTask {
-  id: string;
-  title: string;
-  description: string;
-  deadline: Date | null;
-  priority: TaskPriority;
-  status: TaskStatus;
-  cost: number;
-  assignedToId: string;
-  completedAt: Date | null;
-}
+// Remove this local interface definition as it conflicts with the imported one
+// interface ProjectTask {
+//   id: string;
+//   title: string;
+//   description: string;
+//   deadline: Date | null;
+//   priority: TaskPriority;
+//   status: TaskStatus;
+//   cost: number;
+//   assignedToId: string;
+//   completedAt: Date | null;
+// }
 
 interface TaskContextType {
   tasks: Task[];

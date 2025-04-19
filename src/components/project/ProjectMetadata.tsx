@@ -2,12 +2,12 @@
 import React from 'react';
 import { Calendar, Users } from 'lucide-react';
 import { format } from 'date-fns';
-import { Task } from '@/types';
+import { Task, ProjectTask } from '@/types';
 
 interface ProjectMetadataProps {
   startDate: Date;
   endDate: Date;
-  tasks: Task[];
+  tasks: Task[] | ProjectTask[];
 }
 
 const ProjectMetadata: React.FC<ProjectMetadataProps> = ({ startDate, endDate, tasks }) => {

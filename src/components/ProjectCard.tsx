@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Project, Task } from '@/types';
+import { Project, Task, ProjectTask } from '@/types';
 import { Badge } from "@/components/ui/badge";
 import { Plus } from 'lucide-react';
 import {
@@ -157,7 +157,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
               {projectTasks.slice(0, 3).map((task) => (
                 <TaskPreview 
                   key={task.id} 
-                  task={task} 
+                  task={task as Task} // Cast ProjectTask to Task for compatibility
                   onClick={handleViewTasks}
                 />
               ))}
@@ -172,10 +172,10 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
         <ProjectMetadata 
           startDate={project.startDate} 
           endDate={project.endDate}
-          tasks={projectTasks}
+          tasks={projectTasks as Task[]} // Cast ProjectTask[] to Task[] for compatibility
         />
         
-        <ProjectTaskProgress tasks={projectTasks} />
+        <ProjectTaskProgress tasks={projectTasks as Task[]} /> // Cast ProjectTask[] to Task[] for compatibility
         
         {project.budget && (
           <ProjectBudget 

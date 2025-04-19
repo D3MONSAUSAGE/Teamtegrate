@@ -1,5 +1,5 @@
 
-import { Task, Project } from '@/types';
+import { Task, Project, ProjectTask } from '@/types';
 import { toast } from '@/components/ui/sonner';
 
 export const addTagToTask = (
@@ -32,6 +32,7 @@ export const addTagToTask = (
       if (project.id === taskToUpdate.projectId) {
         const projectTasks = project.tasks.map((task) => {
           if (task.id === taskId) {
+            // Ensure tags exist on the ProjectTask
             const tags = task.tags || [];
             if (!tags.includes(tag)) {
               return { 

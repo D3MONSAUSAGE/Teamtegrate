@@ -1,4 +1,5 @@
-import { User, Task, Project, TaskPriority, TaskStatus } from '@/types';
+
+import { User, Task, Project, TaskPriority, TaskStatus, ProjectTask } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { fetchTeamMemberName } from './team';
@@ -79,9 +80,11 @@ export const fetchProjects = async (user: User | null, setProjects: React.Dispat
           console.error(`Error fetching assignee name for task ${task.id}:`, error);
         }
         
-        return {
+        // Create a ProjectTask object with all required fields
+        const projectTask: ProjectTask = {
           id: task.id,
           projectId: task.project_id,
+          userId: user.id, // Add userId to make it compatible with Task
           title: task.title || '',
           description: task.description || '',
           deadline: task.deadline ? new Date(task.deadline) : new Date(),
@@ -92,8 +95,14 @@ export const fetchProjects = async (user: User | null, setProjects: React.Dispat
           completedAt: task.completed_at ? new Date(task.completed_at) : undefined,
           assignedToId: task.assigned_to_id,
           assignedToName: assigneeName,
+          completedById: user.id, // Add completedById to make it compatible with Task
+          completedByName: user.name, // Add completedByName to make it compatible with Task
+          tags: [], // Add tags to make it compatible with Task
+          comments: [], // Add comments to make it compatible with Task
           cost: task.cost || 0,
         };
+        
+        return projectTask;
       }));
       
       return {

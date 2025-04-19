@@ -3,10 +3,10 @@ import React from 'react';
 import { ListTodo } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Task } from '@/types';
+import { Task, ProjectTask } from '@/types';
 
 interface ProjectTaskProgressProps {
-  tasks: Task[];
+  tasks: Task[] | ProjectTask[];
 }
 
 const ProjectTaskProgress: React.FC<ProjectTaskProgressProps> = ({ tasks }) => {
