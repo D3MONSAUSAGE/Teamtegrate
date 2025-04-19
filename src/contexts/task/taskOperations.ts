@@ -1,4 +1,3 @@
-
 import { playSuccessSound, playErrorSound, playStatusChangeSound } from '@/utils/sounds';
 import { User, Project, Task, TaskStatus, TaskPriority, TaskComment, DailyScore } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,6 +18,8 @@ export const addTask = async (
     const now = new Date();
     const taskId = uuidv4();
 
+    console.log('Adding task with project:', task.projectId);
+
     const taskToInsert = {
       id: taskId,
       user_id: user.id,
@@ -31,8 +32,11 @@ export const addTask = async (
       created_at: now.toISOString(),
       updated_at: now.toISOString(),
       assigned_to_id: task.assignedToId || null,
-      // Don't include assigned_to_name in database insert - this will be handled in frontend
+      assigned_to_name: task.assignedToName || null,
+      cost: task.cost || 0
     };
+
+    console.log('Inserting task:', taskToInsert);
 
     const { data, error } = await supabase
       .from('tasks')
@@ -60,9 +64,10 @@ export const addTask = async (
         createdAt: new Date(data.created_at),
         updatedAt: new Date(data.updated_at),
         assignedToId: data.assigned_to_id || undefined,
-        assignedToName: task.assignedToName, // Use the assignedToName from the input task object
+        assignedToName: data.assigned_to_name || undefined,
         tags: [],
-        comments: []
+        comments: [],
+        cost: data.cost || 0
       };
 
       setTasks(prevTasks => [...prevTasks, newTask]);
@@ -98,9 +103,12 @@ export const updateTask = async (
     if (updates.deadline !== undefined) updatedFields.deadline = (updates.deadline instanceof Date ? updates.deadline : new Date(updates.deadline)).toISOString();
     if (updates.priority !== undefined) updatedFields.priority = updates.priority;
     if (updates.status !== undefined) updatedFields.status = updates.status;
-    if (updates.projectId !== undefined && updates.projectId !== null) updatedFields.project_id = updates.projectId;
-    if (updates.assignedToId !== undefined && updates.assignedToId !== null) updatedFields.assigned_to_id = updates.assignedToId;
-    if (updates.assignedToName !== undefined && updates.assignedToName !== null) updatedFields.assigned_to_name = updates.assignedToName;
+    if (updates.projectId !== undefined) updatedFields.project_id = updates.projectId;
+    if (updates.assignedToId !== undefined) updatedFields.assigned_to_id = updates.assignedToId;
+    if (updates.assignedToName !== undefined) updatedFields.assigned_to_name = updates.assignedToName;
+    if (updates.cost !== undefined) updatedFields.cost = updates.cost;
+
+    console.log('Updating task with fields:', updatedFields);
 
     const { error } = await supabase
       .from('tasks')
@@ -213,6 +221,8 @@ export const assignTaskToProject = async (
 
     const now = new Date();
 
+    console.log(`Assigning task ${taskId} to project ${projectId}`);
+
     const { error } = await supabase
       .from('tasks')
       .update({ project_id: projectId, updated_at: now.toISOString() })
@@ -227,7 +237,7 @@ export const assignTaskToProject = async (
 
     setTasks(prevTasks => prevTasks.map(task => {
       if (task.id === taskId) {
-        return { ...task, projectId };
+        return { ...task, projectId, updatedAt: now };
       }
       return task;
     }));
@@ -255,7 +265,6 @@ export const assignTaskToUser = async (
 
     const now = new Date();
 
-    // Only send assigned_to_id to the database, not assigned_to_name
     const { error } = await supabase
       .from('tasks')
       .update({ assigned_to_id: userId, updated_at: now.toISOString() })
@@ -268,7 +277,6 @@ export const assignTaskToUser = async (
       return;
     }
 
-    // Update the in-memory state with both ID and name
     setTasks(prevTasks => prevTasks.map(task => {
       if (task.id === taskId) {
         return { ...task, assignedToId: userId, assignedToName: userName };

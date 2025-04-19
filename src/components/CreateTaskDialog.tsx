@@ -45,9 +45,11 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
       setValue('priority', editingTask.priority);
       setValue('deadline', format(new Date(editingTask.deadline), "yyyy-MM-dd'T'HH:mm"));
       setValue('projectId', editingTask.projectId || '');
+      setValue('cost', editingTask.cost || 0);
       setSelectedMember(editingTask.assignedToId);
     } else {
       if (currentProjectId) {
+        console.log('Setting current project ID:', currentProjectId);
         setValue('projectId', currentProjectId);
       }
       reset();
@@ -56,13 +58,17 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
   }, [editingTask, currentProjectId, setValue, reset, setSelectedMember]);
   
   const onSubmit = (data: any) => {
+    console.log('Form submitted with data:', data);
+    
     if (isEditMode && editingTask) {
       updateTask(editingTask.id, {
         ...data,
         deadline: new Date(data.deadline),
+        projectId: data.projectId === "none" ? undefined : data.projectId,
         assignedToId: selectedMember === "unassigned" ? undefined : selectedMember,
         assignedToName: selectedMember && selectedMember !== "unassigned" ? 
-          appUsers?.find(m => m.id === selectedMember)?.name : undefined
+          appUsers?.find(m => m.id === selectedMember)?.name : undefined,
+        cost: parseFloat(data.cost) || 0
       });
     } else {
       addTask({
@@ -75,7 +81,8 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
         projectId: data.projectId === "none" ? undefined : data.projectId,
         assignedToId: selectedMember === "unassigned" ? undefined : selectedMember,
         assignedToName: selectedMember && selectedMember !== "unassigned" ? 
-          appUsers?.find(m => m.id === selectedMember)?.name : undefined
+          appUsers?.find(m => m.id === selectedMember)?.name : undefined,
+        cost: parseFloat(data.cost) || 0
       });
     }
     onOpenChange(false);

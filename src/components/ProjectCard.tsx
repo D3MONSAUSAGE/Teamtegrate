@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Project } from '@/types';
+import { Project, Task } from '@/types';
 import { Badge } from "@/components/ui/badge";
 import { Plus } from 'lucide-react';
 import {
@@ -20,12 +20,13 @@ import ProjectTaskProgress from './project/ProjectTaskProgress';
 import ProjectBudget from './project/ProjectBudget';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Task } from '@/types';
+import { toast } from '@/components/ui/sonner';
 
 interface ProjectCardProps {
   project: Project;
   onEdit?: (project: Project) => void;
   onViewTasks?: (project: Project) => void;
+  onCreateProject: () => void;
   onCreateTask?: (project: Project) => void;
 }
 
@@ -35,7 +36,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   onViewTasks, 
   onCreateTask 
 }) => {
-  const { deleteProject, updateProject } = useTask();
+  const { deleteProject, updateProject, fetchProjects } = useTask();
   const [projectTasks, setProjectTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   
@@ -45,6 +46,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
       
       setIsLoading(true);
       try {
+        console.log(`Fetching tasks for project ID: ${project.id}`);
+        
         const { data, error } = await supabase
           .from('tasks')
           .select('*')
@@ -52,8 +55,11 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
           
         if (error) {
           console.error('Error fetching project tasks:', error);
+          toast.error('Failed to load project tasks');
           return;
         }
+        
+        console.log(`Found ${data?.length || 0} tasks for project ${project.id}`);
         
         if (data) {
           const mappedTasks: Task[] = data.map(task => ({
@@ -77,6 +83,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
         }
       } catch (error) {
         console.error('Error fetching project tasks:', error);
+        toast.error('Failed to load project tasks');
       } finally {
         setIsLoading(false);
       }
@@ -87,6 +94,12 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
 
   const handleToggleCompletion = () => {
     updateProject(project.id, { is_completed: !project.is_completed });
+  };
+  
+  const handleViewTasks = () => {
+    if (onViewTasks) {
+      onViewTasks(project);
+    }
   };
   
   return (
@@ -111,7 +124,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
             <DropdownMenuItem onClick={() => onEdit && onEdit(project)}>
               Edit
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onViewTasks && onViewTasks(project)}>
+            <DropdownMenuItem onClick={handleViewTasks}>
               View Tasks
             </DropdownMenuItem>
             <DropdownMenuItem onClick={handleToggleCompletion}>
@@ -144,14 +157,18 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
                 variant="ghost" 
                 size="sm" 
                 className="h-6 px-2 text-xs"
-                onClick={() => onViewTasks && onViewTasks(project)}
+                onClick={handleViewTasks}
               >
                 View All
               </Button>
             </div>
             <ScrollArea className="h-[120px]">
               {projectTasks.slice(0, 3).map((task) => (
-                <TaskPreview key={task.id} task={task} />
+                <TaskPreview 
+                  key={task.id} 
+                  task={task} 
+                  onClick={handleViewTasks}
+                />
               ))}
             </ScrollArea>
           </div>

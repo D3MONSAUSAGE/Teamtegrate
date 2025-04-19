@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import TaskCommentsDialog from './TaskCommentsDialog';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/components/ui/sonner';
 
 interface ProjectTasksDialogProps {
   open: boolean;
@@ -54,6 +55,7 @@ const ProjectTasksDialog: React.FC<ProjectTasksDialogProps> = ({
         
       if (error) {
         console.error('Error fetching project tasks:', error);
+        toast.error('Failed to load project tasks');
         return;
       }
       
@@ -73,6 +75,7 @@ const ProjectTasksDialog: React.FC<ProjectTasksDialogProps> = ({
           updatedAt: new Date(task.updated_at || new Date()),
           completedAt: task.completed_at ? new Date(task.completed_at) : undefined,
           assignedToId: task.assigned_to_id || undefined,
+          assignedToName: task.assigned_to_name || undefined,
           tags: [],
           comments: [],
           cost: task.cost || 0
@@ -81,6 +84,7 @@ const ProjectTasksDialog: React.FC<ProjectTasksDialogProps> = ({
       }
     } catch (error) {
       console.error('Error fetching project tasks:', error);
+      toast.error('Failed to load project tasks');
     } finally {
       setIsLoading(false);
     }
