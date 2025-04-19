@@ -1,8 +1,7 @@
-
 import { TaskComment } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from '@/components/ui/sonner';
-import { Task } from '@/types';
+import { Task, Project } from '@/types';
 
 export const fetchTaskComments = async (taskId: string): Promise<TaskComment[] | null> => {
   try {
@@ -77,4 +76,3 @@ export const addCommentToTask = async (
     return null;
   }
 };
-
