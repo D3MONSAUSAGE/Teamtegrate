@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Project, Task } from '@/types';
-import { Plus } from 'lucide-react';
+import { Plus, Calendar } from 'lucide-react';
 import TaskCard from '@/components/TaskCard';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
@@ -75,8 +75,8 @@ const ProjectTasksDialog: React.FC<ProjectTasksDialogProps> = ({
           updatedAt: new Date(task.updated_at || new Date()),
           completedAt: task.completed_at ? new Date(task.completed_at) : undefined,
           assignedToId: task.assigned_to_id || undefined,
-          // Safely handle assignedToName as it might not exist in the database
-          assignedToName: task.assigned_to_name || undefined,
+          // Use type assertion to handle properties that might not exist in the DB schema
+          assignedToName: (task as any).assigned_to_name || undefined,
           tags: [],
           comments: [],
           cost: task.cost || 0
@@ -172,8 +172,5 @@ const ProjectTasksDialog: React.FC<ProjectTasksDialogProps> = ({
     </>
   );
 };
-
-// Fix missing Calendar import
-import { Calendar } from 'lucide-react';
 
 export default ProjectTasksDialog;

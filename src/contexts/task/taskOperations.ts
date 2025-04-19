@@ -1,3 +1,4 @@
+
 import { playSuccessSound, playErrorSound, playStatusChangeSound } from '@/utils/sounds';
 import { User, Project, Task, TaskStatus, TaskPriority, TaskComment, DailyScore } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -65,7 +66,7 @@ export const addTask = async (
         createdAt: new Date(data.created_at),
         updatedAt: new Date(data.updated_at),
         assignedToId: data.assigned_to_id || undefined,
-        assignedToName: data.assigned_to_name || undefined,
+        assignedToName: (data as any).assigned_to_name || undefined,
         tags: [],
         comments: [],
         cost: data.cost || 0
