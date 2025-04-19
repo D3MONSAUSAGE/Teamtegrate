@@ -1,8 +1,8 @@
-
 import { User, Project, Task } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { v4 as uuidv4 } from 'uuid';
+import { playSuccessSound, playErrorSound } from '@/utils/sounds';
 
 export const addProject = async (
   project: Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'tasks'>,
@@ -36,6 +36,7 @@ export const addProject = async (
     
     if (error) {
       console.error('Error adding project:', error);
+      playErrorSound();
       toast.error('Failed to create project');
       return;
     }
@@ -56,10 +57,12 @@ export const addProject = async (
       };
       
       setProjects(prevProjects => [...prevProjects, newProject]);
+      playSuccessSound();
       toast.success('Project created successfully!');
     }
   } catch (error) {
     console.error('Error in addProject:', error);
+    playErrorSound();
     toast.error('Failed to create project');
   }
 };
@@ -93,6 +96,7 @@ export const updateProject = async (
     
     if (error) {
       console.error('Error updating project:', error);
+      playErrorSound();
       toast.error('Failed to update project');
       return;
     }
@@ -108,6 +112,7 @@ export const updateProject = async (
     toast.success('Project updated successfully!');
   } catch (error) {
     console.error('Error in updateProject:', error);
+    playErrorSound();
     toast.error('Failed to update project');
   }
 };
@@ -137,6 +142,7 @@ export const deleteProject = async (
     
     if (error) {
       console.error('Error deleting project:', error);
+      playErrorSound();
       toast.error('Failed to delete project');
       return;
     }
@@ -153,6 +159,7 @@ export const deleteProject = async (
     toast.success('Project deleted successfully!');
   } catch (error) {
     console.error('Error in deleteProject:', error);
+    playErrorSound();
     toast.error('Failed to delete project');
   }
 };

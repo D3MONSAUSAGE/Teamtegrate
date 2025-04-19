@@ -39,44 +39,46 @@ const TaskStatusDistribution: React.FC<TaskStatusDistributionProps> = ({ statusC
         <CardDescription>Breakdown of tasks by status</CardDescription>
       </CardHeader>
       <CardContent className={isMobile ? "h-64" : "h-80"}>
-        <ChartContainer config={chartConfig} className="h-full">
-          <PieChart>
-            <Pie
-              data={statusCounts}
-              cx="50%"
-              cy="50%"
-              labelLine={!isMobile}
-              outerRadius={isMobile ? 50 : 80}
-              innerRadius={isMobile ? 20 : 30}
-              fill="#8884d8"
-              dataKey="value"
-              nameKey="name"
-              label={renderPieChartLabel}
-            >
-              {statusCounts.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-              ))}
-            </Pie>
-            <ChartTooltip content={<ChartTooltipContent />} />
-            <Legend 
-              layout={isMobile ? "horizontal" : "horizontal"}
-              verticalAlign="bottom" 
-              align="center"
-              formatter={(value) => <span className="text-xs">{value}</span>}
-              iconSize={8}
-              wrapperStyle={{ 
-                fontSize: isMobile ? '9px' : '12px',
-                paddingTop: '10px',
-                width: '100%',
-                maxWidth: '100%',
-                margin: '0 auto',
-                display: 'flex',
-                flexWrap: 'wrap',
-                justifyContent: 'center',
-                gap: '4px'
-              }}
-            />
-          </PieChart>
+        <ChartContainer config={chartConfig} className="h-full flex items-center justify-center">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={statusCounts}
+                cx="50%"
+                cy="50%"
+                labelLine={!isMobile}
+                outerRadius={isMobile ? 50 : 80}
+                innerRadius={isMobile ? 20 : 30}
+                fill="#8884d8"
+                dataKey="value"
+                nameKey="name"
+                label={renderPieChartLabel}
+              >
+                {statusCounts.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <Legend 
+                layout={isMobile ? "horizontal" : "horizontal"}
+                verticalAlign="bottom" 
+                align="center"
+                formatter={(value) => <span className="text-xs">{value}</span>}
+                iconSize={8}
+                wrapperStyle={{ 
+                  fontSize: isMobile ? '9px' : '12px',
+                  paddingTop: '10px',
+                  width: '100%',
+                  maxWidth: '100%',
+                  margin: '0 auto',
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  justifyContent: 'center',
+                  gap: '4px'
+                }}
+              />
+            </PieChart>
+          </ResponsiveContainer>
         </ChartContainer>
       </CardContent>
     </Card>
