@@ -80,7 +80,8 @@ export const fetchProjects = async (user: User | null, setProjects: React.Dispat
           tags: [],
           budget: project.budget || 0,
           budgetSpent: project.budget_spent || 0,
-          is_completed: Boolean(project.is_completed) || false, // Convert to boolean
+          // Create is_completed property with default false if not present in database
+          is_completed: false
         };
       }));
       
