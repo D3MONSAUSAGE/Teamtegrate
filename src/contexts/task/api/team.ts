@@ -24,6 +24,8 @@ export const fetchTeamMemberName = async (memberId: string): Promise<string> => 
 // Function to check if an email exists in auth.users
 export const checkUserExists = async (email: string): Promise<boolean> => {
   try {
+    // We can't directly query auth.users, so we'll check the public users table
+    // which is synced with auth.users
     const { count, error } = await supabase
       .from('users')
       .select('*', { count: 'exact', head: true })
