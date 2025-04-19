@@ -1,11 +1,9 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Project, Task } from '@/types';
+import { Project } from '@/types';
 import { Badge } from "@/components/ui/badge";
-import { format } from 'date-fns';
-import { Calendar, Users, Plus, ListTodo } from 'lucide-react';
-import { Progress } from "@/components/ui/progress";
+import { Plus } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,10 +13,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { MoreHorizontal } from 'lucide-react';
 import { useTask } from '@/contexts/task';
-import { supabase } from '@/integrations/supabase/client';
-import { useEffect, useState } from 'react';
-import TaskPreview from './task/TaskPreview';
 import { ScrollArea } from "@/components/ui/scroll-area";
+import TaskPreview from './task/TaskPreview';
+import ProjectMetadata from './project/ProjectMetadata';
+import ProjectTaskProgress from './project/ProjectTaskProgress';
+import ProjectBudget from './project/ProjectBudget';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { Task } from '@/types';
 
 interface ProjectCardProps {
   project: Project;
@@ -43,8 +45,6 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
       
       setIsLoading(true);
       try {
-        console.log(`Fetching tasks for project ${project.id}`);
-        
         const { data, error } = await supabase
           .from('tasks')
           .select('*')
@@ -55,8 +55,6 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
           return;
         }
         
-        console.log(`Found ${data?.length || 0} tasks for project ${project.id}`, data);
-        
         if (data) {
           const mappedTasks: Task[] = data.map(task => ({
             id: task.id,
@@ -64,11 +62,11 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
             projectId: task.project_id || undefined,
             title: task.title || '',
             description: task.description || '',
-            deadline: new Date(task.deadline || new Date()),
+            deadline: new Date(task.deadline || Date.now()),
             priority: task.priority as Task['priority'] || 'Medium',
             status: task.status as Task['status'] || 'To Do',
-            createdAt: new Date(task.created_at || new Date()),
-            updatedAt: new Date(task.updated_at || new Date()),
+            createdAt: new Date(task.created_at || Date.now()),
+            updatedAt: new Date(task.updated_at || Date.now()),
             completedAt: task.completed_at ? new Date(task.completed_at) : undefined,
             assignedToId: task.assigned_to_id || undefined,
             tags: [],
@@ -84,23 +82,9 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
       }
     };
     
-    if (project.id) {
-      fetchProjectTasks();
-    }
+    fetchProjectTasks();
   }, [project.id]);
-  
-  const calculateProgress = (tasks: Task[]) => {
-    if (tasks.length === 0) return 0;
-    const completed = tasks.filter(task => task.status === 'Completed').length;
-    return Math.round((completed / tasks.length) * 100);
-  };
-  
-  const totalTasks = projectTasks.length;
-  const completedTasks = projectTasks.filter(task => task.status === 'Completed').length;
-  const progress = calculateProgress(projectTasks);
-  
-  const budgetProgress = project.budget ? Math.round((project.budgetSpent || 0) / project.budget * 100) : 0;
-  
+
   const handleToggleCompletion = () => {
     updateProject(project.id, { is_completed: !project.is_completed });
   };
@@ -142,6 +126,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
           </DropdownMenuContent>
         </DropdownMenu>
       </CardHeader>
+
       <CardContent className="space-y-2 pt-0 md:pt-1 px-4 md:px-6 pb-4">
         <p className="text-xs md:text-sm text-gray-600 line-clamp-2 min-h-[2rem]">
           {project.description}
@@ -176,49 +161,19 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
           </div>
         )}
 
-        <div className="flex flex-wrap items-center justify-between pt-1 md:pt-2 gap-y-1">
-          <div className="flex items-center text-xs text-gray-500 gap-1">
-            <Calendar className="h-3 w-3 flex-shrink-0" />
-            <span className="truncate">
-              {format(new Date(project.startDate), 'MMM d')} - {format(new Date(project.endDate), 'MMM d')}
-            </span>
-          </div>
-          
-          <div className="flex items-center text-xs text-gray-500 gap-1">
-            <Users className="h-3 w-3 flex-shrink-0" />
-            <span>{projectTasks.filter(task => task.assignedToId).length} assigned</span>
-          </div>
-        </div>
+        <ProjectMetadata 
+          startDate={project.startDate} 
+          endDate={project.endDate}
+          tasks={projectTasks}
+        />
         
-        <div className="pt-1 md:pt-3 space-y-1">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center text-xs font-medium">
-              <ListTodo className="h-3 w-3 mr-1 text-blue-500 flex-shrink-0" />
-              <span>{totalTasks} {totalTasks === 1 ? 'Task' : 'Tasks'}</span>
-            </div>
-            <Badge variant="outline" className="ml-1 text-xs">{progress}%</Badge>
-          </div>
-          <div className="flex justify-between items-center text-xs text-gray-500">
-            <span>{completedTasks} of {totalTasks} completed</span>
-          </div>
-          <Progress value={progress} className="h-1.5 md:h-2" />
-        </div>
+        <ProjectTaskProgress tasks={projectTasks} />
         
         {project.budget && (
-          <div className="mt-3 space-y-1">
-            <div className="flex justify-between items-center text-xs text-gray-500">
-              <span>Budget: ${project.budget.toLocaleString()}</span>
-              <Badge variant="outline" className="ml-1">{budgetProgress}%</Badge>
-            </div>
-            <div className="flex justify-between items-center text-xs text-gray-500">
-              <span>Spent: ${(project.budgetSpent || 0).toLocaleString()}</span>
-            </div>
-            <Progress 
-              value={budgetProgress} 
-              className="h-1.5 md:h-2"
-              variant={budgetProgress > 100 ? "destructive" : "default"}
-            />
-          </div>
+          <ProjectBudget 
+            budget={project.budget} 
+            budgetSpent={project.budgetSpent || 0} 
+          />
         )}
         
         <Button 
