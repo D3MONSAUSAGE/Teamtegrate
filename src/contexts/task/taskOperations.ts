@@ -1,5 +1,5 @@
 import { playSuccessSound, playErrorSound, playStatusChangeSound } from '@/utils/sounds';
-import { User, Project, Task } from '@/types';
+import { User, Project, Task, TaskStatus, TaskPriority, TaskComment, DailyScore } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { v4 as uuidv4 } from 'uuid';
@@ -54,8 +54,8 @@ export const addTask = async (
         title: data.title,
         description: data.description,
         deadline: new Date(data.deadline),
-        priority: data.priority,
-        status: data.status,
+        priority: data.priority as TaskPriority,
+        status: data.status as TaskStatus,
         createdAt: new Date(data.created_at),
         updatedAt: new Date(data.updated_at),
         assignedToId: data.assigned_to_id || undefined,
@@ -291,7 +291,7 @@ export const addCommentToTask = async (
 ) => {
   try {
     const now = new Date();
-    const newComment: Comment = {
+    const newComment: TaskComment = {
       id: uuidv4(),
       userId: comment.userId,
       userName: comment.userName,

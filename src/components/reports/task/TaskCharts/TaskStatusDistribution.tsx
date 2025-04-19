@@ -60,7 +60,7 @@ const TaskStatusDistribution: React.FC<TaskStatusDistributionProps> = ({ statusC
               </Pie>
               <ChartTooltip content={<ChartTooltipContent />} />
               <Legend 
-                layout={isMobile ? "horizontal" : "horizontal"}
+                layout="horizontal"
                 verticalAlign="bottom" 
                 align="center"
                 formatter={(value) => <span className="text-xs">{value}</span>}
