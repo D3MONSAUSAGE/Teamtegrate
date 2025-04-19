@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
-import { Task } from '@/types';
+import { Task, TaskStatus } from '@/types';
 import { cn } from "@/lib/utils";
 import TaskCommentsDialog from './TaskCommentsDialog';
 import TaskCardHeader from './task/TaskCardHeader';
