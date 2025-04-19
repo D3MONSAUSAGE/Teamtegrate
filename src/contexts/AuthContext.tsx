@@ -12,6 +12,7 @@ interface AuthContextType {
   signup: (email: string, password: string, name: string, role: UserRole) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
+  updateUserProfile: (data: { name?: string }) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -128,6 +129,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw error;
     }
   };
+  
+  const updateUserProfile = async (data: { name?: string }) => {
+    try {
+      // Get current session first to ensure we have valid auth
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      
+      if (!currentSession) {
+        throw new Error('No active session found. Please log in again.');
+      }
+
+      const { error } = await supabase.auth.updateUser({
+        data: data
+      });
+
+      if (error) throw error;
+      
+      // Update the local user state
+      if (user) {
+        setUser({
+          ...user,
+          name: data.name || user.name,
+        });
+      }
+      
+      return;
+    } catch (error: any) {
+      console.error('Error updating profile:', error);
+      throw error;
+    }
+  };
 
   const value = {
     user,
@@ -135,6 +166,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     login,
     signup,
     logout,
+    updateUserProfile,
     isAuthenticated: !!user,
   };
 

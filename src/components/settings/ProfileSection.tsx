@@ -10,7 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 const ProfileSection = () => {
-  const { user } = useAuth();
+  const { user, updateUserProfile } = useAuth();
   const [name, setName] = useState(user?.name || '');
   const [isLoading, setIsLoading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -62,6 +62,13 @@ const ProfileSection = () => {
       const fileExt = file.name.split('.').pop();
       const filePath = `${user?.id}/${Math.random().toString(36).substring(2)}.${fileExt}`;
       
+      // Get current session first to ensure we have valid auth
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Authentication session not found. Please log in again.');
+        return;
+      }
+      
       const { error: uploadError } = await supabase.storage
         .from('profiles')
         .upload(filePath, file);
@@ -106,19 +113,11 @@ const ProfileSection = () => {
 
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.updateUser({
-        data: { name }
-      });
-
-      if (error) {
-        toast.error('Failed to update profile: ' + error.message);
-        return;
-      }
-
+      await updateUserProfile({ name });
       toast.success('Profile updated successfully!');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Profile update error:', error);
-      toast.error('An unexpected error occurred');
+      toast.error(`Failed to update profile: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
