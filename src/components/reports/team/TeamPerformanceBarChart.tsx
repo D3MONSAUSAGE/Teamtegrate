@@ -11,7 +11,7 @@ import {
   ResponsiveContainer 
 } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { TeamMemberPerformance } from '@/hooks/useTeamMembers';
+import { TeamMemberPerformance } from '@/types/performance';
 
 interface TeamPerformanceBarChartProps {
   memberPerformanceData: {

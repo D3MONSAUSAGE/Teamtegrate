@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { TeamMemberPerformance } from '@/hooks/useTeamMembers';
+import { TeamMemberPerformance } from '@/types/performance';
 
 interface TeamRankingsTableProps {
   teamMembersPerformance: TeamMemberPerformance[];
