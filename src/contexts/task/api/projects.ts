@@ -1,5 +1,4 @@
-
-import { User, Task, Project } from '@/types';
+import { User, Task, Project, TaskPriority, TaskStatus } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { fetchTeamMemberName } from './team';
@@ -28,19 +27,19 @@ export const fetchProjects = async (user: User | null, setProjects: React.Dispat
       return;
     }
     
-    // Next, fetch all tasks for these projects in a single query for efficiency
+    // Next, fetch all tasks for these projects in a single query
     const projectIds = projectData.map(project => project.id);
     
-    let tasksData = [];
+    let projectTasksData = [];
     let tasksError = null;
     
     try {
       const result = await supabase
-        .from('tasks')
+        .from('project_tasks')
         .select('*')
         .in('project_id', projectIds);
       
-      tasksData = result.data || [];
+      projectTasksData = result.data || [];
       tasksError = result.error;
     } catch (err) {
       console.error('Error fetching tasks for projects:', err);
@@ -49,13 +48,12 @@ export const fetchProjects = async (user: User | null, setProjects: React.Dispat
     
     if (tasksError) {
       console.error('Error fetching tasks for projects:', tasksError);
-      // Continue with empty tasks rather than failing completely
     }
     
     // Group tasks by project_id for easier assignment
     const tasksByProject: Record<string, any[]> = {};
-    if (tasksData && tasksData.length > 0) {
-      tasksData.forEach(task => {
+    if (projectTasksData && projectTasksData.length > 0) {
+      projectTasksData.forEach(task => {
         if (task.project_id) {
           if (!tasksByProject[task.project_id]) {
             tasksByProject[task.project_id] = [];
@@ -70,18 +68,8 @@ export const fetchProjects = async (user: User | null, setProjects: React.Dispat
       const projectId = project.id;
       const projectTasksData = tasksByProject[projectId] || [];
       
-      console.log(`Found ${projectTasksData.length} tasks for project ${projectId}:`, projectTasksData);
-      
       // Process all tasks for this project
       const formattedProjectTasks = await Promise.all(projectTasksData.map(async (task) => {
-        let comments = [];
-        
-        try {
-          comments = await fetchTaskComments(task.id);
-        } catch (error) {
-          console.error(`Error fetching comments for task ${task.id}:`, error);
-        }
-
         let assigneeName;
         try {
           if (task.assigned_to_id) {
@@ -93,21 +81,17 @@ export const fetchProjects = async (user: User | null, setProjects: React.Dispat
         
         return {
           id: task.id,
-          userId: task.user_id,
           projectId: task.project_id,
           title: task.title || '',
           description: task.description || '',
-          deadline: new Date(task.deadline || Date.now()),
-          priority: (task.priority as any) || 'Medium',
-          status: (task.status as any) || 'To Do',
+          deadline: task.deadline ? new Date(task.deadline) : new Date(),
+          priority: (task.priority as TaskPriority) || 'Medium',
+          status: (task.status as TaskStatus) || 'To Do',
           createdAt: new Date(task.created_at || Date.now()),
           updatedAt: new Date(task.updated_at || Date.now()),
           completedAt: task.completed_at ? new Date(task.completed_at) : undefined,
           assignedToId: task.assigned_to_id,
           assignedToName: assigneeName,
-          completedById: user.id,
-          completedByName: user.name,
-          comments: comments || [],
           cost: task.cost || 0,
         };
       }));

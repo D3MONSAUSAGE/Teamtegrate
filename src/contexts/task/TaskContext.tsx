@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { Task, Project, TaskStatus, TaskPriority, DailyScore } from '@/types';
 import { useAuth } from '../AuthContext';
@@ -36,6 +35,18 @@ import {
 } from './taskFilters';
 import { toast } from '@/components/ui/sonner';
 
+interface ProjectTask {
+  id: string;
+  title: string;
+  description: string;
+  deadline: Date | null;
+  priority: TaskPriority;
+  status: TaskStatus;
+  cost: number;
+  assignedToId: string;
+  completedAt: Date | null;
+}
+
 interface TaskContextType {
   tasks: Task[];
   projects: Project[];
@@ -63,6 +74,10 @@ interface TaskContextType {
   getTasksByPriority: (priority: TaskPriority) => Task[];
   getTasksByDate: (date: Date) => Task[];
   getOverdueTasks: () => Task[];
+  addProjectTask: (projectId: string, task: Omit<ProjectTask, 'id' | 'createdAt' | 'updatedAt' | 'projectId'>) => void;
+  updateProjectTask: (taskId: string, updates: Partial<ProjectTask>) => void;
+  deleteProjectTask: (taskId: string) => void;
+  assignProjectTask: (taskId: string, userId: string, userName: string) => void;
   isLoading: boolean;
 }
 
@@ -135,6 +150,98 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return Promise.resolve();
   };
 
+  const addProjectTask = async (
+    projectId: string,
+    task: Omit<ProjectTask, 'id' | 'createdAt' | 'updatedAt' | 'projectId'>
+  ) => {
+    try {
+      const { data, error } = await supabase
+        .from('project_tasks')
+        .insert({
+          project_id: projectId,
+          title: task.title,
+          description: task.description,
+          deadline: task.deadline?.toISOString(),
+          priority: task.priority,
+          status: task.status,
+          cost: task.cost,
+          assigned_to_id: task.assignedToId
+        })
+        .select('*')
+        .single();
+
+      if (error) throw error;
+
+      await refreshProjects();
+      toast.success('Task added successfully!');
+    } catch (error) {
+      console.error('Error adding project task:', error);
+      toast.error('Failed to add task');
+    }
+  };
+
+  const updateProjectTask = async (taskId: string, updates: Partial<ProjectTask>) => {
+    try {
+      const { error } = await supabase
+        .from('project_tasks')
+        .update({
+          title: updates.title,
+          description: updates.description,
+          deadline: updates.deadline?.toISOString(),
+          priority: updates.priority,
+          status: updates.status,
+          cost: updates.cost,
+          assigned_to_id: updates.assignedToId,
+          completed_at: updates.completedAt?.toISOString()
+        })
+        .eq('id', taskId);
+
+      if (error) throw error;
+
+      await refreshProjects();
+      toast.success('Task updated successfully!');
+    } catch (error) {
+      console.error('Error updating project task:', error);
+      toast.error('Failed to update task');
+    }
+  };
+
+  const deleteProjectTask = async (taskId: string) => {
+    try {
+      const { error } = await supabase
+        .from('project_tasks')
+        .delete()
+        .eq('id', taskId);
+
+      if (error) throw error;
+
+      await refreshProjects();
+      toast.success('Task deleted successfully!');
+    } catch (error) {
+      console.error('Error deleting project task:', error);
+      toast.error('Failed to delete task');
+    }
+  };
+
+  const assignProjectTask = async (taskId: string, userId: string, userName: string) => {
+    try {
+      const { error } = await supabase
+        .from('project_tasks')
+        .update({
+          assigned_to_id: userId
+        })
+        .eq('id', taskId);
+
+      if (error) throw error;
+
+      await refreshProjects();
+      toast.success('Task assigned successfully!');
+    } catch (error) {
+      console.error('Error assigning project task:', error);
+      toast.error('Failed to assign task');
+    }
+  };
+
   const value = {
     tasks,
     projects,
@@ -179,6 +286,10 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     getTasksByPriority: (priority: TaskPriority) => getTasksByPriority(priority, tasks),
     getTasksByDate: (date: Date) => getTasksByDate(date, tasks),
     getOverdueTasks: () => getOverdueTasks(tasks),
+    addProjectTask,
+    updateProjectTask,
+    deleteProjectTask,
+    assignProjectTask,
   };
 
   return <TaskContext.Provider value={value}>{children}</TaskContext.Provider>;
