@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -13,7 +12,8 @@ import {
   Calendar,
   Timer,
   FileText,
-  DollarSign
+  DollarSign,
+  MessageSquare
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -87,6 +87,12 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
       name: 'Settings',
       path: '/dashboard/settings',
       icon: <Settings className="h-5 w-5" />,
+      allowed: true,
+    },
+    {
+      name: 'Team Chat',
+      path: '/dashboard/chat',
+      icon: <MessageSquare className="h-5 w-5" />,
       allowed: true,
     },
   ];
