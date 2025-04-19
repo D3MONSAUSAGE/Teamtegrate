@@ -4,9 +4,11 @@ import { useTask } from '@/contexts/task';
 import { format } from 'date-fns';
 import { getTasksCompletionByDate } from '@/contexts/task/taskMetrics';
 import { TaskStatus, TaskPriority } from '@/types';
-import TaskStatusDistribution from './task/TaskStatusDistribution';
-import TaskPriorityDistribution from './task/TaskPriorityDistribution';
-import TaskCompletionTrend from './task/TaskCompletionTrend';
+import { 
+  TaskStatusDistribution, 
+  TaskPriorityDistribution, 
+  TaskCompletionTrend 
+} from './task/TaskCharts';
 
 const TaskReports: React.FC = () => {
   const { tasks } = useTask();
