@@ -37,19 +37,19 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   const { deleteProject, updateProject, fetchProjects } = useTask();
   const [isLoading, setIsLoading] = useState(false);
   
-  // Use the tasks from the project prop directly
+  // Always use the tasks array from the project prop
   const projectTasks = project.tasks || [];
   
-  // Fetch projects once when component mounts to ensure we have latest data
+  // Check if we need to refresh project data
   useEffect(() => {
-    // Only fetch if we don't have tasks already
+    // Only fetch if we're explicitly missing tasks data
     if ((!projectTasks || projectTasks.length === 0) && fetchProjects) {
-      console.log(`ProjectCard: No tasks found for ${project.id}, refreshing data`);
       setIsLoading(true);
-      fetchProjects();
-      setIsLoading(false);
+      fetchProjects().finally(() => {
+        setIsLoading(false);
+      });
     }
-  }, []);
+  }, [fetchProjects, projectTasks]);
 
   const handleToggleCompletion = () => {
     updateProject(project.id, { is_completed: !project.is_completed });
@@ -63,7 +63,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   
   const handleCreateTask = () => {
     if (onCreateTask) {
-      fetchProjects();
+      fetchProjects && fetchProjects();
       onCreateTask(project);
     }
   };
@@ -118,7 +118,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
         ) : projectTasks.length > 0 ? (
           <div className="mt-3">
             <div className="flex justify-between items-center mb-2">
-              <span className="text-xs font-medium">Recent Tasks</span>
+              <span className="text-xs font-medium">Recent Tasks ({projectTasks.length})</span>
               <Button 
                 variant="ghost" 
                 size="sm" 

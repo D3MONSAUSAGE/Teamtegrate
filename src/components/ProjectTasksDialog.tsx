@@ -33,27 +33,19 @@ const ProjectTasksDialog: React.FC<ProjectTasksDialogProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const { projects, fetchProjects } = useTask();
   
-  // Get the current project tasks from the projects context
-  const projectTasks = project?.tasks || [];
+  // Get the latest project tasks from the projects context
+  const currentProject = project ? projects.find(p => p.id === project.id) : null;
+  const projectTasks = currentProject?.tasks || [];
   
   // Fetch projects data when the dialog opens to ensure we have latest data
   useEffect(() => {
     if (open && fetchProjects) {
       setIsLoading(true);
-      fetchProjects();
-      setIsLoading(false);
+      fetchProjects().then(() => {
+        setIsLoading(false);
+      });
     }
-  }, [open]);
-  
-  // Sync with the projects context to get real-time updates
-  useEffect(() => {
-    if (project && open) {
-      const currentProject = projects.find(p => p.id === project.id);
-      if (currentProject && currentProject.tasks) {
-        console.log(`ProjectTasksDialog: Syncing with context, found ${currentProject.tasks.length} tasks`);
-      }
-    }
-  }, [projects, project, open]);
+  }, [open, fetchProjects]);
   
   if (!project) return null;
   
