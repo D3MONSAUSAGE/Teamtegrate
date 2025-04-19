@@ -52,7 +52,6 @@ export const addTask = async (
     }
 
     if (data) {
-      // Fetch assignee name if needed
       let assigneeName = task.assignedToName;
       if (data.assigned_to_id && !assigneeName) {
         assigneeName = await fetchTeamMemberName(data.assigned_to_id);
