@@ -36,6 +36,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
 }) => {
   const { deleteProject, updateProject, fetchProjects } = useTask();
   const [isLoading, setIsLoading] = useState(false);
+  const [taskError, setTaskError] = useState(false);
   
   // Always use the tasks array from the project prop
   const projectTasks = project.tasks || [];
@@ -46,12 +47,12 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
     if ((!projectTasks || projectTasks.length === 0) && fetchProjects) {
       setIsLoading(true);
       
-      // Handle fetchProjects safely - it might not return a Promise
       const fetchData = async () => {
         try {
           await fetchProjects();
         } catch (err) {
           console.error("Error fetching projects:", err);
+          setTaskError(true);
         } finally {
           setIsLoading(false);
         }
@@ -62,7 +63,9 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   }, [fetchProjects, projectTasks]);
 
   const handleToggleCompletion = () => {
-    updateProject(project.id, { is_completed: !project.is_completed });
+    if (updateProject) {
+      updateProject(project.id, { is_completed: !project.is_completed });
+    }
   };
   
   const handleViewTasks = () => {
@@ -75,6 +78,12 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
     if (onCreateTask) {
       if (fetchProjects) fetchProjects();
       onCreateTask(project);
+    }
+  };
+
+  const handleDeleteProject = () => {
+    if (deleteProject) {
+      deleteProject(project.id);
     }
   };
   
@@ -97,9 +106,11 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="text-xs md:text-sm">
-            <DropdownMenuItem onClick={() => onEdit && onEdit(project)}>
-              Edit
-            </DropdownMenuItem>
+            {onEdit && (
+              <DropdownMenuItem onClick={() => onEdit(project)}>
+                Edit
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem onClick={handleViewTasks}>
               View Tasks
             </DropdownMenuItem>
@@ -108,7 +119,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
             </DropdownMenuItem>
             <DropdownMenuItem 
               className="text-red-500" 
-              onClick={() => deleteProject(project.id)}
+              onClick={handleDeleteProject}
             >
               Delete
             </DropdownMenuItem>
@@ -124,6 +135,10 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
         {isLoading ? (
           <div className="flex justify-center py-4">
             <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full"></div>
+          </div>
+        ) : taskError ? (
+          <div className="text-center py-2">
+            <p className="text-xs text-red-500">Error loading tasks</p>
           </div>
         ) : projectTasks.length > 0 ? (
           <div className="mt-3">

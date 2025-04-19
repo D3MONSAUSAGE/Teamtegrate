@@ -8,10 +8,11 @@ import AssignTaskDialog from '@/components/AssignTaskDialog';
 import ProjectToolbar from '@/components/ProjectToolbar';
 import ProjectList from '@/components/ProjectList';
 import ProjectTasksDialog from '@/components/ProjectTasksDialog';
-import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/components/ui/sonner';
+import { Loader2 } from 'lucide-react';
 
 const ProjectsPage = () => {
-  const { projects, fetchProjects } = useTask();
+  const { projects, fetchProjects, isLoading } = useTask();
   const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | undefined>(undefined);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
@@ -22,12 +23,25 @@ const ProjectsPage = () => {
   const [isAssignTaskOpen, setIsAssignTaskOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('date');
+  const [pageLoading, setPageLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   // Refresh projects when page loads
   useEffect(() => {
     if (fetchProjects) {
       console.log("Fetching projects on page load");
-      fetchProjects();
+      setPageLoading(true);
+      setError(null);
+      
+      fetchProjects()
+        .then(() => {
+          setPageLoading(false);
+        })
+        .catch((err) => {
+          console.error("Error fetching projects:", err);
+          setError("Failed to load projects. Please try refreshing the page.");
+          setPageLoading(false);
+        });
     }
   }, [fetchProjects]);
   
@@ -68,7 +82,10 @@ const ProjectsPage = () => {
     if (!open && fetchProjects) {
       console.log("Refreshing projects after task dialog closed");
       // Refresh projects data when task dialog closes
-      fetchProjects();
+      fetchProjects().catch(err => {
+        console.error("Error refreshing projects:", err);
+        toast.error("Failed to refresh project data");
+      });
     }
   };
   
@@ -77,7 +94,10 @@ const ProjectsPage = () => {
     if (!open && fetchProjects) {
       console.log("Refreshing projects after task view dialog closed");
       // Refresh projects data when task dialog closes
-      fetchProjects();
+      fetchProjects().catch(err => {
+        console.error("Error refreshing projects:", err);
+        toast.error("Failed to refresh project data");
+      });
     }
   };
   
@@ -86,7 +106,10 @@ const ProjectsPage = () => {
     if (!open && fetchProjects) {
       console.log("Refreshing projects after project dialog closed");
       // Refresh projects data when project dialog closes
-      fetchProjects();
+      fetchProjects().catch(err => {
+        console.error("Error refreshing projects:", err);
+        toast.error("Failed to refresh project data");
+      });
     }
   };
   
@@ -113,6 +136,43 @@ const ProjectsPage = () => {
         return 0;
     }
   });
+  
+  // Show loading state
+  if (pageLoading || isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+        <p className="text-gray-500">Loading projects...</p>
+      </div>
+    );
+  }
+  
+  // Show error state
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] p-6">
+        <div className="bg-red-50 p-6 rounded-lg border border-red-200 text-center max-w-md">
+          <p className="text-red-600 mb-4">{error}</p>
+          <button 
+            onClick={() => {
+              setPageLoading(true);
+              setError(null);
+              fetchProjects()
+                .then(() => setPageLoading(false))
+                .catch(err => {
+                  console.error("Error retrying fetch:", err);
+                  setError("Failed to load projects. Please try again later.");
+                  setPageLoading(false);
+                });
+            }}
+            className="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="p-6">

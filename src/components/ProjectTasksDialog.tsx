@@ -31,6 +31,7 @@ const ProjectTasksDialog: React.FC<ProjectTasksDialogProps> = ({
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [showComments, setShowComments] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { projects, fetchProjects } = useTask();
   
   // Get the latest project tasks from the projects context
@@ -41,13 +42,14 @@ const ProjectTasksDialog: React.FC<ProjectTasksDialogProps> = ({
   useEffect(() => {
     if (open && fetchProjects) {
       setIsLoading(true);
+      setError(null);
       
-      // Handle fetchProjects safely - it might not return a Promise
       const fetchData = async () => {
         try {
           await fetchProjects();
         } catch (err) {
           console.error("Error fetching projects:", err);
+          setError("Could not load project tasks. Please try again.");
         } finally {
           setIsLoading(false);
         }
@@ -76,7 +78,9 @@ const ProjectTasksDialog: React.FC<ProjectTasksDialogProps> = ({
             <DialogDescription>
               <div className="flex items-center gap-2 mt-2">
                 <Calendar className="h-4 w-4" />
-                <span>{format(new Date(project.startDate), 'MMM d, yyyy')} - {format(new Date(project.endDate), 'MMM d, yyyy')}</span>
+                <span>
+                  {format(new Date(project.startDate), 'MMM d, yyyy')} - {format(new Date(project.endDate), 'MMM d, yyyy')}
+                </span>
               </div>
               <div className="mt-2">
                 <p>{project.description}</p>
@@ -102,6 +106,18 @@ const ProjectTasksDialog: React.FC<ProjectTasksDialogProps> = ({
           {isLoading ? (
             <div className="flex justify-center items-center p-8">
               <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full"></div>
+            </div>
+          ) : error ? (
+            <div className="bg-red-50 p-6 rounded-lg text-center">
+              <p className="text-red-500">{error}</p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="mt-2"
+                onClick={() => fetchProjects && fetchProjects()}
+              >
+                Retry
+              </Button>
             </div>
           ) : projectTasks.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto p-1">
@@ -130,11 +146,13 @@ const ProjectTasksDialog: React.FC<ProjectTasksDialogProps> = ({
         </DialogContent>
       </Dialog>
       
-      <TaskCommentsDialog
-        open={showComments}
-        onOpenChange={setShowComments}
-        task={selectedTask}
-      />
+      {selectedTask && (
+        <TaskCommentsDialog
+          open={showComments}
+          onOpenChange={setShowComments}
+          task={selectedTask}
+        />
+      )}
     </>
   );
 };

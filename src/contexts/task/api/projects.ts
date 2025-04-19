@@ -30,18 +30,31 @@ export const fetchProjects = async (user: User | null, setProjects: React.Dispat
     
     // Next, fetch all tasks for these projects in a single query for efficiency
     const projectIds = projectData.map(project => project.id);
-    const { data: tasksData, error: tasksError } = await supabase
-      .from('tasks')
-      .select('*')
-      .in('project_id', projectIds);
+    
+    let tasksData = [];
+    let tasksError = null;
+    
+    try {
+      const result = await supabase
+        .from('tasks')
+        .select('*')
+        .in('project_id', projectIds);
+      
+      tasksData = result.data || [];
+      tasksError = result.error;
+    } catch (err) {
+      console.error('Error fetching tasks for projects:', err);
+      tasksError = err;
+    }
     
     if (tasksError) {
       console.error('Error fetching tasks for projects:', tasksError);
+      // Continue with empty tasks rather than failing completely
     }
     
     // Group tasks by project_id for easier assignment
     const tasksByProject: Record<string, any[]> = {};
-    if (tasksData) {
+    if (tasksData && tasksData.length > 0) {
       tasksData.forEach(task => {
         if (task.project_id) {
           if (!tasksByProject[task.project_id]) {
@@ -61,14 +74,24 @@ export const fetchProjects = async (user: User | null, setProjects: React.Dispat
       
       // Process all tasks for this project
       const formattedProjectTasks = await Promise.all(projectTasksData.map(async (task) => {
-        const comments = await fetchTaskComments(task.id);
+        let comments = [];
+        
+        try {
+          comments = await fetchTaskComments(task.id);
+        } catch (error) {
+          console.error(`Error fetching comments for task ${task.id}:`, error);
+        }
 
         let assigneeName;
-        if (task.assigned_to_id) {
-          assigneeName = await fetchTeamMemberName(task.assigned_to_id);
+        try {
+          if (task.assigned_to_id) {
+            assigneeName = await fetchTeamMemberName(task.assigned_to_id);
+          }
+        } catch (error) {
+          console.error(`Error fetching assignee name for task ${task.id}:`, error);
         }
         
-        const formattedTask: Task = {
+        return {
           id: task.id,
           userId: task.user_id,
           projectId: task.project_id,
@@ -87,11 +110,7 @@ export const fetchProjects = async (user: User | null, setProjects: React.Dispat
           comments: comments || [],
           cost: task.cost || 0,
         };
-        return formattedTask;
       }));
-      
-      // Create the project object with explicit type handling
-      const projectData = project as any;
       
       return {
         id: project.id,
@@ -102,12 +121,12 @@ export const fetchProjects = async (user: User | null, setProjects: React.Dispat
         managerId: project.manager_id || '',
         createdAt: new Date(project.created_at || Date.now()),
         updatedAt: new Date(project.updated_at || Date.now()),
-        tasks: formattedProjectTasks, // This is an array of all tasks for this project
+        tasks: formattedProjectTasks,
         teamMembers: [],
         tags: [],
         budget: project.budget || 0,
         budgetSpent: project.budget_spent || 0,
-        is_completed: projectData.is_completed !== undefined ? Boolean(projectData.is_completed) : false
+        is_completed: project.is_completed !== undefined ? Boolean(project.is_completed) : false
       };
     }));
     

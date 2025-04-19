@@ -1,6 +1,6 @@
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { Task, Project, TaskStatus, TaskPriority, DailyScore, Comment } from '@/types';
+import { Task, Project, TaskStatus, TaskPriority, DailyScore } from '@/types';
 import { useAuth } from '../AuthContext';
 import { fetchTasks, fetchProjects } from './taskApi';
 import { calculateDailyScore } from './taskMetrics';
@@ -34,6 +34,7 @@ import {
   getTasksByDate, 
   getOverdueTasks 
 } from './taskFilters';
+import { toast } from '@/components/ui/sonner';
 
 interface TaskContextType {
   tasks: Task[];
@@ -62,6 +63,7 @@ interface TaskContextType {
   getTasksByPriority: (priority: TaskPriority) => Task[];
   getTasksByDate: (date: Date) => Task[];
   getOverdueTasks: () => Task[];
+  isLoading: boolean;
 }
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
@@ -84,14 +86,30 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     percentage: 0,
     date: new Date(),
   });
+  const [isLoading, setIsLoading] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      fetchTasks(user, setTasks);
-      refreshProjects();
-    } else {
+    if (user && !isInitialized) {
+      setIsLoading(true);
+      Promise.all([
+        fetchTasks(user, setTasks),
+        refreshProjects()
+      ])
+      .then(() => {
+        setIsInitialized(true);
+      })
+      .catch(error => {
+        console.error("Error initializing data:", error);
+        toast.error("Failed to load your data. Please refresh the page.");
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+    } else if (!user) {
       setTasks([]);
       setProjects([]);
+      setIsInitialized(false);
     }
   }, [user]);
 
@@ -102,12 +120,17 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [tasks, user]);
 
-  const refreshProjects = (): Promise<void> => {
+  const refreshProjects = async (): Promise<void> => {
     if (user) {
-      return new Promise<void>((resolve) => {
-        fetchProjects(user, setProjects);
-        resolve();
-      });
+      try {
+        setIsLoading(true);
+        await fetchProjects(user, setProjects);
+      } catch (error) {
+        console.error("Error fetching projects:", error);
+        throw error;
+      } finally {
+        setIsLoading(false);
+      }
     }
     return Promise.resolve();
   };
@@ -116,6 +139,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     tasks,
     projects,
     dailyScore,
+    isLoading,
     fetchProjects: refreshProjects,
     addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => 
       addTask(task, user, tasks, setTasks, projects, setProjects),
