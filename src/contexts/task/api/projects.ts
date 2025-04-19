@@ -34,10 +34,8 @@ export const fetchProjects = async (user: User | null, setProjects: React.Dispat
         console.log(`Found ${projectTasks?.length || 0} tasks for project ${project.id}:`, projectTasks);
         
         const formattedProjectTasks = projectTasks ? await Promise.all(projectTasks.map(async (task) => {
-          // For each task, fetch its comments
           const comments = await fetchTaskComments(task.id);
 
-          // Get assignee name if available
           let assigneeName;
           if (task.assigned_to_id) {
             assigneeName = await fetchTeamMemberName(task.assigned_to_id);
@@ -56,9 +54,8 @@ export const fetchProjects = async (user: User | null, setProjects: React.Dispat
             updatedAt: new Date(task.updated_at || Date.now()),
             completedAt: task.completed_at ? new Date(task.completed_at) : undefined,
             assignedToId: task.assigned_to_id,
-            // Use the fetched name or undefined
             assignedToName: assigneeName,
-            completedById: user.id, // Default to the project manager
+            completedById: user.id,
             completedByName: user.name,
             comments: comments || [],
             cost: task.cost || 0,
@@ -80,8 +77,7 @@ export const fetchProjects = async (user: User | null, setProjects: React.Dispat
           tags: [],
           budget: project.budget || 0,
           budgetSpent: project.budget_spent || 0,
-          // Create is_completed property with default false if not present in database
-          is_completed: Boolean(project.is_completed) || false
+          is_completed: project.is_completed !== undefined ? Boolean(project.is_completed) : false
         };
       }));
       
