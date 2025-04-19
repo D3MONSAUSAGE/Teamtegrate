@@ -9,8 +9,6 @@ import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import TaskCommentsDialog from './TaskCommentsDialog';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/components/ui/sonner';
 import { useTask } from '@/contexts/task';
 
 interface ProjectTasksDialogProps {
@@ -32,16 +30,20 @@ const ProjectTasksDialog: React.FC<ProjectTasksDialogProps> = ({
 }) => {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [showComments, setShowComments] = useState(false);
-  const [projectTasks, setProjectTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const { projects } = useTask();
+  const { projects, fetchProjects } = useTask();
   
-  // Fetch project tasks when dialog opens and project changes
+  // Get the current project tasks from the projects context
+  const projectTasks = project?.tasks || [];
+  
+  // Fetch projects data when the dialog opens to ensure we have latest data
   useEffect(() => {
-    if (open && project) {
-      fetchProjectTasks();
+    if (open && fetchProjects) {
+      setIsLoading(true);
+      fetchProjects();
+      setIsLoading(false);
     }
-  }, [open, project]);
+  }, [open]);
   
   // Sync with the projects context to get real-time updates
   useEffect(() => {
@@ -49,69 +51,9 @@ const ProjectTasksDialog: React.FC<ProjectTasksDialogProps> = ({
       const currentProject = projects.find(p => p.id === project.id);
       if (currentProject && currentProject.tasks) {
         console.log(`ProjectTasksDialog: Syncing with context, found ${currentProject.tasks.length} tasks`);
-        setProjectTasks(currentProject.tasks);
       }
     }
   }, [projects, project, open]);
-  
-  const fetchProjectTasks = async () => {
-    if (!project) return;
-    
-    setIsLoading(true);
-    try {
-      console.log(`ProjectTasksDialog: Fetching tasks for project ${project.id}`);
-      
-      const { data, error } = await supabase
-        .from('tasks')
-        .select('*')
-        .eq('project_id', project.id);
-        
-      if (error) {
-        console.error('Error fetching project tasks:', error);
-        toast.error('Failed to load project tasks');
-        return;
-      }
-      
-      console.log(`ProjectTasksDialog: Found ${data?.length || 0} tasks for project ${project.id}`, data);
-      
-      if (data) {
-        const mappedTasks: Task[] = await Promise.all(data.map(async (task) => {
-          // Get assignee name if available
-          let assigneeName;
-          if (task.assigned_to_id) {
-            // Import and use fetchTeamMemberName helper
-            const { fetchTeamMemberName } = await import('@/contexts/task/api/team');
-            assigneeName = await fetchTeamMemberName(task.assigned_to_id);
-          }
-          
-          return {
-            id: task.id,
-            userId: task.user_id || '',
-            projectId: task.project_id || undefined,
-            title: task.title || '',
-            description: task.description || '',
-            deadline: new Date(task.deadline || new Date()),
-            priority: task.priority as Task['priority'] || 'Medium',
-            status: task.status as Task['status'] || 'To Do',
-            createdAt: new Date(task.created_at || new Date()),
-            updatedAt: new Date(task.updated_at || new Date()),
-            completedAt: task.completed_at ? new Date(task.completed_at) : undefined,
-            assignedToId: task.assigned_to_id || undefined,
-            assignedToName: assigneeName || undefined,
-            tags: [],
-            comments: [],
-            cost: task.cost || 0
-          };
-        }));
-        setProjectTasks(mappedTasks);
-      }
-    } catch (error) {
-      console.error('Error fetching project tasks:', error);
-      toast.error('Failed to load project tasks');
-    } finally {
-      setIsLoading(false);
-    }
-  };
   
   if (!project) return null;
   

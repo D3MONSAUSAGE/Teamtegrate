@@ -57,7 +57,7 @@ export const fetchProjects = async (user: User | null, setProjects: React.Dispat
             completedAt: task.completed_at ? new Date(task.completed_at) : undefined,
             assignedToId: task.assigned_to_id,
             // Use the fetched name or undefined
-            assignedToName: assigneeName || undefined,
+            assignedToName: assigneeName,
             completedById: user.id, // Default to the project manager
             completedByName: user.name,
             comments: comments || [],
@@ -81,7 +81,7 @@ export const fetchProjects = async (user: User | null, setProjects: React.Dispat
           budget: project.budget || 0,
           budgetSpent: project.budget_spent || 0,
           // Create is_completed property with default false if not present in database
-          is_completed: false
+          is_completed: Boolean(project.is_completed) || false
         };
       }));
       
@@ -89,5 +89,6 @@ export const fetchProjects = async (user: User | null, setProjects: React.Dispat
     }
   } catch (error) {
     console.error('Error in fetchProjects:', error);
+    toast.error('Failed to load projects');
   }
 };

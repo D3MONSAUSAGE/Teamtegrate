@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Project, Task } from '@/types';
@@ -18,8 +19,6 @@ import ProjectMetadata from './project/ProjectMetadata';
 import ProjectTaskProgress from './project/ProjectTaskProgress';
 import ProjectBudget from './project/ProjectBudget';
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/components/ui/sonner';
 
 interface ProjectCardProps {
   project: Project;
@@ -36,74 +35,21 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   onCreateTask 
 }) => {
   const { deleteProject, updateProject, fetchProjects } = useTask();
-  const [projectTasks, setProjectTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   
-  useEffect(() => {
-    if (project.tasks && project.tasks.length > 0) {
-      console.log(`ProjectCard: Using ${project.tasks.length} tasks from project prop for ${project.id}`);
-      setProjectTasks(project.tasks);
-    } else {
-      fetchProjectTasks();
-    }
-  }, [project.id, project.tasks]);
+  // Use the tasks from the project prop directly
+  const projectTasks = project.tasks || [];
   
-  const fetchProjectTasks = async () => {
-    if (!project.id) return;
-    
-    setIsLoading(true);
-    try {
-      console.log(`ProjectCard: Fetching tasks for project ID: ${project.id}`);
-      
-      const { data, error } = await supabase
-        .from('tasks')
-        .select('*')
-        .eq('project_id', project.id);
-        
-      if (error) {
-        console.error('Error fetching project tasks:', error);
-        toast.error('Failed to load project tasks');
-        return;
-      }
-      
-      console.log(`ProjectCard: Found ${data?.length || 0} tasks for project ${project.id}`, data);
-      
-      if (data) {
-        const mappedTasks: Task[] = await Promise.all(data.map(async (task) => {
-          let assigneeName;
-          if (task.assigned_to_id) {
-            const { fetchTeamMemberName } = await import('@/contexts/task/api/team');
-            assigneeName = await fetchTeamMemberName(task.assigned_to_id);
-          }
-          
-          return {
-            id: task.id,
-            userId: task.user_id || '',
-            projectId: task.project_id || undefined,
-            title: task.title || '',
-            description: task.description || '',
-            deadline: new Date(task.deadline || Date.now()),
-            priority: task.priority as Task['priority'] || 'Medium',
-            status: task.status as Task['status'] || 'To Do',
-            createdAt: new Date(task.created_at || Date.now()),
-            updatedAt: new Date(task.updated_at || Date.now()),
-            completedAt: task.completed_at ? new Date(task.completed_at) : undefined,
-            assignedToId: task.assigned_to_id || undefined,
-            assignedToName: assigneeName || undefined,
-            tags: [],
-            comments: [],
-            cost: task.cost || 0
-          };
-        }));
-        setProjectTasks(mappedTasks);
-      }
-    } catch (error) {
-      console.error('Error fetching project tasks:', error);
-      toast.error('Failed to load project tasks');
-    } finally {
+  // Fetch projects once when component mounts to ensure we have latest data
+  useEffect(() => {
+    // Only fetch if we don't have tasks already
+    if ((!projectTasks || projectTasks.length === 0) && fetchProjects) {
+      console.log(`ProjectCard: No tasks found for ${project.id}, refreshing data`);
+      setIsLoading(true);
+      fetchProjects();
       setIsLoading(false);
     }
-  };
+  }, []);
 
   const handleToggleCompletion = () => {
     updateProject(project.id, { is_completed: !project.is_completed });
