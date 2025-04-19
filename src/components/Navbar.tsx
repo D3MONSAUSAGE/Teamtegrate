@@ -22,7 +22,6 @@ const Navbar = () => {
   
   useEffect(() => {
     if (user) {
-      // Fetch user data including avatar
       const fetchAvatar = async () => {
         try {
           const { data, error } = await supabase
@@ -55,7 +54,6 @@ const Navbar = () => {
       toast.success('Logged out successfully');
     } catch (error) {
       console.error('Logout error:', error);
-      // Still navigate to login page even if there was an error
       navigate('/login');
     }
   };
@@ -73,7 +71,7 @@ const Navbar = () => {
       </div>
       
       <div className="flex items-center space-x-4">
-        <span className="text-sm text-gray-600">
+        <span className="text-sm text-gray-600 mr-2 hidden md:inline">
           {user.role === 'manager' ? 'Manager' : 'Team Member'}
         </span>
         
