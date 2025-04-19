@@ -2,7 +2,6 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
-import { useTheme } from '@/hooks/use-theme';
 import { 
   LayoutDashboard, 
   CheckSquare, 
@@ -14,10 +13,7 @@ import {
   Clock,
   FileText,
   DollarSign,
-  MessageSquare,
-  Monitor,
-  Sun,
-  Moon
+  MessageSquare
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -27,7 +23,6 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
   const location = useLocation();
   const { user } = useAuth();
-  const { theme, toggleTheme } = useTheme();
   
   const isActive = (path: string) => {
     return location.pathname === path;
@@ -141,26 +136,12 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
         </ul>
       </div>
       
-      <div className="p-4 border-t border-gray-200 flex items-center justify-between">
+      <div className="p-4 border-t border-gray-200">
         <div className="text-xs text-gray-500">
           <p>Logged in as</p>
           <p className="font-semibold">{user.name}</p>
           <p>{user.email}</p>
           <p className="mt-1 font-medium">{user.role === 'manager' ? 'Manager' : 'Team Member'}</p>
-        </div>
-        
-        <div className="flex items-center space-x-2">
-          <button 
-            onClick={toggleTheme} 
-            className="p-2 rounded-md hover:bg-gray-100 transition-colors"
-            aria-label="Toggle theme"
-          >
-            {theme === 'light' ? (
-              <Moon className="h-5 w-5 text-gray-600" />
-            ) : (
-              <Sun className="h-5 w-5 text-gray-600" />
-            )}
-          </button>
         </div>
       </div>
     </div>
