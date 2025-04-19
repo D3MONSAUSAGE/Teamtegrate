@@ -45,9 +45,19 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
     // Only fetch if we're explicitly missing tasks data
     if ((!projectTasks || projectTasks.length === 0) && fetchProjects) {
       setIsLoading(true);
-      fetchProjects().finally(() => {
-        setIsLoading(false);
-      });
+      
+      // Handle fetchProjects safely - it might not return a Promise
+      const fetchData = async () => {
+        try {
+          await fetchProjects();
+        } catch (err) {
+          console.error("Error fetching projects:", err);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      
+      fetchData();
     }
   }, [fetchProjects, projectTasks]);
 
@@ -63,7 +73,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   
   const handleCreateTask = () => {
     if (onCreateTask) {
-      fetchProjects && fetchProjects();
+      if (fetchProjects) fetchProjects();
       onCreateTask(project);
     }
   };

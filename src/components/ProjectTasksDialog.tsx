@@ -41,9 +41,19 @@ const ProjectTasksDialog: React.FC<ProjectTasksDialogProps> = ({
   useEffect(() => {
     if (open && fetchProjects) {
       setIsLoading(true);
-      fetchProjects().then(() => {
-        setIsLoading(false);
-      });
+      
+      // Handle fetchProjects safely - it might not return a Promise
+      const fetchData = async () => {
+        try {
+          await fetchProjects();
+        } catch (err) {
+          console.error("Error fetching projects:", err);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      
+      fetchData();
     }
   }, [open, fetchProjects]);
   

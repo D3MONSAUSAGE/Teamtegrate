@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { Task, Project, TaskStatus, TaskPriority, DailyScore, Comment } from '@/types';
 import { useAuth } from '../AuthContext';
@@ -39,7 +38,7 @@ interface TaskContextType {
   tasks: Task[];
   projects: Project[];
   dailyScore: DailyScore;
-  fetchProjects: () => void; // Add this method
+  fetchProjects: () => Promise<void>;
   addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateTask: (taskId: string, updates: Partial<Task>) => void;
   updateTaskStatus: (taskId: string, status: TaskStatus) => void;
@@ -88,7 +87,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     if (user) {
       fetchTasks(user, setTasks);
-      fetchProjects(user, setProjects);
+      refreshProjects();
     } else {
       setTasks([]);
       setProjects([]);
@@ -102,19 +101,21 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [tasks, user]);
 
-  // Add a function to manually refresh projects
-  const refreshProjects = () => {
+  const refreshProjects = (): Promise<void> => {
     if (user) {
-      fetchProjects(user, setProjects);
+      return new Promise<void>((resolve) => {
+        fetchProjects(user, setProjects);
+        resolve();
+      });
     }
+    return Promise.resolve();
   };
 
-  // Create context value object with all the functions
   const value = {
     tasks,
     projects,
     dailyScore,
-    fetchProjects: refreshProjects, // Expose this method
+    fetchProjects: refreshProjects,
     addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => 
       addTask(task, user, tasks, setTasks, projects, setProjects),
     updateTask: (taskId: string, updates: Partial<Task>) => 
