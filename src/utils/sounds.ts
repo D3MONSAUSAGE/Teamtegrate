@@ -1,26 +1,35 @@
 
-const createSound = (frequency: number, type: OscillatorType = 'sine', duration: number = 200) => {
-  const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-  const oscillator = audioContext.createOscillator();
-  const gainNode = audioContext.createGain();
+// These functions play various sounds for different app interactions
 
-  oscillator.connect(gainNode);
-  gainNode.connect(audioContext.destination);
-
-  oscillator.type = type;
-  oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
-
-  gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-  gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration / 1000);
-
-  oscillator.start();
-  setTimeout(() => {
-    oscillator.stop();
-    audioContext.close();
-  }, duration);
+// Play success sound when tasks/projects are created/completed
+export const playSuccessSound = () => {
+  try {
+    const audio = new Audio('/sounds/success.mp3');
+    audio.volume = 0.5;
+    audio.play();
+  } catch (error) {
+    console.error('Error playing success sound:', error);
+  }
 };
 
-export const playSuccessSound = () => createSound(800, 'sine', 150);
-export const playErrorSound = () => createSound(250, 'square', 300);
-export const playStatusChangeSound = () => createSound(600, 'sine', 100);
-export const playNotificationSound = () => createSound(700, 'sine', 200);
+// Play error sound when operations fail
+export const playErrorSound = () => {
+  try {
+    const audio = new Audio('/sounds/error.mp3');
+    audio.volume = 0.5;
+    audio.play();
+  } catch (error) {
+    console.error('Error playing error sound:', error);
+  }
+};
+
+// Play status change sound when task status changes
+export const playStatusChangeSound = () => {
+  try {
+    const audio = new Audio('/sounds/status-change.mp3');
+    audio.volume = 0.4;
+    audio.play();
+  } catch (error) {
+    console.error('Error playing status change sound:', error);
+  }
+};
