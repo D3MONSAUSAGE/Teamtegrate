@@ -1,37 +1,19 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useForm } from "react-hook-form";
-import { Task, TaskPriority, TaskStatus } from '@/types';
+import { Task } from '@/types';
 import { useTask } from '@/contexts/task';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
-import { Loader2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { useQuery } from '@tanstack/react-query';
+import { useTaskForm } from '@/hooks/useTaskForm';
+import TaskFormFields from './task/TaskFormFields';
 
 interface CreateTaskDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editingTask?: Task;
   currentProjectId?: string;
-}
-
-interface AppUser {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
 }
 
 const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({ 
@@ -43,38 +25,20 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
   const { user } = useAuth();
   const { addTask, updateTask, projects } = useTask();
   const isEditMode = !!editingTask;
-  const [selectedMember, setSelectedMember] = useState<string | undefined>(
-    editingTask?.assignedToId
-  );
   
-  const { data: appUsers, isLoading: isLoadingUsers } = useQuery({
-    queryKey: ['app-users'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('users')
-        .select('id, name, email, role')
-        .order('name');
-        
-      if (error) {
-        console.error('Error loading users:', error);
-        return [];
-      }
-      
-      return data as AppUser[];
-    }
-  });
+  const {
+    register,
+    handleSubmit,
+    errors,
+    reset,
+    setValue,
+    selectedMember,
+    setSelectedMember,
+    appUsers,
+    isLoadingUsers
+  } = useTaskForm(editingTask, currentProjectId);
   
-  const { register, handleSubmit, formState: { errors }, reset, setValue } = useForm({
-    defaultValues: {
-      title: editingTask?.title || '',
-      description: editingTask?.description || '',
-      priority: editingTask?.priority || 'Medium' as TaskPriority,
-      deadline: editingTask ? format(new Date(editingTask.deadline), "yyyy-MM-dd'T'HH:mm") : '',
-      projectId: editingTask?.projectId || currentProjectId || '',
-    },
-  });
-  
-  React.useEffect(() => {
+  useEffect(() => {
     if (editingTask) {
       setValue('title', editingTask.title);
       setValue('description', editingTask.description);
@@ -89,7 +53,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
       reset();
       setSelectedMember(undefined);
     }
-  }, [editingTask, currentProjectId, setValue, reset]);
+  }, [editingTask, currentProjectId, setValue, reset, setSelectedMember]);
   
   const onSubmit = (data: any) => {
     if (isEditMode && editingTask) {
@@ -104,9 +68,9 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
       addTask({
         title: data.title,
         description: data.description,
-        priority: data.priority as TaskPriority,
+        priority: data.priority,
         deadline: new Date(data.deadline),
-        status: 'To Do' as TaskStatus,
+        status: 'To Do',
         userId: user?.id || '',
         projectId: data.projectId === "none" ? undefined : data.projectId,
         assignedToId: selectedMember === "unassigned" ? undefined : selectedMember,
@@ -118,7 +82,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
     reset();
     setSelectedMember(undefined);
   };
-  
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
@@ -127,114 +91,29 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
         </DialogHeader>
         
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="title">Title <span className="text-red-500">*</span></Label>
-            <Input
-              id="title"
-              placeholder="Task title"
-              {...register('title', { required: 'Title is required' })}
-            />
-            {errors.title && (
-              <span className="text-xs text-red-500">{errors.title.message}</span>
-            )}
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              placeholder="Task description"
-              {...register('description')}
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="projectId">Project</Label>
-            <Select
-              defaultValue={editingTask?.projectId || currentProjectId || ''}
-              onValueChange={(value) => setValue('projectId', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select project (optional)" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">No Project</SelectItem>
-                {projects.map(project => (
-                  <SelectItem key={project.id} value={project.id}>
-                    {project.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="assignedTo">Assigned To</Label>
-            <Select
-              value={selectedMember}
-              onValueChange={setSelectedMember}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Assign to user (optional)" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="unassigned">Unassigned</SelectItem>
-                
-                {isLoadingUsers ? (
-                  <div className="flex items-center justify-center py-2">
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" /> 
-                    <span className="text-sm">Loading users...</span>
-                  </div>
-                ) : appUsers && appUsers.length > 0 ? (
-                  appUsers.map(appUser => (
-                    <SelectItem key={appUser.id} value={appUser.id}>
-                      {appUser.name} ({appUser.role})
-                    </SelectItem>
-                  ))
-                ) : (
-                  <SelectItem value="no-users" disabled>
-                    No users found
-                  </SelectItem>
-                )}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="priority">Priority <span className="text-red-500">*</span></Label>
-            <Select
-              defaultValue={editingTask?.priority || 'Medium'}
-              onValueChange={(value) => setValue('priority', value as TaskPriority)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select priority" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Low">Low</SelectItem>
-                <SelectItem value="Medium">Medium</SelectItem>
-                <SelectItem value="High">High</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="deadline">Deadline <span className="text-red-500">*</span></Label>
-            <Input
-              id="deadline"
-              type="datetime-local"
-              {...register('deadline', { required: 'Deadline is required' })}
-            />
-            {errors.deadline && (
-              <span className="text-xs text-red-500">{errors.deadline.message}</span>
-            )}
-          </div>
+          <TaskFormFields
+            register={register}
+            errors={errors}
+            setValue={setValue}
+            selectedMember={selectedMember}
+            setSelectedMember={setSelectedMember}
+            appUsers={appUsers}
+            isLoadingUsers={isLoadingUsers}
+            projects={projects}
+            editingTask={editingTask}
+            currentProjectId={currentProjectId}
+          />
           
           <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={() => {
-              onOpenChange(false);
-              reset();
-              setSelectedMember(undefined);
-            }}>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => {
+                onOpenChange(false);
+                reset();
+                setSelectedMember(undefined);
+              }}
+            >
               Cancel
             </Button>
             <Button type="submit">{isEditMode ? 'Update' : 'Create'}</Button>
