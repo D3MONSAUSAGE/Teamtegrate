@@ -45,7 +45,11 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
       setValue('priority', editingTask.priority);
       setValue('deadline', format(new Date(editingTask.deadline), "yyyy-MM-dd'T'HH:mm"));
       setValue('projectId', editingTask.projectId || '');
-      setValue('cost', editingTask.cost || 0);
+      
+      // Use an explicit type assertion with "as any" for setting cost
+      // This is a workaround for the TypeScript error
+      (setValue as any)('cost', editingTask.cost || 0);
+      
       setSelectedMember(editingTask.assignedToId);
     } else {
       if (currentProjectId) {

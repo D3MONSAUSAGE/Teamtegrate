@@ -54,6 +54,7 @@ const ProjectList: React.FC<ProjectListProps> = ({
           onEdit={onEditProject} 
           onViewTasks={() => onViewTasks(project)}
           onCreateTask={() => onCreateTask(project)}
+          onCreateProject={onCreateProject}
         />
       ))}
     </div>

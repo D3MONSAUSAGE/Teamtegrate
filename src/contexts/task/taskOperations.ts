@@ -3,6 +3,7 @@ import { User, Project, Task, TaskStatus, TaskPriority, TaskComment, DailyScore 
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { v4 as uuidv4 } from 'uuid';
+import { updateTaskInProjects } from './utils';
 
 export const addTask = async (
   task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>,
@@ -254,41 +255,52 @@ export const assignTaskToUser = async (
   taskId: string,
   userId: string,
   userName: string,
-  user: User | null,
+  currentUser: User | null,
   tasks: Task[],
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>,
   projects: Project[],
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
 ) => {
   try {
-    if (!user) return;
-
-    const now = new Date();
-
-    const { error } = await supabase
+    if (!currentUser) return;
+    
+    const { data, error } = await supabase
       .from('tasks')
-      .update({ assigned_to_id: userId, updated_at: now.toISOString() })
-      .eq('id', taskId);
-
+      .update({ 
+        assigned_to_id: userId,
+        assigned_to_name: userName
+      })
+      .eq('id', taskId)
+      .select();
+    
     if (error) {
       console.error('Error assigning task to user:', error);
-      playErrorSound();
-      toast.error('Failed to assign task to user');
+      toast.error('Failed to assign task');
       return;
     }
-
-    setTasks(prevTasks => prevTasks.map(task => {
-      if (task.id === taskId) {
-        return { ...task, assignedToId: userId, assignedToName: userName };
-      }
-      return task;
-    }));
-
-    toast.success('Task assigned to user successfully!');
+    
+    setTasks(prevTasks => 
+      prevTasks.map(task => 
+        task.id === taskId ? 
+          {
+            ...task,
+            assignedToId: userId,
+            assignedToName: userName
+          } :
+          task
+      )
+    );
+    
+    updateTaskInProjects(
+      projects, 
+      setProjects, 
+      taskId, 
+      { assignedToId: userId, assignedToName: userName }
+    );
+    
+    toast.success(`Task assigned to ${userName}`);
   } catch (error) {
     console.error('Error in assignTaskToUser:', error);
-    playErrorSound();
-    toast.error('Failed to assign task to user');
   }
 };
 
