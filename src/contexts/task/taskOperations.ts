@@ -66,13 +66,28 @@ export const addTask = async (
         createdAt: new Date(data.created_at),
         updatedAt: new Date(data.updated_at),
         assignedToId: data.assigned_to_id || undefined,
-        assignedToName: (data as any).assigned_to_name || undefined,
+        assignedToName: data.assigned_to_name || undefined,
         tags: [],
         comments: [],
         cost: data.cost || 0
       };
 
+      // Add the task to the tasks array
       setTasks(prevTasks => [...prevTasks, newTask]);
+      
+      // If task has a projectId, update the projects state to include this task
+      if (task.projectId) {
+        setProjects(prevProjects => prevProjects.map(project => {
+          if (project.id === task.projectId) {
+            return {
+              ...project,
+              tasks: [...(project.tasks || []), newTask]
+            };
+          }
+          return project;
+        }));
+      }
+
       playSuccessSound();
       toast.success('Task created successfully!');
     }

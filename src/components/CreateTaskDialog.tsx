@@ -23,8 +23,16 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
   currentProjectId 
 }) => {
   const { user } = useAuth();
-  const { addTask, updateTask, projects } = useTask();
+  const { addTask, updateTask, projects, fetchProjects } = useTask();
   const isEditMode = !!editingTask;
+  
+  // Fetch the latest projects data when the dialog opens
+  useEffect(() => {
+    if (open && fetchProjects) {
+      console.log('CreateTaskDialog: Fetching latest projects data');
+      fetchProjects();
+    }
+  }, [open, fetchProjects]);
   
   const {
     register,
@@ -89,9 +97,17 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
         cost: parseFloat(data.cost) || 0
       });
     }
+    
+    // Close the dialog and reset the form
     onOpenChange(false);
     reset();
     setSelectedMember(undefined);
+    
+    // Refresh projects after task creation/update to ensure proper display
+    if (fetchProjects) {
+      console.log('Refreshing projects after task submit');
+      setTimeout(() => fetchProjects(), 500); // Small delay to ensure task is saved
+    }
   };
 
   return (

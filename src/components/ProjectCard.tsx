@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Project, Task } from '@/types';
@@ -41,56 +40,62 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   
   useEffect(() => {
-    const fetchProjectTasks = async () => {
-      if (!project.id) return;
+    if (project.tasks && project.tasks.length > 0) {
+      console.log(`ProjectCard: Using ${project.tasks.length} tasks from project prop for ${project.id}`);
+      setProjectTasks(project.tasks);
+    } else {
+      fetchProjectTasks();
+    }
+  }, [project.id, project.tasks]);
+  
+  const fetchProjectTasks = async () => {
+    if (!project.id) return;
+    
+    setIsLoading(true);
+    try {
+      console.log(`ProjectCard: Fetching tasks for project ID: ${project.id}`);
       
-      setIsLoading(true);
-      try {
-        console.log(`Fetching tasks for project ID: ${project.id}`);
+      const { data, error } = await supabase
+        .from('tasks')
+        .select('*')
+        .eq('project_id', project.id);
         
-        const { data, error } = await supabase
-          .from('tasks')
-          .select('*')
-          .eq('project_id', project.id);
-          
-        if (error) {
-          console.error('Error fetching project tasks:', error);
-          toast.error('Failed to load project tasks');
-          return;
-        }
-        
-        console.log(`Found ${data?.length || 0} tasks for project ${project.id}`);
-        
-        if (data) {
-          const mappedTasks: Task[] = data.map(task => ({
-            id: task.id,
-            userId: task.user_id || '',
-            projectId: task.project_id || undefined,
-            title: task.title || '',
-            description: task.description || '',
-            deadline: new Date(task.deadline || Date.now()),
-            priority: task.priority as Task['priority'] || 'Medium',
-            status: task.status as Task['status'] || 'To Do',
-            createdAt: new Date(task.created_at || Date.now()),
-            updatedAt: new Date(task.updated_at || Date.now()),
-            completedAt: task.completed_at ? new Date(task.completed_at) : undefined,
-            assignedToId: task.assigned_to_id || undefined,
-            tags: [],
-            comments: [],
-            cost: task.cost || 0
-          }));
-          setProjectTasks(mappedTasks);
-        }
-      } catch (error) {
+      if (error) {
         console.error('Error fetching project tasks:', error);
         toast.error('Failed to load project tasks');
-      } finally {
-        setIsLoading(false);
+        return;
       }
-    };
-    
-    fetchProjectTasks();
-  }, [project.id]);
+      
+      console.log(`ProjectCard: Found ${data?.length || 0} tasks for project ${project.id}`, data);
+      
+      if (data) {
+        const mappedTasks: Task[] = data.map(task => ({
+          id: task.id,
+          userId: task.user_id || '',
+          projectId: task.project_id || undefined,
+          title: task.title || '',
+          description: task.description || '',
+          deadline: new Date(task.deadline || Date.now()),
+          priority: task.priority as Task['priority'] || 'Medium',
+          status: task.status as Task['status'] || 'To Do',
+          createdAt: new Date(task.created_at || Date.now()),
+          updatedAt: new Date(task.updated_at || Date.now()),
+          completedAt: task.completed_at ? new Date(task.completed_at) : undefined,
+          assignedToId: task.assigned_to_id || undefined,
+          assignedToName: task.assigned_to_name || undefined,
+          tags: [],
+          comments: [],
+          cost: task.cost || 0
+        }));
+        setProjectTasks(mappedTasks);
+      }
+    } catch (error) {
+      console.error('Error fetching project tasks:', error);
+      toast.error('Failed to load project tasks');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleToggleCompletion = () => {
     updateProject(project.id, { is_completed: !project.is_completed });
@@ -99,6 +104,13 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   const handleViewTasks = () => {
     if (onViewTasks) {
       onViewTasks(project);
+    }
+  };
+  
+  const handleCreateTask = () => {
+    if (onCreateTask) {
+      fetchProjects();
+      onCreateTask(project);
     }
   };
   
@@ -197,7 +209,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
           variant="outline" 
           size="sm" 
           className="w-full mt-1 md:mt-2 text-xs" 
-          onClick={() => onCreateTask && onCreateTask(project)}
+          onClick={handleCreateTask}
         >
           <Plus className="h-3 w-3 mr-1 flex-shrink-0" /> Add Task
         </Button>

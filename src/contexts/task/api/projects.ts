@@ -9,6 +9,8 @@ export const fetchProjects = async (user: User | null, setProjects: React.Dispat
   try {
     if (!user) return;
     
+    console.log('Fetching projects for user:', user.id);
+    
     const { data, error } = await supabase
       .from('projects')
       .select('*')
@@ -22,10 +24,14 @@ export const fetchProjects = async (user: User | null, setProjects: React.Dispat
     
     if (data) {
       const formattedProjects = await Promise.all(data.map(async (project) => {
+        console.log(`Fetching tasks for project ${project.id}`);
+        
         const { data: projectTasks } = await supabase
           .from('tasks')
           .select('*')
           .eq('project_id', project.id);
+        
+        console.log(`Found ${projectTasks?.length || 0} tasks for project ${project.id}:`, projectTasks);
         
         const formattedProjectTasks = projectTasks ? await Promise.all(projectTasks.map(async (task) => {
           // For each task, fetch its comments
@@ -50,7 +56,7 @@ export const fetchProjects = async (user: User | null, setProjects: React.Dispat
             updatedAt: new Date(task.updated_at || Date.now()),
             completedAt: task.completed_at ? new Date(task.completed_at) : undefined,
             assignedToId: task.assigned_to_id,
-            assignedToName: assigneeName,
+            assignedToName: task.assigned_to_name || assigneeName,
             completedById: user.id, // Default to the project manager
             completedByName: user.name,
             comments: comments || [],
@@ -73,6 +79,7 @@ export const fetchProjects = async (user: User | null, setProjects: React.Dispat
           tags: [],
           budget: project.budget || 0,
           budgetSpent: project.budget_spent || 0,
+          is_completed: project.is_completed || false,
         };
       }));
       
@@ -82,4 +89,3 @@ export const fetchProjects = async (user: User | null, setProjects: React.Dispat
     console.error('Error in fetchProjects:', error);
   }
 };
-

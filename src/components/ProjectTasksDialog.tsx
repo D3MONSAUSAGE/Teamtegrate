@@ -11,6 +11,7 @@ import { Progress } from '@/components/ui/progress';
 import TaskCommentsDialog from './TaskCommentsDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
+import { useTask } from '@/contexts/task';
 
 interface ProjectTasksDialogProps {
   open: boolean;
@@ -33,6 +34,7 @@ const ProjectTasksDialog: React.FC<ProjectTasksDialogProps> = ({
   const [showComments, setShowComments] = useState(false);
   const [projectTasks, setProjectTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const { projects } = useTask();
   
   // Fetch project tasks when dialog opens and project changes
   useEffect(() => {
@@ -40,6 +42,17 @@ const ProjectTasksDialog: React.FC<ProjectTasksDialogProps> = ({
       fetchProjectTasks();
     }
   }, [open, project]);
+  
+  // Sync with the projects context to get real-time updates
+  useEffect(() => {
+    if (project && open) {
+      const currentProject = projects.find(p => p.id === project.id);
+      if (currentProject && currentProject.tasks) {
+        console.log(`ProjectTasksDialog: Syncing with context, found ${currentProject.tasks.length} tasks`);
+        setProjectTasks(currentProject.tasks);
+      }
+    }
+  }, [projects, project, open]);
   
   const fetchProjectTasks = async () => {
     if (!project) return;
@@ -75,8 +88,7 @@ const ProjectTasksDialog: React.FC<ProjectTasksDialogProps> = ({
           updatedAt: new Date(task.updated_at || new Date()),
           completedAt: task.completed_at ? new Date(task.completed_at) : undefined,
           assignedToId: task.assigned_to_id || undefined,
-          // Use type assertion to handle properties that might not exist in the DB schema
-          assignedToName: (task as any).assigned_to_name || undefined,
+          assignedToName: task.assigned_to_name || undefined,
           tags: [],
           comments: [],
           cost: task.cost || 0
@@ -143,7 +155,7 @@ const ProjectTasksDialog: React.FC<ProjectTasksDialogProps> = ({
                 <TaskCard 
                   key={task.id} 
                   task={task} 
-                  onEdit={onEditTask}
+                  onEdit={() => onEditTask(task)}
                   onAssign={() => onAssignTask(task)}
                 />
               ))}
