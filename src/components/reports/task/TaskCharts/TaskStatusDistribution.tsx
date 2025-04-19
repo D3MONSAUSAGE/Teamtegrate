@@ -13,24 +13,7 @@ interface TaskStatusDistributionProps {
 
 const TaskStatusDistribution: React.FC<TaskStatusDistributionProps> = ({ statusCounts }) => {
   const isMobile = useIsMobile();
-  
-  // Define consistent colors for each status to ensure they match both in the chart and legend
-  const STATUS_COLORS = {
-    'To Do': '#0088FE',
-    'In Progress': '#00C49F',
-    'Pending': '#FFBB28',
-    'Completed': '#FF8042'
-  };
-  
-  // Ensure our data is in a consistent order to match the legend
-  const orderedStatuses = ['To Do', 'In Progress', 'Pending', 'Completed'];
-  const orderedData = orderedStatuses.map(status => {
-    const existingItem = statusCounts.find(item => item.name === status);
-    return {
-      name: status,
-      value: existingItem ? existingItem.value : 0
-    };
-  });
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
   const renderPieChartLabel = ({ name, percent }: { name: string; percent: number }) => {
     if (!isMobile || percent > 0.15) {
@@ -39,12 +22,11 @@ const TaskStatusDistribution: React.FC<TaskStatusDistributionProps> = ({ statusC
     return null;
   };
 
-  // Create chart config with consistent colors
   const chartConfig = {
-    'To Do': { color: STATUS_COLORS['To Do'] },
-    'In Progress': { color: STATUS_COLORS['In Progress'] },
-    'Pending': { color: STATUS_COLORS['Pending'] },
-    'Completed': { color: STATUS_COLORS['Completed'] }
+    'To Do': { color: COLORS[0] },
+    'In Progress': { color: COLORS[1] },
+    'Pending': { color: COLORS[2] },
+    'Completed': { color: COLORS[3] }
   };
 
   return (
@@ -60,7 +42,7 @@ const TaskStatusDistribution: React.FC<TaskStatusDistributionProps> = ({ statusC
         <ChartContainer config={chartConfig} className="h-full">
           <PieChart>
             <Pie
-              data={orderedData}
+              data={statusCounts}
               cx="50%"
               cy="50%"
               labelLine={!isMobile}
@@ -71,13 +53,13 @@ const TaskStatusDistribution: React.FC<TaskStatusDistributionProps> = ({ statusC
               nameKey="name"
               label={renderPieChartLabel}
             >
-              {orderedData.map((entry) => (
-                <Cell key={`cell-${entry.name}`} fill={STATUS_COLORS[entry.name as TaskStatus]} />
+              {statusCounts.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
               ))}
             </Pie>
             <ChartTooltip content={<ChartTooltipContent />} />
             <Legend 
-              layout="horizontal"
+              layout={isMobile ? "horizontal" : "horizontal"}
               verticalAlign="bottom" 
               align="center"
               formatter={(value) => <span className="text-xs">{value}</span>}
