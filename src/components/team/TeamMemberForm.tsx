@@ -1,14 +1,12 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { DialogFooter } from "@/components/ui/dialog";
 import useTeamMemberForm from '@/hooks/useTeamMemberForm';
-import { Loader2, Eye, EyeOff } from 'lucide-react';
-import { Switch } from "@/components/ui/switch";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription } from '@/components/ui/form';
+import { Loader2 } from 'lucide-react';
 
 interface TeamMemberFormProps {
   onCancel: () => void;
@@ -21,22 +19,8 @@ const TeamMemberForm: React.FC<TeamMemberFormProps> = ({ onCancel, onSuccess }) 
     onCancel,
   });
   
-  const [showPassword, setShowPassword] = React.useState(false);
-
   return (
     <form onSubmit={handleSubmit} className="space-y-4 mt-2">
-      <div className="space-y-2">
-        <Label htmlFor="name">Name *</Label>
-        <Input 
-          id="name" 
-          value={formData.name} 
-          onChange={(e) => handleInputChange('name', e.target.value)}
-          placeholder="John Doe" 
-          disabled={isLoading}
-          required
-        />
-      </div>
-      
       <div className="space-y-2">
         <Label htmlFor="email">Email *</Label>
         <Input 
@@ -48,6 +32,9 @@ const TeamMemberForm: React.FC<TeamMemberFormProps> = ({ onCancel, onSuccess }) 
           disabled={isLoading}
           required
         />
+        <p className="text-xs text-muted-foreground">
+          The user must already have an account in the system
+        </p>
       </div>
       
       <div className="space-y-2">
@@ -69,48 +56,6 @@ const TeamMemberForm: React.FC<TeamMemberFormProps> = ({ onCancel, onSuccess }) 
             <SelectItem value="Product Owner">Product Owner</SelectItem>
           </SelectContent>
         </Select>
-      </div>
-      
-      <div className="space-y-2">
-        <Label htmlFor="password">Password</Label>
-        <div className="relative">
-          <Input 
-            id="password" 
-            type={showPassword ? "text" : "password"}
-            value={formData.password} 
-            onChange={(e) => handleInputChange('password', e.target.value)}
-            placeholder="Enter password for the team member" 
-            disabled={isLoading || formData.verified}
-          />
-          <Button 
-            type="button" 
-            variant="ghost" 
-            size="icon"
-            className="absolute right-0 top-0 h-full"
-            onClick={() => setShowPassword(!showPassword)}
-            disabled={isLoading || formData.verified}
-          >
-            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-          </Button>
-        </div>
-        <p className="text-xs text-muted-foreground">
-          {formData.verified ? 
-            "Password not required when marked as verified" : 
-            "Password the team member will use to login"
-          }
-        </p>
-      </div>
-      
-      <div className="flex items-center space-x-2 pt-2">
-        <Switch
-          id="verified"
-          checked={formData.verified}
-          onCheckedChange={(checked) => handleInputChange('verified', checked)}
-          disabled={isLoading}
-        />
-        <Label htmlFor="verified" className="cursor-pointer">
-          Mark as verified user
-        </Label>
       </div>
       
       <DialogFooter className="pt-4">
