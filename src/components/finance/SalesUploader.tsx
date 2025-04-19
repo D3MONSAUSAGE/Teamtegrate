@@ -22,7 +22,7 @@ const SalesUploader: React.FC<SalesUploaderProps> = ({ onUpload }) => {
   const [salesDate, setSalesDate] = useState<Date | undefined>(new Date());
   const [location, setLocation] = useState('Santa Clarita');
   
-  const { getRootProps, getInputProps, isDragActive, acceptedFiles } = useDropzone({
+  const { getRootProps, getInputProps, isDragActive, acceptedFiles, setAcceptedFiles } = useDropzone({
     accept: {
       'application/pdf': ['.pdf']
     },
@@ -97,7 +97,8 @@ const SalesUploader: React.FC<SalesUploaderProps> = ({ onUpload }) => {
       
       // Reset the form
       setSalesDate(new Date());
-      acceptedFiles.splice(0, acceptedFiles.length);
+      // Instead of using splice on the readonly array, we'll use setAcceptedFiles to reset
+      setAcceptedFiles([]);
     } catch (error) {
       console.error('Error uploading sales data:', error);
       toast.error("Error processing file");
