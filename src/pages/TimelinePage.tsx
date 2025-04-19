@@ -3,11 +3,13 @@ import React from 'react';
 import { useTask } from '@/contexts/task';
 import { Timeline } from "@/components/ui/timeline";
 import { format } from 'date-fns';
-import { CheckIcon } from 'lucide-react';
+import { CheckIcon, UserIcon } from 'lucide-react';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import useTeamMembers from '@/hooks/useTeamMembers';
 
 const TimelinePage = () => {
   const { tasks, projects } = useTask();
+  const { teamMembers } = useTeamMembers();
   
   // Get completed tasks and projects sorted by completion date
   const completedTasks = tasks
@@ -16,7 +18,15 @@ const TimelinePage = () => {
 
   const completedProjects = projects
     .filter(project => project.is_completed)
-    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+    .map(project => {
+      // Find the project manager name
+      const manager = teamMembers.find(member => member.id === project.managerId);
+      return {
+        ...project,
+        completedBy: manager?.name || 'Unknown Manager'
+      };
+    });
 
   // Group items by month and year
   const timelineData = [];
@@ -59,18 +69,26 @@ const TimelinePage = () => {
                             'MMM d, yyyy'
                           )}
                         </p>
-                        {('assignedToName' in entry) && entry.assignedToName && (
-                          <div className="flex items-center gap-2">
-                            <Avatar className="h-6 w-6">
-                              <AvatarFallback className="text-xs">
-                                {entry.assignedToName.split(' ').map(n => n[0]).join('')}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span className="text-xs text-muted-foreground">
-                              {entry.assignedToName}
-                            </span>
-                          </div>
-                        )}
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-6 w-6">
+                            <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                              {('assignedToName' in entry && entry.assignedToName) ? 
+                                entry.assignedToName.split(' ').map(n => n[0]).join('') : 
+                                ('completedBy' in entry && entry.completedBy) ?
+                                  entry.completedBy.split(' ').map(n => n[0]).join('') :
+                                  <UserIcon className="h-3 w-3" />
+                              }
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="text-xs text-muted-foreground">
+                            {('assignedToName' in entry && entry.assignedToName) ? 
+                              entry.assignedToName : 
+                              ('completedBy' in entry && entry.completedBy) ?
+                                entry.completedBy :
+                                'Unassigned'
+                            }
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
