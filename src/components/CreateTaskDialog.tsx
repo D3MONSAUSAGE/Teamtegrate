@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -17,8 +16,9 @@ import { Task, TaskPriority, TaskStatus } from '@/types';
 import { useTask } from '@/contexts/task';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
-import { Loader2, Users } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 
 interface CreateTaskDialogProps {
   open: boolean;
@@ -27,7 +27,7 @@ interface CreateTaskDialogProps {
   currentProjectId?: string;
 }
 
-interface TeamMember {
+interface AppUser {
   id: string;
   name: string;
   email: string;
@@ -46,39 +46,23 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
   const [selectedMember, setSelectedMember] = useState<string | undefined>(
     editingTask?.assignedToId
   );
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
-  const [isLoadingTeamMembers, setIsLoadingTeamMembers] = useState(false);
   
-  // Load team members from Supabase when dialog opens
-  useEffect(() => {
-    const fetchTeamMembers = async () => {
-      if (!user) return;
-      
-      setIsLoadingTeamMembers(true);
-      try {
-        const { data, error } = await supabase
-          .from('team_members')
-          .select('*')
-          .eq('manager_id', user.id);
-          
-        if (error) {
-          console.error('Error loading team members:', error);
-          return;
-        }
+  const { data: appUsers, isLoading: isLoadingUsers } = useQuery({
+    queryKey: ['app-users'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('users')
+        .select('id, name, email, role')
+        .order('name');
         
-        setTeamMembers(data || []);
-      } catch (error) {
-        console.error('Error fetching team members:', error);
-      } finally {
-        setIsLoadingTeamMembers(false);
+      if (error) {
+        console.error('Error loading users:', error);
+        return [];
       }
-    };
-
-    // Fetch team members when dialog opens
-    if (open) {
-      fetchTeamMembers();
+      
+      return data as AppUser[];
     }
-  }, [user, open]);
+  });
   
   const { register, handleSubmit, formState: { errors }, reset, setValue } = useForm({
     defaultValues: {
@@ -114,7 +98,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
         deadline: new Date(data.deadline),
         assignedToId: selectedMember === "unassigned" ? undefined : selectedMember,
         assignedToName: selectedMember && selectedMember !== "unassigned" ? 
-          teamMembers.find(m => m.id === selectedMember)?.name : undefined
+          appUsers?.find(m => m.id === selectedMember)?.name : undefined
       });
     } else {
       addTask({
@@ -127,7 +111,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
         projectId: data.projectId === "none" ? undefined : data.projectId,
         assignedToId: selectedMember === "unassigned" ? undefined : selectedMember,
         assignedToName: selectedMember && selectedMember !== "unassigned" ? 
-          teamMembers.find(m => m.id === selectedMember)?.name : undefined
+          appUsers?.find(m => m.id === selectedMember)?.name : undefined
       });
     }
     onOpenChange(false);
@@ -191,25 +175,25 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
               onValueChange={setSelectedMember}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Assign to team member (optional)" />
+                <SelectValue placeholder="Assign to user (optional)" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="unassigned">Unassigned</SelectItem>
                 
-                {isLoadingTeamMembers ? (
+                {isLoadingUsers ? (
                   <div className="flex items-center justify-center py-2">
                     <Loader2 className="h-4 w-4 animate-spin mr-2" /> 
-                    <span className="text-sm">Loading team members...</span>
+                    <span className="text-sm">Loading users...</span>
                   </div>
-                ) : teamMembers.length > 0 ? (
-                  teamMembers.map(member => (
-                    <SelectItem key={member.id} value={member.id}>
-                      {member.name}
+                ) : appUsers && appUsers.length > 0 ? (
+                  appUsers.map(appUser => (
+                    <SelectItem key={appUser.id} value={appUser.id}>
+                      {appUser.name} ({appUser.role})
                     </SelectItem>
                   ))
                 ) : (
-                  <SelectItem value="no-members" disabled>
-                    No team members added yet
+                  <SelectItem value="no-users" disabled>
+                    No users found
                   </SelectItem>
                 )}
               </SelectContent>
