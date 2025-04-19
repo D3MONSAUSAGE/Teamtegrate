@@ -16,6 +16,8 @@ import { MoreHorizontal } from 'lucide-react';
 import { useTask } from '@/contexts/task';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffect, useState } from 'react';
+import TaskPreview from './task/TaskPreview';
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface ProjectCardProps {
   project: Project;
@@ -71,7 +73,9 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
       }
     };
     
-    fetchProjectTasks();
+    if (project.id) {
+      fetchProjectTasks();
+    }
   }, [project.id]);
   
   const calculateProgress = (tasks: Task[]) => {
@@ -91,7 +95,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   };
   
   return (
-    <Card className={`card-hover relative overflow-hidden ${project.is_completed ? 'bg-gray-50' : ''}`}>
+    <Card className={`relative overflow-hidden ${project.is_completed ? 'bg-gray-50' : ''}`}>
       <CardHeader className="pb-1 md:pb-2 flex flex-row justify-between items-start gap-2">
         <div className="min-w-0 flex items-center gap-2">
           <CardTitle className="text-sm md:text-base text-ellipsis overflow-hidden whitespace-nowrap">
@@ -128,8 +132,35 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
         </DropdownMenu>
       </CardHeader>
       <CardContent className="space-y-2 pt-0 md:pt-1 px-4 md:px-6 pb-4">
-        <p className="text-xs md:text-sm text-gray-600 line-clamp-2 min-h-[2rem]">{project.description}</p>
+        <p className="text-xs md:text-sm text-gray-600 line-clamp-2 min-h-[2rem]">
+          {project.description}
+        </p>
         
+        {projectTasks.length > 0 ? (
+          <div className="mt-3">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-xs font-medium">Recent Tasks</span>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-6 px-2 text-xs"
+                onClick={() => onViewTasks && onViewTasks(project)}
+              >
+                View All
+              </Button>
+            </div>
+            <ScrollArea className="h-[120px]">
+              {projectTasks.slice(0, 3).map((task) => (
+                <TaskPreview key={task.id} task={task} />
+              ))}
+            </ScrollArea>
+          </div>
+        ) : (
+          <div className="text-center py-2">
+            <p className="text-xs text-gray-500">No tasks yet</p>
+          </div>
+        )}
+
         <div className="flex flex-wrap items-center justify-between pt-1 md:pt-2 gap-y-1">
           <div className="flex items-center text-xs text-gray-500 gap-1">
             <Calendar className="h-3 w-3 flex-shrink-0" />
