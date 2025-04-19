@@ -38,9 +38,9 @@ const ProjectTasksDialog: React.FC<ProjectTasksDialogProps> = ({
   const currentProject = project ? projects.find(p => p.id === project.id) : null;
   const projectTasks = currentProject?.tasks || [];
   
-  // Fetch projects data when the dialog opens to ensure we have latest data
+  // Fetch projects data when the dialog opens only once
   useEffect(() => {
-    if (open && fetchProjects) {
+    if (open && project && fetchProjects && (!projectTasks || projectTasks.length === 0)) {
       setIsLoading(true);
       setError(null);
       
@@ -57,7 +57,7 @@ const ProjectTasksDialog: React.FC<ProjectTasksDialogProps> = ({
       
       fetchData();
     }
-  }, [open, fetchProjects]);
+  }, [open, project?.id, fetchProjects]); // Depend on project.id instead of the whole project object
   
   if (!project) return null;
   

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useTask } from '@/contexts/task';
 import { Project, Task } from '@/types';
 import CreateProjectDialog from '@/components/CreateProjectDialog';
@@ -26,7 +26,7 @@ const ProjectsPage = () => {
   const [pageLoading, setPageLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Refresh projects when page loads
+  // Fetch projects only once when the component mounts
   useEffect(() => {
     if (fetchProjects) {
       console.log("Fetching projects on page load");
@@ -45,39 +45,40 @@ const ProjectsPage = () => {
     }
   }, [fetchProjects]);
   
-  const handleEditProject = (project: Project) => {
+  // Memoize handlers to prevent unnecessary re-renders
+  const handleEditProject = useCallback((project: Project) => {
     setEditingProject(project);
     setIsCreateProjectOpen(true);
-  };
+  }, []);
   
-  const handleViewTasks = (project: Project) => {
+  const handleViewTasks = useCallback((project: Project) => {
     setSelectedProject(project);
     setIsViewTasksOpen(true);
-  };
+  }, []);
   
-  const handleCreateTask = (project?: Project) => {
+  const handleCreateTask = useCallback((project?: Project) => {
     setEditingTask(undefined);
     setSelectedProject(project || null);
     setIsCreateTaskOpen(true);
-  };
+  }, []);
   
-  const handleEditTask = (task: Task) => {
+  const handleEditTask = useCallback((task: Task) => {
     setEditingTask(task);
     setIsCreateTaskOpen(true);
-  };
+  }, []);
   
-  const handleAssignTask = (task: Task) => {
+  const handleAssignTask = useCallback((task: Task) => {
     setSelectedTask(task);
     setIsAssignTaskOpen(true);
-  };
+  }, []);
 
-  const handleCreateProject = () => {
+  const handleCreateProject = useCallback(() => {
     setEditingProject(undefined);
     setIsCreateProjectOpen(true);
-  };
+  }, []);
   
-  // Handle dialog closings - refresh data when needed
-  const handleTaskDialogChange = (open: boolean) => {
+  // Handle dialog closings with refresh functions
+  const handleTaskDialogChange = useCallback((open: boolean) => {
     setIsCreateTaskOpen(open);
     if (!open && fetchProjects) {
       console.log("Refreshing projects after task dialog closed");
@@ -87,21 +88,13 @@ const ProjectsPage = () => {
         toast.error("Failed to refresh project data");
       });
     }
-  };
+  }, [fetchProjects]);
   
-  const handleViewTasksDialogChange = (open: boolean) => {
+  const handleViewTasksDialogChange = useCallback((open: boolean) => {
     setIsViewTasksOpen(open);
-    if (!open && fetchProjects) {
-      console.log("Refreshing projects after task view dialog closed");
-      // Refresh projects data when task dialog closes
-      fetchProjects().catch(err => {
-        console.error("Error refreshing projects:", err);
-        toast.error("Failed to refresh project data");
-      });
-    }
-  };
+  }, []);
   
-  const handleProjectDialogChange = (open: boolean) => {
+  const handleProjectDialogChange = useCallback((open: boolean) => {
     setIsCreateProjectOpen(open);
     if (!open && fetchProjects) {
       console.log("Refreshing projects after project dialog closed");
@@ -111,9 +104,9 @@ const ProjectsPage = () => {
         toast.error("Failed to refresh project data");
       });
     }
-  };
+  }, [fetchProjects]);
   
-  // Filter projects based on search query
+  // Filter & sort projects
   const filteredProjects = projects.filter((project) => {
     return (
       project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -121,7 +114,6 @@ const ProjectsPage = () => {
     );
   });
   
-  // Sort projects based on the selected option
   const sortedProjects = [...filteredProjects].sort((a, b) => {
     switch (sortBy) {
       case 'date':
@@ -137,7 +129,7 @@ const ProjectsPage = () => {
     }
   });
   
-  // Show loading state
+  // Loading state
   if (pageLoading || isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
@@ -147,7 +139,7 @@ const ProjectsPage = () => {
     );
   }
   
-  // Show error state
+  // Error state
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] p-6">

@@ -18,7 +18,7 @@ import TaskPreview from './task/TaskPreview';
 import ProjectMetadata from './project/ProjectMetadata';
 import ProjectTaskProgress from './project/ProjectTaskProgress';
 import ProjectBudget from './project/ProjectBudget';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 interface ProjectCardProps {
   project: Project;
@@ -62,11 +62,12 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
     }
   }, [fetchProjects, projectTasks]);
 
-  const handleToggleCompletion = () => {
+  // Memoize the toggle handler to prevent unnecessary re-renders
+  const handleToggleCompletion = useCallback(() => {
     if (updateProject) {
       updateProject(project.id, { is_completed: !project.is_completed });
     }
-  };
+  }, [project.id, project.is_completed, updateProject]);
   
   const handleViewTasks = () => {
     if (onViewTasks) {
@@ -76,7 +77,6 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   
   const handleCreateTask = () => {
     if (onCreateTask) {
-      if (fetchProjects) fetchProjects();
       onCreateTask(project);
     }
   };
