@@ -1,11 +1,12 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from '@/contexts/AuthContext';
 import ChatRoom from './ChatRoom';
 import CreateRoomDialog from './CreateRoomDialog';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, ChevronLeft } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Card } from '@/components/ui/card';
 
 interface ChatRoomData {
   id: string;
@@ -19,7 +20,8 @@ const ChatRooms = () => {
   const [selectedRoom, setSelectedRoom] = useState<ChatRoomData | null>(null);
   const [isCreateRoomOpen, setIsCreateRoomOpen] = useState(false);
   const { user } = useAuth();
-
+  const isMobile = useIsMobile();
+  
   useEffect(() => {
     fetchRooms();
     subscribeToRooms();
@@ -59,10 +61,24 @@ const ChatRooms = () => {
     };
   };
 
+  const handleBackToRooms = () => {
+    setSelectedRoom(null);
+  };
+
+  if (isMobile && selectedRoom) {
+    return (
+      <div className="h-full">
+        <ChatRoom room={selectedRoom} onBack={handleBackToRooms} />
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-full gap-4">
-      <div className="w-64 bg-white border rounded-lg p-4 flex flex-col">
-        <div className="flex items-center justify-between mb-4">
+      <Card className={`${
+        isMobile || !selectedRoom ? 'w-full' : 'w-64'
+      } bg-white flex flex-col`}>
+        <div className="p-4 border-b flex items-center justify-between">
           <h2 className="font-semibold">Chat Rooms</h2>
           <Button
             size="sm"
@@ -73,22 +89,22 @@ const ChatRooms = () => {
           </Button>
         </div>
         
-        <div className="flex flex-col gap-2 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto p-4 space-y-2">
           {rooms.map((room) => (
             <Button
               key={room.id}
               variant={selectedRoom?.id === room.id ? "default" : "ghost"}
-              className="justify-start"
+              className="w-full justify-start"
               onClick={() => setSelectedRoom(room)}
             >
               {room.name}
             </Button>
           ))}
         </div>
-      </div>
+      </Card>
 
-      {selectedRoom && (
-        <div className="flex-1 bg-white border rounded-lg">
+      {selectedRoom && !isMobile && (
+        <div className="flex-1">
           <ChatRoom room={selectedRoom} />
         </div>
       )}

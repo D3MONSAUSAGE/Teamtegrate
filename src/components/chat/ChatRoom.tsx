@@ -1,16 +1,18 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Send } from 'lucide-react';
+import { Send, ChevronLeft } from 'lucide-react';
+import { Card } from '@/components/ui/card';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ChatRoomProps {
   room: {
     id: string;
     name: string;
   };
+  onBack?: () => void;
 }
 
 interface Message {
@@ -21,11 +23,12 @@ interface Message {
   type: 'text' | 'system';
 }
 
-const ChatRoom: React.FC<ChatRoomProps> = ({ room }) => {
+const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const { user } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     fetchMessages();
@@ -95,8 +98,13 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room }) => {
   };
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="p-4 border-b">
+    <Card className="flex flex-col h-full">
+      <div className="p-4 border-b flex items-center gap-2">
+        {isMobile && (
+          <Button variant="ghost" size="icon" onClick={onBack}>
+            <ChevronLeft className="h-5 w-5" />
+          </Button>
+        )}
         <h2 className="font-semibold">{room.name}</h2>
       </div>
 
@@ -109,13 +117,13 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room }) => {
             }`}
           >
             <div
-              className={`max-w-[70%] rounded-lg p-3 ${
+              className={`max-w-[80%] rounded-lg p-3 ${
                 message.user_id === user?.id
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted'
+                  ? 'bg-primary text-primary-foreground ml-12'
+                  : 'bg-muted mr-12'
               }`}
             >
-              <p className="text-sm">{message.content}</p>
+              <p className="text-sm break-words">{message.content}</p>
             </div>
           </div>
         ))}
@@ -133,7 +141,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room }) => {
           <Send className="h-4 w-4" />
         </Button>
       </form>
-    </div>
+    </Card>
   );
 };
 
