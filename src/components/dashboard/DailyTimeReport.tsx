@@ -14,10 +14,14 @@ interface DailyTimeReportProps {
 }
 
 const DailyTimeReport: React.FC<DailyTimeReportProps> = ({ entries }) => {
-  const totalHours = entries.reduce((total, entry) => {
+  // Calculate total duration from all entries with duration_minutes value
+  const completedEntriesTotalMinutes = entries.reduce((total, entry) => {
     return total + (entry.duration_minutes || 0);
-  }, 0) / 60;
+  }, 0);
 
+  // Calculate total hours from minutes
+  const totalHours = completedEntriesTotalMinutes / 60;
+  
   return (
     <Card className="mt-4">
       <CardHeader className="pb-2">
@@ -37,6 +41,9 @@ const DailyTimeReport: React.FC<DailyTimeReportProps> = ({ entries }) => {
               <div key={index} className="text-xs text-muted-foreground">
                 {format(new Date(entry.clock_in), 'HH:mm')} - {' '}
                 {entry.clock_out ? format(new Date(entry.clock_out), 'HH:mm') : 'ongoing'}
+                {entry.duration_minutes && entry.clock_out && (
+                  <span className="ml-1">• {(entry.duration_minutes / 60).toFixed(2)}h</span>
+                )}
                 {entry.notes && <span className="ml-1">• {entry.notes}</span>}
               </div>
             ))}
