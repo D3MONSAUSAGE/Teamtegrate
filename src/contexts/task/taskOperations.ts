@@ -1,10 +1,10 @@
-
 import { playSuccessSound, playErrorSound, playStatusChangeSound } from '@/utils/sounds';
 import { User, Project, Task, TaskStatus, TaskPriority, TaskComment, DailyScore } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { v4 as uuidv4 } from 'uuid';
 import { updateTaskInProjects } from './utils';
+import { fetchTeamMemberName } from './api/team';
 
 export const addTask = async (
   task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>,
@@ -34,7 +34,6 @@ export const addTask = async (
       created_at: now.toISOString(),
       updated_at: now.toISOString(),
       assigned_to_id: task.assignedToId || null,
-      assigned_to_name: task.assignedToName || null,
       cost: task.cost || 0
     };
 
@@ -54,6 +53,12 @@ export const addTask = async (
     }
 
     if (data) {
+      // Fetch assignee name if needed
+      let assigneeName = task.assignedToName;
+      if (data.assigned_to_id && !assigneeName) {
+        assigneeName = await fetchTeamMemberName(data.assigned_to_id);
+      }
+      
       const newTask: Task = {
         id: data.id,
         userId: data.user_id,
@@ -66,7 +71,7 @@ export const addTask = async (
         createdAt: new Date(data.created_at),
         updatedAt: new Date(data.updated_at),
         assignedToId: data.assigned_to_id || undefined,
-        assignedToName: data.assigned_to_name || undefined,
+        assignedToName: assigneeName,
         tags: [],
         comments: [],
         cost: data.cost || 0
@@ -122,7 +127,6 @@ export const updateTask = async (
     if (updates.status !== undefined) updatedFields.status = updates.status;
     if (updates.projectId !== undefined) updatedFields.project_id = updates.projectId;
     if (updates.assignedToId !== undefined) updatedFields.assigned_to_id = updates.assignedToId;
-    if (updates.assignedToName !== undefined) updatedFields.assigned_to_name = updates.assignedToName;
     if (updates.cost !== undefined) updatedFields.cost = updates.cost;
 
     console.log('Updating task with fields:', updatedFields);
@@ -145,6 +149,11 @@ export const updateTask = async (
       }
       return task;
     }));
+
+    // Update tasks in projects too if needed
+    if (updates) {
+      updateTaskInProjects(projects, setProjects, taskId, updates);
+    }
 
     toast.success('Task updated successfully!');
   } catch (error) {
@@ -280,14 +289,12 @@ export const assignTaskToUser = async (
   try {
     if (!currentUser) return;
     
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('tasks')
       .update({ 
-        assigned_to_id: userId,
-        assigned_to_name: userName
+        assigned_to_id: userId
       })
-      .eq('id', taskId)
-      .select();
+      .eq('id', taskId);
     
     if (error) {
       console.error('Error assigning task to user:', error);

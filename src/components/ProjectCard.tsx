@@ -69,23 +69,31 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
       console.log(`ProjectCard: Found ${data?.length || 0} tasks for project ${project.id}`, data);
       
       if (data) {
-        const mappedTasks: Task[] = data.map(task => ({
-          id: task.id,
-          userId: task.user_id || '',
-          projectId: task.project_id || undefined,
-          title: task.title || '',
-          description: task.description || '',
-          deadline: new Date(task.deadline || Date.now()),
-          priority: task.priority as Task['priority'] || 'Medium',
-          status: task.status as Task['status'] || 'To Do',
-          createdAt: new Date(task.created_at || Date.now()),
-          updatedAt: new Date(task.updated_at || Date.now()),
-          completedAt: task.completed_at ? new Date(task.completed_at) : undefined,
-          assignedToId: task.assigned_to_id || undefined,
-          assignedToName: task.assigned_to_name || undefined,
-          tags: [],
-          comments: [],
-          cost: task.cost || 0
+        const mappedTasks: Task[] = await Promise.all(data.map(async (task) => {
+          let assigneeName;
+          if (task.assigned_to_id) {
+            const { fetchTeamMemberName } = await import('@/contexts/task/api/team');
+            assigneeName = await fetchTeamMemberName(task.assigned_to_id);
+          }
+          
+          return {
+            id: task.id,
+            userId: task.user_id || '',
+            projectId: task.project_id || undefined,
+            title: task.title || '',
+            description: task.description || '',
+            deadline: new Date(task.deadline || Date.now()),
+            priority: task.priority as Task['priority'] || 'Medium',
+            status: task.status as Task['status'] || 'To Do',
+            createdAt: new Date(task.created_at || Date.now()),
+            updatedAt: new Date(task.updated_at || Date.now()),
+            completedAt: task.completed_at ? new Date(task.completed_at) : undefined,
+            assignedToId: task.assigned_to_id || undefined,
+            assignedToName: assigneeName || undefined,
+            tags: [],
+            comments: [],
+            cost: task.cost || 0
+          };
         }));
         setProjectTasks(mappedTasks);
       }

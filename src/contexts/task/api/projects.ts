@@ -56,7 +56,8 @@ export const fetchProjects = async (user: User | null, setProjects: React.Dispat
             updatedAt: new Date(task.updated_at || Date.now()),
             completedAt: task.completed_at ? new Date(task.completed_at) : undefined,
             assignedToId: task.assigned_to_id,
-            assignedToName: task.assigned_to_name || assigneeName,
+            // Use the fetched name or undefined
+            assignedToName: assigneeName || undefined,
             completedById: user.id, // Default to the project manager
             completedByName: user.name,
             comments: comments || [],
@@ -79,7 +80,7 @@ export const fetchProjects = async (user: User | null, setProjects: React.Dispat
           tags: [],
           budget: project.budget || 0,
           budgetSpent: project.budget_spent || 0,
-          is_completed: project.is_completed || false,
+          is_completed: Boolean(project.is_completed) || false, // Convert to boolean
         };
       }));
       
