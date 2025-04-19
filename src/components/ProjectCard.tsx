@@ -61,7 +61,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
             completedAt: task.completed_at ? new Date(task.completed_at) : undefined,
             assignedToId: task.assigned_to_id || undefined,
             tags: [],
-            comments: []
+            comments: [],
+            cost: task.cost || 0
           }));
           setProjectTasks(mappedTasks);
         }

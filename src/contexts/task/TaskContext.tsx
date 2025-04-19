@@ -39,6 +39,7 @@ interface TaskContextType {
   tasks: Task[];
   projects: Project[];
   dailyScore: DailyScore;
+  fetchProjects: () => void; // Add this method
   addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateTask: (taskId: string, updates: Partial<Task>) => void;
   updateTaskStatus: (taskId: string, status: TaskStatus) => void;
@@ -101,11 +102,19 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [tasks, user]);
 
+  // Add a function to manually refresh projects
+  const refreshProjects = () => {
+    if (user) {
+      fetchProjects(user, setProjects);
+    }
+  };
+
   // Create context value object with all the functions
   const value = {
     tasks,
     projects,
     dailyScore,
+    fetchProjects: refreshProjects, // Expose this method
     addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => 
       addTask(task, user, tasks, setTasks, projects, setProjects),
     updateTask: (taskId: string, updates: Partial<Task>) => 

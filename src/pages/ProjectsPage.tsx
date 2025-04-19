@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTask } from '@/contexts/task';
 import { Project, Task } from '@/types';
 import CreateProjectDialog from '@/components/CreateProjectDialog';
@@ -8,9 +8,10 @@ import AssignTaskDialog from '@/components/AssignTaskDialog';
 import ProjectToolbar from '@/components/ProjectToolbar';
 import ProjectList from '@/components/ProjectList';
 import ProjectTasksDialog from '@/components/ProjectTasksDialog';
+import { supabase } from '@/integrations/supabase/client';
 
 const ProjectsPage = () => {
-  const { projects } = useTask();
+  const { projects, fetchProjects } = useTask();
   const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | undefined>(undefined);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
@@ -21,6 +22,13 @@ const ProjectsPage = () => {
   const [isAssignTaskOpen, setIsAssignTaskOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('date');
+  
+  // Refresh projects when page loads
+  useEffect(() => {
+    if (fetchProjects) {
+      fetchProjects();
+    }
+  }, [fetchProjects]);
   
   const handleEditProject = (project: Project) => {
     setEditingProject(project);
@@ -51,6 +59,23 @@ const ProjectsPage = () => {
   const handleCreateProject = () => {
     setEditingProject(undefined);
     setIsCreateProjectOpen(true);
+  };
+  
+  // Handle dialog closings - refresh data when needed
+  const handleTaskDialogChange = (open: boolean) => {
+    setIsCreateTaskOpen(open);
+    if (!open && fetchProjects) {
+      // Refresh projects data when task dialog closes
+      fetchProjects();
+    }
+  };
+  
+  const handleViewTasksDialogChange = (open: boolean) => {
+    setIsViewTasksOpen(open);
+    if (!open && fetchProjects) {
+      // Refresh projects data when task dialog closes
+      fetchProjects();
+    }
   };
   
   // Filter projects based on search query
@@ -104,7 +129,7 @@ const ProjectsPage = () => {
       
       <ProjectTasksDialog 
         open={isViewTasksOpen}
-        onOpenChange={setIsViewTasksOpen}
+        onOpenChange={handleViewTasksDialogChange}
         project={selectedProject}
         onCreateTask={() => handleCreateTask(selectedProject)}
         onEditTask={handleEditTask}
@@ -113,7 +138,7 @@ const ProjectsPage = () => {
       
       <CreateTaskDialog 
         open={isCreateTaskOpen} 
-        onOpenChange={setIsCreateTaskOpen}
+        onOpenChange={handleTaskDialogChange}
         editingTask={editingTask}
         currentProjectId={selectedProject?.id}
       />

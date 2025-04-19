@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Project, Task } from '@/types';
@@ -9,6 +9,7 @@ import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import TaskCommentsDialog from './TaskCommentsDialog';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ProjectTasksDialogProps {
   open: boolean;
@@ -29,13 +30,64 @@ const ProjectTasksDialog: React.FC<ProjectTasksDialogProps> = ({
 }) => {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [showComments, setShowComments] = useState(false);
+  const [projectTasks, setProjectTasks] = useState<Task[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Fetch project tasks when dialog opens and project changes
+  useEffect(() => {
+    if (open && project) {
+      fetchProjectTasks();
+    }
+  }, [open, project]);
+  
+  const fetchProjectTasks = async () => {
+    if (!project) return;
+    
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('tasks')
+        .select('*')
+        .eq('project_id', project.id);
+        
+      if (error) {
+        console.error('Error fetching project tasks:', error);
+        return;
+      }
+      
+      if (data) {
+        const mappedTasks: Task[] = data.map(task => ({
+          id: task.id,
+          userId: task.user_id || '',
+          projectId: task.project_id || undefined,
+          title: task.title || '',
+          description: task.description || '',
+          deadline: new Date(task.deadline || new Date()),
+          priority: task.priority as Task['priority'] || 'Medium',
+          status: task.status as Task['status'] || 'To Do',
+          createdAt: new Date(task.created_at || new Date()),
+          updatedAt: new Date(task.updated_at || new Date()),
+          completedAt: task.completed_at ? new Date(task.completed_at) : undefined,
+          assignedToId: task.assigned_to_id || undefined,
+          tags: [],
+          comments: [],
+          cost: task.cost || 0
+        }));
+        setProjectTasks(mappedTasks);
+      }
+    } catch (error) {
+      console.error('Error fetching project tasks:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
   
   if (!project) return null;
   
   const calculateProgress = () => {
-    if (!project.tasks || project.tasks.length === 0) return 0;
-    const completed = project.tasks.filter(task => task.status === 'Completed').length;
-    return Math.round((completed / project.tasks.length) * 100);
+    if (projectTasks.length === 0) return 0;
+    const completed = projectTasks.filter(task => task.status === 'Completed').length;
+    return Math.round((completed / projectTasks.length) * 100);
   };
   
   const progress = calculateProgress();
@@ -57,7 +109,7 @@ const ProjectTasksDialog: React.FC<ProjectTasksDialogProps> = ({
               <div className="mt-3 space-y-1">
                 <div className="flex justify-between items-center">
                   <span className="text-xs">
-                    {project.tasks?.filter(task => task.status === 'Completed').length || 0} of {project.tasks?.length || 0} tasks completed
+                    {projectTasks.filter(task => task.status === 'Completed').length} of {projectTasks.length} tasks completed
                   </span>
                   <Badge variant="outline">{progress}%</Badge>
                 </div>
@@ -72,9 +124,13 @@ const ProjectTasksDialog: React.FC<ProjectTasksDialogProps> = ({
             </Button>
           </div>
           
-          {project.tasks && project.tasks.length > 0 ? (
+          {isLoading ? (
+            <div className="flex justify-center items-center p-8">
+              <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full"></div>
+            </div>
+          ) : projectTasks.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto p-1">
-              {project.tasks.map((task) => (
+              {projectTasks.map((task) => (
                 <TaskCard 
                   key={task.id} 
                   task={task} 
