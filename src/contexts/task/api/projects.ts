@@ -39,8 +39,8 @@ export const fetchProjects = async (user: User | null, setProjects: React.Dispat
           
           const formattedTask: Task = {
             id: task.id,
-            userId: task.user_id,
-            projectId: task.project_id,
+            userId: task.user_id || user.id, // Default to current user if null
+            projectId: task.project_id || undefined,
             title: task.title || '',
             description: task.description || '',
             deadline: new Date(task.deadline || Date.now()),
@@ -51,9 +51,10 @@ export const fetchProjects = async (user: User | null, setProjects: React.Dispat
             completedAt: task.completed_at ? new Date(task.completed_at) : undefined,
             assignedToId: task.assigned_to_id,
             assignedToName: assigneeName,
-            completedById: user.id, // Default to the project manager
+            completedById: task.completed_by_id || user.id,
             completedByName: user.name,
             comments: comments || [],
+            tags: [], // Initialize as empty array
             cost: task.cost || 0,
           };
           return formattedTask;
@@ -73,6 +74,7 @@ export const fetchProjects = async (user: User | null, setProjects: React.Dispat
           tags: [],
           budget: project.budget || 0,
           budgetSpent: project.budget_spent || 0,
+          is_completed: project.is_completed || false,
         };
       }));
       
@@ -82,4 +84,3 @@ export const fetchProjects = async (user: User | null, setProjects: React.Dispat
     console.error('Error in fetchProjects:', error);
   }
 };
-

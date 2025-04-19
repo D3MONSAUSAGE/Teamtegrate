@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Project, Task } from '@/types';
@@ -14,8 +15,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { MoreHorizontal } from 'lucide-react';
 import { useTask } from '@/contexts/task';
-import { supabase } from '@/integrations/supabase/client';
-import { useEffect, useState } from 'react';
 
 interface ProjectCardProps {
   project: Project;
@@ -31,47 +30,6 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   onCreateTask 
 }) => {
   const { deleteProject, updateProject } = useTask();
-  const [projectTasks, setProjectTasks] = useState<Task[]>([]);
-  
-  useEffect(() => {
-    const fetchProjectTasks = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('tasks')
-          .select('*')
-          .eq('project_id', project.id);
-          
-        if (error) {
-          console.error('Error fetching project tasks:', error);
-          return;
-        }
-        
-        if (data) {
-          const mappedTasks: Task[] = data.map(task => ({
-            id: task.id,
-            userId: task.user_id || '',
-            projectId: task.project_id || undefined,
-            title: task.title || '',
-            description: task.description || '',
-            deadline: new Date(task.deadline || new Date()),
-            priority: task.priority as Task['priority'] || 'Medium',
-            status: task.status as Task['status'] || 'To Do',
-            createdAt: new Date(task.created_at || new Date()),
-            updatedAt: new Date(task.updated_at || new Date()),
-            completedAt: task.completed_at ? new Date(task.completed_at) : undefined,
-            assignedToId: task.assigned_to_id || undefined,
-            tags: [],
-            comments: []
-          }));
-          setProjectTasks(mappedTasks);
-        }
-      } catch (error) {
-        console.error('Error fetching project tasks:', error);
-      }
-    };
-    
-    fetchProjectTasks();
-  }, [project.id]);
   
   const calculateProgress = (tasks: Task[]) => {
     if (tasks.length === 0) return 0;
@@ -79,15 +37,17 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
     return Math.round((completed / tasks.length) * 100);
   };
   
-  const totalTasks = projectTasks.length;
-  const completedTasks = projectTasks.filter(task => task.status === 'Completed').length;
-  const progress = calculateProgress(projectTasks);
+  const totalTasks = project.tasks.length;
+  const completedTasks = project.tasks.filter(task => task.status === 'Completed').length;
+  const progress = calculateProgress(project.tasks);
   
   const budgetProgress = project.budget ? Math.round((project.budgetSpent || 0) / project.budget * 100) : 0;
   
   const handleToggleCompletion = () => {
     updateProject(project.id, { is_completed: !project.is_completed });
   };
+  
+  const assignedTasksCount = project.tasks.filter(task => task.assignedToId).length;
   
   return (
     <Card className={`card-hover relative overflow-hidden ${project.is_completed ? 'bg-gray-50' : ''}`}>
@@ -139,7 +99,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
           
           <div className="flex items-center text-xs text-gray-500 gap-1">
             <Users className="h-3 w-3 flex-shrink-0" />
-            <span>{projectTasks.filter(task => task.assignedToId).length} assigned</span>
+            <span>{assignedTasksCount} assigned</span>
           </div>
         </div>
         
