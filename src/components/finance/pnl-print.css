@@ -1,0 +1,31 @@
+
+@media print {
+  /* Hide everything except the PnL content */
+  body * {
+    visibility: hidden;
+  }
+  
+  /* Show only the print content */
+  .print\\:block {
+    display: block !important;
+  }
+  
+  /* Target the specific content we want to print */
+  .print\\:block * {
+    visibility: visible;
+  }
+  
+  /* Remove any backgrounds and shadows for better printing */
+  .print\\:block {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+  
+  /* Adjust page margins and size */
+  @page {
+    size: auto;
+    margin: 10mm;
+  }
+}

@@ -12,7 +12,8 @@ import {
   BarChart3,
   Calendar,
   Timer,
-  FileText
+  FileText,
+  DollarSign
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -68,6 +69,12 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
       name: 'Reports',
       path: '/dashboard/reports',
       icon: <BarChart3 className="h-5 w-5" />,
+      allowed: true,
+    },
+    {
+      name: 'Finance',
+      path: '/dashboard/finance',
+      icon: <DollarSign className="h-5 w-5" />,
       allowed: true,
     },
     {

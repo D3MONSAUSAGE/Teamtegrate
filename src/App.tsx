@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -18,6 +19,7 @@ import TimeTrackingPage from "./pages/TimeTrackingPage";
 import NotFound from "./pages/NotFound";
 import Index from "./pages/Index";
 import DocumentsPage from "./pages/DocumentsPage";
+import FinancePage from "./pages/FinancePage";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +44,7 @@ const App = () => (
                 <Route path="settings" element={<SettingsPage />} />
                 <Route path="time-tracking" element={<TimeTrackingPage />} />
                 <Route path="documents" element={<DocumentsPage />} />
+                <Route path="finance" element={<FinancePage />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
