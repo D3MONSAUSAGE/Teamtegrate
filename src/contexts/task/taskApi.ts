@@ -1,4 +1,3 @@
-
 import { User, Task, Project, TaskComment } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
@@ -34,6 +33,9 @@ export const fetchTasks = async (user: User | null, setTasks: React.Dispatch<Rea
           updatedAt: new Date(task.updated_at || Date.now()),
           completedAt: task.completed_at ? new Date(task.completed_at) : undefined,
           assignedToId: task.assigned_to_id,
+          assignedToName: task.assigned_to_name,
+          completedById: task.completed_by_id,
+          completedByName: task.completed_by_name,
           cost: task.cost || 0,
           comments: [] // Initialize as empty array
         };
@@ -94,6 +96,9 @@ export const fetchProjects = async (user: User | null, setProjects: React.Dispat
             updatedAt: new Date(task.updated_at || Date.now()),
             completedAt: task.completed_at ? new Date(task.completed_at) : undefined,
             assignedToId: task.assigned_to_id,
+            assignedToName: task.assigned_to_name,
+            completedById: task.completed_by_id,
+            completedByName: task.completed_by_name,
             comments: comments || [],
             cost: task.cost || 0,
           };
@@ -124,7 +129,6 @@ export const fetchProjects = async (user: User | null, setProjects: React.Dispat
   }
 };
 
-// Function to fetch comments for a specific task
 export const fetchTaskComments = async (taskId: string): Promise<TaskComment[] | null> => {
   try {
     // In a real app, you would have a comments table. For now, we'll simulate it.
@@ -145,7 +149,6 @@ export const fetchTaskComments = async (taskId: string): Promise<TaskComment[] |
   }
 };
 
-// Function to add a comment to a task
 export const addCommentToTask = async (
   taskId: string,
   comment: { userId: string; userName: string; text: string },

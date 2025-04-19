@@ -72,8 +72,8 @@ const TimelinePage = () => {
                         <div className="flex items-center gap-2">
                           <Avatar className="h-6 w-6">
                             <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                              {('assignedToName' in entry && entry.assignedToName) ? 
-                                entry.assignedToName.split(' ').map(n => n[0]).join('') : 
+                              {('completedByName' in entry && entry.completedByName) ? 
+                                entry.completedByName.split(' ').map(n => n[0]).join('') : 
                                 ('completedBy' in entry && entry.completedBy) ?
                                   entry.completedBy.split(' ').map(n => n[0]).join('') :
                                   <UserIcon className="h-3 w-3" />
@@ -81,11 +81,12 @@ const TimelinePage = () => {
                             </AvatarFallback>
                           </Avatar>
                           <span className="text-xs text-muted-foreground">
-                            {('assignedToName' in entry && entry.assignedToName) ? 
-                              entry.assignedToName : 
+                            {'Completed by '}
+                            {('completedByName' in entry && entry.completedByName) ? 
+                              entry.completedByName : 
                               ('completedBy' in entry && entry.completedBy) ?
                                 entry.completedBy :
-                                'Unassigned'
+                                'Unknown'
                             }
                           </span>
                         </div>

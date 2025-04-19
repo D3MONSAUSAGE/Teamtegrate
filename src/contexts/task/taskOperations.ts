@@ -1,4 +1,3 @@
-
 import { User, Task, Project, TaskStatus } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
@@ -185,12 +184,16 @@ export const updateTaskStatus = async (
     
     const now = new Date();
     const completedAt = status === 'Completed' ? now : null;
+    const completedById = status === 'Completed' ? user.id : null;
+    const completedByName = status === 'Completed' ? user.name : null;
     
     const { error } = await supabase
       .from('tasks')
       .update({
         status,
         completed_at: completedAt ? completedAt.toISOString() : null,
+        completed_by_id: completedById,
+        completed_by_name: completedByName,
         updated_at: now.toISOString()
       })
       .eq('id', taskId);
@@ -207,6 +210,8 @@ export const updateTaskStatus = async (
           ...task,
           status,
           completedAt: completedAt || undefined,
+          completedById: completedById || undefined,
+          completedByName: completedByName || undefined,
           updatedAt: now
         };
       }
@@ -224,6 +229,8 @@ export const updateTaskStatus = async (
               ...task,
               status,
               completedAt: completedAt || undefined,
+              completedById: completedById || undefined,
+              completedByName: completedByName || undefined,
               updatedAt: now
             };
           }
