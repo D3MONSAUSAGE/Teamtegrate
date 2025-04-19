@@ -1,3 +1,4 @@
+
 import { playSuccessSound, playErrorSound, playStatusChangeSound } from '@/utils/sounds';
 import { User, Project, Task, TaskStatus, TaskPriority, TaskComment, DailyScore } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -30,7 +31,7 @@ export const addTask = async (
       created_at: now.toISOString(),
       updated_at: now.toISOString(),
       assigned_to_id: task.assignedToId || null,
-      assigned_to_name: task.assignedToName || null,
+      // Don't include assigned_to_name in database insert - this will be handled in frontend
     };
 
     const { data, error } = await supabase
@@ -59,7 +60,7 @@ export const addTask = async (
         createdAt: new Date(data.created_at),
         updatedAt: new Date(data.updated_at),
         assignedToId: data.assigned_to_id || undefined,
-        assignedToName: data.assigned_to_name || undefined,
+        assignedToName: task.assignedToName, // Use the assignedToName from the input task object
         tags: [],
         comments: []
       };
@@ -254,9 +255,10 @@ export const assignTaskToUser = async (
 
     const now = new Date();
 
+    // Only send assigned_to_id to the database, not assigned_to_name
     const { error } = await supabase
       .from('tasks')
-      .update({ assigned_to_id: userId, assigned_to_name: userName, updated_at: now.toISOString() })
+      .update({ assigned_to_id: userId, updated_at: now.toISOString() })
       .eq('id', taskId);
 
     if (error) {
@@ -266,6 +268,7 @@ export const assignTaskToUser = async (
       return;
     }
 
+    // Update the in-memory state with both ID and name
     setTasks(prevTasks => prevTasks.map(task => {
       if (task.id === taskId) {
         return { ...task, assignedToId: userId, assignedToName: userName };

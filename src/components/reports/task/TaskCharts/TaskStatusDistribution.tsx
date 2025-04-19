@@ -39,7 +39,7 @@ const TaskStatusDistribution: React.FC<TaskStatusDistributionProps> = ({ statusC
         <CardDescription>Breakdown of tasks by status</CardDescription>
       </CardHeader>
       <CardContent className={isMobile ? "h-64" : "h-80"}>
-        <ChartContainer config={chartConfig} className="h-full flex items-center justify-center">
+        <ChartContainer config={chartConfig} className="h-full w-full flex items-center justify-center">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
