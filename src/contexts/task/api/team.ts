@@ -21,3 +21,22 @@ export const fetchTeamMemberName = async (memberId: string): Promise<string> => 
   }
 };
 
+// Function to check if an email exists in auth.users
+export const checkUserExists = async (email: string): Promise<boolean> => {
+  try {
+    const { count, error } = await supabase
+      .from('users')
+      .select('*', { count: 'exact', head: true })
+      .eq('email', email.toLowerCase());
+    
+    if (error) {
+      console.error('Error checking if user exists:', error);
+      return false;
+    }
+    
+    return count !== null && count > 0;
+  } catch (error) {
+    console.error('Error in checkUserExists:', error);
+    return false;
+  }
+};

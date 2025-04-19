@@ -9,6 +9,7 @@ interface TeamMemberFormData {
   email: string;
   role: string;
   password: string;
+  verified: boolean;
 }
 
 interface UseTeamMemberFormProps {
@@ -24,9 +25,10 @@ export const useTeamMemberForm = ({ onSuccess, onCancel }: UseTeamMemberFormProp
     email: '',
     role: 'Developer',
     password: '',
+    verified: false
   });
 
-  const handleInputChange = (field: keyof TeamMemberFormData, value: string) => {
+  const handleInputChange = (field: keyof TeamMemberFormData, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -36,6 +38,7 @@ export const useTeamMemberForm = ({ onSuccess, onCancel }: UseTeamMemberFormProp
       email: '',
       role: 'Developer',
       password: '',
+      verified: false
     });
   };
 
@@ -43,13 +46,8 @@ export const useTeamMemberForm = ({ onSuccess, onCancel }: UseTeamMemberFormProp
     e.preventDefault();
     
     // Validate inputs
-    if (!formData.name.trim() || !formData.email.trim() || !formData.role || !formData.password) {
-      toast.error('Please fill in all fields');
-      return;
-    }
-
-    if (formData.password.length < 6) {
-      toast.error('Password must be at least 6 characters');
+    if (!formData.name.trim() || !formData.email.trim() || !formData.role) {
+      toast.error('Please fill in all required fields');
       return;
     }
 
@@ -81,33 +79,17 @@ export const useTeamMemberForm = ({ onSuccess, onCancel }: UseTeamMemberFormProp
         return;
       }
 
-      // First create user with Supabase Auth
-      const { data: authData, error: signUpError } = await supabase.auth.admin.createUser({
-        email: formData.email.toLowerCase(),
-        password: formData.password,
-        email_confirm: true,
-        user_metadata: {
-          name: formData.name,
-          role: formData.role
-        }
-      });
-
-      if (signUpError) {
-        console.error('Error creating user account:', signUpError);
-        toast.error('Failed to create user account: ' + signUpError.message);
-        setIsLoading(false);
-        return;
-      }
-
       // Insert new team member into Supabase
-      const { error: insertError } = await supabase
+      const { error: insertError, data: newMember } = await supabase
         .from('team_members')
         .insert({
           name: formData.name.trim(),
           email: formData.email.trim().toLowerCase(),
           role: formData.role,
           manager_id: user.id
-        });
+        })
+        .select()
+        .single();
 
       if (insertError) {
         console.error('Error adding team member:', insertError);

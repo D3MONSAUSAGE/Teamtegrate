@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { DialogFooter } from "@/components/ui/dialog";
 import useTeamMemberForm from '@/hooks/useTeamMemberForm';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
+import { Switch } from "@/components/ui/switch";
+import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription } from '@/components/ui/form';
 
 interface TeamMemberFormProps {
   onCancel: () => void;
@@ -24,18 +26,19 @@ const TeamMemberForm: React.FC<TeamMemberFormProps> = ({ onCancel, onSuccess }) 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 mt-2">
       <div className="space-y-2">
-        <Label htmlFor="name">Name</Label>
+        <Label htmlFor="name">Name *</Label>
         <Input 
           id="name" 
           value={formData.name} 
           onChange={(e) => handleInputChange('name', e.target.value)}
           placeholder="John Doe" 
           disabled={isLoading}
+          required
         />
       </div>
       
       <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email">Email *</Label>
         <Input 
           id="email" 
           type="email" 
@@ -43,32 +46,12 @@ const TeamMemberForm: React.FC<TeamMemberFormProps> = ({ onCancel, onSuccess }) 
           onChange={(e) => handleInputChange('email', e.target.value)}
           placeholder="johndoe@example.com" 
           disabled={isLoading}
+          required
         />
       </div>
       
       <div className="space-y-2">
-        <Label htmlFor="password">Password</Label>
-        <div className="relative">
-          <Input 
-            id="password" 
-            type={showPassword ? "text" : "password"} 
-            value={formData.password} 
-            onChange={(e) => handleInputChange('password', e.target.value)}
-            placeholder="Enter password" 
-            disabled={isLoading}
-          />
-          <button 
-            type="button"
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-            onClick={() => setShowPassword(!showPassword)}
-          >
-            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-          </button>
-        </div>
-      </div>
-      
-      <div className="space-y-2">
-        <Label htmlFor="role">Role</Label>
+        <Label htmlFor="role">Role *</Label>
         <Select 
           value={formData.role} 
           onValueChange={(value) => handleInputChange('role', value)}
@@ -86,6 +69,18 @@ const TeamMemberForm: React.FC<TeamMemberFormProps> = ({ onCancel, onSuccess }) 
             <SelectItem value="Product Owner">Product Owner</SelectItem>
           </SelectContent>
         </Select>
+      </div>
+      
+      <div className="flex items-center space-x-2 pt-2">
+        <Switch
+          id="verified"
+          checked={formData.verified}
+          onCheckedChange={(checked) => handleInputChange('verified', checked)}
+          disabled={isLoading}
+        />
+        <Label htmlFor="verified" className="cursor-pointer">
+          Mark as verified user
+        </Label>
       </div>
       
       <DialogFooter className="pt-4">
