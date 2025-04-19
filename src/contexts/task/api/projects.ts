@@ -63,6 +63,10 @@ export const fetchProjects = async (user: User | null, setProjects: React.Dispat
           return formattedTask;
         })) : [];
         
+        // Create the project object with explicit type handling for is_completed
+        // Using type assertion to access unknown properties safely
+        const projectData = project as any;
+        
         return {
           id: project.id,
           title: project.title || '',
@@ -77,7 +81,7 @@ export const fetchProjects = async (user: User | null, setProjects: React.Dispat
           tags: [],
           budget: project.budget || 0,
           budgetSpent: project.budget_spent || 0,
-          is_completed: project.is_completed !== undefined ? Boolean(project.is_completed) : false
+          is_completed: projectData.is_completed !== undefined ? Boolean(projectData.is_completed) : false
         };
       }));
       
