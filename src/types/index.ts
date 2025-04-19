@@ -1,5 +1,3 @@
-
-
 export type UserRole = 'user' | 'manager';
 
 export interface User {
@@ -49,8 +47,8 @@ export interface Task {
 // Updated ProjectTask interface to make it compatible with Task
 export interface ProjectTask {
   id: string;
-  projectId: string;
-  userId?: string; // Added to make it compatible with Task
+  projectId: string; // This is required for ProjectTask
+  userId: string; 
   title: string;
   description: string;
   deadline: Date;
@@ -61,10 +59,10 @@ export interface ProjectTask {
   completedAt?: Date;
   assignedToId?: string;
   assignedToName?: string;
-  completedById?: string; // Added to make it compatible with Task
-  completedByName?: string; // Added to make it compatible with Task
-  tags?: string[]; // Added to make it compatible with Task
-  comments?: TaskComment[]; // Added to make it compatible with Task
+  completedById?: string;
+  completedByName?: string;
+  tags: string[]; // Making this non-optional
+  comments: TaskComment[]; // Making this non-optional
   cost?: number;
 }
 
@@ -82,7 +80,7 @@ export interface Project {
   tags?: string[];
   budget?: number;
   budgetSpent?: number;
-  is_completed?: boolean;  // Ensure this is optional
+  is_completed?: boolean;
 }
 
 export interface DailyScore {

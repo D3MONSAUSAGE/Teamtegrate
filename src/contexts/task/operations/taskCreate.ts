@@ -1,6 +1,6 @@
 
 import { playSuccessSound, playErrorSound } from '@/utils/sounds';
-import { User, Project, Task } from '@/types';
+import { User, Project, Task, ProjectTask } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { v4 as uuidv4 } from 'uuid';
@@ -80,10 +80,31 @@ export const addTask = async (
       if (task.projectId) {
         setProjects(prevProjects => prevProjects.map(project => {
           if (project.id === task.projectId) {
-            const updatedTasks = [...(project.tasks || []), newTask];
+            // Convert the Task to ProjectTask before adding it to the project
+            const projectTask: ProjectTask = {
+              id: newTask.id,
+              projectId: task.projectId!, // We know projectId exists here
+              userId: newTask.userId,
+              title: newTask.title,
+              description: newTask.description,
+              deadline: newTask.deadline,
+              priority: newTask.priority,
+              status: newTask.status,
+              createdAt: newTask.createdAt,
+              updatedAt: newTask.updatedAt,
+              completedAt: newTask.completedAt,
+              assignedToId: newTask.assignedToId,
+              assignedToName: newTask.assignedToName,
+              completedById: newTask.completedById,
+              completedByName: newTask.completedByName,
+              tags: newTask.tags || [],
+              comments: newTask.comments || [],
+              cost: newTask.cost
+            };
+            
             return {
               ...project,
-              tasks: updatedTasks
+              tasks: [...project.tasks, projectTask]
             };
           }
           return project;
