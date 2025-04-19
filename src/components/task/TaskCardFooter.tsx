@@ -37,9 +37,18 @@ const TaskCardFooter: React.FC<TaskCardFooterProps> = ({
     }
   };
 
+  const handleStatusChange = (newStatus: TaskStatus) => {
+    if (onStatusChange) {
+      onStatusChange(newStatus);
+    }
+  };
+
   return (
     <div className="flex items-center justify-between pt-2">
-      <Select value={status} onValueChange={onStatusChange}>
+      <Select 
+        value={status} 
+        onValueChange={handleStatusChange}
+      >
         <SelectTrigger className="w-[140px]">
           <SelectValue>
             <Badge className={cn("px-2 py-1", getStatusColor(status))}>

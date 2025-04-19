@@ -183,17 +183,13 @@ export const updateTaskStatus = async (
     if (!user) return;
     
     const now = new Date();
-    const completedAt = status === 'Completed' ? now : null;
-    const completedById = status === 'Completed' ? user.id : null;
-    const completedByName = status === 'Completed' ? user.name : null;
+    const completedAt = status === 'Completed' ? now.toISOString() : null;
     
     const { error } = await supabase
       .from('tasks')
       .update({
         status,
-        completed_at: completedAt ? completedAt.toISOString() : null,
-        completed_by_id: completedById,
-        completed_by_name: completedByName,
+        completed_at: completedAt,
         updated_at: now.toISOString()
       })
       .eq('id', taskId);
@@ -209,9 +205,7 @@ export const updateTaskStatus = async (
         return {
           ...task,
           status,
-          completedAt: completedAt || undefined,
-          completedById: completedById || undefined,
-          completedByName: completedByName || undefined,
+          completedAt: status === 'Completed' ? now : undefined,
           updatedAt: now
         };
       }
@@ -228,9 +222,7 @@ export const updateTaskStatus = async (
             return {
               ...task,
               status,
-              completedAt: completedAt || undefined,
-              completedById: completedById || undefined,
-              completedByName: completedByName || undefined,
+              completedAt: status === 'Completed' ? now : undefined,
               updatedAt: now
             };
           }
