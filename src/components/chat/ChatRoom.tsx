@@ -3,10 +3,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Send, ChevronLeft, Paperclip, FileText, FileImage, X } from 'lucide-react';
+import { Send, ChevronLeft, Paperclip, FileText, FileImage, X, Mic } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from 'sonner';
+import ChatMessageAvatar from './ChatMessageAvatar';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface ChatRoomProps {
   room: {
@@ -193,8 +195,8 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
   };
 
   return (
-    <Card className="flex flex-col h-full">
-      <div className="p-4 border-b flex items-center gap-2">
+    <Card className="flex flex-col h-full border-none shadow-none bg-background">
+      <div className="p-4 border-b flex items-center gap-2 bg-card">
         {isMobile && (
           <Button variant="ghost" size="icon" onClick={onBack}>
             <ChevronLeft className="h-5 w-5" />
@@ -203,39 +205,54 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
         <h2 className="font-semibold">{room.name}</h2>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`flex ${
-              message.user_id === user?.id ? 'justify-end' : 'justify-start'
-            }`}
-          >
-            <div
-              className={`max-w-[80%] rounded-lg p-3 ${
-                message.user_id === user?.id
-                  ? 'bg-primary text-primary-foreground ml-12'
-                  : 'bg-muted mr-12'
-              }`}
-            >
-              <p className="text-sm break-words">{message.content}</p>
-              {message.attachments?.map(attachment => renderAttachment(attachment))}
-            </div>
-          </div>
-        ))}
-        <div ref={messagesEndRef} />
-      </div>
+      <ScrollArea className="flex-1 p-4">
+        <div className="space-y-4">
+          {messages.map((message) => {
+            const isCurrentUser = message.user_id === user?.id;
+            return (
+              <div
+                key={message.id}
+                className={`flex items-start gap-3 ${
+                  isCurrentUser ? 'flex-row-reverse' : 'flex-row'
+                }`}
+              >
+                <ChatMessageAvatar 
+                  userId={message.user_id}
+                  className="mt-0.5 flex-shrink-0 w-8 h-8"
+                />
+                <div
+                  className={`group relative max-w-[85%] sm:max-w-[75%] ${
+                    isCurrentUser ? 'items-end' : 'items-start'
+                  }`}
+                >
+                  <div
+                    className={`px-4 py-2.5 rounded-2xl break-words ${
+                      isCurrentUser
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted'
+                    }`}
+                  >
+                    <p className="text-sm">{message.content}</p>
+                  </div>
+                  {message.attachments?.map(attachment => renderAttachment(attachment))}
+                </div>
+              </div>
+            );
+          })}
+          <div ref={messagesEndRef} />
+        </div>
+      </ScrollArea>
 
-      <form onSubmit={sendMessage} className="p-4 border-t space-y-2">
+      <div className="p-4 border-t bg-card space-y-3">
         <div className="flex flex-wrap gap-2">
           {fileUploads.map((upload, index) => (
-            <div key={index} className="flex items-center gap-2 bg-muted p-2 rounded">
+            <div key={index} className="flex items-center gap-2 bg-muted p-2 rounded-full">
               <span className="text-sm truncate max-w-[150px]">{upload.file.name}</span>
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="h-5 w-5"
+                className="h-5 w-5 hover:bg-background/50"
                 onClick={() => removeFile(index)}
               >
                 <X className="h-4 w-4" />
@@ -244,7 +261,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
           ))}
         </div>
         
-        <div className="flex gap-2">
+        <form onSubmit={sendMessage} className="flex items-center gap-2">
           <Input
             type="file"
             onChange={handleFileSelect}
@@ -256,21 +273,31 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
             type="button"
             variant="outline"
             size="icon"
+            className="flex-shrink-0"
             onClick={() => fileInputRef.current?.click()}
           >
             <Paperclip className="h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="flex-shrink-0"
+            onClick={() => toast.info("Voice messages coming soon!")}
+          >
+            <Mic className="h-4 w-4" />
           </Button>
           <Input
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="Type your message..."
-            className="flex-1"
+            className="flex-1 rounded-full bg-muted border-0"
           />
-          <Button type="submit" size="icon">
+          <Button type="submit" size="icon" className="flex-shrink-0 rounded-full">
             <Send className="h-4 w-4" />
           </Button>
-        </div>
-      </form>
+        </form>
+      </div>
     </Card>
   );
 };
