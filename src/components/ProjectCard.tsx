@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Project, Task } from '@/types';
@@ -84,6 +83,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   const completedTasks = projectTasks.filter(task => task.status === 'Completed').length;
   const progress = calculateProgress(projectTasks);
   
+  const budgetProgress = project.budget ? Math.round((project.budgetSpent || 0) / project.budget * 100) : 0;
+  
   const handleToggleCompletion = () => {
     updateProject(project.id, { is_completed: !project.is_completed });
   };
@@ -155,6 +156,23 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
           </div>
           <Progress value={progress} className="h-1.5 md:h-2" />
         </div>
+        
+        {project.budget && (
+          <div className="mt-3 space-y-1">
+            <div className="flex justify-between items-center text-xs text-gray-500">
+              <span>Budget: ${project.budget.toLocaleString()}</span>
+              <Badge variant="outline" className="ml-1">{budgetProgress}%</Badge>
+            </div>
+            <div className="flex justify-between items-center text-xs text-gray-500">
+              <span>Spent: ${(project.budgetSpent || 0).toLocaleString()}</span>
+            </div>
+            <Progress 
+              value={budgetProgress} 
+              className="h-1.5 md:h-2"
+              variant={budgetProgress > 100 ? "destructive" : "default"}
+            />
+          </div>
+        )}
         
         <Button 
           variant="outline" 

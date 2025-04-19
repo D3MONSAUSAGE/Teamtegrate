@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -147,6 +146,18 @@ const TaskFormFields: React.FC<TaskFormFieldsProps> = ({
         {errors.deadline && (
           <span className="text-xs text-red-500">{errors.deadline.message as string}</span>
         )}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="cost">Cost</Label>
+        <Input
+          id="cost"
+          type="number"
+          step="0.01"
+          min="0"
+          placeholder="Task cost (optional)"
+          {...register('cost')}
+        />
       </div>
     </>
   );
