@@ -1,3 +1,4 @@
+
 export type UserRole = 'user' | 'manager';
 
 export interface User {
@@ -44,28 +45,6 @@ export interface Task {
   cost?: number;
 }
 
-// Updated ProjectTask interface to make it compatible with Task
-export interface ProjectTask {
-  id: string;
-  projectId: string; // This is required for ProjectTask
-  userId: string; 
-  title: string;
-  description: string;
-  deadline: Date;
-  priority: TaskPriority;
-  status: TaskStatus;
-  createdAt: Date;
-  updatedAt: Date;
-  completedAt?: Date;
-  assignedToId?: string;
-  assignedToName?: string;
-  completedById?: string;
-  completedByName?: string;
-  tags: string[]; // Making this non-optional
-  comments: TaskComment[]; // Making this non-optional
-  cost?: number;
-}
-
 export interface Project {
   id: string;
   title: string;
@@ -75,7 +54,7 @@ export interface Project {
   managerId: string;
   createdAt: Date;
   updatedAt: Date;
-  tasks: ProjectTask[]; // Using ProjectTask[] instead of Task[]
+  tasks: Task[];
   teamMembers?: string[];
   tags?: string[];
   budget?: number;

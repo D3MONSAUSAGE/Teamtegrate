@@ -23,16 +23,8 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
   currentProjectId 
 }) => {
   const { user } = useAuth();
-  const { addTask, updateTask, projects, fetchProjects } = useTask();
+  const { addTask, updateTask, projects } = useTask();
   const isEditMode = !!editingTask;
-  
-  // Fetch the latest projects data when the dialog opens
-  useEffect(() => {
-    if (open && fetchProjects) {
-      console.log('CreateTaskDialog: Fetching latest projects data');
-      fetchProjects();
-    }
-  }, [open, fetchProjects]);
   
   const {
     register,
@@ -53,15 +45,9 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
       setValue('priority', editingTask.priority);
       setValue('deadline', format(new Date(editingTask.deadline), "yyyy-MM-dd'T'HH:mm"));
       setValue('projectId', editingTask.projectId || '');
-      
-      // Use an explicit type assertion with "as any" for setting cost
-      // This is a workaround for the TypeScript error
-      (setValue as any)('cost', editingTask.cost || 0);
-      
       setSelectedMember(editingTask.assignedToId);
     } else {
       if (currentProjectId) {
-        console.log('Setting current project ID:', currentProjectId);
         setValue('projectId', currentProjectId);
       }
       reset();
@@ -70,17 +56,13 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
   }, [editingTask, currentProjectId, setValue, reset, setSelectedMember]);
   
   const onSubmit = (data: any) => {
-    console.log('Form submitted with data:', data);
-    
     if (isEditMode && editingTask) {
       updateTask(editingTask.id, {
         ...data,
         deadline: new Date(data.deadline),
-        projectId: data.projectId === "none" ? undefined : data.projectId,
         assignedToId: selectedMember === "unassigned" ? undefined : selectedMember,
         assignedToName: selectedMember && selectedMember !== "unassigned" ? 
-          appUsers?.find(m => m.id === selectedMember)?.name : undefined,
-        cost: parseFloat(data.cost) || 0
+          appUsers?.find(m => m.id === selectedMember)?.name : undefined
       });
     } else {
       addTask({
@@ -93,21 +75,12 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
         projectId: data.projectId === "none" ? undefined : data.projectId,
         assignedToId: selectedMember === "unassigned" ? undefined : selectedMember,
         assignedToName: selectedMember && selectedMember !== "unassigned" ? 
-          appUsers?.find(m => m.id === selectedMember)?.name : undefined,
-        cost: parseFloat(data.cost) || 0
+          appUsers?.find(m => m.id === selectedMember)?.name : undefined
       });
     }
-    
-    // Close the dialog and reset the form
     onOpenChange(false);
     reset();
     setSelectedMember(undefined);
-    
-    // Refresh projects after task creation/update to ensure proper display
-    if (fetchProjects) {
-      console.log('Refreshing projects after task submit');
-      setTimeout(() => fetchProjects(), 500); // Small delay to ensure task is saved
-    }
   };
 
   return (

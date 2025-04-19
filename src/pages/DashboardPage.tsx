@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { useTask } from '@/contexts/task';
@@ -15,13 +14,11 @@ import TeamManagement from '@/components/dashboard/TeamManagement';
 import { useIsMobile } from '@/hooks/use-mobile';
 import AnalyticsSection from '@/components/dashboard/AnalyticsSection';
 import TimeTracking from '@/components/dashboard/TimeTracking';
-import CreateProjectDialog from '@/components/CreateProjectDialog';
 
 const DashboardPage = () => {
   const { user } = useAuth();
   const { tasks, projects, dailyScore } = useTask();
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
-  const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const isMobile = useIsMobile();
@@ -61,10 +58,6 @@ const DashboardPage = () => {
 
   const handleViewTasks = (project: Project) => {
     console.log("View tasks for project:", project.title);
-  };
-  
-  const handleCreateProject = () => {
-    setIsCreateProjectOpen(true);
   };
   
   return (
@@ -113,7 +106,6 @@ const DashboardPage = () => {
               projects={recentProjects}
               onViewTasks={handleViewTasks}
               onCreateTask={handleCreateTask}
-              onCreateProject={handleCreateProject}
             />
             
             <TeamManagement />
@@ -126,11 +118,6 @@ const DashboardPage = () => {
         onOpenChange={setIsCreateTaskOpen}
         editingTask={editingTask}
         currentProjectId={selectedProject?.id}
-      />
-      
-      <CreateProjectDialog 
-        open={isCreateProjectOpen} 
-        onOpenChange={setIsCreateProjectOpen}
       />
     </div>
   );

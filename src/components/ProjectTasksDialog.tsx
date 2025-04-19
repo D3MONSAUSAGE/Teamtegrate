@@ -1,15 +1,14 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Project, Task, ProjectTask } from '@/types';
-import { Plus, Calendar } from 'lucide-react';
+import { Project, Task } from '@/types';
+import { Plus, Users, Calendar } from 'lucide-react';
 import TaskCard from '@/components/TaskCard';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import TaskCommentsDialog from './TaskCommentsDialog';
-import { useTask } from '@/contexts/task';
 
 interface ProjectTasksDialogProps {
   open: boolean;
@@ -30,41 +29,13 @@ const ProjectTasksDialog: React.FC<ProjectTasksDialogProps> = ({
 }) => {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [showComments, setShowComments] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const { projects, fetchProjects } = useTask();
-  
-  // Get the latest project tasks from the projects context
-  const currentProject = project ? projects.find(p => p.id === project.id) : null;
-  const projectTasks = currentProject?.tasks || [];
-  
-  // Fetch projects data when the dialog opens only once
-  useEffect(() => {
-    if (open && project && fetchProjects && (!projectTasks || projectTasks.length === 0)) {
-      setIsLoading(true);
-      setError(null);
-      
-      const fetchData = async () => {
-        try {
-          await fetchProjects();
-        } catch (err) {
-          console.error("Error fetching projects:", err);
-          setError("Could not load project tasks. Please try again.");
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      
-      fetchData();
-    }
-  }, [open, project?.id, fetchProjects, projectTasks]); // Depend on project.id instead of the whole project object
   
   if (!project) return null;
   
   const calculateProgress = () => {
-    if (projectTasks.length === 0) return 0;
-    const completed = projectTasks.filter(task => task.status === 'Completed').length;
-    return Math.round((completed / projectTasks.length) * 100);
+    if (!project.tasks || project.tasks.length === 0) return 0;
+    const completed = project.tasks.filter(task => task.status === 'Completed').length;
+    return Math.round((completed / project.tasks.length) * 100);
   };
   
   const progress = calculateProgress();
@@ -75,20 +46,18 @@ const ProjectTasksDialog: React.FC<ProjectTasksDialogProps> = ({
         <DialogContent className="sm:max-w-[800px]">
           <DialogHeader>
             <DialogTitle>{project?.title}</DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-sm text-gray-500">
               <div className="flex items-center gap-2 mt-2">
                 <Calendar className="h-4 w-4" />
-                <span>
-                  {format(new Date(project.startDate), 'MMM d, yyyy')} - {format(new Date(project.endDate), 'MMM d, yyyy')}
-                </span>
+                <span>{format(new Date(project.startDate), 'MMM d, yyyy')} - {format(new Date(project.endDate), 'MMM d, yyyy')}</span>
               </div>
               <div className="mt-2">
-                <p>{project.description}</p>
+                <p className="line-clamp-2">{project.description}</p>
               </div>
               <div className="mt-3 space-y-1">
                 <div className="flex justify-between items-center">
                   <span className="text-xs">
-                    {projectTasks.filter(task => task.status === 'Completed').length} of {projectTasks.length} tasks completed
+                    {project.tasks?.filter(task => task.status === 'Completed').length || 0} of {project.tasks?.length || 0} tasks completed
                   </span>
                   <Badge variant="outline">{progress}%</Badge>
                 </div>
@@ -103,30 +72,14 @@ const ProjectTasksDialog: React.FC<ProjectTasksDialogProps> = ({
             </Button>
           </div>
           
-          {isLoading ? (
-            <div className="flex justify-center items-center p-8">
-              <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full"></div>
-            </div>
-          ) : error ? (
-            <div className="bg-red-50 p-6 rounded-lg text-center">
-              <p className="text-red-500">{error}</p>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="mt-2"
-                onClick={() => fetchProjects && fetchProjects()}
-              >
-                Retry
-              </Button>
-            </div>
-          ) : projectTasks.length > 0 ? (
+          {project.tasks && project.tasks.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto p-1">
-              {projectTasks.map((task) => (
+              {project.tasks.map((task) => (
                 <TaskCard 
                   key={task.id} 
-                  task={task as Task} // Cast ProjectTask to Task for compatibility
-                  onEdit={() => onEditTask(task as Task)} // Cast ProjectTask to Task for compatibility
-                  onAssign={() => onAssignTask(task as Task)} // Cast ProjectTask to Task for compatibility
+                  task={task} 
+                  onEdit={onEditTask}
+                  onAssign={() => onAssignTask(task)}
                 />
               ))}
             </div>
@@ -146,13 +99,11 @@ const ProjectTasksDialog: React.FC<ProjectTasksDialogProps> = ({
         </DialogContent>
       </Dialog>
       
-      {selectedTask && (
-        <TaskCommentsDialog
-          open={showComments}
-          onOpenChange={setShowComments}
-          task={selectedTask}
-        />
-      )}
+      <TaskCommentsDialog
+        open={showComments}
+        onOpenChange={setShowComments}
+        task={selectedTask}
+      />
     </>
   );
 };

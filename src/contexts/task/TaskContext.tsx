@@ -1,10 +1,9 @@
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { Task, Project, TaskStatus, TaskPriority, DailyScore, ProjectTask } from '@/types';
+import { Task, Project, TaskStatus, TaskPriority, DailyScore, Comment } from '@/types';
 import { useAuth } from '../AuthContext';
 import { fetchTasks, fetchProjects } from './taskApi';
 import { calculateDailyScore } from './taskMetrics';
-import { supabase } from '@/integrations/supabase/client';
 import { 
   addTask, 
   updateTask, 
@@ -19,7 +18,7 @@ import {
   deleteProject, 
   addTeamMemberToProject, 
   removeTeamMemberFromProject 
-} from './operations/projects';
+} from './projectOperations';
 import { 
   addCommentToTask, 
   addTagToTask, 
@@ -35,26 +34,11 @@ import {
   getTasksByDate, 
   getOverdueTasks 
 } from './taskFilters';
-import { toast } from '@/components/ui/sonner';
-
-// Remove this local interface definition as it conflicts with the imported one
-// interface ProjectTask {
-//   id: string;
-//   title: string;
-//   description: string;
-//   deadline: Date | null;
-//   priority: TaskPriority;
-//   status: TaskStatus;
-//   cost: number;
-//   assignedToId: string;
-//   completedAt: Date | null;
-// }
 
 interface TaskContextType {
   tasks: Task[];
   projects: Project[];
   dailyScore: DailyScore;
-  fetchProjects: () => Promise<void>;
   addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateTask: (taskId: string, updates: Partial<Task>) => void;
   updateTaskStatus: (taskId: string, status: TaskStatus) => void;
@@ -77,11 +61,6 @@ interface TaskContextType {
   getTasksByPriority: (priority: TaskPriority) => Task[];
   getTasksByDate: (date: Date) => Task[];
   getOverdueTasks: () => Task[];
-  addProjectTask: (projectId: string, task: Omit<ProjectTask, 'id' | 'createdAt' | 'updatedAt' | 'projectId'>) => void;
-  updateProjectTask: (taskId: string, updates: Partial<ProjectTask>) => void;
-  deleteProjectTask: (taskId: string) => void;
-  assignProjectTask: (taskId: string, userId: string, userName: string) => void;
-  isLoading: boolean;
 }
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
@@ -104,30 +83,14 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     percentage: 0,
     date: new Date(),
   });
-  const [isLoading, setIsLoading] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    if (user && !isInitialized) {
-      setIsLoading(true);
-      Promise.all([
-        fetchTasks(user, setTasks),
-        refreshProjects()
-      ])
-      .then(() => {
-        setIsInitialized(true);
-      })
-      .catch(error => {
-        console.error("Error initializing data:", error);
-        toast.error("Failed to load your data. Please refresh the page.");
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
-    } else if (!user) {
+    if (user) {
+      fetchTasks(user, setTasks);
+      fetchProjects(user, setProjects);
+    } else {
       setTasks([]);
       setProjects([]);
-      setIsInitialized(false);
     }
   }, [user]);
 
@@ -138,119 +101,11 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [tasks, user]);
 
-  const refreshProjects = async (): Promise<void> => {
-    if (user) {
-      try {
-        setIsLoading(true);
-        await fetchProjects(user, setProjects);
-      } catch (error) {
-        console.error("Error fetching projects:", error);
-        throw error;
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    return Promise.resolve();
-  };
-
-  const addProjectTask = async (
-    projectId: string,
-    task: Omit<ProjectTask, 'id' | 'createdAt' | 'updatedAt' | 'projectId'>
-  ) => {
-    try {
-      const { data, error } = await supabase
-        .from('project_tasks')
-        .insert({
-          project_id: projectId,
-          title: task.title,
-          description: task.description,
-          deadline: task.deadline?.toISOString(),
-          priority: task.priority,
-          status: task.status,
-          cost: task.cost,
-          assigned_to_id: task.assignedToId
-        })
-        .select('*')
-        .single();
-
-      if (error) throw error;
-
-      await refreshProjects();
-      toast.success('Task added successfully!');
-    } catch (error) {
-      console.error('Error adding project task:', error);
-      toast.error('Failed to add task');
-    }
-  };
-
-  const updateProjectTask = async (taskId: string, updates: Partial<ProjectTask>) => {
-    try {
-      const { error } = await supabase
-        .from('project_tasks')
-        .update({
-          title: updates.title,
-          description: updates.description,
-          deadline: updates.deadline?.toISOString(),
-          priority: updates.priority,
-          status: updates.status,
-          cost: updates.cost,
-          assigned_to_id: updates.assignedToId,
-          completed_at: updates.completedAt?.toISOString()
-        })
-        .eq('id', taskId);
-
-      if (error) throw error;
-
-      await refreshProjects();
-      toast.success('Task updated successfully!');
-    } catch (error) {
-      console.error('Error updating project task:', error);
-      toast.error('Failed to update task');
-    }
-  };
-
-  const deleteProjectTask = async (taskId: string) => {
-    try {
-      const { error } = await supabase
-        .from('project_tasks')
-        .delete()
-        .eq('id', taskId);
-
-      if (error) throw error;
-
-      await refreshProjects();
-      toast.success('Task deleted successfully!');
-    } catch (error) {
-      console.error('Error deleting project task:', error);
-      toast.error('Failed to delete task');
-    }
-  };
-
-  const assignProjectTask = async (taskId: string, userId: string, userName: string) => {
-    try {
-      const { error } = await supabase
-        .from('project_tasks')
-        .update({
-          assigned_to_id: userId
-        })
-        .eq('id', taskId);
-
-      if (error) throw error;
-
-      await refreshProjects();
-      toast.success('Task assigned successfully!');
-    } catch (error) {
-      console.error('Error assigning project task:', error);
-      toast.error('Failed to assign task');
-    }
-  };
-
+  // Create context value object with all the functions
   const value = {
     tasks,
     projects,
     dailyScore,
-    isLoading,
-    fetchProjects: refreshProjects,
     addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => 
       addTask(task, user, tasks, setTasks, projects, setProjects),
     updateTask: (taskId: string, updates: Partial<Task>) => 
@@ -289,10 +144,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     getTasksByPriority: (priority: TaskPriority) => getTasksByPriority(priority, tasks),
     getTasksByDate: (date: Date) => getTasksByDate(date, tasks),
     getOverdueTasks: () => getOverdueTasks(tasks),
-    addProjectTask,
-    updateProjectTask,
-    deleteProjectTask,
-    assignProjectTask,
   };
 
   return <TaskContext.Provider value={value}>{children}</TaskContext.Provider>;
