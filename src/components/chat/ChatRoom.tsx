@@ -8,6 +8,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import ChatMessage from './ChatMessage';
 import ChatMessageInput from './ChatMessageInput';
+import ChatParticipants from './ChatParticipants';
 import { useChat } from '@/hooks/use-chat';
 
 interface ChatRoomProps {
@@ -48,6 +49,9 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
           </Button>
         )}
         <h2 className="font-semibold">{room.name}</h2>
+        <div className="ml-auto">
+          <ChatParticipants roomId={room.id} />
+        </div>
       </div>
 
       <ScrollArea className="flex-1 p-4">
