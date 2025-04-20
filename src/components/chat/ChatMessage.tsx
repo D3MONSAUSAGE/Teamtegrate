@@ -47,14 +47,22 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isCurrentUser }) => 
         href={url}
         target="_blank"
         rel="noopener noreferrer"
-        className="block p-2 mt-2 bg-muted rounded hover:bg-muted/80 transition-colors"
+        download={attachment.file_name}
+        className="flex items-center gap-2 p-3 mt-2 bg-muted rounded hover:bg-muted/80 transition-colors"
       >
-        {isImage ? (
-          <FileImage className="inline-block mr-2 h-4 w-4" />
-        ) : (
-          <FileText className="inline-block mr-2 h-4 w-4" />
-        )}
-        {attachment.file_name}
+        <div className="flex-shrink-0">
+          {isImage ? (
+            <FileImage className="h-5 w-5" />
+          ) : (
+            <FileText className="h-5 w-5" />
+          )}
+        </div>
+        <div className="overflow-hidden">
+          <div className="text-sm font-medium truncate">{attachment.file_name}</div>
+          <div className="text-xs text-muted-foreground">
+            {isImage ? 'Image' : attachment.file_type.split('/')[1]?.toUpperCase() || 'File'}
+          </div>
+        </div>
       </a>
     );
   };
@@ -88,7 +96,9 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isCurrentUser }) => 
         >
           <p className="text-sm">{message.content}</p>
         </div>
-        {message.attachments?.map(attachment => renderAttachment(attachment))}
+        <div className="mt-1 space-y-2">
+          {message.attachments?.map(attachment => renderAttachment(attachment))}
+        </div>
       </div>
     </div>
   );
