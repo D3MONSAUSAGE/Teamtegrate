@@ -15,7 +15,7 @@ import { X, Plus } from 'lucide-react';
 import { UseFieldArrayReturn, UseFormRegister, FieldValues, FieldArrayWithId, UseFormSetValue, UseFormWatch } from 'react-hook-form';
 import { TaskPriority } from '@/types';
 
-interface ProjectTasksSectionProps<TFieldValues extends FieldValues = FieldValues> {
+interface ProjectTasksSectionProps<TFieldValues extends FieldValues> {
   taskFields: FieldArrayWithId<TFieldValues, "tasks", "id">[];
   register: UseFormRegister<TFieldValues>;
   setValue: UseFormSetValue<TFieldValues>;
@@ -26,7 +26,7 @@ interface ProjectTasksSectionProps<TFieldValues extends FieldValues = FieldValue
   };
 }
 
-const ProjectTasksSection = <TFieldValues extends FieldValues = FieldValues>({
+const ProjectTasksSection = <TFieldValues extends FieldValues>({
   taskFields,
   register,
   setValue,

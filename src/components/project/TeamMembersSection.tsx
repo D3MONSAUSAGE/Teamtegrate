@@ -12,7 +12,7 @@ import {
 import { X, Plus } from 'lucide-react';
 import { UseFieldArrayReturn, FieldValues, FieldArrayWithId, UseFormWatch, UseFormSetValue } from 'react-hook-form';
 
-interface TeamMembersSectionProps<TFieldValues extends FieldValues = FieldValues> {
+interface TeamMembersSectionProps<TFieldValues extends FieldValues> {
   teamMembers: any[];
   teamMemberFields: FieldArrayWithId<TFieldValues, "teamMembers", "id">[];
   setValue: UseFormSetValue<TFieldValues>;
@@ -23,7 +23,7 @@ interface TeamMembersSectionProps<TFieldValues extends FieldValues = FieldValues
   };
 }
 
-const TeamMembersSection = <TFieldValues extends FieldValues = FieldValues>({
+const TeamMembersSection = <TFieldValues extends FieldValues>({
   teamMembers,
   teamMemberFields,
   setValue,
