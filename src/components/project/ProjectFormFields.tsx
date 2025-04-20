@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,7 +13,7 @@ export type FormValues = {
   endDate: string;
   budget: string | number;
   teamMembers: { memberId: string }[];
-}
+};
 
 interface ProjectFormFieldsProps {
   register: UseFormRegister<FormValues>;
@@ -88,3 +89,4 @@ const ProjectFormFields: React.FC<ProjectFormFieldsProps> = ({
 };
 
 export default ProjectFormFields;
+

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -18,7 +19,7 @@ export type FormValues = {
   endDate: string;
   budget: string | number;
   teamMembers: { memberId: string }[];
-}
+};
 
 interface TeamMembersSectionProps {
   teamMembers: any[];
@@ -108,3 +109,4 @@ const TeamMembersSection: React.FC<TeamMembersSectionProps> = ({
 };
 
 export default TeamMembersSection;
+
