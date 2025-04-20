@@ -37,8 +37,18 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
     appUsers,
     isLoadingUsers
   } = useTaskForm(editingTask, currentProjectId);
-  
+
+  // Set initial projectId value when: dialog opens, or currentProjectId changes, and only if not editing
   useEffect(() => {
+    if (open && !editingTask && currentProjectId) {
+      setValue('projectId', currentProjectId);
+    }
+    // If dialog closed and not editing, reset form
+    if (!open && !editingTask) {
+      reset();
+      setSelectedMember(undefined);
+    }
+    // If editing, always update form fields properly
     if (editingTask) {
       setValue('title', editingTask.title);
       setValue('description', editingTask.description);
@@ -46,15 +56,9 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
       setValue('deadline', format(new Date(editingTask.deadline), "yyyy-MM-dd'T'HH:mm"));
       setValue('projectId', editingTask.projectId || '');
       setSelectedMember(editingTask.assignedToId);
-    } else {
-      if (currentProjectId) {
-        setValue('projectId', currentProjectId);
-      }
-      reset();
-      setSelectedMember(undefined);
     }
-  }, [editingTask, currentProjectId, setValue, reset, setSelectedMember]);
-  
+  }, [open, editingTask, currentProjectId, setValue, reset, setSelectedMember]);
+
   const onSubmit = (data: any) => {
     if (isEditMode && editingTask) {
       updateTask(editingTask.id, {
@@ -72,7 +76,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
         deadline: new Date(data.deadline),
         status: 'To Do',
         userId: user?.id || '',
-        projectId: data.projectId === "none" ? undefined : data.projectId,
+        projectId: data.projectId === "none" ? undefined : data.projectId, // Now always set
         assignedToId: selectedMember === "unassigned" ? undefined : selectedMember,
         assignedToName: selectedMember && selectedMember !== "unassigned" ? 
           appUsers?.find(m => m.id === selectedMember)?.name : undefined
@@ -125,3 +129,4 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
 };
 
 export default CreateTaskDialog;
+
