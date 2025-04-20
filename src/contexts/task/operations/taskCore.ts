@@ -201,8 +201,8 @@ export const deleteTask = async (
   try {
     if (!user) return;
 
-    const taskToDelete = projects.flatMap(p => p.tasks).find(t => t.id === taskId) || 
-                        tasks.find(t => t.id === taskId);
+    // Find the task to get its project ID before deleting
+    const taskToDelete = projects.flatMap(p => p.tasks).find(t => t.id === taskId);
     const projectId = taskToDelete?.projectId;
 
     const { error } = await supabase
@@ -217,8 +217,10 @@ export const deleteTask = async (
       return;
     }
 
+    // Remove from tasks array
     setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
     
+    // Also remove from project if it belongs to one
     if (projectId) {
       setProjects(prevProjects => {
         return prevProjects.map(project => {
