@@ -49,9 +49,9 @@ const TeamMembersSection = <TFieldValues extends FieldValues>({
         <div key={field.id} className="flex items-center gap-2">
           <Select
             onValueChange={(value) => {
-              setValue(`teamMembers.${index}.memberId` as Path<TFieldValues>, value);
+              setValue(`teamMembers.${index}.memberId` as unknown as Path<TFieldValues>, value);
             }}
-            value={watch(`teamMembers.${index}.memberId` as Path<TFieldValues>)}
+            value={watch(`teamMembers.${index}.memberId` as unknown as Path<TFieldValues>)}
           >
             <SelectTrigger className="flex-1">
               <SelectValue placeholder="Select team member" />

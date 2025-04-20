@@ -68,7 +68,7 @@ const ProjectTasksSection = <TFieldValues extends FieldValues>({
           <div className="space-y-2">
             <Label>Task Title</Label>
             <Input
-              {...register(`tasks.${index}.title` as Path<TFieldValues>)}
+              {...register(`tasks.${index}.title` as unknown as Path<TFieldValues>)}
               placeholder="Task title"
             />
           </div>
@@ -76,7 +76,7 @@ const ProjectTasksSection = <TFieldValues extends FieldValues>({
           <div className="space-y-2">
             <Label>Description</Label>
             <Textarea
-              {...register(`tasks.${index}.description` as Path<TFieldValues>)}
+              {...register(`tasks.${index}.description` as unknown as Path<TFieldValues>)}
               placeholder="Task description"
             />
           </div>
@@ -86,9 +86,9 @@ const ProjectTasksSection = <TFieldValues extends FieldValues>({
               <Label>Priority</Label>
               <Select
                 onValueChange={(value: TaskPriority) => {
-                  setValue(`tasks.${index}.priority` as Path<TFieldValues>, value);
+                  setValue(`tasks.${index}.priority` as unknown as Path<TFieldValues>, value);
                 }}
-                value={watch(`tasks.${index}.priority` as Path<TFieldValues>)}
+                value={watch(`tasks.${index}.priority` as unknown as Path<TFieldValues>)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select priority" />
@@ -105,7 +105,7 @@ const ProjectTasksSection = <TFieldValues extends FieldValues>({
               <Label>Deadline</Label>
               <Input
                 type="date"
-                {...register(`tasks.${index}.deadline` as Path<TFieldValues>)}
+                {...register(`tasks.${index}.deadline` as unknown as Path<TFieldValues>)}
               />
             </div>
           </div>

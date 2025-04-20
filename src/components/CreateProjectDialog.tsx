@@ -111,7 +111,7 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
         </DialogHeader>
         
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <ProjectFormFields 
+          <ProjectFormFields
             register={register}
             errors={errors}
             editingProject={editingProject}
