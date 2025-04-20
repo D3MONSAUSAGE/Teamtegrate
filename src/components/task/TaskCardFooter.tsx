@@ -29,11 +29,11 @@ const TaskCardFooter: React.FC<TaskCardFooterProps> = ({
 }) => {
   const getStatusColor = (status: TaskStatus) => {
     switch(status) {
-      case 'To Do': return 'bg-slate-500';
-      case 'In Progress': return 'bg-blue-500';
-      case 'Pending': return 'bg-yellow-500';
-      case 'Completed': return 'bg-green-500';
-      default: return 'bg-slate-500';
+      case 'To Do': return 'bg-slate-500 dark:bg-slate-600';
+      case 'In Progress': return 'bg-blue-500 dark:bg-blue-600';
+      case 'Pending': return 'bg-yellow-500 dark:bg-yellow-600';
+      case 'Completed': return 'bg-green-500 dark:bg-green-600';
+      default: return 'bg-slate-500 dark:bg-slate-600';
     }
   };
 
@@ -49,7 +49,7 @@ const TaskCardFooter: React.FC<TaskCardFooterProps> = ({
         value={status} 
         onValueChange={handleStatusChange}
       >
-        <SelectTrigger className="w-[140px]">
+        <SelectTrigger className="w-[140px] dark:bg-card">
           <SelectValue>
             <Badge className={cn("px-2 py-1", getStatusColor(status))}>
               {status}
@@ -67,7 +67,7 @@ const TaskCardFooter: React.FC<TaskCardFooterProps> = ({
       {commentCount > 0 && (
         <button
           onClick={onShowComments}
-          className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700"
+          className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
         >
           <MessageCircle className="h-3 w-3" />
           {commentCount}

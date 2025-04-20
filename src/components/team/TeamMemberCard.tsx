@@ -35,15 +35,15 @@ const TeamMemberCard: React.FC<TeamMemberCardProps> = ({
         <div className={`flex items-start ${isMobile ? 'flex-col' : 'justify-between'} mb-4`}>
           <div className="flex items-center mb-2">
             <div 
-              className="h-10 w-10 mr-4 rounded-full bg-gray-200 flex items-center justify-center font-semibold text-gray-600 flex-shrink-0"
+              className="h-10 w-10 mr-4 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center font-semibold text-gray-600 dark:text-gray-200 flex-shrink-0"
             >
               {member.name.substring(0, 1).toUpperCase()}
             </div>
             <div className="min-w-0 flex-1">
               <h3 className="font-semibold truncate">{member.name}</h3>
               <div className={`flex ${isMobile ? 'flex-col' : 'items-center space-x-2'}`}>
-                <p className="text-sm text-gray-500 truncate">{member.role}</p>
-                <p className={`text-xs text-gray-400 truncate ${isMobile ? 'mt-1' : ''}`}>{member.email}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{member.role}</p>
+                <p className={`text-xs text-gray-400 dark:text-gray-500 truncate ${isMobile ? 'mt-1' : ''}`}>{member.email}</p>
               </div>
             </div>
           </div>
@@ -52,7 +52,7 @@ const TeamMemberCard: React.FC<TeamMemberCardProps> = ({
             <Button 
               variant="ghost" 
               size="icon"
-              className="text-red-500 hover:text-red-700 hover:bg-red-50 ml-2"
+              className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 dark:hover:text-red-400 ml-2"
               onClick={() => onRemove(member.id)}
               disabled={isRemoving}
             >
@@ -75,13 +75,13 @@ const TeamMemberCard: React.FC<TeamMemberCardProps> = ({
           </div>
           
           <div className="grid grid-cols-2 gap-2">
-            <div className="bg-blue-50 p-2 rounded-md">
-              <div className="text-xs text-gray-500">Due Today</div>
+            <div className="bg-blue-50 dark:bg-blue-900/20 p-2 rounded-md text-blue-800 dark:text-blue-200">
+              <div className="text-xs text-gray-500 dark:text-gray-400">Due Today</div>
               <div className="font-semibold">{member.dueTodayTasks}</div>
             </div>
             
-            <div className="bg-purple-50 p-2 rounded-md">
-              <div className="text-xs text-gray-500">Projects</div>
+            <div className="bg-purple-50 dark:bg-purple-900/20 p-2 rounded-md text-purple-800 dark:text-purple-200">
+              <div className="text-xs text-gray-500 dark:text-gray-400">Projects</div>
               <div className="font-semibold">{member.projects}</div>
             </div>
           </div>

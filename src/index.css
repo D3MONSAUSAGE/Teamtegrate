@@ -66,7 +66,7 @@
     --accent-foreground: 127 85% 90%;
 
     --destructive: 348 75% 57%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive-foreground: 0 0% 98%;
 
     --border: 222 15% 25%;
     --input: 222 15% 18%;
@@ -132,26 +132,6 @@ button.bg-secondary {
 }
 .dark button.bg-secondary {
   @apply from-secondary to-accent text-secondary-foreground;
-}
-
-/* Colored pills */
-.priority-low {
-  @apply bg-emerald-100 text-emerald-800 border-emerald-300;
-}
-.priority-medium {
-  @apply bg-lime-200 text-lime-900 border-lime-300;
-}
-.priority-high {
-  @apply bg-red-100 text-red-800 border-red-300;
-}
-.dark .priority-low {
-  @apply bg-emerald-700/30 text-emerald-200 border-emerald-500/40;
-}
-.dark .priority-medium {
-  @apply bg-lime-700/30 text-lime-200 border-lime-500/40;
-}
-.dark .priority-high {
-  @apply bg-red-700/30 text-red-200 border-red-500/40;
 }
 
 /* Status - natural, themed look */
@@ -234,4 +214,3 @@ textarea {
 .hover-scale {
   @apply transition-transform duration-200 hover:scale-105;
 }
-
