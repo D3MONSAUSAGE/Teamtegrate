@@ -4,8 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { playSuccessSound, playErrorSound } from '@/utils/sounds';
 import { v4 as uuidv4 } from 'uuid';
-import { ProjectInput } from '../TaskContext';
-import { formatNewProjectTasks } from './projectUtils';
+import { ProjectInput } from '../../TaskContext';
+import { formatNewProjectTasks } from '../projectUtils';
 
 export const addProject = async (
   project: ProjectInput,
@@ -96,86 +96,5 @@ export const addProject = async (
     console.error('Error in addProject:', error);
     playErrorSound();
     toast.error('Failed to create project');
-  }
-};
-
-export const updateProject = async (
-  projectId: string,
-  updates: Partial<Project>,
-  user: User | null,
-  setProjects: React.Dispatch<React.SetStateAction<Project[]>>
-) => {
-  try {
-    if (!user) return;
-
-    const now = new Date();
-    const updatedFields: any = {
-      updated_at: now.toISOString()
-    };
-
-    if (updates.title !== undefined) updatedFields.title = updates.title;
-    if (updates.description !== undefined) updatedFields.description = updates.description;
-    if (updates.startDate !== undefined) updatedFields.start_date = (updates.startDate instanceof Date ? updates.startDate : new Date(updates.startDate)).toISOString();
-    if (updates.endDate !== undefined) updatedFields.end_date = (updates.endDate instanceof Date ? updates.endDate : new Date(updates.endDate)).toISOString();
-    if (updates.budget !== undefined) updatedFields.budget = updates.budget;
-    if (updates.is_completed !== undefined) updatedFields.is_completed = updates.is_completed;
-
-    const { error } = await supabase
-      .from('projects')
-      .update(updatedFields)
-      .eq('id', projectId);
-
-    if (error) {
-      console.error('Error updating project:', error);
-      playErrorSound();
-      toast.error('Failed to update project');
-      return;
-    }
-
-    setProjects(prevProjects => prevProjects.map(project => {
-      if (project.id === projectId) {
-        return { ...project, ...updates, updatedAt: now };
-      }
-      return project;
-    }));
-
-    toast.success('Project updated successfully!');
-  } catch (error) {
-    console.error('Error in updateProject:', error);
-    playErrorSound();
-    toast.error('Failed to update project');
-  }
-};
-
-export const deleteProject = async (
-  projectId: string,
-  user: User | null,
-  tasks: any[],
-  setTasks: React.Dispatch<React.SetStateAction<any[]>>,
-  setProjects: React.Dispatch<React.SetStateAction<Project[]>>
-) => {
-  try {
-    if (!user) return;
-
-    const { error } = await supabase
-      .from('projects')
-      .delete()
-      .eq('id', projectId);
-
-    if (error) {
-      console.error('Error deleting project:', error);
-      playErrorSound();
-      toast.error('Failed to delete project');
-      return;
-    }
-
-    setProjects(prevProjects => prevProjects.filter(project => project.id !== projectId));
-    setTasks(prevTasks => prevTasks.filter(task => task.projectId !== projectId));
-
-    toast.success('Project deleted successfully!');
-  } catch (error) {
-    console.error('Error in deleteProject:', error);
-    playErrorSound();
-    toast.error('Failed to delete project');
   }
 };
