@@ -99,18 +99,30 @@ const TasksPage = () => {
       </div>
       
       <Tabs defaultValue="todo" className="w-full">
-        <div className="overflow-x-auto pb-2">
-          <TabsList className="mb-4 w-full flex-nowrap">
-            <TabsTrigger value="todo" className={`${isMobile ? 'text-xs' : ''}`}>
+        <div className="overflow-x-auto pb-2 no-scrollbar">
+          <TabsList className="mb-4 w-full flex-nowrap justify-start px-0 h-auto">
+            <TabsTrigger 
+              value="todo" 
+              className={`${isMobile ? 'text-xs py-1.5 px-2' : ''} whitespace-nowrap`}
+            >
               To Do ({todoTasks.length})
             </TabsTrigger>
-            <TabsTrigger value="inprogress" className={`${isMobile ? 'text-xs' : ''}`}>
+            <TabsTrigger 
+              value="inprogress" 
+              className={`${isMobile ? 'text-xs py-1.5 px-2' : ''} whitespace-nowrap`}
+            >
               In Progress ({inProgressTasks.length})
             </TabsTrigger>
-            <TabsTrigger value="pending" className={`${isMobile ? 'text-xs' : ''}`}>
+            <TabsTrigger 
+              value="pending" 
+              className={`${isMobile ? 'text-xs py-1.5 px-2' : ''} whitespace-nowrap`}
+            >
               Pending ({pendingTasks.length})
             </TabsTrigger>
-            <TabsTrigger value="completed" className={`${isMobile ? 'text-xs' : ''}`}>
+            <TabsTrigger 
+              value="completed" 
+              className={`${isMobile ? 'text-xs py-1.5 px-2' : ''} whitespace-nowrap`}
+            >
               Completed ({completedTasks.length})
             </TabsTrigger>
           </TabsList>
@@ -124,8 +136,8 @@ const TasksPage = () => {
               ))}
             </div>
           ) : (
-            <div className="bg-white p-6 rounded-lg border text-center">
-              <p className="text-gray-500">No to-do tasks</p>
+            <div className="bg-white dark:bg-card p-6 rounded-lg border text-center">
+              <p className="text-gray-500 dark:text-gray-300">No to-do tasks</p>
               <Button 
                 variant="outline" 
                 size="sm" 
