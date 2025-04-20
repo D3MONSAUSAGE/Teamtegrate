@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { X, Plus } from 'lucide-react';
-import { UseFieldArrayReturn, FieldValues, FieldArrayWithId, UseFormWatch, UseFormSetValue, Path } from 'react-hook-form';
+import { UseFieldArrayReturn, FieldValues, FieldArrayWithId, UseFormWatch, UseFormSetValue, Path, FieldPath } from 'react-hook-form';
 
 interface TeamMembersSectionProps<TFieldValues extends FieldValues> {
   teamMembers: any[];
@@ -48,8 +48,11 @@ const TeamMembersSection = <TFieldValues extends FieldValues>({
       {teamMemberFields.map((field, index) => (
         <div key={field.id} className="flex items-center gap-2">
           <Select
-            onValueChange={(value) => setValue(`teamMembers.${index}.memberId` as Path<TFieldValues>, value as any)}
-            value={watch(`teamMembers.${index}.memberId` as Path<TFieldValues>)}
+            onValueChange={(value) => {
+              const path = `teamMembers.${index}.memberId` as FieldPath<TFieldValues>;
+              setValue(path, value as any);
+            }}
+            value={watch(`teamMembers.${index}.memberId` as FieldPath<TFieldValues>)}
           >
             <SelectTrigger className="flex-1">
               <SelectValue placeholder="Select team member" />
