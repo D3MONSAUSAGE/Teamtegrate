@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -126,7 +127,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
                     "flex items-center gap-3 px-4 py-2.5 rounded-lg text-base font-medium transition-all duration-200 focus:outline-none",
                     isActiveItem
                       ? "bg-primary/90 text-white shadow-md"
-                      : "bg-white text-gray-700 hover:bg-primary/10 hover:text-primary focus:ring-2 focus:ring-primary/60"
+                      : "bg-white text-black hover:bg-primary/10 hover:text-primary focus:ring-2 focus:ring-primary/60"
                   )}
                   style={{
                     letterSpacing: '0.02em'
@@ -139,7 +140,6 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
                         ? "text-white"
                         : "text-primary/70 group-hover:text-primary group-focus:text-primary"
                     )}
-                    // Icon is a react element, so we spread props below
                   >
                     {React.cloneElement(item.icon as JSX.Element, {
                       className: cn(
@@ -153,7 +153,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
                   <span
                     className={cn(
                       "ml-2",
-                      isActiveItem ? "text-white font-bold" : "text-primary/90 font-semibold"
+                      isActiveItem ? "text-white font-bold" : "text-black font-semibold" // changed to black text here
                     )}
                   >
                     {item.name}
@@ -178,3 +178,4 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
 };
 
 export default Sidebar;
+
