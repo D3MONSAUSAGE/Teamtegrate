@@ -46,7 +46,7 @@ const TeamMembersSection = <T,>({
             <div key={field.id} className="flex items-center gap-2">
               <Select
                 onValueChange={(value) => setValue(`teamMembers.${index}.memberId`, value)}
-                value={watch(`teamMembers.${index}.memberId` as any) || ""}
+                value={String(watch(`teamMembers.${index}.memberId` as any) || "")}
               >
                 <SelectTrigger className="flex-1">
                   <SelectValue placeholder="Select team member" />
