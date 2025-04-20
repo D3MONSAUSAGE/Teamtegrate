@@ -76,7 +76,7 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({ open, onOpenC
       tasks: data.tasks.map((task: any) => ({
         title: task.title,
         description: task.description,
-        priority: task.priority as TaskPriority,
+        priority: task.priority as TaskPriority, // Ensure type safety with explicit cast
         deadline: new Date(task.deadline),
         status: 'To Do' as const,
       })),
@@ -215,7 +215,7 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({ open, onOpenC
                 onClick={() => appendTask({ 
                   title: '', 
                   description: '', 
-                  priority: 'Medium',
+                  priority: 'Medium' as TaskPriority, // Explicitly cast to TaskPriority
                   deadline: '' 
                 })}
               >
@@ -256,7 +256,7 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({ open, onOpenC
                   <div className="space-y-2">
                     <Label>Priority</Label>
                     <Select
-                      onValueChange={(value) => setValue(`tasks.${index}.priority`, value)}
+                      onValueChange={(value: TaskPriority) => setValue(`tasks.${index}.priority`, value)}
                       value={watch(`tasks.${index}.priority`)}
                     >
                       <SelectTrigger>
