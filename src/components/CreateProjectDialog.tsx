@@ -93,12 +93,12 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({ open, onOpenC
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>{isEditMode ? 'Edit Project' : 'Create New Project'}</DialogTitle>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 overflow-y-auto pr-2 pb-4">
           <div className="space-y-2">
             <Label htmlFor="title">Title <span className="text-red-500">*</span></Label>
             <Input
@@ -174,33 +174,35 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({ open, onOpenC
               </Button>
             </div>
             
-            {teamMemberFields.map((field, index) => (
-              <div key={field.id} className="flex items-center gap-2">
-                <Select
-                  onValueChange={(value) => setValue(`teamMembers.${index}.memberId`, value)}
-                  value={watch(`teamMembers.${index}.memberId`)}
-                >
-                  <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Select team member" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {teamMembers.map((member) => (
-                      <SelectItem key={member.id} value={member.id}>
-                        {member.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button 
-                  type="button" 
-                  variant="ghost" 
-                  size="icon"
-                  onClick={() => removeTeamMember(index)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
+            <div className="max-h-40 overflow-y-auto">
+              {teamMemberFields.map((field, index) => (
+                <div key={field.id} className="flex items-center gap-2 mb-2">
+                  <Select
+                    onValueChange={(value) => setValue(`teamMembers.${index}.memberId`, value)}
+                    value={watch(`teamMembers.${index}.memberId`)}
+                  >
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Select team member" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {teamMembers.map((member) => (
+                        <SelectItem key={member.id} value={member.id}>
+                          {member.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={() => removeTeamMember(index)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
           </div>
 
           <Separator className="my-4" />
@@ -224,65 +226,67 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({ open, onOpenC
               </Button>
             </div>
             
-            {taskFields.map((field, index) => (
-              <div key={field.id} className="space-y-4 p-4 border rounded-md relative">
-                <Button 
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-2 top-2"
-                  onClick={() => removeTask(index)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-                
-                <div className="space-y-2">
-                  <Label>Task Title</Label>
-                  <Input
-                    {...register(`tasks.${index}.title`)}
-                    placeholder="Task title"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label>Description</Label>
-                  <Textarea
-                    {...register(`tasks.${index}.description`)}
-                    placeholder="Task description"
-                  />
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
+            <div className="max-h-60 overflow-y-auto">
+              {taskFields.map((field, index) => (
+                <div key={field.id} className="space-y-4 p-4 border rounded-md relative mb-3">
+                  <Button 
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-2 top-2"
+                    onClick={() => removeTask(index)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                  
                   <div className="space-y-2">
-                    <Label>Priority</Label>
-                    <Select
-                      onValueChange={(value: TaskPriority) => setValue(`tasks.${index}.priority`, value)}
-                      value={watch(`tasks.${index}.priority`)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select priority" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Low">Low</SelectItem>
-                        <SelectItem value="Medium">Medium</SelectItem>
-                        <SelectItem value="High">High</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Label>Task Title</Label>
+                    <Input
+                      {...register(`tasks.${index}.title`)}
+                      placeholder="Task title"
+                    />
                   </div>
                   
                   <div className="space-y-2">
-                    <Label>Deadline</Label>
-                    <Input
-                      type="date"
-                      {...register(`tasks.${index}.deadline`)}
+                    <Label>Description</Label>
+                    <Textarea
+                      {...register(`tasks.${index}.description`)}
+                      placeholder="Task description"
                     />
                   </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Priority</Label>
+                      <Select
+                        onValueChange={(value: TaskPriority) => setValue(`tasks.${index}.priority`, value)}
+                        value={watch(`tasks.${index}.priority`)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select priority" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Low">Low</SelectItem>
+                          <SelectItem value="Medium">Medium</SelectItem>
+                          <SelectItem value="High">High</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label>Deadline</Label>
+                      <Input
+                        type="date"
+                        {...register(`tasks.${index}.deadline`)}
+                      />
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
           
-          <div className="flex justify-end gap-2 pt-4">
+          <div className="flex justify-end gap-2 pt-4 sticky bottom-0 bg-background">
             <Button 
               type="button" 
               variant="outline" 
