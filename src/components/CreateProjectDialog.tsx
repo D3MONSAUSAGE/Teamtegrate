@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -72,7 +73,7 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({ open, onOpenC
   const onSubmit = (data: FormValues) => {
     if (!user) return;
     
-    const projectData: Partial<Project> = {
+    const projectData: Omit<Project, 'id' | 'tasks' | 'createdAt' | 'updatedAt'> = {
       title: data.title,
       description: data.description,
       startDate: new Date(data.startDate),
@@ -80,6 +81,7 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({ open, onOpenC
       managerId: user.id,
       budget: data.budget ? Number(data.budget) : undefined,
       teamMembers: data.teamMembers.map(tm => tm.memberId),
+      is_completed: false
     };
     
     const taskData = data.tasks.map(task => ({
@@ -99,7 +101,7 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({ open, onOpenC
       addProject({
         ...projectData,
         tasks: taskData as unknown as Task[]
-      });
+      } as Project);
     }
     
     onOpenChange(false);

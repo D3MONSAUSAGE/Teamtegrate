@@ -90,7 +90,7 @@ const ProjectTasksSection = <T,>({
                     <Label>Priority</Label>
                     <Select
                       onValueChange={(value: TaskPriority) => setValue(`tasks.${index}.priority`, value)}
-                      value={watch(`tasks.${index}.priority` as any) as TaskPriority || 'Medium'}
+                      value={(watch(`tasks.${index}.priority` as any) as TaskPriority) || 'Medium'}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select priority" />
