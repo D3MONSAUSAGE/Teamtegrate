@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { X, Plus } from 'lucide-react';
-import { UseFieldArrayReturn, FieldValues, FieldArrayWithId, UseFormWatch, UseFormSetValue, FieldPath } from 'react-hook-form';
+import { UseFieldArrayReturn, FieldValues, FieldArrayWithId, UseFormWatch, UseFormSetValue } from 'react-hook-form';
 
 interface TeamMembersSectionProps<TFieldValues extends FieldValues> {
   teamMembers: any[];
@@ -49,10 +49,9 @@ const TeamMembersSection = <TFieldValues extends FieldValues>({
         <div key={field.id} className="flex items-center gap-2">
           <Select
             onValueChange={(value) => {
-              const path = `teamMembers.${index}.memberId` as unknown as FieldPath<TFieldValues>;
-              setValue(path, value as any);
+              setValue(`teamMembers.${index}.memberId` as any, value);
             }}
-            value={watch(`teamMembers.${index}.memberId` as unknown as FieldPath<TFieldValues>)}
+            value={watch(`teamMembers.${index}.memberId` as any)}
           >
             <SelectTrigger className="flex-1">
               <SelectValue placeholder="Select team member" />
