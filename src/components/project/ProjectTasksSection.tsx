@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Trash, Plus, ListTodo } from 'lucide-react';
 import { UseFormRegister, UseFormSetValue, UseFormWatch } from 'react-hook-form';
-import { FormValues } from '../CreateProjectDialog';
+import { FormValues } from './ProjectFormTypes';
 import {
   Select,
   SelectContent,

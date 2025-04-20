@@ -11,14 +11,16 @@ import {
   deleteTask, 
   assignTaskToProject, 
   assignTaskToUser
-} from './operations';
+} from './operations/taskCore';
 import { 
   addProject, 
   updateProject, 
-  deleteProject, 
+  deleteProject 
+} from './operations/project';
+import { 
   addTeamMemberToProject, 
-  removeTeamMemberFromProject
-} from './projectOperations';
+  removeTeamMemberFromProject 
+} from './operations/projectTeam';
 import { 
   addCommentToTask, 
   addTagToTask, 

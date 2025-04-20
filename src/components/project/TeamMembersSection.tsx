@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { UseFormWatch, UseFormSetValue } from 'react-hook-form';
-import { FormValues } from '../CreateProjectDialog';
+import { FormValues } from './ProjectFormTypes';
 
 interface TeamMember {
   id: string;

@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Project } from '@/types';
 import { UseFormRegister, FieldErrors } from 'react-hook-form';
-import { FormValues } from '../CreateProjectDialog';
+import { FormValues } from './ProjectFormTypes';
 
 interface ProjectFormFieldsProps {
   register: UseFormRegister<FormValues>;

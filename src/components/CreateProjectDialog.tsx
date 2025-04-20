@@ -12,6 +12,9 @@ import ProjectTasksSection from './project/ProjectTasksSection';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ProjectDialogProps } from './project/ProjectFormTypes';
 import { useProjectForm } from '@/hooks/useProjectForm';
+import { FormValues } from './project/ProjectFormTypes';
+import { TaskPriority, TaskStatus } from '@/types';
+import { format } from 'date-fns';
 
 const CreateProjectDialog: React.FC<ProjectDialogProps> = ({ 
   open, 
