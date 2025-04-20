@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { X, Plus } from 'lucide-react';
 import { TaskPriority } from '@/types';
-import { UseFormRegister, UseFormSetValue, UseFormWatch, FieldArrayWithId } from 'react-hook-form';
+import { UseFormRegister, UseFormSetValue, UseFormWatch, FieldArrayWithId, Path } from 'react-hook-form';
 import { FormValues } from '../CreateProjectDialog';
 
 interface ProjectTasksSectionProps<TFormValues extends FormValues> {
@@ -63,7 +63,7 @@ function ProjectTasksSection<TFormValues extends FormValues>({
           <div className="space-y-2">
             <Label>Task Title</Label>
             <Input
-              {...register(`tasks.${index}.title` as any)}
+              {...register(`tasks.${index}.title` as Path<TFormValues>)}
               placeholder="Task title"
             />
           </div>
@@ -71,7 +71,7 @@ function ProjectTasksSection<TFormValues extends FormValues>({
           <div className="space-y-2">
             <Label>Description</Label>
             <Textarea
-              {...register(`tasks.${index}.description` as any)}
+              {...register(`tasks.${index}.description` as Path<TFormValues>)}
               placeholder="Task description"
             />
           </div>
@@ -80,8 +80,10 @@ function ProjectTasksSection<TFormValues extends FormValues>({
             <div className="space-y-2">
               <Label>Priority</Label>
               <Select
-                onValueChange={(value: TaskPriority) => setValue(`tasks.${index}.priority` as any, value)}
-                value={(watch(`tasks.${index}.priority` as any) as TaskPriority) || 'Medium'}
+                onValueChange={(value: TaskPriority) => {
+                  setValue(`tasks.${index}.priority` as Path<TFormValues>, value as any);
+                }}
+                value={(watch(`tasks.${index}.priority` as Path<TFormValues>) || 'Medium') as TaskPriority}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select priority" />
@@ -98,7 +100,7 @@ function ProjectTasksSection<TFormValues extends FormValues>({
               <Label>Deadline</Label>
               <Input
                 type="date"
-                {...register(`tasks.${index}.deadline` as any)}
+                {...register(`tasks.${index}.deadline` as Path<TFormValues>)}
               />
             </div>
           </div>

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { X, Plus } from 'lucide-react';
-import { UseFieldArrayReturn, FieldArrayWithId, UseFormWatch, UseFormSetValue } from 'react-hook-form';
+import { UseFieldArrayReturn, FieldArrayWithId, UseFormWatch, UseFormSetValue, Path, PathValue } from 'react-hook-form';
 import { FormValues } from '../CreateProjectDialog';
 
 interface TeamMember {
@@ -51,8 +51,10 @@ function TeamMembersSection<TFormValues extends FormValues>({
       {teamMemberFields.map((field, index) => (
         <div key={field.id} className="flex items-center gap-2">
           <Select
-            onValueChange={(value: string) => setValue(`teamMembers.${index}.memberId` as any, value)}
-            value={(watch(`teamMembers.${index}.memberId` as any) as string) || ''}
+            onValueChange={(value: string) => {
+              setValue(`teamMembers.${index}.memberId` as Path<TFormValues>, value as any);
+            }}
+            value={(watch(`teamMembers.${index}.memberId` as Path<TFormValues>) || '') as string}
           >
             <SelectTrigger className="flex-1">
               <SelectValue placeholder="Select team member" />
