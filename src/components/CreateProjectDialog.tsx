@@ -95,9 +95,9 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
     };
 
     if (isEditMode && editingProject) {
-      updateProject(editingProject.id, projectData);
+      updateProject(editingProject.id, projectData as any);
     } else {
-      addProject(projectData);
+      addProject(projectData as any);
     }
     onOpenChange(false);
     reset();
