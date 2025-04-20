@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -80,14 +81,7 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({ open, onOpenC
       endDate: new Date(data.endDate),
       managerId: user.id,
       budget: data.budget ? Number(data.budget) : undefined,
-      teamMembers: data.teamMembers.map((tm: { memberId: string }) => tm.memberId),
-      tasks: data.tasks.map((task: any) => ({
-        title: task.title,
-        description: task.description,
-        priority: task.priority as TaskPriority,
-        deadline: new Date(task.deadline),
-        status: 'To Do' as const,
-      })),
+      teamMembers: data.teamMembers.map(tm => tm.memberId),
     };
 
     if (isEditMode && editingProject) {
@@ -95,6 +89,7 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({ open, onOpenC
     } else {
       addProject(projectData);
     }
+    
     onOpenChange(false);
     reset();
   };
@@ -107,7 +102,7 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({ open, onOpenC
         </DialogHeader>
         
         <ScrollArea className="pr-4 flex-1 overflow-y-auto">
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" id="project-form">
             <ProjectFormFields
               register={register}
               errors={errors}
