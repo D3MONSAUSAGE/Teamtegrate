@@ -10,23 +10,26 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { X, Plus } from 'lucide-react';
-import { UseFieldArrayReturn } from 'react-hook-form';
+import { UseFieldArrayReturn, FieldValues, FieldArrayWithId, UseFormWatch, UseFormSetValue } from 'react-hook-form';
 
-interface TeamMembersSectionProps {
+interface TeamMembersSectionProps<TFieldValues extends FieldValues = FieldValues> {
   teamMembers: any[];
-  teamMemberFields: any[];
-  setValue: (name: string, value: any) => void;
-  watch: any;
-  fieldArrayProps: Pick<UseFieldArrayReturn, 'append' | 'remove'>;
+  teamMemberFields: FieldArrayWithId<TFieldValues, "teamMembers", "id">[];
+  setValue: UseFormSetValue<TFieldValues>;
+  watch: UseFormWatch<TFieldValues>;
+  fieldArrayProps: {
+    append: UseFieldArrayReturn<TFieldValues, "teamMembers", "id">["append"];
+    remove: UseFieldArrayReturn<TFieldValues, "teamMembers", "id">["remove"];
+  };
 }
 
-const TeamMembersSection: React.FC<TeamMembersSectionProps> = ({
+const TeamMembersSection = <TFieldValues extends FieldValues = FieldValues>({
   teamMembers,
   teamMemberFields,
   setValue,
   watch,
   fieldArrayProps: { append, remove }
-}) => {
+}: TeamMembersSectionProps<TFieldValues>) => {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -35,7 +38,7 @@ const TeamMembersSection: React.FC<TeamMembersSectionProps> = ({
           type="button" 
           variant="outline" 
           size="sm"
-          onClick={() => append({ memberId: '' })}
+          onClick={() => append({ memberId: '' } as any)}
         >
           <Plus className="h-4 w-4 mr-1" />
           Add Member
@@ -45,8 +48,8 @@ const TeamMembersSection: React.FC<TeamMembersSectionProps> = ({
       {teamMemberFields.map((field, index) => (
         <div key={field.id} className="flex items-center gap-2">
           <Select
-            onValueChange={(value) => setValue(`teamMembers.${index}.memberId`, value)}
-            value={watch(`teamMembers.${index}.memberId`)}
+            onValueChange={(value) => setValue(`teamMembers.${index}.memberId` as any, value)}
+            value={watch(`teamMembers.${index}.memberId` as any)}
           >
             <SelectTrigger className="flex-1">
               <SelectValue placeholder="Select team member" />

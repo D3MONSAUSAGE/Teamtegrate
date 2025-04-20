@@ -19,6 +19,16 @@ interface CreateProjectDialogProps {
   editingProject?: Project;
 }
 
+type FormValues = {
+  title: string;
+  description: string;
+  startDate: string;
+  endDate: string;
+  budget: string | number;
+  teamMembers: { memberId: string }[];
+  tasks: { title: string; description: string; priority: TaskPriority; deadline: string }[];
+}
+
 const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({ 
   open, 
   onOpenChange, 
@@ -29,7 +39,7 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
   const { teamMembers } = useTeamMembers();
   const isEditMode = !!editingProject;
   
-  const { register, handleSubmit, formState: { errors }, reset, setValue, control, watch } = useForm({
+  const { register, handleSubmit, formState: { errors }, reset, setValue, control, watch } = useForm<FormValues>({
     defaultValues: {
       title: editingProject?.title || '',
       description: editingProject?.description || '',
@@ -64,7 +74,7 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
     }
   }, [editingProject, setValue, reset]);
   
-  const onSubmit = (data: any) => {
+  const onSubmit = (data: FormValues) => {
     if (!user) return;
     
     const projectData = {
@@ -74,8 +84,8 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
       endDate: new Date(data.endDate),
       managerId: user.id,
       budget: data.budget ? Number(data.budget) : undefined,
-      teamMembers: data.teamMembers.map((tm: { memberId: string }) => tm.memberId),
-      tasks: data.tasks.map((task: any) => ({
+      teamMembers: data.teamMembers.map((tm) => tm.memberId),
+      tasks: data.tasks.map((task) => ({
         title: task.title,
         description: task.description,
         priority: task.priority as TaskPriority,
@@ -109,7 +119,7 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
 
           <Separator className="my-4" />
           
-          <TeamMembersSection 
+          <TeamMembersSection<FormValues>
             teamMembers={teamMembers}
             teamMemberFields={teamMemberArray.fields}
             setValue={setValue}
@@ -122,7 +132,7 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
 
           <Separator className="my-4" />
           
-          <ProjectTasksSection 
+          <ProjectTasksSection<FormValues>
             taskFields={taskArray.fields}
             register={register}
             setValue={setValue}

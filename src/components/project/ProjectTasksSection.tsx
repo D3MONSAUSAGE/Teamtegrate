@@ -12,24 +12,27 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { X, Plus } from 'lucide-react';
-import { UseFieldArrayReturn } from 'react-hook-form';
+import { UseFieldArrayReturn, UseFormRegister, FieldValues, FieldArrayWithId, UseFormSetValue, UseFormWatch } from 'react-hook-form';
 import { TaskPriority } from '@/types';
 
-interface ProjectTasksSectionProps {
-  taskFields: any[];
-  register: any;
-  setValue: (name: string, value: any) => void;
-  watch: any;
-  fieldArrayProps: Pick<UseFieldArrayReturn, 'append' | 'remove'>;
+interface ProjectTasksSectionProps<TFieldValues extends FieldValues = FieldValues> {
+  taskFields: FieldArrayWithId<TFieldValues, "tasks", "id">[];
+  register: UseFormRegister<TFieldValues>;
+  setValue: UseFormSetValue<TFieldValues>;
+  watch: UseFormWatch<TFieldValues>;
+  fieldArrayProps: {
+    append: UseFieldArrayReturn<TFieldValues, "tasks", "id">["append"];
+    remove: UseFieldArrayReturn<TFieldValues, "tasks", "id">["remove"];
+  };
 }
 
-const ProjectTasksSection: React.FC<ProjectTasksSectionProps> = ({
+const ProjectTasksSection = <TFieldValues extends FieldValues = FieldValues>({
   taskFields,
   register,
   setValue,
   watch,
   fieldArrayProps: { append, remove }
-}) => {
+}: ProjectTasksSectionProps<TFieldValues>) => {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -43,7 +46,7 @@ const ProjectTasksSection: React.FC<ProjectTasksSectionProps> = ({
             description: '', 
             priority: 'Medium' as TaskPriority,
             deadline: '' 
-          })}
+          } as any)}
         >
           <Plus className="h-4 w-4 mr-1" />
           Add Task
@@ -65,7 +68,7 @@ const ProjectTasksSection: React.FC<ProjectTasksSectionProps> = ({
           <div className="space-y-2">
             <Label>Task Title</Label>
             <Input
-              {...register(`tasks.${index}.title`)}
+              {...register(`tasks.${index}.title` as any)}
               placeholder="Task title"
             />
           </div>
@@ -73,7 +76,7 @@ const ProjectTasksSection: React.FC<ProjectTasksSectionProps> = ({
           <div className="space-y-2">
             <Label>Description</Label>
             <Textarea
-              {...register(`tasks.${index}.description`)}
+              {...register(`tasks.${index}.description` as any)}
               placeholder="Task description"
             />
           </div>
@@ -82,8 +85,8 @@ const ProjectTasksSection: React.FC<ProjectTasksSectionProps> = ({
             <div className="space-y-2">
               <Label>Priority</Label>
               <Select
-                onValueChange={(value: TaskPriority) => setValue(`tasks.${index}.priority`, value)}
-                value={watch(`tasks.${index}.priority`)}
+                onValueChange={(value: TaskPriority) => setValue(`tasks.${index}.priority` as any, value)}
+                value={watch(`tasks.${index}.priority` as any)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select priority" />
@@ -100,7 +103,7 @@ const ProjectTasksSection: React.FC<ProjectTasksSectionProps> = ({
               <Label>Deadline</Label>
               <Input
                 type="date"
-                {...register(`tasks.${index}.deadline`)}
+                {...register(`tasks.${index}.deadline` as any)}
               />
             </div>
           </div>
