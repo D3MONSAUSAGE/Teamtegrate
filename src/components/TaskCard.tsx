@@ -20,21 +20,31 @@ interface TaskCardProps {
 const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onAssign }) => {
   const { updateTaskStatus, deleteTask } = useTask();
   const [showComments, setShowComments] = useState(false);
-  
+
+  // Define background colors for priority (soft pastel shades)
+  const getPriorityBackground = (priority: string) => {
+    switch(priority) {
+      case 'Low': return 'bg-green-100 text-green-900';
+      case 'Medium': return 'bg-amber-100 text-amber-900';
+      case 'High': return 'bg-red-100 text-red-900';
+      default: return 'bg-gray-100 text-gray-900';
+    }
+  };
+
   const isTaskOverdue = () => {
     const now = new Date();
     return task.status !== 'Completed' && task.deadline < now;
   };
-  
+
   const commentCount = task.comments?.length || 0;
 
   const handleStatusChange = (newStatus: TaskStatus) => {
     updateTaskStatus(task.id, newStatus);
   };
-  
+
   return (
     <>
-      <Card className={cn("card-hover", isTaskOverdue() && "border-red-500")}>
+      <Card className={cn("card-hover cursor-pointer", getPriorityBackground(task.priority), isTaskOverdue() && "ring-2 ring-red-500")}>
         <TaskCardHeader 
           title={task.title} 
           priority={task.priority}

@@ -64,9 +64,10 @@ body {
 
 /* Prioritize smooth shadows and subtle gradients on cards */
 .card {
-  @apply bg-white bg-gradient-to-br from-white to-purple-50 rounded-lg shadow-md border border-gray-200 transition-shadow duration-300;
+  @apply rounded-lg shadow-md border border-gray-300 transition-shadow duration-300;
 }
 
+/* When hovered or focused, slightly increase shadow */
 .card-hover {
   @apply shadow-lg translate-y-[-2px] hover:shadow-xl transition-transform duration-300;
 }
@@ -129,4 +130,3 @@ textarea {
 .bg-gradient-primary {
   background-image: linear-gradient(90deg, hsl(var(--primary)) 0%, hsl(280, 70%, 60%) 100%);
 }
-
