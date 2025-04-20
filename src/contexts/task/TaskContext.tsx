@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { Task, Project, TaskStatus, TaskPriority, DailyScore } from '@/types';
 import { useAuth } from '../AuthContext';
@@ -83,16 +84,24 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     date: new Date(),
   });
 
+  // First fetch all projects and tasks
   useEffect(() => {
     if (user) {
-      fetchTasks(user, setTasks);
-      fetchProjects(user, setProjects);
+      const loadData = async () => {
+        // Fetch projects first
+        await fetchProjects(user, setProjects);
+        // Then fetch tasks (some may belong to projects)
+        await fetchTasks(user, setTasks);
+      };
+      
+      loadData();
     } else {
       setTasks([]);
       setProjects([]);
     }
   }, [user]);
 
+  // Calculate daily score whenever tasks change
   useEffect(() => {
     if (user) {
       const score = calculateDailyScore(tasks);

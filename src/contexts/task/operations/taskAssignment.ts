@@ -1,3 +1,4 @@
+
 import { Task, User, Project } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
@@ -19,7 +20,12 @@ export const assignTaskToProject = async (
 
     // Find the task to get its current project ID
     const task = allTasks.find(t => t.id === taskId);
-    const originalProjectId = task?.projectId;
+    if (!task) {
+      console.error('Task not found:', taskId);
+      return;
+    }
+    
+    const originalProjectId = task.projectId;
 
     const { error } = await supabase
       .from('tasks')
@@ -33,12 +39,15 @@ export const assignTaskToProject = async (
       return;
     }
 
+    // Make a copy of the task with updated project ID for adding to the project
+    const updatedTask = { ...task, projectId, updatedAt: now };
+
     // Update the task in the tasks array
-    setTasks(prevTasks => prevTasks.map(task => {
-      if (task.id === taskId) {
-        return { ...task, projectId, updatedAt: now };
+    setTasks(prevTasks => prevTasks.map(t => {
+      if (t.id === taskId) {
+        return updatedTask;
       }
-      return task;
+      return t;
     }));
 
     // Handle project assignments
@@ -48,16 +57,15 @@ export const assignTaskToProject = async (
         if (project.id === originalProjectId) {
           return {
             ...project,
-            tasks: project.tasks.filter(task => task.id !== taskId)
+            tasks: project.tasks.filter(t => t.id !== taskId)
           };
         }
         
         // If this is the new project, add the task
         if (project.id === projectId) {
-          const taskToAdd = allTasks.find(t => t.id === taskId);
-          if (taskToAdd) {
-            // Make a copy with the new project ID
-            const updatedTask = { ...taskToAdd, projectId, updatedAt: now };
+          // Check if the task is already in the project
+          const taskExists = project.tasks.some(t => t.id === taskId);
+          if (!taskExists) {
             return {
               ...project,
               tasks: [...project.tasks, updatedTask]
@@ -107,7 +115,12 @@ export const assignTaskToUser = async (
 
     // Find the task to get its project ID
     const task = tasks.find(t => t.id === taskId);
-    const projectId = task?.projectId;
+    if (!task) {
+      console.error('Task not found:', taskId);
+      return;
+    }
+    
+    const projectId = task.projectId;
     
     // Update the task in the tasks array
     setTasks(prevTasks => prevTasks.map(task => {

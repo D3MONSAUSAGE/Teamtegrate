@@ -21,13 +21,34 @@ export const fetchProjects = async (user: User | null, setProjects: React.Dispat
     }
     
     if (data) {
+      // First get all tasks that belong to any project to avoid multiple queries
+      const { data: allProjectTasks, error: tasksError } = await supabase
+        .from('tasks')
+        .select('*')
+        .in('project_id', data.map(project => project.id));
+      
+      if (tasksError) {
+        console.error('Error fetching project tasks:', tasksError);
+      }
+      
+      // Group tasks by project_id for more efficient lookup
+      const tasksByProject: Record<string, any[]> = {};
+      if (allProjectTasks) {
+        allProjectTasks.forEach(task => {
+          if (task.project_id) {
+            if (!tasksByProject[task.project_id]) {
+              tasksByProject[task.project_id] = [];
+            }
+            tasksByProject[task.project_id].push(task);
+          }
+        });
+      }
+      
       const formattedProjects = await Promise.all(data.map(async (project) => {
-        const { data: projectTasks } = await supabase
-          .from('tasks')
-          .select('*')
-          .eq('project_id', project.id);
+        // Get tasks for this specific project
+        const projectTasks = tasksByProject[project.id] || [];
         
-        const formattedProjectTasks = projectTasks ? await Promise.all(projectTasks.map(async (task) => {
+        const formattedProjectTasks = await Promise.all(projectTasks.map(async (task) => {
           // For each task, fetch its comments
           const comments = await fetchTaskComments(task.id);
 
@@ -40,7 +61,7 @@ export const fetchProjects = async (user: User | null, setProjects: React.Dispat
           const formattedTask: Task = {
             id: task.id,
             userId: task.user_id || user.id, // Default to current user if null
-            projectId: task.project_id || undefined,
+            projectId: task.project_id,
             title: task.title || '',
             description: task.description || '',
             deadline: new Date(task.deadline || Date.now()),
@@ -59,7 +80,7 @@ export const fetchProjects = async (user: User | null, setProjects: React.Dispat
             cost: task.cost || 0,
           };
           return formattedTask;
-        })) : [];
+        }));
         
         return {
           id: project.id,
