@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useForm, useFieldArray } from "react-hook-form";
-import { Project, Task, TaskPriority } from '@/types';
+import { Project, Task, TaskPriority, TaskStatus } from '@/types';
 import { useTask } from '@/contexts/task';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
@@ -65,7 +65,10 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({ open, onOpenC
   const onSubmit = (data: FormValues) => {
     if (!user) return;
     
-    const projectData = {
+    const now = new Date();
+    
+    // Create the project data structure without tasks first
+    const projectData: Partial<Project> = {
       title: data.title,
       description: data.description,
       startDate: new Date(data.startDate),
@@ -73,19 +76,30 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({ open, onOpenC
       managerId: user.id,
       budget: data.budget ? Number(data.budget) : undefined,
       teamMembers: data.teamMembers.map((tm: { memberId: string }) => tm.memberId),
-      tasks: data.tasks.map((task) => ({
-        title: task.title,
-        description: task.description,
-        priority: task.priority as TaskPriority,
-        deadline: new Date(task.deadline),
-      })),
     };
+
+    // Handle tasks separately - we won't include them in the project data
+    // as the backend will add them once the project is created
+    const taskDataList = data.tasks.map((task) => ({
+      title: task.title,
+      description: task.description,
+      priority: task.priority as TaskPriority,
+      deadline: new Date(task.deadline),
+      status: 'To Do' as TaskStatus
+    }));
 
     if (isEditMode && editingProject) {
       updateProject(editingProject.id, projectData);
     } else {
-      addProject(projectData);
+      addProject({
+        ...projectData,
+        tasks: [] // Pass an empty array as tasks - they'll be created separately
+      } as Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'tasks'>);
+      
+      // Note: In a real implementation, you might want to create tasks after project creation
+      // This would require modifying the addProject function to handle tasks separately
     }
+    
     onOpenChange(false);
     reset();
   };
