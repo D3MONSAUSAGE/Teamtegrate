@@ -27,7 +27,10 @@ const TasksHeader: React.FC<TasksHeaderProps> = ({ onNewTask, sortBy, setSortBy 
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuRadioGroup value={sortBy} onValueChange={setSortBy}>
+          <DropdownMenuRadioGroup 
+            value={sortBy} 
+            onValueChange={(value: "deadline" | "priority" | "created") => setSortBy(value)}
+          >
             <DropdownMenuRadioItem value="deadline">Deadline</DropdownMenuRadioItem>
             <DropdownMenuRadioItem value="priority">Priority</DropdownMenuRadioItem>
             <DropdownMenuRadioItem value="created">Creation Date</DropdownMenuRadioItem>
