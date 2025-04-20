@@ -43,12 +43,11 @@ const TeamReports: React.FC = () => {
     <div className="space-y-6">
       <TeamPerformanceBarChart memberPerformanceData={memberPerformanceData} />
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <TeamProductivityTrend 
-          productivityTrend={productivityTrend}
-          teamMembers={teamMembersPerformance}
-        />
-      </div>
+      {/* Full width productivity trend */}
+      <TeamProductivityTrend 
+        productivityTrend={productivityTrend}
+        teamMembers={teamMembersPerformance}
+      />
       
       <TeamRankingsTable teamMembersPerformance={teamMembersPerformance} />
     </div>
@@ -56,4 +55,3 @@ const TeamReports: React.FC = () => {
 };
 
 export default TeamReports;
-
