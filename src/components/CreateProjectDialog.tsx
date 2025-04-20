@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -12,7 +11,8 @@ import ProjectFormFields from './project/ProjectFormFields';
 import TeamMembersSection from './project/TeamMembersSection';
 import ProjectTasksSection from './project/ProjectTasksSection';
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Project } from '@/types';
+import { Project, TaskPriority, TaskStatus } from '@/types';
+import { ProjectInput } from '@/contexts/task/TaskContext';
 
 export interface FormValues {
   title: string;
@@ -84,7 +84,7 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
   const onSubmit = (data: FormValues) => {
     if (!user) return;
     
-    const projectData = {
+    const projectData: ProjectInput = {
       title: data.title,
       description: data.description,
       startDate: new Date(data.startDate),
@@ -95,9 +95,9 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
       tasks: data.tasks.map((task) => ({
         title: task.title,
         description: task.description,
-        priority: task.priority,
+        priority: task.priority as TaskPriority,
         deadline: new Date(task.deadline),
-        status: 'To Do'
+        status: 'To Do' as TaskStatus
       }))
     };
     

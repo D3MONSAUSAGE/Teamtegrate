@@ -2,7 +2,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { Task, Project, TaskStatus, TaskPriority, DailyScore } from '@/types';
 import { useAuth } from '../AuthContext';
-import { fetchTasks, fetchProjects } from './taskApi';
+import { fetchTasks, fetchProjects } from './api';
 import { calculateDailyScore } from './taskMetrics';
 import { 
   addTask, 
@@ -35,8 +35,8 @@ import {
   getOverdueTasks 
 } from './taskFilters';
 
-// Define the ProjectInput type to include tasks
-interface ProjectInput extends Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'tasks'> {
+// Define the ProjectInput type to include tasks with proper type references
+export interface ProjectInput extends Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'tasks'> {
   tasks?: {
     title: string;
     description: string;

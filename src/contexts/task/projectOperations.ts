@@ -1,18 +1,9 @@
-import { Project, User, Task } from '@/types';
+import { Project, User, Task, TaskStatus, TaskPriority } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { playSuccessSound, playErrorSound } from '@/utils/sounds';
 import { v4 as uuidv4 } from 'uuid';
-
-interface ProjectInput extends Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'tasks'> {
-  tasks?: {
-    title: string;
-    description: string;
-    priority: string;
-    deadline: Date;
-    status: string;
-  }[];
-}
+import { ProjectInput } from './TaskContext';
 
 export const addProject = async (
   project: ProjectInput,
@@ -83,6 +74,7 @@ export const addProject = async (
     }
 
     setProjects(prevProjects => {
+      // Create properly typed task objects for the new project
       const formattedTasks = project.tasks ? project.tasks.map(task => ({
         id: uuidv4(),
         userId: user.id,
@@ -90,8 +82,8 @@ export const addProject = async (
         title: task.title,
         description: task.description || '',
         deadline: task.deadline,
-        priority: task.priority || 'Medium',
-        status: task.status || 'To Do',
+        priority: task.priority,
+        status: task.status,
         createdAt: now,
         updatedAt: now,
         assignedToId: undefined,
@@ -100,9 +92,9 @@ export const addProject = async (
         tags: [],
         comments: [],
         cost: 0
-      })) : [];
+      } as Task)) : [];
 
-      const newProject = {
+      const newProject: Project = {
         id: projectId,
         title: project.title,
         description: project.description,
