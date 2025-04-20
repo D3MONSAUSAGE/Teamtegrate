@@ -1,9 +1,11 @@
-import { Project, User, Task, TaskStatus, TaskPriority } from '@/types';
+
+import { Project, User } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { playSuccessSound, playErrorSound } from '@/utils/sounds';
 import { v4 as uuidv4 } from 'uuid';
-import { ProjectInput } from './TaskContext';
+import { ProjectInput } from '../TaskContext';
+import { formatNewProjectTasks } from './projectUtils';
 
 export const addProject = async (
   project: ProjectInput,
@@ -42,21 +44,18 @@ export const addProject = async (
     }
 
     if (project.tasks && project.tasks.length > 0) {
-      const tasksToInsert = project.tasks.map(task => {
-        const taskId = uuidv4();
-        return {
-          id: taskId,
-          user_id: user.id,
-          project_id: projectId,
-          title: task.title,
-          description: task.description,
-          deadline: task.deadline.toISOString(),
-          priority: task.priority,
-          status: task.status || 'To Do',
-          created_at: now.toISOString(),
-          updated_at: now.toISOString()
-        };
-      });
+      const tasksToInsert = project.tasks.map(task => ({
+        id: uuidv4(),
+        user_id: user.id,
+        project_id: projectId,
+        title: task.title,
+        description: task.description,
+        deadline: task.deadline.toISOString(),
+        priority: task.priority,
+        status: task.status,
+        created_at: now.toISOString(),
+        updated_at: now.toISOString()
+      }));
 
       const { error: tasksError } = await supabase
         .from('project_tasks')
@@ -68,32 +67,9 @@ export const addProject = async (
       }
     }
 
-    if (project.teamMembers && project.teamMembers.length > 0) {
-      // Logic to add team members would go here
-      // This would typically involve creating records in a project_team_members table
-    }
-
     setProjects(prevProjects => {
-      // Create properly typed task objects for the new project
-      const formattedTasks = project.tasks ? project.tasks.map(task => ({
-        id: uuidv4(),
-        userId: user.id,
-        projectId,
-        title: task.title,
-        description: task.description || '',
-        deadline: task.deadline,
-        priority: task.priority,
-        status: task.status,
-        createdAt: now,
-        updatedAt: now,
-        assignedToId: undefined,
-        assignedToName: undefined,
-        completedAt: undefined,
-        tags: [],
-        comments: [],
-        cost: 0
-      } as Task)) : [];
-
+      const formattedTasks = formatNewProjectTasks(project.tasks || [], user.id, projectId, now);
+      
       const newProject: Project = {
         id: projectId,
         title: project.title,
@@ -194,7 +170,6 @@ export const deleteProject = async (
     }
 
     setProjects(prevProjects => prevProjects.filter(project => project.id !== projectId));
-    
     setTasks(prevTasks => prevTasks.filter(task => task.projectId !== projectId));
 
     toast.success('Project deleted successfully!');
@@ -203,38 +178,4 @@ export const deleteProject = async (
     playErrorSound();
     toast.error('Failed to delete project');
   }
-};
-
-export const addTeamMemberToProject = async (
-  projectId: string,
-  userId: string,
-  projects: Project[],
-  setProjects: React.Dispatch<React.SetStateAction<Project[]>>
-) => {
-  setProjects(prevProjects => prevProjects.map(project => {
-    if (project.id === projectId) {
-      return {
-        ...project,
-        teamMembers: [...(project.teamMembers || []), userId]
-      };
-    }
-    return project;
-  }));
-};
-
-export const removeTeamMemberFromProject = async (
-  projectId: string,
-  userId: string,
-  projects: Project[],
-  setProjects: React.Dispatch<React.SetStateAction<Project[]>>
-) => {
-  setProjects(prevProjects => prevProjects.map(project => {
-    if (project.id === projectId) {
-      return {
-        ...project,
-        teamMembers: (project.teamMembers || []).filter(id => id !== userId)
-      };
-    }
-    return project;
-  }));
 };
