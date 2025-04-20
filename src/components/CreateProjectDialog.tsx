@@ -1,41 +1,19 @@
+
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { useForm, useFieldArray } from "react-hook-form";
 import { useTask } from '@/contexts/task';
 import { useAuth } from '@/contexts/AuthContext';
-import { format } from 'date-fns';
 import useTeamMembers from '@/hooks/useTeamMembers';
 import ProjectFormFields from './project/ProjectFormFields';
 import TeamMembersSection from './project/TeamMembersSection';
 import ProjectTasksSection from './project/ProjectTasksSection';
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Project, TaskPriority, TaskStatus } from '@/types';
-import { ProjectInput } from '@/contexts/task/TaskContext';
+import { ProjectDialogProps } from './project/ProjectFormTypes';
+import { useProjectForm } from '@/hooks/useProjectForm';
 
-export interface FormValues {
-  title: string;
-  description: string;
-  startDate: string;
-  endDate: string;
-  budget: string | number;
-  teamMembers: { memberId: string }[];
-  tasks: {
-    title: string;
-    description: string;
-    priority: string;
-    deadline: string;
-  }[];
-}
-
-interface CreateProjectDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  editingProject?: Project;
-}
-
-const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({ 
+const CreateProjectDialog: React.FC<ProjectDialogProps> = ({ 
   open, 
   onOpenChange, 
   editingProject 
@@ -46,28 +24,18 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
   
   const isEditMode = !!editingProject;
   
-  const { register, handleSubmit, formState: { errors }, reset, setValue, control, watch } = useForm<FormValues>({
-    defaultValues: {
-      title: editingProject?.title || '',
-      description: editingProject?.description || '',
-      startDate: editingProject ? format(new Date(editingProject.startDate), 'yyyy-MM-dd') : '',
-      endDate: editingProject ? format(new Date(editingProject.endDate), 'yyyy-MM-dd') : '',
-      budget: editingProject?.budget || '',
-      teamMembers: editingProject?.teamMembers?.map((id) => ({ memberId: id })) || [],
-      tasks: []
-    }
-  });
-  
-  const teamMemberArray = useFieldArray({
+  const {
+    register,
+    handleSubmit,
+    errors,
+    reset,
+    setValue,
     control,
-    name: "teamMembers"
-  });
-  
-  const taskArray = useFieldArray({
-    control,
-    name: "tasks"
-  });
-  
+    watch,
+    teamMemberArray,
+    taskArray
+  } = useProjectForm(editingProject);
+
   React.useEffect(() => {
     if (editingProject) {
       setValue('title', editingProject.title);
@@ -84,7 +52,7 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
   const onSubmit = (data: FormValues) => {
     if (!user) return;
     
-    const projectData: ProjectInput = {
+    const projectData = {
       title: data.title,
       description: data.description,
       startDate: new Date(data.startDate),
