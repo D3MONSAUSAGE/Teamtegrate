@@ -44,36 +44,44 @@
     --sidebar-border: 134 18% 82%;
     --sidebar-ring: 134 80% 62%;
   }
+
   .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 4.9%;
+    --background: 222 31% 11%;               /* Modern rich background */
+    --foreground: 0 0% 98%;                  /* High contrast text */
+    --card: 222 25% 15%;                     /* Slightly lighter than background */
     --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
+
+    --popover: 225 20% 13%;                  /* Floating surfaces */
     --popover-foreground: 0 0% 98%;
-    --primary: 134 60% 45%;
+
+    --primary: 134 65% 38%;                  /* Strong green */
     --primary-foreground: 0 0% 100%;
-    --secondary: 134 14% 18%;
-    --secondary-foreground: 134 60% 98%;
-    --muted: 134 10% 13%;
-    --muted-foreground: 150 16% 68%;
-    --accent: 168 20% 18%;
-    --accent-foreground: 134 60% 98%;
-    --destructive: 348 87% 46%;
+    --secondary: 222 15% 20%;                /* Glassy gray surface */
+    --secondary-foreground: 134 75% 87%;
+
+    --muted: 220 12% 20%;                    /* Dim glass blur surface */
+    --muted-foreground: 134 10% 72%;
+
+    --accent: 168 55% 35%;                   /* Deeper teal/emerald */
+    --accent-foreground: 127 85% 90%;
+
+    --destructive: 348 75% 57%;
     --destructive-foreground: 0 0% 100%;
-    --border: 134 14% 24%;
-    --input: 134 16% 22%;
-    --ring: 134 70% 60%;
+
+    --border: 222 15% 25%;
+    --input: 222 15% 18%;
+    --ring: 134 80% 45%;
+
     --radius: 0.9rem;
 
-    --sidebar-background: 240 10% 9%;
-    --sidebar-foreground: 134 30% 87%;
+    --sidebar-background: 225 13% 14%;          /* Dark sidebar glass */
+    --sidebar-foreground: 134 18% 84%;
     --sidebar-primary: 134 70% 45%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 160 23% 21%;
+    --sidebar-accent: 168 25% 20%;
     --sidebar-accent-foreground: 134 60% 98%;
-    --sidebar-border: 134 12% 18%;
-    --sidebar-ring: 134 80% 50%;
+    --sidebar-border: 224 10% 19%;
+    --sidebar-ring: 134 70% 60%;
   }
 
   * {
@@ -93,27 +101,37 @@ body {
   font-family: 'Inter', sans-serif;
 }
 
-/* Card: Subtle green glass/gradient with shadow */
+/* Card: Subtle glass/gradient with shadow for both modes */
 .card {
   @apply rounded-2xl shadow-sm border border-accent/50 backdrop-blur-md bg-gradient-to-br from-white/70 via-secondary to-accent/40 transition-shadow duration-400;
+}
+.dark .card {
+  @apply bg-gradient-to-br from-[#22293a]/80 via-secondary to-accent/50 border-accent/30 text-foreground shadow-lg backdrop-blur-2xl;
 }
 
 /* Card on hover: softer, modern glass & slightly lifted */
 .card-hover {
   @apply shadow-lg hover:shadow-emerald-200 hover:scale-[1.01] translate-y-[-2px] transition-transform duration-300;
 }
+.dark .card-hover {
+  @apply hover:shadow-[#9b87f5]/30;
+}
 
-/* Buttons: lively gradients and deep green hovers */
+/* Buttons: lively gradients, clear in dark */
 button {
   @apply transition-colors duration-300 ease-in-out;
 }
-
 button.bg-primary {
   @apply bg-gradient-to-r from-primary to-emerald-500 text-primary-foreground font-semibold shadow hover:brightness-110 hover:from-emerald-600 hover:to-lime-500;
 }
-
+.dark button.bg-primary {
+  @apply from-primary to-emerald-600 text-primary-foreground shadow-xl;
+}
 button.bg-secondary {
   @apply bg-gradient-to-r from-secondary to-accent text-secondary-foreground font-semibold shadow hover:bg-accent hover:from-accent hover:to-primary/80;
+}
+.dark button.bg-secondary {
+  @apply from-secondary to-accent text-secondary-foreground;
 }
 
 /* Colored pills */
@@ -125,6 +143,15 @@ button.bg-secondary {
 }
 .priority-high {
   @apply bg-red-100 text-red-800 border-red-300;
+}
+.dark .priority-low {
+  @apply bg-emerald-700/30 text-emerald-200 border-emerald-500/40;
+}
+.dark .priority-medium {
+  @apply bg-lime-700/30 text-lime-200 border-lime-500/40;
+}
+.dark .priority-high {
+  @apply bg-red-700/30 text-red-200 border-red-500/40;
 }
 
 /* Status - natural, themed look */
@@ -140,10 +167,26 @@ button.bg-secondary {
 .status-completed {
   @apply bg-emerald-200 text-emerald-900 border-emerald-400;
 }
+/* Dark mode status colors */
+.dark .status-todo {
+  @apply bg-gray-700/40 text-gray-200 border-gray-500/40;
+}
+.dark .status-inprogress {
+  @apply bg-amber-900/30 text-amber-100 border-amber-300/40;
+}
+.dark .status-pending {
+  @apply bg-yellow-900/25 text-yellow-100 border-yellow-200/40;
+}
+.dark .status-completed {
+  @apply bg-emerald-800/40 text-emerald-200 border-emerald-500/40;
+}
 
 /* Links and interactives: animated underline, more color */
 a {
   @apply text-primary font-medium underline underline-offset-2 transition-colors duration-200 hover:text-emerald-700 hover:no-underline;
+}
+.dark a {
+  @apply text-primary font-medium underline underline-offset-2 transition-colors duration-200 hover:text-emerald-200 hover:no-underline;
 }
 
 /* Inputs: soft green borders, lively focus */
@@ -152,6 +195,11 @@ select,
 textarea {
   @apply border border-accent rounded-lg shadow-sm focus:ring-2 focus:ring-primary focus:border-primary transition bg-white/80 placeholder:text-muted-foreground;
 }
+.dark input,
+.dark select,
+.dark textarea {
+  @apply border-accent/40 bg-[#181928]/70 text-white placeholder:text-gray-400;
+}
 
 /* Gradients and useful utilities */
 .bg-gradient-primary {
@@ -159,6 +207,9 @@ textarea {
 }
 .bg-glass {
   @apply bg-white/60 backdrop-blur-lg border border-accent/30 rounded-2xl;
+}
+.dark .bg-glass {
+  @apply bg-[#1b2134]/60 backdrop-blur-2xl border border-accent/25;
 }
 
 /* Animations for a lively experience */
@@ -175,8 +226,12 @@ textarea {
 .story-link {
   @apply relative after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-primary after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left;
 }
+.dark .story-link {
+  @apply after:bg-primary/70;
+}
 
 /* Utility for hover scale effect */
 .hover-scale {
   @apply transition-transform duration-200 hover:scale-105;
 }
+
