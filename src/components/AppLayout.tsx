@@ -52,10 +52,10 @@ const AppLayout = () => {
         </div>
       </div>
 
-      {/* Main content container - adjusted to properly account for sidebar */}
-      <div className="flex-1 flex flex-col w-full">
+      {/* Main content container - adjusted to remove excess spacing */}
+      <div className="flex-1 flex flex-col w-full md:ml-64">
         <Navbar />
-        <main className="flex-1 p-3 md:p-6 md:ml-64 overflow-x-hidden overflow-y-auto">
+        <main className="flex-1 p-3 md:p-6 overflow-x-hidden overflow-y-auto">
           <Outlet />
         </main>
       </div>
