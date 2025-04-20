@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -256,7 +255,7 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({ open, onOpenC
                   <div className="space-y-2">
                     <Label>Priority</Label>
                     <Select
-                      onValueChange={(value) => setValue(`tasks.${index}.priority`, value)}
+                      onValueChange={(value: TaskPriority) => setValue(`tasks.${index}.priority`, value)}
                       value={watch(`tasks.${index}.priority`)}
                     >
                       <SelectTrigger>
