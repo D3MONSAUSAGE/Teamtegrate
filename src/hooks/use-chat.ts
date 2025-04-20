@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from 'sonner';
@@ -28,18 +27,38 @@ export const useChat = (roomId: string, userId: string | undefined) => {
   const [fileUploads, setFileUploads] = useState<FileUpload[]>([]);
 
   const fetchMessages = async () => {
-    const { data, error } = await supabase
+    const { data: messagesData, error: messagesError } = await supabase
       .from('chat_messages')
       .select('*')
       .eq('room_id', roomId)
       .order('created_at', { ascending: true });
 
-    if (error) {
-      console.error('Error fetching messages:', error);
+    if (messagesError) {
+      console.error('Error fetching messages:', messagesError);
       return;
     }
 
-    setMessages(data);
+    const { data: attachmentsData, error: attachmentsError } = await supabase
+      .from('chat_message_attachments')
+      .select('*');
+
+    if (attachmentsError) {
+      console.error('Error fetching attachments:', attachmentsError);
+      return;
+    }
+
+    const messagesWithAttachments = messagesData.map(message => {
+      const messageAttachments = attachmentsData.filter(
+        attachment => attachment.message_id === message.id
+      );
+      
+      return {
+        ...message,
+        attachments: messageAttachments.length > 0 ? messageAttachments : undefined
+      };
+    });
+
+    setMessages(messagesWithAttachments);
   };
 
   const subscribeToMessages = () => {
