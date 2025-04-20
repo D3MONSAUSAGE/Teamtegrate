@@ -1,12 +1,21 @@
-
-import { Project, User } from '@/types';
+import { Project, User, Task } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { playSuccessSound, playErrorSound } from '@/utils/sounds';
 import { v4 as uuidv4 } from 'uuid';
 
+interface ProjectInput extends Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'tasks'> {
+  tasks?: {
+    title: string;
+    description: string;
+    priority: string;
+    deadline: Date;
+    status: string;
+  }[];
+}
+
 export const addProject = async (
-  project: Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'tasks'>,
+  project: ProjectInput,
   user: User | null,
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
 ) => {
@@ -30,7 +39,6 @@ export const addProject = async (
       budget_spent: 0
     };
 
-    // Insert the project
     const { error } = await supabase
       .from('projects')
       .insert(projectToInsert);
@@ -42,7 +50,6 @@ export const addProject = async (
       return;
     }
 
-    // Create tasks if any
     if (project.tasks && project.tasks.length > 0) {
       const tasksToInsert = project.tasks.map(task => {
         const taskId = uuidv4();
@@ -70,13 +77,11 @@ export const addProject = async (
       }
     }
 
-    // Add team members if any
     if (project.teamMembers && project.teamMembers.length > 0) {
       // Logic to add team members would go here
       // This would typically involve creating records in a project_team_members table
     }
 
-    // Add project to local state with proper task structure
     setProjects(prevProjects => {
       const formattedTasks = project.tasks ? project.tasks.map(task => ({
         id: uuidv4(),
@@ -119,7 +124,6 @@ export const addProject = async (
 
     playSuccessSound();
     toast.success('Project created successfully!');
-
   } catch (error) {
     console.error('Error in addProject:', error);
     playErrorSound();
@@ -160,7 +164,6 @@ export const updateProject = async (
       return;
     }
 
-    // Update local state
     setProjects(prevProjects => prevProjects.map(project => {
       if (project.id === projectId) {
         return { ...project, ...updates, updatedAt: now };
@@ -198,10 +201,8 @@ export const deleteProject = async (
       return;
     }
 
-    // Remove project from local state
     setProjects(prevProjects => prevProjects.filter(project => project.id !== projectId));
     
-    // Remove project tasks from tasks array
     setTasks(prevTasks => prevTasks.filter(task => task.projectId !== projectId));
 
     toast.success('Project deleted successfully!');
@@ -218,8 +219,6 @@ export const addTeamMemberToProject = async (
   projects: Project[],
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
 ) => {
-  // This would typically involve inserting a record into a project_team_members table
-  // For now, we'll just update the local state
   setProjects(prevProjects => prevProjects.map(project => {
     if (project.id === projectId) {
       return {
@@ -237,8 +236,6 @@ export const removeTeamMemberFromProject = async (
   projects: Project[],
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
 ) => {
-  // This would typically involve removing a record from a project_team_members table
-  // For now, we'll just update the local state
   setProjects(prevProjects => prevProjects.map(project => {
     if (project.id === projectId) {
       return {
