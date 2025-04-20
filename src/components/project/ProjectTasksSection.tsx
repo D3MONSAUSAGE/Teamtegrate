@@ -7,20 +7,21 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { X, Plus } from 'lucide-react';
 import { TaskPriority } from '@/types';
-import { UseFormRegister, UseFormSetValue, UseFormWatch, FieldArrayWithId, UseFieldArrayReturn } from 'react-hook-form';
+import { UseFormRegister, UseFormSetValue, UseFormWatch, FieldArrayWithId } from 'react-hook-form';
+import { FormValues } from '../CreateProjectDialog';
 
-interface ProjectTasksSectionProps<TFormValues> {
+interface ProjectTasksSectionProps<TFormValues extends FormValues> {
   taskFields: FieldArrayWithId[];
   register: UseFormRegister<TFormValues>;
   setValue: UseFormSetValue<TFormValues>;
   watch: UseFormWatch<TFormValues>;
   fieldArrayProps: {
-    append: UseFieldArrayReturn['append'];
-    remove: UseFieldArrayReturn['remove'];
+    append: (value: { title: string; description: string; priority: TaskPriority; deadline: string }) => void;
+    remove: (index: number) => void;
   };
 }
 
-function ProjectTasksSection<TFormValues>({
+function ProjectTasksSection<TFormValues extends FormValues>({
   taskFields,
   register,
   setValue,
@@ -40,7 +41,7 @@ function ProjectTasksSection<TFormValues>({
             description: '', 
             priority: 'Medium' as TaskPriority,
             deadline: '' 
-          } as any)}
+          })}
         >
           <Plus className="h-4 w-4 mr-1" />
           Add Task
@@ -62,7 +63,7 @@ function ProjectTasksSection<TFormValues>({
           <div className="space-y-2">
             <Label>Task Title</Label>
             <Input
-              {...register(`tasks.${index}.title` as const)}
+              {...register(`tasks.${index}.title` as any)}
               placeholder="Task title"
             />
           </div>
@@ -70,7 +71,7 @@ function ProjectTasksSection<TFormValues>({
           <div className="space-y-2">
             <Label>Description</Label>
             <Textarea
-              {...register(`tasks.${index}.description` as const)}
+              {...register(`tasks.${index}.description` as any)}
               placeholder="Task description"
             />
           </div>
@@ -79,8 +80,8 @@ function ProjectTasksSection<TFormValues>({
             <div className="space-y-2">
               <Label>Priority</Label>
               <Select
-                onValueChange={(value) => setValue(`tasks.${index}.priority` as any, value as TaskPriority)}
-                value={(watch(`tasks.${index}.priority` as any) as string) || 'Medium'}
+                onValueChange={(value: TaskPriority) => setValue(`tasks.${index}.priority` as any, value)}
+                value={(watch(`tasks.${index}.priority` as any) as TaskPriority) || 'Medium'}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select priority" />
@@ -97,7 +98,7 @@ function ProjectTasksSection<TFormValues>({
               <Label>Deadline</Label>
               <Input
                 type="date"
-                {...register(`tasks.${index}.deadline` as const)}
+                {...register(`tasks.${index}.deadline` as any)}
               />
             </div>
           </div>

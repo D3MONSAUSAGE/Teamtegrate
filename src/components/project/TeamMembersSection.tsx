@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { X, Plus } from 'lucide-react';
 import { UseFieldArrayReturn, FieldArrayWithId, UseFormWatch, UseFormSetValue } from 'react-hook-form';
+import { FormValues } from '../CreateProjectDialog';
 
 interface TeamMember {
   id: string;
@@ -14,18 +15,18 @@ interface TeamMember {
   managerId: string;
 }
 
-interface TeamMembersSectionProps<TFormValues> {
+interface TeamMembersSectionProps<TFormValues extends FormValues> {
   teamMembers: TeamMember[];
   teamMemberFields: FieldArrayWithId[];
   setValue: UseFormSetValue<TFormValues>;
   watch: UseFormWatch<TFormValues>;
   fieldArrayProps: {
-    append: UseFieldArrayReturn['append'];
-    remove: UseFieldArrayReturn['remove'];
+    append: (value: { memberId: string }) => void;
+    remove: (index: number) => void;
   };
 }
 
-function TeamMembersSection<TFormValues>({
+function TeamMembersSection<TFormValues extends FormValues>({
   teamMembers,
   teamMemberFields,
   setValue,
@@ -40,7 +41,7 @@ function TeamMembersSection<TFormValues>({
           type="button" 
           variant="outline" 
           size="sm"
-          onClick={() => append({ memberId: '' } as any)}
+          onClick={() => append({ memberId: '' })}
         >
           <Plus className="h-4 w-4 mr-1" />
           Add Member
@@ -50,7 +51,7 @@ function TeamMembersSection<TFormValues>({
       {teamMemberFields.map((field, index) => (
         <div key={field.id} className="flex items-center gap-2">
           <Select
-            onValueChange={(value) => setValue(`teamMembers.${index}.memberId` as any, value)}
+            onValueChange={(value: string) => setValue(`teamMembers.${index}.memberId` as any, value)}
             value={(watch(`teamMembers.${index}.memberId` as any) as string) || ''}
           >
             <SelectTrigger className="flex-1">

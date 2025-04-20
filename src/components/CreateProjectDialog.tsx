@@ -19,7 +19,7 @@ interface CreateProjectDialogProps {
   editingProject?: Project;
 }
 
-type FormValues = {
+export type FormValues = {
   title: string;
   description: string;
   startDate: string;
