@@ -1,8 +1,7 @@
-
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { Task, Project, TaskStatus, TaskPriority, DailyScore } from '@/types';
 import { useAuth } from '../AuthContext';
-import { fetchTasks, fetchProjects } from './api';
+import { fetchTasks, fetchProjects } from './taskApi';
 import { calculateDailyScore } from './taskMetrics';
 import { 
   addTask, 
@@ -11,16 +10,14 @@ import {
   deleteTask, 
   assignTaskToProject, 
   assignTaskToUser
-} from './operations/taskCore';
+} from './operations';
 import { 
   addProject, 
   updateProject, 
-  deleteProject 
-} from './operations/project';
-import { 
+  deleteProject, 
   addTeamMemberToProject, 
-  removeTeamMemberFromProject 
-} from './operations/projectTeam';
+  removeTeamMemberFromProject
+} from './projectOperations';
 import { 
   addCommentToTask, 
   addTagToTask, 
@@ -37,17 +34,6 @@ import {
   getOverdueTasks 
 } from './taskFilters';
 
-// Define the ProjectInput type to include tasks with proper type references
-export interface ProjectInput extends Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'tasks'> {
-  tasks?: {
-    title: string;
-    description: string;
-    priority: TaskPriority;
-    deadline: Date;
-    status: TaskStatus;
-  }[];
-}
-
 interface TaskContextType {
   tasks: Task[];
   projects: Project[];
@@ -56,7 +42,7 @@ interface TaskContextType {
   updateTask: (taskId: string, updates: Partial<Task>) => void;
   updateTaskStatus: (taskId: string, status: TaskStatus) => void;
   deleteTask: (taskId: string) => void;
-  addProject: (project: ProjectInput) => void;
+  addProject: (project: Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'tasks'>) => void;
   updateProject: (projectId: string, updates: Partial<Project>) => void;
   deleteProject: (projectId: string) => void;
   assignTaskToProject: (taskId: string, projectId: string) => void;
@@ -126,7 +112,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       updateTaskStatus(taskId, status, user, tasks, setTasks, projects, setProjects, setDailyScore),
     deleteTask: (taskId: string) => 
       deleteTask(taskId, user, setTasks, projects, setProjects),
-    addProject: (project: ProjectInput) => 
+    addProject: (project: Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'tasks'>) => 
       addProject(project, user, setProjects),
     updateProject: (projectId: string, updates: Partial<Project>) => 
       updateProject(projectId, updates, user, setProjects),

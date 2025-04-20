@@ -32,14 +32,14 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   const { deleteProject, updateProject } = useTask();
   
   const calculateProgress = (tasks: Task[]) => {
-    if (!tasks || tasks.length === 0) return 0;
+    if (tasks.length === 0) return 0;
     const completed = tasks.filter(task => task.status === 'Completed').length;
     return Math.round((completed / tasks.length) * 100);
   };
   
-  const totalTasks = project.tasks ? project.tasks.length : 0;
-  const completedTasks = project.tasks ? project.tasks.filter(task => task.status === 'Completed').length : 0;
-  const progress = calculateProgress(project.tasks || []);
+  const totalTasks = project.tasks.length;
+  const completedTasks = project.tasks.filter(task => task.status === 'Completed').length;
+  const progress = calculateProgress(project.tasks);
   
   const budgetProgress = project.budget ? Math.round((project.budgetSpent || 0) / project.budget * 100) : 0;
   
@@ -47,7 +47,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
     updateProject(project.id, { is_completed: !project.is_completed });
   };
   
-  const assignedTasksCount = project.tasks ? project.tasks.filter(task => task.assignedToId).length : 0;
+  const assignedTasksCount = project.tasks.filter(task => task.assignedToId).length;
   
   return (
     <Card className={`card-hover relative overflow-hidden ${project.is_completed ? 'bg-gray-50' : ''}`}>
