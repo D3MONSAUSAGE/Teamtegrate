@@ -1,4 +1,5 @@
-import { Task, User, TaskStatus, DailyScore } from '@/types';
+
+import { Task, User, TaskStatus, DailyScore, Project } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { playStatusChangeSound, playErrorSound } from '@/utils/sounds';

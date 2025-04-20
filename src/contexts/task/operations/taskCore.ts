@@ -1,4 +1,4 @@
-import { Task, User, TaskStatus, DailyScore, TaskPriority } from '@/types';
+import { Task, User, TaskStatus, DailyScore, TaskPriority, Project } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { playSuccessSound, playErrorSound } from '@/utils/sounds';
@@ -64,10 +64,8 @@ export const addTask = async (
         cost: data.cost || 0,
       };
 
-      // Update local tasks state
       setTasks(prevTasks => [...prevTasks, newTask]);
       
-      // If the task is assigned to a project, update the project's tasks array
       if (newTask.projectId) {
         setProjects(prevProjects => 
           prevProjects.map(project => {
@@ -130,11 +128,9 @@ export const updateTask = async (
       return;
     }
 
-    // Get the original task before update
     const originalTask = tasks.find(t => t.id === taskId);
     const originalProjectId = originalTask?.projectId;
     
-    // Update local tasks state
     setTasks(prevTasks => prevTasks.map(task => {
       if (task.id === taskId) {
         return { ...task, ...updates, updatedAt: now };
@@ -142,11 +138,9 @@ export const updateTask = async (
       return task;
     }));
     
-    // Handle project assignment changes
     if (updates.projectId !== undefined && updates.projectId !== originalProjectId) {
       setProjects(prevProjects => {
         return prevProjects.map(project => {
-          // If this is the old project, remove the task
           if (project.id === originalProjectId) {
             return {
               ...project,
@@ -154,9 +148,7 @@ export const updateTask = async (
             };
           }
           
-          // If this is the new project, add the task
           if (project.id === updates.projectId) {
-            // Find the updated task
             const updatedTask = tasks.find(t => t.id === taskId);
             if (updatedTask) {
               const newTask = { ...updatedTask, ...updates, projectId: updates.projectId, updatedAt: now };
@@ -171,7 +163,6 @@ export const updateTask = async (
         });
       });
     } else if (updates.status || updates.title || updates.description || updates.priority || updates.deadline || updates.assignedToId) {
-      // Update task in project if other properties changed
       if (originalProjectId) {
         setProjects(prevProjects => {
           return prevProjects.map(project => {
@@ -210,7 +201,6 @@ export const deleteTask = async (
   try {
     if (!user) return;
 
-    // Find the task to get its project ID before deleting
     const taskToDelete = projects.flatMap(p => p.tasks).find(t => t.id === taskId) || 
                         tasks.find(t => t.id === taskId);
     const projectId = taskToDelete?.projectId;
@@ -227,10 +217,8 @@ export const deleteTask = async (
       return;
     }
 
-    // Remove from tasks array
     setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
     
-    // Also remove from project if it belongs to one
     if (projectId) {
       setProjects(prevProjects => {
         return prevProjects.map(project => {

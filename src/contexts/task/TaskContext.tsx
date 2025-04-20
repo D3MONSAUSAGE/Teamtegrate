@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { Task, Project, TaskStatus, TaskPriority, DailyScore } from '@/types';
 import { useAuth } from '../AuthContext';
@@ -10,19 +9,14 @@ import {
   updateTaskStatus, 
   deleteTask, 
   assignTaskToProject, 
-  assignTaskToUser,
-  addCommentToTask,
-  addTagToTask,
-  removeTagFromTask
+  assignTaskToUser
 } from './operations';
 import { 
   addProject, 
   updateProject, 
   deleteProject, 
   addTeamMemberToProject, 
-  removeTeamMemberFromProject,
-  addTagToProject,
-  removeTagFromProject
+  removeTeamMemberFromProject
 } from './projectOperations';
 import { 
   addCommentToTask, 
@@ -106,7 +100,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [tasks, user]);
 
-  // Create context value object with all the functions
   const value = {
     tasks,
     projects,
