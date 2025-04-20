@@ -72,28 +72,36 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({ open, onOpenC
   const onSubmit = (data: FormValues) => {
     if (!user) return;
     
-    const projectData = {
+    const projectData: Partial<Project> = {
       title: data.title,
       description: data.description,
       startDate: new Date(data.startDate),
       endDate: new Date(data.endDate),
       managerId: user.id,
       budget: data.budget ? Number(data.budget) : undefined,
-      teamMembers: data.teamMembers.map((tm: { memberId: string }) => tm.memberId),
-      tasks: data.tasks.map((task: any) => ({
-        title: task.title,
-        description: task.description,
-        priority: task.priority as TaskPriority,
-        deadline: new Date(task.deadline),
-        status: 'To Do' as const,
-      })),
+      teamMembers: data.teamMembers.map(tm => tm.memberId),
     };
-
+    
+    const taskData = data.tasks.map(task => ({
+      title: task.title,
+      description: task.description,
+      priority: task.priority,
+      deadline: new Date(task.deadline),
+      status: 'To Do' as const,
+    }));
+    
     if (isEditMode && editingProject) {
-      updateProject(editingProject.id, projectData);
+      updateProject(editingProject.id, { 
+        ...projectData,
+        tasks: [...(editingProject.tasks || []), ...taskData] as Task[]
+      });
     } else {
-      addProject(projectData);
+      addProject({
+        ...projectData,
+        tasks: taskData as unknown as Task[]
+      });
     }
+    
     onOpenChange(false);
     reset();
   };
