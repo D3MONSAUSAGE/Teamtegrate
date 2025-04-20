@@ -43,8 +43,8 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({
           ))}
         </div>
       ) : (
-        <div className="bg-white p-4 md:p-6 rounded-lg border text-center">
-          <p className="text-gray-500 text-sm md:text-base">No projects created yet</p>
+        <div className="bg-white dark:bg-card p-4 md:p-6 rounded-lg border text-center">
+          <p className="text-gray-500 dark:text-gray-300 text-sm md:text-base">No projects created yet</p>
           <Link to="/dashboard/projects">
             <Button variant="outline" size={isMobile ? "sm" : "default"} className="mt-2">
               <Plus className="h-4 w-4 mr-2" /> Create Project

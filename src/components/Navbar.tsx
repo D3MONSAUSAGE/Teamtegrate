@@ -65,13 +65,13 @@ const Navbar = () => {
   if (!user) return null;
   
   return (
-    <nav className="bg-white border-b border-gray-200 py-4 px-6 flex items-center justify-between">
+    <nav className="bg-white dark:bg-background border-b border-gray-200 dark:border-gray-800 py-4 px-6 flex items-center justify-between">
       <div className="flex items-center space-x-4 md:space-x-0">
         <Link to="/" className="text-xl font-bold text-primary ml-10 md:ml-0">TeamStream</Link>
       </div>
       
       <div className="flex items-center space-x-4">
-        <span className="text-sm text-gray-600 mr-2 hidden md:inline">
+        <span className="text-sm text-gray-600 dark:text-gray-300 mr-2 hidden md:inline">
           {user.role === 'manager' ? 'Manager' : 'Team Member'}
         </span>
         

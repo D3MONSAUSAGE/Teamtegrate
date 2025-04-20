@@ -38,8 +38,8 @@ const UpcomingTasksSection: React.FC<UpcomingTasksSectionProps> = ({
           ))}
         </div>
       ) : (
-        <div className="bg-white p-4 md:p-6 rounded-lg border text-center">
-          <p className="text-gray-500 text-sm md:text-base">No upcoming tasks for the next 7 days</p>
+        <div className="bg-white dark:bg-card p-4 md:p-6 rounded-lg border text-center">
+          <p className="text-gray-500 dark:text-gray-300 text-sm md:text-base">No upcoming tasks for the next 7 days</p>
           <Button 
             variant="outline" 
             size={isMobile ? "sm" : "default"}

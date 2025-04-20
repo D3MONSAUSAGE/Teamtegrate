@@ -38,8 +38,8 @@ const DailyTasksSection: React.FC<DailyTasksSectionProps> = ({
           ))}
         </div>
       ) : (
-        <div className="bg-white p-4 md:p-6 rounded-lg border text-center">
-          <p className="text-gray-500 text-sm md:text-base">No tasks scheduled for today</p>
+        <div className="bg-white dark:bg-card p-4 md:p-6 rounded-lg border text-center">
+          <p className="text-gray-500 dark:text-gray-300 text-sm md:text-base">No tasks scheduled for today</p>
           <Button 
             variant="outline" 
             size={isMobile ? "sm" : "default"}

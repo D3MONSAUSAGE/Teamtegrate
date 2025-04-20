@@ -19,17 +19,17 @@ const TasksSummary: React.FC<TasksSummaryProps> = ({
       <DailyScoreCard score={dailyScore} />
       
       <div className="col-span-1 md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
-        <div className="bg-white p-3 md:p-4 rounded-lg border">
+        <div className="bg-white dark:bg-card p-3 md:p-4 rounded-lg border">
           <h3 className="font-medium mb-2">Today's Tasks</h3>
           <div className="text-2xl md:text-3xl font-bold">{todaysTasks.length}</div>
-          <div className="text-xs md:text-sm text-gray-500">
+          <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400">
             {todaysTasks.filter(task => task.status === 'Completed').length} completed
           </div>
         </div>
-        <div className="bg-white p-3 md:p-4 rounded-lg border">
+        <div className="bg-white dark:bg-card p-3 md:p-4 rounded-lg border">
           <h3 className="font-medium mb-2">Upcoming Tasks</h3>
           <div className="text-2xl md:text-3xl font-bold">{upcomingTasks.length}</div>
-          <div className="text-xs md:text-sm text-gray-500">Next 7 days</div>
+          <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400">Next 7 days</div>
         </div>
       </div>
     </div>

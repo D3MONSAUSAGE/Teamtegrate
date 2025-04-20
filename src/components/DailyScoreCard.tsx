@@ -16,13 +16,13 @@ const DailyScoreCard: React.FC<DailyScoreCardProps> = ({ score }) => {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex justify-between items-center">
-          <span className="text-sm text-gray-500">
+          <span className="text-sm text-gray-500 dark:text-gray-400">
             {score.completedTasks} of {score.totalTasks} tasks completed
           </span>
           <span className="font-bold text-xl">{score.percentage}%</span>
         </div>
         <Progress value={score.percentage} className="h-2" />
-        <div className="text-xs text-gray-500">
+        <div className="text-xs text-gray-500 dark:text-gray-400">
           {score.totalTasks === 0 ? (
             <span>No tasks scheduled for today</span>
           ) : (

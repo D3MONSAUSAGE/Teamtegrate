@@ -34,7 +34,7 @@ const AppLayout = () => {
           <Button 
             variant="outline" 
             size="icon" 
-            className="fixed top-4 left-4 z-50 md:hidden bg-white shadow-md"
+            className="fixed top-4 left-4 z-50 md:hidden bg-white dark:bg-gray-800 dark:border-gray-700 shadow-md"
           >
             <Menu className="h-5 w-5" />
             <span className="sr-only">Toggle Sidebar</span>
