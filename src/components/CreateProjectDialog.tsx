@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -12,21 +13,12 @@ import ProjectFormFields from './project/ProjectFormFields';
 import TeamMembersSection from './project/TeamMembersSection';
 import ProjectTasksSection from './project/ProjectTasksSection';
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { FormValues } from './project/ProjectFormFields';
 
 interface CreateProjectDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editingProject?: Project;
-}
-
-export type FormValues = {
-  title: string;
-  description: string;
-  startDate: string;
-  endDate: string;
-  budget: string | number;
-  teamMembers: { memberId: string }[];
-  tasks: { title: string; description: string; priority: TaskPriority; deadline: string }[];
 }
 
 const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({ open, onOpenChange, editingProject }) => {
@@ -43,7 +35,7 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({ open, onOpenC
       endDate: editingProject ? format(new Date(editingProject.endDate), 'yyyy-MM-dd') : '',
       budget: editingProject?.budget || '',
       teamMembers: editingProject?.teamMembers?.map(id => ({ memberId: id })) || [],
-      tasks: [] as { title: string; description: string; priority: TaskPriority; deadline: string }[],
+      tasks: [] as { title: string; description: string; priority: string; deadline: string }[],
     },
   });
 
@@ -81,12 +73,11 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({ open, onOpenC
       managerId: user.id,
       budget: data.budget ? Number(data.budget) : undefined,
       teamMembers: data.teamMembers.map((tm: { memberId: string }) => tm.memberId),
-      tasks: data.tasks.map((task: any) => ({
+      tasks: data.tasks.map((task) => ({
         title: task.title,
         description: task.description,
         priority: task.priority as TaskPriority,
         deadline: new Date(task.deadline),
-        status: 'To Do' as const,
       })),
     };
 
@@ -107,7 +98,7 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({ open, onOpenC
         </DialogHeader>
         
         <ScrollArea className="pr-4 flex-1 overflow-y-auto">
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" id="project-form">
             <ProjectFormFields
               register={register}
               errors={errors}
