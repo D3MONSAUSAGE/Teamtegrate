@@ -1,6 +1,6 @@
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { Task, Project, TaskStatus, TaskPriority, DailyScore, Comment } from '@/types';
+import { Task, Project, TaskStatus, TaskPriority, DailyScore } from '@/types';
 import { useAuth } from '../AuthContext';
 import { fetchTasks, fetchProjects } from './taskApi';
 import { calculateDailyScore } from './taskMetrics';
@@ -10,14 +10,19 @@ import {
   updateTaskStatus, 
   deleteTask, 
   assignTaskToProject, 
-  assignTaskToUser 
-} from './taskOperations';
+  assignTaskToUser,
+  addCommentToTask,
+  addTagToTask,
+  removeTagFromTask
+} from './operations';
 import { 
   addProject, 
   updateProject, 
   deleteProject, 
   addTeamMemberToProject, 
-  removeTeamMemberFromProject 
+  removeTeamMemberFromProject,
+  addTagToProject,
+  removeTagFromProject
 } from './projectOperations';
 import { 
   addCommentToTask, 
