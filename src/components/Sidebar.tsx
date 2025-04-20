@@ -118,8 +118,8 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
         position: "relative",
       }}
     >
-      {/* Top: Logo and Dark Mode Toggle - removed p-6 pt-5 */}
-      <div className="flex items-center justify-between gap-2">
+      {/* Top: Logo and Dark Mode Toggle */}
+      <div className="p-6 pt-5 flex items-center justify-between gap-2">
         <div>
           <h2 className="text-lg font-bold tracking-wide text-primary/90 dark:text-primary/85">TeamStream</h2>
           <p className="text-sm text-gray-600 dark:text-gray-400">Manage your tasks & projects</p>
@@ -143,8 +143,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
         </button>
       </div>
       
-      {/* Main nav - removed px-4 */}
-      <div className="flex-1">
+      <div className="flex-1 px-4">
         <ul className="space-y-2">
           {navItems.map((item) => {
             if (!item.allowed) return null;
@@ -198,9 +197,8 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
         </ul>
       </div>
       
-      {/* Footer - removed p-4 */}
-      <div className="border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-[#181928]">
-        <div className="text-xs text-gray-500 dark:text-gray-400 px-4 py-3">
+      <div className="p-4 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-[#181928]">
+        <div className="text-xs text-gray-500 dark:text-gray-400">
           <p>Logged in as</p>
           <p className="font-semibold text-black dark:text-white">{user.name}</p>
           <p className="text-gray-600 dark:text-gray-300">{user.email}</p>

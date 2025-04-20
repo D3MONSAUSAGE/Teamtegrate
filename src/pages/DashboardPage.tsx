@@ -61,8 +61,8 @@ const DashboardPage = () => {
   };
   
   return (
-    <div className="w-full max-w-full">
-      <div className="flex flex-col gap-4 md:gap-6">
+    <div className="p-2 md:p-6">
+      <div className="flex flex-col gap-4 md:gap-8">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h1 className="text-xl md:text-2xl font-bold">Welcome, {user?.name}!</h1>

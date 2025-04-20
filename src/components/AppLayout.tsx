@@ -13,7 +13,7 @@ const AppLayout = () => {
   const { user, loading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const isMobile = useIsMobile();
-
+  
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -21,11 +21,11 @@ const AppLayout = () => {
       </div>
     );
   }
-
+  
   if (!user) {
     return <Navigate to="/login" />;
   }
-
+  
   return (
     <div className="flex min-h-screen bg-background">
       {/* Mobile sidebar with Sheet component */}
@@ -44,18 +44,17 @@ const AppLayout = () => {
           <Sidebar onNavigation={() => setSidebarOpen(false)} />
         </SheetContent>
       </Sheet>
-
+      
       {/* Desktop sidebar - fixed position on medium screens and larger */}
       <div className="hidden md:block w-64 flex-shrink-0">
-        <div className="fixed top-0 left-0 h-screen w-64 overflow-y-auto bg-white dark:bg-[#181928] border-r border-gray-200 dark:border-gray-800">
+        <div className="fixed h-screen w-64 overflow-y-auto">
           <Sidebar />
         </div>
       </div>
-
-      {/* Main content container - adjusted to remove gap */}
-      <div className="flex-1 flex flex-col w-full md:pl-64">
+      
+      <div className="flex flex-col flex-1 overflow-hidden">
         <Navbar />
-        <main className="flex-1 p-3 md:p-6 overflow-x-hidden overflow-y-auto">
+        <main className="flex-1 overflow-y-auto p-3 md:p-6 md:ml-64 w-full">
           <Outlet />
         </main>
       </div>
