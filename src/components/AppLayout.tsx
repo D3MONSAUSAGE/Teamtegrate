@@ -45,16 +45,14 @@ const AppLayout = () => {
         </SheetContent>
       </Sheet>
       
-      {/* Desktop sidebar - fixed position on medium screens and larger */}
+      {/* Desktop sidebar - visible on medium screens and larger */}
       <div className="hidden md:block w-64 flex-shrink-0">
-        <div className="fixed h-screen w-64 overflow-y-auto">
-          <Sidebar />
-        </div>
+        <Sidebar />
       </div>
       
       <div className="flex flex-col flex-1 overflow-hidden">
         <Navbar />
-        <main className="flex-1 overflow-y-auto p-3 md:p-6 md:ml-64 w-full">
+        <main className="flex-1 overflow-y-auto p-3 md:p-6">
           <Outlet />
         </main>
       </div>
