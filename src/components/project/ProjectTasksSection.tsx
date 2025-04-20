@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { X, Plus } from 'lucide-react';
-import { UseFieldArrayReturn, UseFormRegister, FieldValues, FieldArrayWithId, UseFormSetValue, UseFormWatch, Path, FieldPath } from 'react-hook-form';
+import { UseFieldArrayReturn, UseFormRegister, FieldValues, FieldArrayWithId, UseFormSetValue, UseFormWatch, FieldPath } from 'react-hook-form';
 import { TaskPriority } from '@/types';
 
 interface ProjectTasksSectionProps<TFieldValues extends FieldValues> {
@@ -68,7 +68,7 @@ const ProjectTasksSection = <TFieldValues extends FieldValues>({
           <div className="space-y-2">
             <Label>Task Title</Label>
             <Input
-              {...register(`tasks.${index}.title` as FieldPath<TFieldValues>)}
+              {...register(`tasks.${index}.title` as unknown as FieldPath<TFieldValues>)}
               placeholder="Task title"
             />
           </div>
@@ -76,7 +76,7 @@ const ProjectTasksSection = <TFieldValues extends FieldValues>({
           <div className="space-y-2">
             <Label>Description</Label>
             <Textarea
-              {...register(`tasks.${index}.description` as FieldPath<TFieldValues>)}
+              {...register(`tasks.${index}.description` as unknown as FieldPath<TFieldValues>)}
               placeholder="Task description"
             />
           </div>
@@ -86,10 +86,10 @@ const ProjectTasksSection = <TFieldValues extends FieldValues>({
               <Label>Priority</Label>
               <Select
                 onValueChange={(value: TaskPriority) => {
-                  const path = `tasks.${index}.priority` as FieldPath<TFieldValues>;
+                  const path = `tasks.${index}.priority` as unknown as FieldPath<TFieldValues>;
                   setValue(path, value as any);
                 }}
-                value={watch(`tasks.${index}.priority` as FieldPath<TFieldValues>)}
+                value={watch(`tasks.${index}.priority` as unknown as FieldPath<TFieldValues>)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select priority" />
@@ -106,7 +106,7 @@ const ProjectTasksSection = <TFieldValues extends FieldValues>({
               <Label>Deadline</Label>
               <Input
                 type="date"
-                {...register(`tasks.${index}.deadline` as FieldPath<TFieldValues>)}
+                {...register(`tasks.${index}.deadline` as unknown as FieldPath<TFieldValues>)}
               />
             </div>
           </div>
