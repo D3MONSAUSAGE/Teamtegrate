@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -103,11 +102,11 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
   const handleNavClick = () => {
     if (onNavigation) onNavigation();
   };
-  
+
   return (
     <div className="h-full w-64 bg-white border-r border-gray-200 flex flex-col">
       <div className="p-6">
-        <h2 className="text-lg font-bold">TeamStream</h2>
+        <h2 className="text-lg font-bold tracking-wide text-primary/90">TeamStream</h2>
         <p className="text-sm text-gray-600">Manage your tasks & projects</p>
       </div>
       
@@ -115,21 +114,50 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
         <ul className="space-y-2">
           {navItems.map((item) => {
             if (!item.allowed) return null;
-            
+
+            const isActiveItem = isActive(item.path);
+
             return (
               <li key={item.path}>
                 <Link
                   to={item.path}
                   onClick={handleNavClick}
                   className={cn(
-                    "flex items-center gap-3 px-4 py-2.5 rounded-md text-sm font-medium transition-colors",
-                    isActive(item.path)
-                      ? "bg-primary text-white"
-                      : "text-gray-600 hover:bg-gray-100"
+                    "flex items-center gap-3 px-4 py-2.5 rounded-lg text-base font-medium transition-all duration-200 focus:outline-none",
+                    isActiveItem
+                      ? "bg-primary/90 text-white shadow-md"
+                      : "bg-white text-gray-700 hover:bg-primary/10 hover:text-primary focus:ring-2 focus:ring-primary/60"
                   )}
+                  style={{
+                    letterSpacing: '0.02em'
+                  }}
                 >
-                  {item.icon}
-                  {item.name}
+                  <span
+                    className={cn(
+                      "flex items-center justify-center",
+                      isActiveItem
+                        ? "text-white"
+                        : "text-primary/70 group-hover:text-primary group-focus:text-primary"
+                    )}
+                    // Icon is a react element, so we spread props below
+                  >
+                    {React.cloneElement(item.icon as JSX.Element, {
+                      className: cn(
+                        "w-6 h-6",
+                        isActiveItem
+                          ? "stroke-[2.2] text-white"
+                          : "stroke-[2.2] text-primary/80 group-hover:text-primary"
+                      ),
+                    })}
+                  </span>
+                  <span
+                    className={cn(
+                      "ml-2",
+                      isActiveItem ? "text-white font-bold" : "text-primary/90 font-semibold"
+                    )}
+                  >
+                    {item.name}
+                  </span>
                 </Link>
               </li>
             );
