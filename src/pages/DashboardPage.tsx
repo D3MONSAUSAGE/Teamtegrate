@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { useTask } from '@/contexts/task';
@@ -61,7 +62,7 @@ const DashboardPage = () => {
   };
   
   return (
-    <div className="p-2 md:p-6">
+    <div className="w-full max-w-full">
       <div className="flex flex-col gap-4 md:gap-8">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>

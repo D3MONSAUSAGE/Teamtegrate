@@ -23,7 +23,7 @@ const TasksPage = () => {
   };
 
   return (
-    <div className="p-6">
+    <div className="w-full max-w-full">
       <TasksHeader
         sortBy={sortBy}
         setSortBy={(value) => setSortBy(value)}
