@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
-import { startOfWeek, addDays, format } from 'date-fns';
+import { startOfWeek, addDays, format, parseISO, differenceInMinutes } from 'date-fns';
 
 interface WeeklyTimeReportProps {
   entries: Array<{
@@ -15,15 +15,27 @@ interface WeeklyTimeReportProps {
 
 const WeeklyTimeReport: React.FC<WeeklyTimeReportProps> = ({ entries }) => {
   const getDayEntries = (date: Date) => {
+    const dateString = format(date, 'yyyy-MM-dd');
     return entries.filter(entry => {
-      const entryDate = new Date(entry.clock_in);
-      return format(entryDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd');
+      const entryDate = format(parseISO(entry.clock_in), 'yyyy-MM-dd');
+      return entryDate === dateString;
     });
   };
 
   const calculateDayTotal = (dayEntries: typeof entries) => {
     return dayEntries.reduce((total, entry) => {
-      return total + (entry.duration_minutes || 0);
+      if (entry.duration_minutes) {
+        // If we have a pre-calculated duration, use it
+        return total + entry.duration_minutes;
+      } else if (entry.clock_out) {
+        // If we have clock_out but no duration, calculate it
+        const minutesDiff = differenceInMinutes(
+          parseISO(entry.clock_out),
+          parseISO(entry.clock_in)
+        );
+        return total + minutesDiff;
+      }
+      return total;
     }, 0) / 60; // Convert minutes to hours
   };
 
@@ -59,8 +71,8 @@ const WeeklyTimeReport: React.FC<WeeklyTimeReportProps> = ({ entries }) => {
                   <TableCell>
                     {dayEntries.map((entry, index) => (
                       <div key={index} className="text-sm text-muted-foreground">
-                        {format(new Date(entry.clock_in), 'HH:mm')} - {' '}
-                        {entry.clock_out ? format(new Date(entry.clock_out), 'HH:mm') : 'ongoing'}
+                        {format(parseISO(entry.clock_in), 'HH:mm')} - {' '}
+                        {entry.clock_out ? format(parseISO(entry.clock_out), 'HH:mm') : 'ongoing'}
                         {entry.notes && ` - ${entry.notes}`}
                       </div>
                     ))}

@@ -94,16 +94,22 @@ export const useTimeTracking = () => {
   const getWeeklyTimeEntries = async () => {
     if (!user) return [];
 
+    // Set start of week to 7 days ago to ensure we capture a full week of data
     const startOfWeek = new Date();
+    startOfWeek.setDate(startOfWeek.getDate() - 7);
     startOfWeek.setHours(0, 0, 0, 0);
-    startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
 
     const { data, error } = await supabase
       .from('time_entries')
       .select('*')
       .eq('user_id', user.id)
       .gte('clock_in', startOfWeek.toISOString())
-      .order('clock_in');
+      .order('clock_in', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching weekly time entries:', error);
+      return [];
+    }
 
     return data || [];
   };
