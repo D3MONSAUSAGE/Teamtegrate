@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,7 +12,6 @@ export type FormValues = {
   endDate: string;
   budget: string | number;
   teamMembers: { memberId: string }[];
-  tasks: { title: string; description: string; priority: string; deadline: string }[];
 }
 
 interface ProjectFormFieldsProps {

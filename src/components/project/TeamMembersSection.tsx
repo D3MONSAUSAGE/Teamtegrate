@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -19,7 +18,6 @@ export type FormValues = {
   endDate: string;
   budget: string | number;
   teamMembers: { memberId: string }[];
-  tasks: { title: string; description: string; priority: string; deadline: string }[];
 }
 
 interface TeamMembersSectionProps {
