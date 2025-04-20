@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { X, Plus } from 'lucide-react';
-import { UseFieldArrayReturn, UseFormRegister, FieldValues, FieldArrayWithId, UseFormSetValue, UseFormWatch, Path } from 'react-hook-form';
+import { UseFieldArrayReturn, UseFormRegister, FieldValues, FieldArrayWithId, UseFormSetValue, UseFormWatch } from 'react-hook-form';
 import { TaskPriority } from '@/types';
 
 interface ProjectTasksSectionProps<TFieldValues extends FieldValues> {

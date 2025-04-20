@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { X, Plus } from 'lucide-react';
-import { UseFieldArrayReturn, FieldValues, FieldArrayWithId, UseFormWatch, UseFormSetValue, Path } from 'react-hook-form';
+import { UseFieldArrayReturn, FieldValues, FieldArrayWithId, UseFormWatch, UseFormSetValue } from 'react-hook-form';
 
 interface TeamMembersSectionProps<TFieldValues extends FieldValues> {
   teamMembers: any[];
