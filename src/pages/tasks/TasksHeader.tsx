@@ -12,8 +12,8 @@ import {
 
 interface TasksHeaderProps {
   onNewTask: () => void;
-  sortBy: string;
-  setSortBy: (v: string) => void;
+  sortBy: "deadline" | "priority" | "created";
+  setSortBy: React.Dispatch<React.SetStateAction<"deadline" | "priority" | "created">>;
 }
 
 const TasksHeader: React.FC<TasksHeaderProps> = ({ onNewTask, sortBy, setSortBy }) => (
