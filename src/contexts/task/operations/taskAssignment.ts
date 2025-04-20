@@ -27,6 +27,7 @@ export const assignTaskToProject = async (
     
     const originalProjectId = task.projectId;
 
+    // First update the database
     const { error } = await supabase
       .from('tasks')
       .update({ project_id: projectId, updated_at: now.toISOString() })
@@ -39,10 +40,10 @@ export const assignTaskToProject = async (
       return;
     }
 
-    // Make a copy of the task with updated project ID for adding to the project
+    // Create a copy of the task with updated project ID
     const updatedTask = { ...task, projectId, updatedAt: now };
-
-    // Update the task in the tasks array
+    
+    // Update the local state for tasks
     setTasks(prevTasks => prevTasks.map(t => {
       if (t.id === taskId) {
         return updatedTask;
@@ -50,18 +51,19 @@ export const assignTaskToProject = async (
       return t;
     }));
 
-    // Handle project assignments
+    // Now handle the project state updates - do this in a more predictable way
     setProjects(prevProjects => {
+      // Create a new array to avoid mutation
       return prevProjects.map(project => {
-        // If this is the old project, remove the task
-        if (project.id === originalProjectId) {
+        // If this is the old project and task was previously assigned to a project
+        if (originalProjectId && project.id === originalProjectId) {
           return {
             ...project,
             tasks: project.tasks.filter(t => t.id !== taskId)
           };
         }
         
-        // If this is the new project, add the task
+        // If this is the new project
         if (project.id === projectId) {
           // Check if the task is already in the project
           const taskExists = project.tasks.some(t => t.id === taskId);

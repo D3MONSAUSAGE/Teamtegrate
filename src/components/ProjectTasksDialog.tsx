@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Project, Task } from '@/types';
 import { Plus, Calendar } from 'lucide-react';
@@ -46,7 +46,7 @@ const ProjectTasksDialog: React.FC<ProjectTasksDialogProps> = ({
         <DialogContent className="sm:max-w-[800px]">
           <DialogHeader>
             <DialogTitle>{project?.title}</DialogTitle>
-            <DialogDescription className="text-sm text-gray-500">
+            <div className="text-sm text-gray-500">
               <div className="flex items-center gap-2 mt-2">
                 <Calendar className="h-4 w-4" />
                 <span>{format(new Date(project.startDate), 'MMM d, yyyy')} - {format(new Date(project.endDate), 'MMM d, yyyy')}</span>
@@ -63,7 +63,7 @@ const ProjectTasksDialog: React.FC<ProjectTasksDialogProps> = ({
                 </div>
                 <Progress value={progress} className="h-2" />
               </div>
-            </DialogDescription>
+            </div>
           </DialogHeader>
           
           <div className="flex justify-end mb-4">
