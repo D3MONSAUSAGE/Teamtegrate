@@ -86,7 +86,7 @@ const ProjectTasksSection = <TFieldValues extends FieldValues>({
               <Label>Priority</Label>
               <Select
                 onValueChange={(value: TaskPriority) => {
-                  setValue(`tasks.${index}.priority` as unknown as FieldPath<TFieldValues>, value);
+                  setValue(`tasks.${index}.priority` as unknown as FieldPath<TFieldValues>, value as any);
                 }}
                 value={watch(`tasks.${index}.priority` as unknown as FieldPath<TFieldValues>)}
               >
