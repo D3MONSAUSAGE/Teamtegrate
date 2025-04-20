@@ -51,7 +51,8 @@ export const fetchProjects = async (user: User | null, setProjects: React.Dispat
             completedAt: task.completed_at ? new Date(task.completed_at) : undefined,
             assignedToId: task.assigned_to_id,
             assignedToName: assigneeName,
-            completedById: task.completed_by_id || user.id,
+            // Use user info since completed_by_id isn't available
+            completedById: user.id,
             completedByName: user.name,
             comments: comments || [],
             tags: [], // Initialize as empty array

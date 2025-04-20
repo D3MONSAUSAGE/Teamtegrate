@@ -348,7 +348,7 @@ export const assignTaskToProject = async (
   taskId: string,
   projectId: string,
   user: User | null,
-  tasks: Task[],
+  allTasks: Task[],
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>,
   projects: Project[],
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
@@ -359,7 +359,7 @@ export const assignTaskToProject = async (
     const now = new Date();
 
     // Find the task to get its current project ID
-    const task = tasks.find(t => t.id === taskId);
+    const task = allTasks.find(t => t.id === taskId);
     const originalProjectId = task?.projectId;
 
     const { error } = await supabase
@@ -395,7 +395,7 @@ export const assignTaskToProject = async (
         
         // If this is the new project, add the task
         if (project.id === projectId) {
-          const taskToAdd = tasks.find(t => t.id === taskId);
+          const taskToAdd = allTasks.find(t => t.id === taskId);
           if (taskToAdd) {
             // Make a copy with the new project ID
             const updatedTask = { ...taskToAdd, projectId, updatedAt: now };

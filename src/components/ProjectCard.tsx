@@ -128,8 +128,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
             </div>
             <Progress 
               value={budgetProgress} 
-              className="h-1.5 md:h-2"
-              variant={budgetProgress > 100 ? "destructive" : "default"}
+              className={`h-1.5 md:h-2 ${budgetProgress > 100 ? "bg-destructive" : ""}`}
             />
           </div>
         )}
