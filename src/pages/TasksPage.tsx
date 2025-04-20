@@ -26,7 +26,7 @@ const TasksPage = () => {
     <div className="p-6">
       <TasksHeader
         sortBy={sortBy}
-        setSortBy={setSortBy}
+        setSortBy={(value) => setSortBy(value)}
         onNewTask={() => {
           setEditingTask(undefined);
           setIsCreateTaskOpen(true);
