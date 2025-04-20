@@ -52,7 +52,7 @@ function TeamMembersSection<TFormValues extends FormValues>({
         <div key={field.id} className="flex items-center gap-2">
           <Select
             onValueChange={(value: string) => {
-              setValue(`teamMembers.${index}.memberId` as Path<TFormValues>, value as any);
+              setValue(`teamMembers.${index}.memberId` as Path<TFormValues>, value as PathValue<TFormValues, Path<TFormValues>>);
             }}
             value={(watch(`teamMembers.${index}.memberId` as Path<TFormValues>) || '') as string}
           >

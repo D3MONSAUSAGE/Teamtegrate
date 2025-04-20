@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { X, Plus } from 'lucide-react';
 import { TaskPriority } from '@/types';
-import { UseFormRegister, UseFormSetValue, UseFormWatch, FieldArrayWithId, Path } from 'react-hook-form';
+import { UseFormRegister, UseFormSetValue, UseFormWatch, FieldArrayWithId, Path, PathValue } from 'react-hook-form';
 import { FormValues } from '../CreateProjectDialog';
 
 interface ProjectTasksSectionProps<TFormValues extends FormValues> {
@@ -81,7 +81,7 @@ function ProjectTasksSection<TFormValues extends FormValues>({
               <Label>Priority</Label>
               <Select
                 onValueChange={(value: TaskPriority) => {
-                  setValue(`tasks.${index}.priority` as Path<TFormValues>, value as any);
+                  setValue(`tasks.${index}.priority` as Path<TFormValues>, value as PathValue<TFormValues, Path<TFormValues>>);
                 }}
                 value={(watch(`tasks.${index}.priority` as Path<TFormValues>) || 'Medium') as TaskPriority}
               >
