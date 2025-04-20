@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { FileImage, FileText } from 'lucide-react';
+import { FileImage, FileText, Download } from 'lucide-react';
 import { supabase } from "@/integrations/supabase/client";
 import ChatMessageAvatar from './ChatMessageAvatar';
 import { useQuery } from '@tanstack/react-query';
@@ -31,7 +31,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isCurrentUser }) => 
         .select('name')
         .eq('id', message.user_id)
         .single();
-      
       if (error) throw error;
       return data;
     },
@@ -39,31 +38,55 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isCurrentUser }) => 
 
   const renderAttachment = (attachment: Attachment) => {
     const isImage = attachment.file_type.startsWith('image/');
-    const url = `${supabase.storage.from('chat-attachments').getPublicUrl(attachment.file_path).data.publicUrl}`;
+    const url = supabase.storage.from('chat-attachments').getPublicUrl(attachment.file_path).data.publicUrl;
 
     return (
-      <a
+      <div
         key={attachment.id}
-        href={url}
-        target="_blank"
-        rel="noopener noreferrer"
-        download={attachment.file_name}
-        className="flex items-center gap-2 p-3 mt-2 bg-muted rounded hover:bg-muted/80 transition-colors"
+        className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-[rgba(147,39,143,0.08)] to-[rgba(234,172,232,0.16)] shadow-sm border border-accent/30 mb-1 hover:shadow-md transition hover:scale-[1.02] group max-w-full"
+        style={{ minWidth: 0 }}
       >
-        <div className="flex-shrink-0">
-          {isImage ? (
-            <FileImage className="h-5 w-5" />
-          ) : (
-            <FileText className="h-5 w-5" />
+        <div
+          className={`flex-shrink-0 rounded-lg w-10 h-10 flex items-center justify-center bg-gradient-to-tr ${
+            isImage
+              ? 'from-purple-400 to-pink-300'
+              : 'from-blue-400 to-blue-300'
+          } shadow group-hover:ring-2 group-hover:ring-primary/40 transition`}
+        >
+          {isImage ? <FileImage className="h-6 w-6 text-white" /> : <FileText className="h-6 w-6 text-white" />}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center">
+            <div className="truncate font-medium text-sm text-gray-900 dark:text-white">
+              {attachment.file_name}
+            </div>
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              download={attachment.file_name}
+              className="ml-2 group/download rounded-full hover:bg-accent hover:text-primary transition-colors p-1"
+              title="Download file"
+            >
+              <Download className="h-5 w-5 text-primary group-hover:text-purple-800 transition" />
+            </a>
+          </div>
+          <div className="text-xs text-muted-foreground pt-0.5">
+            {isImage ? 'Image' : (attachment.file_type.split('/')[1]?.toUpperCase() || 'File')}
+          </div>
+          {/* Preview image when available */}
+          {isImage && (
+            <a href={url} target="_blank" rel="noopener noreferrer" className="block mt-2 rounded-lg overflow-hidden border border-muted/50 hover:shadow-lg transition-all" title="Preview image">
+              <img
+                src={url}
+                alt={attachment.file_name}
+                className="w-32 max-h-36 object-cover transition-transform group-hover:scale-105"
+                style={{ background: "#f6f1fb" }}
+              />
+            </a>
           )}
         </div>
-        <div className="overflow-hidden">
-          <div className="text-sm font-medium truncate">{attachment.file_name}</div>
-          <div className="text-xs text-muted-foreground">
-            {isImage ? 'Image' : attachment.file_type.split('/')[1]?.toUpperCase() || 'File'}
-          </div>
-        </div>
-      </a>
+      </div>
     );
   };
 
@@ -90,13 +113,14 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isCurrentUser }) => 
         <div
           className={`px-4 py-2.5 rounded-3xl break-words ${
             isCurrentUser
-              ? 'bg-primary text-primary-foreground rounded-br-sm'
+              ? 'bg-gradient-to-tr from-primary to-purple-400 text-primary-foreground rounded-br-sm'
               : 'bg-muted rounded-bl-sm'
           }`}
         >
           <p className="text-sm">{message.content}</p>
         </div>
-        <div className="mt-1 space-y-2">
+        {/* Attachments, Stripe-style modern list */}
+        <div className="mt-2 space-y-1">
           {message.attachments?.map(attachment => renderAttachment(attachment))}
         </div>
       </div>
