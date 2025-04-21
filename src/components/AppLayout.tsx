@@ -29,14 +29,15 @@ const AppLayout = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background overflow-x-hidden"> {/* Prevent side-to-side scroll */}
+    <div className="min-h-screen bg-background overflow-x-hidden">
       {/* Mobile sidebar with Sheet component */}
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
         <SheetTrigger asChild>
+          {/* Changed from fixed to absolute */}
           <Button 
             variant="outline" 
             size="icon" 
-            className="fixed top-4 left-4 z-50 md:hidden bg-white dark:bg-gray-800 dark:border-gray-700 shadow-md"
+            className="absolute top-4 left-4 z-50 md:hidden bg-white dark:bg-gray-800 dark:border-gray-700 shadow-md"
           >
             <Menu className="h-5 w-5" />
             <span className="sr-only">Toggle Sidebar</span>
@@ -46,7 +47,7 @@ const AppLayout = () => {
           <Sidebar onNavigation={() => setSidebarOpen(false)} />
         </SheetContent>
       </Sheet>
-      
+
       {/* Desktop sidebar - fixed and not scrollable */}
       <div
         className="hidden md:block"
@@ -62,13 +63,13 @@ const AppLayout = () => {
       
       {/* Main content area (with sidebar offset on desktop) */}
       <div
-        className={`flex flex-col flex-1 overflow-x-hidden`} // Prevent side-to-side scroll here too
+        className={`flex flex-col flex-1 overflow-x-hidden`}
         style={{
           marginLeft: !isMobile ? SIDEBAR_WIDTH : 0,
         }}
       >
         <Navbar />
-        <main className="flex-1 overflow-y-auto p-3 md:p-6 overflow-x-hidden"> {/* <-- added overflow-x-hidden */}
+        <main className="flex-1 overflow-y-auto p-3 md:p-6 overflow-x-hidden">
           <Outlet />
         </main>
       </div>
