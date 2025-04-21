@@ -1,4 +1,3 @@
-
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,24 +25,19 @@ export const useMessageDisplayName = (message: {
         return { name: currentUser.name };
       }
 
-      try {
-        // Fetch user details from the database
-        const { data, error } = await supabase
-          .from("users")
-          .select("name")
-          .eq("id", message.user_id)
-          .single();
+      // Fetch user details from the database
+      const { data, error } = await supabase
+        .from("users")
+        .select("name")
+        .eq("id", message.user_id)
+        .single();
 
-        if (error || !data) {
-          console.warn("Failed to fetch user details:", error);
-          return { name: isCurrentUser ? "You" : "Unknown User" };
-        }
-
-        return data;
-      } catch (error) {
-        console.error("Error fetching user details:", error);
+      if (error || !data) {
+        console.warn("Failed to fetch user details:", error);
         return { name: isCurrentUser ? "You" : "Unknown User" };
       }
+
+      return data;
     },
     // Set initial data to avoid flicker
     initialData:

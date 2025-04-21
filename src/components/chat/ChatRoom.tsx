@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card } from '@/components/ui/card';
@@ -8,10 +7,12 @@ import ChatMessageInput from './ChatMessageInput';
 import { useChat } from '@/hooks/use-chat';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-// Extracted subcomponents
 import ChatRoomHeader from './ChatRoomHeader';
 import ChatParticipantsSidebar from './ChatParticipantsSidebar';
 import ChatMessageGroups from './ChatMessageGroups';
+import AddChatParticipantDialog from './AddChatParticipantDialog';
+import { Button } from '@/components/ui/button';
+import { UserPlus } from '@/components/ui/icons';
 
 interface ChatRoomProps {
   room: {
@@ -39,6 +40,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
 
   const [leaving, setLeaving] = useState(false);
   const [showParticipants, setShowParticipants] = useState(false);
+  const [showAddParticipant, setShowAddParticipant] = useState(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -120,6 +122,19 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
         onLeave={handleLeaveChat}
         leaving={leaving}
       />
+
+      <div className="absolute right-3 top-5 z-20 flex gap-2">
+        <Button variant="outline" size="sm" onClick={() => setShowAddParticipant(true)}>
+          <UserPlus className="h-4 w-4 mr-1" /> Add Member
+        </Button>
+      </div>
+      {showAddParticipant && (
+        <AddChatParticipantDialog
+          open={showAddParticipant}
+          onOpenChange={setShowAddParticipant}
+          roomId={room.id}
+        />
+      )}
 
       {showParticipants && (
         <ChatParticipantsSidebar
