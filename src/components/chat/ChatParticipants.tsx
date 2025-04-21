@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   Popover,
@@ -11,13 +10,16 @@ import ChatMessageAvatar from './ChatMessageAvatar';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ChatParticipantsProps {
   roomId: string;
 }
 
 const ChatParticipants: React.FC<ChatParticipantsProps> = ({ roomId }) => {
-  const { data: participants } = useQuery({
+  const { user: currentUser } = useAuth();
+  
+  const { data: participants, isLoading } = useQuery({
     queryKey: ['chat-participants', roomId],
     queryFn: async () => {
       // First get unique user IDs who have sent messages in this room
@@ -40,9 +42,41 @@ const ChatParticipants: React.FC<ChatParticipantsProps> = ({ roomId }) => {
         .select('id, name, avatar_url')
         .in('id', uniqueUserIds);
       
-      if (usersError) throw usersError;
+      if (usersError) {
+        console.error('Error fetching users:', usersError);
+        // Return fallback user data using the authenticated user if available
+        return uniqueUserIds.map(id => {
+          // If this is the current user, use our auth context data
+          if (currentUser && id === currentUser.id) {
+            return {
+              id: currentUser.id,
+              name: currentUser.name,
+              avatar_url: null
+            };
+          }
+          // Otherwise return a placeholder
+          return {
+            id: id,
+            name: 'User',
+            avatar_url: null
+          };
+        });
+      }
       
-      return users || [];
+      // Combine database results with current user data for completeness
+      const participantsList = [...(users || [])];
+      
+      // If current user is a participant but not in the database results, add them
+      if (currentUser && uniqueUserIds.includes(currentUser.id) && 
+          !participantsList.some(p => p.id === currentUser.id)) {
+        participantsList.push({
+          id: currentUser.id,
+          name: currentUser.name,
+          avatar_url: null
+        });
+      }
+      
+      return participantsList;
     },
   });
 
@@ -63,20 +97,29 @@ const ChatParticipants: React.FC<ChatParticipantsProps> = ({ roomId }) => {
           <h4 className="font-medium">Participants ({participants?.length || 0})</h4>
         </div>
         <ScrollArea className="h-[300px] p-4">
-          <div className="space-y-4">
-            {participants?.length ? (
-              participants.map((user) => (
-                <div key={user.id} className="flex items-center gap-3">
-                  <ChatMessageAvatar userId={user.id} className="h-8 w-8" />
-                  <span className="text-sm">{user.name}</span>
+          {isLoading ? (
+            <div className="text-center py-4">
+              <p className="text-sm text-muted-foreground">Loading participants...</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {participants?.length ? (
+                participants.map((user) => (
+                  <div key={user.id} className="flex items-center gap-3">
+                    <ChatMessageAvatar userId={user.id} className="h-8 w-8" />
+                    <span className="text-sm">
+                      {user.name || 'Unknown User'}
+                      {currentUser?.id === user.id && " (You)"}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center text-muted-foreground py-4">
+                  No participants yet
                 </div>
-              ))
-            ) : (
-              <div className="text-center text-muted-foreground py-4">
-                No participants yet
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </ScrollArea>
       </PopoverContent>
     </Popover>

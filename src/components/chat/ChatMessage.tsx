@@ -1,9 +1,9 @@
-
 import React from 'react';
 import { FileImage, FileText, Download } from 'lucide-react';
 import { supabase } from "@/integrations/supabase/client";
 import ChatMessageAvatar from './ChatMessageAvatar';
 import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Attachment {
   id: string;
@@ -17,23 +17,44 @@ interface ChatMessageProps {
     id: string;
     content: string;
     user_id: string;
+    type?: 'text' | 'system';
     attachments?: Attachment[];
   };
   isCurrentUser: boolean;
 }
 
 const ChatMessage: React.FC<ChatMessageProps> = ({ message, isCurrentUser }) => {
-  const { data: user } = useQuery({
+  const { user: currentUser } = useAuth();
+  
+  const { data: userData } = useQuery({
     queryKey: ['user', message.user_id],
     queryFn: async () => {
+      if (message.type === 'system') {
+        return { name: 'System' };
+      }
+      
+      if (isCurrentUser && currentUser) {
+        return { name: currentUser.name };
+      }
+      
       const { data, error } = await supabase
         .from('users')
         .select('name')
         .eq('id', message.user_id)
         .single();
-      if (error) throw error;
+      
+      if (error || !data) {
+        console.warn('Failed to fetch user details:', error);
+        return { name: isCurrentUser ? 'You' : 'Unknown User' };
+      }
+      
       return data;
     },
+    initialData: isCurrentUser && currentUser 
+      ? { name: currentUser.name } 
+      : message.type === 'system' 
+        ? { name: 'System' } 
+        : { name: 'Unknown User' }
   });
 
   const renderAttachment = (attachment: Attachment) => {
@@ -74,7 +95,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isCurrentUser }) => 
           <div className="text-xs text-muted-foreground pt-0.5">
             {isImage ? 'Image' : (attachment.file_type.split('/')[1]?.toUpperCase() || 'File')}
           </div>
-          {/* Preview image when available */}
           {isImage && (
             <a href={url} target="_blank" rel="noopener noreferrer" className="block mt-2 rounded-lg overflow-hidden border border-muted/50 hover:shadow-lg transition-all" title="Preview image">
               <img
@@ -89,6 +109,8 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isCurrentUser }) => 
       </div>
     );
   };
+
+  const displayName = message.type === 'system' ? 'System' : userData?.name || (isCurrentUser ? 'You' : 'Unknown User');
 
   return (
     <div
@@ -108,7 +130,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isCurrentUser }) => 
         <div className={`text-xs text-muted-foreground mb-1 ${
           isCurrentUser ? 'text-right' : 'text-left'
         }`}>
-          {user?.name || 'Unknown User'}
+          {displayName}
         </div>
         <div
           className={`px-4 py-2.5 rounded-3xl break-words ${
@@ -119,7 +141,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isCurrentUser }) => 
         >
           <p className="text-sm">{message.content}</p>
         </div>
-        {/* Attachments, Stripe-style modern list */}
         <div className="mt-2 space-y-1">
           {message.attachments?.map(attachment => renderAttachment(attachment))}
         </div>
