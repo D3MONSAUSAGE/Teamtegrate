@@ -1,12 +1,11 @@
-
 import React from 'react';
-import { FileImage, FileText, Download, MessageSquareReply, Clock } from 'lucide-react';
-import { supabase } from "@/integrations/supabase/client";
+import { MessageSquareReply, Clock } from 'lucide-react';
 import ChatMessageAvatar from './ChatMessageAvatar';
-import { useQuery } from '@tanstack/react-query';
-import { useAuth } from '@/contexts/AuthContext';
 import MessageReactions from './MessageReactions';
 import { formatDistanceToNow } from 'date-fns';
+import ChatMessageAttachment from './ChatMessageAttachment';
+import ChatMessageReplySnippet from './ChatMessageReplySnippet';
+import { useMessageDisplayName } from './hooks/useMessageDisplayName';
 
 interface Attachment {
   id: string;
@@ -39,111 +38,19 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   onReplyClick,
   parentMessage,
 }) => {
-  const { user: currentUser } = useAuth();
-  
-  const { data: userData } = useQuery({
-    queryKey: ['user', message.user_id],
-    queryFn: async () => {
-      if (message.type === 'system') {
-        return { name: 'System' };
-      }
-      
-      if (isCurrentUser && currentUser) {
-        return { name: currentUser.name };
-      }
-      
-      const { data, error } = await supabase
-        .from('users')
-        .select('name')
-        .eq('id', message.user_id)
-        .single();
-      
-      if (error || !data) {
-        console.warn('Failed to fetch user details:', error);
-        return { name: isCurrentUser ? 'You' : 'Unknown User' };
-      }
-      
-      return data;
-    },
-    initialData: isCurrentUser && currentUser 
-      ? { name: currentUser.name } 
-      : message.type === 'system' 
-        ? { name: 'System' } 
-        : { name: 'Unknown User' }
-  });
+  // Replace user fetching logic with hook
+  const { data: userData } = useMessageDisplayName(message, isCurrentUser);
 
   // Format timestamp if available
   const timestamp = message.created_at 
     ? formatDistanceToNow(new Date(message.created_at), { addSuffix: false })
     : '';
 
-  let replySnippet = null;
-  if (parentMessage) {
-    replySnippet = (
-      <div className="mb-1 pl-2 py-1 border-l-2 border-primary/50 bg-accent/15 rounded text-xs text-muted-foreground max-w-full">
-        <span className="font-semibold">
-          {parentMessage.user_id === currentUser?.id ? "You" : "Replied"}:
-        </span>{" "}
-        <span className="italic truncate">{parentMessage.content?.slice(0, 60)}{parentMessage.content?.length > 60 ? '...' : ''}</span>
-      </div>
-    );
-  }
+  // Use the refactored reply snippet component
+  const replySnippet = (
+    <ChatMessageReplySnippet parentMessage={parentMessage} />
+  );
 
-  const renderAttachment = (attachment: Attachment) => {
-    const isImage = attachment.file_type.startsWith('image/');
-    const url = supabase.storage.from('chat-attachments').getPublicUrl(attachment.file_path).data.publicUrl;
-
-    return (
-      <div
-        key={attachment.id}
-        className="flex items-center gap-3 p-3 rounded-xl bg-accent/10 shadow-sm border border-accent/20 mb-1 hover:shadow-md transition hover:scale-[1.02] group max-w-full"
-        style={{ minWidth: 0 }}
-      >
-        <div
-          className={`flex-shrink-0 rounded-lg w-10 h-10 flex items-center justify-center bg-gradient-to-tr ${
-            isImage
-              ? 'from-primary/80 to-primary/60'
-              : 'from-accent/80 to-accent/60'
-          } shadow`}
-        >
-          {isImage ? <FileImage className="h-5 w-5 text-white" /> : <FileText className="h-5 w-5 text-white" />}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center">
-            <div className="truncate font-medium text-sm text-gray-900 dark:text-white">
-              {attachment.file_name}
-            </div>
-            <a
-              href={url}
-              target="_blank"
-              rel="noopener noreferrer"
-              download={attachment.file_name}
-              className="ml-2 rounded-full hover:bg-accent hover:text-primary transition-colors p-1"
-              title="Download file"
-            >
-              <Download className="h-4 w-4 text-primary" />
-            </a>
-          </div>
-          <div className="text-xs text-muted-foreground pt-0.5">
-            {isImage ? 'Image' : (attachment.file_type.split('/')[1]?.toUpperCase() || 'File')}
-          </div>
-          {isImage && (
-            <a href={url} target="_blank" rel="noopener noreferrer" className="block mt-2 rounded-lg overflow-hidden border border-muted/30 hover:shadow-lg transition-all" title="Preview image">
-              <img
-                src={url}
-                alt={attachment.file_name}
-                className="w-48 max-h-36 object-cover transition-transform group-hover:scale-105"
-                style={{ background: "#f6f1fb" }}
-              />
-            </a>
-          )}
-        </div>
-      </div>
-    );
-  };
-
-  const displayName = message.type === 'system' ? 'System' : userData?.name || (isCurrentUser ? 'You' : 'Unknown User');
-  
   // WhatsApp-style class definitions
   const messageContainerClasses = `max-w-[85%] sm:max-w-[70%] ${
     isCurrentUser 
@@ -157,6 +64,8 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
       : 'bg-muted dark:bg-[#262d45] dark:text-white rounded-tl-none'
   }`;
 
+  const displayName = message.type === 'system' ? 'System' : userData?.name || (isCurrentUser ? 'You' : 'Unknown User');
+  
   return (
     <div className="flex flex-col mb-1 relative group">
       {/* Show user name only for non-current users and not showing continuously from same user */}
@@ -176,7 +85,8 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
         
         <div className={messageContainerClasses}>
           <div className="space-y-0.5">
-            {replySnippet}
+            {/* Use extracted reply snippet */}
+            {parentMessage ? replySnippet : null}
             
             <div className={messageBubbleClasses}>
               <p className="text-sm whitespace-pre-wrap">{message.content}</p>
@@ -188,7 +98,10 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
             </div>
             
             <div className="space-y-1">
-              {message.attachments?.map(attachment => renderAttachment(attachment))}
+              {/* Use extracted attachment rendering */}
+              {message.attachments?.map(attachment => (
+                <ChatMessageAttachment key={attachment.id} attachment={attachment} />
+              ))}
             </div>
             
             <div className="flex justify-end mt-0.5 pr-1">
