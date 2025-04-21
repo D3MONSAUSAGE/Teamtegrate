@@ -8,8 +8,8 @@ import { useAuth } from '@/contexts/AuthContext';
 
 const ProfileSection = () => {
   const { user } = useAuth();
-  const [name, setName] = useState<string>(user?.user_metadata?.name || "");
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(user?.user_metadata?.avatar_url || null);
+  const [name, setName] = useState<string>(user?.name || "");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSave = async () => {
