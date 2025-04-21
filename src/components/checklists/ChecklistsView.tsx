@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   Card, CardContent, CardDescription, 
@@ -55,6 +56,12 @@ const ChecklistsView: React.FC<ChecklistsViewProps> = ({ type }) => {
     setIsUseTemplateDialogOpen(true);
   };
 
+  const handleExecuteChecklist = (checklist: Checklist) => {
+    // You may want to handle navigation or advanced logic here.
+    // For now, just show a toast (already handled in ActiveChecklistCard's default).
+    // This function is available if you want to override, or extend, the default behavior.
+  };
+
   const goToPrevWeek = () => setWeekStart(addWeeks(weekStart, -1));
   const goToNextWeek = () => setWeekStart(addWeeks(weekStart, 1));
 
@@ -86,7 +93,11 @@ const ChecklistsView: React.FC<ChecklistsViewProps> = ({ type }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {type === 'active'
           ? (data as Checklist[]).map(item => (
-              <ActiveChecklistCard key={item.id} checklist={item} />
+              <ActiveChecklistCard
+                key={item.id}
+                checklist={item}
+                onExecute={handleExecuteChecklist}
+              />
             ))
           : (data as ChecklistTemplate[]).map(item => (
               <TemplateChecklistCard
