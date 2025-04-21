@@ -22,20 +22,24 @@ import { toast } from '@/components/ui/sonner';
 interface ActiveChecklistCardProps {
   checklist: Checklist;
   onExecute: () => void;
+  onChecklistExecuted?: (checklist: Checklist) => void; // <-- new
 }
 
-const ActiveChecklistCard: React.FC<ActiveChecklistCardProps> = ({ checklist, onExecute }) => {
+const ActiveChecklistCard: React.FC<ActiveChecklistCardProps> = ({ checklist, onExecute, onChecklistExecuted }) => {
   const { canExecuteChecklist } = useChecklists();
   const isExecutable = canExecuteChecklist(checklist);
-  
+
   const handleExecuteClick = () => {
     if (!isExecutable) {
       toast.error("This checklist cannot be executed at this time due to its execution window constraints.");
       return;
     }
     onExecute();
+    if (onChecklistExecuted) {
+      onChecklistExecuted(checklist);
+    }
   };
-  
+
   return (
     <Card className="overflow-hidden">
       <CardHeader className="pb-3">

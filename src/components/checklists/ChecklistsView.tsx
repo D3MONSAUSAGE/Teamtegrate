@@ -31,10 +31,20 @@ import {
   SelectValue
 } from '@/components/ui/select';
 
+
 interface ChecklistsViewProps {
   type: 'active' | 'template';
   onSelectChecklist?: (checklist: Checklist) => void;
 }
+
+const isToday = (date: Date) => {
+  const now = new Date();
+  return (
+    date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth() &&
+    date.getDate() === now.getDate()
+  );
+};
 
 const ChecklistsView: React.FC<ChecklistsViewProps> = ({ type, onSelectChecklist }) => {
   const isMobile = useIsMobile();
@@ -50,6 +60,9 @@ const ChecklistsView: React.FC<ChecklistsViewProps> = ({ type, onSelectChecklist
 
   const [selectedBranch, setSelectedBranch] = useState<string>('all');
 
+  // Local state to track checklist executions for today
+  const [executedTodaySet, setExecutedTodaySet] = useState<Set<string>>(new Set());
+
   const availableBranches = useMemo(() => {
     if (type !== 'active') return [];
     const branches = new Set<string>();
@@ -58,7 +71,7 @@ const ChecklistsView: React.FC<ChecklistsViewProps> = ({ type, onSelectChecklist
     });
     return Array.from(branches);
   }, [type, checklists]);
-  
+
   let data = type === 'template' ? templates : checklists;
 
   if (type === 'active') {
@@ -76,6 +89,17 @@ const ChecklistsView: React.FC<ChecklistsViewProps> = ({ type, onSelectChecklist
     }
     data = activeChecklists;
   }
+
+  // Callback for when an "Execute" is performed
+  const handleChecklistExecuted = (checklist: Checklist) => {
+    // Only add if not already marked as executed today
+    setExecutedTodaySet(prev => {
+      if (prev.has(checklist.id)) return prev;
+      const newSet = new Set(prev);
+      newSet.add(checklist.id);
+      return newSet;
+    });
+  };
 
   const handleUseTemplate = (template: ChecklistTemplate) => {
     setSelectedTemplate(template);
@@ -96,6 +120,9 @@ const ChecklistsView: React.FC<ChecklistsViewProps> = ({ type, onSelectChecklist
   const goToPrevWeek = () => setWeekStart(addWeeks(weekStart, -1));
   const goToNextWeek = () => setWeekStart(addWeeks(weekStart, 1));
 
+  // Number of unique executed checklists today
+  const totalExecutedToday = executedTodaySet.size;
+
   if (data.length === 0) {
     return (
       <div className="text-center py-10">
@@ -114,32 +141,38 @@ const ChecklistsView: React.FC<ChecklistsViewProps> = ({ type, onSelectChecklist
   return (
     <div className="space-y-6">
       {type === 'active' && (
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <WeekSelector
-            weekStart={weekStart}
-            setWeekStart={setWeekStart}
-            goToPrevWeek={goToPrevWeek}
-            goToNextWeek={goToNextWeek}
-          />
-          {availableBranches.length > 0 && (
-            <div className="w-full md:w-[200px]">
-              <Select
-                value={selectedBranch}
-                onValueChange={setSelectedBranch}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select branch" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem key="all" value="all">All Branches</SelectItem>
-                  {availableBranches.map(branch => (
-                    <SelectItem key={branch} value={branch}>{branch}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-        </div>
+        <>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <WeekSelector
+              weekStart={weekStart}
+              setWeekStart={setWeekStart}
+              goToPrevWeek={goToPrevWeek}
+              goToNextWeek={goToNextWeek}
+            />
+            {availableBranches.length > 0 && (
+              <div className="w-full md:w-[200px]">
+                <Select
+                  value={selectedBranch}
+                  onValueChange={setSelectedBranch}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select branch" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem key="all" value="all">All Branches</SelectItem>
+                    {availableBranches.map(branch => (
+                      <SelectItem key={branch} value={branch}>{branch}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-4 bg-accent rounded-lg py-2 px-4">
+            <span className="font-medium text-base">Total Checklists Executed Today:</span>
+            <span className="font-bold text-foreground text-lg">{totalExecutedToday}</span>
+          </div>
+        </>
       )}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {type === 'active'
@@ -148,6 +181,7 @@ const ChecklistsView: React.FC<ChecklistsViewProps> = ({ type, onSelectChecklist
                 key={item.id}
                 checklist={item}
                 onExecute={() => handleExecuteChecklist(item)}
+                onChecklistExecuted={handleChecklistExecuted}
               />
             ))
           : (data as ChecklistTemplate[]).map(item => (
