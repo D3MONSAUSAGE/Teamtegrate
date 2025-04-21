@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Checklist, ChecklistTemplate } from '@/types/checklist';
-import { v4 as uuidv4 } from 'uuid';
 import { useAuth } from '../AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
@@ -39,7 +38,7 @@ export const ChecklistProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           createdBy: template.created_by || '',
           createdAt: template.created_at ? new Date(template.created_at) : new Date(),
           branchOptions: template.branch_options || [],
-          frequency: validateChecklistFrequency(template.frequency || 'once'),
+          frequency: validateChecklistFrequency(template.frequency || 'once'), // cast properly here
           lastGenerated: template.last_generated ? new Date(template.last_generated) : undefined,
           tags: template.tags || [],
         }));
@@ -74,7 +73,7 @@ export const ChecklistProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           assignedTo: checklist.assigned_to || [],
           startDate: checklist.start_date ? new Date(checklist.start_date) : new Date(),
           dueDate: checklist.due_date ? new Date(checklist.due_date) : undefined,
-          status: validateChecklistStatus(checklist.status),
+          status: validateChecklistStatus(checklist.status), // cast to allowed status
           progress: typeof checklist.progress === 'number' ? checklist.progress : 0,
           completedCount: typeof checklist.completed_count === 'number' ? checklist.completed_count : 0,
           totalCount: typeof checklist.total_count === 'number' ? checklist.total_count : 0,
@@ -91,7 +90,6 @@ export const ChecklistProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   }, []);
 
-  // Add new checklist
   const addChecklist = async (newChecklist: Partial<Checklist>) => {
     if (!user) {
       toast.error('You must be logged in to create a checklist');
@@ -126,7 +124,6 @@ export const ChecklistProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   };
 
-  // Add new template
   const addTemplate = async (newTemplate: Partial<ChecklistTemplate>) => {
     if (!user) {
       toast.error('You must be logged in to create a template');
@@ -139,7 +136,7 @@ export const ChecklistProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         description: newTemplate.description || '',
         sections: prepareJsonSections(sections),
         created_by: user.id,
-        frequency: newTemplate.frequency || 'once',
+        frequency: newTemplate.frequency ? validateChecklistFrequency(newTemplate.frequency) : 'once',
         branch_options: newTemplate.branchOptions || [],
         tags: newTemplate.tags || [],
         last_generated: newTemplate.lastGenerated ? newTemplate.lastGenerated.toISOString() : null,
@@ -186,3 +183,4 @@ export const ChecklistProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     </ChecklistContext.Provider>
   );
 };
+
