@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -15,7 +14,7 @@ const AppSettingsSection = () => {
   const { isDark, toggle } = useDarkMode();
   const { enabled: soundEnabled, volume: soundVolume, setEnabled: setSoundEnabled, setVolume: setSoundVolume } = useSoundSettings();
 
-  // Enhanced test sound function with fallback and better feedback
+  // Enhanced test sound function with multiple fallback methods
   const playTestSound = async () => {
     if (!soundEnabled) {
       toast.info("Sound is currently disabled. Enable sound to test.");
@@ -25,13 +24,14 @@ const AppSettingsSection = () => {
     toast.loading("Testing sound playback...", { id: "sound-test" });
     
     try {
+      // Try to play the test sound with our improved function that uses multiple fallbacks
       const success = await testSoundPlayback(soundVolume);
       
       if (success) {
         toast.success("Sound test successful!", { id: "sound-test" });
         playSuccessSound(soundVolume);
       } else {
-        // Try alternative sound as fallback
+        // If test failed but we didn't get an exception, try alternative sound
         playErrorSound(soundVolume);
         toast.error("Primary sound test failed. Using fallback sound.", { id: "sound-test" });
       }
