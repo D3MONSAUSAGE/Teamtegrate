@@ -7,10 +7,20 @@ import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import CreateChecklistDialog from '@/components/checklists/CreateChecklistDialog';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Checklist } from '@/types/checklist';
+import ChecklistDetails from '@/components/checklists/ChecklistDetails';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 const ChecklistsPage: React.FC = () => {
   const isMobile = useIsMobile();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [selectedChecklist, setSelectedChecklist] = useState<Checklist | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  
+  const handleSelectChecklist = (checklist: Checklist) => {
+    setSelectedChecklist(checklist);
+    setIsDetailsOpen(true);
+  };
   
   return (
     <div className="space-y-6 pb-10">
@@ -28,7 +38,10 @@ const ChecklistsPage: React.FC = () => {
           <TabsTrigger value="reports" className="flex-1 md:flex-none">Reports</TabsTrigger>
         </TabsList>
         <TabsContent value="active" className="space-y-4">
-          <ChecklistsView type="active" />
+          <ChecklistsView 
+            type="active" 
+            onSelectChecklist={handleSelectChecklist}
+          />
         </TabsContent>
         <TabsContent value="templates" className="space-y-4">
           <ChecklistsView type="template" />
@@ -42,6 +55,15 @@ const ChecklistsPage: React.FC = () => {
         open={isCreateOpen} 
         onOpenChange={setIsCreateOpen} 
       />
+      
+      <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Checklist Execution</DialogTitle>
+          </DialogHeader>
+          {selectedChecklist && <ChecklistDetails checklist={selectedChecklist} />}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

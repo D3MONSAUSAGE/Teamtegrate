@@ -33,9 +33,10 @@ import {
 
 interface ChecklistsViewProps {
   type: 'active' | 'template';
+  onSelectChecklist?: (checklist: Checklist) => void;
 }
 
-const ChecklistsView: React.FC<ChecklistsViewProps> = ({ type }) => {
+const ChecklistsView: React.FC<ChecklistsViewProps> = ({ type, onSelectChecklist }) => {
   const isMobile = useIsMobile();
   const [searchTerm, setSearchTerm] = useState('');
   const { checklists, templates } = useChecklists();
@@ -87,9 +88,9 @@ const ChecklistsView: React.FC<ChecklistsViewProps> = ({ type }) => {
   };
 
   const handleExecuteChecklist = (checklist: Checklist) => {
-    // You may want to handle navigation or advanced logic here.
-    // For now, just show a toast (already handled in ActiveChecklistCard's default).
-    // This function is available if you want to override, or extend, the default behavior.
+    if (onSelectChecklist) {
+      onSelectChecklist(checklist);
+    }
   };
 
   const goToPrevWeek = () => setWeekStart(addWeeks(weekStart, -1));
@@ -146,7 +147,7 @@ const ChecklistsView: React.FC<ChecklistsViewProps> = ({ type }) => {
               <ActiveChecklistCard
                 key={item.id}
                 checklist={item}
-                onExecute={handleExecuteChecklist}
+                onExecute={() => handleExecuteChecklist(item)}
               />
             ))
           : (data as ChecklistTemplate[]).map(item => (
