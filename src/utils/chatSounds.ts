@@ -39,7 +39,7 @@ export function playChatNotification(settings: SoundSettings) {
     .catch(error => {
       if (!soundErrorShown) {
         console.error("Failed to play chat notification sound:", error);
-        toast.error("Sound notification failed. Check sound settings.");
+        // Removed toast error message here as per user request to avoid disrupting UX
         soundErrorShown = true;
       }
     });
