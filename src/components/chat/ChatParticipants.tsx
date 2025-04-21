@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   Popover,
@@ -14,9 +15,10 @@ import { useAuth } from '@/contexts/AuthContext';
 
 interface ChatParticipantsProps {
   roomId: string;
+  compact?: boolean;
 }
 
-const ChatParticipants: React.FC<ChatParticipantsProps> = ({ roomId }) => {
+const ChatParticipants: React.FC<ChatParticipantsProps> = ({ roomId, compact = false }) => {
   const { user: currentUser } = useAuth();
   
   const { data: participants, isLoading } = useQuery({
@@ -79,6 +81,15 @@ const ChatParticipants: React.FC<ChatParticipantsProps> = ({ roomId }) => {
       return participantsList;
     },
   });
+
+  // If compact mode is enabled, just show the count
+  if (compact) {
+    return (
+      <span>
+        {participants?.length || 0} participants
+      </span>
+    );
+  }
 
   return (
     <Popover>
