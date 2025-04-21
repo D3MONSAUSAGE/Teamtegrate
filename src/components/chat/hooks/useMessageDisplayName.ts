@@ -1,3 +1,4 @@
+
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -46,10 +47,12 @@ export const useMessageDisplayName = (message: {
         : message.type === "system"
         ? { name: "System" }
         : { name: "Unknown User" },
-    // Error handling
-    onError: (error) => {
-      console.error("Error in useMessageDisplayName:", error);
-      return { name: isCurrentUser ? "You" : "Unknown User" };
+    // Error handling - using meta instead of onError directly
+    meta: {
+      onError: (error: Error) => {
+        console.error("Error in useMessageDisplayName:", error);
+        return { name: isCurrentUser ? "You" : "Unknown User" };
+      }
     }
   });
 };

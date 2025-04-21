@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card } from '@/components/ui/card';
@@ -12,7 +13,7 @@ import ChatParticipantsSidebar from './ChatParticipantsSidebar';
 import ChatMessageGroups from './ChatMessageGroups';
 import AddChatParticipantDialog from './AddChatParticipantDialog';
 import { Button } from '@/components/ui/button';
-import { UserPlus } from '@/components/ui/icons';
+import { UserPlus } from 'lucide-react';
 
 interface ChatRoomProps {
   room: {
