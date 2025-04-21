@@ -4,11 +4,20 @@ import ChatMessage from './ChatMessage';
 
 interface Message {
   id: string;
+  content: string; // Add the missing content property
   created_at?: string;
   user_id: string;
   parent_id?: string;
+  type?: 'text' | 'system';
+  attachments?: Array<{
+    id: string;
+    file_name: string;
+    file_type: string;
+    file_path: string;
+  }>;
   [key: string]: any;
 }
+
 interface ChatMessageGroupsProps {
   groupedMessages: [string, Message[]][];
   msgMap: Record<string, any>;
