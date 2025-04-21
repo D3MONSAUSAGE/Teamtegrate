@@ -29,7 +29,7 @@ const AppLayout = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-x-hidden"> {/* Prevent side-to-side scroll */}
       {/* Mobile sidebar with Sheet component */}
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
         <SheetTrigger asChild>
@@ -62,13 +62,13 @@ const AppLayout = () => {
       
       {/* Main content area (with sidebar offset on desktop) */}
       <div
-        className={`flex flex-col flex-1 overflow-hidden`}
+        className={`flex flex-col flex-1 overflow-x-hidden`} // Prevent side-to-side scroll here too
         style={{
           marginLeft: !isMobile ? SIDEBAR_WIDTH : 0,
         }}
       >
         <Navbar />
-        <main className="flex-1 overflow-y-auto p-3 md:p-6">
+        <main className="flex-1 overflow-y-auto p-3 md:p-6 overflow-x-hidden"> {/* <-- added overflow-x-hidden */}
           <Outlet />
         </main>
       </div>
