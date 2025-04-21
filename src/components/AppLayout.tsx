@@ -43,7 +43,7 @@ const AppLayout = () => {
             <span className="sr-only">Toggle Sidebar</span>
           </Button>
         </SheetTrigger>
-        <SheetContent side="left" className="p-0 w-64">
+        <SheetContent side="left" className="p-0 w-64 max-h-[100dvh] overflow-y-auto">
           <Sidebar onNavigation={() => setSidebarOpen(false)} />
         </SheetContent>
       </Sheet>

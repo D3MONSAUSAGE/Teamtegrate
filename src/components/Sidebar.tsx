@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -154,7 +155,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
         </button>
       </div>
 
-      <div className="flex-1 px-4 overflow-visible">
+      <div className="flex-1 px-4 overflow-y-auto">
         <ul className="space-y-2">
           {navItems.map((item) => {
             if (!item.allowed) return null;
