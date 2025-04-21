@@ -11,4 +11,5 @@ export interface ChecklistContextType {
   getChecklistById: (id: string) => Checklist | undefined;
   fetchChecklists: () => Promise<void>;
   fetchTemplates: () => Promise<void>;
+  canExecuteChecklist: (checklist: Checklist) => boolean;
 }

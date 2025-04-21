@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Checklist, ChecklistTemplate } from '@/types/checklist';
+import { Checklist, ChecklistTemplate, ExecutionWindow } from '@/types/checklist';
 import { useAuth } from '../AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
@@ -10,7 +10,8 @@ import {
   prepareJsonSections, 
   processStoredSections,
   validateChecklistStatus,
-  validateChecklistFrequency
+  validateChecklistFrequency,
+  isWithinExecutionWindow
 } from './helpers';
 
 export const ChecklistProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -79,6 +80,12 @@ export const ChecklistProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           totalCount: typeof checklist.total_count === 'number' ? checklist.total_count : 0,
           templateId: checklist.template_id || undefined,
           branch: checklist.branch || undefined,
+          executionWindow: checklist.execution_window ? {
+            startDate: checklist.execution_window.start_date ? new Date(checklist.execution_window.start_date) : null,
+            endDate: checklist.execution_window.end_date ? new Date(checklist.execution_window.end_date) : null,
+            startTime: checklist.execution_window.start_time,
+            endTime: checklist.execution_window.end_time,
+          } : undefined,
         }));
         setChecklists(processedChecklists);
       }
@@ -98,6 +105,15 @@ export const ChecklistProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     try {
       const sections = (newChecklist.sections || []);
       const totalItems = sections.reduce((acc, section) => acc + section.items.length, 0);
+      
+      // Prepare execution window data if present
+      const executionWindow = newChecklist.executionWindow ? {
+        start_date: newChecklist.executionWindow.startDate?.toISOString(),
+        end_date: newChecklist.executionWindow.endDate?.toISOString(),
+        start_time: newChecklist.executionWindow.startTime,
+        end_time: newChecklist.executionWindow.endTime,
+      } : null;
+      
       const insertData = {
         title: newChecklist.title || 'New Checklist',
         description: newChecklist.description || '',
@@ -112,7 +128,9 @@ export const ChecklistProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         branch: newChecklist.branch || null,
         template_id: newChecklist.templateId || null,
         due_date: newChecklist.dueDate ? newChecklist.dueDate.toISOString() : null,
+        execution_window: executionWindow,
       };
+      
       const { error } = await supabase.from('checklists').insert([insertData]);
       if (error) throw error;
       toast.success('Checklist created successfully');
@@ -152,6 +170,12 @@ export const ChecklistProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   };
 
+  // Check if a checklist can be executed based on its execution window
+  const canExecuteChecklist = (checklist: Checklist): boolean => {
+    if (!checklist.executionWindow) return true;
+    return isWithinExecutionWindow(checklist.executionWindow);
+  };
+
   const getTemplateById = (id: string) => {
     return templates.find(template => template.id === id);
   };
@@ -175,6 +199,7 @@ export const ChecklistProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     getChecklistById,
     fetchChecklists,
     fetchTemplates,
+    canExecuteChecklist,
   };
 
   return (
@@ -183,4 +208,3 @@ export const ChecklistProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     </ChecklistContext.Provider>
   );
 };
-

@@ -1,5 +1,5 @@
 
-import { ChecklistSection, ChecklistItemStatus, ChecklistFrequency } from '@/types/checklist';
+import { ChecklistSection, ChecklistItemStatus, ChecklistFrequency, ExecutionWindow } from '@/types/checklist';
 
 // Convert Date objects to ISO strings for JSON storage
 export const prepareJsonSections = (sections: ChecklistSection[]) => {
@@ -43,4 +43,24 @@ export const validateChecklistFrequency = (frequency: string): ChecklistFrequenc
     return frequency as ChecklistFrequency;
   }
   return "once";
+};
+
+// Check if current time is within execution window
+export const isWithinExecutionWindow = (window: ExecutionWindow): boolean => {
+  const now = new Date();
+  
+  // Check date range
+  if (window.startDate && now < window.startDate) return false;
+  if (window.endDate && now > window.endDate) return false;
+  
+  // Check time range if provided
+  if (window.startTime && window.endTime) {
+    const currentHours = now.getHours();
+    const currentMinutes = now.getMinutes();
+    const currentTimeString = `${currentHours.toString().padStart(2, '0')}:${currentMinutes.toString().padStart(2, '0')}`;
+    
+    if (currentTimeString < window.startTime || currentTimeString > window.endTime) return false;
+  }
+  
+  return true;
 };

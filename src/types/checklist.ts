@@ -20,6 +20,13 @@ export interface ChecklistSection {
   items: ChecklistItem[];
 }
 
+export interface ExecutionWindow {
+  startDate: Date | null;
+  endDate: Date | null;
+  startTime?: string;
+  endTime?: string;
+}
+
 export interface ChecklistTemplate {
   id: string;
   title: string;
@@ -43,6 +50,7 @@ export interface Checklist extends Omit<ChecklistTemplate, 'branchOptions'> {
   progress: number;
   completedCount: number;
   totalCount: number;
+  executionWindow?: ExecutionWindow;
 }
 
 export interface ChecklistReport {

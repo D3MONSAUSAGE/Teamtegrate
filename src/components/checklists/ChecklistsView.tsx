@@ -17,7 +17,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Checklist, ChecklistTemplate } from '@/types/checklist';
-import { useChecklists } from '@/contexts/checklists/ChecklistContext';
+import { useChecklists } from '@/contexts/checklists';
+import UseTemplateDialog from './UseTemplateDialog';
 
 interface ChecklistsViewProps {
   type: 'active' | 'template';
@@ -27,8 +28,15 @@ const ChecklistsView: React.FC<ChecklistsViewProps> = ({ type }) => {
   const isMobile = useIsMobile();
   const [searchTerm, setSearchTerm] = useState('');
   const { checklists, templates } = useChecklists();
+  const [selectedTemplate, setSelectedTemplate] = useState<ChecklistTemplate | null>(null);
+  const [isUseTemplateDialogOpen, setIsUseTemplateDialogOpen] = useState(false);
   
   const data = type === 'template' ? templates : checklists;
+
+  const handleUseTemplate = (template: ChecklistTemplate) => {
+    setSelectedTemplate(template);
+    setIsUseTemplateDialogOpen(true);
+  };
   
   if (data.length === 0) {
     return (
@@ -118,9 +126,19 @@ const ChecklistsView: React.FC<ChecklistsViewProps> = ({ type }) => {
             </CardContent>
             
             <CardFooter className="flex justify-between pt-3 border-t">
-              <Button variant="default" size="sm">
-                {type === 'template' ? 'Use Template' : 'View Checklist'}
-              </Button>
+              {type === 'template' ? (
+                <Button 
+                  variant="default" 
+                  size="sm" 
+                  onClick={() => handleUseTemplate(item as ChecklistTemplate)}
+                >
+                  Use Template
+                </Button>
+              ) : (
+                <Button variant="default" size="sm">
+                  View Checklist
+                </Button>
+              )}
               
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -151,6 +169,12 @@ const ChecklistsView: React.FC<ChecklistsViewProps> = ({ type }) => {
           </Card>
         ))}
       </div>
+
+      <UseTemplateDialog
+        open={isUseTemplateDialogOpen}
+        onOpenChange={setIsUseTemplateDialogOpen}
+        template={selectedTemplate}
+      />
     </div>
   );
 };

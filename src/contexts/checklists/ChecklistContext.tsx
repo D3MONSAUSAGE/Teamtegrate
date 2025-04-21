@@ -12,6 +12,7 @@ export const ChecklistContext = createContext<ChecklistContextType>({
   getChecklistById: () => undefined,
   fetchChecklists: async () => {},
   fetchTemplates: async () => {},
+  canExecuteChecklist: () => true,
 });
 
 export const useChecklists = () => useContext(ChecklistContext);
