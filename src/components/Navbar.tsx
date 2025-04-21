@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { LogOut, User as UserIcon, Settings } from "lucide-react";
+import { LogOut, User as UserIcon, Settings, Bell } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,11 +15,30 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 
+const mockNotifications = [
+  {
+    id: 1,
+    text: "New task assigned: Fix sidebar styles",
+    date: "2m ago"
+  },
+  {
+    id: 2,
+    text: "Time tracking reminder: Submit hours",
+    date: "30m ago"
+  },
+  {
+    id: 3,
+    text: "Project deadline approaching: Sprint Update",
+    date: "1d ago"
+  }
+];
+
 const Navbar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  
+  const [hasUnread, setHasUnread] = useState(true);
+
   useEffect(() => {
     if (user) {
       const fetchAvatar = async () => {
@@ -29,12 +48,12 @@ const Navbar = () => {
             .select('avatar_url')
             .eq('id', user.id)
             .maybeSingle();
-            
+
           if (error) {
             console.error('Error fetching user avatar:', error);
             return;
           }
-          
+
           if (data?.avatar_url) {
             setAvatarUrl(data.avatar_url);
           }
@@ -42,11 +61,11 @@ const Navbar = () => {
           console.error('Error fetching avatar:', error);
         }
       };
-      
+
       fetchAvatar();
     }
   }, [user]);
-  
+
   const handleLogout = async () => {
     try {
       await logout();
@@ -57,24 +76,54 @@ const Navbar = () => {
       navigate('/login');
     }
   };
-  
+
   const handleSettings = () => {
     navigate('/dashboard/settings');
   };
-  
+
+  const handleNotificationsOpen = () => {
+    setHasUnread(false);
+  };
+
   if (!user) return null;
-  
+
   return (
     <nav className="bg-white dark:bg-background border-b border-gray-200 dark:border-gray-800 py-4 px-6 flex items-center justify-between">
       <div className="flex items-center space-x-4 md:space-x-0">
         <Link to="/" className="text-xl font-bold text-primary ml-10 md:ml-0">TeamStream</Link>
       </div>
-      
+
       <div className="flex items-center space-x-4">
+        {/* Notifications */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="relative h-10 w-10 rounded-full" aria-label="Notifications" onClick={handleNotificationsOpen}>
+              <Bell className="h-5 w-5" />
+              {hasUnread && (
+                <span className="absolute top-2 right-2 inline-block w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+              )}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-72">
+            <div className="px-2 pt-2 pb-1 text-sm font-semibold text-muted-foreground">Notifications</div>
+            <DropdownMenuSeparator />
+            {mockNotifications.length > 0 ? (
+              mockNotifications.map((notification) => (
+                <DropdownMenuItem key={notification.id} className="flex flex-col items-start gap-0.5 py-2 px-2 whitespace-normal">
+                  <span>{notification.text}</span>
+                  <span className="text-xs text-muted-foreground">{notification.date}</span>
+                </DropdownMenuItem>
+              ))
+            ) : (
+              <DropdownMenuItem className="text-center py-4">No notifications</DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
         <span className="text-sm text-gray-600 dark:text-gray-300 mr-2 hidden md:inline">
           {user.role === 'manager' ? 'Manager' : 'Team Member'}
         </span>
-        
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-10 w-10 rounded-full">

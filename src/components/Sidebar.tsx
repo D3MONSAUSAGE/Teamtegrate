@@ -111,7 +111,8 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
   return (
     <aside
       className={cn(
-        "flex flex-col h-full w-64 z-30 bg-sidebar border-r border-sidebar-border",
+        // Swap out fixed bg classes with theme-aware classes
+        "flex flex-col h-full w-64 z-30 bg-background text-foreground border-r border-border",
         "fixed top-0 left-0",
         "transition-colors duration-300"
       )}
@@ -125,15 +126,15 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
       {/* Top: Logo and Dark Mode Toggle */}
       <div className="p-6 pt-5 flex items-center justify-between gap-2">
         <div>
-          <h2 className="text-lg font-bold tracking-wide text-sidebar-primary">{/* primary/90 might be too dark/light depending on theme */}
+          <h2 className="text-lg font-bold tracking-wide text-primary">
             TeamStream
           </h2>
-          <p className="text-sm text-sidebar-foreground">Manage your tasks & projects</p>
+          <p className="text-sm text-muted-foreground">Manage your tasks & projects</p>
         </div>
         <button
           aria-label="Toggle dark mode"
           className={cn(
-            "rounded-full p-1.5 hover:bg-muted border border-transparent hover:border-sidebar-primary transition-colors duration-200",
+            "rounded-full p-1.5 hover:bg-muted border border-transparent hover:border-primary transition-colors duration-200",
             "focus:outline-none"
           )}
           onClick={toggle}
@@ -164,8 +165,8 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
                   className={cn(
                     "flex items-center gap-3 px-4 py-2.5 rounded-lg text-base font-medium transition-all duration-200 focus:outline-none",
                     isActiveItem
-                      ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-md"
-                      : "bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus:ring-2 focus:ring-sidebar-ring"
+                      ? "bg-primary text-primary-foreground shadow-md"
+                      : "bg-background text-foreground hover:bg-muted hover:text-primary focus:ring-2 focus:ring-primary"
                   )}
                   style={{
                     letterSpacing: '0.02em'
@@ -175,23 +176,23 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
                     className={cn(
                       "flex items-center justify-center",
                       isActiveItem
-                        ? "text-sidebar-primary-foreground"
-                        : "text-sidebar-primary group-hover:text-sidebar-primary group-focus:text-sidebar-primary"
+                        ? "text-primary-foreground"
+                        : "text-primary group-hover:text-primary group-focus:text-primary"
                     )}
                   >
                     {React.cloneElement(item.icon as JSX.Element, {
                       className: cn(
                         "w-6 h-6",
                         isActiveItem
-                          ? "stroke-[2.2] text-sidebar-primary-foreground"
-                          : "stroke-[2.2] text-sidebar-primary"
+                          ? "stroke-[2.2] text-primary-foreground"
+                          : "stroke-[2.2] text-primary"
                       ),
                     })}
                   </span>
                   <span
                     className={cn(
                       "ml-2",
-                      isActiveItem ? "text-sidebar-primary-foreground font-bold" : "text-sidebar-foreground font-semibold"
+                      isActiveItem ? "text-primary-foreground font-bold" : "text-foreground font-semibold"
                     )}
                   >
                     {item.name}
@@ -203,12 +204,12 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
         </ul>
       </div>
 
-      <div className="p-4 border-t border-sidebar-border bg-sidebar">
-        <div className="text-xs text-sidebar-foreground">
+      <div className="p-4 border-t border-border bg-background">
+        <div className="text-xs text-muted-foreground">
           <p>Logged in as</p>
-          <p className="font-semibold text-sidebar-primary">{user.name}</p>
-          <p className="text-sidebar-foreground">{user.email}</p>
-          <p className="mt-1 font-medium text-sidebar-primary">{user.role === 'manager' ? 'Manager' : 'Team Member'}</p>
+          <p className="font-semibold text-primary">{user.name}</p>
+          <p className="text-muted-foreground">{user.email}</p>
+          <p className="mt-1 font-medium text-primary">{user.role === 'manager' ? 'Manager' : 'Team Member'}</p>
         </div>
       </div>
     </aside>
