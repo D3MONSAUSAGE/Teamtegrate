@@ -59,10 +59,10 @@ const AppLayout = () => {
         <Navbar />
         <main
           className="flex-1 overflow-y-auto p-3 md:p-6"
-          style={{ paddingLeft: isMobile ? undefined : 0 }}
+          style={{ paddingLeft: isMobile ? undefined : '16rem' }}
         >
-          {/* Add margin-left for main area on desktop so content doesn't go under sidebar */}
-          <div className="md:ml-64">
+          {/* Remove the margin-left here to avoid duplicate spacing */}
+          <div>
             <Outlet />
           </div>
         </main>
