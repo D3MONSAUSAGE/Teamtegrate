@@ -1,9 +1,10 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Checklist, ChecklistTemplate } from '@/types/checklist';
+import { Checklist, ChecklistTemplate, ChecklistSection, ChecklistItem, ChecklistItemStatus } from '@/types/checklist';
 import { v4 as uuidv4 } from 'uuid';
 import { useAuth } from '../AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/components/ui/sonner';
 
 interface ChecklistContextType {
   checklists: Checklist[];
@@ -31,6 +32,38 @@ const ChecklistContext = createContext<ChecklistContextType>({
 
 export const useChecklists = () => useContext(ChecklistContext);
 
+// Helper function to convert Date objects to ISO strings for JSON storage
+const prepareJsonSections = (sections: ChecklistSection[]) => {
+  return sections.map(section => ({
+    ...section,
+    items: section.items.map(item => ({
+      ...item,
+      // Convert Date objects to ISO strings for storage
+      completedAt: item.completedAt ? item.completedAt.toISOString() : undefined,
+    }))
+  }));
+};
+
+// Helper function to convert ISO strings back to Date objects
+const processStoredSections = (sections: any): ChecklistSection[] => {
+  if (!sections || !Array.isArray(sections)) return [];
+  
+  return sections.map(section => ({
+    id: section.id,
+    title: section.title,
+    items: Array.isArray(section.items) ? section.items.map(item => ({
+      id: item.id,
+      text: item.text,
+      status: item.status as ChecklistItemStatus,
+      notes: item.notes,
+      completedAt: item.completedAt ? new Date(item.completedAt) : undefined,
+      completedBy: item.completedBy,
+      requiredPhoto: item.requiredPhoto || false,
+      photoUrl: item.photoUrl,
+    })) : [],
+  }));
+};
+
 export const ChecklistProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [checklists, setChecklists] = useState<Checklist[]>([]);
   const [templates, setTemplates] = useState<ChecklistTemplate[]>([]);
@@ -39,123 +72,151 @@ export const ChecklistProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // Fetch checklist templates from Supabase
   const fetchTemplates = useCallback(async () => {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from('checklist_templates')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (!error && data) {
-      setTemplates(
-        data.map((t) => ({
-          ...t,
-          id: t.id,
-          title: t.title,
-          description: t.description || '',
-          sections: t.sections || [],
-          createdBy: t.created_by || '',
-          createdAt: t.created_at ? new Date(t.created_at) : new Date(),
-          branchOptions: t.branch_options || [],
-          frequency: t.frequency || 'once',
-          lastGenerated: t.last_generated ? new Date(t.last_generated) : undefined,
-          tags: t.tags || [],
-        }))
-      );
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('checklist_templates')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      if (data) {
+        const processedTemplates = data.map((template) => ({
+          id: template.id,
+          title: template.title,
+          description: template.description || '',
+          sections: processStoredSections(template.sections),
+          createdBy: template.created_by || '',
+          createdAt: template.created_at ? new Date(template.created_at) : new Date(),
+          branchOptions: template.branch_options || [],
+          frequency: template.frequency || 'once',
+          lastGenerated: template.last_generated ? new Date(template.last_generated) : undefined,
+          tags: template.tags || [],
+        }));
+        
+        setTemplates(processedTemplates);
+      }
+    } catch (error) {
+      console.error('Error fetching templates:', error);
+      toast.error('Failed to load checklist templates');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   // Fetch checklists from Supabase
   const fetchChecklists = useCallback(async () => {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from('checklists')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (!error && data) {
-      setChecklists(
-        data.map((c) => ({
-          ...c,
-          id: c.id,
-          title: c.title,
-          description: c.description || '',
-          sections: c.sections || [],
-          createdBy: c.created_by || '',
-          createdAt: c.created_at ? new Date(c.created_at) : new Date(),
-          assignedTo: c.assigned_to || [],
-          startDate: c.start_date ? new Date(c.start_date) : new Date(),
-          dueDate: c.due_date ? new Date(c.due_date) : undefined,
-          status: c.status as Checklist['status'],
-          progress: typeof c.progress === 'number' ? c.progress : 0,
-          completedCount: typeof c.completed_count === 'number' ? c.completed_count : 0,
-          totalCount: typeof c.total_count === 'number' ? c.total_count : 0,
-          templateId: c.template_id || undefined,
-          branch: c.branch || undefined,
-        }))
-      );
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('checklists')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      if (data) {
+        const processedChecklists = data.map((checklist) => ({
+          id: checklist.id,
+          title: checklist.title,
+          description: checklist.description || '',
+          sections: processStoredSections(checklist.sections),
+          createdBy: checklist.created_by || '',
+          createdAt: checklist.created_at ? new Date(checklist.created_at) : new Date(),
+          assignedTo: checklist.assigned_to || [],
+          startDate: checklist.start_date ? new Date(checklist.start_date) : new Date(),
+          dueDate: checklist.due_date ? new Date(checklist.due_date) : undefined,
+          status: checklist.status,
+          progress: typeof checklist.progress === 'number' ? checklist.progress : 0,
+          completedCount: typeof checklist.completed_count === 'number' ? checklist.completed_count : 0,
+          totalCount: typeof checklist.total_count === 'number' ? checklist.total_count : 0,
+          templateId: checklist.template_id || undefined,
+          branch: checklist.branch || undefined,
+        }));
+        
+        setChecklists(processedChecklists);
+      }
+    } catch (error) {
+      console.error('Error fetching checklists:', error);
+      toast.error('Failed to load checklists');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   // Add new checklist to Supabase
   const addChecklist = async (newChecklist: Partial<Checklist>) => {
-    if (!user) throw new Error('User not authenticated');
-    // Type-safe section/items using correct enums
-    // Ensures all items use ChecklistItemStatus type
-    const sections = (newChecklist.sections || []).map(section => ({
-      ...section,
-      items: section.items.map(item => ({
-        ...item,
-        status: item.status as Checklist['sections'][0]['items'][0]['status'],
-      }))
-    }));
-    const totalItems = sections.reduce((acc, section) => acc + section.items.length, 0);
+    if (!user) {
+      toast.error('You must be logged in to create a checklist');
+      throw new Error('User not authenticated');
+    }
+    
+    try {
+      // Type-safe section/items using correct enums
+      // Ensures all items use ChecklistItemStatus type
+      const sections = (newChecklist.sections || []);
+      const totalItems = sections.reduce((acc, section) => acc + section.items.length, 0);
 
-    const insertData = {
-      title: newChecklist.title || 'New Checklist',
-      description: newChecklist.description || '',
-      sections: sections,
-      created_by: user.id,
-      assigned_to: newChecklist.assignedTo || [user.id],
-      start_date: (newChecklist.startDate || new Date()).toISOString(),
-      status: newChecklist.status || 'draft',
-      total_count: totalItems,
-      completed_count: 0,
-      progress: 0,
-      branch: newChecklist.branch || null,
-      template_id: newChecklist.templateId || null,
-      due_date: newChecklist.dueDate ? newChecklist.dueDate.toISOString() : null,
-    };
+      const insertData = {
+        title: newChecklist.title || 'New Checklist',
+        description: newChecklist.description || '',
+        sections: prepareJsonSections(sections),
+        created_by: user.id,
+        assigned_to: newChecklist.assignedTo || [user.id],
+        start_date: (newChecklist.startDate || new Date()).toISOString(),
+        status: newChecklist.status || 'draft',
+        total_count: totalItems,
+        completed_count: 0,
+        progress: 0,
+        branch: newChecklist.branch || null,
+        template_id: newChecklist.templateId || null,
+        due_date: newChecklist.dueDate ? newChecklist.dueDate.toISOString() : null,
+      };
 
-    const { error } = await supabase.from('checklists').insert([insertData]);
-    if (error) throw error;
-    await fetchChecklists();
+      const { error } = await supabase.from('checklists').insert([insertData]);
+      if (error) throw error;
+      
+      toast.success('Checklist created successfully');
+      await fetchChecklists();
+    } catch (error) {
+      console.error('Error creating checklist:', error);
+      toast.error('Failed to create checklist');
+      throw error;
+    }
   };
 
   // Add new template to Supabase
   const addTemplate = async (newTemplate: Partial<ChecklistTemplate>) => {
-    if (!user) throw new Error('User not authenticated');
-    const sections = (newTemplate.sections || []).map(section => ({
-      ...section,
-      items: section.items.map(item => ({
-        ...item,
-        status: item.status as ChecklistTemplate['sections'][0]['items'][0]['status'],
-      }))
-    }));
+    if (!user) {
+      toast.error('You must be logged in to create a template');
+      throw new Error('User not authenticated');
+    }
+    
+    try {
+      const sections = (newTemplate.sections || []);
 
-    const insertData = {
-      title: newTemplate.title || 'New Template',
-      description: newTemplate.description || '',
-      sections: sections,
-      created_by: user.id,
-      frequency: newTemplate.frequency || 'once',
-      branch_options: newTemplate.branchOptions || [],
-      tags: newTemplate.tags || [],
-      last_generated: newTemplate.lastGenerated ? newTemplate.lastGenerated.toISOString() : null,
-    };
+      const insertData = {
+        title: newTemplate.title || 'New Template',
+        description: newTemplate.description || '',
+        sections: prepareJsonSections(sections),
+        created_by: user.id,
+        frequency: newTemplate.frequency || 'once',
+        branch_options: newTemplate.branchOptions || [],
+        tags: newTemplate.tags || [],
+        last_generated: newTemplate.lastGenerated ? newTemplate.lastGenerated.toISOString() : null,
+      };
 
-    const { error } = await supabase.from('checklist_templates').insert([insertData]);
-    if (error) throw error;
-    await fetchTemplates();
+      const { error } = await supabase.from('checklist_templates').insert([insertData]);
+      if (error) throw error;
+      
+      toast.success('Template created successfully');
+      await fetchTemplates();
+    } catch (error) {
+      console.error('Error creating template:', error);
+      toast.error('Failed to create template');
+      throw error;
+    }
   };
 
   const getTemplateById = (id: string) => {
