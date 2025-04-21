@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -8,6 +7,7 @@ import { ToggleLeft, ToggleRight } from "lucide-react";
 import { useSoundSettings } from "@/hooks/useSoundSettings";
 import { Volume, VolumeOff, VolumeX, Volume1, Volume2 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
+import { toast } from "sonner";
 
 const AppSettingsSection = () => {
   const { isDark, toggle } = useDarkMode();
@@ -16,19 +16,23 @@ const AppSettingsSection = () => {
   // Test sound function for immediate feedback
   const playTestSound = () => {
     try {
-      const audio = new Audio("/sounds/notification.mp3");
+      // Using the same sound file as the chat notification
+      const audio = new Audio("/sounds/message.wav");
       audio.volume = soundVolume;
       const playPromise = audio.play();
       
       if (playPromise !== undefined) {
         playPromise.then(() => {
           console.log("Test sound played successfully");
+          toast.success("Sound test successful!");
         }).catch(error => {
           console.error("Error playing test sound:", error);
+          toast.error("Sound test failed. Check if sound files are available.");
         });
       }
     } catch (error) {
       console.error("Error initializing test sound:", error);
+      toast.error("Failed to initialize sound test");
     }
   };
 

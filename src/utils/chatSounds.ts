@@ -2,8 +2,8 @@
 import { SoundSettings } from "@/hooks/useSoundSettings";
 import { toast } from "sonner";
 
-// You can customize this sound
-const CHAT_MESSAGE_SOUND = "/sounds/notification.mp3";
+// Using .wav format which is more widely supported by browsers
+const CHAT_MESSAGE_SOUND = "/sounds/message.wav";
 
 export function playChatNotification(settings: SoundSettings) {
   if (!settings.enabled) return;
@@ -19,10 +19,12 @@ export function playChatNotification(settings: SoundSettings) {
       playPromise.catch(error => {
         console.error("Error playing chat notification sound:", error);
         
-        // Only show error toast in development
-        if (import.meta.env.DEV) {
-          toast.error("Sound failed to play. Check console for details.");
-        }
+        // Show a user-friendly error message
+        toast.error("Sound failed to play. Check if sound files are available.");
+        
+        // Log more detailed information for debugging
+        console.error(`Failed to play sound file: ${CHAT_MESSAGE_SOUND}`);
+        console.error(`Sound settings used: enabled=${settings.enabled}, volume=${settings.volume}`);
       });
     }
   } catch (error) {
@@ -41,6 +43,7 @@ export function playAppSound(soundPath: string, volume: number = 0.5) {
     if (playPromise !== undefined) {
       playPromise.catch(error => {
         console.error(`Error playing sound (${soundPath}):`, error);
+        toast.error(`Failed to play sound: ${soundPath.split('/').pop()}`);
       });
     }
   } catch (error) {
