@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card } from '@/components/ui/card';
@@ -14,6 +13,7 @@ import ChatMessageGroups from './ChatMessageGroups';
 import AddChatParticipantDialog from './AddChatParticipantDialog';
 import { Button } from '@/components/ui/button';
 import { UserPlus } from 'lucide-react';
+import { playSuccessSound } from '@/utils/sounds';
 
 interface ChatRoomProps {
   room: {
@@ -113,6 +113,11 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
     return Object.entries(groups);
   }, [messages]);
 
+  const handleParticipantAdded = () => {
+    playSuccessSound();
+    toast.success('Member added to the chat room');
+  };
+
   return (
     <Card className="flex flex-col h-full border-border dark:border-gray-800 shadow-none bg-background dark:bg-[#111827] overflow-hidden">
       <ChatRoomHeader
@@ -134,6 +139,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
           open={showAddParticipant}
           onOpenChange={setShowAddParticipant}
           roomId={room.id}
+          onAdded={handleParticipantAdded}
         />
       )}
 

@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { LogOut, User as UserIcon, Settings, Bell } from "lucide-react";
+import { LogOut, User as UserIcon, Settings, Bell, BellRing } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,31 +13,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/components/ui/sonner';
-
-const mockNotifications = [
-  {
-    id: 1,
-    text: "New task assigned: Fix sidebar styles",
-    date: "2m ago"
-  },
-  {
-    id: 2,
-    text: "Time tracking reminder: Submit hours",
-    date: "30m ago"
-  },
-  {
-    id: 3,
-    text: "Project deadline approaching: Sprint Update",
-    date: "1d ago"
-  }
-];
+import { toast } from 'sonner';
+import { useNotifications } from '@/hooks/use-notifications';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [hasUnread, setHasUnread] = useState(true);
+  const { notifications, unreadCount, markAsRead } = useNotifications();
 
   useEffect(() => {
     if (user) {
@@ -78,11 +61,25 @@ const Navbar = () => {
   };
 
   const handleSettings = () => {
-    navigate('/settings');
+    navigate('/dashboard/settings');
   };
 
   const handleNotificationsOpen = () => {
-    setHasUnread(false);
+    markAsRead();
+  };
+
+  const formatNotificationTime = (timestamp: string) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMins < 1) return 'just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return `${diffDays}d ago`;
   };
 
   if (!user) return null;
@@ -97,25 +94,46 @@ const Navbar = () => {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-10 w-10 rounded-full" aria-label="Notifications" onClick={handleNotificationsOpen}>
-              <Bell className="h-5 w-5" />
-              {hasUnread && (
-                <span className="absolute top-2 right-2 inline-block w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+              {unreadCount > 0 ? (
+                <BellRing className="h-5 w-5 text-primary animate-pulse" />
+              ) : (
+                <Bell className="h-5 w-5" />
+              )}
+              {unreadCount > 0 && (
+                <span className="absolute top-1 right-1 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-primary rounded-full">
+                  {unreadCount}
+                </span>
               )}
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-72">
-            <div className="px-2 pt-2 pb-1 text-sm font-semibold text-muted-foreground">Notifications</div>
+          <DropdownMenuContent align="end" className="w-80">
+            <div className="px-3 pt-2 pb-1 text-sm font-semibold">Notifications</div>
             <DropdownMenuSeparator />
-            {mockNotifications.length > 0 ? (
-              mockNotifications.map((notification) => (
-                <DropdownMenuItem key={notification.id} className="flex flex-col items-start gap-0.5 py-2 px-2 whitespace-normal">
-                  <span>{notification.text}</span>
-                  <span className="text-xs text-muted-foreground">{notification.date}</span>
-                </DropdownMenuItem>
-              ))
-            ) : (
-              <DropdownMenuItem className="text-center py-4">No notifications</DropdownMenuItem>
-            )}
+            <div className="max-h-[400px] overflow-y-auto">
+              {notifications.length > 0 ? (
+                notifications.map((notification) => (
+                  <DropdownMenuItem key={notification.id} className="flex flex-col items-start gap-0.5 py-2 px-3 cursor-pointer">
+                    <div className="flex items-center justify-between w-full">
+                      <span className="font-medium">{notification.title}</span>
+                      <span className="text-xs text-muted-foreground">{formatNotificationTime(notification.created_at)}</span>
+                    </div>
+                    <span className="text-sm">{notification.content}</span>
+                    {notification.type === 'chat_invitation' && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="mt-1 h-7 text-xs text-primary"
+                        onClick={() => navigate('/dashboard/chat')}
+                      >
+                        Go to Chat
+                      </Button>
+                    )}
+                  </DropdownMenuItem>
+                ))
+              ) : (
+                <div className="text-center py-4 text-muted-foreground text-sm">No notifications</div>
+              )}
+            </div>
           </DropdownMenuContent>
         </DropdownMenu>
 
@@ -156,4 +174,3 @@ const Navbar = () => {
 };
 
 export default Navbar;
-

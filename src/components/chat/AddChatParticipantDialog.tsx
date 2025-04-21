@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { UserPlus } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface AddChatParticipantDialogProps {
   open: boolean;
@@ -23,6 +24,7 @@ const AddChatParticipantDialog: React.FC<AddChatParticipantDialogProps> = ({
 }) => {
   const [search, setSearch] = useState("");
   const [addingId, setAddingId] = useState<string | null>(null);
+  const { user: currentUser } = useAuth();
 
   // Fetch users not already in the room, optionally filtered by search
   const { data: availableUsers = [], isLoading } = useQuery({
@@ -52,18 +54,44 @@ const AddChatParticipantDialog: React.FC<AddChatParticipantDialogProps> = ({
 
   const handleAddParticipant = async (userId: string) => {
     setAddingId(userId);
-    const { error } = await supabase.from("chat_room_participants").insert({
-      room_id: roomId,
-      user_id: userId,
-    });
-    setAddingId(null);
-    if (error) {
+    try {
+      // Get room details for notification
+      const { data: roomData } = await supabase
+        .from("chat_rooms")
+        .select("name")
+        .eq("id", roomId)
+        .single();
+
+      // Add user to room
+      const { error } = await supabase.from("chat_room_participants").insert({
+        room_id: roomId,
+        user_id: userId,
+        added_by: currentUser?.id,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      // Create system message in the chat to notify about the new participant
+      const addedUser = availableUsers.find(user => user.id === userId);
+      if (addedUser) {
+        await supabase.from("chat_messages").insert({
+          room_id: roomId,
+          user_id: currentUser?.id || userId,
+          content: `${addedUser.name} was added to the chat by ${currentUser?.name || "Admin"}`,
+          type: "system"
+        });
+      }
+
+      toast.success("Added to chat!");
+      onAdded?.();
+      onOpenChange(false);
+    } catch (error: any) {
       toast.error("Failed to add user: " + error.message);
-      return;
+    } finally {
+      setAddingId(null);
     }
-    toast.success("Added to chat!");
-    onAdded?.();
-    onOpenChange(false);
   };
 
   return (
