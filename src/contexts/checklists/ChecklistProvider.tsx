@@ -1,4 +1,7 @@
 
+// ChecklistProvider implementation manages checklist state & logic.
+// It uses ChecklistContext from ChecklistContext.tsx
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Checklist, ChecklistTemplate, ExecutionWindow } from '@/types/checklist';
 import { useAuth } from '../AuthContext';
@@ -39,7 +42,7 @@ export const ChecklistProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           createdBy: template.created_by || '',
           createdAt: template.created_at ? new Date(template.created_at) : new Date(),
           branchOptions: template.branch_options || [],
-          frequency: validateChecklistFrequency(template.frequency || 'once'), // cast properly here
+          frequency: validateChecklistFrequency(template.frequency || 'once'),
           lastGenerated: template.last_generated ? new Date(template.last_generated) : undefined,
           tags: template.tags || [],
         }));
@@ -67,10 +70,7 @@ export const ChecklistProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         const processedChecklists = data.map((checklist) => {
           // Create execution window if it exists in database
           let executionWindow: ExecutionWindow | undefined = undefined;
-          
-          // Using type assertion to handle the execution_window property
           const checklistAny = checklist as any;
-          
           if (checklistAny.execution_window) {
             executionWindow = {
               startDate: checklistAny.execution_window.start_date ? new Date(checklistAny.execution_window.start_date) : null,
@@ -90,7 +90,7 @@ export const ChecklistProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             assignedTo: checklist.assigned_to || [],
             startDate: checklist.start_date ? new Date(checklist.start_date) : new Date(),
             dueDate: checklist.due_date ? new Date(checklist.due_date) : undefined,
-            status: validateChecklistStatus(checklist.status), // cast to allowed status
+            status: validateChecklistStatus(checklist.status),
             progress: typeof checklist.progress === 'number' ? checklist.progress : 0,
             completedCount: typeof checklist.completed_count === 'number' ? checklist.completed_count : 0,
             totalCount: typeof checklist.total_count === 'number' ? checklist.total_count : 0,
@@ -117,15 +117,12 @@ export const ChecklistProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     try {
       const sections = (newChecklist.sections || []);
       const totalItems = sections.reduce((acc, section) => acc + section.items.length, 0);
-      
-      // Prepare execution window data if present
       const executionWindow = newChecklist.executionWindow ? {
         start_date: newChecklist.executionWindow.startDate?.toISOString(),
         end_date: newChecklist.executionWindow.endDate?.toISOString(),
         start_time: newChecklist.executionWindow.startTime,
         end_time: newChecklist.executionWindow.endTime,
       } : null;
-      
       const insertData = {
         title: newChecklist.title || 'New Checklist',
         description: newChecklist.description || '',
@@ -142,7 +139,6 @@ export const ChecklistProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         due_date: newChecklist.dueDate ? newChecklist.dueDate.toISOString() : null,
         execution_window: executionWindow,
       };
-      
       const { error } = await supabase.from('checklists').insert([insertData]);
       if (error) throw error;
       toast.success('Checklist created successfully');
@@ -188,13 +184,9 @@ export const ChecklistProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return isWithinExecutionWindow(checklist.executionWindow);
   };
 
-  const getTemplateById = (id: string) => {
-    return templates.find(template => template.id === id);
-  };
+  const getTemplateById = (id: string) => templates.find(template => template.id === id);
 
-  const getChecklistById = (id: string) => {
-    return checklists.find(checklist => checklist.id === id);
-  };
+  const getChecklistById = (id: string) => checklists.find(checklist => checklist.id === id);
 
   useEffect(() => {
     fetchTemplates();

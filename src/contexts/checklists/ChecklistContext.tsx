@@ -2,6 +2,7 @@
 import React, { createContext, useContext } from 'react';
 import { ChecklistContextType } from './types';
 
+// Dedicated context for checklists, avoiding in-file implementation logic
 export const ChecklistContext = createContext<ChecklistContextType>({
   checklists: [],
   templates: [],
@@ -15,4 +16,6 @@ export const ChecklistContext = createContext<ChecklistContextType>({
   canExecuteChecklist: () => true,
 });
 
+// Standard hook to use the checklist context
 export const useChecklists = () => useContext(ChecklistContext);
+
