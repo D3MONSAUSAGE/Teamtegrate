@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { playSuccessSound } from "@/utils/sounds";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export interface Notification {
   id: string;
@@ -18,20 +19,26 @@ export function useNotifications() {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const isMobile = useIsMobile();
 
   const fetchNotifications = useCallback(async () => {
     if (!user) return;
+    
+    // Limit to fewer notifications on mobile to improve performance
+    const limit = isMobile ? 10 : 20;
+    
     const { data, error } = await supabase
       .from("notifications")
       .select("*")
       .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .limit(limit);
 
     if (!error && data) {
       setNotifications(data as Notification[]);
       setUnreadCount(data.filter((n: any) => !n.read).length);
     }
-  }, [user]);
+  }, [user, isMobile]);
 
   useEffect(() => {
     fetchNotifications();
@@ -47,7 +54,14 @@ export function useNotifications() {
           const notif = payload.new as Notification;
           setNotifications((prev) => [notif, ...prev]);
           setUnreadCount((prev) => prev + 1);
-          toast.success(notif.title || "New Notification");
+          
+          // Show toast notification on both desktop and mobile
+          toast.success(notif.title || "New Notification", {
+            description: notif.content || "",
+            duration: 5000,
+          });
+          
+          // Play sound notification
           playSuccessSound();
         }
       )
@@ -61,23 +75,28 @@ export function useNotifications() {
   // Mark notification(s) as read
   const markAsRead = async (id?: string) => {
     if (!user) return;
-    if (id) {
-      await supabase
-        .from("notifications")
-        .update({ read: true })
-        .eq("id", id)
-        .eq("user_id", user.id);
-      setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
-      setUnreadCount((prev) => Math.max(0, prev - 1));
-    } else {
-      await supabase
-        .from("notifications")
-        .update({ read: true })
-        .eq("user_id", user.id);
-      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-      setUnreadCount(0);
+    
+    try {
+      if (id) {
+        await supabase
+          .from("notifications")
+          .update({ read: true })
+          .eq("id", id)
+          .eq("user_id", user.id);
+        setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
+        setUnreadCount((prev) => Math.max(0, prev - 1));
+      } else {
+        await supabase
+          .from("notifications")
+          .update({ read: true })
+          .eq("user_id", user.id);
+        setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+        setUnreadCount(0);
+      }
+    } catch (error) {
+      console.error("Error marking notifications as read:", error);
     }
   };
 
-  return { notifications, unreadCount, markAsRead };
+  return { notifications, unreadCount, markAsRead, fetchNotifications };
 }

@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { UserPlus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface AddChatParticipantDialogProps {
   open: boolean;
@@ -25,6 +26,7 @@ const AddChatParticipantDialog: React.FC<AddChatParticipantDialogProps> = ({
   const [search, setSearch] = useState("");
   const [addingId, setAddingId] = useState<string | null>(null);
   const { user: currentUser } = useAuth();
+  const isMobile = useIsMobile();
 
   // Fetch users not already in the room, optionally filtered by search
   const { data: availableUsers = [], isLoading } = useQuery({
@@ -103,7 +105,7 @@ const AddChatParticipantDialog: React.FC<AddChatParticipantDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className={isMobile ? "w-[95%] max-w-md p-4" : "max-w-md"}>
         <DialogHeader>
           <DialogTitle>Add Member to Chat</DialogTitle>
         </DialogHeader>
@@ -113,19 +115,21 @@ const AddChatParticipantDialog: React.FC<AddChatParticipantDialogProps> = ({
           placeholder="Search by name"
           className="mb-4"
         />
-        <div className="space-y-2 max-h-72 overflow-y-auto">
+        <div className="space-y-2 max-h-60 md:max-h-72 overflow-y-auto">
           {isLoading ? (
-            <div>Loading...</div>
+            <div className="flex justify-center py-4">
+              <div className="animate-spin h-6 w-6 border-2 border-primary rounded-full border-t-transparent"></div>
+            </div>
           ) : availableUsers.length === 0 ? (
-            <div className="text-sm text-muted-foreground px-2">
+            <div className="text-sm text-muted-foreground px-2 py-4 text-center">
               No users found.
             </div>
           ) : (
             availableUsers.map((user) => (
               <div key={user.id} className="flex items-center justify-between border-b pb-1">
-                <div>
-                  <span className="font-medium">{user.name}</span>
-                  <span className="ml-2 text-xs text-muted-foreground">{user.email}</span>
+                <div className={isMobile ? "max-w-[70%]" : ""}>
+                  <span className="font-medium truncate block">{user.name}</span>
+                  <span className="ml-0 text-xs text-muted-foreground truncate block">{user.email}</span>
                 </div>
                 <Button
                   size="sm"

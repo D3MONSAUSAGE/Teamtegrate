@@ -15,12 +15,20 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useNotifications } from '@/hooks/use-notifications';
+import { useIsMobile } from '@/hooks/use-mobile';
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 
 const Navbar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const { notifications, unreadCount, markAsRead } = useNotifications();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (user) {
@@ -82,6 +90,34 @@ const Navbar = () => {
     return `${diffDays}d ago`;
   };
 
+  const NotificationContent = () => (
+    <div className="max-h-[400px] overflow-y-auto">
+      {notifications.length > 0 ? (
+        notifications.map((notification) => (
+          <div key={notification.id} className="flex flex-col items-start gap-0.5 py-2 px-3 cursor-pointer border-b last:border-b-0">
+            <div className="flex items-center justify-between w-full">
+              <span className="font-medium">{notification.title}</span>
+              <span className="text-xs text-muted-foreground">{formatNotificationTime(notification.created_at)}</span>
+            </div>
+            <span className="text-sm">{notification.content}</span>
+            {notification.type === 'chat_invitation' && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="mt-1 h-7 text-xs text-primary"
+                onClick={() => navigate('/dashboard/chat')}
+              >
+                Go to Chat
+              </Button>
+            )}
+          </div>
+        ))
+      ) : (
+        <div className="text-center py-4 text-muted-foreground text-sm">No notifications</div>
+      )}
+    </div>
+  );
+
   if (!user) return null;
 
   return (
@@ -91,51 +127,57 @@ const Navbar = () => {
       </div>
 
       <div className="flex items-center space-x-4">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-10 w-10 rounded-full" aria-label="Notifications" onClick={handleNotificationsOpen}>
-              {unreadCount > 0 ? (
-                <BellRing className="h-5 w-5 text-primary animate-pulse" />
-              ) : (
-                <Bell className="h-5 w-5" />
-              )}
-              {unreadCount > 0 && (
-                <span className="absolute top-1 right-1 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-primary rounded-full">
-                  {unreadCount}
-                </span>
-              )}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-80">
-            <div className="px-3 pt-2 pb-1 text-sm font-semibold">Notifications</div>
-            <DropdownMenuSeparator />
-            <div className="max-h-[400px] overflow-y-auto">
-              {notifications.length > 0 ? (
-                notifications.map((notification) => (
-                  <DropdownMenuItem key={notification.id} className="flex flex-col items-start gap-0.5 py-2 px-3 cursor-pointer">
-                    <div className="flex items-center justify-between w-full">
-                      <span className="font-medium">{notification.title}</span>
-                      <span className="text-xs text-muted-foreground">{formatNotificationTime(notification.created_at)}</span>
-                    </div>
-                    <span className="text-sm">{notification.content}</span>
-                    {notification.type === 'chat_invitation' && (
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="mt-1 h-7 text-xs text-primary"
-                        onClick={() => navigate('/dashboard/chat')}
-                      >
-                        Go to Chat
-                      </Button>
-                    )}
-                  </DropdownMenuItem>
-                ))
-              ) : (
-                <div className="text-center py-4 text-muted-foreground text-sm">No notifications</div>
-              )}
-            </div>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {isMobile ? (
+          <Drawer>
+            <DrawerTrigger asChild>
+              <Button variant="ghost" className="relative h-10 w-10 rounded-full" aria-label="Notifications" onClick={handleNotificationsOpen}>
+                {unreadCount > 0 ? (
+                  <BellRing className="h-5 w-5 text-primary animate-pulse" />
+                ) : (
+                  <Bell className="h-5 w-5" />
+                )}
+                {unreadCount > 0 && (
+                  <span className="absolute top-1 right-1 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-primary rounded-full">
+                    {unreadCount}
+                  </span>
+                )}
+              </Button>
+            </DrawerTrigger>
+            <DrawerContent className="max-h-[80vh]">
+              <div className="px-3 py-4">
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="font-semibold text-lg">Notifications</h3>
+                  <DrawerClose asChild>
+                    <Button variant="ghost" size="sm">Done</Button>
+                  </DrawerClose>
+                </div>
+                <NotificationContent />
+              </div>
+            </DrawerContent>
+          </Drawer>
+        ) : (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="relative h-10 w-10 rounded-full" aria-label="Notifications" onClick={handleNotificationsOpen}>
+                {unreadCount > 0 ? (
+                  <BellRing className="h-5 w-5 text-primary animate-pulse" />
+                ) : (
+                  <Bell className="h-5 w-5" />
+                )}
+                {unreadCount > 0 && (
+                  <span className="absolute top-1 right-1 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-primary rounded-full">
+                    {unreadCount}
+                  </span>
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-80">
+              <div className="px-3 pt-2 pb-1 text-sm font-semibold">Notifications</div>
+              <DropdownMenuSeparator />
+              <NotificationContent />
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
 
         <span className="text-sm text-gray-600 dark:text-gray-300 mr-2 hidden md:inline">
           {user.role === 'manager' ? 'Manager' : 'Team Member'}
