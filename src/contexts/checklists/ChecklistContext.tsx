@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Checklist, ChecklistTemplate, ChecklistSection, ChecklistItem, ChecklistItemStatus } from '@/types/checklist';
+import { Checklist, ChecklistTemplate, ChecklistSection, ChecklistItem, ChecklistItemStatus, ChecklistFrequency } from '@/types/checklist';
 import { v4 as uuidv4 } from 'uuid';
 import { useAuth } from '../AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -64,6 +64,22 @@ const processStoredSections = (sections: any): ChecklistSection[] => {
   }));
 };
 
+// Helper function to validate checklist status
+const validateChecklistStatus = (status: string): "draft" | "in-progress" | "completed" => {
+  if (status === "draft" || status === "in-progress" || status === "completed") {
+    return status;
+  }
+  return "draft"; // Default to draft if invalid status is provided
+};
+
+// Helper function to validate checklist frequency
+const validateChecklistFrequency = (frequency: string): ChecklistFrequency => {
+  if (frequency === "once" || frequency === "daily" || frequency === "weekly" || frequency === "monthly") {
+    return frequency as ChecklistFrequency;
+  }
+  return "once"; // Default to once if invalid frequency is provided
+};
+
 export const ChecklistProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [checklists, setChecklists] = useState<Checklist[]>([]);
   const [templates, setTemplates] = useState<ChecklistTemplate[]>([]);
@@ -90,7 +106,7 @@ export const ChecklistProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           createdBy: template.created_by || '',
           createdAt: template.created_at ? new Date(template.created_at) : new Date(),
           branchOptions: template.branch_options || [],
-          frequency: template.frequency || 'once',
+          frequency: validateChecklistFrequency(template.frequency || 'once'),
           lastGenerated: template.last_generated ? new Date(template.last_generated) : undefined,
           tags: template.tags || [],
         }));
@@ -127,7 +143,7 @@ export const ChecklistProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           assignedTo: checklist.assigned_to || [],
           startDate: checklist.start_date ? new Date(checklist.start_date) : new Date(),
           dueDate: checklist.due_date ? new Date(checklist.due_date) : undefined,
-          status: checklist.status,
+          status: validateChecklistStatus(checklist.status),
           progress: typeof checklist.progress === 'number' ? checklist.progress : 0,
           completedCount: typeof checklist.completed_count === 'number' ? checklist.completed_count : 0,
           totalCount: typeof checklist.total_count === 'number' ? checklist.total_count : 0,
