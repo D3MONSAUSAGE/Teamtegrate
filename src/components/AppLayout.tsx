@@ -9,11 +9,13 @@ import { Button } from './ui/button';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
 import { useIsMobile } from '@/hooks/use-mobile';
 
+const SIDEBAR_WIDTH = 256; // Tailwind w-64
+
 const AppLayout = () => {
   const { user, loading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const isMobile = useIsMobile();
-  
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -21,13 +23,13 @@ const AppLayout = () => {
       </div>
     );
   }
-  
+
   if (!user) {
     return <Navigate to="/login" />;
   }
-  
+
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="min-h-screen bg-background">
       {/* Mobile sidebar with Sheet component */}
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
         <SheetTrigger asChild>
@@ -45,12 +47,26 @@ const AppLayout = () => {
         </SheetContent>
       </Sheet>
       
-      {/* Desktop sidebar - visible on medium screens and larger */}
-      <div className="hidden md:block w-64 flex-shrink-0">
-        <Sidebar />
+      {/* Desktop sidebar - fixed and not scrollable */}
+      <div
+        className="hidden md:block"
+        aria-hidden={isMobile ? "true" : "false"}
+      >
+        <div
+          className="fixed top-0 left-0 h-screen w-64 z-30"
+          style={{ height: '100vh', width: SIDEBAR_WIDTH }}
+        >
+          <Sidebar />
+        </div>
       </div>
       
-      <div className="flex flex-col flex-1 overflow-hidden">
+      {/* Main content area (with sidebar offset on desktop) */}
+      <div
+        className={`flex flex-col flex-1 overflow-hidden`}
+        style={{
+          marginLeft: !isMobile ? SIDEBAR_WIDTH : 0,
+        }}
+      >
         <Navbar />
         <main className="flex-1 overflow-y-auto p-3 md:p-6">
           <Outlet />

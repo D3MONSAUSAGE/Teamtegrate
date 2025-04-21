@@ -28,11 +28,11 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
   const location = useLocation();
   const { user } = useAuth();
   const { isDark, toggle } = useDarkMode();
-  
+
   const isActive = (path: string) => {
     return location.pathname === path;
   };
-  
+
   const navItems = [
     {
       name: 'Dashboard',
@@ -101,7 +101,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
       allowed: true,
     },
   ];
-  
+
   if (!user) return null;
 
   const handleNavClick = () => {
@@ -109,14 +109,19 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
   };
 
   return (
-    <div
+    <aside
       className={cn(
-        "h-full w-64 flex flex-col border-r transition-colors duration-300",
-        "bg-white dark:bg-[#181928] border-gray-200 dark:border-gray-800"
+        "flex flex-col h-full w-64 z-30 bg-[#181928] border-r border-gray-800",
+        "fixed top-0 left-0",
+        "transition-colors duration-300"
       )}
       style={{
-        position: "relative",
+        minHeight: '100vh',
+        height: '100vh',
+        // removes scrolling from sidebar container
+        overflow: 'hidden',
       }}
+      aria-label="Sidebar"
     >
       {/* Top: Logo and Dark Mode Toggle */}
       <div className="p-6 pt-5 flex items-center justify-between gap-2">
@@ -142,8 +147,8 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
           {isDark ? <Moon className="h-5 w-5 text-yellow-300" /> : <Sun className="h-5 w-5 text-yellow-400" />}
         </button>
       </div>
-      
-      <div className="flex-1 px-4">
+
+      <div className="flex-1 px-4 overflow-visible">
         <ul className="space-y-2">
           {navItems.map((item) => {
             if (!item.allowed) return null;
@@ -159,7 +164,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
                     "flex items-center gap-3 px-4 py-2.5 rounded-lg text-base font-medium transition-all duration-200 focus:outline-none",
                     isActiveItem
                       ? "bg-primary/90 text-white shadow-md"
-                      : "bg-white dark:bg-[#1a1f2c] text-black dark:text-gray-100 hover:bg-primary/10 hover:text-primary focus:ring-2 focus:ring-primary/60"
+                      : "bg-[#181928] text-white hover:bg-primary/10 hover:text-primary focus:ring-2 focus:ring-primary/60"
                   )}
                   style={{
                     letterSpacing: '0.02em'
@@ -185,7 +190,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
                   <span
                     className={cn(
                       "ml-2",
-                      isActiveItem ? "text-white font-bold" : "text-black dark:text-gray-100 font-semibold"
+                      isActiveItem ? "text-white font-bold" : "text-white font-semibold"
                     )}
                   >
                     {item.name}
@@ -196,16 +201,16 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
           })}
         </ul>
       </div>
-      
-      <div className="p-4 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-[#181928]">
+
+      <div className="p-4 border-t border-gray-800 bg-[#181928]">
         <div className="text-xs text-gray-500 dark:text-gray-400">
           <p>Logged in as</p>
-          <p className="font-semibold text-black dark:text-white">{user.name}</p>
-          <p className="text-gray-600 dark:text-gray-300">{user.email}</p>
+          <p className="font-semibold text-white">{user.name}</p>
+          <p className="text-gray-300">{user.email}</p>
           <p className="mt-1 font-medium text-primary/90 dark:text-primary/70">{user.role === 'manager' ? 'Manager' : 'Team Member'}</p>
         </div>
       </div>
-    </div>
+    </aside>
   );
 };
 
