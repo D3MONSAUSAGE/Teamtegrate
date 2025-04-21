@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -179,7 +180,7 @@ const TimeTracking: React.FC = () => {
                 <span className="text-muted-foreground text-sm">tracked</span>
               </div>
               <div>
-                <span className="font-semibold">{remainingHours}</span>{" "}
+                <span className="font-semibold">{remainingHours.toFixed(2)}</span>{" "}
                 <span className="text-muted-foreground text-sm">remaining</span>
               </div>
               <div>
@@ -306,3 +307,4 @@ const TimeTracking: React.FC = () => {
 };
 
 export default TimeTracking;
+
