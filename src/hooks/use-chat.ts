@@ -1,7 +1,8 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from 'sonner';
+import { useSoundSettings } from "@/hooks/useSoundSettings";
+import { playChatNotification } from "@/utils/chatSounds";
 
 interface Message {
   id: string;
@@ -29,6 +30,7 @@ export const useChat = (roomId: string, userId: string | undefined) => {
   const [fileUploads, setFileUploads] = useState<FileUpload[]>([]);
   const [replyTo, setReplyTo] = useState<Message | null>(null);
   const [isSending, setIsSending] = useState(false);
+  const soundSettings = useSoundSettings();
 
   const fetchMessages = async () => {
     try {
@@ -81,8 +83,11 @@ export const useChat = (roomId: string, userId: string | undefined) => {
           table: 'chat_messages',
           filter: `room_id=eq.${roomId}`,
         },
-        () => {
+        (payload) => {
           fetchMessages();
+          if (payload.eventType === "INSERT" && payload.new?.user_id !== userId) {
+            playChatNotification(soundSettings);
+          }
         }
       )
       .subscribe();
@@ -197,7 +202,7 @@ export const useChat = (roomId: string, userId: string | undefined) => {
     return () => {
       unsubscribe();
     };
-  }, [roomId]);
+  }, [roomId, userId, soundSettings.enabled, soundSettings.volume]);
 
   return {
     messages,

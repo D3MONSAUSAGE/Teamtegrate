@@ -1,13 +1,15 @@
-
 import React from 'react';
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useDarkMode } from "@/hooks/useDarkMode";
 import { ToggleLeft, ToggleRight } from "lucide-react";
+import { useSoundSettings } from "@/hooks/useSoundSettings";
+import { Volume, VolumeOff } from "lucide-react";
 
 const AppSettingsSection = () => {
   const { isDark, toggle } = useDarkMode();
+  const { enabled: soundEnabled, setEnabled: setSoundEnabled } = useSoundSettings();
 
   return (
     <div>
@@ -38,6 +40,36 @@ const AppSettingsSection = () => {
               <>
                 <ToggleLeft className="h-6 w-6 text-black" />
                 <span className="text-black font-medium">Light</span>
+              </>
+            )}
+          </button>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div>
+            <Label htmlFor="sound-toggle" className="block mb-1">App Sounds</Label>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Enable notification sounds</p>
+          </div>
+          <button
+            id="sound-toggle"
+            aria-label="Toggle sound"
+            type="button"
+            className={`flex items-center gap-2 px-3 py-2 rounded-full border transition ${
+              soundEnabled
+                ? "bg-primary text-white border-primary"
+                : "bg-muted text-muted-foreground border-border"
+            }`}
+            onClick={() => setSoundEnabled(!soundEnabled)}
+          >
+            {soundEnabled ? (
+              <>
+                <Volume className="h-5 w-5" />
+                <span className="font-medium">On</span>
+              </>
+            ) : (
+              <>
+                <VolumeOff className="h-5 w-5" />
+                <span className="font-medium">Off</span>
               </>
             )}
           </button>
