@@ -47,6 +47,11 @@ const CreateChecklistDialog: React.FC<CreateChecklistDialogProps> = ({
   );
   const [newBranch, setNewBranch] = useState('');
   const [selectedBranchDropdown, setSelectedBranchDropdown] = useState<string>('');
+  const [enableExecutionWindow, setEnableExecutionWindow] = useState(false);
+  const [executionStartDate, setExecutionStartDate] = useState<Date | null>(new Date());
+  const [executionEndDate, setExecutionEndDate] = useState<Date | null>(null);
+  const [executionStartTime, setExecutionStartTime] = useState<string>('08:00');
+  const [executionEndTime, setExecutionEndTime] = useState<string>('18:00');
 
   useEffect(() => {
     if (editingTemplate) {
@@ -248,13 +253,23 @@ const CreateChecklistDialog: React.FC<CreateChecklistDialogProps> = ({
           toast.success('Template saved successfully');
         }
       } else {
+        let executionWindow = undefined;
+        if (enableExecutionWindow) {
+          executionWindow = {
+            startDate: executionStartDate,
+            endDate: executionEndDate,
+            startTime: executionStartTime,
+            endTime: executionEndTime,
+          };
+        }
         await addChecklist({
           title,
           description,
           sections,
           branch: branches.length > 0 ? branches[0] : undefined,
           startDate: new Date(),
-          status: 'draft'
+          status: 'draft',
+          executionWindow,
         });
         toast.success('Checklist created successfully');
       }
@@ -328,6 +343,107 @@ const CreateChecklistDialog: React.FC<CreateChecklistDialogProps> = ({
               onChangeNewBranch={setNewBranch}
               onChangeDropdown={setSelectedBranchDropdown}
             />
+
+            {!isTemplate && (
+              <div className="border rounded-lg p-4 space-y-4 bg-muted">
+                <div className="flex items-center mb-2">
+                  <input
+                    type="checkbox"
+                    id="enable-execution-window"
+                    checked={enableExecutionWindow}
+                    onChange={e => setEnableExecutionWindow(e.target.checked)}
+                    className="mr-2"
+                  />
+                  <label htmlFor="enable-execution-window" className="font-medium select-none">
+                    Set Execution Window
+                  </label>
+                </div>
+                {enableExecutionWindow && (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Start Date</label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant={"outline"}
+                              className="w-full pl-3 text-left font-normal"
+                            >
+                              {executionStartDate
+                                ? format(executionStartDate, "PPP")
+                                : <span>Pick a date</span>
+                              }
+                              <span className="ml-auto pl-2">
+                                <Calendar className="h-4 w-4 opacity-50" />
+                              </span>
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={executionStartDate ?? undefined}
+                              onSelect={setExecutionStartDate}
+                              initialFocus
+                              className="p-3 pointer-events-auto"
+                              disabled={date => executionEndDate ? date > executionEndDate : false}
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">End Date</label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant={"outline"}
+                              className="w-full pl-3 text-left font-normal"
+                            >
+                              {executionEndDate
+                                ? format(executionEndDate, "PPP")
+                                : <span>Pick a date</span>
+                              }
+                              <span className="ml-auto pl-2">
+                                <Calendar className="h-4 w-4 opacity-50" />
+                              </span>
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={executionEndDate ?? undefined}
+                              onSelect={setExecutionEndDate}
+                              initialFocus
+                              className="p-3 pointer-events-auto"
+                              disabled={date => executionStartDate ? date < executionStartDate : false}
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Start Time</label>
+                        <input
+                          type="time"
+                          className="w-full border rounded-md px-3 py-2"
+                          value={executionStartTime}
+                          onChange={e => setExecutionStartTime(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">End Time</label>
+                        <input
+                          type="time"
+                          className="w-full border rounded-md px-3 py-2"
+                          value={executionEndTime}
+                          onChange={e => setExecutionEndTime(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </TabsContent>
         </Tabs>
         <DialogFooter>
