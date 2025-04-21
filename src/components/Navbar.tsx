@@ -59,7 +59,7 @@ const Navbar = () => {
   };
   
   const handleSettings = () => {
-    navigate('/settings');
+    navigate('/dashboard/settings');
   };
   
   if (!user) return null;
