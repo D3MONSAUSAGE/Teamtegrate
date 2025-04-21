@@ -1,12 +1,17 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Check } from 'lucide-react';
+import { Check, Calendar as CalendarIcon } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 import { ChecklistFrequency, ChecklistTemplate, ChecklistItemStatus, ChecklistSection } from '@/types/checklist';
 import { useChecklists } from '@/contexts/checklists/ChecklistContext';
 import { prepareJsonSections } from '@/contexts/checklists/helpers';
+import { format } from 'date-fns';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 
 import ChecklistBasicInfo from './ChecklistBasicInfo';
 import ChecklistSectionsEditor from './ChecklistSectionsEditor';
@@ -374,7 +379,7 @@ const CreateChecklistDialog: React.FC<CreateChecklistDialogProps> = ({
                                 : <span>Pick a date</span>
                               }
                               <span className="ml-auto pl-2">
-                                <Calendar className="h-4 w-4 opacity-50" />
+                                <CalendarIcon className="h-4 w-4 opacity-50" />
                               </span>
                             </Button>
                           </PopoverTrigger>
@@ -403,7 +408,7 @@ const CreateChecklistDialog: React.FC<CreateChecklistDialogProps> = ({
                                 : <span>Pick a date</span>
                               }
                               <span className="ml-auto pl-2">
-                                <Calendar className="h-4 w-4 opacity-50" />
+                                <CalendarIcon className="h-4 w-4 opacity-50" />
                               </span>
                             </Button>
                           </PopoverTrigger>
