@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { useAuth } from '@/contexts/AuthContext';
@@ -94,7 +93,6 @@ const Navbar = () => {
       </div>
 
       <div className="flex items-center space-x-4">
-        {/* Notifications */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-10 w-10 rounded-full" aria-label="Notifications" onClick={handleNotificationsOpen}>
