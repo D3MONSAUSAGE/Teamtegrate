@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -17,7 +16,7 @@ import {
   MessageSquare,
   Sun,
   Moon,
-  CheckList
+  ListChecks
 } from 'lucide-react';
 import { useDarkMode } from '@/hooks/useDarkMode';
 
@@ -56,7 +55,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
     {
       name: 'Checklists',
       path: '/dashboard/checklists',
-      icon: <CheckList className="h-5 w-5" />,
+      icon: <ListChecks className="h-5 w-5" />,
       allowed: true,
     },
     {
@@ -118,7 +117,6 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
   return (
     <aside
       className={cn(
-        // Swap out fixed bg classes with theme-aware classes
         "flex flex-col h-full w-64 z-30 bg-background text-foreground border-r border-border",
         "fixed top-0 left-0",
         "transition-colors duration-300"
@@ -130,7 +128,6 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
       }}
       aria-label="Sidebar"
     >
-      {/* Top: Logo and Dark Mode Toggle */}
       <div className="p-6 pt-5 flex items-center justify-between gap-2">
         <div>
           <h2 className="text-lg font-bold tracking-wide text-primary">
