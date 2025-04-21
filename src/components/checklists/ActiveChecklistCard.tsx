@@ -92,7 +92,7 @@ const ActiveChecklistCard: React.FC<ActiveChecklistCardProps> = ({ checklist, on
               </div>
             )}
           </div>
-          
+
           <div className="space-y-1">
             <div className="flex justify-between text-sm">
               <span>Progress</span>
@@ -109,14 +109,15 @@ const ActiveChecklistCard: React.FC<ActiveChecklistCardProps> = ({ checklist, on
             {checklist.assignedTo?.length || 0} assigned
           </span>
         </div>
-        <Badge variant={
-          checklist.status === 'completed' ? 'default' : 
-          checklist.status === 'in-progress' ? 'secondary' : 
-          'outline'
-        }>
-          {checklist.status === 'in-progress' ? 'In Progress' : 
-           checklist.status === 'completed' ? 'Completed' : 'Draft'}
-        </Badge>
+        {/* Removed Draft badge, only show badges for 'in-progress' or 'completed' */}
+        {(checklist.status === 'in-progress' || checklist.status === 'completed') && (
+          <Badge variant={
+            checklist.status === 'completed' ? 'default' : 
+            checklist.status === 'in-progress' ? 'secondary' : 'outline'
+          }>
+            {checklist.status === 'in-progress' ? 'In Progress' : 'Completed'}
+          </Badge>
+        )}
         <Button 
           size="sm" 
           onClick={handleExecuteClick}
@@ -130,3 +131,4 @@ const ActiveChecklistCard: React.FC<ActiveChecklistCardProps> = ({ checklist, on
 };
 
 export default ActiveChecklistCard;
+
