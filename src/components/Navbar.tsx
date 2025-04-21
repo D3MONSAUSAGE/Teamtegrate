@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { useAuth } from '@/contexts/AuthContext';
@@ -77,7 +78,7 @@ const Navbar = () => {
   };
 
   const handleSettings = () => {
-    navigate('/dashboard/settings');
+    navigate('/settings');
   };
 
   const handleNotificationsOpen = () => {
@@ -155,3 +156,4 @@ const Navbar = () => {
 };
 
 export default Navbar;
+
