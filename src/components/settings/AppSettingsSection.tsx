@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -8,31 +9,35 @@ import { useSoundSettings } from "@/hooks/useSoundSettings";
 import { Volume, VolumeOff, VolumeX, Volume1, Volume2 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
+import { testSoundPlayback, playSuccessSound, playErrorSound } from "@/utils/sounds";
 
 const AppSettingsSection = () => {
   const { isDark, toggle } = useDarkMode();
   const { enabled: soundEnabled, volume: soundVolume, setEnabled: setSoundEnabled, setVolume: setSoundVolume } = useSoundSettings();
 
-  // Test sound function for immediate feedback
-  const playTestSound = () => {
+  // Enhanced test sound function with fallback and better feedback
+  const playTestSound = async () => {
+    if (!soundEnabled) {
+      toast.info("Sound is currently disabled. Enable sound to test.");
+      return;
+    }
+
+    toast.loading("Testing sound playback...", { id: "sound-test" });
+    
     try {
-      // Using the same sound file as the chat notification
-      const audio = new Audio("/sounds/message.wav");
-      audio.volume = soundVolume;
-      const playPromise = audio.play();
+      const success = await testSoundPlayback(soundVolume);
       
-      if (playPromise !== undefined) {
-        playPromise.then(() => {
-          console.log("Test sound played successfully");
-          toast.success("Sound test successful!");
-        }).catch(error => {
-          console.error("Error playing test sound:", error);
-          toast.error("Sound test failed. Check if sound files are available.");
-        });
+      if (success) {
+        toast.success("Sound test successful!", { id: "sound-test" });
+        playSuccessSound(soundVolume);
+      } else {
+        // Try alternative sound as fallback
+        playErrorSound(soundVolume);
+        toast.error("Primary sound test failed. Using fallback sound.", { id: "sound-test" });
       }
     } catch (error) {
-      console.error("Error initializing test sound:", error);
-      toast.error("Failed to initialize sound test");
+      console.error("Error testing sound:", error);
+      toast.error("Sound test failed. Check browser audio permissions.", { id: "sound-test" });
     }
   };
 

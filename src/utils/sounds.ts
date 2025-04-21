@@ -1,35 +1,34 @@
 
-// These functions play various sounds for different app interactions
+import { playSound, playAppSound } from "./chatSounds";
 
-// Play success sound when tasks/projects are created/completed
-export const playSuccessSound = () => {
-  try {
-    const audio = new Audio('/sounds/success.mp3');
-    audio.volume = 0.5;
-    audio.play();
-  } catch (error) {
-    console.error('Error playing success sound:', error);
-  }
-};
+// Re-export the general sound functions
+export { playSound };
 
-// Play error sound when operations fail
-export const playErrorSound = () => {
-  try {
-    const audio = new Audio('/sounds/error.mp3');
-    audio.volume = 0.5;
-    audio.play();
-  } catch (error) {
-    console.error('Error playing error sound:', error);
-  }
-};
+// Convenience functions for specific sounds
+export function playSuccessSound(volume: number = 0.5) {
+  playAppSound('success', volume);
+}
 
-// Play status change sound when task status changes
-export const playStatusChangeSound = () => {
-  try {
-    const audio = new Audio('/sounds/status-change.mp3');
-    audio.volume = 0.4;
-    audio.play();
-  } catch (error) {
-    console.error('Error playing status change sound:', error);
-  }
-};
+export function playErrorSound(volume: number = 0.5) {
+  playAppSound('error', volume);
+}
+
+export function playStatusChangeSound(volume: number = 0.5) {
+  playAppSound('status-change', volume);
+}
+
+// Add a function to test audio playback
+export function testSoundPlayback(volume: number = 0.5): Promise<boolean> {
+  return new Promise((resolve) => {
+    const audio = new Audio("/sounds/message.wav");
+    audio.volume = volume;
+    
+    audio.onended = () => resolve(true);
+    audio.onerror = () => resolve(false);
+    
+    const playPromise = audio.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(() => resolve(false));
+    }
+  });
+}
