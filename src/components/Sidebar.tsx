@@ -17,6 +17,7 @@ import {
   MessageSquare,
   Sun,
   Moon,
+  CheckList
 } from 'lucide-react';
 import { useDarkMode } from '@/hooks/useDarkMode';
 
@@ -50,6 +51,12 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
       name: 'My Tasks',
       path: '/dashboard/tasks',
       icon: <CheckSquare className="h-5 w-5" />,
+      allowed: true,
+    },
+    {
+      name: 'Checklists',
+      path: '/dashboard/checklists',
+      icon: <CheckList className="h-5 w-5" />,
       allowed: true,
     },
     {
