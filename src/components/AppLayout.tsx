@@ -31,14 +31,12 @@ const AppLayout = () => {
       {/* Mobile sidebar with Sheet component */}
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
         <SheetTrigger asChild>
-          {/* Hamburger is always fixed at top left on mobile */}
           <Button 
             variant="outline" 
             size="icon" 
-            className="fixed top-0 left-0 z-[100] md:hidden bg-white dark:bg-gray-800 dark:border-gray-700 shadow-md rounded-none h-14 w-14"
-            style={{ borderRadius: 0 }}
+            className="fixed top-4 left-4 z-50 md:hidden bg-white dark:bg-gray-800 dark:border-gray-700 shadow-md"
           >
-            <Menu className="h-6 w-6" />
+            <Menu className="h-5 w-5" />
             <span className="sr-only">Toggle Sidebar</span>
           </Button>
         </SheetTrigger>
@@ -47,24 +45,18 @@ const AppLayout = () => {
         </SheetContent>
       </Sheet>
 
-      {/* Desktop sidebar - fixed and not scrollable */}
+      {/* Desktop sidebar - fixed position on medium screens and larger */}
       <div className="hidden md:block w-64 flex-shrink-0">
-        <div className="fixed left-0 top-0 h-screen w-64 z-40">
+        <div className="fixed top-0 left-0 h-screen w-64 overflow-y-auto bg-white dark:bg-[#181928] border-r border-gray-200 dark:border-gray-800">
           <Sidebar />
         </div>
       </div>
 
-      <div className="flex flex-col flex-1 overflow-hidden">
-        {/* Padding left to avoid content under sidebar on desktop */}
+      {/* Main content container - adjusted to remove gap */}
+      <div className="flex-1 flex flex-col w-full md:pl-64">
         <Navbar />
-        <main
-          className="flex-1 overflow-y-auto p-3 md:p-6"
-          style={{ paddingLeft: isMobile ? undefined : '16rem' }}
-        >
-          {/* Remove the margin-left here to avoid duplicate spacing */}
-          <div>
-            <Outlet />
-          </div>
+        <main className="flex-1 p-3 md:p-6 overflow-x-hidden overflow-y-auto">
+          <Outlet />
         </main>
       </div>
     </div>

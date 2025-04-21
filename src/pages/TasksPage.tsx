@@ -23,10 +23,10 @@ const TasksPage = () => {
   };
 
   return (
-    <div className="p-6">
+    <div className="w-full max-w-full">
       <TasksHeader
         sortBy={sortBy}
-        setSortBy={setSortBy}
+        setSortBy={(value) => setSortBy(value)}
         onNewTask={() => {
           setEditingTask(undefined);
           setIsCreateTaskOpen(true);
@@ -34,19 +34,19 @@ const TasksPage = () => {
       />
       <Tabs defaultValue="todo" className="w-full">
         <TasksTabsNav counts={counts} />
-        <TabsContent value="todo">
+        <TabsContent value="todo" className="w-full">
           <TasksTabPanel tasks={todo} status="todo" onEdit={handleEditTask} onAddTask={() => {
             setEditingTask(undefined);
             setIsCreateTaskOpen(true);
           }} />
         </TabsContent>
-        <TabsContent value="inprogress">
+        <TabsContent value="inprogress" className="w-full">
           <TasksTabPanel tasks={inprogress} status="inprogress" onEdit={handleEditTask} onAddTask={() => {}} />
         </TabsContent>
-        <TabsContent value="pending">
+        <TabsContent value="pending" className="w-full">
           <TasksTabPanel tasks={pending} status="pending" onEdit={handleEditTask} onAddTask={() => {}} />
         </TabsContent>
-        <TabsContent value="completed">
+        <TabsContent value="completed" className="w-full">
           <TasksTabPanel tasks={completed} status="completed" onEdit={handleEditTask} onAddTask={() => {}} />
         </TabsContent>
       </Tabs>
