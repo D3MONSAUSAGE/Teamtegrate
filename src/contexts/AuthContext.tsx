@@ -94,6 +94,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signup = async (email: string, password: string, name: string, role: UserRole) => {
     setLoading(true);
     try {
+      // We'll directly create the user through the API,
+      // The handle_new_user trigger should handle creating the user in the users table
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -101,7 +103,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           data: {
             name,
             role,
-          }
+          },
+          emailRedirectTo: window.location.origin + '/dashboard',
         }
       });
 
