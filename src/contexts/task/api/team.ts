@@ -42,3 +42,24 @@ export const checkUserExists = async (email: string): Promise<boolean> => {
     return false;
   }
 };
+
+// Function to check if a user is already a team member under a specific manager
+export const isAlreadyTeamMember = async (email: string, managerId: string): Promise<boolean> => {
+  try {
+    const { count, error } = await supabase
+      .from('team_members')
+      .select('*', { count: 'exact', head: true })
+      .eq('email', email.toLowerCase())
+      .eq('manager_id', managerId);
+    
+    if (error) {
+      console.error('Error checking if user is already a team member:', error);
+      return false;
+    }
+    
+    return count !== null && count > 0;
+  } catch (error) {
+    console.error('Error in isAlreadyTeamMember:', error);
+    return false;
+  }
+};

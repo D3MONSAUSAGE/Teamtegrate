@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { toast } from '@/components/ui/sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { checkUserExists } from '@/contexts/task/api/team';
 
 interface TeamMemberFormData {
   email: string;
@@ -72,6 +73,20 @@ export const useTeamMemberForm = ({ onSuccess, onCancel }: UseTeamMemberFormProp
         return;
       }
 
+      // Check if the user is already a team member under this manager
+      const { data: existingTeamMember, error: teamMemberCheckError } = await supabase
+        .from('team_members')
+        .select('id')
+        .eq('email', formData.email.trim().toLowerCase())
+        .eq('manager_id', user.id)
+        .single();
+
+      if (existingTeamMember) {
+        setError('This user is already a member of your team');
+        setIsLoading(false);
+        return;
+      }
+
       // Add user as team member
       const { error: insertError } = await supabase
         .from('team_members')
@@ -83,15 +98,8 @@ export const useTeamMemberForm = ({ onSuccess, onCancel }: UseTeamMemberFormProp
         });
 
       if (insertError) {
-        if (insertError.code === '23505') { // Unique violation
-          setError('This user is already a member of your team');
-        } else if (insertError.code === '42P01') { // Table doesn't exist
-          setError('System error: Team members table not found. Please contact support.');
-          console.error('Database table error:', insertError);
-        } else {
-          console.error('Error adding team member:', insertError);
-          setError('Failed to add team member. Please try again.');
-        }
+        console.error('Error adding team member:', insertError);
+        setError('Failed to add team member. Please try again.');
         setIsLoading(false);
         return;
       }

@@ -43,11 +43,16 @@ const TeamMembersSection: React.FC<TeamMembersSectionProps> = ({
   const watchTeamMembers = watch('teamMembers') || [];
   
   const handleAddMember = () => {
-    if (selectedMember && !watchTeamMembers.find(m => m.memberId === selectedMember)) {
+    if (selectedMember && !watchTeamMembers.some(m => m.memberId === selectedMember)) {
       append({ memberId: selectedMember });
       setSelectedMember('');
     }
   };
+
+  // Filter out team members that are already selected
+  const availableTeamMembers = teamMembers.filter(
+    member => !watchTeamMembers.some(m => m.memberId === member.id)
+  );
 
   return (
     <div className="space-y-4">
@@ -62,11 +67,10 @@ const TeamMembersSection: React.FC<TeamMembersSectionProps> = ({
             <SelectValue placeholder="Select a team member" />
           </SelectTrigger>
           <SelectContent>
-            {teamMembers.map(member => (
+            {availableTeamMembers.map(member => (
               <SelectItem 
                 key={member.id} 
                 value={member.id}
-                disabled={watchTeamMembers.some(m => m.memberId === member.id)}
               >
                 {member.name}
               </SelectItem>
@@ -109,4 +113,3 @@ const TeamMembersSection: React.FC<TeamMembersSectionProps> = ({
 };
 
 export default TeamMembersSection;
-
