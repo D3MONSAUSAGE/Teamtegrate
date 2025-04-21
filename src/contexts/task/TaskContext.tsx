@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { Task, Project, TaskStatus, TaskPriority, DailyScore } from '@/types';
 import { useAuth } from '../AuthContext';
@@ -15,10 +14,12 @@ import {
 import { 
   addProject, 
   updateProject, 
-  deleteProject, 
-  addTeamMemberToProject, 
+  deleteProject
+} from './operations/projectCrud';
+import {
+  addTeamMemberToProject,
   removeTeamMemberFromProject
-} from './projectOperations';
+} from './operations/projectTeamMember';
 import { 
   addCommentToTask, 
   addTagToTask, 

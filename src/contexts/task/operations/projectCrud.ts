@@ -1,4 +1,5 @@
-import { User, Project, Task, TaskStatus, TaskPriority } from '@/types';
+
+import { User, Project, Task } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { v4 as uuidv4 } from 'uuid';
@@ -21,7 +22,7 @@ export const addProject = async (
       description: project.description,
       start_date: project.startDate.toISOString(),
       end_date: project.endDate.toISOString(),
-      manager_id: user.id,  // This should match the auth.uid() format
+      manager_id: user.id,
       created_at: now.toISOString(),
       updated_at: now.toISOString()
     };
@@ -41,21 +42,17 @@ export const addProject = async (
       return;
     }
     
-    // If there are team members, add them to the project
+    // If there are team members, add them to the project (handled externally in addTeamMemberToProject)
     const teamMembers = project.teamMembers || [];
     if (teamMembers.length > 0) {
-      // Create a project_team_members entry for each team member
+      // Add entries for each member if needed (see projectTeamMember.ts for best practice)
       for (const memberId of teamMembers) {
-        const { error: teamMemberError } = await supabase
+        await supabase
           .from('project_team_members')
           .insert({
             project_id: projectId,
             team_member_id: memberId
           });
-          
-        if (teamMemberError) {
-          console.error('Error adding team member to project:', teamMemberError);
-        }
       }
     }
     
@@ -104,9 +101,6 @@ export const updateProject = async (
     if (updates.startDate !== undefined) updatedFields.start_date = updates.startDate.toISOString();
     if (updates.endDate !== undefined) updatedFields.end_date = updates.endDate.toISOString();
     
-    // Handle is_completed separately - store it only in local state for now
-    const isCompletedUpdate = updates.is_completed !== undefined;
-    
     const { error } = await supabase
       .from('projects')
       .update(updatedFields)
@@ -119,7 +113,6 @@ export const updateProject = async (
       return;
     }
     
-    // Update local state including the completion status
     setProjects(prevProjects => prevProjects.map(project => {
       if (project.id === projectId) {
         return { ...project, ...updates, updatedAt: now };
@@ -179,88 +172,5 @@ export const deleteProject = async (
     console.error('Error in deleteProject:', error);
     playErrorSound();
     toast.error('Failed to delete project');
-  }
-};
-
-export const addTeamMemberToProject = async (
-  projectId: string,
-  userId: string,
-  projects: Project[],
-  setProjects: React.Dispatch<React.SetStateAction<Project[]>>
-) => {
-  try {
-    // First update the database
-    const { error } = await supabase
-      .from('project_team_members')
-      .insert({
-        project_id: projectId,
-        team_member_id: userId
-      });
-      
-    if (error) {
-      console.error('Error adding team member to project in database:', error);
-      toast.error('Failed to add team member to project');
-      return;
-    }
-    
-    // Then update the local state
-    const updatedProjects = projects.map((project) => {
-      if (project.id === projectId) {
-        const teamMembers = project.teamMembers || [];
-        if (!teamMembers.includes(userId)) {
-          return { 
-            ...project, 
-            teamMembers: [...teamMembers, userId],
-            updatedAt: new Date() 
-          };
-        }
-      }
-      return project;
-    });
-
-    setProjects(updatedProjects);
-    toast.success('Team member added to project successfully!');
-  } catch (error) {
-    console.error('Error in addTeamMemberToProject:', error);
-    toast.error('Failed to add team member to project');
-  }
-};
-
-export const removeTeamMemberFromProject = async (
-  projectId: string,
-  userId: string,
-  projects: Project[],
-  setProjects: React.Dispatch<React.SetStateAction<Project[]>>
-) => {
-  try {
-    // First remove from the database
-    const { error } = await supabase
-      .from('project_team_members')
-      .delete()
-      .match({ project_id: projectId, team_member_id: userId });
-      
-    if (error) {
-      console.error('Error removing team member from project in database:', error);
-      toast.error('Failed to remove team member from project');
-      return;
-    }
-    
-    // Then update the local state
-    const updatedProjects = projects.map((project) => {
-      if (project.id === projectId && project.teamMembers) {
-        return { 
-          ...project, 
-          teamMembers: project.teamMembers.filter(id => id !== userId),
-          updatedAt: new Date() 
-        };
-      }
-      return project;
-    });
-
-    setProjects(updatedProjects);
-    toast.success('Team member removed from project successfully!');
-  } catch (error) {
-    console.error('Error in removeTeamMemberFromProject:', error);
-    toast.error('Failed to remove team member from project');
   }
 };
