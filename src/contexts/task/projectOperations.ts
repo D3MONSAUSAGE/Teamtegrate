@@ -1,4 +1,3 @@
-
 import { User, Project, Task, TaskStatus, TaskPriority } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
@@ -42,6 +41,24 @@ export const addProject = async (
       return;
     }
     
+    // If there are team members, add them to the project
+    const teamMembers = project.teamMembers || [];
+    if (teamMembers.length > 0) {
+      // Create a project_team_members entry for each team member
+      for (const memberId of teamMembers) {
+        const { error: teamMemberError } = await supabase
+          .from('project_team_members')
+          .insert({
+            project_id: projectId,
+            team_member_id: memberId
+          });
+          
+        if (teamMemberError) {
+          console.error('Error adding team member to project:', teamMemberError);
+        }
+      }
+    }
+    
     if (data) {
       const newProject: Project = {
         id: data.id,
@@ -53,7 +70,7 @@ export const addProject = async (
         createdAt: new Date(data.created_at),
         updatedAt: new Date(data.updated_at),
         tasks: [],
-        teamMembers: [],
+        teamMembers,
         tags: []
       };
       
@@ -165,47 +182,85 @@ export const deleteProject = async (
   }
 };
 
-export const addTeamMemberToProject = (
+export const addTeamMemberToProject = async (
   projectId: string,
   userId: string,
   projects: Project[],
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
 ) => {
-  const updatedProjects = projects.map((project) => {
-    if (project.id === projectId) {
-      const teamMembers = project.teamMembers || [];
-      if (!teamMembers.includes(userId)) {
+  try {
+    // First update the database
+    const { error } = await supabase
+      .from('project_team_members')
+      .insert({
+        project_id: projectId,
+        team_member_id: userId
+      });
+      
+    if (error) {
+      console.error('Error adding team member to project in database:', error);
+      toast.error('Failed to add team member to project');
+      return;
+    }
+    
+    // Then update the local state
+    const updatedProjects = projects.map((project) => {
+      if (project.id === projectId) {
+        const teamMembers = project.teamMembers || [];
+        if (!teamMembers.includes(userId)) {
+          return { 
+            ...project, 
+            teamMembers: [...teamMembers, userId],
+            updatedAt: new Date() 
+          };
+        }
+      }
+      return project;
+    });
+
+    setProjects(updatedProjects);
+    toast.success('Team member added to project successfully!');
+  } catch (error) {
+    console.error('Error in addTeamMemberToProject:', error);
+    toast.error('Failed to add team member to project');
+  }
+};
+
+export const removeTeamMemberFromProject = async (
+  projectId: string,
+  userId: string,
+  projects: Project[],
+  setProjects: React.Dispatch<React.SetStateAction<Project[]>>
+) => {
+  try {
+    // First remove from the database
+    const { error } = await supabase
+      .from('project_team_members')
+      .delete()
+      .match({ project_id: projectId, team_member_id: userId });
+      
+    if (error) {
+      console.error('Error removing team member from project in database:', error);
+      toast.error('Failed to remove team member from project');
+      return;
+    }
+    
+    // Then update the local state
+    const updatedProjects = projects.map((project) => {
+      if (project.id === projectId && project.teamMembers) {
         return { 
           ...project, 
-          teamMembers: [...teamMembers, userId],
+          teamMembers: project.teamMembers.filter(id => id !== userId),
           updatedAt: new Date() 
         };
       }
-    }
-    return project;
-  });
+      return project;
+    });
 
-  setProjects(updatedProjects);
-  toast.success('Team member added to project successfully!');
-};
-
-export const removeTeamMemberFromProject = (
-  projectId: string,
-  userId: string,
-  projects: Project[],
-  setProjects: React.Dispatch<React.SetStateAction<Project[]>>
-) => {
-  const updatedProjects = projects.map((project) => {
-    if (project.id === projectId && project.teamMembers) {
-      return { 
-        ...project, 
-        teamMembers: project.teamMembers.filter(id => id !== userId),
-        updatedAt: new Date() 
-      };
-    }
-    return project;
-  });
-
-  setProjects(updatedProjects);
-  toast.success('Team member removed from project successfully!');
+    setProjects(updatedProjects);
+    toast.success('Team member removed from project successfully!');
+  } catch (error) {
+    console.error('Error in removeTeamMemberFromProject:', error);
+    toast.error('Failed to remove team member from project');
+  }
 };

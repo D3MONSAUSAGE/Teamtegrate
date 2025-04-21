@@ -64,3 +64,23 @@ export const isAlreadyTeamMember = async (email: string, managerId: string): Pro
     return false;
   }
 };
+
+// New function to get projects a team member is assigned to
+export const getTeamMemberProjects = async (teamMemberId: string): Promise<string[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('project_team_members')
+      .select('project_id')
+      .eq('team_member_id', teamMemberId);
+    
+    if (error) {
+      console.error('Error getting team member projects:', error);
+      return [];
+    }
+    
+    return data.map(item => item.project_id);
+  } catch (error) {
+    console.error('Error in getTeamMemberProjects:', error);
+    return [];
+  }
+};
