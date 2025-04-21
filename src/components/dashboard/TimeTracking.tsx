@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +7,7 @@ import { format, startOfWeek, addWeeks, subWeeks, addDays } from 'date-fns';
 import { Clock, TimerOff, Coffee, UtensilsCrossed, FileText, CalendarDays, Search } from 'lucide-react';
 import DailyTimeReport from './DailyTimeReport';
 import WeeklyTimeReport from './WeeklyTimeReport';
+import WeeklyTimeTrackingChart from './WeeklyTimeTrackingChart';
 
 function getWeekRange(date: Date) {
   const start = startOfWeek(date, { weekStartsOn: 1 });
@@ -46,6 +46,37 @@ const TimeTracking: React.FC = () => {
   const [isSearching, setIsSearching] = useState(false);
 
   const { start: weekStart, end: weekEnd } = getWeekRange(weekDate);
+
+  // --- Compute weekly chart data based on weeklyEntries and weekStart ---
+  // This must always reflect the current week being displayed.
+  const getWeeklyChartData = () => {
+    // Array of days from Monday to Sunday
+    const weekDays = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(weekStart);
+      d.setDate(d.getDate() + i);
+      return d;
+    });
+    // Prepare chart data: total hours per day
+    return weekDays.map(day => {
+      const dateStr = day.toISOString().split("T")[0];
+      // Sum durations for this day
+      const dayEntries = weeklyEntries.filter(entry => entry.clock_in.startsWith(dateStr));
+      const totalMinutes = dayEntries.reduce((total, entry) => {
+        if (entry.duration_minutes) return total + entry.duration_minutes;
+        if (entry.clock_out) {
+          const diff = require("date-fns/differenceInMinutes")(
+            new Date(entry.clock_out), new Date(entry.clock_in)
+          );
+          return total + diff;
+        }
+        return total;
+      }, 0);
+      return {
+        day: require("date-fns/format")(day, 'EEE'),
+        totalHours: +(totalMinutes / 60).toFixed(2)
+      };
+    });
+  };
 
   useEffect(() => {
     const fetchEntries = async () => {
@@ -102,6 +133,9 @@ const TimeTracking: React.FC = () => {
 
   return (
     <div className="space-y-4">
+      {/* Chart showing weekly hours trend */}
+      <WeeklyTimeTrackingChart data={getWeeklyChartData()} />
+
       <Card>
         <CardHeader>
           <CardTitle>Time Tracking</CardTitle>
@@ -215,4 +249,3 @@ const TimeTracking: React.FC = () => {
 };
 
 export default TimeTracking;
-
