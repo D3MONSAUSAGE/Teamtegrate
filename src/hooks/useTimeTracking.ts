@@ -3,7 +3,9 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { startOfWeek, addDays } from 'date-fns';
 
+// Accept an optional "weekStart" param to fetch entries for a specific week.
 export const useTimeTracking = () => {
   const { user } = useAuth();
   const [currentEntry, setCurrentEntry] = useState<{
@@ -14,7 +16,6 @@ export const useTimeTracking = () => {
 
   useEffect(() => {
     if (!user) return;
-    
     const fetchCurrentEntry = async () => {
       const { data, error } = await supabase
         .from('time_entries')
@@ -91,19 +92,24 @@ export const useTimeTracking = () => {
     toast.success('Clocked out successfully');
   };
 
-  const getWeeklyTimeEntries = async () => {
+  // Accepts an optional weekStart: Date to fetch entries in ANY specific week
+  const getWeeklyTimeEntries = async (weekStart?: Date) => {
     if (!user) return [];
-
-    // Set start of week to 7 days ago to ensure we capture a full week of data
-    const startOfWeek = new Date();
-    startOfWeek.setDate(startOfWeek.getDate() - 7);
-    startOfWeek.setHours(0, 0, 0, 0);
+    let start: Date;
+    if (weekStart) {
+      start = startOfWeek(weekStart, { weekStartsOn: 1 });
+    } else {
+      start = startOfWeek(new Date(), { weekStartsOn: 1 });
+    }
+    // End: start + 7 days, i.e. next week's Monday
+    const end = addDays(start, 7);
 
     const { data, error } = await supabase
       .from('time_entries')
       .select('*')
       .eq('user_id', user.id)
-      .gte('clock_in', startOfWeek.toISOString())
+      .gte('clock_in', start.toISOString())
+      .lt('clock_in', end.toISOString())
       .order('clock_in', { ascending: true });
 
     if (error) {
