@@ -16,15 +16,18 @@ export const useMessageDisplayName = (message: {
   return useQuery({
     queryKey: ["user", message.user_id],
     queryFn: async (): Promise<MessageUser> => {
+      // Handle system messages
       if (message.type === "system") {
         return { name: "System" };
       }
 
+      // Handle current user (use cached data if available)
       if (isCurrentUser && currentUser) {
         return { name: currentUser.name };
       }
 
       try {
+        // Fetch user details from the database
         const { data, error } = await supabase
           .from("users")
           .select("name")
@@ -42,11 +45,17 @@ export const useMessageDisplayName = (message: {
         return { name: isCurrentUser ? "You" : "Unknown User" };
       }
     },
+    // Set initial data to avoid flicker
     initialData:
       isCurrentUser && currentUser
         ? { name: currentUser.name }
         : message.type === "system"
         ? { name: "System" }
         : { name: "Unknown User" },
+    // Error handling
+    onError: (error) => {
+      console.error("Error in useMessageDisplayName:", error);
+      return { name: isCurrentUser ? "You" : "Unknown User" };
+    }
   });
 };

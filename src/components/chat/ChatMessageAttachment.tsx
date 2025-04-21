@@ -18,6 +18,12 @@ const ChatMessageAttachment: React.FC<AttachmentProps> = ({ attachment }) => {
   // Get URL safely
   const getAttachmentUrl = () => {
     try {
+      // Make sure we have a valid file path before getting URL
+      if (!attachment.file_path) {
+        console.error("Missing file_path in attachment:", attachment);
+        return "#"; // Fallback URL
+      }
+      
       return supabase.storage.from('chat-attachments').getPublicUrl(attachment.file_path).data.publicUrl;
     } catch (error) {
       console.error("Failed to get attachment URL:", error);

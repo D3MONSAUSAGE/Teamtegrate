@@ -52,6 +52,7 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          parent_id: string | null
           room_id: string
           type: Database["public"]["Enums"]["message_type"]
           user_id: string
@@ -60,6 +61,7 @@ export type Database = {
           content: string
           created_at?: string
           id?: string
+          parent_id?: string | null
           room_id: string
           type?: Database["public"]["Enums"]["message_type"]
           user_id: string
@@ -68,11 +70,19 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
+          parent_id?: string | null
           room_id?: string
           type?: Database["public"]["Enums"]["message_type"]
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "chat_messages_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "chat_messages"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "chat_messages_room_id_fkey"
             columns: ["room_id"]
