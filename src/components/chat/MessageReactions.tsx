@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Smile, ThumbsUp, Heart, ThumbsDown, Laugh, Angry, Surprised, Sad, Plus } from 'lucide-react';
+import { Smile, ThumbsUp, Heart, ThumbsDown, Laugh, Frown, Plus } from 'lucide-react';
 import EmojiPickerButton from './EmojiPickerButton';
 import { Button } from "@/components/ui/button";
 
