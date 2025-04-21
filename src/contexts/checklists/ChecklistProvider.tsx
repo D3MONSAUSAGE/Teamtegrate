@@ -68,13 +68,15 @@ export const ChecklistProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           // Create execution window if it exists in database
           let executionWindow: ExecutionWindow | undefined = undefined;
           
-          // Check if the checklist object has the execution_window property
-          if (checklist.execution_window) {
+          // Using type assertion to handle the execution_window property
+          const checklistAny = checklist as any;
+          
+          if (checklistAny.execution_window) {
             executionWindow = {
-              startDate: checklist.execution_window.start_date ? new Date(checklist.execution_window.start_date) : null,
-              endDate: checklist.execution_window.end_date ? new Date(checklist.execution_window.end_date) : null,
-              startTime: checklist.execution_window.start_time,
-              endTime: checklist.execution_window.end_time,
+              startDate: checklistAny.execution_window.start_date ? new Date(checklistAny.execution_window.start_date) : null,
+              endDate: checklistAny.execution_window.end_date ? new Date(checklistAny.execution_window.end_date) : null,
+              startTime: checklistAny.execution_window.start_time,
+              endTime: checklistAny.execution_window.end_time,
             };
           }
           
