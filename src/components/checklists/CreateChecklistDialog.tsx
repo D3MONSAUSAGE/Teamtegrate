@@ -1,17 +1,16 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ChecklistFrequency, ChecklistTemplate, ChecklistItemStatus } from '@/types/checklist';
-import { Plus, Trash2, Move, Check } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
-import { Checkbox } from '@/components/ui/checkbox';
+import { ChecklistFrequency, ChecklistTemplate, ChecklistItemStatus, ChecklistSection } from '@/types/checklist';
 import { useChecklists } from '@/contexts/checklists/ChecklistContext';
+
+import ChecklistBasicInfo from './ChecklistBasicInfo';
+import ChecklistSectionsEditor from './ChecklistSectionsEditor';
+import ChecklistBranchSelector from './ChecklistBranchSelector';
 
 interface CreateChecklistDialogProps {
   open: boolean;
@@ -30,7 +29,7 @@ const CreateChecklistDialog: React.FC<CreateChecklistDialogProps> = ({
   const [description, setDescription] = useState(editingTemplate?.description || '');
   const [isTemplate, setIsTemplate] = useState(true);
   const [frequency, setFrequency] = useState<ChecklistFrequency>(editingTemplate?.frequency ?? 'once');
-  const [sections, setSections] = useState(() =>
+  const [sections, setSections] = useState<ChecklistSection[]>(
     editingTemplate?.sections
       ? JSON.parse(JSON.stringify(editingTemplate.sections))
       : [{
@@ -100,6 +99,7 @@ const CreateChecklistDialog: React.FC<CreateChecklistDialogProps> = ({
     );
   }, [checklists, templates, branches]);
 
+  // Section and Item handlers
   const handleAddSection = () => {
     setSections([...sections, {
       id: Date.now().toString(),
@@ -113,7 +113,7 @@ const CreateChecklistDialog: React.FC<CreateChecklistDialogProps> = ({
   };
 
   const handleUpdateSectionTitle = (sectionId: string, title: string) => {
-    setSections(sections.map(section => 
+    setSections(sections.map(section =>
       section.id === sectionId ? { ...section, title } : section
     ));
   };
@@ -152,7 +152,7 @@ const CreateChecklistDialog: React.FC<CreateChecklistDialogProps> = ({
       if (section.id === sectionId) {
         return {
           ...section,
-          items: section.items.map(item => 
+          items: section.items.map(item =>
             item.id === itemId ? { ...item, text } : item
           )
         };
@@ -166,7 +166,7 @@ const CreateChecklistDialog: React.FC<CreateChecklistDialogProps> = ({
       if (section.id === sectionId) {
         return {
           ...section,
-          items: section.items.map(item => 
+          items: section.items.map(item =>
             item.id === itemId ? { ...item, requiredPhoto: !item.requiredPhoto } : item
           )
         };
@@ -175,6 +175,7 @@ const CreateChecklistDialog: React.FC<CreateChecklistDialogProps> = ({
     }));
   };
 
+  // Branch handlers
   const handleAddBranch = () => {
     const trimmed = newBranch.trim();
     if (trimmed && !branches.includes(trimmed)) {
@@ -304,236 +305,57 @@ const CreateChecklistDialog: React.FC<CreateChecklistDialogProps> = ({
               : 'Create a new checklist from scratch or a template.'}
           </DialogDescription>
         </DialogHeader>
-        
+
         <Tabs defaultValue="info" value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="info">Basic Info</TabsTrigger>
             <TabsTrigger value="items">Checklist Items</TabsTrigger>
             <TabsTrigger value="options">Options</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="info" className="space-y-4 py-4">
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">Title</Label>
-                <Input 
-                  id="title" 
-                  value={title} 
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="E.g., Store Opening Procedure" 
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="description">Description (optional)</Label>
-                <Textarea 
-                  id="description" 
-                  value={description} 
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Describe the purpose of this checklist" 
-                  rows={3}
-                />
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Switch 
-                  id="template" 
-                  checked={isTemplate} 
-                  onCheckedChange={setIsTemplate} 
-                />
-                <Label htmlFor="template">Save as reusable template</Label>
-              </div>
-              
-              {isTemplate && (
-                <div className="space-y-2">
-                  <Label htmlFor="frequency">Frequency</Label>
-                  <Select 
-                    defaultValue={frequency} 
-                    onValueChange={(value) => setFrequency(value as ChecklistFrequency)}
-                  >
-                    <SelectTrigger id="frequency">
-                      <SelectValue placeholder="Select frequency" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="once">One Time</SelectItem>
-                      <SelectItem value="daily">Daily</SelectItem>
-                      <SelectItem value="weekly">Weekly</SelectItem>
-                      <SelectItem value="monthly">Monthly</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-              
-              <div className="pt-2">
-                <Button type="button" onClick={() => setActiveTab('items')}>
-                  Continue to Items
-                </Button>
-              </div>
-            </div>
+            <ChecklistBasicInfo
+              title={title}
+              description={description}
+              isTemplate={isTemplate}
+              frequency={frequency}
+              onChangeTitle={setTitle}
+              onChangeDescription={setDescription}
+              onChangeIsTemplate={setIsTemplate}
+              onChangeFrequency={setFrequency}
+              onContinue={() => setActiveTab('items')}
+            />
           </TabsContent>
-          
+
           <TabsContent value="items" className="space-y-4 py-4">
-            <div className="space-y-6">
-              {sections.map((section, index) => (
-                <div key={section.id} className="space-y-3 p-3 border rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <Input
-                        value={section.title}
-                        onChange={(e) => handleUpdateSectionTitle(section.id, e.target.value)}
-                        placeholder="Section Title"
-                        className="font-medium"
-                      />
-                    </div>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => handleRemoveSection(section.id)}
-                      disabled={sections.length === 1}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      <span className="sr-only">Remove Section</span>
-                    </Button>
-                  </div>
-                  
-                  <div className="space-y-2 pl-2">
-                    {section.items.map((item) => (
-                      <div key={item.id} className="flex items-center gap-2">
-                        <div className="flex-none">
-                          <Move className="h-4 w-4 text-gray-400" />
-                        </div>
-                        <div className="flex-1">
-                          <Input
-                            value={item.text}
-                            onChange={(e) => handleUpdateItemText(section.id, item.id, e.target.value)}
-                            placeholder="Item description"
-                          />
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`photo-${item.id}`}
-                              checked={item.requiredPhoto}
-                              onCheckedChange={() => handleToggleRequirePhoto(section.id, item.id)}
-                            />
-                            <Label htmlFor={`photo-${item.id}`} className="text-xs">Photo</Label>
-                          </div>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleRemoveItem(section.id, item.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            <span className="sr-only">Remove Item</span>
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="flex items-center"
-                      onClick={() => handleAddItem(section.id)}
-                    >
-                      <Plus className="h-4 w-4 mr-1" /> Add Item
-                    </Button>
-                  </div>
-                </div>
-              ))}
-              
-              <Button 
-                variant="outline" 
-                className="w-full"
-                onClick={handleAddSection}
-              >
-                <Plus className="h-4 w-4 mr-2" /> Add New Section
-              </Button>
-              
-              <div className="pt-2 flex justify-between">
-                <Button 
-                  variant="outline" 
-                  type="button" 
-                  onClick={() => setActiveTab('info')}
-                >
-                  Back to Info
-                </Button>
-                <Button 
-                  type="button" 
-                  onClick={() => setActiveTab('options')}
-                >
-                  Continue to Options
-                </Button>
-              </div>
-            </div>
+            <ChecklistSectionsEditor
+              sections={sections}
+              onAddSection={handleAddSection}
+              onRemoveSection={handleRemoveSection}
+              onUpdateSectionTitle={handleUpdateSectionTitle}
+              onAddItem={handleAddItem}
+              onRemoveItem={handleRemoveItem}
+              onUpdateItemText={handleUpdateItemText}
+              onToggleRequirePhoto={handleToggleRequirePhoto}
+              onBack={() => setActiveTab('info')}
+              onContinue={() => setActiveTab('options')}
+            />
           </TabsContent>
-          
+
           <TabsContent value="options" className="space-y-4 py-4">
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Branch Selection</Label>
-                <p className="text-sm text-muted-foreground">
-                  Add branches where this checklist can be used
-                </p>
-                
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {branches.map(branch => (
-                    <div
-                      key={branch}
-                      className="flex items-center bg-green-100 text-green-700 py-1 px-2 rounded-md text-sm font-medium border border-green-300"
-                    >
-                      <span>{branch}</span>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="h-6 w-6 p-0 ml-1"
-                        onClick={() => handleRemoveBranch(branch)}
-                      >
-                        <span className="sr-only">Remove</span>
-                        ×
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-                
-                <div className="flex gap-2 flex-wrap w-full">
-                  {allBranches.length > 0 && (
-                    <div className="w-44">
-                      <Select
-                        value={selectedBranchDropdown}
-                        onValueChange={handleAddBranchFromDropdown}
-                      >
-                        <SelectTrigger className="w-full" aria-label="Select existing branch">
-                          <SelectValue placeholder="Select existing..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {allBranches.map((b) => (
-                            <SelectItem key={b} value={b}>{b}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                  <span className="hidden sm:inline-block w-2" />
-                  <Input
-                    placeholder="Add new branch"
-                    value={newBranch}
-                    onChange={(e) => setNewBranch(e.target.value)}
-                    className="max-w-xs"
-                  />
-                  <Button 
-                    type="button" 
-                    variant="outline"
-                    onClick={handleAddBranch}
-                    disabled={!newBranch.trim()}
-                  >
-                    +
-                  </Button>
-                </div>
-              </div>
-            </div>
+            <ChecklistBranchSelector
+              branches={branches}
+              allBranches={allBranches}
+              selectedBranchDropdown={selectedBranchDropdown}
+              newBranch={newBranch}
+              onAddBranch={handleAddBranch}
+              onAddBranchFromDropdown={handleAddBranchFromDropdown}
+              onRemoveBranch={handleRemoveBranch}
+              onChangeNewBranch={setNewBranch}
+              onChangeDropdown={setSelectedBranchDropdown}
+            />
           </TabsContent>
         </Tabs>
-        
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button onClick={handleSave}>
