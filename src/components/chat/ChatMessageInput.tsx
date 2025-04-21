@@ -1,9 +1,9 @@
-
 import React, { useRef } from 'react';
 import { Paperclip, Send, Mic, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import EmojiPickerButton from './EmojiPickerButton';
 
 interface FileUpload {
   file: File;
@@ -26,6 +26,7 @@ const ChatMessageInput: React.FC<ChatMessageInputProps> = ({
   onSubmit,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
@@ -34,6 +35,24 @@ const ChatMessageInput: React.FC<ChatMessageInputProps> = ({
 
   const removeFile = (index: number) => {
     setFileUploads(current => current.filter((_, i) => i !== index));
+  };
+
+  const insertAtCursor = (text: string) => {
+    if (!inputRef.current) {
+      setNewMessage(newMessage + text);
+      return;
+    }
+    const start = inputRef.current.selectionStart ?? newMessage.length;
+    const end = inputRef.current.selectionEnd ?? newMessage.length;
+    setNewMessage(
+      newMessage.slice(0, start) + text + newMessage.slice(end)
+    );
+    setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.selectionStart = inputRef.current.selectionEnd = start + text.length;
+        inputRef.current.focus();
+      }
+    }, 0);
   };
 
   return (
@@ -65,12 +84,14 @@ const ChatMessageInput: React.FC<ChatMessageInputProps> = ({
         />
         <div className="flex-1 relative">
           <Input
+            ref={inputRef}
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="Type your message..."
             className="pr-24 rounded-full bg-muted dark:bg-[#181928]/70 border-border dark:border-gray-800"
           />
           <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+            <EmojiPickerButton onEmojiClick={insertAtCursor} />
             <Button
               type="button"
               variant="ghost"
