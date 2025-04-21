@@ -103,6 +103,107 @@ export type Database = {
         }
         Relationships: []
       }
+      checklist_templates: {
+        Row: {
+          branch_options: string[] | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          frequency: string | null
+          id: string
+          last_generated: string | null
+          sections: Json
+          tags: string[] | null
+          title: string
+        }
+        Insert: {
+          branch_options?: string[] | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          frequency?: string | null
+          id?: string
+          last_generated?: string | null
+          sections: Json
+          tags?: string[] | null
+          title: string
+        }
+        Update: {
+          branch_options?: string[] | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          frequency?: string | null
+          id?: string
+          last_generated?: string | null
+          sections?: Json
+          tags?: string[] | null
+          title?: string
+        }
+        Relationships: []
+      }
+      checklists: {
+        Row: {
+          assigned_to: string[] | null
+          branch: string | null
+          completed_count: number | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          progress: number | null
+          sections: Json
+          start_date: string
+          status: string
+          template_id: string | null
+          title: string
+          total_count: number | null
+        }
+        Insert: {
+          assigned_to?: string[] | null
+          branch?: string | null
+          completed_count?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          progress?: number | null
+          sections: Json
+          start_date: string
+          status: string
+          template_id?: string | null
+          title: string
+          total_count?: number | null
+        }
+        Update: {
+          assigned_to?: string[] | null
+          branch?: string | null
+          completed_count?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          progress?: number | null
+          sections?: Json
+          start_date?: string
+          status?: string
+          template_id?: string | null
+          title?: string
+          total_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checklists_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "checklist_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documents: {
         Row: {
           created_at: string | null

@@ -128,20 +128,20 @@ const CreateChecklistDialog: React.FC<CreateChecklistDialogProps> = ({
     setBranches(branches.filter(b => b !== branch));
   };
   
-  const handleSave = () => {
+  const handleSave = async () => {
     // Validation
     if (!title) {
       toast.error('Please enter a title');
       return;
     }
-    
+
     // Check if all sections have titles
     const emptySection = sections.find(section => !section.title.trim());
     if (emptySection) {
       toast.error('All sections must have titles');
       return;
     }
-    
+
     // Check if all items have text
     let hasEmptyItem = false;
     sections.forEach(section => {
@@ -149,35 +149,53 @@ const CreateChecklistDialog: React.FC<CreateChecklistDialogProps> = ({
         if (!item.text.trim()) hasEmptyItem = true;
       });
     });
-    
+
     if (hasEmptyItem) {
       toast.error('All checklist items must have text');
       return;
     }
-    
-    // Save the data
-    if (isTemplate) {
-      addTemplate({
-        title,
-        description,
-        sections: sections as any,
-        frequency,
-        branchOptions: branches
-      });
-      toast.success('Template saved successfully');
-    } else {
-      addChecklist({
-        title,
-        description,
-        sections: sections as any,
-        branch: branches.length > 0 ? branches[0] : undefined,
-        startDate: new Date(),
-        status: 'draft'
-      });
-      toast.success('Checklist created successfully');
+
+    try {
+      if (isTemplate) {
+        await addTemplate({
+          title,
+          description,
+          sections: sections.map(section => ({
+            ...section,
+            items: section.items.map(item => ({
+              ...item,
+              status: item.status as ChecklistItemStatus,
+              requiredPhoto: !!item.requiredPhoto,
+            }))
+          })),
+          frequency,
+          branchOptions: branches
+        });
+        toast.success('Template saved successfully');
+      } else {
+        await addChecklist({
+          title,
+          description,
+          sections: sections.map(section => ({
+            ...section,
+            items: section.items.map(item => ({
+              ...item,
+              status: item.status as ChecklistItemStatus,
+              requiredPhoto: !!item.requiredPhoto,
+            }))
+          })),
+          branch: branches.length > 0 ? branches[0] : undefined,
+          startDate: new Date(),
+          status: 'draft'
+        });
+        toast.success('Checklist created successfully');
+      }
+
+      onOpenChange(false);
+    } catch (err: any) {
+      console.error(err);
+      toast.error("An error occurred while saving. Please try again.");
     }
-    
-    onOpenChange(false);
   };
   
   return (
