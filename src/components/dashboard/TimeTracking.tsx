@@ -36,6 +36,15 @@ function downloadCSV(entries: any[], weekStart: Date, weekEnd: Date) {
   link.click();
 }
 
+function formatDuration(ms: number): string {
+  const totalSeconds = Math.floor(ms / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  const pad = (n: number) => (n < 10 ? '0' + n : n.toString());
+  return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+}
+
 const TimeTracking: React.FC = () => {
   const { currentEntry, clockIn, clockOut, getWeeklyTimeEntries } = useTimeTracking();
   const [notes, setNotes] = useState('');
@@ -108,13 +117,11 @@ const TimeTracking: React.FC = () => {
     let interval: NodeJS.Timeout;
     if (currentEntry.isClocked && currentEntry.clock_in) {
       interval = setInterval(() => {
-        setElapsedTime(
-          format(
-            new Date(Date.now() - new Date(currentEntry.clock_in!).getTime()),
-            "HH:mm:ss"
-          )
-        );
+        const elapsedMs = Date.now() - new Date(currentEntry.clock_in!).getTime();
+        setElapsedTime(formatDuration(elapsedMs));
       }, 1000);
+    } else {
+      setElapsedTime("");
     }
     return () => clearInterval(interval);
   }, [currentEntry]);
