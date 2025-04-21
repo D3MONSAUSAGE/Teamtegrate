@@ -1,4 +1,3 @@
-
 import { User, Project, Task } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
@@ -42,19 +41,9 @@ export const addProject = async (
       return;
     }
     
-    // If there are team members, add them to the project (handled externally in addTeamMemberToProject)
+    // For now, we won't be able to store team members in the database until we set up the project_team_members table
+    // But we can still track them in local state
     const teamMembers = project.teamMembers || [];
-    if (teamMembers.length > 0) {
-      // Add entries for each member if needed (see projectTeamMember.ts for best practice)
-      for (const memberId of teamMembers) {
-        await supabase
-          .from('project_team_members')
-          .insert({
-            project_id: projectId,
-            team_member_id: memberId
-          });
-      }
-    }
     
     if (data) {
       const newProject: Project = {
