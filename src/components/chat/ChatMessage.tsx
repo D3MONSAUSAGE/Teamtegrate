@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { FileImage, FileText, Download, MessageSquareReply } from 'lucide-react';
 import { supabase } from "@/integrations/supabase/client";
@@ -164,14 +165,16 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
           <button
             title="Reply"
             className={`absolute z-10 opacity-70 group-hover:opacity-100 p-1 rounded-full transition bg-background hover:bg-accent border border-border
-             ${isCurrentUser ? 'right-2 bottom-2' : 'left-2 bottom-2'}`}
+              ${isCurrentUser ? 'right-8 bottom-2' : 'left-8 bottom-2'}`}
             onClick={() => onReplyClick(message)}
             type="button"
           >
             <MessageSquareReply className="w-4 h-4 text-primary" />
           </button>
         )}
-        <MessageReactions messageId={message.id} />
+        <div className="mt-2 space-y-1 py-8">
+          <MessageReactions messageId={message.id} />
+        </div>
         <div className="mt-2 space-y-1">
           {message.attachments?.map(attachment => renderAttachment(attachment))}
         </div>
