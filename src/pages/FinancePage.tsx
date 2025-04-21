@@ -1,9 +1,9 @@
-
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useIsMobile } from '@/hooks/use-mobile';
 import ProfitAndLoss from '@/components/finance/ProfitAndLoss';
 import DailySales from '@/components/finance/DailySales';
+import BranchBudgets from '@/components/finance/BranchBudgets';
 
 const FinancePage: React.FC = () => {
   const isMobile = useIsMobile();
@@ -32,10 +32,7 @@ const FinancePage: React.FC = () => {
           </div>
         </TabsContent>
         <TabsContent value="budgets" className="space-y-4">
-          <div className="bg-muted/50 p-8 rounded-lg flex flex-col items-center justify-center">
-            <h2 className="text-xl font-medium text-muted-foreground">Budgets Coming Soon</h2>
-            <p className="text-muted-foreground">This feature is currently under development.</p>
-          </div>
+          <BranchBudgets />
         </TabsContent>
       </Tabs>
     </div>

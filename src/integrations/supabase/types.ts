@@ -9,6 +9,68 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      branch_budgets: {
+        Row: {
+          branch_id: string
+          created_at: string
+          id: string
+          notes: string | null
+          period: string
+          total_budget: number
+          updated_at: string
+        }
+        Insert: {
+          branch_id: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          period: string
+          total_budget: number
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          period?: string
+          total_budget?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "branch_budgets_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      branches: {
+        Row: {
+          created_at: string
+          id: string
+          location: string | null
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          location?: string | null
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          location?: string | null
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       chat_message_attachments: {
         Row: {
           created_at: string
