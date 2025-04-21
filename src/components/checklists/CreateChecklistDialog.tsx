@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,7 +24,7 @@ const CreateChecklistDialog: React.FC<CreateChecklistDialogProps> = ({
   onOpenChange,
   editingTemplate
 }) => {
-  const { addTemplate, addChecklist } = useChecklists();
+  const { addTemplate, addChecklist, checklists, templates } = useChecklists();
   const [activeTab, setActiveTab] = useState('info');
   const [title, setTitle] = useState(editingTemplate?.title || '');
   const [description, setDescription] = useState(editingTemplate?.description || '');
@@ -41,7 +41,23 @@ const CreateChecklistDialog: React.FC<CreateChecklistDialogProps> = ({
   ]);
   const [branches, setBranches] = useState<string[]>(['Main Branch']);
   const [newBranch, setNewBranch] = useState('');
-  
+  const [selectedBranchDropdown, setSelectedBranchDropdown] = useState<string>('');
+
+  const allBranches = useMemo(() => {
+    const branchSet = new Set<string>();
+    checklists.forEach((cl) => {
+      if (cl.branch) branchSet.add(cl.branch);
+    });
+    templates.forEach((tpl) => {
+      if (tpl.branchOptions && Array.isArray(tpl.branchOptions)) {
+        tpl.branchOptions.forEach((b: string) => branchSet.add(b));
+      }
+    });
+    return Array.from(branchSet).filter(
+      (b) => !branches.includes(b)
+    );
+  }, [checklists, templates, branches]);
+
   const handleAddSection = () => {
     setSections([...sections, {
       id: Date.now().toString(),
@@ -49,17 +65,17 @@ const CreateChecklistDialog: React.FC<CreateChecklistDialogProps> = ({
       items: []
     }]);
   };
-  
+
   const handleRemoveSection = (sectionId: string) => {
     setSections(sections.filter(section => section.id !== sectionId));
   };
-  
+
   const handleUpdateSectionTitle = (sectionId: string, title: string) => {
     setSections(sections.map(section => 
       section.id === sectionId ? { ...section, title } : section
     ));
   };
-  
+
   const handleAddItem = (sectionId: string) => {
     setSections(sections.map(section => {
       if (section.id === sectionId) {
@@ -76,7 +92,7 @@ const CreateChecklistDialog: React.FC<CreateChecklistDialogProps> = ({
       return section;
     }));
   };
-  
+
   const handleRemoveItem = (sectionId: string, itemId: string) => {
     setSections(sections.map(section => {
       if (section.id === sectionId) {
@@ -88,7 +104,7 @@ const CreateChecklistDialog: React.FC<CreateChecklistDialogProps> = ({
       return section;
     }));
   };
-  
+
   const handleUpdateItemText = (sectionId: string, itemId: string, text: string) => {
     setSections(sections.map(section => {
       if (section.id === sectionId) {
@@ -102,7 +118,7 @@ const CreateChecklistDialog: React.FC<CreateChecklistDialogProps> = ({
       return section;
     }));
   };
-  
+
   const handleToggleRequirePhoto = (sectionId: string, itemId: string) => {
     setSections(sections.map(section => {
       if (section.id === sectionId) {
@@ -116,33 +132,38 @@ const CreateChecklistDialog: React.FC<CreateChecklistDialogProps> = ({
       return section;
     }));
   };
-  
+
   const handleAddBranch = () => {
-    if (newBranch && !branches.includes(newBranch)) {
-      setBranches([...branches, newBranch]);
+    const trimmed = newBranch.trim();
+    if (trimmed && !branches.includes(trimmed)) {
+      setBranches([...branches, trimmed]);
       setNewBranch('');
     }
   };
-  
+
+  const handleAddBranchFromDropdown = (value: string) => {
+    if (value && !branches.includes(value)) {
+      setBranches([...branches, value]);
+    }
+    setSelectedBranchDropdown('');
+  };
+
   const handleRemoveBranch = (branch: string) => {
     setBranches(branches.filter(b => b !== branch));
   };
-  
+
   const handleSave = async () => {
-    // Validation
     if (!title) {
       toast.error('Please enter a title');
       return;
     }
 
-    // Check if all sections have titles
     const emptySection = sections.find(section => !section.title.trim());
     if (emptySection) {
       toast.error('All sections must have titles');
       return;
     }
 
-    // Check if all items have text
     let hasEmptyItem = false;
     sections.forEach(section => {
       section.items.forEach(item => {
@@ -197,7 +218,7 @@ const CreateChecklistDialog: React.FC<CreateChecklistDialogProps> = ({
       toast.error("An error occurred while saving. Please try again.");
     }
   };
-  
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[625px]">
@@ -217,7 +238,6 @@ const CreateChecklistDialog: React.FC<CreateChecklistDialogProps> = ({
             <TabsTrigger value="options">Options</TabsTrigger>
           </TabsList>
           
-          {/* Basic Info Tab */}
           <TabsContent value="info" className="space-y-4 py-4">
             <div className="space-y-4">
               <div className="space-y-2">
@@ -278,7 +298,6 @@ const CreateChecklistDialog: React.FC<CreateChecklistDialogProps> = ({
             </div>
           </TabsContent>
           
-          {/* Checklist Items Tab */}
           <TabsContent value="items" className="space-y-4 py-4">
             <div className="space-y-6">
               {sections.map((section, index) => (
@@ -374,7 +393,6 @@ const CreateChecklistDialog: React.FC<CreateChecklistDialogProps> = ({
             </div>
           </TabsContent>
           
-          {/* Options Tab */}
           <TabsContent value="options" className="space-y-4 py-4">
             <div className="space-y-4">
               <div className="space-y-2">
@@ -385,7 +403,10 @@ const CreateChecklistDialog: React.FC<CreateChecklistDialogProps> = ({
                 
                 <div className="flex flex-wrap gap-2 mb-4">
                   {branches.map(branch => (
-                    <div key={branch} className="flex items-center bg-muted py-1 px-2 rounded-md text-sm">
+                    <div
+                      key={branch}
+                      className="flex items-center bg-green-100 text-green-700 py-1 px-2 rounded-md text-sm font-medium border border-green-300"
+                    >
                       <span>{branch}</span>
                       <Button 
                         variant="ghost" 
@@ -393,26 +414,45 @@ const CreateChecklistDialog: React.FC<CreateChecklistDialogProps> = ({
                         className="h-6 w-6 p-0 ml-1"
                         onClick={() => handleRemoveBranch(branch)}
                       >
-                        <Trash2 className="h-3 w-3" />
                         <span className="sr-only">Remove</span>
+                        ×
                       </Button>
                     </div>
                   ))}
                 </div>
                 
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap w-full">
+                  {allBranches.length > 0 && (
+                    <div className="w-44">
+                      <Select
+                        value={selectedBranchDropdown}
+                        onValueChange={handleAddBranchFromDropdown}
+                      >
+                        <SelectTrigger className="w-full" aria-label="Select existing branch">
+                          <SelectValue placeholder="Select existing..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {allBranches.map((b) => (
+                            <SelectItem key={b} value={b}>{b}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  <span className="hidden sm:inline-block w-2" />
                   <Input
                     placeholder="Add new branch"
                     value={newBranch}
                     onChange={(e) => setNewBranch(e.target.value)}
+                    className="max-w-xs"
                   />
                   <Button 
                     type="button" 
                     variant="outline"
                     onClick={handleAddBranch}
-                    disabled={!newBranch}
+                    disabled={!newBranch.trim()}
                   >
-                    <Plus className="h-4 w-4" />
+                    +
                   </Button>
                 </div>
               </div>
