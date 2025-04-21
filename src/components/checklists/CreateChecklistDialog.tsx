@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from '@/components/ui/button';
@@ -7,6 +6,7 @@ import { Check } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 import { ChecklistFrequency, ChecklistTemplate, ChecklistItemStatus, ChecklistSection } from '@/types/checklist';
 import { useChecklists } from '@/contexts/checklists/ChecklistContext';
+import { prepareJsonSections } from '@/contexts/checklists/helpers';
 
 import ChecklistBasicInfo from './ChecklistBasicInfo';
 import ChecklistSectionsEditor from './ChecklistSectionsEditor';
@@ -99,7 +99,6 @@ const CreateChecklistDialog: React.FC<CreateChecklistDialogProps> = ({
     );
   }, [checklists, templates, branches]);
 
-  // Section and Item handlers
   const handleAddSection = () => {
     setSections([...sections, {
       id: Date.now().toString(),
@@ -175,7 +174,6 @@ const CreateChecklistDialog: React.FC<CreateChecklistDialogProps> = ({
     }));
   };
 
-  // Branch handlers
   const handleAddBranch = () => {
     const trimmed = newBranch.trim();
     if (trimmed && !branches.includes(trimmed)) {
@@ -222,45 +220,28 @@ const CreateChecklistDialog: React.FC<CreateChecklistDialogProps> = ({
     try {
       if (isTemplate) {
         if (editingTemplate) {
-          const updateData = {
-            title,
-            description,
-            sections: sections.map(section => ({
-              ...section,
-              items: section.items.map(item => ({
-                ...item,
-                status: item.status as ChecklistItemStatus,
-                requiredPhoto: !!item.requiredPhoto,
-              }))
-            })),
-            frequency,
-            branchOptions: branches
-          };
           const { supabase } = await import('@/integrations/supabase/client');
+          
+          const preparedSections = prepareJsonSections(sections);
+          
           const { error } = await supabase
             .from('checklist_templates')
             .update({
-              title: updateData.title,
-              description: updateData.description,
-              sections: updateData.sections,
-              frequency: updateData.frequency,
-              branch_options: updateData.branchOptions
+              title: title,
+              description: description,
+              sections: preparedSections,
+              frequency: frequency,
+              branch_options: branches
             })
             .eq('id', editingTemplate.id);
+          
           if (error) throw error;
           toast.success('Template updated successfully');
         } else {
           await addTemplate({
             title,
             description,
-            sections: sections.map(section => ({
-              ...section,
-              items: section.items.map(item => ({
-                ...item,
-                status: item.status as ChecklistItemStatus,
-                requiredPhoto: !!item.requiredPhoto,
-              }))
-            })),
+            sections,
             frequency,
             branchOptions: branches
           });
@@ -270,14 +251,7 @@ const CreateChecklistDialog: React.FC<CreateChecklistDialogProps> = ({
         await addChecklist({
           title,
           description,
-          sections: sections.map(section => ({
-            ...section,
-            items: section.items.map(item => ({
-              ...item,
-              status: item.status as ChecklistItemStatus,
-              requiredPhoto: !!item.requiredPhoto,
-            }))
-          })),
+          sections,
           branch: branches.length > 0 ? branches[0] : undefined,
           startDate: new Date(),
           status: 'draft'
