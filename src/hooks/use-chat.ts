@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from 'sonner';
 import { useSoundSettings } from "@/hooks/useSoundSettings";
@@ -72,7 +73,9 @@ export const useChat = (roomId: string, userId: string | undefined) => {
     }
   };
 
-  const subscribeToMessages = () => {
+  const subscribeToMessages = useCallback(() => {
+    console.log('Subscribing to chat messages with sound settings:', { enabled: soundSettings.enabled, volume: soundSettings.volume });
+    
     const channel = supabase
       .channel('chat-messages')
       .on(
@@ -85,7 +88,10 @@ export const useChat = (roomId: string, userId: string | undefined) => {
         },
         (payload) => {
           fetchMessages();
+          
+          // Play sound for new messages from others
           if (payload.eventType === "INSERT" && payload.new?.user_id !== userId) {
+            console.log('New message received, playing notification sound');
             playChatNotification(soundSettings);
           }
         }
@@ -93,9 +99,10 @@ export const useChat = (roomId: string, userId: string | undefined) => {
       .subscribe();
 
     return () => {
+      console.log('Unsubscribing from chat messages');
       supabase.removeChannel(channel);
     };
-  };
+  }, [roomId, userId, soundSettings.enabled, soundSettings.volume]);
 
   const uploadFile = async (file: File) => {
     if (!userId) {
@@ -202,7 +209,7 @@ export const useChat = (roomId: string, userId: string | undefined) => {
     return () => {
       unsubscribe();
     };
-  }, [roomId, userId, soundSettings.enabled, soundSettings.volume]);
+  }, [roomId, userId, subscribeToMessages]);
 
   return {
     messages,
