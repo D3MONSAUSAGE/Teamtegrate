@@ -64,29 +64,39 @@ export const ChecklistProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
       if (error) throw error;
       if (data) {
-        const processedChecklists = data.map((checklist) => ({
-          id: checklist.id,
-          title: checklist.title,
-          description: checklist.description || '',
-          sections: processStoredSections(checklist.sections),
-          createdBy: checklist.created_by || '',
-          createdAt: checklist.created_at ? new Date(checklist.created_at) : new Date(),
-          assignedTo: checklist.assigned_to || [],
-          startDate: checklist.start_date ? new Date(checklist.start_date) : new Date(),
-          dueDate: checklist.due_date ? new Date(checklist.due_date) : undefined,
-          status: validateChecklistStatus(checklist.status), // cast to allowed status
-          progress: typeof checklist.progress === 'number' ? checklist.progress : 0,
-          completedCount: typeof checklist.completed_count === 'number' ? checklist.completed_count : 0,
-          totalCount: typeof checklist.total_count === 'number' ? checklist.total_count : 0,
-          templateId: checklist.template_id || undefined,
-          branch: checklist.branch || undefined,
-          executionWindow: checklist.execution_window ? {
-            startDate: checklist.execution_window.start_date ? new Date(checklist.execution_window.start_date) : null,
-            endDate: checklist.execution_window.end_date ? new Date(checklist.execution_window.end_date) : null,
-            startTime: checklist.execution_window.start_time,
-            endTime: checklist.execution_window.end_time,
-          } : undefined,
-        }));
+        const processedChecklists = data.map((checklist) => {
+          // Create execution window if it exists in database
+          let executionWindow: ExecutionWindow | undefined = undefined;
+          
+          // Check if the checklist object has the execution_window property
+          if (checklist.execution_window) {
+            executionWindow = {
+              startDate: checklist.execution_window.start_date ? new Date(checklist.execution_window.start_date) : null,
+              endDate: checklist.execution_window.end_date ? new Date(checklist.execution_window.end_date) : null,
+              startTime: checklist.execution_window.start_time,
+              endTime: checklist.execution_window.end_time,
+            };
+          }
+          
+          return {
+            id: checklist.id,
+            title: checklist.title,
+            description: checklist.description || '',
+            sections: processStoredSections(checklist.sections),
+            createdBy: checklist.created_by || '',
+            createdAt: checklist.created_at ? new Date(checklist.created_at) : new Date(),
+            assignedTo: checklist.assigned_to || [],
+            startDate: checklist.start_date ? new Date(checklist.start_date) : new Date(),
+            dueDate: checklist.due_date ? new Date(checklist.due_date) : undefined,
+            status: validateChecklistStatus(checklist.status), // cast to allowed status
+            progress: typeof checklist.progress === 'number' ? checklist.progress : 0,
+            completedCount: typeof checklist.completed_count === 'number' ? checklist.completed_count : 0,
+            totalCount: typeof checklist.total_count === 'number' ? checklist.total_count : 0,
+            templateId: checklist.template_id || undefined,
+            branch: checklist.branch || undefined,
+            executionWindow,
+          };
+        });
         setChecklists(processedChecklists);
       }
     } catch (error) {
@@ -208,3 +218,4 @@ export const ChecklistProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     </ChecklistContext.Provider>
   );
 };
+
