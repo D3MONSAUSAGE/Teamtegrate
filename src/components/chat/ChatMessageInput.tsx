@@ -1,3 +1,4 @@
+
 import React, { useRef } from 'react';
 import { Paperclip, Send, Mic, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -8,17 +9,17 @@ import EmojiPickerButton from './EmojiPickerButton';
 function ReplyPreview({ message, onCancel }: { message: any, onCancel: () => void }) {
   if (!message) return null;
   return (
-    <div className="flex items-center gap-2 bg-accent/30 p-2 rounded mb-2 border-l-4 border-primary">
-      <div className="truncate text-xs font-medium text-gray-900 dark:text-white">
-        Replying to: <span className="italic">"{message.content?.slice(0, 80)}"</span>
+    <div className="flex items-center gap-2 bg-accent/20 dark:bg-accent/10 p-2 rounded-t-lg border-l-4 border-primary/70">
+      <div className="truncate text-xs font-medium text-foreground">
+        Replying to: <span className="italic text-muted-foreground">"{message.content?.slice(0, 80)}"</span>
       </div>
       <button
         aria-label="Cancel reply"
-        className="ml-auto rounded hover:bg-destructive/20 p-1 transition"
+        className="ml-auto rounded-full hover:bg-background/80 p-1.5 transition"
         onClick={onCancel}
         type="button"
       >
-        <X className="h-4 w-4 text-destructive" />
+        <X className="h-3.5 w-3.5 text-muted-foreground" />
       </button>
     </div>
   );
@@ -79,23 +80,23 @@ const ChatMessageInput: React.FC<ChatMessageInputProps> = ({
   };
 
   return (
-    <div className="p-4 border-t border-border dark:border-gray-800 bg-card dark:bg-[#1f2133] space-y-3">
+    <div className="p-3 bg-card dark:bg-[#1f2133] border-t border-border dark:border-gray-800">
       {replyTo && setReplyTo && (
         <ReplyPreview message={replyTo} onCancel={() => setReplyTo(null)} />
       )}
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2 mb-2">
         {fileUploads.map((upload, index) => (
-          <div key={index} className="flex items-center gap-2 bg-muted dark:bg-[#181928]/70 p-2 rounded-full">
-            <span className="text-sm truncate max-w-[150px]">{upload.file.name}</span>
+          <div key={index} className="flex items-center gap-2 bg-accent/20 dark:bg-accent/10 px-3 py-1.5 rounded-full">
+            <span className="text-xs truncate max-w-[150px]">{upload.file.name}</span>
             <Button
               type="button"
               variant="ghost"
               size="icon"
-              className="h-5 w-5 hover:bg-background/50 dark:hover:bg-gray-800/50"
+              className="h-5 w-5 hover:bg-background/50 dark:hover:bg-background/20 rounded-full p-0.5"
               onClick={() => removeFile(index)}
             >
-              <X className="h-4 w-4" />
+              <X className="h-3.5 w-3.5" />
             </Button>
           </div>
         ))}
@@ -109,42 +110,46 @@ const ChatMessageInput: React.FC<ChatMessageInputProps> = ({
           ref={fileInputRef}
           multiple
         />
-        <div className="flex-1 relative">
+        
+        <div className="flex bg-muted dark:bg-[#262d45] rounded-full p-1 pl-4 flex-1">
+          <EmojiPickerButton onEmojiClick={insertAtCursor} />
+          
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 rounded-full"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <Paperclip className="h-5 w-5 text-muted-foreground" />
+          </Button>
+          
           <Input
             ref={inputRef}
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="Type your message..."
-            className="pr-24 rounded-full bg-muted dark:bg-[#181928]/70 border-border dark:border-gray-800"
+            placeholder="Type a message"
+            className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-2"
           />
-          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-            <EmojiPickerButton onEmojiClick={insertAtCursor} />
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <Paperclip className="h-4 w-4" />
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => toast.info("Voice messages coming soon!")}
-            >
-              <Mic className="h-4 w-4" />
-            </Button>
-          </div>
+          
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 rounded-full"
+            onClick={() => toast.info("Voice messages coming soon!")}
+          >
+            <Mic className="h-5 w-5 text-muted-foreground" />
+          </Button>
         </div>
+        
         <Button 
           type="submit" 
           size="icon" 
           className="rounded-full h-10 w-10 flex-shrink-0 bg-primary hover:bg-primary/90"
+          disabled={!newMessage.trim() && fileUploads.length === 0}
         >
-          <Send className="h-4 w-4" />
+          <Send className="h-5 w-5" />
         </Button>
       </form>
     </div>
