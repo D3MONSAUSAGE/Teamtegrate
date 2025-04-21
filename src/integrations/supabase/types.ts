@@ -151,6 +151,7 @@ export type Database = {
           created_by: string | null
           description: string | null
           due_date: string | null
+          execution_window: Json | null
           id: string
           progress: number | null
           sections: Json
@@ -168,6 +169,7 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           due_date?: string | null
+          execution_window?: Json | null
           id?: string
           progress?: number | null
           sections: Json
@@ -185,6 +187,7 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           due_date?: string | null
+          execution_window?: Json | null
           id?: string
           progress?: number | null
           sections?: Json

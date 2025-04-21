@@ -7,8 +7,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, Users, Copy, MoreHorizontal } from 'lucide-react';
-import { format } from 'date-fns';
+import { Calendar, Clock, Users, Copy, MoreHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
+import { format, addWeeks, startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -30,13 +30,35 @@ const ChecklistsView: React.FC<ChecklistsViewProps> = ({ type }) => {
   const { checklists, templates } = useChecklists();
   const [selectedTemplate, setSelectedTemplate] = useState<ChecklistTemplate | null>(null);
   const [isUseTemplateDialogOpen, setIsUseTemplateDialogOpen] = useState(false);
-  
-  const data = type === 'template' ? templates : checklists;
+
+  // For week filtering
+  const [weekStart, setWeekStart] = useState<Date>(startOfWeek(new Date(), { weekStartsOn: 1 }));
+  const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
+
+  let data = type === 'template' ? templates : checklists;
+
+  // Only filter by week for active checklists
+  if (type === 'active') {
+    data = data.filter(item => {
+      // "startDate" is always present, "dueDate" is optional
+      const start = item.startDate;
+      const end = item.dueDate || item.startDate;
+      // If the week overlaps with any part of the checklist's duration
+      return (
+        isWithinInterval(start, { start: weekStart, end: weekEnd }) ||
+        (item.dueDate && isWithinInterval(end, { start: weekStart, end: weekEnd }))
+      );
+    });
+  }
 
   const handleUseTemplate = (template: ChecklistTemplate) => {
     setSelectedTemplate(template);
     setIsUseTemplateDialogOpen(true);
   };
+
+  // Navigation funcs for previous/next week (only for active checklists)
+  const goToPrevWeek = () => setWeekStart(addWeeks(weekStart, -1));
+  const goToNextWeek = () => setWeekStart(addWeeks(weekStart, 1));
   
   if (data.length === 0) {
     return (
@@ -55,6 +77,30 @@ const ChecklistsView: React.FC<ChecklistsViewProps> = ({ type }) => {
   
   return (
     <div className="space-y-6">
+      {type === 'active' && (
+        <div className="flex items-center justify-between max-w-full mb-2">
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" onClick={goToPrevWeek}>
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            <span className="font-medium">
+              {format(weekStart, 'MMM d')} - {format(weekEnd, 'MMM d, yyyy')}
+            </span>
+            <Button variant="ghost" size="icon" onClick={goToNextWeek}>
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
+          {/* Optionally, you can add "This week" quick reset */}
+          <Button 
+            variant="secondary"
+            size="sm"
+            className="ml-2"
+            onClick={() => setWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }))}
+          >
+            This Week
+          </Button>
+        </div>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {data.map((item) => (
           <Card key={item.id} className="overflow-hidden hover:shadow-md transition-shadow">
@@ -180,3 +226,4 @@ const ChecklistsView: React.FC<ChecklistsViewProps> = ({ type }) => {
 };
 
 export default ChecklistsView;
+
