@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ProjectReports from '@/components/reports/ProjectReports';
 import TeamReports from '@/components/reports/TeamReports';
 import TaskReports from '@/components/reports/TaskReports';
+import TeamTimeReports from '@/components/reports/TeamTimeReports';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 const ReportsPage: React.FC = () => {
@@ -18,6 +19,7 @@ const ReportsPage: React.FC = () => {
           <TabsTrigger value="tasks" className="flex-1 md:flex-none">Tasks</TabsTrigger>
           <TabsTrigger value="projects" className="flex-1 md:flex-none">Projects</TabsTrigger>
           <TabsTrigger value="team" className="flex-1 md:flex-none">Team</TabsTrigger>
+          <TabsTrigger value="time" className="flex-1 md:flex-none">Time</TabsTrigger>
         </TabsList>
         <TabsContent value="tasks" className="space-y-4">
           <TaskReports />
@@ -27,6 +29,9 @@ const ReportsPage: React.FC = () => {
         </TabsContent>
         <TabsContent value="team" className="space-y-4">
           <TeamReports />
+        </TabsContent>
+        <TabsContent value="time" className="space-y-4">
+          <TeamTimeReports />
         </TabsContent>
       </Tabs>
     </div>
