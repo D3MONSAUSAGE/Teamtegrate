@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import ChatMessageAvatar from './ChatMessageAvatar';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
+import MessageReactions from './MessageReactions';
 
 interface Attachment {
   id: string;
@@ -141,6 +142,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isCurrentUser }) => 
         >
           <p className="text-sm">{message.content}</p>
         </div>
+        <MessageReactions messageId={message.id} />
         <div className="mt-2 space-y-1">
           {message.attachments?.map(attachment => renderAttachment(attachment))}
         </div>
