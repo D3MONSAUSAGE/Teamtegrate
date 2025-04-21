@@ -11,22 +11,31 @@ const SUCCESS_SOUND = "/sounds/success.mp3";
 const ERROR_SOUND = "/sounds/error.mp3";
 const STATUS_CHANGE_SOUND = "/sounds/status-change.mp3";
 
+// Track errors to prevent showing too many toasts
+let soundErrorShown = false;
+
 /**
  * Play notification sound for new chat messages
  */
 export function playChatNotification(settings: SoundSettings) {
   if (!settings.enabled) return;
   
-  // Try to play sound with fallback mechanism
+  // Reset error flag when attempting to play a new sound
+  soundErrorShown = false;
+  
+  // Try to play sound with advanced fallback mechanism
   playSound(CHAT_MESSAGE_SOUND, settings.volume)
     .catch(() => {
+      console.log("WAV format failed, trying MP3 fallback");
       // If WAV fails, try MP3
       return playSound(CHAT_MESSAGE_SOUND_MP3, settings.volume);
     })
     .catch(error => {
-      console.error("Failed to play chat notification sound:", error);
-      // Only show error toast once, not for every fallback attempt
-      toast.error("Sound notification failed. Check sound settings.");
+      if (!soundErrorShown) {
+        console.error("Failed to play chat notification sound:", error);
+        toast.error("Sound notification failed. Check sound settings.");
+        soundErrorShown = true;
+      }
     });
 }
 
@@ -46,6 +55,11 @@ export function playSound(soundPath: string, volume: number = 0.5): Promise<void
         reject(error);
       };
       
+      // Add a timeout to handle browser limitations
+      const timeoutId = setTimeout(() => {
+        reject(new Error("Sound playback timeout"));
+      }, 5000);
+      
       // Start playback
       const playPromise = audio.play();
       
@@ -53,9 +67,11 @@ export function playSound(soundPath: string, volume: number = 0.5): Promise<void
         playPromise
           .then(() => {
             // Sound started playing successfully
+            clearTimeout(timeoutId);
             console.log(`Playing sound: ${soundPath}`);
           })
           .catch(error => {
+            clearTimeout(timeoutId);
             reject(error);
           });
       }
