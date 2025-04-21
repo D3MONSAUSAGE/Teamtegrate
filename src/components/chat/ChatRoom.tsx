@@ -1,8 +1,8 @@
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, LogOut } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -10,6 +10,9 @@ import ChatMessage from './ChatMessage';
 import ChatMessageInput from './ChatMessageInput';
 import ChatParticipants from './ChatParticipants';
 import { useChat } from '@/hooks/use-chat';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 interface ChatRoomProps {
   room: {
@@ -32,6 +35,8 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
     sendMessage
   } = useChat(room.id, user?.id);
 
+  const [leaving, setLeaving] = useState(false);
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -39,6 +44,37 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Handler for leaving the chat room
+  const handleLeaveChat = async () => {
+    if (!user) return;
+    setLeaving(true);
+
+    // Assume there is a 'chat_room_participants' table with columns: room_id, user_id
+    const { error } = await supabase
+      .from('chat_room_participants')
+      .delete()
+      .eq('room_id', room.id)
+      .eq('user_id', user.id);
+
+    setLeaving(false);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to leave the chat.",
+        variant: "destructive"
+      });
+    } else {
+      toast({
+        title: "Left chat",
+        description: `You have left "${room.name}"`,
+        variant: "default"
+      });
+      // Optionally, return user to chat rooms list
+      if (onBack) onBack();
+    }
+  };
 
   return (
     <Card className="flex flex-col h-full border-border dark:border-gray-800 shadow-none bg-background dark:bg-[#181928]">
@@ -54,8 +90,25 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
           </Button>
         )}
         <h2 className="font-semibold">{room.name}</h2>
-        <div className="ml-auto">
+        <div className="ml-auto flex gap-2 items-center">
           <ChatParticipants roomId={room.id} />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" aria-label="More options">
+                <LogOut className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem 
+                className="text-red-600"
+                onClick={handleLeaveChat}
+                disabled={leaving}
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Leave Chat
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
