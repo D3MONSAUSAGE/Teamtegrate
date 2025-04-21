@@ -11,7 +11,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/components/ui/sonner';
@@ -22,7 +21,8 @@ const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
-  const [role, setRole] = useState<UserRole>('user');
+  // Remove the UI to change role, always set to "user"
+  const role: UserRole = 'user';
   const { login, signup, isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
   
@@ -45,6 +45,7 @@ const LoginPage = () => {
           toast.error('Please enter your name');
           return;
         }
+        // Use the hardcoded "user" role for all signups
         await signup(email, password, name, role);
       }
       // The redirect will be handled by the useEffect above
@@ -101,23 +102,7 @@ const LoginPage = () => {
                 required
               />
             </div>
-            
-            {!isLogin && (
-              <div className="space-y-2">
-                <Label>Account Type</Label>
-                <RadioGroup value={role} onValueChange={(value) => setRole(value as UserRole)}>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="user" id="user" />
-                    <Label htmlFor="user">User</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="manager" id="manager" />
-                    <Label htmlFor="manager">Manager</Label>
-                  </div>
-                </RadioGroup>
-              </div>
-            )}
-            
+            {/* Removed Account Type selection */}
             <Button type="submit" className="w-full" disabled={loading}>
               {isLogin ? (loading ? 'Logging in...' : 'Login') : (loading ? 'Signing Up...' : 'Sign Up')}
             </Button>
