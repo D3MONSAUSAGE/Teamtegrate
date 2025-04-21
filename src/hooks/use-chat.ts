@@ -8,6 +8,7 @@ interface Message {
   user_id: string;
   created_at: string;
   type: 'text' | 'system';
+  parent_id?: string;
   attachments?: {
     id: string;
     file_name: string;
@@ -25,6 +26,7 @@ export const useChat = (roomId: string, userId: string | undefined) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [fileUploads, setFileUploads] = useState<FileUpload[]>([]);
+  const [replyTo, setReplyTo] = useState<Message | null>(null);
 
   const fetchMessages = async () => {
     const { data: messagesData, error: messagesError } = await supabase
@@ -108,7 +110,6 @@ export const useChat = (roomId: string, userId: string | undefined) => {
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if ((!newMessage.trim() && fileUploads.length === 0) || !userId) return;
-
     try {
       let attachments = [];
       if (fileUploads.length > 0) {
@@ -122,6 +123,7 @@ export const useChat = (roomId: string, userId: string | undefined) => {
           user_id: userId,
           content: newMessage.trim() || 'Shared attachments',
           type: 'text',
+          parent_id: replyTo ? replyTo.id : null,
         })
         .select()
         .single();
@@ -143,6 +145,7 @@ export const useChat = (roomId: string, userId: string | undefined) => {
 
       setNewMessage('');
       setFileUploads([]);
+      setReplyTo(null);
     } catch (error) {
       console.error('Error sending message:', error);
       toast.error('Failed to send message');
@@ -163,6 +166,8 @@ export const useChat = (roomId: string, userId: string | undefined) => {
     setNewMessage,
     fileUploads,
     setFileUploads,
-    sendMessage
+    sendMessage,
+    replyTo,
+    setReplyTo,
   };
 };

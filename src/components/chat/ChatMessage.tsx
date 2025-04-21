@@ -1,5 +1,5 @@
 import React from 'react';
-import { FileImage, FileText, Download } from 'lucide-react';
+import { FileImage, FileText, Download, MessageSquareReply } from 'lucide-react';
 import { supabase } from "@/integrations/supabase/client";
 import ChatMessageAvatar from './ChatMessageAvatar';
 import { useQuery } from '@tanstack/react-query';
@@ -19,12 +19,23 @@ interface ChatMessageProps {
     content: string;
     user_id: string;
     type?: 'text' | 'system';
+    parent_id?: string | null;
     attachments?: Attachment[];
   };
   isCurrentUser: boolean;
+  onReplyClick?: (msg: any) => void;
+  parentMessage?: {
+    content: string;
+    user_id: string;
+  };
 }
 
-const ChatMessage: React.FC<ChatMessageProps> = ({ message, isCurrentUser }) => {
+const ChatMessage: React.FC<ChatMessageProps> = ({
+  message,
+  isCurrentUser,
+  onReplyClick,
+  parentMessage,
+}) => {
   const { user: currentUser } = useAuth();
   
   const { data: userData } = useQuery({
@@ -57,6 +68,18 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isCurrentUser }) => 
         ? { name: 'System' } 
         : { name: 'Unknown User' }
   });
+
+  let replySnippet = null;
+  if (parentMessage) {
+    replySnippet = (
+      <div className="mb-1 pl-3 py-1 border-l-2 border-primary bg-accent/25 rounded text-xs text-muted-foreground max-w-full">
+        <span className="font-semibold">
+          {parentMessage.user_id === currentUser?.id ? "You" : "Replied"}:
+        </span>{" "}
+        <span className="italic">{parentMessage.content?.slice(0, 80)}</span>
+      </div>
+    );
+  }
 
   const renderAttachment = (attachment: Attachment) => {
     const isImage = attachment.file_type.startsWith('image/');
@@ -115,24 +138,19 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isCurrentUser }) => 
 
   return (
     <div
-      className={`flex items-start gap-3 ${
-        isCurrentUser ? 'flex-row-reverse' : 'flex-row'
-      }`}
+      className={`flex items-start gap-3 ${isCurrentUser ? 'flex-row-reverse' : 'flex-row'}`}
     >
       <ChatMessageAvatar 
         userId={message.user_id}
         className="mt-0.5 flex-shrink-0 w-8 h-8"
       />
       <div
-        className={`group relative max-w-[85%] sm:max-w-[75%] ${
-          isCurrentUser ? 'items-end' : 'items-start'
-        }`}
+        className={`group relative max-w-[85%] sm:max-w-[75%] ${isCurrentUser ? 'items-end' : 'items-start'}`}
       >
-        <div className={`text-xs text-muted-foreground mb-1 ${
-          isCurrentUser ? 'text-right' : 'text-left'
-        }`}>
+        <div className={`text-xs text-muted-foreground mb-1 ${isCurrentUser ? 'text-right' : 'text-left'}`}>
           {displayName}
         </div>
+        {replySnippet}
         <div
           className={`px-4 py-2.5 rounded-3xl break-words ${
             isCurrentUser
@@ -142,6 +160,17 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isCurrentUser }) => 
         >
           <p className="text-sm">{message.content}</p>
         </div>
+        {onReplyClick && (
+          <button
+            title="Reply"
+            className={`absolute z-10 opacity-70 group-hover:opacity-100 p-1 rounded-full transition bg-background hover:bg-accent border border-border
+             ${isCurrentUser ? 'right-2 bottom-2' : 'left-2 bottom-2'}`}
+            onClick={() => onReplyClick(message)}
+            type="button"
+          >
+            <MessageSquareReply className="w-4 h-4 text-primary" />
+          </button>
+        )}
         <MessageReactions messageId={message.id} />
         <div className="mt-2 space-y-1">
           {message.attachments?.map(attachment => renderAttachment(attachment))}

@@ -5,6 +5,25 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import EmojiPickerButton from './EmojiPickerButton';
 
+function ReplyPreview({ message, onCancel }: { message: any, onCancel: () => void }) {
+  if (!message) return null;
+  return (
+    <div className="flex items-center gap-2 bg-accent/30 p-2 rounded mb-2 border-l-4 border-primary">
+      <div className="truncate text-xs font-medium text-gray-900 dark:text-white">
+        Replying to: <span className="italic">"{message.content?.slice(0, 80)}"</span>
+      </div>
+      <button
+        aria-label="Cancel reply"
+        className="ml-auto rounded hover:bg-destructive/20 p-1 transition"
+        onClick={onCancel}
+        type="button"
+      >
+        <X className="h-4 w-4 text-destructive" />
+      </button>
+    </div>
+  );
+}
+
 interface FileUpload {
   file: File;
   progress: number;
@@ -16,6 +35,8 @@ interface ChatMessageInputProps {
   fileUploads: FileUpload[];
   setFileUploads: React.Dispatch<React.SetStateAction<FileUpload[]>>;
   onSubmit: (e: React.FormEvent) => Promise<void>;
+  replyTo?: any;
+  setReplyTo?: (msg: any | null) => void;
 }
 
 const ChatMessageInput: React.FC<ChatMessageInputProps> = ({
@@ -24,6 +45,8 @@ const ChatMessageInput: React.FC<ChatMessageInputProps> = ({
   fileUploads,
   setFileUploads,
   onSubmit,
+  replyTo,
+  setReplyTo
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -57,6 +80,10 @@ const ChatMessageInput: React.FC<ChatMessageInputProps> = ({
 
   return (
     <div className="p-4 border-t border-border dark:border-gray-800 bg-card dark:bg-[#1f2133] space-y-3">
+      {replyTo && setReplyTo && (
+        <ReplyPreview message={replyTo} onCancel={() => setReplyTo(null)} />
+      )}
+
       <div className="flex flex-wrap gap-2">
         {fileUploads.map((upload, index) => (
           <div key={index} className="flex items-center gap-2 bg-muted dark:bg-[#181928]/70 p-2 rounded-full">

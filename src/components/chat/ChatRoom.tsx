@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -32,7 +31,9 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
     setNewMessage,
     fileUploads,
     setFileUploads,
-    sendMessage
+    sendMessage,
+    replyTo,
+    setReplyTo
   } = useChat(room.id, user?.id);
 
   const [leaving, setLeaving] = useState(false);
@@ -45,12 +46,10 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
     scrollToBottom();
   }, [messages]);
 
-  // Handler for leaving the chat room
   const handleLeaveChat = async () => {
     if (!user) return;
     setLeaving(true);
 
-    // Send a system message to notify others that the user has left
     const { error } = await supabase
       .from('chat_messages')
       .insert({
@@ -74,9 +73,20 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
         description: `You have left "${room.name}"`,
         variant: "default"
       });
-      // Return user to chat rooms list
       if (onBack) onBack();
     }
+  };
+
+  const msgMap = React.useMemo(() => {
+    const map: Record<string, any> = {};
+    for (const m of messages) {
+      map[m.id] = m;
+    }
+    return map;
+  }, [messages]);
+
+  const handleReplyClick = (message: any) => {
+    setReplyTo(message);
   };
 
   return (
@@ -122,6 +132,8 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
               key={message.id}
               message={message}
               isCurrentUser={message.user_id === user?.id}
+              onReplyClick={handleReplyClick}
+              parentMessage={message.parent_id ? msgMap[message.parent_id] : undefined}
             />
           ))}
           <div ref={messagesEndRef} />
@@ -134,6 +146,8 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
         fileUploads={fileUploads}
         setFileUploads={setFileUploads}
         onSubmit={sendMessage}
+        replyTo={replyTo}
+        setReplyTo={setReplyTo}
       />
     </Card>
   );
