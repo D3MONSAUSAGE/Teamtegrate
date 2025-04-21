@@ -71,10 +71,12 @@ const TeamMemberForm: React.FC<TeamMemberFormProps> = ({ onCancel, onSuccess }) 
       {showHelp && (
         <Alert className="bg-blue-50 text-blue-800 border-blue-200">
           <AlertDescription className="text-sm">
-            <p className="font-medium mb-1">How to add team members:</p>
+            <p className="font-medium mb-1">About Team Members:</p>
             <ol className="list-decimal pl-4 space-y-1">
-              <li>The user must first create an account in the login page</li>
-              <li>Then you can add them as a team member using their email</li>
+              <li>Users must first create an account in the system</li>
+              <li>Add them as team members to assign tasks and projects</li>
+              <li>Team members will see assigned tasks on their dashboard</li>
+              <li>You can collaborate with team members via chat</li>
             </ol>
           </AlertDescription>
         </Alert>

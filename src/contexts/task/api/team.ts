@@ -46,6 +46,7 @@ export const checkUserExists = async (email: string): Promise<boolean> => {
 // Function to check if a user is already a team member under a specific manager
 export const isAlreadyTeamMember = async (email: string, managerId: string): Promise<boolean> => {
   try {
+    // This checks if the user is already a team member for this specific manager
     const { count, error } = await supabase
       .from('team_members')
       .select('*', { count: 'exact', head: true })

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { toast } from '@/components/ui/sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { checkUserExists } from '@/contexts/task/api/team';
+import { checkUserExists, isAlreadyTeamMember } from '@/contexts/task/api/team';
 
 interface TeamMemberFormData {
   email: string;
@@ -50,39 +50,33 @@ export const useTeamMemberForm = ({ onSuccess, onCancel }: UseTeamMemberFormProp
 
     try {
       // Check if email exists in the users table
-      const { data: existingUser, error: checkError } = await supabase
-        .from('users')
-        .select('id, name, role')
-        .eq('email', formData.email.toLowerCase())
-        .single();
-
-      if (checkError) {
-        if (checkError.code === 'PGRST116') {
-          setError('This email is not registered in the system. The user needs to sign up first.');
-        } else {
-          console.error('Error checking for existing user:', checkError);
-          setError('Error checking email. Please try again.');
-        }
-        setIsLoading(false);
-        return;
-      }
-
-      if (!existingUser) {
+      const userExists = await checkUserExists(formData.email.trim().toLowerCase());
+      
+      if (!userExists) {
         setError('This email is not registered in the system. The user needs to sign up first.');
         setIsLoading(false);
         return;
       }
 
       // Check if the user is already a team member under this manager
-      const { data: existingTeamMember, error: teamMemberCheckError } = await supabase
-        .from('team_members')
-        .select('id')
+      const alreadyTeamMember = await isAlreadyTeamMember(formData.email.trim().toLowerCase(), user.id);
+      
+      if (alreadyTeamMember) {
+        setError('This user is already a member of your team');
+        setIsLoading(false);
+        return;
+      }
+
+      // Get user details from the users table
+      const { data: existingUser, error: userDataError } = await supabase
+        .from('users')
+        .select('id, name, role')
         .eq('email', formData.email.trim().toLowerCase())
-        .eq('manager_id', user.id)
         .single();
 
-      if (existingTeamMember) {
-        setError('This user is already a member of your team');
+      if (userDataError || !existingUser) {
+        console.error('Error fetching user details:', userDataError);
+        setError('Error retrieving user information. Please try again.');
         setIsLoading(false);
         return;
       }

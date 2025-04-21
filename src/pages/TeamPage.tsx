@@ -79,7 +79,7 @@ const TeamPage = () => {
         projectsCount={projectsCount}
       />
       
-      <h2 className="text-xl font-semibold mb-4">Team Members</h2>
+      <h2 className="text-xl font-semibold mb-4">My Team Members</h2>
       
       {isTeamMembersLoading ? (
         <div className="flex items-center justify-center py-8">
@@ -102,6 +102,9 @@ const TeamPage = () => {
       )}
       
       <h2 className="text-xl font-semibold mb-4 mt-8">All App Users</h2>
+      <p className="text-sm text-muted-foreground mb-4">
+        These are all users registered in the system. Add them as team members to assign tasks and collaborate.
+      </p>
       
       {isUsersLoading ? (
         <div className="flex items-center justify-center py-8">
