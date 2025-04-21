@@ -12,7 +12,7 @@ interface ChatMessageReplySnippetProps {
 const ChatMessageReplySnippet: React.FC<ChatMessageReplySnippetProps> = ({ parentMessage }) => {
   const { user: currentUser } = useAuth();
 
-  if (!parentMessage) return null;
+  if (!parentMessage || !parentMessage.content) return null;
 
   return (
     <div className="mb-1 pl-2 py-1 border-l-2 border-primary/50 bg-accent/15 rounded text-xs text-muted-foreground max-w-full">
@@ -28,4 +28,3 @@ const ChatMessageReplySnippet: React.FC<ChatMessageReplySnippetProps> = ({ paren
 };
 
 export default ChatMessageReplySnippet;
-

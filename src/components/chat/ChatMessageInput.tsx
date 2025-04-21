@@ -38,6 +38,7 @@ interface ChatMessageInputProps {
   onSubmit: (e: React.FormEvent) => Promise<void>;
   replyTo?: any;
   setReplyTo?: (msg: any | null) => void;
+  isSending?: boolean;
 }
 
 const ChatMessageInput: React.FC<ChatMessageInputProps> = ({
@@ -47,7 +48,8 @@ const ChatMessageInput: React.FC<ChatMessageInputProps> = ({
   setFileUploads,
   onSubmit,
   replyTo,
-  setReplyTo
+  setReplyTo,
+  isSending = false
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -79,6 +81,14 @@ const ChatMessageInput: React.FC<ChatMessageInputProps> = ({
     }, 0);
   };
 
+  const handleSubmit = (e: React.FormEvent) => {
+    if (isSending) {
+      e.preventDefault();
+      return;
+    }
+    onSubmit(e);
+  };
+
   return (
     <div className="p-3 bg-card dark:bg-[#1f2133] border-t border-border dark:border-gray-800">
       {replyTo && setReplyTo && (
@@ -102,7 +112,7 @@ const ChatMessageInput: React.FC<ChatMessageInputProps> = ({
         ))}
       </div>
       
-      <form onSubmit={onSubmit} className="flex items-center gap-2">
+      <form onSubmit={handleSubmit} className="flex items-center gap-2">
         <Input
           type="file"
           onChange={handleFileSelect}
@@ -120,6 +130,7 @@ const ChatMessageInput: React.FC<ChatMessageInputProps> = ({
             size="icon"
             className="h-8 w-8 rounded-full"
             onClick={() => fileInputRef.current?.click()}
+            disabled={isSending}
           >
             <Paperclip className="h-5 w-5 text-muted-foreground" />
           </Button>
@@ -130,6 +141,7 @@ const ChatMessageInput: React.FC<ChatMessageInputProps> = ({
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="Type a message"
             className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-2"
+            disabled={isSending}
           />
           
           <Button
@@ -138,6 +150,7 @@ const ChatMessageInput: React.FC<ChatMessageInputProps> = ({
             size="icon"
             className="h-8 w-8 rounded-full"
             onClick={() => toast.info("Voice messages coming soon!")}
+            disabled={isSending}
           >
             <Mic className="h-5 w-5 text-muted-foreground" />
           </Button>
@@ -147,9 +160,9 @@ const ChatMessageInput: React.FC<ChatMessageInputProps> = ({
           type="submit" 
           size="icon" 
           className="rounded-full h-10 w-10 flex-shrink-0 bg-primary hover:bg-primary/90"
-          disabled={!newMessage.trim() && fileUploads.length === 0}
+          disabled={(!newMessage.trim() && fileUploads.length === 0) || isSending}
         >
-          <Send className="h-5 w-5" />
+          <Send className={`h-5 w-5 ${isSending ? 'opacity-50' : ''}`} />
         </Button>
       </form>
     </div>

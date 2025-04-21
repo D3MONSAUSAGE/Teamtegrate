@@ -7,7 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import ChatMessageInput from './ChatMessageInput';
 import { useChat } from '@/hooks/use-chat';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 // Extracted subcomponents
 import ChatRoomHeader from './ChatRoomHeader';
 import ChatParticipantsSidebar from './ChatParticipantsSidebar';
@@ -33,7 +33,8 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
     setFileUploads,
     sendMessage,
     replyTo,
-    setReplyTo
+    setReplyTo,
+    isSending
   } = useChat(room.id, user?.id);
 
   const [leaving, setLeaving] = useState(false);
@@ -51,30 +52,27 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
     if (!user) return;
     setLeaving(true);
 
-    const { error } = await supabase
-      .from('chat_messages')
-      .insert({
-        room_id: room.id,
-        user_id: user.id,
-        content: `${user.email} has left the chat.`,
-        type: 'system'
-      });
+    try {
+      const { error } = await supabase
+        .from('chat_messages')
+        .insert({
+          room_id: room.id,
+          user_id: user.id,
+          content: `${user.email} has left the chat.`,
+          type: 'system'
+        });
 
-    setLeaving(false);
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to leave the chat.",
-        variant: "destructive"
-      });
-    } else {
-      toast({
-        title: "Left chat",
-        description: `You have left "${room.name}"`,
-        variant: "default"
-      });
-      if (onBack) onBack();
+      if (error) {
+        throw error;
+      } else {
+        toast.success('Left chat room successfully');
+        if (onBack) onBack();
+      }
+    } catch (error) {
+      console.error('Error leaving chat:', error);
+      toast.error('Failed to leave the chat');
+    } finally {
+      setLeaving(false);
     }
   };
 
@@ -148,6 +146,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
         onSubmit={sendMessage}
         replyTo={replyTo}
         setReplyTo={setReplyTo}
+        isSending={isSending}
       />
     </Card>
   );

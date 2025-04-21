@@ -24,18 +24,23 @@ export const useMessageDisplayName = (message: {
         return { name: currentUser.name };
       }
 
-      const { data, error } = await supabase
-        .from("users")
-        .select("name")
-        .eq("id", message.user_id)
-        .single();
+      try {
+        const { data, error } = await supabase
+          .from("users")
+          .select("name")
+          .eq("id", message.user_id)
+          .single();
 
-      if (error || !data) {
-        console.warn("Failed to fetch user details:", error);
+        if (error || !data) {
+          console.warn("Failed to fetch user details:", error);
+          return { name: isCurrentUser ? "You" : "Unknown User" };
+        }
+
+        return data;
+      } catch (error) {
+        console.error("Error fetching user details:", error);
         return { name: isCurrentUser ? "You" : "Unknown User" };
       }
-
-      return data;
     },
     initialData:
       isCurrentUser && currentUser
@@ -45,4 +50,3 @@ export const useMessageDisplayName = (message: {
         : { name: "Unknown User" },
   });
 };
-

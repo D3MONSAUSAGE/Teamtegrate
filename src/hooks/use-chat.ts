@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from 'sonner';
@@ -27,40 +28,46 @@ export const useChat = (roomId: string, userId: string | undefined) => {
   const [newMessage, setNewMessage] = useState('');
   const [fileUploads, setFileUploads] = useState<FileUpload[]>([]);
   const [replyTo, setReplyTo] = useState<Message | null>(null);
+  const [isSending, setIsSending] = useState(false);
 
   const fetchMessages = async () => {
-    const { data: messagesData, error: messagesError } = await supabase
-      .from('chat_messages')
-      .select('*')
-      .eq('room_id', roomId)
-      .order('created_at', { ascending: true });
+    try {
+      const { data: messagesData, error: messagesError } = await supabase
+        .from('chat_messages')
+        .select('*')
+        .eq('room_id', roomId)
+        .order('created_at', { ascending: true });
 
-    if (messagesError) {
-      console.error('Error fetching messages:', messagesError);
-      return;
+      if (messagesError) {
+        console.error('Error fetching messages:', messagesError);
+        return;
+      }
+
+      const { data: attachmentsData, error: attachmentsError } = await supabase
+        .from('chat_message_attachments')
+        .select('*');
+
+      if (attachmentsError) {
+        console.error('Error fetching attachments:', attachmentsError);
+        return;
+      }
+
+      const messagesWithAttachments = messagesData.map(message => {
+        const messageAttachments = attachmentsData.filter(
+          attachment => attachment.message_id === message.id
+        );
+        
+        return {
+          ...message,
+          attachments: messageAttachments.length > 0 ? messageAttachments : undefined
+        };
+      });
+
+      setMessages(messagesWithAttachments);
+    } catch (error) {
+      console.error('Unexpected error fetching messages:', error);
+      toast.error('Failed to load messages');
     }
-
-    const { data: attachmentsData, error: attachmentsError } = await supabase
-      .from('chat_message_attachments')
-      .select('*');
-
-    if (attachmentsError) {
-      console.error('Error fetching attachments:', attachmentsError);
-      return;
-    }
-
-    const messagesWithAttachments = messagesData.map(message => {
-      const messageAttachments = attachmentsData.filter(
-        attachment => attachment.message_id === message.id
-      );
-      
-      return {
-        ...message,
-        attachments: messageAttachments.length > 0 ? messageAttachments : undefined
-      };
-    });
-
-    setMessages(messagesWithAttachments);
   };
 
   const subscribeToMessages = () => {
@@ -86,6 +93,10 @@ export const useChat = (roomId: string, userId: string | undefined) => {
   };
 
   const uploadFile = async (file: File) => {
+    if (!userId) {
+      throw new Error("User ID is required to upload files");
+    }
+    
     const timestamp = Date.now();
     const fileExt = file.name.split('.').pop();
     const filePath = `${userId}/${timestamp}-${file.name}`;
@@ -109,7 +120,9 @@ export const useChat = (roomId: string, userId: string | undefined) => {
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if ((!newMessage.trim() && fileUploads.length === 0) || !userId) return;
+    if ((!newMessage.trim() && fileUploads.length === 0) || !userId || isSending) return;
+    
+    setIsSending(true);
     try {
       let attachments = [];
       if (fileUploads.length > 0) {
@@ -146,9 +159,12 @@ export const useChat = (roomId: string, userId: string | undefined) => {
       setNewMessage('');
       setFileUploads([]);
       setReplyTo(null);
+      toast.success('Message sent successfully');
     } catch (error) {
       console.error('Error sending message:', error);
       toast.error('Failed to send message');
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -169,5 +185,6 @@ export const useChat = (roomId: string, userId: string | undefined) => {
     sendMessage,
     replyTo,
     setReplyTo,
+    isSending
   };
 };

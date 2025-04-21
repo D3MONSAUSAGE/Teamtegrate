@@ -14,7 +14,18 @@ interface AttachmentProps {
 
 const ChatMessageAttachment: React.FC<AttachmentProps> = ({ attachment }) => {
   const isImage = attachment.file_type.startsWith('image/');
-  const url = supabase.storage.from('chat-attachments').getPublicUrl(attachment.file_path).data.publicUrl;
+  
+  // Get URL safely
+  const getAttachmentUrl = () => {
+    try {
+      return supabase.storage.from('chat-attachments').getPublicUrl(attachment.file_path).data.publicUrl;
+    } catch (error) {
+      console.error("Failed to get attachment URL:", error);
+      return "#"; // Fallback URL
+    }
+  };
+  
+  const url = getAttachmentUrl();
 
   return (
     <div
@@ -65,4 +76,3 @@ const ChatMessageAttachment: React.FC<AttachmentProps> = ({ attachment }) => {
 };
 
 export default ChatMessageAttachment;
-
