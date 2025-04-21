@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { 
   Card, CardContent, CardDescription, 
@@ -21,6 +22,7 @@ import UseTemplateDialog from './UseTemplateDialog';
 import WeekSelector from './WeekSelector';
 import ActiveChecklistCard from './ActiveChecklistCard';
 import TemplateChecklistCard from './TemplateChecklistCard';
+import CreateChecklistDialog from './CreateChecklistDialog'; // Added missing import
 import { 
   Select,
   SelectTrigger,
