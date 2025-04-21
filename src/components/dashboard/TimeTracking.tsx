@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTimeTracking } from '@/hooks/useTimeTracking';
-import { format, startOfWeek, addWeeks, subWeeks, addDays } from 'date-fns';
+import { format, startOfWeek, addWeeks, subWeeks, addDays, differenceInMinutes } from 'date-fns';
 import { Clock, TimerOff, Coffee, UtensilsCrossed, FileText, CalendarDays, Search } from 'lucide-react';
 import DailyTimeReport from './DailyTimeReport';
 import WeeklyTimeReport from './WeeklyTimeReport';
@@ -64,7 +65,7 @@ const TimeTracking: React.FC = () => {
       const totalMinutes = dayEntries.reduce((total, entry) => {
         if (entry.duration_minutes) return total + entry.duration_minutes;
         if (entry.clock_out) {
-          const diff = require("date-fns/differenceInMinutes")(
+          const diff = differenceInMinutes(
             new Date(entry.clock_out), new Date(entry.clock_in)
           );
           return total + diff;
@@ -72,7 +73,7 @@ const TimeTracking: React.FC = () => {
         return total;
       }, 0);
       return {
-        day: require("date-fns/format")(day, 'EEE'),
+        day: format(day, 'EEE'),
         totalHours: +(totalMinutes / 60).toFixed(2)
       };
     });
@@ -94,8 +95,9 @@ const TimeTracking: React.FC = () => {
     if (currentEntry.isClocked && currentEntry.clock_in) {
       interval = setInterval(() => {
         setElapsedTime(
-          require("date-fns/formatDistance")(
-            new Date(currentEntry.clock_in!), new Date()
+          format(
+            new Date(Date.now() - new Date(currentEntry.clock_in!).getTime()),
+            "HH:mm:ss"
           )
         );
       }, 1000);
