@@ -39,11 +39,12 @@ const ChecklistsView: React.FC<ChecklistsViewProps> = ({ type }) => {
 
   // Only filter by week for active checklists
   if (type === 'active') {
-    data = data.filter(item => {
-      // "startDate" is always present, "dueDate" is optional
+    // We know data contains Checklist objects when type is 'active'
+    const activeChecklists = data as Checklist[];
+    data = activeChecklists.filter(item => {
       const start = item.startDate;
       const end = item.dueDate || item.startDate;
-      // If the week overlaps with any part of the checklist's duration
+      
       return (
         isWithinInterval(start, { start: weekStart, end: weekEnd }) ||
         (item.dueDate && isWithinInterval(end, { start: weekStart, end: weekEnd }))
@@ -112,7 +113,7 @@ const ChecklistsView: React.FC<ChecklistsViewProps> = ({ type }) => {
             </CardHeader>
             
             <CardContent className="space-y-3">
-              {type === 'active' && item && 'progress' in item && (
+              {type === 'active' && 'progress' in item && (
                 <>
                   <div className="flex items-center justify-between text-sm">
                     <span>Progress</span>
@@ -146,7 +147,7 @@ const ChecklistsView: React.FC<ChecklistsViewProps> = ({ type }) => {
                 </>
               )}
               
-              {type === 'template' && item && 'frequency' in item && (
+              {type === 'template' && 'frequency' in item && (
                 <>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Clock className="h-3.5 w-3.5" />
@@ -226,4 +227,3 @@ const ChecklistsView: React.FC<ChecklistsViewProps> = ({ type }) => {
 };
 
 export default ChecklistsView;
-
