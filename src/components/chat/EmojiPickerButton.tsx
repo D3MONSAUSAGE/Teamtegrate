@@ -1,8 +1,8 @@
 
-import React, { useState, useRef, lazy, Suspense } from "react";
+import React, { useState, lazy, Suspense } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Smile } from "lucide-react";
-import type { EmojiClickData, EmojiStyle } from "emoji-picker-react";
+import type { EmojiClickData } from "emoji-picker-react";
 
 // Lazy load the emoji picker for better performance
 const Picker = lazy(() => import("emoji-picker-react"));
@@ -34,7 +34,6 @@ const EmojiPickerButton: React.FC<EmojiPickerButtonProps> = ({ onEmojiClick }) =
                   onEmojiClick(emojiData.emoji);
                   setOpen(false);
                 }}
-                emojiStyle="apple"
                 lazyLoadEmojis
                 height={380}
               />
