@@ -3,22 +3,42 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Copy, MoreHorizontal } from 'lucide-react';
+import { Clock, Copy, MoreHorizontal, Pencil } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ChecklistTemplate } from '@/types/checklist';
 
 interface TemplateChecklistCardProps {
   template: ChecklistTemplate;
   onUseTemplate: (template: ChecklistTemplate) => void;
+  onEditTemplate?: (template: ChecklistTemplate) => void;
 }
 
-const TemplateChecklistCard: React.FC<TemplateChecklistCardProps> = ({ template, onUseTemplate }) => (
+const TemplateChecklistCard: React.FC<TemplateChecklistCardProps> = ({
+  template,
+  onUseTemplate,
+  onEditTemplate,
+}) => (
   <Card className="overflow-hidden hover:shadow-md transition-shadow">
     <CardHeader className="pb-3">
-      <CardTitle>{template.title}</CardTitle>
-      <CardDescription className="line-clamp-2">
-        {template.description || 'No description provided'}
-      </CardDescription>
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <CardTitle>{template.title}</CardTitle>
+          <CardDescription className="line-clamp-2">
+            {template.description || 'No description provided'}
+          </CardDescription>
+        </div>
+        {onEditTemplate && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="mt-1"
+            onClick={() => onEditTemplate(template)}
+            aria-label="Edit Template"
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
     </CardHeader>
     <CardContent className="space-y-3">
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -58,7 +78,9 @@ const TemplateChecklistCard: React.FC<TemplateChecklistCardProps> = ({ template,
           <DropdownMenuItem>
             <Copy className="h-4 w-4 mr-2" /> Duplicate
           </DropdownMenuItem>
-          <DropdownMenuItem>Edit Template</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onEditTemplate && onEditTemplate(template)}>
+            <Pencil className="h-4 w-4 mr-2" /> Edit Template
+          </DropdownMenuItem>
           <DropdownMenuItem className="text-red-600">Delete</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

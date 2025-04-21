@@ -39,6 +39,8 @@ const ChecklistsView: React.FC<ChecklistsViewProps> = ({ type }) => {
   const { checklists, templates } = useChecklists();
   const [selectedTemplate, setSelectedTemplate] = useState<ChecklistTemplate | null>(null);
   const [isUseTemplateDialogOpen, setIsUseTemplateDialogOpen] = useState(false);
+  const [isEditTemplateDialogOpen, setIsEditTemplateDialogOpen] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<ChecklistTemplate | null>(null);
 
   const [weekStart, setWeekStart] = useState<Date>(startOfWeek(new Date(), { weekStartsOn: 1 }));
   const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
@@ -75,6 +77,11 @@ const ChecklistsView: React.FC<ChecklistsViewProps> = ({ type }) => {
   const handleUseTemplate = (template: ChecklistTemplate) => {
     setSelectedTemplate(template);
     setIsUseTemplateDialogOpen(true);
+  };
+
+  const handleEditTemplate = (template: ChecklistTemplate) => {
+    setEditingTemplate(template);
+    setIsEditTemplateDialogOpen(true);
   };
 
   const handleExecuteChecklist = (checklist: Checklist) => {
@@ -145,6 +152,7 @@ const ChecklistsView: React.FC<ChecklistsViewProps> = ({ type }) => {
                 key={item.id}
                 template={item}
                 onUseTemplate={handleUseTemplate}
+                onEditTemplate={handleEditTemplate}
               />
             ))}
       </div>
@@ -153,6 +161,16 @@ const ChecklistsView: React.FC<ChecklistsViewProps> = ({ type }) => {
         onOpenChange={setIsUseTemplateDialogOpen}
         template={selectedTemplate}
       />
+      {type === 'template' && (
+        <CreateChecklistDialog
+          open={isEditTemplateDialogOpen}
+          onOpenChange={open => {
+            setIsEditTemplateDialogOpen(open);
+            if (!open) setEditingTemplate(null);
+          }}
+          editingTemplate={editingTemplate ?? undefined}
+        />
+      )}
     </div>
   );
 };

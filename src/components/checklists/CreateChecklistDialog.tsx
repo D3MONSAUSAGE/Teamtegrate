@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,19 +29,61 @@ const CreateChecklistDialog: React.FC<CreateChecklistDialogProps> = ({
   const [title, setTitle] = useState(editingTemplate?.title || '');
   const [description, setDescription] = useState(editingTemplate?.description || '');
   const [isTemplate, setIsTemplate] = useState(true);
-  const [frequency, setFrequency] = useState<ChecklistFrequency>('once');
-  const [sections, setSections] = useState([
-    {
-      id: '1',
-      title: 'Section 1',
-      items: [
-        { id: '1', text: 'Checklist item 1', status: 'pending' as ChecklistItemStatus, requiredPhoto: false }
-      ]
-    }
-  ]);
-  const [branches, setBranches] = useState<string[]>(['Main Branch']);
+  const [frequency, setFrequency] = useState<ChecklistFrequency>(editingTemplate?.frequency ?? 'once');
+  const [sections, setSections] = useState(() =>
+    editingTemplate?.sections
+      ? JSON.parse(JSON.stringify(editingTemplate.sections))
+      : [{
+          id: '1',
+          title: 'Section 1',
+          items: [
+            { id: '1', text: 'Checklist item 1', status: 'pending' as ChecklistItemStatus, requiredPhoto: false }
+          ]
+        }]
+  );
+  const [branches, setBranches] = useState<string[]>(
+    editingTemplate?.branchOptions && Array.isArray(editingTemplate.branchOptions)
+      ? [...editingTemplate.branchOptions]
+      : ['Main Branch']
+  );
   const [newBranch, setNewBranch] = useState('');
   const [selectedBranchDropdown, setSelectedBranchDropdown] = useState<string>('');
+
+  useEffect(() => {
+    if (editingTemplate) {
+      setTitle(editingTemplate.title || '');
+      setDescription(editingTemplate.description || '');
+      setIsTemplate(true);
+      setFrequency(editingTemplate.frequency ?? 'once');
+      setSections(editingTemplate.sections ? JSON.parse(JSON.stringify(editingTemplate.sections)) : [{
+        id: '1',
+        title: 'Section 1',
+        items: [
+          { id: '1', text: 'Checklist item 1', status: 'pending' as ChecklistItemStatus, requiredPhoto: false }
+        ]
+      }]);
+      setBranches(
+        editingTemplate.branchOptions && Array.isArray(editingTemplate.branchOptions)
+          ? [...editingTemplate.branchOptions]
+          : ['Main Branch']
+      );
+    } else {
+      setTitle('');
+      setDescription('');
+      setIsTemplate(true);
+      setFrequency('once');
+      setSections([{
+        id: '1',
+        title: 'Section 1',
+        items: [
+          { id: '1', text: 'Checklist item 1', status: 'pending' as ChecklistItemStatus, requiredPhoto: false }
+        ]
+      }]);
+      setBranches(['Main Branch']);
+    }
+    setNewBranch('');
+    setSelectedBranchDropdown('');
+  }, [editingTemplate, open]);
 
   const allBranches = useMemo(() => {
     const branchSet = new Set<string>();
@@ -178,21 +220,51 @@ const CreateChecklistDialog: React.FC<CreateChecklistDialogProps> = ({
 
     try {
       if (isTemplate) {
-        await addTemplate({
-          title,
-          description,
-          sections: sections.map(section => ({
-            ...section,
-            items: section.items.map(item => ({
-              ...item,
-              status: item.status as ChecklistItemStatus,
-              requiredPhoto: !!item.requiredPhoto,
-            }))
-          })),
-          frequency,
-          branchOptions: branches
-        });
-        toast.success('Template saved successfully');
+        if (editingTemplate) {
+          const updateData = {
+            title,
+            description,
+            sections: sections.map(section => ({
+              ...section,
+              items: section.items.map(item => ({
+                ...item,
+                status: item.status as ChecklistItemStatus,
+                requiredPhoto: !!item.requiredPhoto,
+              }))
+            })),
+            frequency,
+            branchOptions: branches
+          };
+          const { supabase } = await import('@/integrations/supabase/client');
+          const { error } = await supabase
+            .from('checklist_templates')
+            .update({
+              title: updateData.title,
+              description: updateData.description,
+              sections: updateData.sections,
+              frequency: updateData.frequency,
+              branch_options: updateData.branchOptions
+            })
+            .eq('id', editingTemplate.id);
+          if (error) throw error;
+          toast.success('Template updated successfully');
+        } else {
+          await addTemplate({
+            title,
+            description,
+            sections: sections.map(section => ({
+              ...section,
+              items: section.items.map(item => ({
+                ...item,
+                status: item.status as ChecklistItemStatus,
+                requiredPhoto: !!item.requiredPhoto,
+              }))
+            })),
+            frequency,
+            branchOptions: branches
+          });
+          toast.success('Template saved successfully');
+        }
       } else {
         await addChecklist({
           title,
@@ -223,10 +295,12 @@ const CreateChecklistDialog: React.FC<CreateChecklistDialogProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[625px]">
         <DialogHeader>
-          <DialogTitle>{editingTemplate ? 'Edit Checklist Template' : 'Create New Checklist'}</DialogTitle>
+          <DialogTitle>
+            {editingTemplate ? 'Edit Checklist Template' : 'Create New Checklist'}
+          </DialogTitle>
           <DialogDescription>
-            {isTemplate 
-              ? 'Create a reusable template for recurring checklists.' 
+            {isTemplate
+              ? 'Create a reusable template for recurring checklists.'
               : 'Create a new checklist from scratch or a template.'}
           </DialogDescription>
         </DialogHeader>
