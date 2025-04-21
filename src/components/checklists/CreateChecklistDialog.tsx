@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from '@/components/ui/button';
@@ -8,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ChecklistFrequency, ChecklistTemplate } from '@/types/checklist';
+import { ChecklistFrequency, ChecklistTemplate, ChecklistItemStatus } from '@/types/checklist';
 import { Plus, Trash2, Move, Check } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -36,7 +35,7 @@ const CreateChecklistDialog: React.FC<CreateChecklistDialogProps> = ({
       id: '1',
       title: 'Section 1',
       items: [
-        { id: '1', text: 'Checklist item 1', status: 'pending', requiredPhoto: false }
+        { id: '1', text: 'Checklist item 1', status: 'pending' as ChecklistItemStatus, requiredPhoto: false }
       ]
     }
   ]);
@@ -69,7 +68,7 @@ const CreateChecklistDialog: React.FC<CreateChecklistDialogProps> = ({
           items: [...section.items, {
             id: Date.now().toString(),
             text: '',
-            status: 'pending',
+            status: 'pending' as ChecklistItemStatus,
             requiredPhoto: false
           }]
         };
@@ -161,7 +160,7 @@ const CreateChecklistDialog: React.FC<CreateChecklistDialogProps> = ({
       addTemplate({
         title,
         description,
-        sections,
+        sections: sections as any,
         frequency,
         branchOptions: branches
       });
@@ -170,7 +169,7 @@ const CreateChecklistDialog: React.FC<CreateChecklistDialogProps> = ({
       addChecklist({
         title,
         description,
-        sections,
+        sections: sections as any,
         branch: branches.length > 0 ? branches[0] : undefined,
         startDate: new Date(),
         status: 'draft'
