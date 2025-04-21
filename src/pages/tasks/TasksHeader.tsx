@@ -10,12 +10,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-type SortByValue = 'deadline' | 'priority' | 'created';
-
 interface TasksHeaderProps {
   onNewTask: () => void;
-  sortBy: SortByValue;
-  setSortBy: (v: SortByValue) => void;
+  sortBy: string;
+  setSortBy: (v: string) => void;
 }
 
 const TasksHeader: React.FC<TasksHeaderProps> = ({ onNewTask, sortBy, setSortBy }) => (
@@ -29,7 +27,7 @@ const TasksHeader: React.FC<TasksHeaderProps> = ({ onNewTask, sortBy, setSortBy 
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuRadioGroup value={sortBy} onValueChange={(value) => setSortBy(value as SortByValue)}>
+          <DropdownMenuRadioGroup value={sortBy} onValueChange={setSortBy}>
             <DropdownMenuRadioItem value="deadline">Deadline</DropdownMenuRadioItem>
             <DropdownMenuRadioItem value="priority">Priority</DropdownMenuRadioItem>
             <DropdownMenuRadioItem value="created">Creation Date</DropdownMenuRadioItem>

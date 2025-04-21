@@ -44,8 +44,8 @@ const TimeTracking: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-full space-y-4">
-      <Card className="w-full">
+    <div className="space-y-4">
+      <Card>
         <CardHeader>
           <CardTitle>Time Tracking</CardTitle>
         </CardHeader>
@@ -55,7 +55,7 @@ const TimeTracking: React.FC = () => {
               placeholder="Optional notes" 
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="flex-grow w-full"
+              className="flex-grow"
             />
             {currentEntry.isClocked ? (
               <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
