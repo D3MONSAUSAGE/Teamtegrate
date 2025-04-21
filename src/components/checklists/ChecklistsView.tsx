@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   Card, CardContent, CardDescription, 
   CardFooter, CardHeader, CardTitle 
@@ -22,6 +21,13 @@ import UseTemplateDialog from './UseTemplateDialog';
 import WeekSelector from './WeekSelector';
 import ActiveChecklistCard from './ActiveChecklistCard';
 import TemplateChecklistCard from './TemplateChecklistCard';
+import { 
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue
+} from '@/components/ui/select';
 
 interface ChecklistsViewProps {
   type: 'active' | 'template';
@@ -37,11 +43,22 @@ const ChecklistsView: React.FC<ChecklistsViewProps> = ({ type }) => {
   const [weekStart, setWeekStart] = useState<Date>(startOfWeek(new Date(), { weekStartsOn: 1 }));
   const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
 
+  const [selectedBranch, setSelectedBranch] = useState<string>('all');
+
+  const availableBranches = useMemo(() => {
+    if (type !== 'active') return [];
+    const branches = new Set<string>();
+    (checklists as Checklist[]).forEach((item) => {
+      if (item.branch) branches.add(item.branch);
+    });
+    return Array.from(branches);
+  }, [type, checklists]);
+  
   let data = type === 'template' ? templates : checklists;
 
   if (type === 'active') {
-    const activeChecklists = data as Checklist[];
-    data = activeChecklists.filter(item => {
+    let activeChecklists: Checklist[] = data as Checklist[];
+    activeChecklists = activeChecklists.filter(item => {
       const start = item.startDate;
       const end = item.dueDate || item.startDate;
       return (
@@ -49,6 +66,10 @@ const ChecklistsView: React.FC<ChecklistsViewProps> = ({ type }) => {
         (item.dueDate && isWithinInterval(end, { start: weekStart, end: weekEnd }))
       );
     });
+    if (selectedBranch !== 'all') {
+      activeChecklists = activeChecklists.filter(item => item.branch === selectedBranch);
+    }
+    data = activeChecklists;
   }
 
   const handleUseTemplate = (template: ChecklistTemplate) => {
@@ -83,12 +104,32 @@ const ChecklistsView: React.FC<ChecklistsViewProps> = ({ type }) => {
   return (
     <div className="space-y-6">
       {type === 'active' && (
-        <WeekSelector
-          weekStart={weekStart}
-          setWeekStart={setWeekStart}
-          goToPrevWeek={goToPrevWeek}
-          goToNextWeek={goToNextWeek}
-        />
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <WeekSelector
+            weekStart={weekStart}
+            setWeekStart={setWeekStart}
+            goToPrevWeek={goToPrevWeek}
+            goToNextWeek={goToNextWeek}
+          />
+          {availableBranches.length > 0 && (
+            <div className="w-full md:w-[200px]">
+              <Select
+                value={selectedBranch}
+                onValueChange={setSelectedBranch}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select branch" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem key="all" value="all">All Branches</SelectItem>
+                  {availableBranches.map(branch => (
+                    <SelectItem key={branch} value={branch}>{branch}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+        </div>
       )}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {type === 'active'
