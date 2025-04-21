@@ -5,10 +5,19 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@
 import { startOfWeek, addDays, endOfWeek, format, differenceInMinutes } from "date-fns";
 import useTeamMembers from "@/hooks/useTeamMembers";
 import { supabase } from "@/integrations/supabase/client";
-import { User, TeamMember } from "@/types";
+import { User } from "@/types";
 import { CalendarDays, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+
+// Define TeamMember type based on what's used in the useTeamMembers hook
+type TeamMember = {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  managerId: string;
+};
 
 type TimeEntry = {
   id: string;
