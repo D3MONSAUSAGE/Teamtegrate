@@ -50,12 +50,15 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
     if (!user) return;
     setLeaving(true);
 
-    // Assume there is a 'chat_room_participants' table with columns: room_id, user_id
+    // Send a system message to notify others that the user has left
     const { error } = await supabase
-      .from('chat_room_participants')
-      .delete()
-      .eq('room_id', room.id)
-      .eq('user_id', user.id);
+      .from('chat_messages')
+      .insert({
+        room_id: room.id,
+        user_id: user.id,
+        content: `${user.email} has left the chat.`,
+        type: 'system'
+      });
 
     setLeaving(false);
 
@@ -71,7 +74,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
         description: `You have left "${room.name}"`,
         variant: "default"
       });
-      // Optionally, return user to chat rooms list
+      // Return user to chat rooms list
       if (onBack) onBack();
     }
   };
