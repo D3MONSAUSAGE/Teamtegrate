@@ -20,7 +20,13 @@ const SettingsLayout: React.FC<SettingsLayoutProps> = ({
         {children}
         
         <div className="flex justify-end gap-2 pt-4">
-          <Button variant="outline" onClick={onCancel}>Cancel</Button>
+          <Button 
+            variant="outline" 
+            onClick={onCancel}
+            className="dark:border-gray-700 dark:hover:bg-gray-800"
+          >
+            Cancel
+          </Button>
         </div>
       </div>
     </div>

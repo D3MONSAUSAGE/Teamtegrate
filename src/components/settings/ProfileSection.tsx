@@ -126,12 +126,12 @@ const ProfileSection = () => {
   return (
     <div>
       <h2 className="text-xl font-semibold mb-4">Profile Settings</h2>
-      <div className="bg-white p-6 rounded-lg border space-y-6">
+      <div className="bg-card dark:bg-[#1f2133] p-6 rounded-lg border border-border dark:border-gray-800 space-y-6">
         <div className="flex flex-col items-center sm:flex-row sm:items-start gap-6">
           <div className="flex flex-col items-center gap-4">
-            <Avatar className="h-24 w-24 border-2 border-gray-200">
+            <Avatar className="h-24 w-24 border-2 border-gray-200 dark:border-gray-700">
               <AvatarImage src={avatarUrl || undefined} alt={user?.name || 'User'} />
-              <AvatarFallback className="text-xl">
+              <AvatarFallback className="text-xl bg-primary/20 text-primary dark:bg-primary/30">
                 {user?.name?.substring(0, 2).toUpperCase() || 'U'}
               </AvatarFallback>
             </Avatar>
@@ -152,7 +152,7 @@ const ProfileSection = () => {
                 size="sm"
                 onClick={triggerFileInput}
                 disabled={uploading}
-                className="flex items-center"
+                className="flex items-center dark:border-gray-700 dark:bg-[#181928]/70"
               >
                 {uploading ? (
                   <>
@@ -176,6 +176,7 @@ const ProfileSection = () => {
                 id="name" 
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                className="bg-background dark:bg-[#181928]/70"
               />
             </div>
             
@@ -184,7 +185,8 @@ const ProfileSection = () => {
               <Input 
                 id="email" 
                 defaultValue={user?.email} 
-                readOnly 
+                readOnly
+                className="bg-background dark:bg-[#181928]/70"
               />
             </div>
           </div>
@@ -196,6 +198,7 @@ const ProfileSection = () => {
             id="role" 
             defaultValue={user?.role === 'manager' ? 'Manager' : 'User'} 
             readOnly 
+            className="bg-background dark:bg-[#181928]/70"
           />
         </div>
         
@@ -203,6 +206,7 @@ const ProfileSection = () => {
           <Button 
             onClick={handleSave} 
             disabled={isLoading}
+            className="bg-primary hover:bg-primary/90 text-primary-foreground"
           >
             {isLoading ? (
               <>Saving...</>

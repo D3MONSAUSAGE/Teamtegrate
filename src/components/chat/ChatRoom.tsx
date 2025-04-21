@@ -41,10 +41,15 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
   }, [messages]);
 
   return (
-    <Card className="flex flex-col h-full border-none shadow-none bg-background">
-      <div className="p-4 border-b flex items-center gap-2 bg-card">
+    <Card className="flex flex-col h-full border-border dark:border-gray-800 shadow-none bg-background dark:bg-[#181928]">
+      <div className="p-4 border-b border-border dark:border-gray-800 flex items-center gap-2 bg-card dark:bg-[#1f2133]">
         {isMobile && (
-          <Button variant="ghost" size="icon" onClick={onBack}>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={onBack}
+            className="dark:hover:bg-gray-800/50"
+          >
             <ChevronLeft className="h-5 w-5" />
           </Button>
         )}

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from '@/contexts/AuthContext';
@@ -77,13 +78,14 @@ const ChatRooms = () => {
     <div className="flex h-full gap-4">
       <Card className={`${
         isMobile || !selectedRoom ? 'w-full' : 'w-64'
-      } bg-white flex flex-col`}>
-        <div className="p-4 border-b flex items-center justify-between">
+      } bg-card dark:bg-[#1f2133] border-border dark:border-gray-800 flex flex-col`}>
+        <div className="p-4 border-b border-border dark:border-gray-800 flex items-center justify-between">
           <h2 className="font-semibold">Chat Rooms</h2>
           <Button
             size="sm"
             variant="outline"
             onClick={() => setIsCreateRoomOpen(true)}
+            className="dark:border-gray-700 dark:bg-[#181928]/70 dark:hover:bg-gray-800"
           >
             <Plus className="h-4 w-4" />
           </Button>

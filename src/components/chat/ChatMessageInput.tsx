@@ -37,16 +37,16 @@ const ChatMessageInput: React.FC<ChatMessageInputProps> = ({
   };
 
   return (
-    <div className="p-4 border-t bg-card space-y-3">
+    <div className="p-4 border-t border-border dark:border-gray-800 bg-card dark:bg-[#1f2133] space-y-3">
       <div className="flex flex-wrap gap-2">
         {fileUploads.map((upload, index) => (
-          <div key={index} className="flex items-center gap-2 bg-muted p-2 rounded-full">
+          <div key={index} className="flex items-center gap-2 bg-muted dark:bg-[#181928]/70 p-2 rounded-full">
             <span className="text-sm truncate max-w-[150px]">{upload.file.name}</span>
             <Button
               type="button"
               variant="ghost"
               size="icon"
-              className="h-5 w-5 hover:bg-background/50"
+              className="h-5 w-5 hover:bg-background/50 dark:hover:bg-gray-800/50"
               onClick={() => removeFile(index)}
             >
               <X className="h-4 w-4" />
@@ -68,7 +68,7 @@ const ChatMessageInput: React.FC<ChatMessageInputProps> = ({
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="Type your message..."
-            className="pr-24 rounded-full bg-muted border-0"
+            className="pr-24 rounded-full bg-muted dark:bg-[#181928]/70 border-border dark:border-gray-800"
           />
           <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
             <Button
@@ -91,7 +91,11 @@ const ChatMessageInput: React.FC<ChatMessageInputProps> = ({
             </Button>
           </div>
         </div>
-        <Button type="submit" size="icon" className="rounded-full h-10 w-10 flex-shrink-0">
+        <Button 
+          type="submit" 
+          size="icon" 
+          className="rounded-full h-10 w-10 flex-shrink-0 bg-primary hover:bg-primary/90"
+        >
           <Send className="h-4 w-4" />
         </Button>
       </form>
