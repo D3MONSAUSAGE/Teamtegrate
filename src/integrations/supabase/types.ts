@@ -299,6 +299,36 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          content: string | null
+          created_at: string
+          id: string
+          read: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          id?: string
+          read?: boolean
+          title: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          id?: string
+          read?: boolean
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       project_tasks: {
         Row: {
           assigned_to_id: string | null

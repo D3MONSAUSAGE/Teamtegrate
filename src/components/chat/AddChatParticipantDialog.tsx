@@ -55,7 +55,7 @@ const AddChatParticipantDialog: React.FC<AddChatParticipantDialogProps> = ({
   const handleAddParticipant = async (userId: string) => {
     setAddingId(userId);
     try {
-      // Get room details for notification
+      // Get current user & room details for notifications
       const { data: roomData } = await supabase
         .from("chat_rooms")
         .select("name")
@@ -69,9 +69,7 @@ const AddChatParticipantDialog: React.FC<AddChatParticipantDialogProps> = ({
         added_by: currentUser?.id,
       });
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       // Create system message in the chat to notify about the new participant
       const addedUser = availableUsers.find(user => user.id === userId);
@@ -81,6 +79,15 @@ const AddChatParticipantDialog: React.FC<AddChatParticipantDialogProps> = ({
           user_id: currentUser?.id || userId,
           content: `${addedUser.name} was added to the chat by ${currentUser?.name || "Admin"}`,
           type: "system"
+        });
+
+        // Insert a notification to the notifications table
+        await supabase.from("notifications").insert({
+          user_id: userId,
+          title: "Chat Invitation",
+          content: `You were added to "${roomData?.name || "a chat"}"`,
+          type: "chat_invitation",
+          read: false
         });
       }
 
