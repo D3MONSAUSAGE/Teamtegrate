@@ -1,61 +1,25 @@
 
-import { useState, useEffect } from 'react';
-import { useSoundSettings } from "@/hooks/useSoundSettings";
-import { fetchMessages } from "./use-chat/useChatFetch";
-import { useChatSubscribe } from "./use-chat/useChatSubscribe";
-import { sendChatMessage } from "./use-chat/useChatSendMessage";
-
-interface Message {
-  id: string;
-  content: string;
-  user_id: string;
-  created_at: string;
-  type: 'text' | 'system';
-  parent_id?: string;
-  attachments?: {
-    id: string;
-    file_name: string;
-    file_type: string;
-    file_path: string;
-  }[];
-}
-
-interface FileUpload {
-  file: File;
-  progress: number;
-}
+import { useEffect } from "react";
+import { useChatMessages } from "./use-chat/useChatMessages";
+import { useChatSending } from "./use-chat/useChatSending";
+import { useChatSubscription } from "./use-chat/useChatSubscription";
 
 export const useChat = (roomId: string, userId: string | undefined) => {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [newMessage, setNewMessage] = useState('');
-  const [fileUploads, setFileUploads] = useState<FileUpload[]>([]);
-  const [replyTo, setReplyTo] = useState<Message | null>(null);
-  const [isSending, setIsSending] = useState(false);
-  const soundSettings = useSoundSettings();
+  const { messages, fetchAndSetMessages, setMessages } = useChatMessages(roomId);
+  const {
+    newMessage,
+    setNewMessage,
+    fileUploads,
+    setFileUploads,
+    replyTo,
+    setReplyTo,
+    isSending,
+    sendMessage,
+  } = useChatSending(roomId, userId);
 
-  const fetchAndSetMessages = async () => {
-    const msgs = await fetchMessages(roomId);
-    setMessages(msgs);
-  };
-
-  const subscribeToMessages = useChatSubscribe(fetchAndSetMessages, roomId, userId, soundSettings);
-
-  const sendMessage = async (e: React.FormEvent) => {
-    await sendChatMessage(e, {
-      newMessage,
-      fileUploads,
-      setIsSending,
-      setNewMessage,
-      setFileUploads,
-      setReplyTo,
-      roomId,
-      userId,
-      replyTo
-    });
-  };
+  const subscribeToMessages = useChatSubscription(roomId, userId, fetchAndSetMessages);
 
   useEffect(() => {
-    fetchAndSetMessages();
     const unsubscribe = subscribeToMessages();
     return () => {
       unsubscribe();
@@ -71,6 +35,6 @@ export const useChat = (roomId: string, userId: string | undefined) => {
     sendMessage,
     replyTo,
     setReplyTo,
-    isSending
+    isSending,
   };
 };
