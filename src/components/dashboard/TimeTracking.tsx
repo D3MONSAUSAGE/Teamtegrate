@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTimeTracking } from '@/hooks/useTimeTracking';
 import { format, startOfWeek, addWeeks, subWeeks, addDays } from 'date-fns';
-import { Clock, TimerOff, Coffee, UtensilsCrossed, FileExport, CalendarDays, Search } from 'lucide-react';
+import { Clock, TimerOff, Coffee, UtensilsCrossed, FileText, CalendarDays, Search } from 'lucide-react';
 import DailyTimeReport from './DailyTimeReport';
 import WeeklyTimeReport from './WeeklyTimeReport';
 
@@ -201,7 +202,7 @@ const TimeTracking: React.FC = () => {
             variant="secondary"
             title="Export CSV"
           >
-            <FileExport className="h-4 w-4 mr-2" />
+            <FileText className="h-4 w-4 mr-2" />
             Export CSV
           </Button>
         </div>
@@ -214,3 +215,4 @@ const TimeTracking: React.FC = () => {
 };
 
 export default TimeTracking;
+
