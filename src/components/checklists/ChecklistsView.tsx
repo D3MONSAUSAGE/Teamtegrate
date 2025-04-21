@@ -17,141 +17,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Checklist, ChecklistTemplate } from '@/types/checklist';
-
-// Mock data - in reality this would come from your API/database
-const mockChecklists: Checklist[] = [
-  {
-    id: '1',
-    title: 'Store Opening Procedure',
-    description: 'Daily checklist for opening the store',
-    sections: [
-      {
-        id: 's1',
-        title: 'Security',
-        items: [
-          { id: 'i1', text: 'Disarm security system', status: 'completed' },
-          { id: 'i2', text: 'Check all emergency exits', status: 'completed' },
-          { id: 'i3', text: 'Test alarm system', status: 'pending' },
-        ]
-      },
-      {
-        id: 's2',
-        title: 'Preparation',
-        items: [
-          { id: 'i4', text: 'Turn on all lights', status: 'completed' },
-          { id: 'i5', text: 'Count starting cash', status: 'pending' },
-          { id: 'i6', text: 'Prepare POS system', status: 'pending' },
-        ]
-      }
-    ],
-    createdBy: 'user-1',
-    createdAt: new Date('2025-04-19'),
-    assignedTo: ['user-1', 'user-2'],
-    startDate: new Date('2025-04-20'),
-    dueDate: new Date('2025-04-20'),
-    status: 'in-progress',
-    progress: 50,
-    completedCount: 3,
-    totalCount: 6,
-    branch: 'Main Street Branch'
-  },
-  {
-    id: '2',
-    title: 'Weekly Equipment Inspection',
-    description: 'Safety check of all equipment',
-    sections: [
-      {
-        id: 's1',
-        title: 'Safety Equipment',
-        items: [
-          { id: 'i1', text: 'Check fire extinguishers', status: 'completed' },
-          { id: 'i2', text: 'Inspect first aid kits', status: 'completed' },
-          { id: 'i3', text: 'Test emergency lighting', status: 'completed' },
-        ]
-      },
-      {
-        id: 's2',
-        title: 'Operations Equipment',
-        items: [
-          { id: 'i4', text: 'Check refrigeration units', status: 'completed' },
-          { id: 'i5', text: 'Inspect POS terminals', status: 'completed' },
-          { id: 'i6', text: 'Test backup power', status: 'completed' },
-        ]
-      }
-    ],
-    createdBy: 'user-1',
-    createdAt: new Date('2025-04-15'),
-    assignedTo: ['user-3'],
-    startDate: new Date('2025-04-18'),
-    dueDate: new Date('2025-04-19'),
-    status: 'completed',
-    progress: 100,
-    completedCount: 6,
-    totalCount: 6,
-    branch: 'Downtown Branch'
-  }
-];
-
-const mockTemplates: ChecklistTemplate[] = [
-  {
-    id: '1',
-    title: 'Store Opening Template',
-    description: 'Template for daily store opening procedures',
-    sections: [
-      {
-        id: 's1',
-        title: 'Security',
-        items: [
-          { id: 'i1', text: 'Disarm security system', status: 'pending' },
-          { id: 'i2', text: 'Check all emergency exits', status: 'pending' },
-          { id: 'i3', text: 'Test alarm system', status: 'pending' },
-        ]
-      },
-      {
-        id: 's2',
-        title: 'Preparation',
-        items: [
-          { id: 'i4', text: 'Turn on all lights', status: 'pending' },
-          { id: 'i5', text: 'Count starting cash', status: 'pending' },
-          { id: 'i6', text: 'Prepare POS system', status: 'pending' },
-        ]
-      }
-    ],
-    createdBy: 'user-1',
-    createdAt: new Date('2025-03-15'),
-    branchOptions: ['Main Street Branch', 'Downtown Branch', 'Mall Location'],
-    frequency: 'daily'
-  },
-  {
-    id: '2',
-    title: 'Weekly Equipment Inspection',
-    description: 'Template for safety checks of all store equipment',
-    sections: [
-      {
-        id: 's1',
-        title: 'Safety Equipment',
-        items: [
-          { id: 'i1', text: 'Check fire extinguishers', status: 'pending' },
-          { id: 'i2', text: 'Inspect first aid kits', status: 'pending' },
-          { id: 'i3', text: 'Test emergency lighting', status: 'pending', requiredPhoto: true },
-        ]
-      },
-      {
-        id: 's2',
-        title: 'Operations Equipment',
-        items: [
-          { id: 'i4', text: 'Check refrigeration units', status: 'pending' },
-          { id: 'i5', text: 'Inspect POS terminals', status: 'pending' },
-          { id: 'i6', text: 'Test backup power', status: 'pending', requiredPhoto: true },
-        ]
-      }
-    ],
-    createdBy: 'user-1',
-    createdAt: new Date('2025-03-20'),
-    branchOptions: ['Main Street Branch', 'Downtown Branch', 'Mall Location'],
-    frequency: 'weekly'
-  }
-];
+import { useChecklists } from '@/contexts/checklists/ChecklistContext';
 
 interface ChecklistsViewProps {
   type: 'active' | 'template';
@@ -160,8 +26,24 @@ interface ChecklistsViewProps {
 const ChecklistsView: React.FC<ChecklistsViewProps> = ({ type }) => {
   const isMobile = useIsMobile();
   const [searchTerm, setSearchTerm] = useState('');
+  const { checklists, templates } = useChecklists();
   
-  const data = type === 'template' ? mockTemplates : mockChecklists;
+  const data = type === 'template' ? templates : checklists;
+  
+  if (data.length === 0) {
+    return (
+      <div className="text-center py-10">
+        <p className="text-muted-foreground">
+          {type === 'template' ? 'No templates found' : 'No checklists found'}
+        </p>
+        <p className="text-sm text-muted-foreground mt-1">
+          {type === 'template' 
+            ? 'Create a template to get started' 
+            : 'Create a checklist to get started'}
+        </p>
+      </div>
+    );
+  }
   
   return (
     <div className="space-y-6">

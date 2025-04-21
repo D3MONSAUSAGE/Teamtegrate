@@ -12,6 +12,7 @@ import { ChecklistFrequency, ChecklistTemplate } from '@/types/checklist';
 import { Plus, Trash2, Move, Check } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useChecklists } from '@/contexts/checklists/ChecklistContext';
 
 interface CreateChecklistDialogProps {
   open: boolean;
@@ -24,6 +25,7 @@ const CreateChecklistDialog: React.FC<CreateChecklistDialogProps> = ({
   onOpenChange,
   editingTemplate
 }) => {
+  const { addTemplate, addChecklist } = useChecklists();
   const [activeTab, setActiveTab] = useState('info');
   const [title, setTitle] = useState(editingTemplate?.title || '');
   const [description, setDescription] = useState(editingTemplate?.description || '');
@@ -154,8 +156,28 @@ const CreateChecklistDialog: React.FC<CreateChecklistDialogProps> = ({
       return;
     }
     
-    // Success
-    toast.success(isTemplate ? 'Template saved successfully' : 'Checklist created successfully');
+    // Save the data
+    if (isTemplate) {
+      addTemplate({
+        title,
+        description,
+        sections,
+        frequency,
+        branchOptions: branches
+      });
+      toast.success('Template saved successfully');
+    } else {
+      addChecklist({
+        title,
+        description,
+        sections,
+        branch: branches.length > 0 ? branches[0] : undefined,
+        startDate: new Date(),
+        status: 'draft'
+      });
+      toast.success('Checklist created successfully');
+    }
+    
     onOpenChange(false);
   };
   

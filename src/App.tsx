@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { TaskProvider } from "./contexts/task";
+import { ChecklistProvider } from "./contexts/checklists/ChecklistContext";
 import AppLayout from "./components/AppLayout";
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
@@ -29,31 +30,33 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <TaskProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/" element={<Index />} />
-              <Route path="/dashboard" element={<AppLayout />}>
-                <Route index element={<DashboardPage />} />
-                <Route path="tasks" element={<TasksPage />} />
-                <Route path="projects" element={<ProjectsPage />} />
-                <Route path="timeline" element={<TimelinePage />} />
-                <Route path="team" element={<TeamPage />} />
-                <Route path="chat" element={<ChatPage />} />
-                <Route path="reports" element={<ReportsPage />} />
-                <Route path="settings" element={<SettingsPage />} />
-                <Route path="time-tracking" element={<TimeTrackingPage />} />
-                <Route path="documents" element={<DocumentsPage />} />
-                <Route path="finance" element={<FinancePage />} />
-                <Route path="checklists" element={<ChecklistsPage />} />
-              </Route>
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
+        <ChecklistProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/" element={<Index />} />
+                <Route path="/dashboard" element={<AppLayout />}>
+                  <Route index element={<DashboardPage />} />
+                  <Route path="tasks" element={<TasksPage />} />
+                  <Route path="projects" element={<ProjectsPage />} />
+                  <Route path="timeline" element={<TimelinePage />} />
+                  <Route path="team" element={<TeamPage />} />
+                  <Route path="chat" element={<ChatPage />} />
+                  <Route path="reports" element={<ReportsPage />} />
+                  <Route path="settings" element={<SettingsPage />} />
+                  <Route path="time-tracking" element={<TimeTrackingPage />} />
+                  <Route path="documents" element={<DocumentsPage />} />
+                  <Route path="finance" element={<FinancePage />} />
+                  <Route path="checklists" element={<ChecklistsPage />} />
+                </Route>
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </TooltipProvider>
+        </ChecklistProvider>
       </TaskProvider>
     </AuthProvider>
   </QueryClientProvider>
