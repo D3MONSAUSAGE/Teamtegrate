@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTimeTracking } from '@/hooks/useTimeTracking';
 import { format, startOfWeek, addWeeks, subWeeks, addDays, differenceInMinutes } from 'date-fns';
-import { Clock, TimerOff, Coffee, UtensilsCrossed, FileText, CalendarDays, Search } from 'lucide-react';
+import { Clock, TimerOff, Coffee, UtensilsCrossed, FileText, CalendarDays, Search, Target } from 'lucide-react';
 import DailyTimeReport from './DailyTimeReport';
 import WeeklyTimeReport from './WeeklyTimeReport';
 import WeeklyTimeTrackingChart from './WeeklyTimeTrackingChart';
@@ -46,21 +45,21 @@ const TimeTracking: React.FC = () => {
   const [searchValue, setSearchValue] = useState('');
   const [isSearching, setIsSearching] = useState(false);
 
+  const [targetWeeklyHours, setTargetWeeklyHours] = useState<number>(() => {
+    const stored = localStorage.getItem("targetWeeklyHours");
+    return stored ? Number(stored) : 40;
+  });
+
   const { start: weekStart, end: weekEnd } = getWeekRange(weekDate);
 
-  // --- Compute weekly chart data based on weeklyEntries and weekStart ---
-  // This must always reflect the current week being displayed.
   const getWeeklyChartData = () => {
-    // Array of days from Monday to Sunday
     const weekDays = Array.from({ length: 7 }, (_, i) => {
       const d = new Date(weekStart);
       d.setDate(d.getDate() + i);
       return d;
     });
-    // Prepare chart data: total hours per day
     return weekDays.map(day => {
       const dateStr = day.toISOString().split("T")[0];
-      // Sum durations for this day
       const dayEntries = weeklyEntries.filter(entry => entry.clock_in.startsWith(dateStr));
       const totalMinutes = dayEntries.reduce((total, entry) => {
         if (entry.duration_minutes) return total + entry.duration_minutes;
@@ -78,6 +77,20 @@ const TimeTracking: React.FC = () => {
       };
     });
   };
+
+  const totalTrackedMinutes = weeklyEntries.reduce((total, entry) => {
+    if (entry.duration_minutes) {
+      return total + entry.duration_minutes;
+    } else if (entry.clock_in && entry.clock_out) {
+      return total + differenceInMinutes(
+        new Date(entry.clock_out),
+        new Date(entry.clock_in)
+      );
+    }
+    return total;
+  }, 0);
+  const totalTrackedHours = +(totalTrackedMinutes / 60).toFixed(2);
+  const remainingHours = Math.max(targetWeeklyHours - totalTrackedHours, 0);
 
   useEffect(() => {
     const fetchEntries = async () => {
@@ -104,6 +117,10 @@ const TimeTracking: React.FC = () => {
     }
     return () => clearInterval(interval);
   }, [currentEntry]);
+
+  useEffect(() => {
+    localStorage.setItem("targetWeeklyHours", String(targetWeeklyHours));
+  }, [targetWeeklyHours]);
 
   const handleBreak = (breakType: string) => {
     clockOut(`${breakType} break started`);
@@ -135,7 +152,45 @@ const TimeTracking: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      {/* Chart showing weekly hours trend */}
+      <Card>
+        <CardHeader className="flex flex-row items-center gap-2">
+          <Target className="h-5 w-5 mr-2 text-muted-foreground" />
+          <CardTitle>Weekly Target Hours</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-6">
+            <div className="flex items-center gap-2">
+              <label htmlFor="target-hours" className="font-medium">Set Target:</label>
+              <Input
+                id="target-hours"
+                type="number"
+                min={0}
+                max={168}
+                step={0.25}
+                style={{ width: 80 }}
+                value={targetWeeklyHours}
+                onChange={e => setTargetWeeklyHours(Number(e.target.value) || 0)}
+              />
+              <span className="ml-2 text-sm text-muted-foreground">hours/week</span>
+            </div>
+            <div className="flex-1 flex gap-4 flex-wrap mt-2 md:mt-0">
+              <div>
+                <span className="font-semibold">{totalTrackedHours}</span>{" "}
+                <span className="text-muted-foreground text-sm">tracked</span>
+              </div>
+              <div>
+                <span className="font-semibold">{remainingHours}</span>{" "}
+                <span className="text-muted-foreground text-sm">remaining</span>
+              </div>
+              <div>
+                <span className="font-semibold">{targetWeeklyHours}</span>{" "}
+                <span className="text-muted-foreground text-sm">target</span>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <WeeklyTimeTrackingChart data={getWeeklyChartData()} />
 
       <Card>
