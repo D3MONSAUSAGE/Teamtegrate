@@ -1,6 +1,6 @@
 
 import React, { useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Task } from '@/types';
 import { useTask } from '@/contexts/task';
@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
 import { useTaskForm } from '@/hooks/useTaskForm';
 import TaskFormFields from './task/TaskFormFields';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface CreateTaskDialogProps {
   open: boolean;
@@ -25,6 +26,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
   const { user } = useAuth();
   const { addTask, updateTask, projects } = useTask();
   const isEditMode = !!editingTask;
+  const isMobile = useIsMobile();
   
   const {
     register,
@@ -89,12 +91,15 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className={`${isMobile ? 'w-[95%] p-4' : 'sm:max-w-[500px]'} max-h-[90vh] overflow-y-auto`}>
         <DialogHeader>
           <DialogTitle>{isEditMode ? 'Edit Task' : 'Create New Task'}</DialogTitle>
+          <DialogDescription>
+            {isEditMode ? 'Update the task details below.' : 'Fill in the details to create a new task.'}
+          </DialogDescription>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className={`space-y-4 ${isMobile ? 'pt-2' : 'pt-4'}`}>
           <TaskFormFields
             register={register}
             errors={errors}
@@ -117,10 +122,16 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
                 reset();
                 setSelectedMember(undefined);
               }}
+              size={isMobile ? "sm" : "default"}
             >
               Cancel
             </Button>
-            <Button type="submit">{isEditMode ? 'Update' : 'Create'}</Button>
+            <Button 
+              type="submit"
+              size={isMobile ? "sm" : "default"}
+            >
+              {isEditMode ? 'Update' : 'Create'}
+            </Button>
           </div>
         </form>
       </DialogContent>
@@ -129,4 +140,3 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
 };
 
 export default CreateTaskDialog;
-
