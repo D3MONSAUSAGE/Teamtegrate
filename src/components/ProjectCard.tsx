@@ -50,7 +50,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   const assignedTasksCount = project.tasks.filter(task => task.assignedToId).length;
   
   return (
-    <Card className={`card-hover relative overflow-hidden ${project.is_completed ? 'bg-gray-50' : ''}`}>
+    <Card className={`card-hover relative overflow-hidden ${project.is_completed ? 'bg-[#f3f3f3] dark:bg-gray-800' : ''}`}>
       <CardHeader className="pb-1 md:pb-2 flex flex-row justify-between items-start gap-2">
         <div className="min-w-0 flex items-center gap-2">
           <CardTitle className="text-sm md:text-base text-ellipsis overflow-hidden whitespace-nowrap">
