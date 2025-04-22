@@ -39,9 +39,8 @@ const WeeklyTimeReport: React.FC<WeeklyTimeReportProps> = ({ entries }) => {
     }, 0) / 60; // Convert minutes to hours
   };
 
-  // Get the week start from the first entry or current week if no entries
-  const firstEntryDate = entries.length > 0 ? parseISO(entries[0].clock_in) : new Date();
-  const weekStart = startOfWeek(firstEntryDate, { weekStartsOn: 1 });
+  // Get the start of the current week (Monday)
+  const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
   return (
@@ -70,17 +69,13 @@ const WeeklyTimeReport: React.FC<WeeklyTimeReportProps> = ({ entries }) => {
                   </TableCell>
                   <TableCell>{totalHours.toFixed(2)}</TableCell>
                   <TableCell>
-                    {dayEntries.length === 0 ? (
-                      <span className="text-xs text-muted-foreground">No entries</span>
-                    ) : (
-                      dayEntries.map((entry, index) => (
-                        <div key={index} className="text-sm text-muted-foreground">
-                          {format(parseISO(entry.clock_in), 'HH:mm')} - {' '}
-                          {entry.clock_out ? format(parseISO(entry.clock_out), 'HH:mm') : 'ongoing'}
-                          {entry.notes && ` - ${entry.notes}`}
-                        </div>
-                      ))
-                    )}
+                    {dayEntries.map((entry, index) => (
+                      <div key={index} className="text-sm text-muted-foreground">
+                        {format(parseISO(entry.clock_in), 'HH:mm')} - {' '}
+                        {entry.clock_out ? format(parseISO(entry.clock_out), 'HH:mm') : 'ongoing'}
+                        {entry.notes && ` - ${entry.notes}`}
+                      </div>
+                    ))}
                   </TableCell>
                 </TableRow>
               );

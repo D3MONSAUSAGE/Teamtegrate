@@ -1,126 +1,70 @@
 
 import React from 'react';
-import { Task, TaskStatus } from '@/types';
+import { Button } from "@/components/ui/button";
+import { MoreHorizontal } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
-import { 
-  MoreVertical, 
-  Pencil, 
-  UserPlus, 
-  CheckCircle2, 
-  PlayCircle, 
-  PauseCircle,
-  Trash2,
-  MessageCircle
-} from 'lucide-react';
+import { Task, TaskStatus } from '@/types';
 
 interface TaskCardActionsProps {
-  task: Task;
   onEdit?: (task: Task) => void;
   onAssign?: (task: Task) => void;
-  onStatusChange?: (status: TaskStatus) => void;
-  onDelete?: (taskId: string) => void;
-  onShowComments?: () => void;
+  onStatusChange: (status: TaskStatus) => void;
+  onDelete: (taskId: string) => void;
+  onShowComments: () => void;
+  task: Task;
 }
 
-const TaskCardActions: React.FC<TaskCardActionsProps> = ({ 
-  task, 
-  onEdit, 
-  onAssign, 
+const TaskCardActions: React.FC<TaskCardActionsProps> = ({
+  onEdit,
+  onAssign,
   onStatusChange,
   onDelete,
-  onShowComments
+  onShowComments,
+  task,
 }) => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+        <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
           <span className="sr-only">Open menu</span>
-          <MoreVertical className="h-4 w-4" />
+          <MoreHorizontal className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        {onEdit && (
-          <DropdownMenuItem onClick={(e) => {
-            e.stopPropagation();
-            onEdit(task);
-          }}>
-            <Pencil className="mr-2 h-4 w-4" />
-            Edit
-          </DropdownMenuItem>
-        )}
-        
+      <DropdownMenuContent align="end" className="text-xs md:text-sm">
+        <DropdownMenuItem onClick={() => onEdit && onEdit(task)}>
+          Edit
+        </DropdownMenuItem>
         {onAssign && (
-          <DropdownMenuItem onClick={(e) => {
-            e.stopPropagation();
-            onAssign(task);
-          }}>
-            <UserPlus className="mr-2 h-4 w-4" />
-            Assign
+          <DropdownMenuItem onClick={() => onAssign(task)}>
+            Assign Member
           </DropdownMenuItem>
         )}
-        
-        {onShowComments && (
-          <DropdownMenuItem onClick={(e) => {
-            e.stopPropagation();
-            onShowComments();
-          }}>
-            <MessageCircle className="mr-2 h-4 w-4" />
-            Comments
-          </DropdownMenuItem>
-        )}
-        
-        {onStatusChange && (
-          <>
-            {task.status !== 'Completed' && (
-              <DropdownMenuItem onClick={(e) => {
-                e.stopPropagation();
-                onStatusChange('Completed');
-              }}>
-                <CheckCircle2 className="mr-2 h-4 w-4 text-green-600" />
-                Mark Complete
-              </DropdownMenuItem>
-            )}
-            
-            {task.status !== 'In Progress' && task.status !== 'Completed' && (
-              <DropdownMenuItem onClick={(e) => {
-                e.stopPropagation();
-                onStatusChange('In Progress');
-              }}>
-                <PlayCircle className="mr-2 h-4 w-4 text-blue-600" />
-                Start Progress
-              </DropdownMenuItem>
-            )}
-            
-            {task.status === 'In Progress' && (
-              <DropdownMenuItem onClick={(e) => {
-                e.stopPropagation();
-                onStatusChange('Pending');
-              }}>
-                <PauseCircle className="mr-2 h-4 w-4 text-amber-600" />
-                Pause Progress
-              </DropdownMenuItem>
-            )}
-          </>
-        )}
-        
-        {onDelete && (
-          <DropdownMenuItem 
-            className="text-destructive focus:text-destructive"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(task.id);
-            }}
-          >
-            <Trash2 className="mr-2 h-4 w-4" />
-            Delete
-          </DropdownMenuItem>
-        )}
+        <DropdownMenuItem onClick={() => onStatusChange('To Do')}>
+          Mark as To Do
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onStatusChange('In Progress')}>
+          Mark as In Progress
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onStatusChange('Pending')}>
+          Mark as Pending
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onStatusChange('Completed')}>
+          Mark as Completed
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={onShowComments}>
+          View Comments
+        </DropdownMenuItem>
+        <DropdownMenuItem 
+          className="text-red-500" 
+          onClick={() => onDelete(task.id)}
+        >
+          Delete
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

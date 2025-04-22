@@ -48,31 +48,27 @@ const DailyTimeReport: React.FC<DailyTimeReportProps> = ({ entries }) => {
             <span className="font-medium">{totalHours.toFixed(2)}h</span>
           </div>
           <div className="space-y-1">
-            {entries.length === 0 ? (
-              <div className="text-xs text-muted-foreground">No entries for today</div>
-            ) : (
-              entries.map((entry, index) => {
-                // Calculate duration for this entry
-                let durationMinutes = entry.duration_minutes || 0;
-                if (!durationMinutes && entry.clock_out) {
-                  durationMinutes = differenceInMinutes(
-                    parseISO(entry.clock_out),
-                    parseISO(entry.clock_in)
-                  );
-                }
-                
-                return (
-                  <div key={index} className="text-xs text-muted-foreground">
-                    {format(parseISO(entry.clock_in), 'HH:mm')} - {' '}
-                    {entry.clock_out ? format(parseISO(entry.clock_out), 'HH:mm') : 'ongoing'}
-                    {durationMinutes > 0 && entry.clock_out && (
-                      <span className="ml-1">• {(durationMinutes / 60).toFixed(2)}h</span>
-                    )}
-                    {entry.notes && <span className="ml-1">• {entry.notes}</span>}
-                  </div>
+            {entries.map((entry, index) => {
+              // Calculate duration for this entry
+              let durationMinutes = entry.duration_minutes || 0;
+              if (!durationMinutes && entry.clock_out) {
+                durationMinutes = differenceInMinutes(
+                  parseISO(entry.clock_out),
+                  parseISO(entry.clock_in)
                 );
-              })
-            )}
+              }
+              
+              return (
+                <div key={index} className="text-xs text-muted-foreground">
+                  {format(parseISO(entry.clock_in), 'HH:mm')} - {' '}
+                  {entry.clock_out ? format(parseISO(entry.clock_out), 'HH:mm') : 'ongoing'}
+                  {durationMinutes > 0 && entry.clock_out && (
+                    <span className="ml-1">• {(durationMinutes / 60).toFixed(2)}h</span>
+                  )}
+                  {entry.notes && <span className="ml-1">• {entry.notes}</span>}
+                </div>
+              );
+            })}
           </div>
         </div>
       </CardContent>

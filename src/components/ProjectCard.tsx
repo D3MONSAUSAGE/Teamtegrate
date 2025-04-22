@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Project, Task } from '@/types';
@@ -14,7 +15,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { MoreHorizontal } from 'lucide-react';
 import { useTask } from '@/contexts/task';
-import { cn } from "@/lib/utils";
 
 interface ProjectCardProps {
   project: Project;
@@ -36,19 +36,6 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
     const completed = tasks.filter(task => task.status === 'Completed').length;
     return Math.round((completed / tasks.length) * 100);
   };
-
-  const getStatusStyles = () => {
-    switch(project.status) {
-      case 'To Do':
-        return 'bg-blue-50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800';
-      case 'In Progress':
-        return 'bg-amber-50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800';
-      case 'Completed':
-        return 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800';
-      default:
-        return '';
-    }
-  };
   
   const totalTasks = project.tasks.length;
   const completedTasks = project.tasks.filter(task => task.status === 'Completed').length;
@@ -57,20 +44,13 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   const budgetProgress = project.budget ? Math.round((project.budgetSpent || 0) / project.budget * 100) : 0;
   
   const handleToggleCompletion = () => {
-    updateProject(project.id, { 
-      is_completed: !project.is_completed,
-      status: !project.is_completed ? 'Completed' : 'In Progress'
-    });
+    updateProject(project.id, { is_completed: !project.is_completed });
   };
   
   const assignedTasksCount = project.tasks.filter(task => task.assignedToId).length;
   
   return (
-    <Card className={cn(
-      "card-hover relative overflow-hidden",
-      getStatusStyles(),
-      project.is_completed ? 'opacity-75' : ''
-    )}>
+    <Card className={`card-hover relative overflow-hidden ${project.is_completed ? 'bg-[#f3f3f3] dark:bg-gray-800' : ''}`}>
       <CardHeader className="pb-1 md:pb-2 flex flex-row justify-between items-start gap-2">
         <div className="min-w-0 flex items-center gap-2">
           <CardTitle className="text-sm md:text-base text-ellipsis overflow-hidden whitespace-nowrap">

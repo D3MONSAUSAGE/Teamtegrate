@@ -128,14 +128,6 @@ export const fetchProjects = async (user: User | null, setProjects: React.Dispat
         return formattedTask;
       }));
       
-      // Determine project status based on is_completed flag or default to "In Progress"
-      let projectStatus: 'To Do' | 'In Progress' | 'Completed' = 'In Progress';
-      if (project.is_completed) {
-        projectStatus = 'Completed';
-      } else if (projectTasks.length === 0) {
-        projectStatus = 'To Do';
-      }
-      
       return {
         id: project.id,
         title: project.title || '',
@@ -151,7 +143,6 @@ export const fetchProjects = async (user: User | null, setProjects: React.Dispat
         budget: project.budget || 0,
         budgetSpent: project.budget_spent || 0,
         is_completed: project.is_completed || false,
-        status: projectStatus, // Add project status
       };
     }));
     

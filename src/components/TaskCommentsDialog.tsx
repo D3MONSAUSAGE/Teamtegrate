@@ -1,11 +1,10 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Task } from '@/types';
 import TaskCommentForm from './TaskCommentForm';
 import TaskCommentsList from './TaskCommentsList';
 import { MessageCircle } from 'lucide-react';
-import { fetchComments } from '@/utils/comments';
 
 interface TaskCommentsDialogProps {
   open: boolean;
@@ -18,25 +17,6 @@ const TaskCommentsDialog: React.FC<TaskCommentsDialogProps> = ({
   onOpenChange,
   task
 }) => {
-  const [comments, setComments] = useState(task?.comments || []);
-  
-  const loadComments = useCallback(async () => {
-    if (task) {
-      try {
-        const fetchedComments = await fetchComments(task.id);
-        setComments(fetchedComments);
-      } catch (error) {
-        console.error("Error loading comments:", error);
-      }
-    }
-  }, [task]);
-
-  useEffect(() => {
-    if (open && task) {
-      loadComments();
-    }
-  }, [open, task, loadComments]);
-
   if (!task) return null;
   
   return (
@@ -50,15 +30,8 @@ const TaskCommentsDialog: React.FC<TaskCommentsDialogProps> = ({
         </DialogHeader>
         
         <div className="max-h-[60vh] overflow-y-auto p-1">
-          <TaskCommentsList 
-            taskComments={comments} 
-            onCommentDeleted={loadComments}
-            onCommentUpdated={loadComments}
-          />
-          <TaskCommentForm 
-            taskId={task.id} 
-            onCommentAdded={loadComments}
-          />
+          <TaskCommentsList taskComments={task.comments || []} />
+          <TaskCommentForm taskId={task.id} />
         </div>
       </DialogContent>
     </Dialog>

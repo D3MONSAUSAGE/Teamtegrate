@@ -9,11 +9,10 @@ interface TaskListProps {
   tasks: Task[];
   onEdit: (task: Task) => void;
   onNewTask: () => void;
-  onShowComments?: (task: Task) => void;
   emptyMessage?: string;
 }
 
-const TaskList = ({ tasks, onEdit, onNewTask, onShowComments, emptyMessage = "No tasks" }: TaskListProps) => {
+const TaskList = ({ tasks, onEdit, onNewTask, emptyMessage = "No tasks" }: TaskListProps) => {
   if (tasks.length === 0) {
     return (
       <div className="bg-white dark:bg-card p-6 rounded-lg border text-center">
@@ -33,12 +32,7 @@ const TaskList = ({ tasks, onEdit, onNewTask, onShowComments, emptyMessage = "No
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {tasks.map((task) => (
-        <TaskCard 
-          key={task.id} 
-          task={task} 
-          onEdit={onEdit} 
-          onShowComments={onShowComments}
-        />
+        <TaskCard key={task.id} task={task} onEdit={onEdit} />
       ))}
     </div>
   );

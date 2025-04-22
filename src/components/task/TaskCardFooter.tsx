@@ -1,15 +1,22 @@
 
 import React from 'react';
+import { MessageCircle } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
-import { Button } from '@/components/ui/button';
 import { TaskStatus } from '@/types';
-import { AlertCircle, CheckCircle2, MessageCircle, Clock } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { cn } from '@/lib/utils';
 
 interface TaskCardFooterProps {
   status: TaskStatus;
   isOverdue: boolean;
   commentCount: number;
-  onShowComments?: () => void;
+  onShowComments: () => void;
   onStatusChange?: (status: TaskStatus) => void;
 }
 
@@ -18,75 +25,54 @@ const TaskCardFooter: React.FC<TaskCardFooterProps> = ({
   isOverdue,
   commentCount,
   onShowComments,
-  onStatusChange,
+  onStatusChange
 }) => {
-  const getStatusColor = () => {
-    switch (status) {
-      case 'To Do': return 'bg-slate-100 hover:bg-slate-200 text-slate-700';
-      case 'In Progress': return 'bg-blue-100 hover:bg-blue-200 text-blue-700';
-      case 'Pending': return 'bg-amber-100 hover:bg-amber-200 text-amber-700';
-      case 'Completed': return 'bg-green-100 hover:bg-green-200 text-green-700';
-      default: return '';
+  const getStatusColor = (status: TaskStatus) => {
+    switch(status) {
+      case 'To Do': return 'bg-slate-500 dark:bg-slate-600';
+      case 'In Progress': return 'bg-blue-500 dark:bg-blue-600';
+      case 'Pending': return 'bg-yellow-500 dark:bg-yellow-600';
+      case 'Completed': return 'bg-green-500 dark:bg-green-600';
+      default: return 'bg-slate-500 dark:bg-slate-600';
     }
   };
 
-  const handleMarkComplete = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleStatusChange = (newStatus: TaskStatus) => {
     if (onStatusChange) {
-      onStatusChange('Completed');
-    }
-  };
-
-  const handleShowComments = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (onShowComments) {
-      onShowComments();
+      onStatusChange(newStatus);
     }
   };
 
   return (
-    <div className="flex flex-wrap justify-between items-center gap-2 mt-2">
-      <Badge className={getStatusColor()}>
-        {status}
-      </Badge>
+    <div className="flex items-center justify-between pt-2">
+      <Select 
+        value={status} 
+        onValueChange={handleStatusChange}
+      >
+        <SelectTrigger className="w-[140px] dark:bg-card">
+          <SelectValue>
+            <Badge className={cn("px-2 py-1", getStatusColor(status))}>
+              {status}
+            </Badge>
+          </SelectValue>
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="To Do">To Do</SelectItem>
+          <SelectItem value="In Progress">In Progress</SelectItem>
+          <SelectItem value="Pending">Pending</SelectItem>
+          <SelectItem value="Completed">Completed</SelectItem>
+        </SelectContent>
+      </Select>
 
-      <div className="flex items-center gap-2">
-        {isOverdue && (
-          <div className="flex items-center text-rose-500">
-            <AlertCircle className="h-4 w-4 mr-1" />
-            <span className="text-xs font-medium">Overdue</span>
-          </div>
-        )}
-
-        {commentCount > 0 && (
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-7 px-2"
-            onClick={handleShowComments}
-          >
-            <MessageCircle className="h-3.5 w-3.5 mr-1" />
-            <span className="text-xs">{commentCount}</span>
-          </Button>
-        )}
-
-        {status !== 'Completed' && onStatusChange && (
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-7 px-2 text-green-600 hover:text-green-700 hover:bg-green-50"
-            onClick={handleMarkComplete}
-          >
-            <CheckCircle2 className="h-4 w-4" />
-          </Button>
-        )}
-
-        {status === 'In Progress' && (
-          <div className="flex items-center text-blue-500">
-            <Clock className="h-3.5 w-3.5 animate-pulse" />
-          </div>
-        )}
-      </div>
+      {commentCount > 0 && (
+        <button
+          onClick={onShowComments}
+          className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+        >
+          <MessageCircle className="h-3 w-3" />
+          {commentCount}
+        </button>
+      )}
     </div>
   );
 };
