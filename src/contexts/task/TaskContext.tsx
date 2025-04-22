@@ -85,10 +85,13 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     date: new Date(),
   });
 
+  // First fetch all projects and tasks
   useEffect(() => {
     if (user) {
       const loadData = async () => {
+        // Fetch projects first
         await fetchProjects(user, setProjects);
+        // Then fetch tasks (some may belong to projects)
         await fetchTasks(user, setTasks);
       };
       
@@ -99,6 +102,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [user]);
 
+  // Calculate daily score whenever tasks change
   useEffect(() => {
     if (user) {
       const score = calculateDailyScore(tasks);

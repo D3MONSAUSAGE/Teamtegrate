@@ -18,12 +18,13 @@ function getWeekRange(date: Date) {
 }
 
 const TimeTracking: React.FC = () => {
-  const { currentEntry, clockIn, clockOut, fetchTimeEntriesForWeek } = useTimeTracking();
+  const { currentEntry, clockIn, clockOut, fetchTimeEntriesForWeek, fetchPreviousWeekTimeEntries } = useTimeTracking();
   const [notes, setNotes] = useState('');
   const [elapsedTime, setElapsedTime] = useState('');
   const [dailyEntries, setDailyEntries] = useState<any[]>([]);
   const [weeklyEntries, setWeeklyEntries] = useState<any[]>([]);
   const [weekDate, setWeekDate] = useState<Date>(new Date());
+  const [isLoading, setIsLoading] = useState(false);
   const [targetWeeklyHours, setTargetWeeklyHours] = useState<number>(() => {
     const stored = localStorage.getItem("targetWeeklyHours");
     return stored ? Number(stored) : 40;
@@ -37,14 +38,38 @@ const TimeTracking: React.FC = () => {
 
   useEffect(() => {
     const fetchEntries = async () => {
-      const entries = await fetchTimeEntriesForWeek(weekDate);
-      const today = new Date().toISOString().split('T')[0];
-      const todayEntries = entries.filter(entry => entry.clock_in.startsWith(today));
-      setDailyEntries(todayEntries);
-      setWeeklyEntries(entries);
+      setIsLoading(true);
+      try {
+        // Get entries for the selected week
+        const entries = await fetchTimeEntriesForWeek(weekDate);
+        
+        // If we're viewing the current week, get today's entries for the daily report
+        const today = new Date().toISOString().split('T')[0];
+        const todayEntries = entries.filter(entry => entry.clock_in.startsWith(today));
+        setDailyEntries(todayEntries);
+        
+        setWeeklyEntries(entries);
+        
+        // If we're viewing previous week and got no entries, try the specific previous week function
+        const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
+        const selectedWeekStart = startOfWeek(weekDate, { weekStartsOn: 1 });
+        
+        if (entries.length === 0 && selectedWeekStart < currentWeekStart) {
+          console.log("No entries found for selected week, trying specific previous week fetch");
+          const prevWeekEntries = await fetchPreviousWeekTimeEntries();
+          if (prevWeekEntries.length > 0) {
+            setWeeklyEntries(prevWeekEntries);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching time entries:", error);
+      } finally {
+        setIsLoading(false);
+      }
     };
+    
     fetchEntries();
-  }, [currentEntry, weekDate]);
+  }, [currentEntry, weekDate, fetchTimeEntriesForWeek, fetchPreviousWeekTimeEntries]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -78,10 +103,14 @@ const TimeTracking: React.FC = () => {
     setWeekDate(
       direction === "prev" ? subWeeks(weekDate, 1) : addWeeks(weekDate, 1)
     );
+    // Force the entries to be refreshed
+    setWeeklyEntries([]);
   };
 
   const handleWeekSearch = (date: Date) => {
     setWeekDate(date);
+    // Force the entries to be refreshed
+    setWeeklyEntries([]);
   };
 
   return (
@@ -116,8 +145,20 @@ const TimeTracking: React.FC = () => {
         onExportCsv={() => downloadCSV(weeklyEntries, weekStart, weekEnd)}
       />
 
-      <DailyTimeReport entries={dailyEntries} />
-      <WeeklyTimeReport entries={weeklyEntries} />
+      {isLoading ? (
+        <div className="p-4 text-center text-muted-foreground">
+          Loading time entries...
+        </div>
+      ) : weeklyEntries.length === 0 ? (
+        <div className="p-4 text-center text-muted-foreground">
+          No time entries found for this week.
+        </div>
+      ) : (
+        <>
+          <DailyTimeReport entries={dailyEntries} />
+          <WeeklyTimeReport entries={weeklyEntries} />
+        </>
+      )}
     </div>
   );
 };
