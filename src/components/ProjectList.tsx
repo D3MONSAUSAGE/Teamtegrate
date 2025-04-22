@@ -12,6 +12,7 @@ interface ProjectListProps {
   onViewTasks: (project: Project) => void;
   onCreateProject: () => void;
   onCreateTask: (project: Project) => void;
+  onDeleteProject: (projectId: string) => void;
 }
 
 const ProjectList: React.FC<ProjectListProps> = ({
@@ -21,6 +22,7 @@ const ProjectList: React.FC<ProjectListProps> = ({
   onViewTasks,
   onCreateProject,
   onCreateTask,
+  onDeleteProject,
 }) => {
   // Filter projects based on search query if needed
   const filteredProjects = projects.filter(project => 
@@ -30,8 +32,8 @@ const ProjectList: React.FC<ProjectListProps> = ({
 
   if (filteredProjects.length === 0) {
     return (
-      <div className="bg-white p-6 rounded-lg border text-center">
-        <p className="text-gray-500">
+      <div className="bg-white dark:bg-card p-6 rounded-lg border text-center">
+        <p className="text-gray-500 dark:text-gray-300">
           {searchQuery ? 'No projects found matching your search' : 'No projects created yet'}
         </p>
         <Button 
@@ -55,6 +57,7 @@ const ProjectList: React.FC<ProjectListProps> = ({
           onEdit={onEditProject} 
           onViewTasks={() => onViewTasks(project)}
           onCreateTask={() => onCreateTask(project)}
+          onDeleteProject={() => onDeleteProject(project.id)}
         />
       ))}
     </div>

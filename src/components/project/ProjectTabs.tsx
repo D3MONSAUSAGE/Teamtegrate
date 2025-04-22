@@ -17,6 +17,7 @@ interface ProjectTabsProps {
   onViewTasks: (project: Project) => void;
   onCreateProject: () => void;
   onCreateTask: (project: Project) => void;
+  onDeleteProject: (projectId: string) => void;
 }
 
 const ProjectTabs: React.FC<ProjectTabsProps> = ({
@@ -26,6 +27,7 @@ const ProjectTabs: React.FC<ProjectTabsProps> = ({
   onViewTasks,
   onCreateProject,
   onCreateTask,
+  onDeleteProject,
 }) => {
   const isMobile = useIsMobile();
 
@@ -64,6 +66,7 @@ const ProjectTabs: React.FC<ProjectTabsProps> = ({
           onViewTasks={onViewTasks}
           onCreateProject={onCreateProject}
           onCreateTask={onCreateTask}
+          onDeleteProject={onDeleteProject}
         />
       </TabsContent>
 
@@ -75,6 +78,7 @@ const ProjectTabs: React.FC<ProjectTabsProps> = ({
           onViewTasks={onViewTasks}
           onCreateProject={onCreateProject}
           onCreateTask={onCreateTask}
+          onDeleteProject={onDeleteProject}
         />
       </TabsContent>
 
@@ -86,6 +90,7 @@ const ProjectTabs: React.FC<ProjectTabsProps> = ({
           onViewTasks={onViewTasks}
           onCreateProject={onCreateProject}
           onCreateTask={onCreateTask}
+          onDeleteProject={onDeleteProject}
         />
       </TabsContent>
     </Tabs>

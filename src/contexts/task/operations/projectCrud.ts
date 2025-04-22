@@ -131,9 +131,12 @@ export const deleteProject = async (
 ) => {
   try {
     if (!user) return;
+
+    console.log('Deleting project with ID:', projectId);
     
     // Find all tasks belonging to this project
     const projectTasks = tasks.filter(task => task.projectId === projectId);
+    console.log(`Found ${projectTasks.length} tasks associated with this project`);
     
     // Update the tasks to remove project association
     for (const task of projectTasks) {
@@ -146,9 +149,19 @@ export const deleteProject = async (
         console.error('Error updating task:', error);
       }
     }
+
+    // Also delete tasks from project_tasks table to ensure no orphaned tasks
+    const { error: projectTasksError } = await supabase
+      .from('project_tasks')
+      .delete()
+      .eq('project_id', projectId);
+    
+    if (projectTasksError) {
+      console.error('Error deleting project tasks:', projectTasksError);
+    }
     
     // Delete the project
-    const { error } = await supabase
+    const { error, count } = await supabase
       .from('projects')
       .delete()
       .eq('id', projectId);
@@ -159,9 +172,15 @@ export const deleteProject = async (
       toast.error('Failed to delete project');
       return;
     }
+
+    console.log(`Deleted ${count} project records from database`);
     
     // Immediately update state to remove the project
-    setProjects(prevProjects => prevProjects.filter(project => project.id !== projectId));
+    setProjects(prevProjects => {
+      const filteredProjects = prevProjects.filter(project => project.id !== projectId);
+      console.log(`Removed project from state. Projects count: ${filteredProjects.length}`);
+      return filteredProjects;
+    });
     
     // Update tasks to remove project association in the local state
     setTasks(prevTasks => prevTasks.map(task => {
@@ -171,6 +190,7 @@ export const deleteProject = async (
       return task;
     }));
     
+    playSuccessSound();
     toast.success('Project deleted successfully!');
   } catch (error) {
     console.error('Error in deleteProject:', error);
@@ -178,3 +198,4 @@ export const deleteProject = async (
     toast.error('Failed to delete project');
   }
 };
+
