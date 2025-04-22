@@ -1,8 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import { useTimeTracking } from '@/hooks/useTimeTracking';
-import { startOfWeek, addDays, addWeeks, subWeeks, differenceInMinutes } from 'date-fns';
-import { Card } from "@/components/ui/card";
+import { startOfWeek, addDays, addWeeks, subWeeks, format, differenceInMinutes } from 'date-fns';
 import TimeTrackingHeader from './time-tracking/TimeTrackingHeader';
 import ClockInOutSection from './time-tracking/ClockInOutSection';
 import WeekSelector from './time-tracking/WeekSelector';
@@ -10,6 +8,7 @@ import WeeklyTimeReport from './WeeklyTimeReport';
 import DailyTimeReport from './DailyTimeReport';
 import WeeklyTimeTrackingChart from './WeeklyTimeTrackingChart';
 import { formatDuration, downloadCSV } from './time-tracking/utils';
+import TimeTrackingChart from './time-tracking/TimeTrackingChart';
 
 function getWeekRange(date: Date) {
   const start = startOfWeek(date, { weekStartsOn: 1 });
@@ -30,32 +29,6 @@ const TimeTracking: React.FC = () => {
   });
 
   const { start: weekStart, end: weekEnd } = getWeekRange(weekDate);
-
-  const getWeeklyChartData = () => {
-    const weekDays = Array.from({ length: 7 }, (_, i) => {
-      const d = new Date(weekStart);
-      d.setDate(d.getDate() + i);
-      return d;
-    });
-    return weekDays.map(day => {
-      const dateStr = day.toISOString().split("T")[0];
-      const dayEntries = weeklyEntries.filter(entry => entry.clock_in.startsWith(dateStr));
-      const totalMinutes = dayEntries.reduce((total, entry) => {
-        if (entry.duration_minutes) return total + entry.duration_minutes;
-        if (entry.clock_out) {
-          const diff = differenceInMinutes(
-            new Date(entry.clock_out), new Date(entry.clock_in)
-          );
-          return total + diff;
-        }
-        return total;
-      }, 0);
-      return {
-        day: format(day, 'EEE'),
-        totalHours: +(totalMinutes / 60).toFixed(2)
-      };
-    });
-  };
 
   useEffect(() => {
     localStorage.setItem("targetWeeklyHours", String(targetWeeklyHours));
@@ -119,7 +92,10 @@ const TimeTracking: React.FC = () => {
         setTargetWeeklyHours={setTargetWeeklyHours}
       />
 
-      <WeeklyTimeTrackingChart data={getWeeklyChartData()} />
+      <TimeTrackingChart 
+        weekStart={weekStart}
+        totalTrackedMinutes={totalTrackedMinutes}
+      />
 
       <ClockInOutSection
         notes={notes}
