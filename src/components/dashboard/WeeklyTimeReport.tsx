@@ -40,7 +40,7 @@ const WeeklyTimeReport: React.FC<WeeklyTimeReportProps> = ({ entries }) => {
   };
 
   // Get the week start from the first entry or current week if no entries
-  const firstEntryDate = entries.length > 0 ? new Date(entries[0].clock_in) : new Date();
+  const firstEntryDate = entries.length > 0 ? parseISO(entries[0].clock_in) : new Date();
   const weekStart = startOfWeek(firstEntryDate, { weekStartsOn: 1 });
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 

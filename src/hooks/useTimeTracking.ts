@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { startOfWeek, addDays, format } from 'date-fns';
+import { startOfWeek, addDays, format, endOfWeek } from 'date-fns';
 
 export const useTimeTracking = () => {
   const { user } = useAuth();
@@ -94,10 +94,10 @@ export const useTimeTracking = () => {
   const fetchTimeEntriesForWeek = async (weekDate: Date) => {
     if (!user) return [];
     
-    // Always use startOfWeek with weekStartsOn: 1 (Monday) for consistency
+    // Use startOfWeek with weekStartsOn: 1 (Monday) for consistency
     const start = startOfWeek(weekDate, { weekStartsOn: 1 });
-    const end = new Date(start);
-    end.setDate(start.getDate() + 7); // Add 7 days to get to the next Monday
+    // Use endOfWeek instead of manually adding days
+    const end = endOfWeek(start, { weekStartsOn: 1 });
     
     console.log(`Fetching entries from ${format(start, 'yyyy-MM-dd')} to ${format(end, 'yyyy-MM-dd')}`);
 
@@ -127,7 +127,7 @@ export const useTimeTracking = () => {
     if (!user) return [];
     
     const start = startOfWeek(weekStart, { weekStartsOn: 1 });
-    const end = addDays(start, 7);
+    const end = endOfWeek(start, { weekStartsOn: 1 });
 
     const { data, error } = await supabase
       .from('time_entries')

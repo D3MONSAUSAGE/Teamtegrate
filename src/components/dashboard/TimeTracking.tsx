@@ -38,8 +38,12 @@ const TimeTracking: React.FC = () => {
       return d;
     });
     return weekDays.map(day => {
-      const dateStr = day.toISOString().split("T")[0];
-      const dayEntries = weeklyEntries.filter(entry => entry.clock_in.startsWith(dateStr));
+      const dateStr = format(day, 'yyyy-MM-dd');
+      const dayEntries = weeklyEntries.filter(entry => {
+        const entryDate = format(new Date(entry.clock_in), 'yyyy-MM-dd');
+        return entryDate === dateStr;
+      });
+      
       const totalMinutes = dayEntries.reduce((total, entry) => {
         if (entry.duration_minutes) return total + entry.duration_minutes;
         if (entry.clock_out) {
@@ -115,10 +119,6 @@ const TimeTracking: React.FC = () => {
         return addWeeks(prevDate, 1);
       }
     });
-  };
-
-  const handleWeekSearch = (date: Date) => {
-    setWeekDate(date);
   };
 
   return (

@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CalendarDays, Search, FileText } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, parse } from 'date-fns';
 import { toast } from 'sonner';
 
 interface WeekSelectorProps {
@@ -29,16 +29,17 @@ const WeekSelector: React.FC<WeekSelectorProps> = ({
       
       if (/^\d{4}-\d{2}-\d{2}$/.test(searchValue)) {
         // Format: YYYY-MM-DD
-        date = new Date(searchValue);
+        date = parse(searchValue, 'yyyy-MM-dd', new Date());
       } else if (/^\d{4}-\d{2}$/.test(searchValue)) {
         // Format: YYYY-MM
-        date = new Date(searchValue + "-01");
+        date = parse(`${searchValue}-01`, 'yyyy-MM-dd', new Date());
       } else {
         throw new Error("Invalid date format");
       }
       
       if (date && !isNaN(date.getTime())) {
-        const direction = date > weekStart ? "next" : "prev";
+        const currentWeekStart = new Date(weekStart);
+        const direction = date > currentWeekStart ? "next" : "prev";
         onWeekChange(direction);
       } else {
         throw new Error("Invalid date");
