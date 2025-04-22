@@ -1,6 +1,6 @@
 
 import { Task, DailyScore } from '@/types';
-import { sub, format, isSameDay } from 'date-fns';
+import { sub, format, isSameDay, isToday } from 'date-fns';
 
 export const calculateDailyScore = (tasks: Task[]): DailyScore => {
   if (!tasks.length) {
@@ -15,15 +15,24 @@ export const calculateDailyScore = (tasks: Task[]): DailyScore => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
+  // Count tasks due today
   const todaysTasks = tasks.filter((task) => {
     const taskDate = new Date(task.deadline);
     taskDate.setHours(0, 0, 0, 0);
     return taskDate.getTime() === today.getTime();
   });
 
-  const completed = todaysTasks.filter((task) => task.status === 'Completed').length;
+  // Count tasks completed today, regardless of due date
+  const completedToday = tasks.filter((task) => {
+    if (task.status !== 'Completed' || !task.completedAt) return false;
+    const completedDate = new Date(task.completedAt);
+    completedDate.setHours(0, 0, 0, 0);
+    return completedDate.getTime() === today.getTime();
+  });
+  
   const total = todaysTasks.length;
-  const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+  const completed = completedToday.length;
+  const percentage = total > 0 ? Math.round((Math.min(completed, total) / total) * 100) : completed > 0 ? 100 : 0;
 
   return {
     completedTasks: completed,
@@ -48,11 +57,17 @@ export const getTasksCompletionByDate = (tasks: Task[], days: number = 7): Array
       return taskDate.getTime() === date.getTime();
     });
     
-    const completed = dayTasks.filter(task => task.status === 'Completed').length;
+    // Count tasks completed on this specific date
+    const completedOnDate = tasks.filter(task => {
+      if (task.status !== 'Completed' || !task.completedAt) return false;
+      const completedDate = new Date(task.completedAt);
+      completedDate.setHours(0, 0, 0, 0);
+      return completedDate.getTime() === date.getTime();
+    });
     
     result.push({
       date: new Date(date),
-      completed,
+      completed: completedOnDate.length,
       total: dayTasks.length
     });
   }
