@@ -2,11 +2,10 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format, parseISO, differenceInMinutes } from 'date-fns';
-import { FileText, Coffee, Clock } from 'lucide-react';
+import { FileText } from 'lucide-react';
 
 interface DailyTimeReportProps {
   entries: Array<{
-    id: string;
     clock_in: string;
     clock_out?: string | null;
     duration_minutes?: number | null;
@@ -34,11 +33,6 @@ const DailyTimeReport: React.FC<DailyTimeReportProps> = ({ entries }) => {
   // Calculate total hours from minutes
   const totalHours = totalMinutes / 60;
   
-  // Sort entries by clock_in time to ensure chronological display
-  const sortedEntries = [...entries].sort((a, b) => 
-    new Date(a.clock_in).getTime() - new Date(b.clock_in).getTime()
-  );
-  
   return (
     <Card className="mt-4">
       <CardHeader className="pb-2">
@@ -54,10 +48,10 @@ const DailyTimeReport: React.FC<DailyTimeReportProps> = ({ entries }) => {
             <span className="font-medium">{totalHours.toFixed(2)}h</span>
           </div>
           <div className="space-y-1">
-            {sortedEntries.length === 0 ? (
+            {entries.length === 0 ? (
               <p className="text-xs text-muted-foreground italic">No time entries for today</p>
             ) : (
-              sortedEntries.map((entry) => {
+              entries.map((entry, index) => {
                 // Calculate duration for this entry
                 let durationMinutes = entry.duration_minutes || 0;
                 if (!durationMinutes && entry.clock_out) {
@@ -67,19 +61,16 @@ const DailyTimeReport: React.FC<DailyTimeReportProps> = ({ entries }) => {
                   );
                 }
                 
-                // Show special formatting for entries with break notes
+                // Show special formatting for entries with lunch break notes
                 const isBreak = entry.notes && 
-                  (entry.notes.toLowerCase().includes('break') || 
-                   entry.notes.toLowerCase().includes('lunch'));
-                
-                const entryIcon = isBreak ? <Coffee className="h-3 w-3 inline mr-1" /> : <Clock className="h-3 w-3 inline mr-1" />;
+                  (entry.notes.toLowerCase().includes('lunch') || 
+                   entry.notes.toLowerCase().includes('break'));
                 
                 return (
                   <div 
-                    key={entry.id} 
-                    className={`text-xs ${isBreak ? 'italic' : ''} ${isBreak ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground'} flex items-center`}
+                    key={index} 
+                    className={`text-xs ${isBreak ? 'italic' : ''} ${isBreak ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground'}`}
                   >
-                    {entryIcon}
                     {format(parseISO(entry.clock_in), 'HH:mm')} - {' '}
                     {entry.clock_out ? format(parseISO(entry.clock_out), 'HH:mm') : 'ongoing'}
                     {durationMinutes > 0 && entry.clock_out && (

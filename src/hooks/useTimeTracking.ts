@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { startOfWeek, addDays, subWeeks, endOfWeek, parseISO, format, subDays } from 'date-fns';
+import { startOfWeek, addDays, subWeeks, endOfWeek } from 'date-fns';
 
 export const useTimeTracking = () => {
   const { user } = useAuth();
@@ -99,33 +99,20 @@ export const useTimeTracking = () => {
     } else {
       start = startOfWeek(new Date(), { weekStartsOn: 1 });
     }
-    const end = endOfWeek(start, { weekStartsOn: 1 });
-
-    // Add 1 day to end date to ensure we get all entries from the last day
-    const endPlusBuffer = new Date(end);
-    endPlusBuffer.setDate(end.getDate() + 1);
-
-    console.log(`Fetching entries from ${format(start, 'yyyy-MM-dd HH:mm:ss')} to ${format(endPlusBuffer, 'yyyy-MM-dd HH:mm:ss')}`);
+    const end = addDays(start, 7);
 
     const { data, error } = await supabase
       .from('time_entries')
       .select('*')
       .eq('user_id', user.id)
       .gte('clock_in', start.toISOString())
-      .lt('clock_in', endPlusBuffer.toISOString())
+      .lt('clock_in', end.toISOString())
       .order('clock_in', { ascending: true });
 
     if (error) {
       console.error('Error fetching weekly time entries:', error);
       toast.error('Failed to fetch time entries');
       return [];
-    }
-
-    console.log(`Retrieved ${data?.length || 0} time entries for week of ${format(start, 'yyyy-MM-dd')}`);
-    if (data && data.length > 0) {
-      data.forEach(entry => {
-        console.log(`Entry ${entry.id}: ${format(new Date(entry.clock_in), 'yyyy-MM-dd HH:mm:ss')} - ${entry.clock_out ? format(new Date(entry.clock_out), 'yyyy-MM-dd HH:mm:ss') : 'ongoing'}, Notes: ${entry.notes || 'none'}`);
-      });
     }
 
     return data || [];
@@ -135,18 +122,14 @@ export const useTimeTracking = () => {
     if (!user) return [];
     
     const start = startOfWeek(weekStart, { weekStartsOn: 1 });
-    const end = endOfWeek(start, { weekStartsOn: 1 });
-    
-    // Add 1 day to end date to ensure we get all entries from the last day
-    const endPlusBuffer = new Date(end);
-    endPlusBuffer.setDate(end.getDate() + 1);
+    const end = addDays(start, 7);
 
     const { data, error } = await supabase
       .from('time_entries')
       .select('*')
       .eq('user_id', teamMemberId)
       .gte('clock_in', start.toISOString())
-      .lt('clock_in', endPlusBuffer.toISOString())
+      .lt('clock_in', end.toISOString())
       .order('clock_in', { ascending: true });
 
     if (error) {
@@ -164,90 +147,26 @@ export const useTimeTracking = () => {
     const start = startOfWeek(weekStart, { weekStartsOn: 1 });
     
     // Use endOfWeek to get the end of the week (Sunday, end of day)
-    // Then add 1 day to make sure we include entries from the last day
     const end = endOfWeek(start, { weekStartsOn: 1 });
-    const endPlusBuffer = new Date(end);
-    endPlusBuffer.setDate(end.getDate() + 1);
     
-    console.log(`Fetching time entries from ${format(start, 'yyyy-MM-dd HH:mm:ss')} to ${format(endPlusBuffer, 'yyyy-MM-dd HH:mm:ss')}`);
+    console.log('Fetching time entries from', start.toISOString(), 'to', end.toISOString());
     
-    try {
-      const { data, error } = await supabase
-        .from('time_entries')
-        .select('*')
-        .eq('user_id', user.id)
-        .gte('clock_in', start.toISOString())
-        .lt('clock_in', endPlusBuffer.toISOString()) // Use lt instead of lte to include the whole day
-        .order('clock_in', { ascending: true });
+    const { data, error } = await supabase
+      .from('time_entries')
+      .select('*')
+      .eq('user_id', user.id)
+      .gte('clock_in', start.toISOString())
+      .lte('clock_in', end.toISOString()) // Changed from lt to lte to include entries exactly at the end time
+      .order('clock_in', { ascending: true });
 
-      if (error) {
-        console.error('Error fetching time entries for week:', error);
-        toast.error('Failed to fetch time entries');
-        return [];
-      }
-
-      console.log(`Found ${data?.length || 0} time entries for the week of ${format(start, 'yyyy-MM-dd')}`);
-      
-      // Log each entry for debugging
-      if (data) {
-        data.forEach(entry => {
-          console.log(`Entry ${entry.id}: ${format(new Date(entry.clock_in), 'yyyy-MM-dd HH:mm:ss')} - ${entry.clock_out ? format(new Date(entry.clock_out), 'yyyy-MM-dd HH:mm:ss') : 'ongoing'}, Notes: ${entry.notes || 'none'}`);
-        });
-      }
-      
-      return data || [];
-    } catch (e) {
-      console.error('Exception while fetching time entries:', e);
-      toast.error('Failed to fetch time entries due to an exception');
+    if (error) {
+      console.error('Error fetching time entries for week:', error);
+      toast.error('Failed to fetch time entries');
       return [];
     }
-  };
 
-  // Add a specific function to fetch previous week's entries
-  const fetchPreviousWeekTimeEntries = async () => {
-    if (!user) return [];
-    
-    // Get start of current week
-    const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
-    
-    // Get start of previous week (7 days before current week start)
-    const previousWeekStart = subWeeks(currentWeekStart, 1);
-    
-    // Get end of previous week
-    const previousWeekEnd = subDays(currentWeekStart, 1);
-    
-    console.log(`Fetching previous week time entries from ${format(previousWeekStart, 'yyyy-MM-dd HH:mm:ss')} to ${format(previousWeekEnd, 'yyyy-MM-dd HH:mm:ss')}`);
-    
-    try {
-      const { data, error } = await supabase
-        .from('time_entries')
-        .select('*')
-        .eq('user_id', user.id)
-        .gte('clock_in', previousWeekStart.toISOString())
-        .lte('clock_in', previousWeekEnd.toISOString())
-        .order('clock_in', { ascending: true });
-
-      if (error) {
-        console.error('Error fetching previous week time entries:', error);
-        toast.error('Failed to fetch previous week time entries');
-        return [];
-      }
-
-      console.log(`Found ${data?.length || 0} time entries for previous week`);
-      
-      if (data && data.length > 0) {
-        console.log("Previous week entries:");
-        data.forEach(entry => {
-          console.log(`Entry ${entry.id}: ${format(new Date(entry.clock_in), 'yyyy-MM-dd HH:mm:ss')} - ${entry.clock_out ? format(new Date(entry.clock_out), 'yyyy-MM-dd HH:mm:ss') : 'ongoing'}, Notes: ${entry.notes || 'none'}`);
-        });
-      }
-      
-      return data || [];
-    } catch (e) {
-      console.error('Exception while fetching previous week time entries:', e);
-      toast.error('Failed to fetch previous week time entries');
-      return [];
-    }
+    console.log(`Found ${data?.length || 0} time entries for the week`);
+    return data || [];
   };
 
   return {
@@ -256,7 +175,6 @@ export const useTimeTracking = () => {
     clockOut,
     getWeeklyTimeEntries,
     getTeamMemberTimeEntries,
-    fetchTimeEntriesForWeek,
-    fetchPreviousWeekTimeEntries
+    fetchTimeEntriesForWeek
   };
 };
