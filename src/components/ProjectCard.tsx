@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Project, Task } from '@/types';
@@ -21,15 +22,17 @@ interface ProjectCardProps {
   onEdit?: (project: Project) => void;
   onViewTasks?: (project: Project) => void;
   onCreateTask?: (project: Project) => void;
+  onDeleteProject?: () => void;
 }
 
 const ProjectCard: React.FC<ProjectCardProps> = ({ 
   project, 
   onEdit, 
   onViewTasks, 
-  onCreateTask 
+  onCreateTask,
+  onDeleteProject
 }) => {
-  const { deleteProject, updateProject } = useTask();
+  const { updateProject } = useTask();
   
   const calculateProgress = (tasks: Task[]) => {
     if (tasks.length === 0) return 0;
@@ -99,7 +102,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
             </DropdownMenuItem>
             <DropdownMenuItem 
               className="text-red-500" 
-              onClick={() => deleteProject(project.id)}
+              onClick={() => onDeleteProject && onDeleteProject()}
             >
               Delete
             </DropdownMenuItem>
