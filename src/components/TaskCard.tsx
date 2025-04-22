@@ -64,16 +64,17 @@ const TaskCard: React.FC<TaskCardProps> = ({
         className={cn(
           "card-hover cursor-pointer border-2",
           getPriorityBackground(task.priority),
-          isTaskOverdue() && "ring-2 ring-red-500 dark:ring-red-400"
+          isTaskOverdue() && "ring-2 ring-red-500 dark:ring-red-400",
         )}
         onClick={onClick}
         tabIndex={0}
         aria-label={`Open details for ${task.title}`}
         role="button"
       >
-        <div className="absolute top-2 left-2 z-10">
+        {/* View icon moved to lower right corner */}
+        <div className="absolute bottom-2 right-2 z-20">
           <button
-            className="bg-white p-1 rounded shadow hover:bg-gray-50 outline-none border border-gray-200 focus:ring-2 focus:ring-primary"
+            className="bg-white p-1 rounded-full shadow hover:bg-gray-100 border border-gray-200 focus:ring-2 focus:ring-primary transition"
             aria-label="View Task"
             onClick={e => {
               e.stopPropagation();
@@ -81,7 +82,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
             }}
             type="button"
           >
-            <View className="h-4 w-4" />
+            <View className="h-5 w-5 text-emerald-600" />
           </button>
         </div>
 
@@ -128,3 +129,4 @@ const TaskCard: React.FC<TaskCardProps> = ({
 };
 
 export default TaskCard;
+
