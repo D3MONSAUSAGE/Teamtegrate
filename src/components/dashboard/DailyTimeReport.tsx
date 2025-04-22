@@ -48,43 +48,27 @@ const DailyTimeReport: React.FC<DailyTimeReportProps> = ({ entries }) => {
             <span className="font-medium">{totalHours.toFixed(2)}h</span>
           </div>
           <div className="space-y-1">
-            {entries.length === 0 ? (
-              <p className="text-xs text-muted-foreground italic">No time entries for today</p>
-            ) : (
-              entries.map((entry, index) => {
-                // Calculate duration for this entry
-                let durationMinutes = entry.duration_minutes || 0;
-                if (!durationMinutes && entry.clock_out) {
-                  durationMinutes = differenceInMinutes(
-                    parseISO(entry.clock_out),
-                    parseISO(entry.clock_in)
-                  );
-                }
-                
-                // Show special formatting for entries with lunch break notes
-                const isBreak = entry.notes && 
-                  (entry.notes.toLowerCase().includes('lunch') || 
-                   entry.notes.toLowerCase().includes('break'));
-                
-                return (
-                  <div 
-                    key={index} 
-                    className={`text-xs ${isBreak ? 'italic' : ''} ${isBreak ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground'}`}
-                  >
-                    {format(parseISO(entry.clock_in), 'HH:mm')} - {' '}
-                    {entry.clock_out ? format(parseISO(entry.clock_out), 'HH:mm') : 'ongoing'}
-                    {durationMinutes > 0 && entry.clock_out && (
-                      <span className="ml-1">• {(durationMinutes / 60).toFixed(2)}h</span>
-                    )}
-                    {entry.notes && (
-                      <span className="ml-1 font-medium">
-                        • {entry.notes}
-                      </span>
-                    )}
-                  </div>
+            {entries.map((entry, index) => {
+              // Calculate duration for this entry
+              let durationMinutes = entry.duration_minutes || 0;
+              if (!durationMinutes && entry.clock_out) {
+                durationMinutes = differenceInMinutes(
+                  parseISO(entry.clock_out),
+                  parseISO(entry.clock_in)
                 );
-              })
-            )}
+              }
+              
+              return (
+                <div key={index} className="text-xs text-muted-foreground">
+                  {format(parseISO(entry.clock_in), 'HH:mm')} - {' '}
+                  {entry.clock_out ? format(parseISO(entry.clock_out), 'HH:mm') : 'ongoing'}
+                  {durationMinutes > 0 && entry.clock_out && (
+                    <span className="ml-1">• {(durationMinutes / 60).toFixed(2)}h</span>
+                  )}
+                  {entry.notes && <span className="ml-1">• {entry.notes}</span>}
+                </div>
+              );
+            })}
           </div>
         </div>
       </CardContent>

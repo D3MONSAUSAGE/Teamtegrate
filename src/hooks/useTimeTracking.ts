@@ -1,9 +1,8 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { startOfWeek, addDays, subWeeks, endOfWeek } from 'date-fns';
+import { startOfWeek, addDays, subWeeks } from 'date-fns';
 
 export const useTimeTracking = () => {
   const { user } = useAuth();
@@ -142,21 +141,15 @@ export const useTimeTracking = () => {
 
   const fetchTimeEntriesForWeek = async (weekStart: Date) => {
     if (!user) return [];
-    
-    // Use startOfWeek to get the beginning of the week (Monday)
     const start = startOfWeek(weekStart, { weekStartsOn: 1 });
-    
-    // Use endOfWeek to get the end of the week (Sunday, end of day)
-    const end = endOfWeek(start, { weekStartsOn: 1 });
-    
-    console.log('Fetching time entries from', start.toISOString(), 'to', end.toISOString());
-    
+    const end = addDays(start, 7);
+
     const { data, error } = await supabase
       .from('time_entries')
       .select('*')
       .eq('user_id', user.id)
       .gte('clock_in', start.toISOString())
-      .lte('clock_in', end.toISOString()) // Changed from lt to lte to include entries exactly at the end time
+      .lt('clock_in', end.toISOString())
       .order('clock_in', { ascending: true });
 
     if (error) {
@@ -165,7 +158,6 @@ export const useTimeTracking = () => {
       return [];
     }
 
-    console.log(`Found ${data?.length || 0} time entries for the week`);
     return data || [];
   };
 

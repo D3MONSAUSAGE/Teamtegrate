@@ -69,26 +69,13 @@ const WeeklyTimeReport: React.FC<WeeklyTimeReportProps> = ({ entries }) => {
                   </TableCell>
                   <TableCell>{totalHours.toFixed(2)}</TableCell>
                   <TableCell>
-                    {dayEntries.length === 0 ? (
-                      <span className="text-xs text-muted-foreground italic">No entries</span>
-                    ) : (
-                      dayEntries.map((entry, index) => {
-                        const isBreak = entry.notes && 
-                          (entry.notes.toLowerCase().includes('lunch') || 
-                           entry.notes.toLowerCase().includes('break'));
-                        
-                        return (
-                          <div 
-                            key={index} 
-                            className={`text-sm ${isBreak ? 'italic' : ''} ${isBreak ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground'}`}
-                          >
-                            {format(parseISO(entry.clock_in), 'HH:mm')} - {' '}
-                            {entry.clock_out ? format(parseISO(entry.clock_out), 'HH:mm') : 'ongoing'}
-                            {entry.notes && ` - ${entry.notes}`}
-                          </div>
-                        );
-                      })
-                    )}
+                    {dayEntries.map((entry, index) => (
+                      <div key={index} className="text-sm text-muted-foreground">
+                        {format(parseISO(entry.clock_in), 'HH:mm')} - {' '}
+                        {entry.clock_out ? format(parseISO(entry.clock_out), 'HH:mm') : 'ongoing'}
+                        {entry.notes && ` - ${entry.notes}`}
+                      </div>
+                    ))}
                   </TableCell>
                 </TableRow>
               );

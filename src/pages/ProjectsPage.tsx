@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useTask } from '@/contexts/task';
 import { Project, Task } from '@/types';
 import CreateProjectDialog from '@/components/CreateProjectDialog';
@@ -10,7 +9,7 @@ import ProjectTabs from '@/components/project/ProjectTabs';
 import ProjectTasksDialog from '@/components/ProjectTasksDialog';
 
 const ProjectsPage = () => {
-  const { projects, deleteProject } = useTask();
+  const { projects } = useTask();
   const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | undefined>(undefined);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
@@ -21,12 +20,6 @@ const ProjectsPage = () => {
   const [isAssignTaskOpen, setIsAssignTaskOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('date');
-  const [localProjects, setLocalProjects] = useState<Project[]>([]);
-  
-  // Update local projects whenever the global projects state changes
-  useEffect(() => {
-    setLocalProjects(projects);
-  }, [projects]);
   
   const handleEditProject = (project: Project) => {
     setEditingProject(project);
@@ -58,22 +51,8 @@ const ProjectsPage = () => {
     setEditingProject(undefined);
     setIsCreateProjectOpen(true);
   };
-
-  const handleDeleteProject = (projectId: string) => {
-    // Immediately update local state to give instant feedback
-    setLocalProjects(prev => prev.filter(p => p.id !== projectId));
-    
-    // Also close any dialogs that might be showing the deleted project
-    if (selectedProject?.id === projectId) {
-      setSelectedProject(null);
-      setIsViewTasksOpen(false);
-    }
-    
-    // Call the context method to delete from database
-    deleteProject(projectId);
-  };
   
-  const filteredProjects = localProjects.filter((project) => {
+  const filteredProjects = projects.filter((project) => {
     return (
       project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       project.description.toLowerCase().includes(searchQuery.toLowerCase())
@@ -112,7 +91,6 @@ const ProjectsPage = () => {
         onViewTasks={handleViewTasks}
         onCreateProject={handleCreateProject}
         onCreateTask={handleCreateTask}
-        onDeleteProject={handleDeleteProject}
       />
       
       <CreateProjectDialog 
