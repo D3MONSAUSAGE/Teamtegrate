@@ -42,7 +42,10 @@ const WeeklyTimeReport: React.FC<WeeklyTimeReportProps> = ({ entries }) => {
   };
 
   // Get the start of the current week (Monday)
-  const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
+  const weekStart = entries.length > 0
+    ? startOfWeek(parseISO(entries[0].clock_in), { weekStartsOn: 1 })
+    : startOfWeek(new Date(), { weekStartsOn: 1 });
+    
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
   return (
@@ -84,6 +87,20 @@ const WeeklyTimeReport: React.FC<WeeklyTimeReportProps> = ({ entries }) => {
                             <Coffee className="h-3 w-3 inline mr-1" /> : 
                             <Clock className="h-3 w-3 inline mr-1" />;
                           
+                          // Calculate duration if available
+                          let durationText = '';
+                          if (entry.duration_minutes && entry.clock_out) {
+                            const hours = (entry.duration_minutes / 60).toFixed(2);
+                            durationText = ` (${hours}h)`;
+                          } else if (entry.clock_out) {
+                            const minutesDiff = differenceInMinutes(
+                              parseISO(entry.clock_out),
+                              parseISO(entry.clock_in)
+                            );
+                            const hours = (minutesDiff / 60).toFixed(2);
+                            durationText = ` (${hours}h)`;
+                          }
+                          
                           return (
                             <div 
                               key={entry.id} 
@@ -92,6 +109,7 @@ const WeeklyTimeReport: React.FC<WeeklyTimeReportProps> = ({ entries }) => {
                               {entryIcon}
                               {format(parseISO(entry.clock_in), 'HH:mm')} - {' '}
                               {entry.clock_out ? format(parseISO(entry.clock_out), 'HH:mm') : 'ongoing'}
+                              {durationText}
                               {entry.notes && <span className="ml-1"> • {entry.notes}</span>}
                             </div>
                           );
