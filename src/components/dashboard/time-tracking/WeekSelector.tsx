@@ -24,17 +24,24 @@ const WeekSelector: React.FC<WeekSelectorProps> = ({
 
   const handleSearch = () => {
     setIsSearching(true);
-    let date: Date | null = null;
     try {
+      let date: Date | null = null;
+      
       if (/^\d{4}-\d{2}-\d{2}$/.test(searchValue)) {
+        // Format: YYYY-MM-DD
         date = new Date(searchValue);
       } else if (/^\d{4}-\d{2}$/.test(searchValue)) {
+        // Format: YYYY-MM
         date = new Date(searchValue + "-01");
       } else {
         throw new Error("Invalid date format");
       }
+      
       if (date && !isNaN(date.getTime())) {
-        onWeekChange(date > weekStart ? "next" : "prev");
+        const direction = date > weekStart ? "next" : "prev";
+        onWeekChange(direction);
+      } else {
+        throw new Error("Invalid date");
       }
     } catch (error) {
       toast.error('Invalid date format. Please use YYYY-MM-DD or YYYY-MM');

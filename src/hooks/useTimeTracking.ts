@@ -1,8 +1,9 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { startOfWeek, addDays, subWeeks } from 'date-fns';
+import { startOfWeek, addDays, format } from 'date-fns';
 
 export const useTimeTracking = () => {
   const { user } = useAuth();
@@ -90,15 +91,15 @@ export const useTimeTracking = () => {
     toast.success('Clocked out successfully');
   };
 
-  const getWeeklyTimeEntries = async (weekStart?: Date) => {
+  const fetchTimeEntriesForWeek = async (weekDate: Date) => {
     if (!user) return [];
-    let start: Date;
-    if (weekStart) {
-      start = startOfWeek(weekStart, { weekStartsOn: 1 });
-    } else {
-      start = startOfWeek(new Date(), { weekStartsOn: 1 });
-    }
-    const end = addDays(start, 7);
+    
+    // Always use startOfWeek with weekStartsOn: 1 (Monday) for consistency
+    const start = startOfWeek(weekDate, { weekStartsOn: 1 });
+    const end = new Date(start);
+    end.setDate(start.getDate() + 7); // Add 7 days to get to the next Monday
+    
+    console.log(`Fetching entries from ${format(start, 'yyyy-MM-dd')} to ${format(end, 'yyyy-MM-dd')}`);
 
     const { data, error } = await supabase
       .from('time_entries')
@@ -109,12 +110,17 @@ export const useTimeTracking = () => {
       .order('clock_in', { ascending: true });
 
     if (error) {
-      console.error('Error fetching weekly time entries:', error);
+      console.error('Error fetching time entries for week:', error);
       toast.error('Failed to fetch time entries');
       return [];
     }
 
+    console.log(`Fetched ${data?.length || 0} entries for week of ${format(start, 'yyyy-MM-dd')}`);
     return data || [];
+  };
+
+  const getWeeklyTimeEntries = async (weekStart?: Date) => {
+    return fetchTimeEntriesForWeek(weekStart || new Date());
   };
 
   const getTeamMemberTimeEntries = async (teamMemberId: string, weekStart: Date) => {
@@ -133,28 +139,6 @@ export const useTimeTracking = () => {
 
     if (error) {
       console.error(`Error fetching time entries for team member ${teamMemberId}:`, error);
-      return [];
-    }
-
-    return data || [];
-  };
-
-  const fetchTimeEntriesForWeek = async (weekStart: Date) => {
-    if (!user) return [];
-    const start = startOfWeek(weekStart, { weekStartsOn: 1 });
-    const end = addDays(start, 7);
-
-    const { data, error } = await supabase
-      .from('time_entries')
-      .select('*')
-      .eq('user_id', user.id)
-      .gte('clock_in', start.toISOString())
-      .lt('clock_in', end.toISOString())
-      .order('clock_in', { ascending: true });
-
-    if (error) {
-      console.error('Error fetching time entries for week:', error);
-      toast.error('Failed to fetch time entries');
       return [];
     }
 

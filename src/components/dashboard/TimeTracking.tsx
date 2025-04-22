@@ -5,7 +5,7 @@ import { startOfWeek, addDays, addWeeks, subWeeks, differenceInMinutes, format }
 import { Card } from "@/components/ui/card";
 import TimeTrackingHeader from './time-tracking/TimeTrackingHeader';
 import ClockInOutSection from './time-tracking/ClockInOutSection';
-import WeekSelector from './WeekSelector';
+import WeekSelector from './time-tracking/WeekSelector';
 import WeeklyTimeReport from './WeeklyTimeReport';
 import DailyTimeReport from './DailyTimeReport';
 import WeeklyTimeTrackingChart from './WeeklyTimeTrackingChart';
@@ -64,13 +64,20 @@ const TimeTracking: React.FC = () => {
   useEffect(() => {
     const fetchEntries = async () => {
       const entries = await fetchTimeEntriesForWeek(weekDate);
+      
+      // For daily entries, we need to get the current date in local timezone
       const today = new Date().toISOString().split('T')[0];
-      const todayEntries = entries.filter(entry => entry.clock_in.startsWith(today));
+      const todayEntries = entries.filter(entry => {
+        const entryDate = new Date(entry.clock_in).toISOString().split('T')[0];
+        return entryDate === today;
+      });
+      
       setDailyEntries(todayEntries);
       setWeeklyEntries(entries);
     };
+    
     fetchEntries();
-  }, [currentEntry, weekDate]);
+  }, [currentEntry, weekDate, fetchTimeEntriesForWeek]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -101,9 +108,13 @@ const TimeTracking: React.FC = () => {
   const remainingHours = Math.max(targetWeeklyHours - totalTrackedHours, 0);
 
   const handleWeekChange = (direction: "prev" | "next") => {
-    setWeekDate(
-      direction === "prev" ? subWeeks(weekDate, 1) : addWeeks(weekDate, 1)
-    );
+    setWeekDate(prevDate => {
+      if (direction === "prev") {
+        return subWeeks(prevDate, 1);
+      } else {
+        return addWeeks(prevDate, 1);
+      }
+    });
   };
 
   const handleWeekSearch = (date: Date) => {
