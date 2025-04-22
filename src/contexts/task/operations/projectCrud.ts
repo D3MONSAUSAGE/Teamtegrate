@@ -1,4 +1,3 @@
-
 import { User, Project, Task } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
@@ -42,8 +41,6 @@ export const addProject = async (
       return;
     }
     
-    // For now, we won't be able to store team members in the database until we set up the project_team_members table
-    // But we can still track them in local state
     const teamMembers = project.teamMembers || [];
     
     if (data) {
@@ -59,7 +56,7 @@ export const addProject = async (
         tasks: [],
         teamMembers,
         tags: [],
-        status: project.status || 'To Do', // Add the status property with default
+        status: project.status || 'To Do',
         budget: project.budget,
         budgetSpent: data.budget_spent || 0,
         is_completed: data.is_completed || false
@@ -134,11 +131,9 @@ export const deleteProject = async (
 
     console.log('Deleting project with ID:', projectId);
     
-    // Find all tasks belonging to this project
     const projectTasks = tasks.filter(task => task.projectId === projectId);
     console.log(`Found ${projectTasks.length} tasks associated with this project`);
     
-    // Update the tasks to remove project association
     for (const task of projectTasks) {
       const { error } = await supabase
         .from('tasks')
@@ -150,7 +145,6 @@ export const deleteProject = async (
       }
     }
 
-    // Also delete tasks from project_tasks table to ensure no orphaned tasks
     const { error: projectTasksError } = await supabase
       .from('project_tasks')
       .delete()
@@ -160,8 +154,7 @@ export const deleteProject = async (
       console.error('Error deleting project tasks:', projectTasksError);
     }
     
-    // Delete the project
-    const { error, count } = await supabase
+    const { error } = await supabase
       .from('projects')
       .delete()
       .eq('id', projectId);
@@ -173,16 +166,12 @@ export const deleteProject = async (
       return;
     }
 
-    console.log(`Deleted ${count} project records from database`);
-    
-    // Immediately update state to remove the project
     setProjects(prevProjects => {
       const filteredProjects = prevProjects.filter(project => project.id !== projectId);
       console.log(`Removed project from state. Projects count: ${filteredProjects.length}`);
       return filteredProjects;
     });
     
-    // Update tasks to remove project association in the local state
     setTasks(prevTasks => prevTasks.map(task => {
       if (task.projectId === projectId) {
         return { ...task, projectId: undefined };
@@ -198,4 +187,3 @@ export const deleteProject = async (
     toast.error('Failed to delete project');
   }
 };
-

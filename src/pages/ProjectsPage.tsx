@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useTask } from '@/contexts/task';
 import { Project, Task } from '@/types';
@@ -23,7 +22,6 @@ const ProjectsPage = () => {
   const [sortBy, setSortBy] = useState('date');
   const [localProjects, setLocalProjects] = useState<Project[]>([]);
   
-  // Update local projects whenever the global projects state changes
   useEffect(() => {
     setLocalProjects(projects);
   }, [projects]);
@@ -60,16 +58,13 @@ const ProjectsPage = () => {
   };
 
   const handleDeleteProject = (projectId: string) => {
-    // Immediately update local state to give instant feedback
     setLocalProjects(prev => prev.filter(p => p.id !== projectId));
     
-    // Also close any dialogs that might be showing the deleted project
     if (selectedProject?.id === projectId) {
       setSelectedProject(null);
       setIsViewTasksOpen(false);
     }
     
-    // Call the context method to delete from database
     deleteProject(projectId);
   };
   
