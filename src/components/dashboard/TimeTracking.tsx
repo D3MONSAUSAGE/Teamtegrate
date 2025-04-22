@@ -5,7 +5,7 @@ import { startOfWeek, addDays, addWeeks, subWeeks, differenceInMinutes, format }
 import { Card } from "@/components/ui/card";
 import TimeTrackingHeader from './time-tracking/TimeTrackingHeader';
 import ClockInOutSection from './time-tracking/ClockInOutSection';
-import WeekSelector from './time-tracking/WeekSelector';
+import WeekSelector from './WeekSelector';
 import WeeklyTimeReport from './WeeklyTimeReport';
 import DailyTimeReport from './DailyTimeReport';
 import WeeklyTimeTrackingChart from './WeeklyTimeTrackingChart';
