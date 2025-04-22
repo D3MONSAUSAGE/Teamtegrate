@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useTask } from '@/contexts/task';
 import { Project, Task } from '@/types';
@@ -6,7 +5,7 @@ import CreateProjectDialog from '@/components/CreateProjectDialog';
 import CreateTaskDialog from '@/components/CreateTaskDialog';
 import AssignTaskDialog from '@/components/AssignTaskDialog';
 import ProjectToolbar from '@/components/ProjectToolbar';
-import ProjectList from '@/components/ProjectList';
+import ProjectTabs from '@/components/project/ProjectTabs';
 import ProjectTasksDialog from '@/components/ProjectTasksDialog';
 
 const ProjectsPage = () => {
@@ -53,7 +52,6 @@ const ProjectsPage = () => {
     setIsCreateProjectOpen(true);
   };
   
-  // Filter projects based on search query
   const filteredProjects = projects.filter((project) => {
     return (
       project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -61,7 +59,6 @@ const ProjectsPage = () => {
     );
   });
   
-  // Sort projects based on the selected option
   const sortedProjects = [...filteredProjects].sort((a, b) => {
     switch (sortBy) {
       case 'date':
@@ -87,7 +84,7 @@ const ProjectsPage = () => {
         onCreateProject={handleCreateProject}
       />
       
-      <ProjectList 
+      <ProjectTabs 
         projects={sortedProjects}
         searchQuery={searchQuery}
         onEditProject={handleEditProject}
