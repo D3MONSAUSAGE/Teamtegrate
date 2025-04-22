@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,7 +45,7 @@ function formatDuration(ms: number): string {
 }
 
 const TimeTracking: React.FC = () => {
-  const { currentEntry, clockIn, clockOut, getWeeklyTimeEntries } = useTimeTracking();
+  const { currentEntry, clockIn, clockOut, getWeeklyTimeEntries, fetchTimeEntriesForWeek } = useTimeTracking();
   const [notes, setNotes] = useState('');
   const [elapsedTime, setElapsedTime] = useState('');
   const [dailyEntries, setDailyEntries] = useState<any[]>([]);
@@ -104,14 +103,14 @@ const TimeTracking: React.FC = () => {
 
   useEffect(() => {
     const fetchEntries = async () => {
-      const entries = await getWeeklyTimeEntries(weekStart);
+      const entries = await fetchTimeEntriesForWeek(weekDate);
       const today = new Date().toISOString().split('T')[0];
       const todayEntries = entries.filter(entry => entry.clock_in.startsWith(today));
       setDailyEntries(todayEntries);
       setWeeklyEntries(entries);
     };
     fetchEntries();
-  }, [currentEntry, weekStart.getTime()]);
+  }, [currentEntry, weekDate]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -151,11 +150,14 @@ const TimeTracking: React.FC = () => {
       } else {
         throw new Error("Invalid date format");
       }
-      setWeekDate(date);
-    } catch {
-      // Ignore and do nothing if invalid
+      if (date) {
+        setWeekDate(date);
+      }
+    } catch (error) {
+      toast.error('Invalid date format. Please use YYYY-MM-DD or YYYY-MM');
+    } finally {
+      setIsSearching(false);
     }
-    setIsSearching(false);
   };
 
   return (
@@ -314,4 +316,3 @@ const TimeTracking: React.FC = () => {
 };
 
 export default TimeTracking;
-

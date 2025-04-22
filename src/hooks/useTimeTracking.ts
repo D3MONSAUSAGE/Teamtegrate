@@ -1,11 +1,9 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { startOfWeek, addDays } from 'date-fns';
+import { startOfWeek, addDays, subWeeks } from 'date-fns';
 
-// Accept an optional "weekStart" param to fetch entries for a specific week.
 export const useTimeTracking = () => {
   const { user } = useAuth();
   const [currentEntry, setCurrentEntry] = useState<{
@@ -92,7 +90,6 @@ export const useTimeTracking = () => {
     toast.success('Clocked out successfully');
   };
 
-  // Accepts an optional weekStart: Date to fetch entries in ANY specific week
   const getWeeklyTimeEntries = async (weekStart?: Date) => {
     if (!user) return [];
     let start: Date;
@@ -101,7 +98,6 @@ export const useTimeTracking = () => {
     } else {
       start = startOfWeek(new Date(), { weekStartsOn: 1 });
     }
-    // End: start + 7 days, i.e. next week's Monday
     const end = addDays(start, 7);
 
     const { data, error } = await supabase
@@ -114,13 +110,13 @@ export const useTimeTracking = () => {
 
     if (error) {
       console.error('Error fetching weekly time entries:', error);
+      toast.error('Failed to fetch time entries');
       return [];
     }
 
     return data || [];
   };
 
-  // New function to fetch time entries for a specific team member
   const getTeamMemberTimeEntries = async (teamMemberId: string, weekStart: Date) => {
     if (!user) return [];
     
@@ -143,11 +139,34 @@ export const useTimeTracking = () => {
     return data || [];
   };
 
+  const fetchTimeEntriesForWeek = async (weekStart: Date) => {
+    if (!user) return [];
+    const start = startOfWeek(weekStart, { weekStartsOn: 1 });
+    const end = addDays(start, 7);
+
+    const { data, error } = await supabase
+      .from('time_entries')
+      .select('*')
+      .eq('user_id', user.id)
+      .gte('clock_in', start.toISOString())
+      .lt('clock_in', end.toISOString())
+      .order('clock_in', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching time entries for week:', error);
+      toast.error('Failed to fetch time entries');
+      return [];
+    }
+
+    return data || [];
+  };
+
   return {
     currentEntry,
     clockIn,
     clockOut,
     getWeeklyTimeEntries,
-    getTeamMemberTimeEntries
+    getTeamMemberTimeEntries,
+    fetchTimeEntriesForWeek
   };
 };
