@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useTimeTracking } from '@/hooks/useTimeTracking';
 import { startOfWeek, addDays, addWeeks, subWeeks, differenceInMinutes, format } from 'date-fns';
