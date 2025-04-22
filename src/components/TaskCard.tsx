@@ -1,40 +1,51 @@
 
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Task, TaskStatus } from '@/types';
+import { Task, TaskStatus } from "@/types";
 import { cn } from "@/lib/utils";
-import TaskCommentsDialog from './TaskCommentsDialog';
-import TaskCardHeader from './task/TaskCardHeader';
-import TaskCardActions from './task/TaskCardActions';
-import TaskCardDescription from './task/TaskCardDescription';
-import TaskCardMetadata from './task/TaskCardMetadata';
-import TaskCardFooter from './task/TaskCardFooter';
-import { useTask } from '@/contexts/task';
+import TaskCommentsDialog from "./TaskCommentsDialog";
+import TaskDetailDrawer from "./task/TaskDetailDrawer";
+import TaskCardHeader from "./task/TaskCardHeader";
+import TaskCardActions from "./task/TaskCardActions";
+import TaskCardDescription from "./task/TaskCardDescription";
+import TaskCardMetadata from "./task/TaskCardMetadata";
+import TaskCardFooter from "./task/TaskCardFooter";
+import { useTask } from "@/contexts/task";
+import { View } from "lucide-react";
 
 interface TaskCardProps {
   task: Task;
   onEdit?: (task: Task) => void;
   onAssign?: (task: Task) => void;
-  onClick?: () => void; // <-- add this
+  onClick?: () => void;
 }
 
-const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onAssign, onClick }) => {
+const TaskCard: React.FC<TaskCardProps> = ({
+  task,
+  onEdit,
+  onAssign,
+  onClick,
+}) => {
   const { updateTaskStatus, deleteTask } = useTask();
   const [showComments, setShowComments] = useState(false);
+  const [showDrawer, setShowDrawer] = useState(false);
 
-  // Define colorful backgrounds for priority levels
   const getPriorityBackground = (priority: string) => {
-    switch(priority) {
-      case 'Low': return 'bg-blue-50 dark:bg-blue-900/10 text-blue-900 dark:text-blue-200 border-blue-200 dark:border-blue-800';
-      case 'Medium': return 'bg-amber-50 dark:bg-amber-900/10 text-amber-900 dark:text-amber-100 border-amber-200 dark:border-amber-800';
-      case 'High': return 'bg-rose-50 dark:bg-rose-900/10 text-rose-900 dark:text-rose-100 border-rose-200 dark:border-rose-800';
-      default: return 'bg-blue-50 dark:bg-blue-900/10 text-blue-900 dark:text-blue-200 border-blue-200 dark:border-blue-800';
+    switch (priority) {
+      case "Low":
+        return "bg-blue-50 dark:bg-blue-900/10 text-blue-900 dark:text-blue-200 border-blue-200 dark:border-blue-800";
+      case "Medium":
+        return "bg-amber-50 dark:bg-amber-900/10 text-amber-900 dark:text-amber-100 border-amber-200 dark:border-amber-800";
+      case "High":
+        return "bg-rose-50 dark:bg-rose-900/10 text-rose-900 dark:text-rose-100 border-rose-200 dark:border-rose-800";
+      default:
+        return "bg-blue-50 dark:bg-blue-900/10 text-blue-900 dark:text-blue-200 border-blue-200 dark:border-blue-800";
     }
   };
 
   const isTaskOverdue = () => {
     const now = new Date();
-    return task.status !== 'Completed' && task.deadline < now;
+    return task.status !== "Completed" && task.deadline < now;
   };
 
   const commentCount = task.comments?.length || 0;
@@ -60,17 +71,28 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onAssign, onClick }) 
         aria-label={`Open details for ${task.title}`}
         role="button"
       >
-        <TaskCardHeader 
-          title={task.title} 
-          priority={task.priority}
-        />
+        <div className="absolute top-2 left-2 z-10">
+          <button
+            className="bg-white p-1 rounded shadow hover:bg-gray-50 outline-none border border-gray-200 focus:ring-2 focus:ring-primary"
+            aria-label="View Task"
+            onClick={e => {
+              e.stopPropagation();
+              setShowDrawer(true);
+            }}
+            type="button"
+          >
+            <View className="h-4 w-4" />
+          </button>
+        </div>
+
+        <TaskCardHeader title={task.title} priority={task.priority} />
         <CardContent className="space-y-2 pt-0 md:pt-1 px-4 md:px-6 pb-4">
           <TaskCardDescription description={task.description} />
-          <TaskCardMetadata 
+          <TaskCardMetadata
             deadline={task.deadline}
             assignedToName={task.assignedToName}
           />
-          <TaskCardFooter 
+          <TaskCardFooter
             status={task.status}
             isOverdue={isTaskOverdue()}
             commentCount={commentCount}
@@ -80,7 +102,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onAssign, onClick }) 
         </CardContent>
 
         <div className="absolute top-1 right-1">
-          <TaskCardActions 
+          <TaskCardActions
             task={task}
             onEdit={onEdit}
             onAssign={onAssign}
@@ -90,10 +112,15 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onAssign, onClick }) 
           />
         </div>
       </Card>
-      
-      <TaskCommentsDialog 
+
+      <TaskCommentsDialog
         open={showComments}
         onOpenChange={setShowComments}
+        task={task}
+      />
+      <TaskDetailDrawer
+        open={showDrawer}
+        onOpenChange={setShowDrawer}
         task={task}
       />
     </>
@@ -101,4 +128,3 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onAssign, onClick }) 
 };
 
 export default TaskCard;
-
