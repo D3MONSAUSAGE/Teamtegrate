@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useTimeTracking } from '@/hooks/useTimeTracking';
 import { startOfWeek, addDays, addWeeks, subWeeks, format, differenceInMinutes } from 'date-fns';
@@ -95,6 +96,7 @@ const TimeTracking: React.FC = () => {
       <TimeTrackingChart 
         weekStart={weekStart}
         totalTrackedMinutes={totalTrackedMinutes}
+        weeklyEntries={weeklyEntries}
       />
 
       <ClockInOutSection
