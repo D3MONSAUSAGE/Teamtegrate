@@ -1,7 +1,9 @@
+
 import { Task, Project, TaskComment } from '@/types';
 import { toast } from '@/components/ui/sonner';
 import { playSuccessSound, playErrorSound } from '@/utils/sounds';
 import { v4 as uuidv4 } from 'uuid';
+import { supabase } from '@/integrations/supabase/client';
 
 export const addCommentToTask = async (
   taskId: string,
@@ -24,6 +26,24 @@ export const addCommentToTask = async (
     // Find the task to get its project ID
     const task = tasks.find(t => t.id === taskId);
     const projectId = task?.projectId;
+    
+    // Save comment to Supabase for persistence
+    const { error } = await supabase
+      .from('comments')
+      .insert({
+        id: newComment.id,
+        user_id: comment.userId,
+        task_id: taskId,
+        project_id: projectId,
+        content: comment.text,
+        created_at: now.toISOString(),
+        updated_at: now.toISOString()
+      });
+
+    if (error) {
+      console.error('Error saving comment to database:', error);
+      throw error;
+    }
     
     // Update the task in the tasks array
     setTasks(prevTasks => prevTasks.map(task => {
