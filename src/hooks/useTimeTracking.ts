@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { startOfWeek, addDays, format, endOfWeek } from 'date-fns';
+import { startOfWeek, endOfWeek, format } from 'date-fns';
 
 export const useTimeTracking = () => {
   const { user } = useAuth();
@@ -106,7 +106,7 @@ export const useTimeTracking = () => {
       .select('*')
       .eq('user_id', user.id)
       .gte('clock_in', start.toISOString())
-      .lt('clock_in', end.toISOString())
+      .lte('clock_in', end.toISOString())
       .order('clock_in', { ascending: true });
 
     if (error) {
@@ -134,7 +134,7 @@ export const useTimeTracking = () => {
       .select('*')
       .eq('user_id', teamMemberId)
       .gte('clock_in', start.toISOString())
-      .lt('clock_in', end.toISOString())
+      .lte('clock_in', end.toISOString())
       .order('clock_in', { ascending: true });
 
     if (error) {

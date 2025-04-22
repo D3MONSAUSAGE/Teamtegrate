@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useTimeTracking } from '@/hooks/useTimeTracking';
-import { startOfWeek, addDays, addWeeks, subWeeks, differenceInMinutes, format } from 'date-fns';
+import { startOfWeek, addDays, addWeeks, subWeeks, differenceInMinutes, format, endOfWeek } from 'date-fns';
 import { Card } from "@/components/ui/card";
 import TimeTrackingHeader from './time-tracking/TimeTrackingHeader';
 import ClockInOutSection from './time-tracking/ClockInOutSection';
@@ -13,7 +13,7 @@ import { formatDuration, downloadCSV } from './time-tracking/utils';
 
 function getWeekRange(date: Date) {
   const start = startOfWeek(date, { weekStartsOn: 1 });
-  const end = addDays(start, 6);
+  const end = endOfWeek(start, { weekStartsOn: 1 });
   return { start, end };
 }
 
@@ -67,6 +67,7 @@ const TimeTracking: React.FC = () => {
 
   useEffect(() => {
     const fetchEntries = async () => {
+      console.log(`Fetching entries for week starting ${weekDate.toISOString()}`);
       const entries = await fetchTimeEntriesForWeek(weekDate);
       
       // For daily entries, we need to get the current date in local timezone
@@ -75,6 +76,8 @@ const TimeTracking: React.FC = () => {
         const entryDate = new Date(entry.clock_in).toISOString().split('T')[0];
         return entryDate === today;
       });
+      
+      console.log(`Fetched total entries: ${entries.length}, today's entries: ${todayEntries.length}`);
       
       setDailyEntries(todayEntries);
       setWeeklyEntries(entries);
