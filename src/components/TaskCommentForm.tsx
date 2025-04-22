@@ -43,7 +43,7 @@ const TaskCommentForm: React.FC<TaskCommentFormProps> = ({ taskId, onCommentAdde
       </div>
       <Button 
         type="submit"
-        disabled={!comment.trim() || isSubmitting}
+        disabled={!comment.trim() || isSubmitting || !user}
         className="flex items-center gap-2"
       >
         <MessageCirclePlus className="h-4 w-4" />

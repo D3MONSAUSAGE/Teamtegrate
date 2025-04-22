@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { TaskComment } from '@/types';
+import { Comment } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/AuthContext';
@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export interface TaskCommentsListProps {
-  taskComments: TaskComment[];
+  taskComments: Comment[];
   className?: string;
   onCommentDeleted?: () => void;
   onCommentUpdated?: () => void;
@@ -40,7 +40,7 @@ const TaskCommentsList: React.FC<TaskCommentsListProps> = ({
     return <div className={`text-sm text-muted-foreground ${className}`}>No comments yet.</div>;
   }
 
-  const handleEditClick = (comment: TaskComment) => {
+  const handleEditClick = (comment: Comment) => {
     setEditingId(comment.id);
     setEditContent(comment.text);
   };
@@ -74,7 +74,9 @@ const TaskCommentsList: React.FC<TaskCommentsListProps> = ({
             <div className="flex justify-between items-start mb-1">
               <div className="font-medium text-sm">{comment.userName}</div>
               <div className="text-xs text-muted-foreground">
-                {new Date(comment.createdAt).toLocaleDateString()}
+                {comment.createdAt instanceof Date 
+                  ? comment.createdAt.toLocaleDateString() 
+                  : new Date(comment.createdAt).toLocaleDateString()}
               </div>
             </div>
             
