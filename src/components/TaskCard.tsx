@@ -15,9 +15,10 @@ interface TaskCardProps {
   task: Task;
   onEdit?: (task: Task) => void;
   onAssign?: (task: Task) => void;
+  onClick?: () => void; // <-- add this
 }
 
-const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onAssign }) => {
+const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onAssign, onClick }) => {
   const { updateTaskStatus, deleteTask } = useTask();
   const [showComments, setShowComments] = useState(false);
 
@@ -48,23 +49,27 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onAssign }) => {
 
   return (
     <>
-      <Card className={cn(
-        "card-hover cursor-pointer border-2", 
-        getPriorityBackground(task.priority), 
-        isTaskOverdue() && "ring-2 ring-red-500 dark:ring-red-400"
-      )}>
+      <Card
+        className={cn(
+          "card-hover cursor-pointer border-2",
+          getPriorityBackground(task.priority),
+          isTaskOverdue() && "ring-2 ring-red-500 dark:ring-red-400"
+        )}
+        onClick={onClick}
+        tabIndex={0}
+        aria-label={`Open details for ${task.title}`}
+        role="button"
+      >
         <TaskCardHeader 
           title={task.title} 
           priority={task.priority}
         />
         <CardContent className="space-y-2 pt-0 md:pt-1 px-4 md:px-6 pb-4">
           <TaskCardDescription description={task.description} />
-          
           <TaskCardMetadata 
             deadline={task.deadline}
             assignedToName={task.assignedToName}
           />
-          
           <TaskCardFooter 
             status={task.status}
             isOverdue={isTaskOverdue()}
@@ -96,3 +101,4 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onAssign }) => {
 };
 
 export default TaskCard;
+
