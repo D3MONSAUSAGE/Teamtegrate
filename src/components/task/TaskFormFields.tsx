@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -10,8 +11,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { TaskPriority } from '@/types';
-import { Loader2 } from 'lucide-react';
+import { Loader2, CalendarIcon, Clock } from 'lucide-react';
 import { UseFormRegister, FieldErrors } from 'react-hook-form';
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { format } from 'date-fns';
+import { cn } from "@/lib/utils";
 
 interface AppUser {
   id: string;
@@ -45,6 +55,38 @@ const TaskFormFields: React.FC<TaskFormFieldsProps> = ({
   editingTask,
   currentProjectId
 }) => {
+  // Use state for the date and time
+  const [date, setDate] = useState<Date | undefined>(
+    editingTask ? new Date(editingTask.deadline) : undefined
+  );
+  
+  // Handle time input separately (HH:MM)
+  const [timeInput, setTimeInput] = useState<string>(
+    editingTask ? format(new Date(editingTask.deadline), 'HH:mm') : '12:00'
+  );
+
+  const handleDateChange = (selectedDate: Date | undefined) => {
+    if (!selectedDate) return;
+    
+    const [hours, minutes] = timeInput.split(':').map(Number);
+    const newDate = new Date(selectedDate);
+    newDate.setHours(hours || 0, minutes || 0, 0, 0);
+    
+    setDate(newDate);
+    setValue('deadline', newDate.toISOString());
+  };
+  
+  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTimeInput(e.target.value);
+    
+    if (date) {
+      const [hours, minutes] = e.target.value.split(':').map(Number);
+      const newDate = new Date(date);
+      newDate.setHours(hours || 0, minutes || 0, 0, 0);
+      setValue('deadline', newDate.toISOString());
+    }
+  };
+
   return (
     <>
       <div className="space-y-2">
@@ -137,15 +179,49 @@ const TaskFormFields: React.FC<TaskFormFieldsProps> = ({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="deadline">Deadline <span className="text-red-500">*</span></Label>
-        <Input
-          id="deadline"
-          type="datetime-local"
-          {...register('deadline', { required: 'Deadline is required' })}
-        />
+        <Label>Deadline <span className="text-red-500">*</span></Label>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button 
+                variant="outline" 
+                className={cn(
+                  "w-full sm:w-[240px] justify-start text-left font-normal",
+                  !date && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {date ? format(date, "PPP") : <span>Select date</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={date}
+                onSelect={handleDateChange}
+                initialFocus
+                className={cn("p-3 pointer-events-auto")}
+              />
+            </PopoverContent>
+          </Popover>
+          
+          <div className="flex items-center">
+            <Clock className="mr-2 h-4 w-4" />
+            <Input
+              type="time"
+              value={timeInput}
+              onChange={handleTimeChange}
+              className="w-[120px]"
+            />
+          </div>
+        </div>
         {errors.deadline && (
           <span className="text-xs text-red-500">{errors.deadline.message as string}</span>
         )}
+        <input
+          type="hidden"
+          {...register('deadline', { required: 'Deadline is required' })}
+        />
       </div>
 
       <div className="space-y-2">

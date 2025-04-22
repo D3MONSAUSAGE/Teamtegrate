@@ -18,13 +18,19 @@ export const useTaskForm = (editingTask?: Task, currentProjectId?: string) => {
     editingTask?.assignedToId
   );
 
+  // Set default values for the form, with ISO string for deadline
+  const defaultDeadline = editingTask?.deadline 
+    ? new Date(editingTask.deadline).toISOString()
+    : '';
+
   const { register, handleSubmit, formState: { errors }, reset, setValue } = useForm({
     defaultValues: {
       title: editingTask?.title || '',
       description: editingTask?.description || '',
       priority: editingTask?.priority || 'Medium' as TaskPriority,
-      deadline: editingTask ? format(new Date(editingTask.deadline), "yyyy-MM-dd'T'HH:mm") : '',
+      deadline: defaultDeadline,
       projectId: editingTask?.projectId || currentProjectId || '',
+      cost: editingTask?.cost || '',
     },
   });
 

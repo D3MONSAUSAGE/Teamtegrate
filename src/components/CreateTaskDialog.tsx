@@ -55,17 +55,22 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
       setValue('title', editingTask.title);
       setValue('description', editingTask.description);
       setValue('priority', editingTask.priority);
-      setValue('deadline', format(new Date(editingTask.deadline), "yyyy-MM-dd'T'HH:mm"));
+      setValue('deadline', new Date(editingTask.deadline).toISOString());
       setValue('projectId', editingTask.projectId || '');
       setSelectedMember(editingTask.assignedToId);
     }
   }, [open, editingTask, currentProjectId, setValue, reset, setSelectedMember]);
 
   const onSubmit = (data: any) => {
+    // Handle the case where deadline might come as string or Date
+    const deadlineDate = typeof data.deadline === 'string' 
+      ? new Date(data.deadline)
+      : data.deadline;
+
     if (isEditMode && editingTask) {
       updateTask(editingTask.id, {
         ...data,
-        deadline: new Date(data.deadline),
+        deadline: deadlineDate,
         assignedToId: selectedMember === "unassigned" ? undefined : selectedMember,
         assignedToName: selectedMember && selectedMember !== "unassigned" ? 
           appUsers?.find(m => m.id === selectedMember)?.name : undefined
@@ -75,10 +80,10 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
         title: data.title,
         description: data.description,
         priority: data.priority,
-        deadline: new Date(data.deadline),
+        deadline: deadlineDate,
         status: 'To Do',
         userId: user?.id || '',
-        projectId: data.projectId === "none" ? undefined : data.projectId, // Now always set
+        projectId: data.projectId === "none" ? undefined : data.projectId,
         assignedToId: selectedMember === "unassigned" ? undefined : selectedMember,
         assignedToName: selectedMember && selectedMember !== "unassigned" ? 
           appUsers?.find(m => m.id === selectedMember)?.name : undefined
