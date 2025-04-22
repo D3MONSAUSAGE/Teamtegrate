@@ -17,6 +17,7 @@ interface TaskTabsProps {
   completedTasks: Task[];
   onEdit: (task: Task) => void;
   onNewTask: () => void;
+  onShowComments?: (task: Task) => void;
 }
 
 const TaskTabs = ({ 
@@ -25,7 +26,8 @@ const TaskTabs = ({
   pendingTasks, 
   completedTasks,
   onEdit,
-  onNewTask
+  onNewTask,
+  onShowComments
 }: TaskTabsProps) => {
   const isMobile = useIsMobile();
 
@@ -65,6 +67,7 @@ const TaskTabs = ({
           tasks={todoTasks} 
           onEdit={onEdit} 
           onNewTask={onNewTask}
+          onShowComments={onShowComments}
           emptyMessage="No to-do tasks"
         />
       </TabsContent>
@@ -74,6 +77,7 @@ const TaskTabs = ({
           tasks={inProgressTasks} 
           onEdit={onEdit} 
           onNewTask={onNewTask}
+          onShowComments={onShowComments}
           emptyMessage="No in-progress tasks"
         />
       </TabsContent>
@@ -83,6 +87,7 @@ const TaskTabs = ({
           tasks={pendingTasks} 
           onEdit={onEdit} 
           onNewTask={onNewTask}
+          onShowComments={onShowComments}
           emptyMessage="No pending tasks"
         />
       </TabsContent>
@@ -92,6 +97,7 @@ const TaskTabs = ({
           tasks={completedTasks} 
           onEdit={onEdit} 
           onNewTask={onNewTask}
+          onShowComments={onShowComments}
           emptyMessage="No completed tasks"
         />
       </TabsContent>

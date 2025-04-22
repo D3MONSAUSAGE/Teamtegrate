@@ -20,6 +20,11 @@ const TasksPage = () => {
     setIsCreateTaskOpen(true);
   };
   
+  const handleShowComments = (task: Task) => {
+    setSelectedTask(task);
+    setShowComments(true);
+  };
+  
   // Filter tasks by status
   const todoTasks = tasks.filter((task) => task.status === 'To Do');
   const inProgressTasks = tasks.filter((task) => task.status === 'In Progress');
@@ -78,6 +83,7 @@ const TasksPage = () => {
           setEditingTask(undefined);
           setIsCreateTaskOpen(true);
         }}
+        onShowComments={handleShowComments}
       />
       
       <CreateTaskDialog 
@@ -86,11 +92,14 @@ const TasksPage = () => {
         editingTask={editingTask}
       />
       
-      <TaskCommentsDialog
-        open={showComments}
-        onOpenChange={setShowComments}
-        task={selectedTask}
-      />
+      {/* Only render the dialog when we have a task and the dialog is open */}
+      {selectedTask && (
+        <TaskCommentsDialog
+          open={showComments}
+          onOpenChange={setShowComments}
+          task={selectedTask}
+        />
+      )}
     </div>
   );
 };

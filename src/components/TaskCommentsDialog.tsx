@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Task } from '@/types';
 import TaskCommentForm from './TaskCommentForm';
@@ -19,19 +19,23 @@ const TaskCommentsDialog: React.FC<TaskCommentsDialogProps> = ({
   task
 }) => {
   const [comments, setComments] = useState(task?.comments || []);
-
-  const loadComments = async () => {
+  
+  const loadComments = useCallback(async () => {
     if (task) {
-      const fetchedComments = await fetchComments(task.id);
-      setComments(fetchedComments);
+      try {
+        const fetchedComments = await fetchComments(task.id);
+        setComments(fetchedComments);
+      } catch (error) {
+        console.error("Error loading comments:", error);
+      }
     }
-  };
+  }, [task]);
 
   useEffect(() => {
     if (open && task) {
       loadComments();
     }
-  }, [open, task]);
+  }, [open, task, loadComments]);
 
   if (!task) return null;
   
