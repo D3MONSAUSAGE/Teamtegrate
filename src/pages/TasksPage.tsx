@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useTask } from '@/contexts/task';
 import TaskCard from '@/components/TaskCard';
 import { Task } from '@/types';
-import { Plus, Filter } from 'lucide-react';
+import { Plus, Filter, Calendar, Clock, ListOrdered } from 'lucide-react';
 import CreateTaskDialog from '@/components/CreateTaskDialog';
 import {
   Tabs,
@@ -57,7 +57,18 @@ const TasksPage = () => {
           const priorityValues = { 'High': 0, 'Medium': 1, 'Low': 2 };
           return priorityValues[a.priority] - priorityValues[b.priority];
         case 'created':
-          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        case 'upcoming':
+          const now = new Date().getTime();
+          const deadlineA = new Date(a.deadline).getTime();
+          const deadlineB = new Date(b.deadline).getTime();
+          // Sort by how soon the deadline is approaching (positive = approaching)
+          const timeToDeadlineA = deadlineA - now;
+          const timeToDeadlineB = deadlineB - now;
+          // Only consider upcoming (positive) deadlines
+          const upcomingA = timeToDeadlineA > 0 ? timeToDeadlineA : Number.MAX_SAFE_INTEGER;
+          const upcomingB = timeToDeadlineB > 0 ? timeToDeadlineB : Number.MAX_SAFE_INTEGER;
+          return upcomingA - upcomingB;
         default:
           return 0;
       }
@@ -82,9 +93,18 @@ const TasksPage = () => {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuRadioGroup value={sortBy} onValueChange={setSortBy}>
-                <DropdownMenuRadioItem value="deadline">Deadline</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="priority">Priority</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="created">Creation Date</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="deadline" className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4" /> Deadline
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="upcoming" className="flex items-center gap-2">
+                  <Clock className="h-4 w-4" /> Upcoming
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="priority" className="flex items-center gap-2">
+                  <ListOrdered className="h-4 w-4" /> Priority
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="created" className="flex items-center gap-2">
+                  <Clock className="h-4 w-4" /> Newest First
+                </DropdownMenuRadioItem>
               </DropdownMenuRadioGroup>
             </DropdownMenuContent>
           </DropdownMenu>

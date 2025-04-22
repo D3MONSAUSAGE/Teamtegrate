@@ -13,10 +13,10 @@ interface TaskCardHeaderProps {
 const TaskCardHeader: React.FC<TaskCardHeaderProps> = ({ title, priority }) => {
   const getPriorityColor = (priority: string) => {
     switch(priority) {
-      case 'Low': return 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-200';
-      case 'Medium': return 'bg-emerald-200 dark:bg-emerald-800/40 text-emerald-900 dark:text-emerald-100';
-      case 'High': return 'bg-emerald-300 dark:bg-emerald-700/50 text-emerald-950 dark:text-emerald-50';
-      default: return 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-200';
+      case 'Low': return 'bg-blue-200 dark:bg-blue-800/60 text-blue-800 dark:text-blue-100';
+      case 'Medium': return 'bg-amber-200 dark:bg-amber-800/60 text-amber-800 dark:text-amber-100';
+      case 'High': return 'bg-rose-200 dark:bg-rose-800/60 text-rose-800 dark:text-rose-100';
+      default: return 'bg-blue-200 dark:bg-blue-800/60 text-blue-800 dark:text-blue-100';
     }
   };
 

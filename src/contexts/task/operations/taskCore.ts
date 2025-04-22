@@ -1,3 +1,4 @@
+
 import { Task, User, TaskStatus, DailyScore, TaskPriority, Project } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
@@ -202,7 +203,8 @@ export const deleteTask = async (
     if (!user) return;
 
     // Find the task to get its project ID before deleting
-    const taskToDelete = projects.flatMap(p => p.tasks).find(t => t.id === taskId);
+    const taskToDelete = projects.flatMap(p => p.tasks).find(t => t.id === taskId) || 
+                         projects.find(p => p.tasks.some(t => t.id === taskId))?.tasks.find(t => t.id === taskId);
     const projectId = taskToDelete?.projectId;
 
     const { error } = await supabase
@@ -217,7 +219,7 @@ export const deleteTask = async (
       return;
     }
 
-    // Remove from tasks array
+    // Immediately update state to remove the task
     setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
     
     // Also remove from project if it belongs to one

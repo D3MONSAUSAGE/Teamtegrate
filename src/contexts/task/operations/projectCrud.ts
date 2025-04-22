@@ -1,3 +1,4 @@
+
 import { User, Project, Task } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
@@ -127,14 +128,22 @@ export const deleteProject = async (
   try {
     if (!user) return;
     
+    // Find all tasks belonging to this project
     const projectTasks = tasks.filter(task => task.projectId === projectId);
+    
+    // Update the tasks to remove project association
     for (const task of projectTasks) {
-      await supabase
+      const { error } = await supabase
         .from('tasks')
         .update({ project_id: null })
         .eq('id', task.id);
+        
+      if (error) {
+        console.error('Error updating task:', error);
+      }
     }
     
+    // Delete the project
     const { error } = await supabase
       .from('projects')
       .delete()
@@ -147,8 +156,10 @@ export const deleteProject = async (
       return;
     }
     
+    // Immediately update state to remove the project
     setProjects(prevProjects => prevProjects.filter(project => project.id !== projectId));
     
+    // Update tasks to remove project association in the local state
     setTasks(prevTasks => prevTasks.map(task => {
       if (task.projectId === projectId) {
         return { ...task, projectId: undefined };

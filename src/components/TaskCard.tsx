@@ -21,13 +21,13 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onAssign }) => {
   const { updateTaskStatus, deleteTask } = useTask();
   const [showComments, setShowComments] = useState(false);
 
-  // Define background colors for priority (green shades in light and dark modes)
+  // Define colorful backgrounds for priority levels
   const getPriorityBackground = (priority: string) => {
     switch(priority) {
-      case 'Low': return 'bg-emerald-50 dark:bg-emerald-900/10 text-emerald-900 dark:text-emerald-200';
-      case 'Medium': return 'bg-emerald-100 dark:bg-emerald-900/20 text-emerald-900 dark:text-emerald-100';
-      case 'High': return 'bg-emerald-200 dark:bg-emerald-900/30 text-emerald-900 dark:text-emerald-50';
-      default: return 'bg-emerald-50 dark:bg-emerald-900/10 text-emerald-900 dark:text-emerald-200';
+      case 'Low': return 'bg-blue-50 dark:bg-blue-900/10 text-blue-900 dark:text-blue-200 border-blue-200 dark:border-blue-800';
+      case 'Medium': return 'bg-amber-50 dark:bg-amber-900/10 text-amber-900 dark:text-amber-100 border-amber-200 dark:border-amber-800';
+      case 'High': return 'bg-rose-50 dark:bg-rose-900/10 text-rose-900 dark:text-rose-100 border-rose-200 dark:border-rose-800';
+      default: return 'bg-blue-50 dark:bg-blue-900/10 text-blue-900 dark:text-blue-200 border-blue-200 dark:border-blue-800';
     }
   };
 
@@ -42,9 +42,17 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onAssign }) => {
     updateTaskStatus(task.id, newStatus);
   };
 
+  const handleDeleteTask = async (taskId: string) => {
+    await deleteTask(taskId);
+  };
+
   return (
     <>
-      <Card className={cn("card-hover cursor-pointer", getPriorityBackground(task.priority), isTaskOverdue() && "ring-2 ring-red-500 dark:ring-red-400")}>
+      <Card className={cn(
+        "card-hover cursor-pointer border-2", 
+        getPriorityBackground(task.priority), 
+        isTaskOverdue() && "ring-2 ring-red-500 dark:ring-red-400"
+      )}>
         <TaskCardHeader 
           title={task.title} 
           priority={task.priority}
@@ -72,7 +80,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onAssign }) => {
             onEdit={onEdit}
             onAssign={onAssign}
             onStatusChange={handleStatusChange}
-            onDelete={deleteTask}
+            onDelete={handleDeleteTask}
             onShowComments={() => setShowComments(true)}
           />
         </div>
