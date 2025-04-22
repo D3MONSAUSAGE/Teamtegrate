@@ -1,4 +1,5 @@
-import { Project, Task, TaskPriority } from '@/types';
+
+import { Project, Task, TaskPriority, TaskStatus } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -82,18 +83,18 @@ export const fetchProjects = async (
 
           return {
             id: task.id,
-            userId: task.user_id || user.id,
+            userId: task.assigned_to_id || user.id, // Using assigned_to_id instead of user_id
             projectId: project.id,
             title: task.title || '',
             description: task.description || '',
             deadline: parseDate(task.deadline),
             priority: (task.priority as TaskPriority) || 'Medium',
-            status: task.status || 'To Do',
+            status: (task.status || 'To Do') as TaskStatus, // Explicitly casting to TaskStatus
             createdAt: parseDate(task.created_at),
             updatedAt: parseDate(task.updated_at),
             completedAt: task.completed_at ? parseDate(task.completed_at) : undefined,
             assignedToId: task.assigned_to_id,
-            assignedToName: task.assigned_to_name,
+            assignedToName: task.assigned_to_id, // Using assigned_to_id since assigned_to_name doesn't exist
             comments: taskComments,
             cost: task.cost || 0
           };

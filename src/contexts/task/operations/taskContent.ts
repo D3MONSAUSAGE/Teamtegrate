@@ -1,5 +1,6 @@
 
-import { Task, Project, TaskComment } from '@/types';
+
+import { Task, Project, TaskComment, TaskStatus } from '@/types';
 import { toast } from '@/components/ui/sonner';
 import { playSuccessSound, playErrorSound } from '@/utils/sounds';
 import { v4 as uuidv4 } from 'uuid';
