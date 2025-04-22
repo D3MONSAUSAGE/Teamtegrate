@@ -120,10 +120,34 @@ export const useTimeTracking = () => {
     return data || [];
   };
 
+  // New function to fetch time entries for a specific team member
+  const getTeamMemberTimeEntries = async (teamMemberId: string, weekStart: Date) => {
+    if (!user) return [];
+    
+    const start = startOfWeek(weekStart, { weekStartsOn: 1 });
+    const end = addDays(start, 7);
+
+    const { data, error } = await supabase
+      .from('time_entries')
+      .select('*')
+      .eq('user_id', teamMemberId)
+      .gte('clock_in', start.toISOString())
+      .lt('clock_in', end.toISOString())
+      .order('clock_in', { ascending: true });
+
+    if (error) {
+      console.error(`Error fetching time entries for team member ${teamMemberId}:`, error);
+      return [];
+    }
+
+    return data || [];
+  };
+
   return {
     currentEntry,
     clockIn,
     clockOut,
-    getWeeklyTimeEntries
+    getWeeklyTimeEntries,
+    getTeamMemberTimeEntries
   };
 };

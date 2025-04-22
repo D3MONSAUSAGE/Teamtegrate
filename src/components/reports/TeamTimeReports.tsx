@@ -5,18 +5,16 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@
 import { startOfWeek, addDays, endOfWeek, format, differenceInMinutes } from "date-fns";
 import useTeamMembers from "@/hooks/useTeamMembers";
 import { supabase } from "@/integrations/supabase/client";
-import { User } from "@/types";
 import { CalendarDays, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
-// Define TeamMember type based on what's used in the useTeamMembers hook
 type TeamMember = {
   id: string;
   name: string;
   email: string;
   role: string;
-  managerId: string;
 };
 
 type TimeEntry = {
@@ -41,34 +39,52 @@ const TeamTimeReports: React.FC = () => {
   const [weekDate, setWeekDate] = useState(new Date());
   const [teamEntries, setTeamEntries] = useState<Record<string, TimeEntry[]>>({});
   const [isLoading, setIsLoading] = useState(false);
+  const { user } = useAuth();
 
   const { start: weekStart, end: weekEnd } = getWeekRange(weekDate);
 
   // Fetch each team member's week entries
   useEffect(() => {
     const fetchTeamEntries = async () => {
+      if (!user) return;
+      
       setIsLoading(true);
-      const entriesByMember: Record<string, TimeEntry[]> = {};
-      if (!teamMembers.length) {
+      try {
+        const entriesByMember: Record<string, TimeEntry[]> = {};
+        
+        if (!teamMembers.length) {
+          setIsLoading(false);
+          return;
+        }
+        
+        for (const member of teamMembers) {
+          const { data, error } = await supabase
+            .from("time_entries")
+            .select("*")
+            .eq("user_id", member.id)
+            .gte("clock_in", weekStart.toISOString())
+            .lte("clock_in", weekEnd.toISOString())
+            .order("clock_in", { ascending: true });
+            
+          if (error) {
+            console.error(`Error fetching entries for ${member.name}:`, error);
+            continue;
+          }
+          
+          entriesByMember[member.id] = data || [];
+        }
+        
+        setTeamEntries(entriesByMember);
+      } catch (error) {
+        console.error("Error fetching team entries:", error);
+        toast.error("Failed to load team time reports");
+      } finally {
         setIsLoading(false);
-        return;
       }
-      for (let i = 0; i < teamMembers.length; i++) {
-        const member = teamMembers[i];
-        const { data, error } = await supabase
-          .from("time_entries")
-          .select("*")
-          .eq("user_id", member.id)
-          .gte("clock_in", weekStart.toISOString())
-          .lte("clock_in", weekEnd.toISOString())
-          .order("clock_in", { ascending: true });
-        entriesByMember[member.id] = data || [];
-      }
-      setTeamEntries(entriesByMember);
-      setIsLoading(false);
     };
+    
     fetchTeamEntries();
-  }, [teamMembers, weekDate.getTime()]);
+  }, [teamMembers, weekDate, user]);
 
   // Change weeks
   const changeWeek = (delta: number) => {
@@ -83,7 +99,7 @@ const TeamTimeReports: React.FC = () => {
           <CardTitle>Team Members Time Reports</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-4 mb-2">
+          <div className="flex items-center gap-4 mb-4">
             <Button variant="outline" size="icon" onClick={() => changeWeek(-1)}>
               <CalendarDays className="h-4 w-4" />
               <span className="sr-only">Previous week</span>
@@ -99,9 +115,10 @@ const TeamTimeReports: React.FC = () => {
           <div className="text-muted-foreground text-sm mb-4">
             View and analyze your team members' working hours for the selected week.
           </div>
+          
           {isLoading ? (
             <div className="py-12 text-center text-muted-foreground">Loading team reports...</div>
-          ) : (
+          ) : teamMembers.length > 0 ? (
             <div className="space-y-6">
               {teamMembers.map((member) => {
                 const entries = teamEntries[member.id] || [];
@@ -116,8 +133,10 @@ const TeamTimeReports: React.FC = () => {
                   }
                   return acc;
                 }, 0);
+                
                 // Daily breakdown
                 const days = Array.from({ length: 7 }, (_, d) => addDays(weekStart, d));
+                
                 return (
                   <Card key={member.id}>
                     <CardHeader>
@@ -140,8 +159,12 @@ const TeamTimeReports: React.FC = () => {
                         </TableHeader>
                         <TableBody>
                           {days.map(day => {
-                            const dateStr = day.toISOString().slice(0, 10);
-                            const dayEntries = entries.filter(e => e.clock_in.startsWith(dateStr));
+                            const dateStr = format(day, 'yyyy-MM-dd');
+                            const dayEntries = entries.filter(e => {
+                              const entryDate = format(new Date(e.clock_in), 'yyyy-MM-dd');
+                              return entryDate === dateStr;
+                            });
+                            
                             const dayMinutes = dayEntries.reduce((acc, entry) => {
                               if (entry.duration_minutes) return acc + entry.duration_minutes;
                               if (entry.clock_in && entry.clock_out) {
@@ -152,6 +175,7 @@ const TeamTimeReports: React.FC = () => {
                               }
                               return acc;
                             }, 0);
+                            
                             return (
                               <TableRow key={dateStr}>
                                 <TableCell>{format(day, 'EEE MMM dd')}</TableCell>
@@ -178,9 +202,11 @@ const TeamTimeReports: React.FC = () => {
                   </Card>
                 );
               })}
-              {teamMembers.length === 0 && (
-                <div className="text-muted-foreground text-center">No team members found.</div>
-              )}
+            </div>
+          ) : (
+            <div className="py-8 text-center">
+              <p className="text-muted-foreground mb-2">No team members found.</p>
+              <p className="text-sm text-muted-foreground">Add team members to see their time reports here.</p>
             </div>
           )}
         </CardContent>
