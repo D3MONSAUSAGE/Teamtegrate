@@ -58,7 +58,11 @@ export const addProject = async (
         updatedAt: new Date(data.updated_at),
         tasks: [],
         teamMembers,
-        tags: []
+        tags: [],
+        status: project.status || 'To Do', // Add the status property with default
+        budget: project.budget,
+        budgetSpent: data.budget_spent || 0,
+        is_completed: data.is_completed || false
       };
       
       setProjects(prevProjects => [...prevProjects, newProject]);
