@@ -1,3 +1,4 @@
 
 export * from './AuthContext';
-export * from './task';
+export * from './task/TaskContext';
+export * from './checklists';
