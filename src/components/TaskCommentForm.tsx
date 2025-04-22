@@ -3,30 +3,32 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from '@/contexts/AuthContext';
-import { useTask } from '@/contexts/task';
 import { MessageCirclePlus } from 'lucide-react';
+import { addComment } from '@/utils/comments';
 
 interface TaskCommentFormProps {
   taskId: string;
+  onCommentAdded?: () => void;
 }
 
-const TaskCommentForm: React.FC<TaskCommentFormProps> = ({ taskId }) => {
+const TaskCommentForm: React.FC<TaskCommentFormProps> = ({ taskId, onCommentAdded }) => {
   const [comment, setComment] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useAuth();
-  const { addCommentToTask } = useTask();
   
-  const handleSubmitComment = (e: React.FormEvent) => {
+  const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!comment.trim() || !user) return;
     
-    addCommentToTask(taskId, {
-      userId: user.id,
-      userName: user.name || user.email,
-      text: comment
-    });
+    setIsSubmitting(true);
+    const result = await addComment(comment, taskId);
+    setIsSubmitting(false);
     
-    setComment('');
+    if (result) {
+      setComment('');
+      onCommentAdded?.();
+    }
   };
   
   return (
@@ -41,7 +43,7 @@ const TaskCommentForm: React.FC<TaskCommentFormProps> = ({ taskId }) => {
       </div>
       <Button 
         type="submit"
-        disabled={!comment.trim()}
+        disabled={!comment.trim() || isSubmitting}
         className="flex items-center gap-2"
       >
         <MessageCirclePlus className="h-4 w-4" />
