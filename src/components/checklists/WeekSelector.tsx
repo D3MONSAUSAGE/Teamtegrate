@@ -1,8 +1,8 @@
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { format, startOfWeek, endOfWeek } from 'date-fns';
+import { Button } from "@/components/ui/button";
+import { format } from 'date-fns';
+import { CalendarDays } from 'lucide-react';
 
 interface WeekSelectorProps {
   weekStart: Date;
@@ -15,30 +15,26 @@ const WeekSelector: React.FC<WeekSelectorProps> = ({
   weekStart,
   setWeekStart,
   goToPrevWeek,
-  goToNextWeek,
+  goToNextWeek
 }) => {
-  const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
-
   return (
-    <div className="flex items-center justify-between max-w-full mb-2">
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" onClick={goToPrevWeek}>
-          <ChevronLeft className="w-4 h-4" />
-        </Button>
-        <span className="font-medium">
-          {format(weekStart, 'MMM d')} - {format(weekEnd, 'MMM d, yyyy')}
-        </span>
-        <Button variant="ghost" size="icon" onClick={goToNextWeek}>
-          <ChevronRight className="w-4 h-4" />
-        </Button>
-      </div>
+    <div className="flex items-center gap-2">
       <Button
-        variant="secondary"
-        size="sm"
-        className="ml-2"
-        onClick={() => setWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }))}
+        variant="outline"
+        size="icon"
+        onClick={goToPrevWeek}
       >
-        This Week
+        <CalendarDays className="h-4 w-4" />
+      </Button>
+      <span className="text-sm md:text-base font-medium">
+        Week of {format(weekStart, "MMM d, yyyy")}
+      </span>
+      <Button
+        variant="outline"
+        size="icon"
+        onClick={goToNextWeek}
+      >
+        <CalendarDays className="h-4 w-4 rotate-180" />
       </Button>
     </div>
   );
