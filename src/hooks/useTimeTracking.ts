@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { startOfWeek, addDays, subWeeks, endOfWeek } from 'date-fns';
+import { startOfWeek, addDays, subWeeks, endOfWeek, parseISO, format } from 'date-fns';
 
 export const useTimeTracking = () => {
   const { user } = useAuth();
@@ -99,14 +99,14 @@ export const useTimeTracking = () => {
     } else {
       start = startOfWeek(new Date(), { weekStartsOn: 1 });
     }
-    const end = addDays(start, 7);
+    const end = endOfWeek(start, { weekStartsOn: 1 });
 
     const { data, error } = await supabase
       .from('time_entries')
       .select('*')
       .eq('user_id', user.id)
       .gte('clock_in', start.toISOString())
-      .lt('clock_in', end.toISOString())
+      .lte('clock_in', end.toISOString())
       .order('clock_in', { ascending: true });
 
     if (error) {
@@ -115,6 +115,7 @@ export const useTimeTracking = () => {
       return [];
     }
 
+    console.log(`Retrieved ${data?.length || 0} time entries from ${format(start, 'yyyy-MM-dd')} to ${format(end, 'yyyy-MM-dd')}`);
     return data || [];
   };
 
@@ -122,14 +123,14 @@ export const useTimeTracking = () => {
     if (!user) return [];
     
     const start = startOfWeek(weekStart, { weekStartsOn: 1 });
-    const end = addDays(start, 7);
+    const end = endOfWeek(start, { weekStartsOn: 1 });
 
     const { data, error } = await supabase
       .from('time_entries')
       .select('*')
       .eq('user_id', teamMemberId)
       .gte('clock_in', start.toISOString())
-      .lt('clock_in', end.toISOString())
+      .lte('clock_in', end.toISOString())
       .order('clock_in', { ascending: true });
 
     if (error) {
@@ -151,22 +152,36 @@ export const useTimeTracking = () => {
     
     console.log('Fetching time entries from', start.toISOString(), 'to', end.toISOString());
     
-    const { data, error } = await supabase
-      .from('time_entries')
-      .select('*')
-      .eq('user_id', user.id)
-      .gte('clock_in', start.toISOString())
-      .lte('clock_in', end.toISOString()) // Changed from lt to lte to include entries exactly at the end time
-      .order('clock_in', { ascending: true });
+    try {
+      const { data, error } = await supabase
+        .from('time_entries')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('clock_in', start.toISOString())
+        .lte('clock_in', end.toISOString()) // This ensures we get entries exactly at the end time
+        .order('clock_in', { ascending: true });
 
-    if (error) {
-      console.error('Error fetching time entries for week:', error);
-      toast.error('Failed to fetch time entries');
+      if (error) {
+        console.error('Error fetching time entries for week:', error);
+        toast.error('Failed to fetch time entries');
+        return [];
+      }
+
+      console.log(`Found ${data?.length || 0} time entries for the week`);
+      
+      // Log each entry for debugging
+      if (data) {
+        data.forEach(entry => {
+          console.log(`Entry ${entry.id}: ${entry.clock_in} - ${entry.clock_out || 'ongoing'}, Notes: ${entry.notes || 'none'}`);
+        });
+      }
+      
+      return data || [];
+    } catch (e) {
+      console.error('Exception while fetching time entries:', e);
+      toast.error('Failed to fetch time entries due to an exception');
       return [];
     }
-
-    console.log(`Found ${data?.length || 0} time entries for the week`);
-    return data || [];
   };
 
   return {
