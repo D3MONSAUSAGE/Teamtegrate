@@ -53,6 +53,10 @@ const JournalEntryList: React.FC<JournalEntryListProps> = ({
               <span className="text-muted-foreground font-mono">
                 {new Date(entry.created_at).toLocaleString()}
               </span>
+              {/* Show author for public entries */}
+              {entry.is_public && entry.user_id !== user?.id && (
+                <span className="ml-2 text-foreground font-medium">by {entry.author_name || "Unknown"}</span>
+              )}
             </div>
             <h3 className="font-bold text-lg mb-1 text-gradient">{entry.title}</h3>
             <p className="text-base whitespace-pre-line mb-6 text-foreground/80">{entry.content}</p>

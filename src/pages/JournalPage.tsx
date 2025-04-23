@@ -15,6 +15,7 @@ export interface JournalEntry {
   created_at: string;
   updated_at: string;
   user_id: string;
+  author_name?: string | null;
 }
 
 const JournalPage = () => {
@@ -30,11 +31,51 @@ const JournalPage = () => {
       .select("*")
       .or(`user_id.eq.${user.id},is_public.eq.true`)
       .order("created_at", { ascending: false });
+
     if (error) {
       toast.error("Failed to load entries");
-    } else {
-      setEntries(data as JournalEntry[]);
+      setIsLoading(false);
+      return;
     }
+
+    // Find all public entries not by you
+    const publicEntries = (data as JournalEntry[]).filter(
+      (e) => e.is_public && e.user_id !== user.id
+    );
+    const publicUserIds = [
+      ...new Set(publicEntries.map((e) => e.user_id).filter(Boolean)),
+    ];
+
+    let userMap: Record<string, string> = {};
+    if (publicUserIds.length > 0) {
+      // Fetch names from users table
+      const { data: usersData } = await supabase
+        .from("users")
+        .select("id, name")
+        .in("id", publicUserIds);
+      if (usersData) {
+        userMap = usersData.reduce(
+          (acc: Record<string, string>, u: any) => {
+            acc[u.id] = u.name;
+            return acc;
+          },
+          {}
+        );
+      }
+    }
+
+    // Attach author_name to each entry if public and not your own
+    const entriesWithAuthors = (data as JournalEntry[]).map((entry) => {
+      if (entry.is_public && entry.user_id !== user.id) {
+        return {
+          ...entry,
+          author_name: userMap[entry.user_id] || "Unknown",
+        };
+      }
+      return entry;
+    });
+
+    setEntries(entriesWithAuthors);
     setIsLoading(false);
   }
 
