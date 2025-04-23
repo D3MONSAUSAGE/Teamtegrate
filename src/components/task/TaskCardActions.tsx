@@ -44,18 +44,6 @@ const TaskCardActions: React.FC<TaskCardActionsProps> = ({
             Assign Member
           </DropdownMenuItem>
         )}
-        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onStatusChange('To Do'); }}>
-          Mark as To Do
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onStatusChange('In Progress'); }}>
-          Mark as In Progress
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onStatusChange('Pending'); }}>
-          Mark as Pending
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onStatusChange('Completed'); }}>
-          Mark as Completed
-        </DropdownMenuItem>
         <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onShowComments(); }}>
           View Details
         </DropdownMenuItem>
