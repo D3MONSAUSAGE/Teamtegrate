@@ -5,6 +5,8 @@ import ProfileInfoForm from "./ProfileInfoForm";
 import ProfileAvatar from "./ProfileAvatar";
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { User } from "lucide-react";
 
 const ProfileSection = () => {
   const { user } = useAuth();
@@ -42,10 +44,15 @@ const ProfileSection = () => {
   }
 
   return (
-    <div>
-      <h2 className="text-xl font-semibold mb-4">Profile</h2>
-      <div className="bg-card dark:bg-[#1f2133] p-6 rounded-lg border border-border dark:border-gray-800">
-        <div className="flex flex-col md:flex-row md:items-start gap-8">
+    <Card className="bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-[#1f2133] dark:to-[#181928]/50 border-none shadow-sm">
+      <CardHeader className="pb-4">
+        <CardTitle className="flex items-center gap-3 text-xl font-semibold text-primary">
+          <User className="w-6 h-6" />
+          Profile Settings
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6 bg-white/50 dark:bg-[#1f2133]/70 rounded-b-lg p-6">
+        <div className="flex flex-col md:flex-row md:items-start gap-8 animate-fade-in">
           <ProfileAvatar 
             user={user} 
             setAvatarUrl={setAvatarUrl} 
@@ -60,8 +67,8 @@ const ProfileSection = () => {
             isLoading={isLoading}
           />
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 
