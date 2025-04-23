@@ -3,5 +3,7 @@ export * from './taskCore';
 export * from './taskStatus';
 export * from './taskAssignment';
 export * from './taskContent';
-export * from './projectCrud';
+export * from './addProject';
+export * from './updateProject';
+export * from './deleteProject';
 export * from './projectTeamMember';
