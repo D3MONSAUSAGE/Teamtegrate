@@ -12,6 +12,13 @@ const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({
   deadline,
   assignedToName,
 }) => {
+  // Format the display name to handle the case where assignedToName is an ID
+  const displayName = assignedToName 
+    ? (assignedToName.includes('-') && assignedToName.length > 20) 
+      ? 'Unassigned' 
+      : assignedToName
+    : null;
+
   return (
     <div className="flex items-center justify-between pt-1 md:pt-2">
       <div className="flex items-center text-xs text-gray-500 gap-1">
@@ -21,10 +28,10 @@ const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({
         </span>
       </div>
       
-      {assignedToName && (
+      {displayName && (
         <div className="flex items-center text-xs text-gray-500 gap-1">
           <User className="h-3 w-3 flex-shrink-0" />
-          <span className="truncate max-w-[100px]">{assignedToName}</span>
+          <span className="truncate max-w-[100px]">{displayName}</span>
         </div>
       )}
     </div>

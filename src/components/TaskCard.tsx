@@ -64,6 +64,13 @@ const TaskCard: React.FC<TaskCardProps> = ({
     }
   };
 
+  // Clean up the assignedToName - if it looks like a UUID, treat it as "Unassigned"
+  const assignedToName = task.assignedToName 
+    ? (task.assignedToName.includes('-') && task.assignedToName.length > 20)
+      ? "Unassigned" 
+      : task.assignedToName
+    : undefined;
+
   // Card styling improvements
   return (
     <>
@@ -113,7 +120,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
             <TaskCardDescription description={task.description} />
             <TaskCardMetadata
               deadline={task.deadline}
-              assignedToName={task.assignedToName}
+              assignedToName={assignedToName}
             />
             <TaskCardFooter
               status={task.status}
