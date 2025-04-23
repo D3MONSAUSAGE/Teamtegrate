@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import JournalEntryForm from "@/components/journal/JournalEntryForm";
 import JournalEntryList from "@/components/journal/JournalEntryList";
 import { toast } from "sonner";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export interface JournalEntry {
   id: string;
@@ -43,10 +44,26 @@ const JournalPage = () => {
   }, [user]);
 
   return (
-    <div className="container mx-auto max-w-2xl p-6">
-      <h1 className="text-2xl font-bold mb-6">Journal / Log</h1>
-      <JournalEntryForm onSaved={fetchEntries} />
-      <JournalEntryList entries={entries} isLoading={isLoading} onChange={fetchEntries} />
+    <div className="container mx-auto max-w-2xl p-6 flex flex-col gap-8">
+      <Card className="card card-hover animate-fade-in">
+        <CardHeader>
+          <CardTitle className="text-3xl font-bold text-gradient-primary tracking-tight flex items-center gap-2 pb-2">
+            <span>Journal / Log</span>
+            <span className="text-base font-normal text-muted-foreground ml-1 hidden sm:inline">Share thoughts, plans, and milestones</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <JournalEntryForm onSaved={fetchEntries} />
+        </CardContent>
+      </Card>
+      <Card className="card card-hover animate-fade-in">
+        <CardHeader>
+          <CardTitle className="text-xl font-semibold">Recent Entries</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <JournalEntryList entries={entries} isLoading={isLoading} onChange={fetchEntries} />
+        </CardContent>
+      </Card>
     </div>
   );
 };
