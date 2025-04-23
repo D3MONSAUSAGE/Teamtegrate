@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +8,9 @@ import { Clock, TimerOff, Coffee, UtensilsCrossed, FileText, CalendarDays, Searc
 import DailyTimeReport from './DailyTimeReport';
 import WeeklyTimeReport from './WeeklyTimeReport';
 import WeeklyTimeTrackingChart from './WeeklyTimeTrackingChart';
+import TargetHoursCard from "./TargetHoursCard";
+import TimeTrackingControls from "./TimeTrackingControls";
+import WeekNavigation from "./WeekNavigation";
 
 function getWeekRange(date: Date) {
   const start = startOfWeek(date, { weekStartsOn: 1 });
@@ -158,46 +160,18 @@ const TimeTracking: React.FC = () => {
     setIsSearching(false);
   };
 
+  const handleExport = () => {
+    downloadCSV(weeklyEntries, weekStart, weekEnd);
+  };
+
   return (
     <div className="space-y-4">
-      <Card>
-        <CardHeader className="flex flex-row items-center gap-2">
-          <Target className="h-5 w-5 mr-2 text-muted-foreground" />
-          <CardTitle>Weekly Target Hours</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-6">
-            <div className="flex items-center gap-2">
-              <label htmlFor="target-hours" className="font-medium">Set Target:</label>
-              <Input
-                id="target-hours"
-                type="number"
-                min={0}
-                max={168}
-                step={0.25}
-                style={{ width: 80 }}
-                value={targetWeeklyHours}
-                onChange={e => setTargetWeeklyHours(Number(e.target.value) || 0)}
-              />
-              <span className="ml-2 text-sm text-muted-foreground">hours/week</span>
-            </div>
-            <div className="flex-1 flex gap-4 flex-wrap mt-2 md:mt-0">
-              <div>
-                <span className="font-semibold">{totalTrackedHours}</span>{" "}
-                <span className="text-muted-foreground text-sm">tracked</span>
-              </div>
-              <div>
-                <span className="font-semibold">{remainingHours.toFixed(2)}</span>{" "}
-                <span className="text-muted-foreground text-sm">remaining</span>
-              </div>
-              <div>
-                <span className="font-semibold">{targetWeeklyHours}</span>{" "}
-                <span className="text-muted-foreground text-sm">target</span>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <TargetHoursCard
+        targetWeeklyHours={targetWeeklyHours}
+        setTargetWeeklyHours={setTargetWeeklyHours}
+        totalTrackedHours={totalTrackedHours}
+        remainingHours={remainingHours}
+      />
 
       <WeeklyTimeTrackingChart data={getWeeklyChartData()} />
 
@@ -206,106 +180,28 @@ const TimeTracking: React.FC = () => {
           <CardTitle>Time Tracking</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex flex-col md:flex-row gap-4 items-center">
-            <Input 
-              placeholder="Optional notes" 
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              className="flex-grow"
-            />
-            {currentEntry.isClocked ? (
-              <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
-                <Button 
-                  variant="destructive" 
-                  onClick={() => clockOut(notes)}
-                  className="w-full md:w-auto"
-                >
-                  <TimerOff className="mr-2 h-4 w-4" /> Clock Out
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => handleBreak('Lunch')}
-                  className="w-full md:w-auto"
-                >
-                  <UtensilsCrossed className="mr-2 h-4 w-4" /> Lunch Break
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => handleBreak('Coffee')}
-                  className="w-full md:w-auto"
-                >
-                  <Coffee className="mr-2 h-4 w-4" /> Break
-                </Button>
-              </div>
-            ) : (
-              <Button 
-                onClick={() => clockIn(notes)}
-                className="w-full md:w-auto"
-              >
-                <Clock className="mr-2 h-4 w-4" /> Clock In
-              </Button>
-            )}
-          </div>
-          {currentEntry.isClocked && (
-            <div className="bg-muted p-3 rounded-md">
-              <p>Current Session: {elapsedTime} elapsed</p>
-            </div>
-          )}
+          <TimeTrackingControls
+            notes={notes}
+            setNotes={setNotes}
+            isClocked={currentEntry.isClocked}
+            clockIn={clockIn}
+            clockOut={clockOut}
+            handleBreak={handleBreak}
+            elapsedTime={elapsedTime}
+          />
         </CardContent>
       </Card>
 
-      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <div className="flex gap-2 items-center">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => handleWeekChange("prev")}
-            title="Previous week"
-          >
-            <CalendarDays className="h-4 w-4" />
-            <span className="sr-only">Previous Week</span>
-          </Button>
-          <span className="font-medium">
-            {format(weekStart, "MMM dd, yyyy")} - {format(weekEnd, "MMM dd, yyyy")}
-          </span>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => handleWeekChange("next")}
-            title="Next week"
-          >
-            <CalendarDays className="h-4 w-4 rotate-180" />
-            <span className="sr-only">Next Week</span>
-          </Button>
-        </div>
-        <div className="flex gap-2 mt-2 md:mt-0">
-          <Input
-            placeholder="Search week (yyyy-MM or yyyy-MM-dd)"
-            value={searchValue}
-            onChange={e => setSearchValue(e.target.value)}
-            className="max-w-[170px]"
-            onKeyDown={e => { if (e.key === 'Enter') handleSearch(); }}
-            disabled={isSearching}
-          />
-          <Button
-            onClick={handleSearch}
-            variant="outline"
-            disabled={isSearching}
-            title="Go"
-            size="icon"
-          >
-            <Search className="h-4 w-4" />
-          </Button>
-          <Button
-            onClick={() => downloadCSV(weeklyEntries, weekStart, weekEnd)}
-            variant="secondary"
-            title="Export CSV"
-          >
-            <FileText className="h-4 w-4 mr-2" />
-            Export CSV
-          </Button>
-        </div>
-      </div>
+      <WeekNavigation
+        weekStart={weekStart}
+        weekEnd={weekEnd}
+        handleWeekChange={handleWeekChange}
+        searchValue={searchValue}
+        setSearchValue={setSearchValue}
+        handleSearch={handleSearch}
+        isSearching={isSearching}
+        handleExport={handleExport}
+      />
 
       <DailyTimeReport entries={dailyEntries} />
       <WeeklyTimeReport entries={weeklyEntries} />
@@ -314,4 +210,3 @@ const TimeTracking: React.FC = () => {
 };
 
 export default TimeTracking;
-
