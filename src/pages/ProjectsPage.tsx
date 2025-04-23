@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTask } from '@/contexts/task';
 import { Project, Task } from '@/types';
 import CreateProjectDialog from '@/components/CreateProjectDialog';
@@ -8,6 +8,7 @@ import AssignTaskDialog from '@/components/AssignTaskDialog';
 import ProjectToolbar from '@/components/ProjectToolbar';
 import ProjectList from '@/components/ProjectList';
 import ProjectTasksDialog from '@/components/ProjectTasksDialog';
+import { toast } from '@/components/ui/sonner';
 
 const ProjectsPage = () => {
   const { projects } = useTask();
@@ -21,6 +22,26 @@ const ProjectsPage = () => {
   const [isAssignTaskOpen, setIsAssignTaskOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('date');
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | undefined>(undefined);
+  
+  useEffect(() => {
+    // Set initial loading state
+    setIsLoading(true);
+    
+    // Check if projects are loaded or if there's an error
+    const timer = setTimeout(() => {
+      if (projects && projects.length >= 0) {
+        setIsLoading(false);
+        setError(undefined);
+      } else {
+        setIsLoading(false);
+        setError("Couldn't load projects. Please try again later.");
+      }
+    }, 2000); // Give it time to load
+    
+    return () => clearTimeout(timer);
+  }, [projects]);
   
   const handleEditProject = (project: Project) => {
     setEditingProject(project);
@@ -52,12 +73,14 @@ const ProjectsPage = () => {
     setEditingProject(undefined);
     setIsCreateProjectOpen(true);
   };
-  
+
   // Filter projects based on search query
   const filteredProjects = projects.filter((project) => {
+    if (!project) return false;
+    
     return (
-      project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      project.description.toLowerCase().includes(searchQuery.toLowerCase())
+      (project.title && project.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (project.description && project.description.toLowerCase().includes(searchQuery.toLowerCase()))
     );
   });
   
@@ -72,13 +95,24 @@ const ProjectsPage = () => {
         return new Date(a.endDate).getTime() - new Date(b.endDate).getTime();
       case 'title':
         return a.title.localeCompare(b.title);
+      case 'progress':
+        const progressA = calculateProgress(a);
+        const progressB = calculateProgress(b);
+        return progressB - progressA;
       default:
         return 0;
     }
   });
   
+  // Helper function to calculate project progress
+  const calculateProgress = (project: Project): number => {
+    if (!project.tasks || project.tasks.length === 0) return 0;
+    const completed = project.tasks.filter(task => task.status === 'Completed').length;
+    return Math.round((completed / project.tasks.length) * 100);
+  };
+  
   return (
-    <div className="p-6">
+    <div className="p-4 md:p-6 max-w-7xl mx-auto">
       <ProjectToolbar 
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
@@ -94,6 +128,8 @@ const ProjectsPage = () => {
         onViewTasks={handleViewTasks}
         onCreateProject={handleCreateProject}
         onCreateTask={handleCreateTask}
+        isLoading={isLoading}
+        error={error}
       />
       
       <CreateProjectDialog 
