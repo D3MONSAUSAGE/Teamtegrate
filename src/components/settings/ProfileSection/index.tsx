@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { toast } from '@/components/ui/sonner';
 import ProfileInfoForm from "./ProfileInfoForm";
 import ProfileAvatar from "./ProfileAvatar";
@@ -13,6 +13,34 @@ const ProfileSection = () => {
   const [name, setName] = useState<string>(user?.name || "");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Fetch the user's avatar URL when component mounts
+  useEffect(() => {
+    const fetchAvatar = async () => {
+      if (!user) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .select('avatar_url')
+          .eq('id', user.id)
+          .maybeSingle();
+        
+        if (error) {
+          console.error("Error fetching avatar:", error);
+          return;
+        }
+        
+        if (data?.avatar_url) {
+          setAvatarUrl(data.avatar_url);
+        }
+      } catch (error) {
+        console.error("Error fetching avatar:", error);
+      }
+    };
+    
+    fetchAvatar();
+  }, [user]);
 
   const handleSave = async () => {
     if (!user) {

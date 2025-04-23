@@ -21,26 +21,24 @@ const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({
   onSave,
   isLoading
 }) => (
-  <>
-    <div className="flex-1 space-y-4 w-full">
-      <div className="space-y-2">
-        <Label htmlFor="name">Full Name</Label>
-        <Input
-          id="name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="bg-background dark:bg-[#181928]/70"
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="email">Email Address</Label>
-        <Input
-          id="email"
-          defaultValue={user.email}
-          readOnly
-          className="bg-background dark:bg-[#181928]/70"
-        />
-      </div>
+  <div className="flex-1 space-y-4 w-full">
+    <div className="space-y-2">
+      <Label htmlFor="name">Full Name</Label>
+      <Input
+        id="name"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        className="bg-background dark:bg-[#181928]/70 w-full text-ellipsis"
+      />
+    </div>
+    <div className="space-y-2">
+      <Label htmlFor="email">Email Address</Label>
+      <Input
+        id="email"
+        defaultValue={user.email}
+        readOnly
+        className="bg-background dark:bg-[#181928]/70 w-full text-ellipsis"
+      />
     </div>
     <div className="space-y-2">
       <Label htmlFor="role">Role</Label>
@@ -48,10 +46,10 @@ const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({
         id="role"
         defaultValue={user.role === "manager" ? "Manager" : "User"}
         readOnly
-        className="bg-background dark:bg-[#181928]/70"
+        className="bg-background dark:bg-[#181928]/70 w-full"
       />
     </div>
-    <div className="flex justify-end">
+    <div className="flex justify-end mt-4">
       <Button
         onClick={onSave}
         disabled={isLoading}
@@ -66,7 +64,7 @@ const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({
         )}
       </Button>
     </div>
-  </>
+  </div>
 );
 
 export default ProfileInfoForm;
