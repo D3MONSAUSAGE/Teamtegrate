@@ -9,6 +9,8 @@ export const fetchProjectTeamMembers = async (
   projectId: string
 ): Promise<User[]> => {
   try {
+    console.log('Fetching project team members for project:', projectId);
+    
     // Query project_team_members to get user IDs
     const { data: teamMemberData, error: teamMemberError } = await supabase
       .from('project_team_members')
@@ -20,12 +22,16 @@ export const fetchProjectTeamMembers = async (
       return [];
     }
     
+    console.log('Team member data:', teamMemberData);
+    
     if (!teamMemberData || teamMemberData.length === 0) {
+      console.log('No team members found for project:', projectId);
       return [];
     }
     
     // Extract user IDs
     const userIds = teamMemberData.map(member => member.user_id);
+    console.log('User IDs to fetch:', userIds);
     
     // Fetch user details
     const { data: userData, error: userError } = await supabase
@@ -37,6 +43,8 @@ export const fetchProjectTeamMembers = async (
       console.error('Error fetching team member details:', userError);
       return [];
     }
+    
+    console.log('User data retrieved:', userData);
     
     // Map the database structure to our User type
     return (userData || []).map(user => ({

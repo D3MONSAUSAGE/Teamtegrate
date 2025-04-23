@@ -32,17 +32,27 @@ const ProjectTasksDialog: React.FC<ProjectTasksDialogProps> = ({
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [showComments, setShowComments] = useState(false);
   const [teamMembers, setTeamMembers] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
     // Fetch team members when dialog opens and project is available
     const loadTeamMembers = async () => {
-      if (project?.id && open) {
-        const members = await fetchProjectTeamMembers(project.id);
-        setTeamMembers(members);
+      setIsLoading(true);
+      try {
+        if (project?.id && open) {
+          const members = await fetchProjectTeamMembers(project.id);
+          setTeamMembers(members);
+        }
+      } catch (error) {
+        console.error("Error loading team members:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
     
-    loadTeamMembers();
+    if (open && project) {
+      loadTeamMembers();
+    }
   }, [project?.id, open]);
   
   if (!project) return null;
@@ -70,7 +80,7 @@ const ProjectTasksDialog: React.FC<ProjectTasksDialogProps> = ({
                 <p className="line-clamp-2">{project.description}</p>
               </div>
               
-              {teamMembers.length > 0 && (
+              {!isLoading && teamMembers.length > 0 && (
                 <div className="mt-3 flex items-center gap-2">
                   <Users className="h-4 w-4" />
                   <span>Team Members:</span>

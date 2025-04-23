@@ -33,13 +33,23 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
 }) => {
   const { deleteProject, updateProject } = useTask();
   const [teamMembers, setTeamMembers] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
     // Fetch team members when component mounts or project changes
     const loadTeamMembers = async () => {
+      setIsLoading(true);
       if (project.id) {
-        const members = await fetchProjectTeamMembers(project.id);
-        setTeamMembers(members);
+        try {
+          const members = await fetchProjectTeamMembers(project.id);
+          setTeamMembers(members);
+        } catch (error) {
+          console.error("Error loading team members:", error);
+        } finally {
+          setIsLoading(false);
+        }
+      } else {
+        setIsLoading(false);
       }
     };
     
@@ -47,14 +57,15 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   }, [project.id]);
   
   const calculateProgress = (tasks: Task[]) => {
-    if (tasks.length === 0) return 0;
+    if (!tasks || tasks.length === 0) return 0;
     const completed = tasks.filter(task => task.status === 'Completed').length;
     return Math.round((completed / tasks.length) * 100);
   };
   
-  const totalTasks = project.tasks.length;
-  const completedTasks = project.tasks.filter(task => task.status === 'Completed').length;
-  const progress = calculateProgress(project.tasks);
+  const tasks = project.tasks || [];
+  const totalTasks = tasks.length;
+  const completedTasks = tasks.filter(task => task.status === 'Completed').length;
+  const progress = calculateProgress(tasks);
   
   const budgetProgress = project.budget ? Math.round((project.budgetSpent || 0) / project.budget * 100) : 0;
   
@@ -62,7 +73,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
     updateProject(project.id, { is_completed: !project.is_completed });
   };
   
-  const assignedTasksCount = project.tasks.filter(task => task.assignedToId).length;
+  const assignedTasksCount = tasks.filter(task => task.assignedToId).length;
   
   return (
     <Card className={`card-hover relative overflow-hidden ${project.is_completed ? 'bg-[#f3f3f3] dark:bg-gray-800' : ''}`}>
@@ -118,7 +129,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
           </div>
         </div>
         
-        {teamMembers.length > 0 && (
+        {!isLoading && teamMembers.length > 0 && (
           <div className="flex items-center justify-between pt-1">
             <span className="text-xs text-gray-500">Team:</span>
             <ProjectTeamMembers members={teamMembers} />

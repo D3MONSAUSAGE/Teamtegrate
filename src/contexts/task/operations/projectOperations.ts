@@ -1,4 +1,3 @@
-
 import { User, Project, Task } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
@@ -245,9 +244,12 @@ export const addTeamMemberToProject = async (
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
 ) => {
   try {
+    console.log(`Adding team member ${userId} to project ${projectId}`);
+    
     // Find the project to update
     const project = projects.find(p => p.id === projectId);
     if (!project) {
+      console.error('Project not found:', projectId);
       toast.error('Project not found');
       return;
     }
@@ -268,9 +270,12 @@ export const addTeamMemberToProject = async (
     }
     
     if (existingMember) {
+      console.log('Team member already exists in project');
       toast.info('User is already a team member of this project');
       return;
     }
+    
+    console.log('Adding new team member to database');
     
     // Insert into project_team_members table
     const { error } = await supabase
@@ -282,10 +287,13 @@ export const addTeamMemberToProject = async (
       
     if (error) {
       console.error('Error adding team member:', error);
+      playErrorSound();
       toast.error('Failed to add team member to project');
       return;
     }
 
+    console.log('Team member added successfully, updating local state');
+    
     // Update the local state
     const updatedProjects = projects.map((p) => {
       if (p.id === projectId) {
@@ -302,9 +310,11 @@ export const addTeamMemberToProject = async (
     });
 
     setProjects(updatedProjects);
+    playSuccessSound();
     toast.success('Team member added to project successfully!');
   } catch (error) {
     console.error('Error in addTeamMemberToProject:', error);
+    playErrorSound();
     toast.error('Failed to add team member to project');
   }
 };
@@ -317,6 +327,8 @@ export const removeTeamMemberFromProject = async (
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
 ) => {
   try {
+    console.log(`Removing team member ${userId} from project ${projectId}`);
+    
     // Delete from project_team_members table
     const { error } = await supabase
       .from('project_team_members')
@@ -326,10 +338,13 @@ export const removeTeamMemberFromProject = async (
       
     if (error) {
       console.error('Error removing team member:', error);
+      playErrorSound();
       toast.error('Failed to remove team member from project');
       return;
     }
 
+    console.log('Team member removed successfully, updating local state');
+    
     // Update the local state
     const updatedProjects = projects.map((project) => {
       if (project.id === projectId && project.teamMembers) {
@@ -343,9 +358,11 @@ export const removeTeamMemberFromProject = async (
     });
 
     setProjects(updatedProjects);
+    playSuccessSound();
     toast.success('Team member removed from project successfully!');
   } catch (error) {
     console.error('Error in removeTeamMemberFromProject:', error);
+    playErrorSound();
     toast.error('Failed to remove team member from project');
   }
 };
