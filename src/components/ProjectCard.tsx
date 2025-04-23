@@ -18,6 +18,7 @@ import { useTask } from '@/contexts/task';
 import { fetchProjectTeamMembers } from '@/contexts/task/operations';
 import ProjectTeamMembers from './project/ProjectTeamMembers';
 import { toast } from '@/components/ui/sonner';
+import { cn } from '@/lib/utils';
 
 interface ProjectCardProps {
   project: Project;
@@ -106,7 +107,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
           </CardTitle>
           <div className="flex flex-wrap gap-1 mt-1">
             {isCompletedProject && (
-              <Badge variant="success" className="flex items-center gap-1">
+              <Badge variant="outline" className="flex items-center gap-1 bg-green-50 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800">
                 <CheckCircle className="h-3 w-3" /> Completed
               </Badge>
             )}
@@ -178,8 +179,11 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
               <span>{totalTasks} {totalTasks === 1 ? 'Task' : 'Tasks'}</span>
             </div>
             <Badge 
-              variant={progress === 100 ? "success" : progress > 0 ? "outline" : "secondary"} 
-              className="ml-1 text-xs"
+              variant={progress === 100 ? "outline" : progress > 0 ? "outline" : "secondary"}
+              className={cn(
+                "ml-1 text-xs",
+                progress === 100 ? "bg-green-50 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800" : ""
+              )}
             >
               {progress}%
             </Badge>

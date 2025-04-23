@@ -12,6 +12,7 @@ import TaskCommentsDialog from './TaskCommentsDialog';
 import ProjectTeamMembers from './project/ProjectTeamMembers';
 import { fetchProjectTeamMembers } from '@/contexts/task/operations';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
 
 interface ProjectTasksDialogProps {
   open: boolean;
@@ -120,7 +121,12 @@ const ProjectTasksDialog: React.FC<ProjectTasksDialogProps> = ({
                 <span className="text-xs text-gray-500">
                   {project.tasks?.filter(task => task.status === 'Completed').length || 0} of {project.tasks?.length || 0} tasks completed
                 </span>
-                <Badge variant={progress === 100 ? "success" : "outline"}>
+                <Badge 
+                  variant="outline" 
+                  className={cn(
+                    progress === 100 ? "bg-green-50 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800" : ""
+                  )}
+                >
                   {progress}%
                 </Badge>
               </div>
