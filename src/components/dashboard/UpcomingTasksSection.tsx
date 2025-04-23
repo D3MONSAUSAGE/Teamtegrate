@@ -1,11 +1,12 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import TaskCard from '@/components/TaskCard';
 import { Task } from '@/types';
 import { Plus, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
+import TaskDetailDrawer from '@/components/task/TaskDetailDrawer';
 
 interface UpcomingTasksSectionProps {
   tasks: Task[];
@@ -19,6 +20,13 @@ const UpcomingTasksSection: React.FC<UpcomingTasksSectionProps> = ({
   onEditTask
 }) => {
   const isMobile = useIsMobile();
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [showDetails, setShowDetails] = useState(false);
+
+  const handleOpenDetails = (task: Task) => {
+    setSelectedTask(task);
+    setShowDetails(true);
+  };
   
   return (
     <div>
@@ -34,7 +42,12 @@ const UpcomingTasksSection: React.FC<UpcomingTasksSectionProps> = ({
       {tasks.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
           {tasks.slice(0, isMobile ? 2 : 3).map((task) => (
-            <TaskCard key={task.id} task={task} onEdit={onEditTask} />
+            <TaskCard 
+              key={task.id} 
+              task={task} 
+              onEdit={onEditTask}
+              onClick={() => handleOpenDetails(task)}
+            />
           ))}
         </div>
       ) : (
@@ -50,6 +63,12 @@ const UpcomingTasksSection: React.FC<UpcomingTasksSectionProps> = ({
           </Button>
         </div>
       )}
+      
+      <TaskDetailDrawer
+        open={showDetails}
+        onOpenChange={setShowDetails}
+        task={selectedTask}
+      />
     </div>
   );
 };

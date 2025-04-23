@@ -3,7 +3,6 @@ import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Task, TaskStatus } from "@/types";
 import { cn } from "@/lib/utils";
-import TaskCommentsDialog from "./TaskCommentsDialog";
 import TaskDetailDrawer from "./task/TaskDetailDrawer";
 import TaskCardHeader from "./task/TaskCardHeader";
 import TaskCardActions from "./task/TaskCardActions";
@@ -27,7 +26,6 @@ const TaskCard: React.FC<TaskCardProps> = ({
   onClick,
 }) => {
   const { updateTaskStatus, deleteTask } = useTask();
-  const [showComments, setShowComments] = useState(false);
   const [showDrawer, setShowDrawer] = useState(false);
 
   const getPriorityBackground = (priority: string) => {
@@ -58,6 +56,14 @@ const TaskCard: React.FC<TaskCardProps> = ({
     await deleteTask(taskId);
   };
 
+  const handleCardClick = () => {
+    if (onClick) {
+      onClick();
+    } else {
+      setShowDrawer(true);
+    }
+  };
+
   return (
     <>
       <Card
@@ -66,7 +72,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
           getPriorityBackground(task.priority),
           isTaskOverdue() && "ring-2 ring-red-500 dark:ring-red-400"
         )}
-        onClick={onClick}
+        onClick={handleCardClick}
         tabIndex={0}
         aria-label={`Open details for ${task.title}`}
         role="button"
@@ -96,7 +102,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
             status={task.status}
             isOverdue={isTaskOverdue()}
             commentCount={commentCount}
-            onShowComments={() => setShowComments(true)}
+            onShowComments={() => setShowDrawer(true)}
             onStatusChange={handleStatusChange}
           />
         </CardContent>
@@ -108,16 +114,11 @@ const TaskCard: React.FC<TaskCardProps> = ({
             onAssign={onAssign}
             onStatusChange={handleStatusChange}
             onDelete={handleDeleteTask}
-            onShowComments={() => setShowComments(true)}
+            onShowComments={() => setShowDrawer(true)}
           />
         </div>
       </Card>
 
-      <TaskCommentsDialog
-        open={showComments}
-        onOpenChange={setShowComments}
-        task={task}
-      />
       <TaskDetailDrawer
         open={showDrawer}
         onOpenChange={setShowDrawer}
