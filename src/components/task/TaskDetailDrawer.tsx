@@ -10,6 +10,7 @@ import {
 import TaskDetailHeader from "./TaskDetailHeader";
 import TaskDetailMeta from "./TaskDetailMeta";
 import TaskDetailComments from "./TaskDetailComments";
+import { format as formatDateFns } from "date-fns";
 
 interface TaskDetailDrawerProps {
   task: Task | null;
@@ -79,9 +80,6 @@ const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
       return "Invalid time";
     }
   };
-
-  // Use date-fns for formatting
-  import { format as formatDateFns } from "date-fns";
 
   // Handle assigned to name
   const getAssignedToName = () => {
