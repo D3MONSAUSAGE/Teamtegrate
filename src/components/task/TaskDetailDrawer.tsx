@@ -86,58 +86,60 @@ const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
     }
   };
 
-  // --- UI IMPROVEMENT START ---
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent>
-        <div className="mx-auto w-full max-w-lg p-0">
-          <DrawerHeader className="bg-gradient-to-r from-primary/30 to-accent/40 rounded-t-xl shadow px-6 py-4 space-y-2">
-            <DrawerTitle className="flex items-center justify-between text-xl font-bold text-emerald-900 dark:text-emerald-200">
-              {task.title}
-              <Badge className={getStatusColor(task.status) + " ml-2 px-2 py-1"}>{task.status}</Badge>
+        <div className="mx-auto w-full max-w-md">
+          <DrawerHeader>
+            <DrawerTitle className="flex items-center justify-between">
+              <span>{task.title}</span>
+              <Badge className={getStatusColor(task.status)}>{task.status}</Badge>
             </DrawerTitle>
-            <DrawerDescription className="text-base text-muted-foreground mt-2">{task.description}</DrawerDescription>
-            <div className="flex gap-2 mt-2">
-              <Badge className={getPriorityColor(task.priority)}>{task.priority} Priority</Badge>
-              {isOverdue() && (
-                <span className="flex items-center gap-1 text-xs font-semibold text-rose-500 bg-rose-50 rounded px-2 py-1">
-                  <AlertCircle className="h-4 w-4" /> Overdue
-                </span>
-              )}
-            </div>
+            <DrawerDescription>{task.description}</DrawerDescription>
           </DrawerHeader>
-          <div className="p-6 pb-2">
-            <div className="grid grid-cols-2 gap-4 mb-3 text-sm">
+          <div className="p-4">
+            <div className="grid grid-cols-2 gap-3 mb-2">
               <div className="flex items-center">
                 <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                <span className="font-medium">{formatDate(task.deadline)}</span>
+                <span className="text-sm">{formatDate(task.deadline)}</span>
               </div>
               <div className="flex items-center">
                 <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
-                <span>{formatTime(task.deadline)}</span>
+                <span className="text-sm">{formatTime(task.deadline)}</span>
               </div>
+              <div>
+                <Badge className={getPriorityColor(task.priority)}>
+                  {task.priority} Priority
+                </Badge>
+              </div>
+              {isOverdue() && (
+                <div className="flex items-center">
+                  <AlertCircle className="mr-2 h-4 w-4 text-rose-500" />
+                  <span className="text-sm text-rose-500 font-medium">Overdue</span>
+                </div>
+              )}
               {task.assignedToName && (
-                <div className="col-span-2 flex items-center mt-1">
-                  <User className="h-4 w-4 mr-2 text-muted-foreground" />
+                <div className="col-span-2 text-sm flex items-center">
+                  <User className="h-4 w-4 mr-1 text-muted-foreground" />
                   <span className="text-muted-foreground pr-1">Assigned to:</span>
                   <span className="font-medium">{task.assignedToName}</span>
                 </div>
               )}
             </div>
             <Separator className="my-4" />
-            <div className="space-y-3">
-              <div className="font-medium text-base flex items-center mb-1">
-                <MessageCircle className="h-5 w-5 mr-2" />
+            <div className="space-y-2">
+              <div className="font-medium text-sm flex items-center">
+                <MessageCircle className="h-4 w-4 mr-2" />
                 Comments
               </div>
               {task.comments && task.comments.length > 0 ? (
                 <TaskCommentsList
                   taskComments={task.comments}
-                  className="mt-2 max-h-52 overflow-y-auto bg-muted/40 rounded-md p-2"
+                  className="mt-2 max-h-40 overflow-y-auto"
                 />
               ) : (
                 <div className="text-sm text-muted-foreground mt-2">
-                  No comments yet.
+                  No comments yet
                 </div>
               )}
               <TaskCommentForm taskId={task.id} />
@@ -145,7 +147,7 @@ const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
           </div>
           <DrawerFooter>
             <DrawerClose asChild>
-              <button className="w-full bg-accent/70 py-2 rounded text-base font-medium hover:bg-accent transition">
+              <button className="w-full bg-gray-100 py-2 rounded text-sm font-medium">
                 Close
               </button>
             </DrawerClose>
@@ -154,8 +156,6 @@ const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
       </DrawerContent>
     </Drawer>
   );
-  // --- UI IMPROVEMENT END ---
 };
 
 export default TaskDetailDrawer;
-
