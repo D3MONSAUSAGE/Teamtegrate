@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -45,12 +44,6 @@ const navItems: NavItem[] = [
     name: "My Tasks",
     path: "/dashboard/tasks",
     icon: <CheckSquare className="h-5 w-5" />,
-    allowed: true,
-  },
-  {
-    name: "Checklists",
-    path: "/dashboard/checklists",
-    icon: <ListChecks className="h-5 w-5" />,
     allowed: true,
   },
   {
