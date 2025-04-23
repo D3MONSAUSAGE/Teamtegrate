@@ -86,6 +86,14 @@ const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
     }
   };
 
+  // For description, always show full content, never truncate
+  // Assigned to: show name, or a friendly fallback if not present
+  const assignedTo = task.assignedToName
+    ? task.assignedToName
+    : (task.assignedToId
+        ? "Unassigned"
+        : "—");
+
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent>
@@ -95,7 +103,16 @@ const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
               <span>{task.title}</span>
               <Badge className={getStatusColor(task.status)}>{task.status}</Badge>
             </DrawerTitle>
-            <DrawerDescription>{task.description}</DrawerDescription>
+            <div
+              className="mt-2 text-sm text-muted-foreground whitespace-pre-line px-1 py-2 rounded bg-muted border"
+              style={{
+                wordBreak: "break-word",
+                lineHeight: "1.7",
+                maxHeight: "none",
+              }}
+            >
+              {task.description || <em className="text-xs text-gray-400">No description provided.</em>}
+            </div>
           </DrawerHeader>
           <div className="p-4">
             <div className="grid grid-cols-2 gap-3 mb-2">
@@ -118,11 +135,12 @@ const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
                   <span className="text-sm text-rose-500 font-medium">Overdue</span>
                 </div>
               )}
-              {task.assignedToName && (
-                <div className="col-span-2 text-sm flex items-center">
+              {/* Always show a human friendly label, never the ID */}
+              {(
+                <div className="col-span-2 text-sm flex items-center mt-2">
                   <User className="h-4 w-4 mr-1 text-muted-foreground" />
                   <span className="text-muted-foreground pr-1">Assigned to:</span>
-                  <span className="font-medium">{task.assignedToName}</span>
+                  <span className="font-medium">{assignedTo}</span>
                 </div>
               )}
             </div>
@@ -159,3 +177,4 @@ const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
 };
 
 export default TaskDetailDrawer;
+
