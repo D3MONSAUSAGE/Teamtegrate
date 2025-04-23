@@ -20,8 +20,8 @@ const SidebarFooter: React.FC<SidebarFooterProps> = ({ user }) => {
   };
 
   return (
-    <div className="p-4 border-t border-border bg-background flex items-center justify-between">
-      <div className="flex flex-col">
+    <div className="p-4 border-t border-border bg-background flex items-center justify-between min-h-[56px]">
+      <div>
         <p className="text-xs text-muted-foreground mb-0.5">Logged in as</p>
         <p className="font-semibold text-primary text-sm">{user.name}</p>
       </div>
@@ -39,4 +39,3 @@ const SidebarFooter: React.FC<SidebarFooterProps> = ({ user }) => {
 };
 
 export default SidebarFooter;
-

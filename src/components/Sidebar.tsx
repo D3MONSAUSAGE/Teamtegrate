@@ -1,6 +1,5 @@
+
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDarkMode } from '@/hooks/useDarkMode';
 import SidebarHeader from './sidebar/SidebarHeader';
@@ -27,10 +26,15 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
       }}
       aria-label="Sidebar"
     >
-      <SidebarHeader isDark={isDark} onToggleDarkMode={toggle} />
-
-      <SidebarNav onNavigation={onNavigation} />
-
+      {/* Main sidebar content */}
+      <div className="flex flex-col flex-1 min-h-0">
+        <SidebarHeader isDark={isDark} onToggleDarkMode={toggle} />
+        {/* Nav wraps & grows */}
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          <SidebarNav onNavigation={onNavigation} />
+        </div>
+      </div>
+      {/* Footer sticks to bottom */}
       <SidebarFooter user={user} />
     </aside>
   );
