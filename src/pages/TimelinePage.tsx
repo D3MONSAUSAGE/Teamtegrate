@@ -1,16 +1,34 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTask } from '@/contexts/task';
 import { Timeline } from "@/components/ui/timeline";
 import { format } from 'date-fns';
-import { CheckIcon, UserIcon } from 'lucide-react';
+import { CheckIcon, UserIcon, BookOpen } from 'lucide-react';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import useTeamMembers from '@/hooks/useTeamMembers';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from "@/contexts/AuthContext";
 
 const TimelinePage = () => {
   const { tasks, projects } = useTask();
   const { teamMembers } = useTeamMembers();
-  
+  const { user } = useAuth();
+  const [journalEntries, setJournalEntries] = useState<any[]>([]);
+
+  useEffect(() => {
+    // Fetch all public journal entries + own private
+    async function fetchJournalEntries() {
+      if (!user) return;
+      const { data, error } = await supabase
+        .from('journal_entries')
+        .select('*')
+        .or(`user_id.eq.${user.id},is_public.eq.true`)
+        .order('created_at', { ascending: false });
+      setJournalEntries(data || []);
+    }
+    fetchJournalEntries();
+  }, [user]);
+
   // Get completed tasks and projects sorted by completion date
   const completedTasks = tasks
     .filter(task => task.status === 'Completed' && task.completedAt)
@@ -20,7 +38,6 @@ const TimelinePage = () => {
     .filter(project => project.is_completed)
     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
     .map(project => {
-      // Find the project manager name
       const manager = teamMembers.find(member => member.id === project.managerId);
       return {
         ...project,
@@ -28,85 +45,136 @@ const TimelinePage = () => {
       };
     });
 
-  // Group items by month and year
-  const timelineData = [];
-  const processedMonths = new Set();
+  // Gather all timeline items (tasks, projects, journal entries)
+  const allItems: any[] = [
+    ...completedTasks.map(task => ({
+      type: "task",
+      ...task,
+      date: task.completedAt,
+    })),
+    ...completedProjects.map(project => ({
+      type: "project",
+      ...project,
+      date: project.updatedAt,
+    })),
+    ...journalEntries.map(entry => ({
+      type: "journal",
+      ...entry,
+      date: entry.created_at,
+    })),
+  ];
 
-  [...completedTasks, ...completedProjects].sort((a, b) => {
-    const dateA = ('completedAt' in a) ? new Date(a.completedAt!) : new Date(a.updatedAt);
-    const dateB = ('completedAt' in b) ? new Date(b.completedAt!) : new Date(b.updatedAt);
-    return dateB.getTime() - dateA.getTime();
-  }).forEach(item => {
-    const date = ('completedAt' in item) ? new Date(item.completedAt!) : new Date(item.updatedAt);
-    const monthYear = format(date, 'MMMM yyyy');
-    
+  // Group by month/year for timeline display
+  allItems.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const processedMonths = new Set();
+  const timelineData = [];
+
+  for (const item of allItems) {
+    const dateObj = new Date(item.date);
+    const monthYear = format(dateObj, 'MMMM yyyy');
     if (!processedMonths.has(monthYear)) {
       processedMonths.add(monthYear);
       timelineData.push({
         title: monthYear,
         content: (
           <div className="space-y-4">
-            {[...completedTasks, ...completedProjects]
-              .filter(entry => {
-                const entryDate = ('completedAt' in entry) ? new Date(entry.completedAt!) : new Date(entry.updatedAt);
-                return format(entryDate, 'MMMM yyyy') === monthYear;
-              })
-              .map((entry, idx) => (
-                <div key={idx} className="bg-card p-4 rounded-lg border">
-                  <div className="flex items-start gap-2">
-                    <CheckIcon className="h-5 w-5 text-primary mt-0.5" />
-                    <div className="flex-1">
-                      <h4 className="font-medium text-sm text-foreground">
-                        {'projectId' in entry ? entry.title : `Project: ${entry.title}`}
-                      </h4>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {entry.description}
-                      </p>
-                      <div className="flex items-center justify-between mt-2">
-                        <p className="text-xs text-muted-foreground">
-                          Completed on {format(
-                            ('completedAt' in entry) ? new Date(entry.completedAt!) : new Date(entry.updatedAt),
-                            'MMM d, yyyy'
-                          )}
-                        </p>
-                        <div className="flex items-center gap-2">
-                          <Avatar className="h-6 w-6">
-                            <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                              {('completedByName' in entry && entry.completedByName) ? 
-                                entry.completedByName.split(' ').map(n => n[0]).join('') : 
-                                ('completedBy' in entry && entry.completedBy) ?
-                                  entry.completedBy.split(' ').map(n => n[0]).join('') :
-                                  <UserIcon className="h-3 w-3" />
-                              }
-                            </AvatarFallback>
-                          </Avatar>
-                          <span className="text-xs text-muted-foreground">
-                            {'Completed by '}
-                            {('completedByName' in entry && entry.completedByName) ? 
-                              entry.completedByName : 
-                              ('completedBy' in entry && entry.completedBy) ?
-                                entry.completedBy :
-                                'Unknown'
-                            }
+            {allItems
+              .filter(x => format(new Date(x.date), 'MMMM yyyy') === monthYear)
+              .map((entry, idx) => {
+                if (entry.type === "journal") {
+                  // Journal entry display
+                  return (
+                    <div key={entry.id || idx} className="bg-card p-4 rounded-lg border flex gap-3 items-start">
+                      <div className="pt-1">
+                        <BookOpen className="h-5 w-5 text-primary" />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-medium text-sm text-foreground flex gap-2 items-center">
+                          {entry.title}
+                          <span className="text-xs px-2 py-0.5 rounded ml-2 bg-muted/50 text-muted-foreground">
+                            {entry.is_public ? "Public" : "Personal"}
                           </span>
+                        </h4>
+                        <p className="text-xs text-muted-foreground mt-0.5">{entry.content}</p>
+                        <div className="flex justify-between items-end mt-2">
+                          <p className="text-xs text-muted-foreground">
+                            Journal entry · {format(new Date(entry.created_at), 'MMM d, yyyy')}
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-6 w-6">
+                              <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                                {/* Fallback: show initials of user_id */}
+                                {entry.is_public ? "T" : "Y"}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="text-xs text-muted-foreground">
+                              {entry.is_public ? "Team" : "You"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+
+                // Default: tasks/projects
+                return (
+                  <div key={entry.id || idx} className="bg-card p-4 rounded-lg border">
+                    <div className="flex items-start gap-2">
+                      <CheckIcon className="h-5 w-5 text-primary mt-0.5" />
+                      <div className="flex-1">
+                        <h4 className="font-medium text-sm text-foreground">
+                          {'projectId' in entry ? entry.title : `Project: ${entry.title}`}
+                        </h4>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {entry.description}
+                        </p>
+                        <div className="flex items-center justify-between mt-2">
+                          <p className="text-xs text-muted-foreground">
+                            Completed on {format(
+                              ('completedAt' in entry) ? new Date(entry.completedAt!) : new Date(entry.updatedAt),
+                              'MMM d, yyyy'
+                            )}
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-6 w-6">
+                              <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                                {('completedByName' in entry && entry.completedByName) ? 
+                                  entry.completedByName.split(' ').map(n => n[0]).join('') : 
+                                  ('completedBy' in entry && entry.completedBy) ?
+                                    entry.completedBy.split(' ').map(n => n[0]).join('') :
+                                    <UserIcon className="h-3 w-3" />
+                                }
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="text-xs text-muted-foreground">
+                              {'Completed by '}
+                              {('completedByName' in entry && entry.completedByName) ? 
+                                entry.completedByName : 
+                                ('completedBy' in entry && entry.completedBy) ?
+                                  entry.completedBy :
+                                  'Unknown'
+                              }
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
           </div>
         ),
       });
     }
-  });
+  }
 
   return (
     <div className="min-h-screen pb-20">
       <div className="p-6">
         <h1 className="text-2xl font-bold mb-2">Timeline</h1>
         <p className="text-muted-foreground text-sm">
-          A chronological view of completed tasks and projects
+          A chronological view of completed tasks, projects, and journal entries
         </p>
       </div>
       <Timeline data={timelineData} />

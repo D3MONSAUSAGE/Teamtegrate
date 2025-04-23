@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -13,7 +14,7 @@ import {
   FileText,
   DollarSign,
   MessageSquare,
-  ListChecks
+  BookOpen
 } from "lucide-react";
 
 interface NavItem {
@@ -80,6 +81,12 @@ const navItems: NavItem[] = [
     name: "Documents",
     path: "/dashboard/documents",
     icon: <FileText className="h-5 w-5" />,
+    allowed: true,
+  },
+  {
+    name: "Journal",
+    path: "/dashboard/journal",
+    icon: <BookOpen className="h-5 w-5" />,
     allowed: true,
   },
   {

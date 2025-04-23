@@ -21,6 +21,7 @@ import Index from "./pages/Index";
 import DocumentsPage from "./pages/DocumentsPage";
 import FinancePage from "./pages/FinancePage";
 import ChatPage from "./pages/ChatPage";
+import JournalPage from "./pages/JournalPage";
 
 const queryClient = new QueryClient();
 
@@ -47,6 +48,7 @@ const App = () => (
                 <Route path="time-tracking" element={<TimeTrackingPage />} />
                 <Route path="documents" element={<DocumentsPage />} />
                 <Route path="finance" element={<FinancePage />} />
+                <Route path="journal" element={<JournalPage />} />
                 {/* ChecklistsPage route removed */}
               </Route>
               <Route path="*" element={<NotFound />} />
