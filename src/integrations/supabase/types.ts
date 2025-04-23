@@ -376,6 +376,7 @@ export type Database = {
           description: string | null
           file_path: string
           file_type: string
+          folder: string | null
           id: string
           size_bytes: number
           storage_id: string
@@ -387,6 +388,7 @@ export type Database = {
           description?: string | null
           file_path: string
           file_type: string
+          folder?: string | null
           id?: string
           size_bytes: number
           storage_id: string
@@ -398,6 +400,7 @@ export type Database = {
           description?: string | null
           file_path?: string
           file_type?: string
+          folder?: string | null
           id?: string
           size_bytes?: number
           storage_id?: string

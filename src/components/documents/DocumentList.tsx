@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { FileText, Download, Trash2, Eye } from 'lucide-react';
+import { FileText, Download, Trash2, Eye, Folder } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -27,15 +27,22 @@ interface DocumentItem {
   file_type: string;
   created_at: string;
   size_bytes: number;
+  folder?: string | null;
 }
 
 interface DocumentListProps {
   documents: DocumentItem[];
   onDocumentDeleted: () => void;
-  isLoading?: boolean; // Add the isLoading prop
+  isLoading?: boolean;
+  currentFolder?: string;
 }
 
-const DocumentList: React.FC<DocumentListProps> = ({ documents, onDocumentDeleted, isLoading = false }) => {
+const DocumentList: React.FC<DocumentListProps> = ({
+  documents,
+  onDocumentDeleted,
+  isLoading = false,
+  currentFolder = "",
+}) => {
   const { toast } = useToast();
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
   const [selectedDocument, setSelectedDocument] = React.useState<DocumentItem | null>(null);
@@ -45,12 +52,10 @@ const DocumentList: React.FC<DocumentListProps> = ({ documents, onDocumentDelete
     const units = ['B', 'KB', 'MB', 'GB'];
     let size = bytes;
     let unitIndex = 0;
-    
     while (size >= 1024 && unitIndex < units.length - 1) {
       size /= 1024;
       unitIndex++;
     }
-    
     return `${size.toFixed(1)} ${units[unitIndex]}`;
   };
 
@@ -128,7 +133,6 @@ const DocumentList: React.FC<DocumentListProps> = ({ documents, onDocumentDelete
         title: "Success",
         description: "Document deleted successfully"
       });
-      
       onDocumentDeleted();
     } catch (error) {
       console.error('Delete error:', error);
@@ -142,6 +146,14 @@ const DocumentList: React.FC<DocumentListProps> = ({ documents, onDocumentDelete
 
   return (
     <>
+      <div className="mb-2">
+        <span className="inline-flex items-center gap-1 text-sm">
+          <Folder className="h-4 w-4" />
+          <span className="font-semibold">
+            Folder: {currentFolder ? <span>{currentFolder}</span> : <span className="italic text-gray-400">None</span>}
+          </span>
+        </span>
+      </div>
       <Table>
         <TableHeader>
           <TableRow>
@@ -172,7 +184,7 @@ const DocumentList: React.FC<DocumentListProps> = ({ documents, onDocumentDelete
                   <FileText className="h-4 w-4" />
                   <span className="line-clamp-1">{document.title}</span>
                 </TableCell>
-                <TableCell className={isMobile ? "hidden" : ""}>{document.file_type.split('/')[1].toUpperCase()}</TableCell>
+                <TableCell className={isMobile ? "hidden" : ""}>{document.file_type.split('/')[1]?.toUpperCase?.() || "-"}</TableCell>
                 <TableCell className={isMobile ? "hidden" : ""}>{formatFileSize(document.size_bytes)}</TableCell>
                 <TableCell className={isMobile ? "hidden" : ""}>{new Date(document.created_at).toLocaleDateString()}</TableCell>
                 <TableCell className="text-right space-x-1">
