@@ -26,6 +26,7 @@ export const addTeamMemberToProject = async (
       .single();
       
     if (checkError && checkError.code !== 'PGRST116') {
+      // PGRST116 is the "no rows returned" error which is expected if the member doesn't exist
       console.error('Error checking team member:', checkError);
       toast.error('Failed to check if team member already exists');
       return;

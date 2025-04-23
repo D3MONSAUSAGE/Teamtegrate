@@ -15,74 +15,84 @@ export const fetchProjects = async (
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
 ): Promise<void> => {
   try {
-    // Fetch projects user is manager of
-    let { data: managerProjects, error: managerError } = await supabase
+    if (!user) {
+      setProjects([]);
+      return;
+    }
+
+    console.log('Fetching projects for user:', user.id);
+    
+    // Fetch all projects the user has access to (RLS will filter properly)
+    const { data: projectData, error: projectError } = await supabase
       .from('projects')
-      .select('*')
-      .eq('manager_id', user.id);
+      .select('*');
 
-    if (managerError) {
-      console.error('Error fetching manager projects:', managerError);
+    if (projectError) {
+      console.error('Error fetching projects:', projectError);
       toast.error('Failed to load projects');
-      managerProjects = [];
+      setProjects([]);
+      return;
     }
 
-    // Fetch project IDs where user is a project_team_member
-    const { data: memberLinks, error: memberLinksError } = await supabase
-      .from('project_team_members')
-      .select('project_id')
-      .eq('user_id', user.id);
-
-    if (memberLinksError) {
-      console.error('Error fetching team member projects:', memberLinksError);
-      toast.error('Failed to load your team projects');
+    // If no projects, return empty array
+    if (!projectData || projectData.length === 0) {
+      setProjects([]);
+      return;
     }
 
-    const teamProjectIds = (memberLinks || []).map(link => link.project_id);
-
-    // Fetch those projects (avoid duplicating manager-owned ones)
-    let memberProjects: any[] = [];
-    if (teamProjectIds.length > 0) {
-      // Remove any projects already fetched as manager
-      const excludeIds = managerProjects ? managerProjects.map(p => p.id) : [];
-      const filterIds = teamProjectIds.filter(pid => !excludeIds.includes(pid));
-      if (filterIds.length > 0) {
-        const { data: extraProjects, error: extraProjectsError } = await supabase
-          .from('projects')
-          .select('*')
-          .in('id', filterIds);
-        if (extraProjectsError) {
-          console.error('Error fetching accessible team projects:', extraProjectsError);
-        }
-        memberProjects = extraProjects || [];
-      }
-    }
-
-    // Combine all projects the user can access
-    const projectData = [...(managerProjects || []), ...memberProjects];
-
-    // Fetch tasks for these projects
     const projectIds = projectData.map(p => p.id);
+    
+    // Fetch team members for these projects
+    const { data: teamMembersData, error: teamMembersError } = await supabase
+      .from('project_team_members')
+      .select('project_id, user_id')
+      .in('project_id', projectIds);
+      
+    if (teamMembersError) {
+      console.error('Error fetching project team members:', teamMembersError);
+    }
+
+    // Create a map of project_id -> [member_ids]
+    const teamMembersMap = new Map<string, string[]>();
+    if (teamMembersData) {
+      teamMembersData.forEach(member => {
+        if (!teamMembersMap.has(member.project_id)) {
+          teamMembersMap.set(member.project_id, []);
+        }
+        teamMembersMap.get(member.project_id)?.push(member.user_id);
+      });
+    }
+    
+    // Fetch tasks for these projects
     let taskData: any[] = [];
     if (projectIds.length > 0) {
       const { data: allTaskData, error: taskError } = await supabase
         .from('project_tasks')
-        .select('*');
+        .select('*')
+        .in('project_id', projectIds);
+        
       if (taskError) {
         console.error('Error fetching project tasks:', taskError);
-        toast.error('Failed to load project tasks');
       } else {
         taskData = allTaskData || [];
       }
     }
     
     // Fetch comments for all tasks
-    const { data: commentData, error: commentError } = await supabase
-      .from('comments')
-      .select('*');
+    const taskIds = taskData.map(t => t.id);
+    let commentData: any[] = [];
+    
+    if (taskIds.length > 0) {
+      const { data: comments, error: commentError } = await supabase
+        .from('comments')
+        .select('*')
+        .in('task_id', taskIds);
 
-    if (commentError) {
-      console.error('Error fetching comments:', commentError);
+      if (commentError) {
+        console.error('Error fetching comments:', commentError);
+      } else {
+        commentData = comments || [];
+      }
     }
 
     // Create userMap for comment user names
@@ -90,15 +100,17 @@ export const fetchProjects = async (
     if (commentData && commentData.length > 0) {
       const userIds = [...new Set(commentData.map(comment => comment.user_id))];
       
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('id, name, email')
-        .in('id', userIds);
-      
-      if (!userError && userData) {
-        userData.forEach(user => {
-          userMap.set(user.id, user.name || user.email);
-        });
+      if (userIds.length > 0) {
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('id, name, email')
+          .in('id', userIds);
+        
+        if (!userError && userData) {
+          userData.forEach(user => {
+            userMap.set(user.id, user.name || user.email);
+          });
+        }
       }
     }
 
@@ -122,22 +134,25 @@ export const fetchProjects = async (
 
           return {
             id: task.id,
-            userId: task.assigned_to_id || user.id, // Using assigned_to_id instead of user_id
+            userId: task.assigned_to_id || user.id, 
             projectId: project.id,
             title: task.title || '',
             description: task.description || '',
             deadline: parseDate(task.deadline),
             priority: (task.priority as TaskPriority) || 'Medium',
-            status: (task.status || 'To Do') as TaskStatus, // Explicitly casting to TaskStatus
+            status: (task.status || 'To Do') as TaskStatus,
             createdAt: parseDate(task.created_at),
             updatedAt: parseDate(task.updated_at),
             completedAt: task.completed_at ? parseDate(task.completed_at) : undefined,
             assignedToId: task.assigned_to_id,
-            assignedToName: task.assigned_to_id, // Using assigned_to_id since assigned_to_name doesn't exist
+            assignedToName: task.assigned_to_id,
             comments: taskComments,
             cost: task.cost || 0
           };
         });
+
+      // Get team members for this project from our map
+      const teamMembers = teamMembersMap.get(project.id) || [];
 
       return {
         id: project.id,
@@ -151,7 +166,8 @@ export const fetchProjects = async (
         updatedAt: parseDate(project.updated_at),
         budget: project.budget,
         budgetSpent: project.budget_spent,
-        is_completed: project.is_completed
+        is_completed: project.is_completed,
+        teamMembers
       };
     });
 
@@ -159,5 +175,6 @@ export const fetchProjects = async (
   } catch (error) {
     console.error('Error in fetchProjects:', error);
     toast.error('Failed to load projects');
+    setProjects([]);
   }
 };

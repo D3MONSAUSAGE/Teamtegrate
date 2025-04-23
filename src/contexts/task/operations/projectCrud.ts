@@ -1,3 +1,4 @@
+
 import { User, Project, Task } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
@@ -10,7 +11,10 @@ export const addProject = async (
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
 ) => {
   try {
-    if (!user) return;
+    if (!user) {
+      toast.error('You must be logged in to create a project');
+      return;
+    }
     
     const now = new Date();
     const projectId = uuidv4();
@@ -24,32 +28,38 @@ export const addProject = async (
       manager_id: user.id,
       created_at: now.toISOString(),
       updated_at: now.toISOString(),
-      budget: project.budget
+      budget: project.budget,
+      is_completed: false
     };
     
-    const { error } = await supabase
+    // First insert the project
+    const { error: projectError } = await supabase
       .from('projects')
       .insert(projectToInsert);
     
-    if (error) {
-      console.error('Error adding project:', error);
+    if (projectError) {
+      console.error('Error adding project:', projectError);
       playErrorSound();
       toast.error('Failed to create project');
       return;
     }
     
+    // Process team members after project creation is successful
     const teamMembers = project.teamMembers || [];
-    const teamMemberPromises = teamMembers.map(userId => 
-      supabase
+    if (teamMembers.length > 0) {
+      const teamMemberInsertData = teamMembers.map(userId => ({
+        project_id: projectId,
+        user_id: userId
+      }));
+      
+      const { error: membersError } = await supabase
         .from('project_team_members')
-        .insert({ 
-          project_id: projectId, 
-          user_id: userId 
-        })
-    );
-    
-    if (teamMemberPromises.length > 0) {
-      await Promise.all(teamMemberPromises);
+        .insert(teamMemberInsertData);
+        
+      if (membersError) {
+        console.error('Error adding team members:', membersError);
+        toast.error('Project created but had issues adding some team members');
+      }
     }
     
     const newProject: Project = {
@@ -85,7 +95,10 @@ export const updateProject = async (
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
 ) => {
   try {
-    if (!user) return;
+    if (!user) {
+      toast.error('You must be logged in to update a project');
+      return;
+    }
     
     const now = new Date();
     const updatedFields: any = {
@@ -111,41 +124,58 @@ export const updateProject = async (
       return;
     }
     
-    if (updates.teamMembers) {
-      const { data: currentMembers } = await supabase
-        .from('project_team_members')
-        .select('user_id')
-        .eq('project_id', projectId);
-      
-      const currentMemberIds = currentMembers ? currentMembers.map(m => m.user_id) : [];
-      const newMemberIds = updates.teamMembers || [];
-      
-      const membersToAdd = newMemberIds.filter(id => !currentMemberIds.includes(id));
-      const membersToRemove = currentMemberIds.filter(id => !newMemberIds.includes(id));
-      
-      for (const userId of membersToAdd) {
-        const { error } = await supabase
+    if (updates.teamMembers !== undefined) {
+      try {
+        // First get current team members
+        const { data: currentMembers } = await supabase
           .from('project_team_members')
-          .insert({ project_id: projectId, user_id: userId });
+          .select('user_id')
+          .eq('project_id', projectId);
+        
+        const currentMemberIds = currentMembers ? currentMembers.map(m => m.user_id) : [];
+        const newMemberIds = updates.teamMembers || [];
+        
+        // Determine members to add and remove
+        const membersToAdd = newMemberIds.filter(id => !currentMemberIds.includes(id));
+        const membersToRemove = currentMemberIds.filter(id => !newMemberIds.includes(id));
+        
+        // Add new members
+        if (membersToAdd.length > 0) {
+          const newMembersData = membersToAdd.map(userId => ({
+            project_id: projectId,
+            user_id: userId
+          }));
           
-        if (error) {
-          console.error('Error adding team member during update:', error);
+          const { error: addError } = await supabase
+            .from('project_team_members')
+            .insert(newMembersData);
+            
+          if (addError) {
+            console.error('Error adding new team members:', addError);
+          }
         }
-      }
-      
-      if (membersToRemove.length > 0) {
-        const { error } = await supabase
-          .from('project_team_members')
-          .delete()
-          .eq('project_id', projectId)
-          .in('user_id', membersToRemove);
-          
-        if (error) {
-          console.error('Error removing team members during update:', error);
+        
+        // Remove members that are no longer on the team
+        if (membersToRemove.length > 0) {
+          for (const userId of membersToRemove) {
+            const { error: removeError } = await supabase
+              .from('project_team_members')
+              .delete()
+              .eq('project_id', projectId)
+              .eq('user_id', userId);
+              
+            if (removeError) {
+              console.error('Error removing team member:', removeError);
+            }
+          }
         }
+      } catch (teamError) {
+        console.error('Error managing team members:', teamError);
+        toast.error('Project updated but had issues updating team members');
       }
     }
     
+    // Update local state
     setProjects(prevProjects => prevProjects.map(project => {
       if (project.id === projectId) {
         return { ...project, ...updates, updatedAt: now };
@@ -169,8 +199,12 @@ export const deleteProject = async (
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
 ) => {
   try {
-    if (!user) return;
+    if (!user) {
+      toast.error('You must be logged in to delete a project');
+      return;
+    }
     
+    // First update any tasks associated with this project to remove the project reference
     const projectTasks = tasks.filter(task => task.projectId === projectId);
     
     for (const task of projectTasks) {
@@ -184,6 +218,7 @@ export const deleteProject = async (
       }
     }
     
+    // Now delete the project
     const { error } = await supabase
       .from('projects')
       .delete()
@@ -196,6 +231,9 @@ export const deleteProject = async (
       return;
     }
     
+    // Team members will be automatically deleted due to ON DELETE CASCADE
+    
+    // Update local state
     setProjects(prevProjects => prevProjects.filter(project => project.id !== projectId));
     
     setTasks(prevTasks => prevTasks.map(task => {
