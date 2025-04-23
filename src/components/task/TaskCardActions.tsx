@@ -35,7 +35,7 @@ const TaskCardActions: React.FC<TaskCardActionsProps> = ({
           <MoreHorizontal className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="text-xs md:text-sm z-50">
+      <DropdownMenuContent align="end" className="text-xs md:text-sm">
         <DropdownMenuItem onClick={() => onEdit && onEdit(task)}>
           Edit
         </DropdownMenuItem>
@@ -44,6 +44,18 @@ const TaskCardActions: React.FC<TaskCardActionsProps> = ({
             Assign Member
           </DropdownMenuItem>
         )}
+        <DropdownMenuItem onClick={() => onStatusChange('To Do')}>
+          Mark as To Do
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onStatusChange('In Progress')}>
+          Mark as In Progress
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onStatusChange('Pending')}>
+          Mark as Pending
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onStatusChange('Completed')}>
+          Mark as Completed
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={onShowComments}>
           View Comments
         </DropdownMenuItem>

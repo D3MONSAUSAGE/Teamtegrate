@@ -11,7 +11,7 @@ import TaskCardDescription from "./task/TaskCardDescription";
 import TaskCardMetadata from "./task/TaskCardMetadata";
 import TaskCardFooter from "./task/TaskCardFooter";
 import { useTask } from "@/contexts/task";
-import { Eye } from "lucide-react";
+import { View } from "lucide-react";
 
 interface TaskCardProps {
   task: Task;
@@ -62,22 +62,19 @@ const TaskCard: React.FC<TaskCardProps> = ({
     <>
       <Card
         className={cn(
-          "card-hover cursor-pointer border-2 relative overflow-visible transition-shadow duration-400 hover:shadow-lg hover:scale-[1.018] hover:z-10 hover:border-primary/80",
+          "card-hover cursor-pointer border-2",
           getPriorityBackground(task.priority),
-          isTaskOverdue() && "ring-2 ring-red-500 dark:ring-red-400"
+          isTaskOverdue() && "ring-2 ring-red-500 dark:ring-red-400",
         )}
         onClick={onClick}
         tabIndex={0}
         aria-label={`Open details for ${task.title}`}
         role="button"
       >
-        {/* Eye/View Icon with better styling */}
+        {/* View icon moved to lower right corner */}
         <div className="absolute bottom-2 right-2 z-20">
           <button
-            className={cn(
-              "bg-gradient-to-br from-primary/60 to-emerald-400/70 dark:from-primary/30 dark:to-emerald-700/50 p-2 rounded-full shadow-lg border-2 border-white/80 hover:scale-105 transition-transform duration-200 focus:ring-2 focus:ring-primary",
-              "flex items-center justify-center"
-            )}
+            className="bg-white p-1 rounded-full shadow hover:bg-gray-100 border border-gray-200 focus:ring-2 focus:ring-primary transition"
             aria-label="View Task"
             onClick={e => {
               e.stopPropagation();
@@ -85,12 +82,12 @@ const TaskCard: React.FC<TaskCardProps> = ({
             }}
             type="button"
           >
-            <Eye className="h-5 w-5 text-white drop-shadow" />
+            <View className="h-5 w-5 text-emerald-600" />
           </button>
         </div>
-        {/* Card header, content, and floating menu */}
+
         <TaskCardHeader title={task.title} priority={task.priority} />
-        <CardContent className="space-y-2 pt-0 md:pt-1 px-4 md:px-6 pb-5">
+        <CardContent className="space-y-2 pt-0 md:pt-1 px-4 md:px-6 pb-4">
           <TaskCardDescription description={task.description} />
           <TaskCardMetadata
             deadline={task.deadline}
@@ -104,6 +101,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
             onStatusChange={handleStatusChange}
           />
         </CardContent>
+
         <div className="absolute top-1 right-1">
           <TaskCardActions
             task={task}
@@ -115,6 +113,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
           />
         </div>
       </Card>
+
       <TaskCommentsDialog
         open={showComments}
         onOpenChange={setShowComments}
@@ -130,3 +129,4 @@ const TaskCard: React.FC<TaskCardProps> = ({
 };
 
 export default TaskCard;
+
