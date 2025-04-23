@@ -7,6 +7,7 @@ export interface User {
   name: string;
   role: UserRole;
   createdAt: Date;
+  avatar_url?: string; // Added avatar_url as an optional property
 }
 
 export type TaskPriority = 'Low' | 'Medium' | 'High';

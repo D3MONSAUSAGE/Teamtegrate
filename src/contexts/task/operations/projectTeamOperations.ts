@@ -38,11 +38,17 @@ export const fetchProjectTeamMembers = async (
       return [];
     }
     
-    return userData || [];
+    // Map the database structure to our User type
+    return (userData || []).map(user => ({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role as User['role'],
+      createdAt: new Date(), // Add a default createdAt value since it's required but not in our query
+      avatar_url: user.avatar_url
+    }));
   } catch (error) {
     console.error('Error in fetchProjectTeamMembers:', error);
     return [];
   }
 };
-
-// Update the export from operations/index.ts to include the new file
