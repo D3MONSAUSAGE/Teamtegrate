@@ -9,22 +9,72 @@ import useTeamMembers from '@/hooks/useTeamMembers';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from "@/contexts/AuthContext";
 
+interface TimelineJournalEntry {
+  id: string;
+  title: string;
+  content: string;
+  is_public: boolean;
+  created_at: string;
+  updated_at: string;
+  user_id: string;
+  author_name?: string | null;
+}
+
 const TimelinePage = () => {
   const { tasks, projects } = useTask();
   const { teamMembers } = useTeamMembers();
   const { user } = useAuth();
-  const [journalEntries, setJournalEntries] = useState<any[]>([]);
+  const [journalEntries, setJournalEntries] = useState<TimelineJournalEntry[]>([]);
 
   useEffect(() => {
-    // Fetch all public journal entries + own private
+    // Fetch all public journal entries + own private, with author names
     async function fetchJournalEntries() {
       if (!user) return;
-      const { data, error } = await supabase
+
+      // Fetch journal entries
+      const { data: entriesData, error } = await supabase
         .from('journal_entries')
         .select('*')
         .or(`user_id.eq.${user.id},is_public.eq.true`)
         .order('created_at', { ascending: false });
-      setJournalEntries(data || []);
+
+      if (!entriesData || entriesData.length === 0) {
+        setJournalEntries([]);
+        return;
+      }
+
+      // For public entries, find unique user_ids other than current user
+      const publicEntries: TimelineJournalEntry[] = entriesData.filter((e: any) => e.is_public);
+      const publicUserIds = [...new Set(publicEntries.map(e => e.user_id).filter((uid) => uid && uid !== user.id))];
+      
+      // Lookup users' names for these user ids
+      let userMap: Record<string, string> = {};
+      if (publicUserIds.length > 0) {
+        const { data: userRows } = await supabase
+          .from('users')
+          .select('id, name')
+          .in('id', publicUserIds);
+
+        if (userRows) {
+          userMap = userRows.reduce((acc: Record<string, string>, u: any) => {
+            acc[u.id] = u.name;
+            return acc;
+          }, {});
+        }
+      }
+
+      // Attach author_name to each entry if public, otherwise undefined
+      const entriesWithAuthors = entriesData.map((entry: any) => {
+        if (entry.is_public) {
+          return {
+            ...entry,
+            author_name: entry.user_id === user.id ? null : userMap[entry.user_id] || "Unknown",
+          };
+        }
+        return entry;
+      });
+
+      setJournalEntries(entriesWithAuthors);
     }
     fetchJournalEntries();
   }, [user]);
@@ -47,16 +97,26 @@ const TimelinePage = () => {
 
   // Gather all timeline items (tasks, projects, journal entries)
   const allItems: any[] = [
-    ...completedTasks.map(task => ({
-      type: "task",
-      ...task,
-      date: task.completedAt,
-    })),
-    ...completedProjects.map(project => ({
-      type: "project",
-      ...project,
-      date: project.updatedAt,
-    })),
+    ...tasks
+      .filter(task => task.status === 'Completed' && task.completedAt)
+      .sort((a, b) => new Date(b.completedAt!).getTime() - new Date(a.completedAt!).getTime())
+      .map(task => ({
+        type: "task",
+        ...task,
+        date: task.completedAt,
+      })),
+    ...projects
+      .filter(project => project.is_completed)
+      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+      .map(project => {
+        const manager = teamMembers.find(member => member.id === project.managerId);
+        return {
+          type: "project",
+          ...project,
+          date: project.updatedAt,
+          completedBy: manager?.name || 'Unknown Manager'
+        };
+      }),
     ...journalEntries.map(entry => ({
       type: "journal",
       ...entry,
@@ -83,6 +143,7 @@ const TimelinePage = () => {
               .map((entry, idx) => {
                 if (entry.type === "journal") {
                   // Journal entry display
+                  const showName = entry.is_public && entry.author_name;
                   return (
                     <div key={entry.id || idx} className="bg-card p-4 rounded-lg border flex gap-3 items-start">
                       <div className="pt-1">
@@ -103,12 +164,21 @@ const TimelinePage = () => {
                           <div className="flex items-center gap-2">
                             <Avatar className="h-6 w-6">
                               <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                                {/* Fallback: show initials of user_id */}
-                                {entry.is_public ? "T" : "Y"}
+                                {entry.is_public
+                                  ? (showName
+                                      ? (entry.author_name || "U")
+                                        .split(" ")
+                                        .map((str: string) => str[0])
+                                        .join("")
+                                      : "T")
+                                  : "Y"}
                               </AvatarFallback>
                             </Avatar>
                             <span className="text-xs text-muted-foreground">
-                              {entry.is_public ? "Team" : "You"}
+                              {entry.is_public
+                                ? (showName ? entry.author_name : "Team")
+                                : "You"
+                              }
                             </span>
                           </div>
                         </div>
@@ -140,9 +210,9 @@ const TimelinePage = () => {
                             <Avatar className="h-6 w-6">
                               <AvatarFallback className="text-xs bg-primary/10 text-primary">
                                 {('completedByName' in entry && entry.completedByName) ? 
-                                  entry.completedByName.split(' ').map(n => n[0]).join('') : 
+                                  entry.completedByName.split(' ').map((n: string) => n[0]).join('') : 
                                   ('completedBy' in entry && entry.completedBy) ?
-                                    entry.completedBy.split(' ').map(n => n[0]).join('') :
+                                    entry.completedBy.split(' ').map((n: string) => n[0]).join('') :
                                     <UserIcon className="h-3 w-3" />
                                 }
                               </AvatarFallback>
