@@ -15,28 +15,67 @@ export const fetchProjects = async (
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
 ): Promise<void> => {
   try {
-    // Fetch projects from supabase
-    const { data: projectData, error } = await supabase
+    // Fetch projects user is manager of
+    let { data: managerProjects, error: managerError } = await supabase
       .from('projects')
-      .select('*');
+      .select('*')
+      .eq('manager_id', user.id);
 
-    if (error) {
-      console.error('Error fetching projects:', error);
+    if (managerError) {
+      console.error('Error fetching manager projects:', managerError);
       toast.error('Failed to load projects');
-      return;
+      managerProjects = [];
     }
+
+    // Fetch project IDs where user is a project_team_member
+    const { data: memberLinks, error: memberLinksError } = await supabase
+      .from('project_team_members')
+      .select('project_id')
+      .eq('user_id', user.id);
+
+    if (memberLinksError) {
+      console.error('Error fetching team member projects:', memberLinksError);
+      toast.error('Failed to load your team projects');
+    }
+
+    const teamProjectIds = (memberLinks || []).map(link => link.project_id);
+
+    // Fetch those projects (avoid duplicating manager-owned ones)
+    let memberProjects: any[] = [];
+    if (teamProjectIds.length > 0) {
+      // Remove any projects already fetched as manager
+      const excludeIds = managerProjects ? managerProjects.map(p => p.id) : [];
+      const filterIds = teamProjectIds.filter(pid => !excludeIds.includes(pid));
+      if (filterIds.length > 0) {
+        const { data: extraProjects, error: extraProjectsError } = await supabase
+          .from('projects')
+          .select('*')
+          .in('id', filterIds);
+        if (extraProjectsError) {
+          console.error('Error fetching accessible team projects:', extraProjectsError);
+        }
+        memberProjects = extraProjects || [];
+      }
+    }
+
+    // Combine all projects the user can access
+    const projectData = [...(managerProjects || []), ...memberProjects];
 
     // Fetch tasks for these projects
-    const { data: taskData, error: taskError } = await supabase
-      .from('project_tasks')
-      .select('*');
-
-    if (taskError) {
-      console.error('Error fetching project tasks:', taskError);
-      toast.error('Failed to load project tasks');
-      return;
+    const projectIds = projectData.map(p => p.id);
+    let taskData: any[] = [];
+    if (projectIds.length > 0) {
+      const { data: allTaskData, error: taskError } = await supabase
+        .from('project_tasks')
+        .select('*');
+      if (taskError) {
+        console.error('Error fetching project tasks:', taskError);
+        toast.error('Failed to load project tasks');
+      } else {
+        taskData = allTaskData || [];
+      }
     }
-
+    
     // Fetch comments for all tasks
     const { data: commentData, error: commentError } = await supabase
       .from('comments')
