@@ -31,14 +31,14 @@ const ProjectsPage = () => {
     
     // Check if projects are loaded or if there's an error
     const timer = setTimeout(() => {
-      if (projects && projects.length >= 0) {
+      if (Array.isArray(projects)) {
         setIsLoading(false);
         setError(undefined);
       } else {
         setIsLoading(false);
         setError("Couldn't load projects. Please try again later.");
       }
-    }, 2000); // Give it time to load
+    }, 1500); // Give it time to load
     
     return () => clearTimeout(timer);
   }, [projects]);
@@ -75,14 +75,16 @@ const ProjectsPage = () => {
   };
 
   // Filter projects based on search query
-  const filteredProjects = projects.filter((project) => {
-    if (!project) return false;
-    
-    return (
-      (project.title && project.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (project.description && project.description.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
-  });
+  const filteredProjects = Array.isArray(projects) 
+    ? projects.filter((project) => {
+        if (!project) return false;
+        
+        return (
+          (project.title && project.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
+          (project.description && project.description.toLowerCase().includes(searchQuery.toLowerCase()))
+        );
+      })
+    : [];
   
   // Sort projects based on the selected option
   const sortedProjects = [...filteredProjects].sort((a, b) => {

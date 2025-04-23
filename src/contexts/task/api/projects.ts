@@ -30,12 +30,12 @@ export const fetchProjects = async (
     if (projectError) {
       console.error('Error fetching projects:', projectError);
       toast.error('Failed to load projects');
-      setProjects([]);
-      return;
+      throw new Error(projectError.message);
     }
 
     // If no projects, return empty array
     if (!projectData || projectData.length === 0) {
+      console.log('No projects found');
       setProjects([]);
       return;
     }

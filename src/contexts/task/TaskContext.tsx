@@ -85,8 +85,12 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     if (user) {
       const loadData = async () => {
-        await fetchProjects(user, setProjects);
-        await fetchTasks(user, setTasks);
+        try {
+          await fetchProjects(user, setProjects);
+          await fetchTasks(user, setTasks);
+        } catch (error) {
+          console.error("Error loading data:", error);
+        }
       };
       
       loadData();

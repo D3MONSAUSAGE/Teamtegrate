@@ -27,12 +27,6 @@ const ProjectList: React.FC<ProjectListProps> = ({
   isLoading = false,
   error,
 }) => {
-  // Filter projects based on search query if needed
-  const filteredProjects = projects.filter(project => 
-    project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    project.description?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-16 w-full bg-gray-50/50 dark:bg-gray-900/20 rounded-lg border border-dashed">
@@ -48,9 +42,25 @@ const ProjectList: React.FC<ProjectListProps> = ({
         <AlertCircle className="h-8 w-8 text-red-500 mb-4" />
         <p className="text-red-600 dark:text-red-400 mb-2">Failed to load projects</p>
         <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md">{error}</p>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="mt-4" 
+          onClick={() => window.location.reload()}
+        >
+          Retry
+        </Button>
       </div>
     );
   }
+
+  // Filter projects based on search query if needed
+  const filteredProjects = projects.filter(project => 
+    project && (
+      (project.title && project.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (project.description && project.description?.toLowerCase().includes(searchQuery.toLowerCase()))
+    )
+  );
 
   if (filteredProjects.length === 0) {
     return (
