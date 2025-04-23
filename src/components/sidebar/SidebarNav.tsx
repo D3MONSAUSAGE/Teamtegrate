@@ -7,7 +7,6 @@ import {
   CheckSquare, 
   FolderKanban,  
   Users, 
-  Settings,
   BarChart3,
   Timer,
   Clock,
@@ -94,13 +93,7 @@ const navItems: NavItem[] = [
     path: "/dashboard/chat",
     icon: <MessageSquare className="h-5 w-5" />,
     allowed: true,
-  },
-  {
-    name: "Settings",
-    path: "/dashboard/settings",
-    icon: <Settings className="h-5 w-5" />,
-    allowed: true,
-  },
+  }
 ];
 
 const SidebarNav: React.FC<SidebarNavProps> = ({ onNavigation }) => {
