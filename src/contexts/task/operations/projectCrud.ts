@@ -1,4 +1,3 @@
-
 import { User, Project, Task } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
@@ -24,16 +23,13 @@ export const addProject = async (
       end_date: project.endDate.toISOString(),
       manager_id: user.id,
       created_at: now.toISOString(),
-      updated_at: now.toISOString()
+      updated_at: now.toISOString(),
+      budget: project.budget
     };
     
-    console.log('Inserting project with manager_id:', projectToInsert.manager_id);
-    
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('projects')
-      .insert(projectToInsert)
-      .select('*')
-      .single();
+      .insert(projectToInsert);
     
     if (error) {
       console.error('Error adding project:', error);
@@ -42,29 +38,39 @@ export const addProject = async (
       return;
     }
     
-    // For now, we won't be able to store team members in the database until we set up the project_team_members table
-    // But we can still track them in local state
     const teamMembers = project.teamMembers || [];
+    const teamMemberPromises = teamMembers.map(userId => 
+      supabase
+        .from('project_team_members')
+        .insert({ 
+          project_id: projectId, 
+          user_id: userId 
+        })
+    );
     
-    if (data) {
-      const newProject: Project = {
-        id: data.id,
-        title: data.title,
-        description: data.description,
-        startDate: new Date(data.start_date),
-        endDate: new Date(data.end_date),
-        managerId: data.manager_id,
-        createdAt: new Date(data.created_at),
-        updatedAt: new Date(data.updated_at),
-        tasks: [],
-        teamMembers,
-        tags: []
-      };
-      
-      setProjects(prevProjects => [...prevProjects, newProject]);
-      playSuccessSound();
-      toast.success('Project created successfully!');
+    if (teamMemberPromises.length > 0) {
+      await Promise.all(teamMemberPromises);
     }
+    
+    const newProject: Project = {
+      id: projectId,
+      title: project.title,
+      description: project.description,
+      startDate: project.startDate,
+      endDate: project.endDate,
+      managerId: user.id,
+      createdAt: now,
+      updatedAt: now,
+      tasks: [],
+      teamMembers,
+      budget: project.budget,
+      budgetSpent: 0,
+      is_completed: false
+    };
+    
+    setProjects(prevProjects => [...prevProjects, newProject]);
+    playSuccessSound();
+    toast.success('Project created successfully!');
   } catch (error) {
     console.error('Error in addProject:', error);
     playErrorSound();
@@ -90,6 +96,8 @@ export const updateProject = async (
     if (updates.description !== undefined) updatedFields.description = updates.description;
     if (updates.startDate !== undefined) updatedFields.start_date = updates.startDate.toISOString();
     if (updates.endDate !== undefined) updatedFields.end_date = updates.endDate.toISOString();
+    if (updates.budget !== undefined) updatedFields.budget = updates.budget;
+    if (updates.is_completed !== undefined) updatedFields.is_completed = updates.is_completed;
     
     const { error } = await supabase
       .from('projects')
@@ -101,6 +109,41 @@ export const updateProject = async (
       playErrorSound();
       toast.error('Failed to update project');
       return;
+    }
+    
+    if (updates.teamMembers) {
+      const { data: currentMembers } = await supabase
+        .from('project_team_members')
+        .select('user_id')
+        .eq('project_id', projectId);
+      
+      const currentMemberIds = currentMembers ? currentMembers.map(m => m.user_id) : [];
+      const newMemberIds = updates.teamMembers || [];
+      
+      const membersToAdd = newMemberIds.filter(id => !currentMemberIds.includes(id));
+      const membersToRemove = currentMemberIds.filter(id => !newMemberIds.includes(id));
+      
+      for (const userId of membersToAdd) {
+        const { error } = await supabase
+          .from('project_team_members')
+          .insert({ project_id: projectId, user_id: userId });
+          
+        if (error) {
+          console.error('Error adding team member during update:', error);
+        }
+      }
+      
+      if (membersToRemove.length > 0) {
+        const { error } = await supabase
+          .from('project_team_members')
+          .delete()
+          .eq('project_id', projectId)
+          .in('user_id', membersToRemove);
+          
+        if (error) {
+          console.error('Error removing team members during update:', error);
+        }
+      }
     }
     
     setProjects(prevProjects => prevProjects.map(project => {
@@ -128,10 +171,8 @@ export const deleteProject = async (
   try {
     if (!user) return;
     
-    // Find all tasks belonging to this project
     const projectTasks = tasks.filter(task => task.projectId === projectId);
     
-    // Update the tasks to remove project association
     for (const task of projectTasks) {
       const { error } = await supabase
         .from('tasks')
@@ -143,7 +184,6 @@ export const deleteProject = async (
       }
     }
     
-    // Delete the project
     const { error } = await supabase
       .from('projects')
       .delete()
@@ -156,10 +196,8 @@ export const deleteProject = async (
       return;
     }
     
-    // Immediately update state to remove the project
     setProjects(prevProjects => prevProjects.filter(project => project.id !== projectId));
     
-    // Update tasks to remove project association in the local state
     setTasks(prevTasks => prevTasks.map(task => {
       if (task.projectId === projectId) {
         return { ...task, projectId: undefined };
