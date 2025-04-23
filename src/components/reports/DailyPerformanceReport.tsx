@@ -5,9 +5,10 @@ import { useTask } from "@/contexts/task/TaskContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { differenceInMinutes, isToday, format } from "date-fns";
-import { Timer, FileCheck2, FolderKanban } from "lucide-react";
+import { Timer, FileCheck2, FolderKanban, Download } from "lucide-react";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 
 interface TimeEntry {
   id: string;
@@ -76,8 +77,49 @@ const DailyPerformanceReport: React.FC = () => {
     t => !t.projectId
   );
 
+  // CSV export implementation
+  const exportCSV = () => {
+    const dateStr = format(today, "yyyy-MM-dd");
+    let csv = [
+      ["Performance Report", dateStr],
+      [],
+      ["Summary"],
+      ["Total Hours Tracked", totalHours],
+      ["Completed Tasks", completedToday.length],
+      ["Project Tasks Done", completedProjectTasks.length],
+      ["Personal Tasks Done", completedPersonalTasks.length],
+      [],
+      ["Completed Tasks Detail"],
+      ["Time", "Task", "Type"]
+    ];
+    completedToday.forEach(task => {
+      const time = task.updatedAt ? format(new Date(task.updatedAt), "p") : "-";
+      const type = task.projectId ? "Project" : "Personal";
+      csv.push([time, task.title, type]);
+    });
+    // Join and export file
+    const csvContent = csv.map(row => row.map(v => `"${(v ?? "").toString().replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv" });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `Daily_Performance_Report_${dateStr}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-bold flex gap-2 items-center">
+          <Timer className="w-5 h-5" />
+          Daily Performance Report
+        </h2>
+        <Button variant="secondary" onClick={exportCSV} className="gap-2" size="sm">
+          <Download className="w-4 h-4" />
+          Export CSV
+        </Button>
+      </div>
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -148,3 +190,4 @@ const DailyPerformanceReport: React.FC = () => {
 };
 
 export default DailyPerformanceReport;
+
