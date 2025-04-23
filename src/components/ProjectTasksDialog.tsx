@@ -1,14 +1,16 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Project, Task } from '@/types';
-import { Plus, Calendar } from 'lucide-react';
+import { Project, Task, User } from '@/types';
+import { Plus, Calendar, Users } from 'lucide-react';
 import TaskCard from '@/components/TaskCard';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import TaskCommentsDialog from './TaskCommentsDialog';
+import ProjectTeamMembers from './project/ProjectTeamMembers';
+import { fetchProjectTeamMembers } from '@/contexts/task/operations';
 
 interface ProjectTasksDialogProps {
   open: boolean;
@@ -29,6 +31,19 @@ const ProjectTasksDialog: React.FC<ProjectTasksDialogProps> = ({
 }) => {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [showComments, setShowComments] = useState(false);
+  const [teamMembers, setTeamMembers] = useState<User[]>([]);
+  
+  useEffect(() => {
+    // Fetch team members when dialog opens and project is available
+    const loadTeamMembers = async () => {
+      if (project?.id && open) {
+        const members = await fetchProjectTeamMembers(project.id);
+        setTeamMembers(members);
+      }
+    };
+    
+    loadTeamMembers();
+  }, [project?.id, open]);
   
   if (!project) return null;
   
@@ -54,6 +69,15 @@ const ProjectTasksDialog: React.FC<ProjectTasksDialogProps> = ({
               <div className="mt-2">
                 <p className="line-clamp-2">{project.description}</p>
               </div>
+              
+              {teamMembers.length > 0 && (
+                <div className="mt-3 flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  <span>Team Members:</span>
+                  <ProjectTeamMembers members={teamMembers} maxDisplay={5} />
+                </div>
+              )}
+              
               <div className="mt-3 space-y-1">
                 <div className="flex justify-between items-center">
                   <span className="text-xs">

@@ -1,7 +1,7 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Project, Task } from '@/types';
+import { Project, Task, User } from '@/types';
 import { Badge } from "@/components/ui/badge";
 import { format } from 'date-fns';
 import { Calendar, Users, Plus, ListTodo } from 'lucide-react';
@@ -15,6 +15,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { MoreHorizontal } from 'lucide-react';
 import { useTask } from '@/contexts/task';
+import { fetchProjectTeamMembers } from '@/contexts/task/operations';
+import ProjectTeamMembers from './project/ProjectTeamMembers';
 
 interface ProjectCardProps {
   project: Project;
@@ -30,6 +32,19 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   onCreateTask 
 }) => {
   const { deleteProject, updateProject } = useTask();
+  const [teamMembers, setTeamMembers] = useState<User[]>([]);
+  
+  useEffect(() => {
+    // Fetch team members when component mounts or project changes
+    const loadTeamMembers = async () => {
+      if (project.id) {
+        const members = await fetchProjectTeamMembers(project.id);
+        setTeamMembers(members);
+      }
+    };
+    
+    loadTeamMembers();
+  }, [project.id]);
   
   const calculateProgress = (tasks: Task[]) => {
     if (tasks.length === 0) return 0;
@@ -102,6 +117,13 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
             <span>{assignedTasksCount} assigned</span>
           </div>
         </div>
+        
+        {teamMembers.length > 0 && (
+          <div className="flex items-center justify-between pt-1">
+            <span className="text-xs text-gray-500">Team:</span>
+            <ProjectTeamMembers members={teamMembers} />
+          </div>
+        )}
         
         <div className="pt-1 md:pt-3 space-y-1">
           <div className="flex justify-between items-center">
