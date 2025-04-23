@@ -85,14 +85,20 @@ const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
       return "Invalid time";
     }
   };
-
-  // For description, always show full content, never truncate
-  // Assigned to: show name, or a friendly fallback if not present
-  const assignedTo = task.assignedToName
-    ? task.assignedToName
-    : (task.assignedToId
-        ? "Unassigned"
-        : "—");
+  
+  // Process the assignedToName for display
+  const getAssignedToName = () => {
+    if (!task.assignedToName || task.assignedToName.trim() === '') {
+      return 'Unassigned';
+    }
+    
+    // Check if it's likely a UUID (common format for IDs)
+    if (task.assignedToId && (!task.assignedToName || task.assignedToName === task.assignedToId)) {
+      return 'Unassigned';
+    }
+    
+    return task.assignedToName;
+  };
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
@@ -135,14 +141,12 @@ const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
                   <span className="text-sm text-rose-500 font-medium">Overdue</span>
                 </div>
               )}
-              {/* Always show a human friendly label, never the ID */}
-              {(
-                <div className="col-span-2 text-sm flex items-center mt-2">
-                  <User className="h-4 w-4 mr-1 text-muted-foreground" />
-                  <span className="text-muted-foreground pr-1">Assigned to:</span>
-                  <span className="font-medium">{assignedTo}</span>
-                </div>
-              )}
+              {/* Always show assigned to with proper name handling */}
+              <div className="col-span-2 text-sm flex items-center mt-2">
+                <User className="h-4 w-4 mr-1 text-muted-foreground" />
+                <span className="text-muted-foreground pr-1">Assigned to:</span>
+                <span className="font-medium">{getAssignedToName()}</span>
+              </div>
             </div>
             <Separator className="my-4" />
             <div className="space-y-2">
@@ -177,4 +181,3 @@ const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
 };
 
 export default TaskDetailDrawer;
-

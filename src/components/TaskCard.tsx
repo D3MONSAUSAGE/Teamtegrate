@@ -64,12 +64,19 @@ const TaskCard: React.FC<TaskCardProps> = ({
     }
   };
 
-  // Clean up the assignedToName - if it looks like a UUID, treat it as "Unassigned"
-  const assignedToName = task.assignedToName 
-    ? (task.assignedToName.includes('-') && task.assignedToName.length > 20)
-      ? "Unassigned" 
-      : task.assignedToName
-    : undefined;
+  // Process the assignedToName for display
+  const getAssignedToName = () => {
+    if (!task.assignedToName || task.assignedToName.trim() === '') {
+      return 'Unassigned';
+    }
+    
+    // Check if it's likely a UUID (common format for IDs)
+    if (task.assignedToId && (!task.assignedToName || task.assignedToName === task.assignedToId)) {
+      return 'Unassigned';
+    }
+    
+    return task.assignedToName;
+  };
 
   // Card styling improvements
   return (
@@ -120,7 +127,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
             <TaskCardDescription description={task.description} />
             <TaskCardMetadata
               deadline={task.deadline}
-              assignedToName={assignedToName}
+              assignedToName={getAssignedToName()}
             />
             <TaskCardFooter
               status={task.status}
