@@ -1,3 +1,4 @@
+
 import { Project, Task, TaskPriority, TaskStatus } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from '@/components/ui/sonner';
@@ -22,6 +23,7 @@ export const fetchProjects = async (
 
     console.log('Fetching projects for user:', user.id);
     
+    // First fetch projects with simplified error handling
     const { data: projectData, error: projectError } = await supabase
       .from('projects')
       .select('*');
@@ -45,11 +47,11 @@ export const fetchProjects = async (
     // Fetch team members for these projects
     const { data: teamMembersData, error: teamMembersError } = await supabase
       .from('project_team_members')
-      .select('project_id, user_id')
-      .in('project_id', projectIds);
+      .select('project_id, user_id');
       
     if (teamMembersError) {
       console.error('Error fetching project team members:', teamMembersError);
+      // Continue execution, just log the error
     }
 
     // Create a map of project_id -> [member_ids]
@@ -73,6 +75,7 @@ export const fetchProjects = async (
         
       if (taskError) {
         console.error('Error fetching project tasks:', taskError);
+        // Continue execution, just log the error
       } else {
         taskData = allTaskData || [];
       }
@@ -90,6 +93,7 @@ export const fetchProjects = async (
 
       if (commentError) {
         console.error('Error fetching comments:', commentError);
+        // Continue execution, just log the error
       } else {
         commentData = comments || [];
       }
@@ -103,8 +107,7 @@ export const fetchProjects = async (
       if (userIds.length > 0) {
         const { data: userData, error: userError } = await supabase
           .from('users')
-          .select('id, name, email')
-          .in('id', userIds);
+          .select('id, name, email');
         
         if (!userError && userData) {
           userData.forEach(user => {
@@ -164,9 +167,9 @@ export const fetchProjects = async (
         tasks: projectTasks,
         createdAt: parseDate(project.created_at),
         updatedAt: parseDate(project.updated_at),
-        budget: project.budget,
-        budgetSpent: project.budget_spent,
-        is_completed: project.is_completed,
+        budget: project.budget || 0,
+        budgetSpent: project.budget_spent || 0,
+        is_completed: project.is_completed || false,
         teamMembers
       };
     });
