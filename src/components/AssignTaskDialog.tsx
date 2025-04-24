@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { useTask } from '@/contexts/task';
 import { Task } from '@/types';
 import { Check, Search } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface TeamMember {
   id: string;
@@ -26,13 +27,48 @@ const AssignTaskDialog: React.FC<AssignTaskDialogProps> = ({ open, onOpenChange,
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const { assignTaskToUser } = useTask();
   
-  // Load team members from localStorage
+  // Load team members when dialog opens
   useEffect(() => {
+    const loadTeamMembers = async () => {
+      if (!open) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('team_members')
+          .select('*');
+          
+        if (error) {
+          console.error('Error loading team members:', error);
+          return;
+        }
+        
+        if (data) {
+          setTeamMembers(data.map(member => ({
+            id: member.id,
+            name: member.name,
+            email: member.email,
+            role: member.role
+          })));
+        }
+      } catch (error) {
+        console.error('Error loading team members:', error);
+      }
+    };
+    
+    // First try from Supabase
+    loadTeamMembers();
+    
+    // Fallback to localStorage if needed
     const storedMembers = localStorage.getItem('teamMembers');
     if (storedMembers) {
-      setTeamMembers(JSON.parse(storedMembers));
+      setTeamMembers(prev => {
+        if (prev.length === 0) {
+          return JSON.parse(storedMembers);
+        }
+        return prev;
+      });
     }
-  }, [open]); // Reload when dialog opens
+  }, [open]); 
   
   const filteredMembers = teamMembers.filter((member) => {
     return (
@@ -43,6 +79,7 @@ const AssignTaskDialog: React.FC<AssignTaskDialogProps> = ({ open, onOpenChange,
   });
   
   const handleAssign = (memberId: string, memberName: string) => {
+    console.log('Assigning task to member:', { memberId, memberName, taskId: task.id });
     assignTaskToUser(task.id, memberId, memberName);
     onOpenChange(false);
   };
