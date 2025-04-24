@@ -1,36 +1,20 @@
-
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useTask } from '@/contexts/task';
-import { Project, Task } from '@/types';
-import CreateProjectDialog from '@/components/CreateProjectDialog';
-import CreateTaskDialog from '@/components/CreateTaskDialog';
-import AssignTaskDialog from '@/components/AssignTaskDialog';
-import ProjectToolbar from '@/components/ProjectToolbar';
-import ProjectList from '@/components/ProjectList';
-import ProjectTasksDialog from '@/components/ProjectTasksDialog';
+import { Project } from '@/types';
 import { toast } from '@/components/ui/sonner';
-import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { ProjectContainer } from '@/components/project/ProjectContainer';
+import ProjectContent from '@/components/project/ProjectContent';
 
 const ProjectsPage = () => {
-  const { projects, addProject } = useTask();
   const { user } = useAuth();
-  const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false);
-  const [editingProject, setEditingProject] = useState<Project | undefined>(undefined);
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [isViewTasksOpen, setIsViewTasksOpen] = useState(false);
-  const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
-  const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [isAssignTaskOpen, setIsAssignTaskOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState('date');
+  const { projects } = useTask();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | undefined>(undefined);
   const [localProjects, setLocalProjects] = useState<Project[]>([]);
   
   useEffect(() => {
-    // This effect will set localProjects whenever the global projects state changes
     if (Array.isArray(projects)) {
       setLocalProjects(projects);
       setIsLoading(false);
@@ -38,7 +22,6 @@ const ProjectsPage = () => {
     }
   }, [projects]);
   
-  // Manual retry function that will fetch projects directly
   const handleRetry = useCallback(async () => {
     if (!user) {
       toast.error('You must be logged in to view projects');
@@ -65,7 +48,6 @@ const ProjectsPage = () => {
         return;
       }
       
-      // Simple transformation just to show something
       const basicProjects = projectData.map(p => ({
         id: p.id,
         title: p.title || 'Untitled',
@@ -94,184 +76,25 @@ const ProjectsPage = () => {
     }
   }, [user]);
   
-  // Call handleRetry on first load if there are no projects
   useEffect(() => {
     const timer = setTimeout(() => {
       if (!Array.isArray(projects) || projects.length === 0) {
         handleRetry();
       }
-    }, 2000); // Wait a bit to see if projects load normally
+    }, 2000);
     
     return () => clearTimeout(timer);
   }, [projects, handleRetry]);
-  
-  const handleEditProject = (project: Project) => {
-    setEditingProject(project);
-    setIsCreateProjectOpen(true);
-  };
-  
-  const handleViewTasks = (project: Project) => {
-    setSelectedProject(project);
-    setIsViewTasksOpen(true);
-  };
-  
-  const handleCreateTask = (project?: Project) => {
-    setEditingTask(undefined);
-    setSelectedProject(project || null);
-    setIsCreateTaskOpen(true);
-  };
-  
-  const handleEditTask = (task: Task) => {
-    setEditingTask(task);
-    setIsCreateTaskOpen(true);
-  };
-  
-  const handleAssignTask = (task: Task) => {
-    setSelectedTask(task);
-    setIsAssignTaskOpen(true);
-  };
 
-  const handleCreateProject = () => {
-    setEditingProject(undefined);
-    setIsCreateProjectOpen(true);
-  };
-
-  // Create a manual project function for direct testing - FIX HERE
-  const handleCreateBasicProject = async () => {
-    if (!user) {
-      toast.error('You must be logged in to create a project');
-      return;
-    }
-    
-    const basicProject = {
-      title: `Test Project ${new Date().toLocaleTimeString()}`,
-      description: 'This is a test project created directly',
-      startDate: new Date(),
-      endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      managerId: user.id,
-      budget: 1000,
-      teamMembers: []
-    };
-    
-    try {
-      await addProject(basicProject);
-      toast.success('Test project created successfully!');
-      handleRetry(); // Refresh projects list after adding
-    } catch (error) {
-      console.error('Failed to create test project:', error);
-      toast.error('Failed to create test project');
-    }
-  };
-
-  // Filter projects based on search query
-  const filteredProjects = Array.isArray(localProjects) 
-    ? localProjects.filter((project) => {
-        if (!project) return false;
-        
-        return (
-          (project.title && project.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
-          (project.description && project.description.toLowerCase().includes(searchQuery.toLowerCase()))
-        );
-      })
-    : [];
-  
-  // Sort projects based on the selected option
-  const sortedProjects = [...filteredProjects].sort((a, b) => {
-    switch (sortBy) {
-      case 'date':
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      case 'start':
-        return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
-      case 'end':
-        return new Date(a.endDate).getTime() - new Date(b.endDate).getTime();
-      case 'title':
-        return a.title.localeCompare(b.title);
-      case 'progress':
-        const progressA = calculateProgress(a);
-        const progressB = calculateProgress(b);
-        return progressB - progressA;
-      default:
-        return 0;
-    }
-  });
-  
-  // Helper function to calculate project progress
-  const calculateProgress = (project: Project): number => {
-    if (!project.tasks || project.tasks.length === 0) return 0;
-    const completed = project.tasks.filter(task => task.status === 'Completed').length;
-    return Math.round((completed / project.tasks.length) * 100);
-  };
-  
   return (
-    <div className="p-4 md:p-6 max-w-7xl mx-auto">
-      <ProjectToolbar 
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        sortBy={sortBy}
-        setSortBy={setSortBy}
-        onCreateProject={handleCreateProject}
-      />
-      
-      {/* Show debugging button in dev environment */}
-      {process.env.NODE_ENV !== 'production' && (
-        <div className="mb-4">
-          <button 
-            onClick={handleRetry}
-            className="px-3 py-1 bg-blue-100 text-blue-800 text-xs rounded mr-2"
-          >
-            Refresh Projects
-          </button>
-          <button 
-            onClick={handleCreateBasicProject}
-            className="px-3 py-1 bg-green-100 text-green-800 text-xs rounded"
-          >
-            Create Test Project
-          </button>
-        </div>
-      )}
-      
-      <ProjectList 
-        projects={sortedProjects}
-        searchQuery={searchQuery}
-        onEditProject={handleEditProject}
-        onViewTasks={handleViewTasks}
-        onCreateProject={handleCreateProject}
-        onCreateTask={handleCreateTask}
+    <ProjectContainer>
+      <ProjectContent
+        projects={localProjects}
         isLoading={isLoading}
         error={error}
         onRetry={handleRetry}
       />
-      
-      <CreateProjectDialog 
-        open={isCreateProjectOpen} 
-        onOpenChange={setIsCreateProjectOpen}
-        editingProject={editingProject}
-      />
-      
-      <ProjectTasksDialog 
-        open={isViewTasksOpen}
-        onOpenChange={setIsViewTasksOpen}
-        project={selectedProject}
-        onCreateTask={() => handleCreateTask(selectedProject)}
-        onEditTask={handleEditTask}
-        onAssignTask={handleAssignTask}
-      />
-      
-      <CreateTaskDialog 
-        open={isCreateTaskOpen} 
-        onOpenChange={setIsCreateTaskOpen}
-        editingTask={editingTask}
-        currentProjectId={selectedProject?.id}
-      />
-      
-      {selectedTask && (
-        <AssignTaskDialog 
-          open={isAssignTaskOpen} 
-          onOpenChange={setIsAssignTaskOpen}
-          task={selectedTask}
-        />
-      )}
-    </div>
+    </ProjectContainer>
   );
 };
 
