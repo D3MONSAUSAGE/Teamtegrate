@@ -18,56 +18,59 @@ export const addProject = async (
     const now = new Date();
     const projectId = uuidv4();
     
-    // In case of database issues, still allow the user to create projects locally
-    let insertError = false;
+    console.log('Creating project with user ID:', user.id); // Debug log
     
-    // Try to insert into database
-    try {
-      const projectToInsert = {
-        id: projectId,
-        title: project.title,
-        description: project.description,
-        start_date: project.startDate.toISOString(),
-        end_date: project.endDate.toISOString(),
-        manager_id: user.id,
-        created_at: now.toISOString(),
-        updated_at: now.toISOString(),
-        budget: project.budget,
-        is_completed: false
-      };
+    const projectToInsert = {
+      id: projectId,
+      title: project.title,
+      description: project.description,
+      start_date: project.startDate.toISOString(),
+      end_date: project.endDate.toISOString(),
+      manager_id: user.id,
+      created_at: now.toISOString(),
+      updated_at: now.toISOString(),
+      budget: project.budget,
+      is_completed: false
+    };
 
-      const { error: projectError } = await supabase
-        .from('projects')
-        .insert(projectToInsert);
+    const { data, error: projectError } = await supabase
+      .from('projects')
+      .insert(projectToInsert)
+      .select()
+      .single();
 
-      if (projectError) {
-        console.error('Error adding project:', projectError);
-        insertError = true;
-        // Don't return here, we'll still create the project locally
+    if (projectError) {
+      console.error('Error adding project:', projectError);
+      if (projectError.code === 'PGRST301') {
+        toast.error('Authentication error. Please try logging in again.');
+        return;
       }
-
-      // Only try to add team members if project was created successfully
-      if (!insertError && project.teamMembers && project.teamMembers.length > 0) {
-        const teamMemberInsertData = project.teamMembers.map(userId => ({
-          project_id: projectId,
-          user_id: userId
-        }));
-
-        const { error: membersError } = await supabase
-          .from('project_team_members')
-          .insert(teamMemberInsertData);
-
-        if (membersError) {
-          console.error('Error adding team members:', membersError);
-          toast.error('Project created but had issues adding some team members');
-        }
-      }
-    } catch (dbError) {
-      console.error('Database operation failed:', dbError);
-      insertError = true;
+      toast.error('Failed to create project. Please try again.');
+      return;
     }
 
-    // Create the project in local state regardless of database success
+    if (!data) {
+      toast.error('No data returned from database');
+      return;
+    }
+
+    // Only try to add team members if project was created successfully
+    if (project.teamMembers && project.teamMembers.length > 0) {
+      const teamMemberInsertData = project.teamMembers.map(userId => ({
+        project_id: projectId,
+        user_id: userId
+      }));
+
+      const { error: membersError } = await supabase
+        .from('project_team_members')
+        .insert(teamMemberInsertData);
+
+      if (membersError) {
+        console.error('Error adding team members:', membersError);
+        toast.error('Project created but had issues adding some team members');
+      }
+    }
+
     const newProject: Project = {
       id: projectId,
       title: project.title,
@@ -86,13 +89,7 @@ export const addProject = async (
 
     setProjects(prevProjects => [...prevProjects, newProject]);
     playSuccessSound();
-    
-    // Show appropriate toast based on whether database operation succeeded
-    if (insertError) {
-      toast.success('Project created locally. Database sync failed - changes will not persist after reload.');
-    } else {
-      toast.success('Project created successfully!');
-    }
+    toast.success('Project created successfully!');
     
     return newProject;
   } catch (error) {
