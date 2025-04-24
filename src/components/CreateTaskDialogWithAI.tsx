@@ -1,13 +1,14 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Task } from '@/types';
+import { Task, AppUser } from '@/types';
 import { useTask } from '@/contexts/task';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTaskForm } from '@/hooks/useTaskForm';
 import TaskFormFieldsWithAI from './task/TaskFormFieldsWithAI';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useUsers } from '@/hooks/useUsers';
 
 interface CreateTaskDialogProps {
   open: boolean;
@@ -26,6 +27,15 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
   const { addTask, updateTask, projects } = useTask();
   const isEditMode = !!editingTask;
   const isMobile = useIsMobile();
+  const { users, isLoading: isLoadingUsers } = useUsers();
+  
+  // Add deadline state management
+  const [deadlineDate, setDeadlineDate] = useState<Date | undefined>(
+    editingTask ? new Date(editingTask.deadline) : undefined
+  );
+  const [timeInput, setTimeInput] = useState(
+    editingTask ? new Date(editingTask.deadline).toTimeString().slice(0, 5) : ""
+  );
   
   const {
     register,
@@ -36,6 +46,17 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
     selectedMember,
     setSelectedMember
   } = useTaskForm(editingTask, currentProjectId);
+
+  // Update deadline state when editing task changes
+  useEffect(() => {
+    if (editingTask) {
+      setDeadlineDate(new Date(editingTask.deadline));
+      setTimeInput(new Date(editingTask.deadline).toTimeString().slice(0, 5));
+    } else {
+      setDeadlineDate(undefined);
+      setTimeInput("");
+    }
+  }, [editingTask]);
 
   // Set initial projectId value when: dialog opens, or currentProjectId changes, and only if not editing
   useEffect(() => {
@@ -57,6 +78,30 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
       setSelectedMember(editingTask.assignedToId);
     }
   }, [open, editingTask, currentProjectId, setValue, reset, setSelectedMember]);
+
+  const onDateChange = (date: Date | undefined) => {
+    setDeadlineDate(date);
+    if (date) {
+      // Preserve time if time was already set
+      if (timeInput) {
+        const [hours, minutes] = timeInput.split(':').map(Number);
+        date.setHours(hours, minutes);
+      }
+      setValue('deadline', date.toISOString());
+    }
+  };
+
+  const onTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newTimeInput = e.target.value;
+    setTimeInput(newTimeInput);
+    
+    if (deadlineDate && newTimeInput) {
+      const [hours, minutes] = newTimeInput.split(':').map(Number);
+      const newDate = new Date(deadlineDate);
+      newDate.setHours(hours, minutes);
+      setValue('deadline', newDate.toISOString());
+    }
+  };
 
   const onSubmit = (data: any) => {
     // Handle the case where deadline might come as string or Date

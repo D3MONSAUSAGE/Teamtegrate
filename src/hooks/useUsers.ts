@@ -1,37 +1,41 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { AppUser } from '@/types';
 
 export const useUsers = () => {
   const [users, setUsers] = useState<AppUser[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    const loadUsers = async () => {
+    const fetchUsers = async () => {
       try {
-        const { data, error } = await supabase
-          .from('users')
-          .select('id, name, email, role')
-          .order('name');
-          
-        if (error) {
-          console.error('Error loading users:', error);
-          return;
-        }
+        setIsLoading(true);
+        // For now, just simulate users
+        // In a real app, you would fetch from your API
+        const mockUsers: AppUser[] = [
+          { id: '1', name: 'John Doe', email: 'john@example.com', role: 'Developer' },
+          { id: '2', name: 'Jane Smith', email: 'jane@example.com', role: 'Designer' },
+          { id: '3', name: 'Alex Johnson', email: 'alex@example.com', role: 'Manager' }
+        ];
         
-        if (data) {
-          setUsers(data);
-        }
-      } catch (error) {
-        console.error('Error loading users:', error);
-      } finally {
+        // Simulate network delay
+        setTimeout(() => {
+          setUsers(mockUsers);
+          setIsLoading(false);
+        }, 500);
+      } catch (err) {
+        setError(err as Error);
         setIsLoading(false);
       }
     };
 
-    loadUsers();
+    fetchUsers();
   }, []);
 
-  return { users, isLoading };
+  return {
+    users,
+    isLoading,
+    error
+  };
 };

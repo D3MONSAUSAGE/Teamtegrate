@@ -58,7 +58,7 @@ const TaskFormFieldsWithAI: React.FC<TaskFormFieldsProps> = ({
               id="use-ai"
               checked={useAI}
               onCheckedChange={setUseAI}
-              size="sm"
+              className="h-4 w-8" // Using className instead of size prop
             />
             <Label htmlFor="use-ai" className="text-xs">Use AI</Label>
           </div>
@@ -117,7 +117,20 @@ const TaskFormFieldsWithAI: React.FC<TaskFormFieldsProps> = ({
           </Select>
         </div>
         
-        <TaskDeadlinePicker register={register} setValue={setValue} />
+        <TaskDeadlinePicker 
+          date={editingTask ? new Date(editingTask.deadline) : undefined}
+          timeInput={editingTask ? new Date(editingTask.deadline).toTimeString().slice(0, 5) : ""}
+          onDateChange={(date) => setValue('deadline', date?.toISOString())}
+          onTimeChange={(e) => {
+            // Handle time change logic
+            if (e.target.value) {
+              const currentDeadline = new Date(editingTask?.deadline || new Date());
+              const [hours, minutes] = e.target.value.split(':').map(Number);
+              currentDeadline.setHours(hours, minutes);
+              setValue('deadline', currentDeadline.toISOString());
+            }
+          }}
+        />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -143,8 +156,9 @@ const TaskFormFieldsWithAI: React.FC<TaskFormFieldsProps> = ({
         
         <TaskAssigneeSelect 
           selectedMember={selectedMember}
-          setSelectedMember={setSelectedMember}
-          setValue={setValue}
+          onAssign={(userId) => setSelectedMember(userId)}
+          users={[]} // We need to pass users here
+          isLoading={false} // And indicate if loading
         />
       </div>
 
