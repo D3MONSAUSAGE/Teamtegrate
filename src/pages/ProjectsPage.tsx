@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { useProjects } from '@/hooks/useProjects';
@@ -8,10 +8,10 @@ import CreateProjectDialog from '@/components/CreateProjectDialog';
 
 const ProjectsPage = () => {
   const { projects, isLoading } = useProjects();
-  const [showCreateDialog, setShowCreateDialog] = React.useState(false);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <div className="flex items-center justify-center h-32">Loading...</div>;
   }
 
   return (
@@ -27,6 +27,15 @@ const ProjectsPage = () => {
         {projects.map(project => (
           <ProjectCard key={project.id} project={project} />
         ))}
+        
+        {projects.length === 0 && (
+          <div className="col-span-1 md:col-span-2 lg:col-span-3 p-8 text-center border rounded-lg bg-white dark:bg-card">
+            <p className="text-gray-500 mb-4">No projects found</p>
+            <Button onClick={() => setShowCreateDialog(true)}>
+              <Plus className="w-4 h-4 mr-2" /> Create First Project
+            </Button>
+          </div>
+        )}
       </div>
 
       <CreateProjectDialog 
