@@ -7,10 +7,13 @@ import ProjectCard from '@/components/ProjectCard';
 import CreateProjectDialog from '@/components/CreateProjectDialog';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from '@/components/ui/sonner';
+import CreateTaskDialog from '@/components/CreateTaskDialog';
 
 const ProjectsPage = () => {
   const { projects, isLoading, refreshProjects } = useProjects();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showCreateTaskDialog, setShowCreateTaskDialog] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>(undefined);
   const navigate = useNavigate();
 
   // Add effect to detect and handle loading errors
@@ -34,7 +37,8 @@ const ProjectsPage = () => {
   };
 
   const handleCreateTask = (projectId: string) => {
-    navigate(`/dashboard/tasks/create?projectId=${projectId}`);
+    setSelectedProjectId(projectId);
+    setShowCreateTaskDialog(true);
   };
 
   const handleCreateSuccess = () => {
@@ -83,6 +87,13 @@ const ProjectsPage = () => {
         open={showCreateDialog} 
         onOpenChange={setShowCreateDialog}
         onSuccess={handleCreateSuccess}
+      />
+
+      <CreateTaskDialog
+        open={showCreateTaskDialog}
+        onOpenChange={setShowCreateTaskDialog}
+        editingTask={undefined}
+        currentProjectId={selectedProjectId}
       />
     </div>
   );

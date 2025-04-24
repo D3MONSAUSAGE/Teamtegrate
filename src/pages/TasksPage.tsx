@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTask } from '@/contexts/task';
 import { Task } from '@/types';
@@ -11,14 +11,20 @@ import ProjectTasksView from '@/components/task/ProjectTasksView';
 const TasksPage = () => {
   const [searchParams] = useSearchParams();
   const projectId = searchParams.get('projectId');
+  const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
+  
+  useEffect(() => {
+    const path = window.location.pathname;
+    if (path.endsWith('/create')) {
+      setIsCreateTaskOpen(true);
+    }
+  }, []);
 
-  // If we have a projectId, render the ProjectTasksView instead
   if (projectId) {
     return <ProjectTasksView />;
   }
 
   const { tasks } = useTask();
-  const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [sortBy, setSortBy] = useState('deadline');
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -29,13 +35,11 @@ const TasksPage = () => {
     setIsCreateTaskOpen(true);
   };
   
-  // Filter tasks by status
   const todoTasks = tasks.filter((task) => task.status === 'To Do');
   const inProgressTasks = tasks.filter((task) => task.status === 'In Progress');
   const pendingTasks = tasks.filter((task) => task.status === 'Pending');
   const completedTasks = tasks.filter((task) => task.status === 'Completed');
   
-  // Sort tasks based on the selected option
   const sortTasks = (tasksToSort: Task[]) => {
     return [...tasksToSort].sort((a, b) => {
       switch (sortBy) {
@@ -93,6 +97,7 @@ const TasksPage = () => {
         open={isCreateTaskOpen} 
         onOpenChange={setIsCreateTaskOpen}
         editingTask={editingTask}
+        currentProjectId={projectId ?? undefined}
       />
       
       <TaskCommentsDialog
