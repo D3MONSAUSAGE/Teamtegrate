@@ -34,7 +34,32 @@ export const fetchTasks = async (
       console.error('Error fetching comments:', commentError);
     }
 
-    // Map tasks with their comments
+    // Get all user IDs that are assigned to tasks to fetch their names
+    const assignedUserIds = taskData
+      .filter(task => task.assigned_to_id)
+      .map(task => task.assigned_to_id);
+
+    // Remove duplicates
+    const uniqueUserIds = [...new Set(assignedUserIds)];
+    
+    // Fetch user names for assigned users
+    let userMap = new Map();
+    if (uniqueUserIds.length > 0) {
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('id, name, email')
+        .in('id', uniqueUserIds);
+
+      if (userError) {
+        console.error('Error fetching user data for task assignments:', userError);
+      } else if (userData) {
+        userData.forEach(user => {
+          userMap.set(user.id, user.name || user.email);
+        });
+      }
+    }
+
+    // Map tasks with their comments and resolve assigned user names
     const tasks: Task[] = taskData.map((task) => {
       const taskComments = commentData
         ? commentData
@@ -47,6 +72,9 @@ export const fetchTasks = async (
               createdAt: parseDate(comment.created_at)
             }))
         : [];
+
+      // Get the assigned user name from our map
+      const assignedUserName = task.assigned_to_id ? userMap.get(task.assigned_to_id) : undefined;
 
       return {
         id: task.id,
@@ -61,12 +89,13 @@ export const fetchTasks = async (
         updatedAt: parseDate(task.updated_at),
         completedAt: task.completed_at ? parseDate(task.completed_at) : undefined,
         assignedToId: task.assigned_to_id,
-        assignedToName: task.assigned_to_id,
+        assignedToName: assignedUserName,
         comments: taskComments,
         cost: task.cost || 0
       };
     });
 
+    // Resolve user names for comments
     if (commentData && commentData.length > 0) {
       const userIds = [...new Set(commentData.map(comment => comment.user_id))];
       

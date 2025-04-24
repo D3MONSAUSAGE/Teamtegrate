@@ -105,17 +105,17 @@ export const assignTaskToUser = async (
 
     const now = new Date();
     
-    // Find user's name if not provided
+    // Find user's name if not provided or get updated name
     let actualUserName = userName;
-    if (!actualUserName && userId) {
+    if ((!actualUserName || actualUserName === userId) && userId) {
       const { data: userData } = await supabase
         .from('users')
-        .select('name')
+        .select('name, email')
         .eq('id', userId)
         .single();
         
-      if (userData && userData.name) {
-        actualUserName = userData.name;
+      if (userData) {
+        actualUserName = userData.name || userData.email;
       }
     }
 

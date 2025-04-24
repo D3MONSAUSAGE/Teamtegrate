@@ -1,3 +1,4 @@
+
 import { User, Task, Project } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
@@ -30,8 +31,36 @@ export const fetchUserTasks = async (
       return new Date(dateStr);
     };
 
-    // Map tasks with their comments
+    // Get all user IDs that are assigned to tasks to fetch their names
+    const assignedUserIds = taskData
+      .filter(task => task.assigned_to_id)
+      .map(task => task.assigned_to_id);
+
+    // Remove duplicates
+    const uniqueUserIds = [...new Set(assignedUserIds)];
+    
+    // Fetch user names for assigned users
+    let userMap = new Map();
+    if (uniqueUserIds.length > 0) {
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('id, name, email')
+        .in('id', uniqueUserIds);
+
+      if (userError) {
+        console.error('Error fetching user data for task assignments:', userError);
+      } else if (userData) {
+        userData.forEach(user => {
+          userMap.set(user.id, user.name || user.email);
+        });
+      }
+    }
+
+    // Map tasks with their comments and assigned user names
     const tasks: Task[] = taskData.map((task) => {
+      // Get the assigned user name from our map
+      const assignedUserName = task.assigned_to_id ? userMap.get(task.assigned_to_id) : undefined;
+
       return {
         id: task.id,
         userId: task.user_id,
@@ -45,7 +74,7 @@ export const fetchUserTasks = async (
         updatedAt: parseDate(task.updated_at),
         completedAt: task.completed_at ? parseDate(task.completed_at) : undefined,
         assignedToId: task.assigned_to_id,
-        assignedToName: task.assigned_to_id,
+        assignedToName: assignedUserName,
         comments: [],
         cost: task.cost || 0
       };
