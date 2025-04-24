@@ -3,7 +3,7 @@ import React from 'react';
 import { Project } from '@/types';
 import ProjectCard from './ProjectCard';
 import { Button } from '@/components/ui/button';
-import { Plus, AlertCircle, Loader2 } from 'lucide-react';
+import { Plus, AlertCircle, Loader2, RefreshCw } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface ProjectListProps {
@@ -15,6 +15,7 @@ interface ProjectListProps {
   onCreateTask: (project: Project) => void;
   isLoading?: boolean;
   error?: string;
+  onRetry?: () => void;
 }
 
 const ProjectList: React.FC<ProjectListProps> = ({
@@ -26,6 +27,7 @@ const ProjectList: React.FC<ProjectListProps> = ({
   onCreateTask,
   isLoading = false,
   error,
+  onRetry,
 }) => {
   if (isLoading) {
     return (
@@ -41,26 +43,28 @@ const ProjectList: React.FC<ProjectListProps> = ({
       <div className="flex flex-col items-center justify-center py-16 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800 text-center">
         <AlertCircle className="h-8 w-8 text-red-500 mb-4" />
         <p className="text-red-600 dark:text-red-400 mb-2">Failed to load projects</p>
-        <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md">{error}</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md mb-4">{error}</p>
         <Button 
           variant="outline" 
           size="sm" 
-          className="mt-4" 
-          onClick={() => window.location.reload()}
+          onClick={onRetry || (() => window.location.reload())}
+          className="flex items-center gap-2"
         >
-          Retry
+          <RefreshCw className="h-4 w-4" /> Retry
         </Button>
       </div>
     );
   }
 
   // Filter projects based on search query if needed
-  const filteredProjects = projects.filter(project => 
-    project && (
-      (project.title && project.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (project.description && project.description?.toLowerCase().includes(searchQuery.toLowerCase()))
-    )
-  );
+  const filteredProjects = Array.isArray(projects) 
+    ? projects.filter(project => 
+        project && (
+          (project.title && project.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
+          (project.description && project.description?.toLowerCase().includes(searchQuery.toLowerCase()))
+        )
+      )
+    : [];
 
   if (filteredProjects.length === 0) {
     return (
