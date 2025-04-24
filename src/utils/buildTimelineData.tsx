@@ -28,7 +28,7 @@ export function buildTimelineData({ tasks, projects, teamMembers, journalEntries
           completedBy: manager?.name || "Unknown Manager"
         };
       }),
-    ...journalEntries.map(entry => ({
+    ...(journalEntries || []).map(entry => ({
       type: "journal",
       ...entry,
       date: entry.created_at,

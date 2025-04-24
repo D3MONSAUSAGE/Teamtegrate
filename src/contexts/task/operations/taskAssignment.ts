@@ -30,7 +30,10 @@ export const assignTaskToProject = async (
     // First update the database
     const { error } = await supabase
       .from('tasks')
-      .update({ project_id: projectId, updated_at: now.toISOString() })
+      .update({ 
+        project_id: projectId, 
+        updated_at: now.toISOString() 
+      })
       .eq('id', taskId);
 
     if (error) {
@@ -101,11 +104,28 @@ export const assignTaskToUser = async (
     if (!user) return;
 
     const now = new Date();
+    
+    // Find user's name if not provided
+    let actualUserName = userName;
+    if (!actualUserName && userId) {
+      const { data: userData } = await supabase
+        .from('users')
+        .select('name')
+        .eq('id', userId)
+        .single();
+        
+      if (userData && userData.name) {
+        actualUserName = userData.name;
+      }
+    }
 
     // Only send assigned_to_id to the database
     const { error } = await supabase
       .from('tasks')
-      .update({ assigned_to_id: userId, updated_at: now.toISOString() })
+      .update({ 
+        assigned_to_id: userId,
+        updated_at: now.toISOString() 
+      })
       .eq('id', taskId);
 
     if (error) {
@@ -114,6 +134,8 @@ export const assignTaskToUser = async (
       toast.error('Failed to assign task to user');
       return;
     }
+
+    console.log('Task assigned to user successfully in database', { taskId, userId, actualUserName });
 
     // Find the task to get its project ID
     const task = tasks.find(t => t.id === taskId);
@@ -127,7 +149,19 @@ export const assignTaskToUser = async (
     // Update the task in the tasks array
     setTasks(prevTasks => prevTasks.map(task => {
       if (task.id === taskId) {
-        return { ...task, assignedToId: userId, assignedToName: userName, updatedAt: now };
+        console.log('Updating task in tasks array', { 
+          taskId, 
+          userId, 
+          actualUserName,
+          before: task.assignedToName || 'none',
+          after: actualUserName || 'none'
+        });
+        return { 
+          ...task, 
+          assignedToId: userId, 
+          assignedToName: actualUserName, 
+          updatedAt: now 
+        };
       }
       return task;
     }));
@@ -141,10 +175,18 @@ export const assignTaskToUser = async (
               ...project,
               tasks: project.tasks.map(projectTask => {
                 if (projectTask.id === taskId) {
+                  console.log('Updating task in project', {
+                    projectId,
+                    taskId,
+                    userId,
+                    actualUserName,
+                    before: projectTask.assignedToName || 'none',
+                    after: actualUserName || 'none'
+                  });
                   return { 
                     ...projectTask, 
                     assignedToId: userId, 
-                    assignedToName: userName,
+                    assignedToName: actualUserName,
                     updatedAt: now
                   };
                 }
