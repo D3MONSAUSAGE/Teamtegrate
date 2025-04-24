@@ -15,6 +15,7 @@ const ProjectsPage = () => {
   const [error, setError] = useState<string | undefined>(undefined);
   const [localProjects, setLocalProjects] = useState<Project[]>([]);
   
+  // Sync with global projects state
   useEffect(() => {
     if (Array.isArray(projects)) {
       setLocalProjects(projects);
@@ -23,6 +24,7 @@ const ProjectsPage = () => {
     }
   }, [projects]);
   
+  // Simple function to manually fetch projects
   const handleRetry = useCallback(async () => {
     if (!user) {
       toast.error('You must be logged in to view projects');
@@ -33,8 +35,9 @@ const ProjectsPage = () => {
     setError(undefined);
     
     try {
-      console.log('Manually fetching projects for user:', user.id);
+      console.log('Fetching projects for user:', user.id);
       
+      // Simplified query - no filters on user to allow seeing all projects
       const { data: projectData, error: projectError } = await supabase
         .from('projects')
         .select('*');
@@ -49,6 +52,7 @@ const ProjectsPage = () => {
         return;
       }
       
+      // Map database projects to application format
       const basicProjects = projectData.map(p => ({
         id: p.id,
         title: p.title || 'Untitled',
@@ -69,7 +73,7 @@ const ProjectsPage = () => {
       toast.success('Projects loaded successfully');
       
     } catch (err: any) {
-      console.error('Manual project fetch failed:', err);
+      console.error('Project fetch failed:', err);
       setError(err.message || 'Failed to load projects');
       toast.error('Failed to load projects');
     } finally {
@@ -77,14 +81,11 @@ const ProjectsPage = () => {
     }
   }, [user]);
   
+  // Try to load projects if projects array is empty
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (!Array.isArray(projects) || projects.length === 0) {
-        handleRetry();
-      }
-    }, 2000);
-    
-    return () => clearTimeout(timer);
+    if (!Array.isArray(projects) || projects.length === 0) {
+      handleRetry();
+    }
   }, [projects, handleRetry]);
 
   return (

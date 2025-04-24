@@ -21,9 +21,9 @@ export const fetchProjects = async (
       return;
     }
 
-    console.log('Fetching projects with simplified approach for user:', user.id);
+    console.log('Fetching projects for user:', user.id);
     
-    // Basic fetch of projects data
+    // Simplified fetch - no filters to allow seeing all projects
     const { data: projectData, error: projectError } = await supabase
       .from('projects')
       .select('*');
@@ -35,7 +35,6 @@ export const fetchProjects = async (
       return;
     }
 
-    // If no projects, return empty array
     if (!projectData || projectData.length === 0) {
       console.log('No projects found');
       setProjects([]);
@@ -61,106 +60,12 @@ export const fetchProjects = async (
       };
     });
 
-    console.log('Successfully fetched basic projects:', projects.length);
-    
-    // First update the state with the basic project data
+    console.log('Successfully fetched projects:', projects.length);
     setProjects(projects);
-    
-    // Then try to fetch additional data in the background
-    fetchAdditionalProjectData(projects, setProjects);
     
   } catch (err) {
     console.error('Failed to fetch projects:', err);
     toast.error('Failed to load projects');
     setProjects([]);
-  }
-};
-
-// Separate function to fetch additional project data after basic data is loaded
-const fetchAdditionalProjectData = async (
-  projects: Project[],
-  setProjects: React.Dispatch<React.SetStateAction<Project[]>>
-) => {
-  try {
-    const projectIds = projects.map(p => p.id);
-    
-    // Fetch tasks for these projects
-    const { data: taskData, error: taskError } = await supabase
-      .from('project_tasks')
-      .select('*')
-      .in('project_id', projectIds);
-      
-    if (taskError) {
-      console.error('Error fetching project tasks:', taskError);
-      return;
-    }
-
-    const tasksById = new Map<string, Task[]>();
-    
-    // Group tasks by project
-    if (taskData) {
-      taskData.forEach(task => {
-        if (!tasksById.has(task.project_id)) {
-          tasksById.set(task.project_id, []);
-        }
-        
-        tasksById.get(task.project_id)?.push({
-          id: task.id,
-          userId: task.assigned_to_id || '',
-          projectId: task.project_id,
-          title: task.title || '',
-          description: task.description || '',
-          deadline: parseDate(task.deadline),
-          priority: (task.priority as TaskPriority) || 'Medium',
-          status: (task.status || 'To Do') as TaskStatus,
-          createdAt: parseDate(task.created_at),
-          updatedAt: parseDate(task.updated_at),
-          completedAt: task.completed_at ? parseDate(task.completed_at) : undefined,
-          assignedToId: task.assigned_to_id,
-          assignedToName: task.assigned_to_id,
-          comments: [],
-          cost: task.cost || 0
-        });
-      });
-    }
-
-    // Try to fetch team members for projects
-    try {
-      const { data: teamMembersData } = await supabase
-        .from('project_team_members')
-        .select('project_id, user_id');
-      
-      const teamMembersById = new Map<string, string[]>();
-      
-      if (teamMembersData) {
-        teamMembersData.forEach(member => {
-          if (!teamMembersById.has(member.project_id)) {
-            teamMembersById.set(member.project_id, []);
-          }
-          teamMembersById.get(member.project_id)?.push(member.user_id);
-        });
-      }
-      
-      // Update projects with tasks and team members
-      setProjects(prevProjects => 
-        prevProjects.map(project => ({
-          ...project,
-          tasks: tasksById.get(project.id) || [],
-          teamMembers: teamMembersById.get(project.id) || []
-        }))
-      );
-      
-    } catch (error) {
-      console.error("Error fetching team members:", error);
-      // At least update with tasks if team members failed
-      setProjects(prevProjects => 
-        prevProjects.map(project => ({
-          ...project,
-          tasks: tasksById.get(project.id) || []
-        }))
-      );
-    }
-  } catch (error) {
-    console.error("Error fetching additional project data:", error);
   }
 };

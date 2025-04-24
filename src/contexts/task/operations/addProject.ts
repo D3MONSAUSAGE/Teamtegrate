@@ -28,7 +28,7 @@ export const addProject = async (
       description: project.description || '',
       start_date: project.startDate?.toISOString() || now.toISOString(),
       end_date: project.endDate?.toISOString() || new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-      manager_id: user.id,
+      manager_id: user.id, // Set current user as manager
       created_at: now.toISOString(),
       updated_at: now.toISOString(),
       budget: project.budget || 0,
@@ -36,7 +36,7 @@ export const addProject = async (
       budget_spent: 0
     };
 
-    // Insert into Supabase with error handling
+    // Insert into Supabase
     const { error: projectError } = await supabase
       .from('projects')
       .insert(projectToInsert);
@@ -64,30 +64,6 @@ export const addProject = async (
       budgetSpent: 0,
       is_completed: false
     };
-
-    // Add team members if available - do this after project creation succeeded
-    if (project.teamMembers && project.teamMembers.length > 0) {
-      try {
-        const teamMemberInsertData = project.teamMembers.map(userId => ({
-          project_id: projectId,
-          user_id: userId
-        }));
-
-        const { error: membersError } = await supabase
-          .from('project_team_members')
-          .insert(teamMemberInsertData);
-
-        if (membersError) {
-          console.error('Error adding team members:', membersError);
-          toast.warning('Project created but had issues adding team members');
-        } else {
-          // If team members were added successfully, update the local project
-          newProject.teamMembers = project.teamMembers;
-        }
-      } catch (memberError) {
-        console.error('Error processing team members:', memberError);
-      }
-    }
 
     // Update local state
     setProjects(prevProjects => [...prevProjects, newProject]);
