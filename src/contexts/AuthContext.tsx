@@ -8,6 +8,7 @@ import { Session } from '@supabase/supabase-js';
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  isLoading: boolean; // Added this property to match what's used in Index.tsx
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, name: string, role: UserRole) => Promise<void>;
   logout: () => Promise<void>;
@@ -180,6 +181,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const value = {
     user,
     loading,
+    isLoading: loading, // Added isLoading as an alias for loading
     login,
     signup,
     logout,

@@ -4,6 +4,7 @@ import { Task, Project, TaskStatus, TaskPriority, DailyScore } from '@/types';
 import { useAuth } from '../AuthContext';
 import { fetchTasks, fetchProjects } from './taskApi';
 import { calculateDailyScore } from './taskMetrics';
+import { toast } from '@/components/ui/sonner';
 import { 
   addTask, 
   updateTask, 
