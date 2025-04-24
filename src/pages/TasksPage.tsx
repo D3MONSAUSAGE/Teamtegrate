@@ -1,13 +1,22 @@
-
 import React, { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useTask } from '@/contexts/task';
 import { Task } from '@/types';
 import CreateTaskDialog from '@/components/CreateTaskDialog';
 import TaskCommentsDialog from '@/components/TaskCommentsDialog';
 import TaskHeader from '@/components/task/TaskHeader';
 import TaskTabs from '@/components/task/TaskTabs';
+import ProjectTasksView from '@/components/task/ProjectTasksView';
 
 const TasksPage = () => {
+  const [searchParams] = useSearchParams();
+  const projectId = searchParams.get('projectId');
+
+  // If we have a projectId, render the ProjectTasksView instead
+  if (projectId) {
+    return <ProjectTasksView />;
+  }
+
   const { tasks } = useTask();
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
