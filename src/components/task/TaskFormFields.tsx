@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -10,25 +11,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { TaskPriority } from '@/types';
-import { Loader2, CalendarIcon, Clock } from 'lucide-react';
 import { UseFormRegister, FieldErrors } from 'react-hook-form';
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { format } from 'date-fns';
-import { cn } from "@/lib/utils";
-import { supabase } from '@/integrations/supabase/client';
-
-interface AppUser {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-}
+import TaskDeadlinePicker from './form/TaskDeadlinePicker';
+import TaskAssigneeSelect from './form/TaskAssigneeSelect';
+import { useUsers } from '@/hooks/useUsers';
 
 interface TaskFormFieldsProps {
   register: UseFormRegister<any>;
@@ -36,11 +23,9 @@ interface TaskFormFieldsProps {
   setValue: (name: string, value: any) => void;
   selectedMember: string | undefined;
   setSelectedMember: (value: string | undefined) => void;
-  appUsers?: AppUser[];
-  isLoadingUsers: boolean;
-  projects: any[];
   editingTask?: any;
   currentProjectId?: string;
+  projects: any[];
 }
 
 const TaskFormFields: React.FC<TaskFormFieldsProps> = ({
@@ -49,8 +34,6 @@ const TaskFormFields: React.FC<TaskFormFieldsProps> = ({
   setValue,
   selectedMember,
   setSelectedMember,
-  appUsers,
-  isLoadingUsers,
   projects,
   editingTask,
   currentProjectId
@@ -62,35 +45,8 @@ const TaskFormFields: React.FC<TaskFormFieldsProps> = ({
   const [timeInput, setTimeInput] = useState<string>(
     editingTask ? format(new Date(editingTask.deadline), 'HH:mm') : '12:00'
   );
-  
-  const [users, setUsers] = useState<AppUser[]>([]);
-  const [loadingUsers, setLoadingUsers] = useState(true);
 
-  useEffect(() => {
-    const loadUsers = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('users')
-          .select('id, name, email, role')
-          .order('name');
-          
-        if (error) {
-          console.error('Error loading users:', error);
-          return;
-        }
-        
-        if (data) {
-          setUsers(data);
-        }
-      } catch (error) {
-        console.error('Error loading users:', error);
-      } finally {
-        setLoadingUsers(false);
-      }
-    };
-
-    loadUsers();
-  }, []);
+  const { users, isLoading: loadingUsers } = useUsers();
 
   const handleDateChange = (selectedDate: Date | undefined) => {
     if (!selectedDate) return;
@@ -170,30 +126,12 @@ const TaskFormFields: React.FC<TaskFormFieldsProps> = ({
         </Select>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="assignedTo">Assigned To</Label>
-        <Select
-          value={selectedMember}
-          onValueChange={handleUserAssignment}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Assign to user (optional)" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="unassigned">Unassigned</SelectItem>
-            {loadingUsers ? (
-              <div className="flex items-center justify-center py-2">
-                <Loader2 className="h-4 w-4 animate-spin mr-2" /> 
-                <span className="text-sm">Loading users...</span>
-              </div>
-            ) : users.map(user => (
-              <SelectItem key={user.id} value={user.id}>
-                {user.name} ({user.role})
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      <TaskAssigneeSelect
+        selectedMember={selectedMember}
+        onAssign={handleUserAssignment}
+        users={users}
+        isLoading={loadingUsers}
+      />
 
       <div className="space-y-2">
         <Label htmlFor="priority">Priority <span className="text-red-500">*</span></Label>
@@ -212,51 +150,13 @@ const TaskFormFields: React.FC<TaskFormFieldsProps> = ({
         </Select>
       </div>
 
-      <div className="space-y-2">
-        <Label>Deadline <span className="text-red-500">*</span></Label>
-        <div className="flex flex-col sm:flex-row gap-2">
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button 
-                variant="outline" 
-                className={cn(
-                  "w-full sm:w-[240px] justify-start text-left font-normal",
-                  !date && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {date ? format(date, "PPP") : <span>Select date</span>}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={date}
-                onSelect={handleDateChange}
-                initialFocus
-                className={cn("p-3 pointer-events-auto")}
-              />
-            </PopoverContent>
-          </Popover>
-          
-          <div className="flex items-center">
-            <Clock className="mr-2 h-4 w-4" />
-            <Input
-              type="time"
-              value={timeInput}
-              onChange={handleTimeChange}
-              className="w-[120px]"
-            />
-          </div>
-        </div>
-        {errors.deadline && (
-          <span className="text-xs text-red-500">{errors.deadline.message as string}</span>
-        )}
-        <input
-          type="hidden"
-          {...register('deadline', { required: 'Deadline is required' })}
-        />
-      </div>
+      <TaskDeadlinePicker
+        date={date}
+        timeInput={timeInput}
+        onDateChange={handleDateChange}
+        onTimeChange={handleTimeChange}
+        error={errors.deadline?.message as string}
+      />
 
       <div className="space-y-2">
         <Label htmlFor="cost">Cost</Label>
