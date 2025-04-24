@@ -1,4 +1,3 @@
-
 export type UserRole = 'user' | 'manager';
 
 export interface User {
@@ -7,10 +6,9 @@ export interface User {
   name: string;
   role: UserRole;
   createdAt: Date;
-  avatar_url?: string; // Added avatar_url as an optional property
+  avatar_url?: string;
 }
 
-// Add AppUser type for use with the users table
 export interface AppUser {
   id: string;
   name: string;
@@ -30,7 +28,6 @@ export interface TaskComment {
   createdAt: Date;
 }
 
-// Alias for TaskComment to fix existing imports
 export type Comment = TaskComment;
 
 export interface Task {
@@ -76,4 +73,12 @@ export interface DailyScore {
   totalTasks: number;
   percentage: number;
   date: Date;
+}
+
+export interface TeamMember {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  managerId: string;
 }
