@@ -47,31 +47,45 @@ const TeamPerformanceChart: React.FC<TeamPerformanceChartProps> = ({ tasks }) =>
   
   if (chartData.length === 0) {
     return (
-      <div className="h-[200px] w-full flex items-center justify-center text-gray-500">
+      <div className="h-[180px] w-full flex items-center justify-center text-gray-500">
         <p>No completed tasks assigned to team members</p>
       </div>
     );
   }
   
   return (
-    <div className="h-[200px] w-full">
+    <div className="h-[180px] w-full">
       <ResponsiveContainer width="100%" height="100%">
-        <PieChart>
+        <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
           <Pie
             data={chartData}
             cx="50%"
             cy="50%"
             labelLine={false}
-            outerRadius={80}
-            fill="#8884d8"
+            outerRadius={60}
+            innerRadius={30}
+            paddingAngle={2}
             dataKey="value"
           >
             {chartData.map((entry, index) => (
               <Cell key={`cell-${index}`} fill={entry.color} />
             ))}
           </Pie>
-          <Tooltip formatter={(value) => [`${value} tasks`, 'Completed']} />
-          <Legend formatter={(value) => <span style={{ color: '#333', fontSize: '12px' }}>{value}</span>} />
+          <Tooltip 
+            formatter={(value) => [`${value} tasks`, 'Completed']} 
+            contentStyle={{ 
+              borderRadius: '6px',
+              fontSize: '12px',
+              padding: '6px 10px',
+            }}
+          />
+          <Legend 
+            layout="horizontal" 
+            verticalAlign="bottom" 
+            align="center"
+            wrapperStyle={{ fontSize: '10px', paddingTop: '5px' }}
+            formatter={(value) => <span style={{ fontSize: '10px' }}>{value}</span>}
+          />
         </PieChart>
       </ResponsiveContainer>
     </div>
