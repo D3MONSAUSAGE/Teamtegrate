@@ -28,11 +28,21 @@ export const useAIChat = () => {
     setIsProcessing(true);
 
     try {
+      console.log("Sending message to AI:", content);
+      
       const { data, error } = await supabase.functions.invoke('chat-with-ai', {
-        body: { message: content }
+        body: { message: content.trim() }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw new Error(error.message || 'Failed to get AI response');
+      }
+
+      if (!data || !data.response) {
+        console.error('Invalid response from AI:', data);
+        throw new Error('Received invalid response from AI');
+      }
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -41,10 +51,11 @@ export const useAIChat = () => {
         timestamp: new Date()
       };
 
+      console.log("Received AI response:", data.response.substring(0, 50) + "...");
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
       console.error('Error sending message:', error);
-      toast.error('Failed to get AI response');
+      toast.error('Failed to get AI response. Please try again.');
     } finally {
       setIsProcessing(false);
     }
