@@ -746,6 +746,10 @@ export type Database = {
         }
         Returns: Json
       }
+      user_is_project_team_member: {
+        Args: { project_id_val: string; user_id_val: string }
+        Returns: boolean
+      }
     }
     Enums: {
       message_type: "text" | "system"

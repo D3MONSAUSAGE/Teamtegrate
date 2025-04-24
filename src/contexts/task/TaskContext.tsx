@@ -75,6 +75,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { user } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [dailyScore, setDailyScore] = useState<DailyScore>({
     completedTasks: 0,
     totalTasks: 0,
@@ -83,21 +84,29 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
 
   useEffect(() => {
-    if (user) {
-      const loadData = async () => {
-        try {
-          await fetchProjects(user, setProjects);
-          await fetchTasks(user, setTasks);
-        } catch (error) {
-          console.error("Error loading data:", error);
-        }
-      };
-      
-      loadData();
-    } else {
-      setTasks([]);
-      setProjects([]);
-    }
+    const loadData = async () => {
+      if (!user) {
+        setProjects([]);
+        setTasks([]);
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        await Promise.all([
+          fetchProjects(user, setProjects),
+          fetchTasks(user, setTasks)
+        ]);
+      } catch (error) {
+        console.error("Error loading data:", error);
+        toast.error("Failed to load data");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadData();
   }, [user]);
 
   useEffect(() => {

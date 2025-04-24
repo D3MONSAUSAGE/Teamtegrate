@@ -1,4 +1,3 @@
-
 import { Project, Task, TaskPriority, TaskStatus } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from '@/components/ui/sonner';
@@ -16,13 +15,13 @@ export const fetchProjects = async (
 ): Promise<void> => {
   try {
     if (!user) {
+      console.log('No user found, skipping project fetch');
       setProjects([]);
       return;
     }
 
     console.log('Fetching projects for user:', user.id);
     
-    // Fetch all projects the user has access to (RLS will filter properly)
     const { data: projectData, error: projectError } = await supabase
       .from('projects')
       .select('*');
@@ -30,7 +29,8 @@ export const fetchProjects = async (
     if (projectError) {
       console.error('Error fetching projects:', projectError);
       toast.error('Failed to load projects');
-      throw new Error(projectError.message);
+      setProjects([]);
+      return;
     }
 
     // If no projects, return empty array
@@ -171,9 +171,10 @@ export const fetchProjects = async (
       };
     });
 
+    console.log('Successfully fetched projects:', projectData?.length || 0);
     setProjects(projects);
-  } catch (error) {
-    console.error('Error in fetchProjects:', error);
+  } catch (err) {
+    console.error('Failed to fetch projects:', err);
     toast.error('Failed to load projects');
     setProjects([]);
   }
