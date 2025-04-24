@@ -2,7 +2,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -16,11 +16,11 @@ serve(async (req) => {
   }
 
   try {
-    if (!openAIApiKey) {
-      console.error("Missing OpenAI API key");
+    if (!geminiApiKey) {
+      console.error("Missing Gemini API key");
       return new Response(
         JSON.stringify({ 
-          response: "I'm sorry, but my AI services are not currently configured. Please contact the administrator to set up the OpenAI API key."
+          response: "I'm sorry, but my AI services are not currently configured. Please contact the administrator to set up the Gemini API key."
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -31,64 +31,69 @@ serve(async (req) => {
     console.log("Processing message:", message);
 
     try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${openAIApiKey}`,
           'Content-Type': 'application/json',
+          'x-goog-api-key': geminiApiKey,
         },
         body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: [
+          contents: [{
+            parts: [{
+              text: message
+            }]
+          }],
+          generationConfig: {
+            temperature: 0.7,
+            topK: 40,
+            topP: 0.95,
+            maxOutputTokens: 1024,
+          },
+          safetySettings: [
             {
-              role: 'system',
-              content: 'You are a helpful AI assistant integrated into a project management application. Be concise, professional, and helpful.'
+              category: "HARM_CATEGORY_HARASSMENT",
+              threshold: "BLOCK_MEDIUM_AND_ABOVE"
             },
-            { role: 'user', content: message }
-          ],
-          max_tokens: 500,
+            {
+              category: "HARM_CATEGORY_HATE_SPEECH",
+              threshold: "BLOCK_MEDIUM_AND_ABOVE"
+            },
+            {
+              category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+              threshold: "BLOCK_MEDIUM_AND_ABOVE"
+            },
+            {
+              category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+              threshold: "BLOCK_MEDIUM_AND_ABOVE"
+            }
+          ]
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error("OpenAI API error:", errorData);
-        
-        // Check if it's a quota error
-        const isQuotaError = errorData.error && 
-          (errorData.error.code === "insufficient_quota" || 
-           errorData.error.type === "insufficient_quota");
-        
-        if (isQuotaError) {
-          // Return a helpful message about quota limits
-          return new Response(
-            JSON.stringify({ 
-              response: "I'm sorry, but the AI service is currently unavailable due to usage limits. The administrator needs to check the OpenAI account billing and quota settings."
-            }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        }
-        
-        throw new Error(`OpenAI API error: ${JSON.stringify(errorData)}`);
+        console.error("Gemini API error:", errorData);
+        throw new Error(`Gemini API error: ${JSON.stringify(errorData)}`);
       }
 
       const data = await response.json();
-      console.log("AI response received:", data.choices[0].message.content.substring(0, 50) + "...");
+      console.log("Gemini response received:", data);
       
-      const aiResponse = data.choices[0].message.content;
+      // Extract the response text from Gemini's response format
+      const aiResponse = data.candidates[0].content.parts[0].text;
+      console.log("Processed response:", aiResponse.substring(0, 50) + "...");
 
       return new Response(
         JSON.stringify({ response: aiResponse }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
       
-    } catch (openaiError) {
-      console.error("Error with OpenAI request:", openaiError);
+    } catch (geminiError) {
+      console.error("Error with Gemini request:", geminiError);
       
-      // Provide a fallback response
       return new Response(
         JSON.stringify({ 
-          response: "I apologize, but I'm having trouble connecting to my AI services right now. This might be due to a temporary issue or account limitations. Please try again later."
+          response: "I apologize, but I'm having trouble connecting to my AI services right now. This might be due to a temporary issue. Please try again later."
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
