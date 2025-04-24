@@ -1,7 +1,8 @@
 
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { MessageCircle, X } from "lucide-react";
+import { MessageCircle, X, Send } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Sheet,
   SheetContent,
@@ -12,6 +13,24 @@ import {
 
 const ChatbotBubble = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [message, setMessage] = useState("");
+
+  const handleSendMessage = () => {
+    if (!message.trim()) return;
+    
+    // TODO: Implement message sending logic here
+    console.log("Sending message:", message);
+    
+    // Clear the input after sending
+    setMessage("");
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
 
   return (
     <div className="fixed bottom-4 right-4 z-50">
@@ -39,6 +58,24 @@ const ChatbotBubble = () => {
                 How can I help you today?
               </div>
             </div>
+            <div className="p-4 border-t">
+              <div className="flex gap-2">
+                <Textarea
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Type your message..."
+                  className="min-h-[60px] max-h-[120px]"
+                />
+                <Button 
+                  size="icon"
+                  onClick={handleSendMessage}
+                  disabled={!message.trim()}
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           </div>
         </SheetContent>
       </Sheet>
@@ -47,3 +84,4 @@ const ChatbotBubble = () => {
 };
 
 export default ChatbotBubble;
+
