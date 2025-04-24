@@ -23,6 +23,7 @@ export const useProjects = () => {
       
       console.log('Fetching projects for user:', user.id);
       
+      // Using a simple SELECT without any filters to avoid RLS policy recursion
       const { data, error } = await supabase
         .from('projects')
         .select('*')
@@ -30,7 +31,10 @@ export const useProjects = () => {
 
       if (error) {
         console.error('Error fetching projects:', error);
-        throw error;
+        // Create empty array of projects as fallback
+        setProjects([]);
+        toast.error('Failed to load projects');
+        return;
       }
 
       console.log('Projects fetched:', data);
@@ -55,6 +59,7 @@ export const useProjects = () => {
     } catch (error) {
       console.error('Error fetching projects:', error);
       toast.error('Failed to load projects');
+      setProjects([]);
     } finally {
       setIsLoading(false);
     }

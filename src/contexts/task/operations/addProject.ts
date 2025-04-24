@@ -18,6 +18,7 @@ export const addProject = async (
     
     const now = new Date();
     const projectId = uuidv4();
+    const nowISO = now.toISOString();
     
     console.log('Creating project with user ID:', user.id, 'project:', project);
     
@@ -26,14 +27,15 @@ export const addProject = async (
       id: projectId,
       title: project.title || 'Untitled Project',
       description: project.description || '',
-      start_date: project.startDate?.toISOString() || now.toISOString(),
+      start_date: project.startDate?.toISOString() || nowISO,
       end_date: project.endDate?.toISOString() || new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString(),
       manager_id: user.id, // Set current user as manager
-      created_at: now.toISOString(),
-      updated_at: now.toISOString(),
+      created_at: nowISO,
+      updated_at: nowISO,
       budget: project.budget || 0,
       is_completed: false,
-      budget_spent: 0
+      budget_spent: 0,
+      team_members: project.teamMembers || []
     };
 
     // Insert into Supabase
@@ -59,7 +61,7 @@ export const addProject = async (
       createdAt: now,
       updatedAt: now,
       tasks: [],
-      teamMembers: [],
+      teamMembers: project.teamMembers || [],
       budget: project.budget || 0,
       budgetSpent: 0,
       is_completed: false

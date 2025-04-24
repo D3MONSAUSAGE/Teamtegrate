@@ -2,6 +2,7 @@
 import { Project, User } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
+import { v4 as uuidv4 } from 'uuid';
 
 export const fetchProjects = async (
   user: { id: string },
@@ -16,6 +17,7 @@ export const fetchProjects = async (
     if (error) {
       console.error('Error fetching projects:', error);
       toast.error('Failed to load projects');
+      setProjects([]);
       return;
     }
 
@@ -42,6 +44,7 @@ export const fetchProjects = async (
   } catch (error) {
     console.error('Error in fetchProjects:', error);
     toast.error('Failed to load projects');
+    setProjects([]);
   }
 };
 
@@ -51,8 +54,9 @@ export const addProject = async (
 ): Promise<Project | null> => {
   try {
     // Generate a unique ID for the project
-    const projectId = crypto.randomUUID();
+    const projectId = uuidv4();
     const now = new Date();
+    const nowISO = now.toISOString();
     
     console.log('Creating project:', {
       id: projectId,
@@ -65,7 +69,7 @@ export const addProject = async (
       is_completed: false
     });
     
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('projects')
       .insert({
         id: projectId,
@@ -76,11 +80,10 @@ export const addProject = async (
         manager_id: user.id,
         budget: project.budget || 0,
         is_completed: false,
-        created_at: now.toISOString(),
-        updated_at: now.toISOString(),
+        created_at: nowISO,
+        updated_at: nowISO,
         team_members: project.teamMembers || []
-      })
-      .select();
+      });
 
     if (error) {
       console.error('Error adding project:', error);
