@@ -1,9 +1,9 @@
 
-// Barrel export for all project operations
-export * from './taskCore';
+export * from './taskAddition';
+export * from './taskUpdate';
+export * from './taskDeletion';
 export * from './taskStatus';
 export * from './taskAssignment';
-export * from './taskContent';
 export * from './addProject';
 export * from './updateProject';
 export * from './deleteProject';
