@@ -2,7 +2,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { Task, Project, TaskStatus, TaskPriority, DailyScore } from '@/types';
 import { useAuth } from '../AuthContext';
-import { fetchTasks, fetchProjects } from './taskApi';
+import { fetchUserTasks, fetchUserProjects } from './taskApi';
 import { calculateDailyScore } from './taskMetrics';
 import { toast } from '@/components/ui/sonner';
 import { 
@@ -96,8 +96,8 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(true);
       try {
         await Promise.all([
-          fetchProjects(user, setProjects),
-          fetchTasks(user, setTasks)
+          fetchUserProjects(user, setProjects),
+          fetchUserTasks(user, setTasks)
         ]);
       } catch (error) {
         console.error("Error loading data:", error);
