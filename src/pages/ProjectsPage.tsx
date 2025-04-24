@@ -136,7 +136,7 @@ const ProjectsPage = () => {
     setIsCreateProjectOpen(true);
   };
 
-  // Create a manual project function for direct testing
+  // Create a manual project function for direct testing - FIX HERE
   const handleCreateBasicProject = async () => {
     if (!user) {
       toast.error('You must be logged in to create a project');
@@ -153,10 +153,13 @@ const ProjectsPage = () => {
       teamMembers: []
     };
     
-    const newProject = await addProject(basicProject);
-    if (newProject) {
+    try {
+      await addProject(basicProject);
       toast.success('Test project created successfully!');
-      handleRetry();
+      handleRetry(); // Refresh projects list after adding
+    } catch (error) {
+      console.error('Failed to create test project:', error);
+      toast.error('Failed to create test project');
     }
   };
 

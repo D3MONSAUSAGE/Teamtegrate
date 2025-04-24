@@ -9,7 +9,7 @@ export const addProject = async (
   project: Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'tasks'>,
   user: User | null,
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
-) => {
+): Promise<Project | null> => {
   try {
     if (!user) {
       toast.error('You must be logged in to create a project');
