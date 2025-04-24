@@ -1,4 +1,5 @@
-import React, { useState, useCallback } from 'react';
+
+import React, { useState, useCallback, useEffect } from 'react';
 import { useTask } from '@/contexts/task';
 import { Project } from '@/types';
 import { toast } from '@/components/ui/sonner';
