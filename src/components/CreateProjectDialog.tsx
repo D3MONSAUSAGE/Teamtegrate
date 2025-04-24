@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useForm } from "react-hook-form";
+import { useProjectOperations } from '@/hooks/useProjectOperations';
 import { useProjects } from '@/hooks/useProjects';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -27,13 +28,14 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
   onOpenChange,
 }) => {
   const { user } = useAuth();
-  const { addProject } = useProjects();
+  const { createProject, isLoading } = useProjectOperations();
+  const { refreshProjects } = useProjects();
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormValues>();
 
   const onSubmit = async (data: FormValues) => {
     if (!user) return;
 
-    await addProject({
+    const project = await createProject({
       title: data.title,
       description: data.description,
       startDate: new Date(data.startDate),
@@ -43,8 +45,11 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
       teamMembers: [],
     });
     
-    onOpenChange(false);
-    reset();
+    if (project) {
+      onOpenChange(false);
+      reset();
+      refreshProjects();
+    }
   };
 
   return (
@@ -113,7 +118,9 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit">Create Project</Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? 'Creating...' : 'Create Project'}
+            </Button>
           </div>
         </form>
       </DialogContent>
