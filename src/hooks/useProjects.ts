@@ -14,12 +14,25 @@ export const useProjects = () => {
     try {
       setIsLoading(true);
       
+      if (!user) {
+        console.log('No user found, skipping project fetch');
+        setProjects([]);
+        setIsLoading(false);
+        return;
+      }
+      
+      console.log('Fetching projects for user:', user.id);
+      
       const { data, error } = await supabase
         .from('projects')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .select('*');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching projects:', error);
+        throw error;
+      }
+
+      console.log('Projects fetched:', data);
 
       const formattedProjects: Project[] = data.map(project => ({
         id: project.id,
@@ -46,8 +59,10 @@ export const useProjects = () => {
   };
 
   useEffect(() => {
-    fetchProjects();
-  }, []);
+    if (user) {
+      fetchProjects();
+    }
+  }, [user]);
 
   return {
     projects,
