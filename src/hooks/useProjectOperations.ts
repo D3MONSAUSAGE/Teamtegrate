@@ -22,6 +22,20 @@ export const useProjectOperations = () => {
       const projectId = uuidv4();
       const now = new Date().toISOString();
 
+      console.log('Creating project with data:', {
+        id: projectId,
+        title: project.title,
+        description: project.description,
+        start_date: project.startDate.toISOString(),
+        end_date: project.endDate.toISOString(),
+        manager_id: user.id,
+        budget: project.budget || 0,
+        is_completed: false,
+        created_at: now,
+        updated_at: now,
+        team_members: project.teamMembers || []
+      });
+
       const { data, error } = await supabase
         .from('projects')
         .insert({
@@ -40,8 +54,12 @@ export const useProjectOperations = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating project:', error);
+        throw error;
+      }
 
+      console.log('Project created successfully:', data);
       toast.success('Project created successfully');
       return data;
     } catch (error) {
