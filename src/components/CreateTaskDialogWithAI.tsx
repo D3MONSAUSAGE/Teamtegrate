@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Task, AppUser } from '@/types';
 import { useTask } from '@/contexts/task';
 import { useAuth } from '@/contexts/AuthContext';
-import { useTaskForm } from '@/hooks/useTaskForm';
+import { useForm } from "react-hook-form";
 import TaskFormFieldsWithAI from './task/TaskFormFieldsWithAI';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useUsers } from '@/hooks/useUsers';
+import { Form } from "@/components/ui/form";
 
 interface CreateTaskDialogProps {
   open: boolean;
@@ -37,15 +38,26 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
     editingTask ? new Date(editingTask.deadline).toTimeString().slice(0, 5) : ""
   );
   
-  const {
-    register,
-    handleSubmit,
-    errors,
-    reset,
-    setValue,
-    selectedMember,
-    setSelectedMember
-  } = useTaskForm(editingTask, currentProjectId);
+  // Setup form with react-hook-form
+  const defaultValues = {
+    title: editingTask?.title || '',
+    description: editingTask?.description || '',
+    priority: editingTask?.priority || 'Medium',
+    deadline: editingTask?.deadline ? new Date(editingTask.deadline).toISOString() : new Date().toISOString(),
+    projectId: editingTask?.projectId || currentProjectId || '',
+    cost: editingTask?.cost || '',
+    assignedToId: editingTask?.assignedToId || '',
+    assignedToName: editingTask?.assignedToName || ''
+  };
+
+  const form = useForm({
+    defaultValues
+  });
+  
+  const { register, handleSubmit, formState: { errors }, reset, setValue } = form;
+  const [selectedMember, setSelectedMember] = useState<string | undefined>(
+    editingTask?.assignedToId
+  );
 
   // Update deadline state when editing task changes
   useEffect(() => {
@@ -77,7 +89,7 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
       setValue('projectId', editingTask.projectId || '');
       setSelectedMember(editingTask.assignedToId);
     }
-  }, [open, editingTask, currentProjectId, setValue, reset, setSelectedMember]);
+  }, [open, editingTask, currentProjectId, setValue, reset]);
 
   const onDateChange = (date: Date | undefined) => {
     setDeadlineDate(date);
@@ -144,39 +156,41 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
           </DialogDescription>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit(onSubmit)} className={`space-y-4 ${isMobile ? 'pt-2' : 'pt-4'}`}>
-          <TaskFormFieldsWithAI
-            register={register}
-            errors={errors}
-            setValue={setValue}
-            selectedMember={selectedMember}
-            setSelectedMember={setSelectedMember}
-            projects={projects}
-            editingTask={editingTask}
-            currentProjectId={currentProjectId}
-          />
-          
-          <div className="flex justify-end gap-2 pt-4">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => {
-                onOpenChange(false);
-                reset();
-                setSelectedMember(undefined);
-              }}
-              size={isMobile ? "sm" : "default"}
-            >
-              Cancel
-            </Button>
-            <Button 
-              type="submit"
-              size={isMobile ? "sm" : "default"}
-            >
-              {isEditMode ? 'Update' : 'Create'}
-            </Button>
-          </div>
-        </form>
+        <Form {...form}>
+          <form onSubmit={handleSubmit(onSubmit)} className={`space-y-4 ${isMobile ? 'pt-2' : 'pt-4'}`}>
+            <TaskFormFieldsWithAI
+              register={register}
+              errors={errors}
+              setValue={setValue}
+              selectedMember={selectedMember}
+              setSelectedMember={setSelectedMember}
+              projects={projects}
+              editingTask={editingTask}
+              currentProjectId={currentProjectId}
+            />
+            
+            <div className="flex justify-end gap-2 pt-4">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => {
+                  onOpenChange(false);
+                  reset();
+                  setSelectedMember(undefined);
+                }}
+                size={isMobile ? "sm" : "default"}
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="submit"
+                size={isMobile ? "sm" : "default"}
+              >
+                {isEditMode ? 'Update' : 'Create'}
+              </Button>
+            </div>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

@@ -10,12 +10,11 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { Project, Task } from '@/types';
-import { FormField, FormLabel, FormMessage } from "@/components/ui/form";
+import { Label } from "@/components/ui/label";
 import TaskAssigneeSelect from './form/TaskAssigneeSelect';
 import TaskDeadlinePicker from './form/TaskDeadlinePicker';
 import AITaskGenerator from './AITaskGenerator';
 import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 
 interface TaskFormFieldsProps {
   register: any;
@@ -52,13 +51,13 @@ const TaskFormFieldsWithAI: React.FC<TaskFormFieldsProps> = ({
     <>
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <FormLabel>Task Title</FormLabel>
+          <Label htmlFor="title">Task Title</Label>
           <div className="flex items-center space-x-2">
             <Switch
               id="use-ai"
               checked={useAI}
               onCheckedChange={setUseAI}
-              className="h-4 w-8" // Using className instead of size prop
+              className="h-4 w-8" 
             />
             <Label htmlFor="use-ai" className="text-xs">Use AI</Label>
           </div>
@@ -71,7 +70,7 @@ const TaskFormFieldsWithAI: React.FC<TaskFormFieldsProps> = ({
           })}
         />
         {errors.title && (
-          <FormMessage>{errors.title.message}</FormMessage>
+          <p className="text-sm font-medium text-destructive">{errors.title.message}</p>
         )}
         
         {useAI && (
@@ -83,7 +82,7 @@ const TaskFormFieldsWithAI: React.FC<TaskFormFieldsProps> = ({
       </div>
 
       <div className="space-y-2">
-        <FormLabel>Description</FormLabel>
+        <Label htmlFor="description">Description</Label>
         <Textarea
           id="description"
           placeholder="Enter task description"
@@ -101,7 +100,7 @@ const TaskFormFieldsWithAI: React.FC<TaskFormFieldsProps> = ({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <FormLabel>Priority</FormLabel>
+          <Label htmlFor="priority">Priority</Label>
           <Select 
             defaultValue={editingTask?.priority || "Medium"} 
             onValueChange={(value) => setValue('priority', value)}
@@ -135,7 +134,7 @@ const TaskFormFieldsWithAI: React.FC<TaskFormFieldsProps> = ({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <FormLabel>Project</FormLabel>
+          <Label htmlFor="project">Project</Label>
           <Select 
             defaultValue={currentProjectId || editingTask?.projectId || "none"} 
             onValueChange={(value) => setValue('projectId', value)}
@@ -163,7 +162,7 @@ const TaskFormFieldsWithAI: React.FC<TaskFormFieldsProps> = ({
       </div>
 
       <div className="space-y-2">
-        <FormLabel>Cost</FormLabel>
+        <Label htmlFor="cost">Cost</Label>
         <Input
           id="cost"
           type="number"
