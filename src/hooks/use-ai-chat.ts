@@ -36,6 +36,21 @@ export const useAIChat = () => {
 
       if (error) {
         console.error('Supabase function error:', error);
+        // Even with errors, we'll still check if there's a response message
+        if (data && data.response) {
+          // If we have a response despite the error, use it
+          const assistantMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            content: data.response,
+            sender: 'assistant',
+            timestamp: new Date()
+          };
+          
+          console.log("Using fallback response from error handler");
+          setMessages(prev => [...prev, assistantMessage]);
+          return;
+        }
+        
         throw new Error(error.message || 'Failed to get AI response');
       }
 
@@ -55,7 +70,17 @@ export const useAIChat = () => {
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
       console.error('Error sending message:', error);
-      toast.error('Failed to get AI response. Please try again.');
+      
+      // Create a fallback assistant message when API fails
+      const fallbackMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: "I'm sorry, I couldn't process your request right now. The AI service might be temporarily unavailable.",
+        sender: 'assistant',
+        timestamp: new Date()
+      };
+      
+      setMessages(prev => [...prev, fallbackMessage]);
+      toast.error('Failed to get AI response. Please try again later.');
     } finally {
       setIsProcessing(false);
     }
