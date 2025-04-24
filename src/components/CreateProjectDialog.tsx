@@ -7,12 +7,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useForm } from "react-hook-form";
 import { useProjectOperations } from '@/hooks/useProjectOperations';
-import { useProjects } from '@/hooks/useProjects';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from '@/components/ui/sonner';
+import { format } from 'date-fns';
 
 interface CreateProjectDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSuccess?: () => void;
 }
 
 interface FormValues {
@@ -26,29 +28,44 @@ interface FormValues {
 const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
   open,
   onOpenChange,
+  onSuccess
 }) => {
   const { user } = useAuth();
   const { createProject, isLoading } = useProjectOperations();
-  const { refreshProjects } = useProjects();
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormValues>();
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormValues>({
+    defaultValues: {
+      startDate: format(new Date(), 'yyyy-MM-dd'),
+      endDate: format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd')
+    }
+  });
 
   const onSubmit = async (data: FormValues) => {
-    if (!user) return;
+    if (!user) {
+      toast.error('You must be logged in to create a project');
+      return;
+    }
 
-    const project = await createProject({
-      title: data.title,
-      description: data.description,
-      startDate: new Date(data.startDate),
-      endDate: new Date(data.endDate),
-      managerId: user.id,
-      budget: data.budget,
-      teamMembers: [],
-    });
-    
-    if (project) {
-      onOpenChange(false);
-      reset();
-      refreshProjects();
+    try {
+      const project = await createProject({
+        title: data.title,
+        description: data.description,
+        startDate: new Date(data.startDate),
+        endDate: new Date(data.endDate),
+        managerId: user.id,
+        budget: data.budget,
+        teamMembers: [],
+      });
+      
+      if (project) {
+        onOpenChange(false);
+        reset();
+        if (onSuccess) {
+          onSuccess();
+        }
+      }
+    } catch (error) {
+      console.error('Error creating project:', error);
+      toast.error('Failed to create project');
     }
   };
 
@@ -110,6 +127,8 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
             <Input
               id="budget"
               type="number"
+              step="0.01"
+              min="0"
               {...register('budget', { valueAsNumber: true })}
             />
           </div>

@@ -25,7 +25,8 @@ export const useProjects = () => {
       
       const { data, error } = await supabase
         .from('projects')
-        .select('*');
+        .select('*')
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching projects:', error);
@@ -46,6 +47,7 @@ export const useProjects = () => {
         tasks: [],
         teamMembers: project.team_members || [],
         budget: project.budget || 0,
+        budgetSpent: project.budget_spent || 0,
         is_completed: project.is_completed || false
       }));
 
@@ -61,6 +63,9 @@ export const useProjects = () => {
   useEffect(() => {
     if (user) {
       fetchProjects();
+    } else {
+      setProjects([]);
+      setIsLoading(false);
     }
   }, [user]);
 

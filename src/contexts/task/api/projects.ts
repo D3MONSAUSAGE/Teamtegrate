@@ -1,5 +1,5 @@
 
-import { Project } from '@/types';
+import { Project, User } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 
@@ -19,6 +19,8 @@ export const fetchProjects = async (
       return;
     }
 
+    console.log('Projects data from API:', data);
+
     const formattedProjects: Project[] = data.map(project => ({
       id: project.id,
       title: project.title || '',
@@ -26,14 +28,16 @@ export const fetchProjects = async (
       startDate: project.start_date ? new Date(project.start_date) : new Date(),
       endDate: project.end_date ? new Date(project.end_date) : new Date(),
       managerId: project.manager_id || user.id,
-      budget: project.budget || 0,
       createdAt: project.created_at ? new Date(project.created_at) : new Date(),
       updatedAt: project.updated_at ? new Date(project.updated_at) : new Date(),
       tasks: [],
+      teamMembers: project.team_members || [],
+      budget: project.budget || 0,
       is_completed: project.is_completed || false,
-      teamMembers: []
+      budgetSpent: project.budget_spent || 0
     }));
 
+    console.log('Formatted projects:', formattedProjects);
     setProjects(formattedProjects);
   } catch (error) {
     console.error('Error in fetchProjects:', error);
@@ -50,6 +54,17 @@ export const addProject = async (
     const projectId = crypto.randomUUID();
     const now = new Date();
     
+    console.log('Creating project:', {
+      id: projectId,
+      title: project.title,
+      description: project.description,
+      start_date: project.startDate.toISOString(),
+      end_date: project.endDate.toISOString(),
+      manager_id: user.id,
+      budget: project.budget || 0,
+      is_completed: false
+    });
+    
     const { data, error } = await supabase
       .from('projects')
       .insert({
@@ -62,7 +77,8 @@ export const addProject = async (
         budget: project.budget || 0,
         is_completed: false,
         created_at: now.toISOString(),
-        updated_at: now.toISOString()
+        updated_at: now.toISOString(),
+        team_members: project.teamMembers || []
       })
       .select();
 
@@ -84,9 +100,11 @@ export const addProject = async (
       updatedAt: now,
       tasks: [],
       teamMembers: project.teamMembers || [],
-      is_completed: false
+      is_completed: false,
+      budgetSpent: 0
     };
 
+    console.log('New project created:', newProject);
     toast.success('Project created successfully');
     return newProject;
   } catch (error) {

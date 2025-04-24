@@ -4,7 +4,6 @@ import { Project } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/components/ui/sonner';
-import { v4 as uuidv4 } from 'uuid';
 
 export const useProjectOperations = () => {
   const { user } = useAuth();
@@ -19,7 +18,7 @@ export const useProjectOperations = () => {
     setIsLoading(true);
     try {
       // Generate a unique ID for the project
-      const projectId = uuidv4();
+      const projectId = crypto.randomUUID();
       const now = new Date().toISOString();
 
       console.log('Creating project with data:', {
@@ -51,8 +50,7 @@ export const useProjectOperations = () => {
           updated_at: now,
           team_members: project.teamMembers || []
         })
-        .select()
-        .single();
+        .select();
 
       if (error) {
         console.error('Error creating project:', error);
@@ -61,7 +59,7 @@ export const useProjectOperations = () => {
 
       console.log('Project created successfully:', data);
       toast.success('Project created successfully');
-      return data;
+      return data[0];
     } catch (error) {
       console.error('Error creating project:', error);
       toast.error('Failed to create project');

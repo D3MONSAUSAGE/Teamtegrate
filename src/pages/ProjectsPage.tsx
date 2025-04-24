@@ -5,13 +5,27 @@ import { Plus } from "lucide-react";
 import { useProjects } from '@/hooks/useProjects';
 import ProjectCard from '@/components/ProjectCard';
 import CreateProjectDialog from '@/components/CreateProjectDialog';
+import { Link, useNavigate } from 'react-router-dom';
 
 const ProjectsPage = () => {
-  const { projects, isLoading } = useProjects();
+  const { projects, isLoading, refreshProjects } = useProjects();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const navigate = useNavigate();
+
+  const handleViewTasks = (projectId: string) => {
+    navigate(`/dashboard/tasks?projectId=${projectId}`);
+  };
+
+  const handleCreateTask = (projectId: string) => {
+    navigate(`/dashboard/tasks/create?projectId=${projectId}`);
+  };
 
   if (isLoading) {
-    return <div className="flex items-center justify-center h-32">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center h-32">
+        <div className="animate-pulse text-lg">Loading projects...</div>
+      </div>
+    );
   }
 
   return (
@@ -25,7 +39,12 @@ const ProjectsPage = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {projects.map(project => (
-          <ProjectCard key={project.id} project={project} />
+          <ProjectCard 
+            key={project.id} 
+            project={project}
+            onViewTasks={() => handleViewTasks(project.id)}
+            onCreateTask={() => handleCreateTask(project.id)}
+          />
         ))}
         
         {projects.length === 0 && (
@@ -40,7 +59,8 @@ const ProjectsPage = () => {
 
       <CreateProjectDialog 
         open={showCreateDialog} 
-        onOpenChange={setShowCreateDialog} 
+        onOpenChange={setShowCreateDialog}
+        onSuccess={refreshProjects}
       />
     </div>
   );

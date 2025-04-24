@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Project } from '@/types';
 import { format } from 'date-fns';
 import { Calendar, List, Plus } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface ProjectCardProps {
   project: Project;
@@ -32,6 +33,17 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onViewTasks, onCreat
         <p className="text-sm text-gray-600 line-clamp-2 mb-4">
           {project.description || 'No description provided'}
         </p>
+        
+        {project.budget > 0 && (
+          <div className="text-sm text-gray-600 mb-4">
+            <span className="font-medium">Budget:</span> ${project.budget.toFixed(2)}
+            {project.budgetSpent !== undefined && (
+              <span className="ml-2">
+                (Spent: ${project.budgetSpent.toFixed(2)})
+              </span>
+            )}
+          </div>
+        )}
         
         {(onViewTasks || onCreateTask) && (
           <div className="mt-auto pt-4 flex gap-2 justify-end">
