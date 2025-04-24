@@ -17,7 +17,7 @@ const Index = () => {
   }
 
   if (!user) {
-    return <Navigate to="/auth/login" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   return <Navigate to="/dashboard" replace />;
