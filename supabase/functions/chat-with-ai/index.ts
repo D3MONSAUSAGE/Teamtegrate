@@ -31,8 +31,8 @@ serve(async (req) => {
     console.log("Processing message:", message);
 
     try {
-      // Updated endpoint to use generativeLanguage API with the correct model
-      const response = await fetch('https://generativelanguage.googleapis.com/v1/models/gemini-1.0-pro:generateContent', {
+      // Using the gemini-pro model which is the correct model name
+      const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
