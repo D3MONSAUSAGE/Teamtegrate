@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useTask } from '@/contexts/task';
 import { Task } from '@/types';
@@ -160,6 +161,14 @@ const useTeamMembers = () => {
     };
   });
   
+  // Generate data specifically for the performance bar chart
+  const memberPerformanceChartData = teamMembersPerformance.map(member => ({
+    name: member.name,
+    assignedTasks: member.totalTasks,
+    completedTasks: member.completedTasks,
+    completionRate: member.completionRate
+  }));
+  
   // Calculate summary statistics
   const totalTasksAssigned = teamMembersPerformance.reduce(
     (sum, member) => sum + member.totalTasks, 0
@@ -172,6 +181,7 @@ const useTeamMembers = () => {
   return {
     teamMembers,
     teamMembersPerformance,
+    memberPerformanceChartData,
     isLoading,
     removeTeamMember,
     refreshTeamMembers,
