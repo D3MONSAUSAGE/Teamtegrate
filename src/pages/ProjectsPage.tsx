@@ -1,16 +1,33 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { useProjects } from '@/hooks/useProjects';
 import ProjectCard from '@/components/ProjectCard';
 import CreateProjectDialog from '@/components/CreateProjectDialog';
 import { Link, useNavigate } from 'react-router-dom';
+import { toast } from '@/components/ui/sonner';
 
 const ProjectsPage = () => {
   const { projects, isLoading, refreshProjects } = useProjects();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const navigate = useNavigate();
+
+  // Add effect to detect and handle loading errors
+  useEffect(() => {
+    const handleRefresh = async () => {
+      try {
+        await refreshProjects();
+      } catch (error) {
+        console.error("Error refreshing projects:", error);
+        toast.error("Failed to load projects. Please try again.");
+      }
+    };
+    
+    if (projects.length === 0 && !isLoading) {
+      handleRefresh();
+    }
+  }, [projects.length, isLoading]);
 
   const handleViewTasks = (projectId: string) => {
     navigate(`/dashboard/tasks?projectId=${projectId}`);
@@ -18,6 +35,11 @@ const ProjectsPage = () => {
 
   const handleCreateTask = (projectId: string) => {
     navigate(`/dashboard/tasks/create?projectId=${projectId}`);
+  };
+
+  const handleCreateSuccess = () => {
+    refreshProjects();
+    toast.success("Project created successfully!");
   };
 
   if (isLoading) {
@@ -60,7 +82,7 @@ const ProjectsPage = () => {
       <CreateProjectDialog 
         open={showCreateDialog} 
         onOpenChange={setShowCreateDialog}
-        onSuccess={refreshProjects}
+        onSuccess={handleCreateSuccess}
       />
     </div>
   );

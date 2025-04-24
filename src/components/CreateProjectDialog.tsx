@@ -46,6 +46,7 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
     }
 
     try {
+      console.log("Submitting project data:", data);
       const project = await createProject({
         title: data.title,
         description: data.description,

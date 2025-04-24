@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/components/ui/sonner';
 import { v4 as uuidv4 } from 'uuid';
+import { playSuccessSound, playErrorSound } from '@/utils/sounds';
 
 export const useProjectOperations = () => {
   const { user } = useAuth();
@@ -13,6 +14,7 @@ export const useProjectOperations = () => {
   const createProject = async (project: Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'tasks'>) => {
     if (!user) {
       toast.error('You must be logged in to create a project');
+      playErrorSound();
       return null;
     }
 
@@ -55,7 +57,8 @@ export const useProjectOperations = () => {
 
       if (error) {
         console.error('Error creating project:', error);
-        toast.error('Failed to create project');
+        toast.error('Failed to create project: ' + error.message);
+        playErrorSound();
         return null;
       }
 
@@ -78,10 +81,12 @@ export const useProjectOperations = () => {
 
       console.log('Project created successfully:', newProject);
       toast.success('Project created successfully');
+      playSuccessSound();
       return newProject;
     } catch (error) {
       console.error('Error creating project:', error);
       toast.error('Failed to create project');
+      playErrorSound();
       return null;
     } finally {
       setIsLoading(false);
