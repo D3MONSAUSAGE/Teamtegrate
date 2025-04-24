@@ -1,12 +1,13 @@
+
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTask } from '@/contexts/task';
 import { Task } from '@/types';
-import CreateTaskDialog from '@/components/CreateTaskDialog';
 import TaskCommentsDialog from '@/components/TaskCommentsDialog';
 import TaskHeader from '@/components/task/TaskHeader';
 import TaskTabs from '@/components/task/TaskTabs';
 import ProjectTasksView from '@/components/task/ProjectTasksView';
+import CreateTaskDialogWithAI from '@/components/CreateTaskDialogWithAI';
 
 const TasksPage = () => {
   const [searchParams] = useSearchParams();
@@ -93,7 +94,7 @@ const TasksPage = () => {
         }}
       />
       
-      <CreateTaskDialog 
+      <CreateTaskDialogWithAI
         open={isCreateTaskOpen} 
         onOpenChange={setIsCreateTaskOpen}
         editingTask={editingTask}

@@ -5,7 +5,7 @@ import { useTask } from '@/contexts/task';
 import TaskHeader from './TaskHeader';
 import TaskTabs from './TaskTabs';
 import { Task } from '@/types';
-import CreateTaskDialog from '../CreateTaskDialog';
+import CreateTaskDialogWithAI from '../CreateTaskDialogWithAI';
 
 const ProjectTasksView = () => {
   const [searchParams] = useSearchParams();
@@ -84,7 +84,7 @@ const ProjectTasksView = () => {
         }}
       />
       
-      <CreateTaskDialog 
+      <CreateTaskDialogWithAI
         open={isCreateTaskOpen} 
         onOpenChange={setIsCreateTaskOpen}
         editingTask={editingTask}

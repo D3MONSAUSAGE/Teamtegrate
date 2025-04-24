@@ -7,7 +7,7 @@ import ProjectCard from '@/components/ProjectCard';
 import CreateProjectDialog from '@/components/CreateProjectDialog';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from '@/components/ui/sonner';
-import CreateTaskDialog from '@/components/CreateTaskDialog';
+import CreateTaskDialogWithAI from '@/components/CreateTaskDialogWithAI';
 
 const ProjectsPage = () => {
   const { projects, isLoading, refreshProjects } = useProjects();
@@ -89,7 +89,7 @@ const ProjectsPage = () => {
         onSuccess={handleCreateSuccess}
       />
 
-      <CreateTaskDialog
+      <CreateTaskDialogWithAI
         open={showCreateTaskDialog}
         onOpenChange={setShowCreateTaskDialog}
         editingTask={undefined}
