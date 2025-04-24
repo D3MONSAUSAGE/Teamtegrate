@@ -10,6 +10,14 @@ export interface User {
   avatar_url?: string; // Added avatar_url as an optional property
 }
 
+// Add AppUser type for use with the users table
+export interface AppUser {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+}
+
 export type TaskPriority = 'Low' | 'Medium' | 'High';
 
 export type TaskStatus = 'To Do' | 'In Progress' | 'Pending' | 'Completed';

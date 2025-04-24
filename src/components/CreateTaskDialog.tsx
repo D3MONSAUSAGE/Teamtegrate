@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Task } from '@/types';
 import { useTask } from '@/contexts/task';
 import { useAuth } from '@/contexts/AuthContext';
-import { format } from 'date-fns';
 import { useTaskForm } from '@/hooks/useTaskForm';
 import TaskFormFields from './task/TaskFormFields';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -35,9 +34,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
     reset,
     setValue,
     selectedMember,
-    setSelectedMember,
-    appUsers,
-    isLoadingUsers
+    setSelectedMember
   } = useTaskForm(editingTask, currentProjectId);
 
   // Set initial projectId value when: dialog opens, or currentProjectId changes, and only if not editing
@@ -72,8 +69,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
         ...data,
         deadline: deadlineDate,
         assignedToId: selectedMember === "unassigned" ? undefined : selectedMember,
-        assignedToName: selectedMember && selectedMember !== "unassigned" ? 
-          appUsers?.find(m => m.id === selectedMember)?.name : undefined
+        assignedToName: data.assignedToName
       });
     } else {
       addTask({
@@ -85,8 +81,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
         userId: user?.id || '',
         projectId: data.projectId === "none" ? undefined : data.projectId,
         assignedToId: selectedMember === "unassigned" ? undefined : selectedMember,
-        assignedToName: selectedMember && selectedMember !== "unassigned" ? 
-          appUsers?.find(m => m.id === selectedMember)?.name : undefined
+        assignedToName: data.assignedToName
       });
     }
     onOpenChange(false);
@@ -111,8 +106,6 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
             setValue={setValue}
             selectedMember={selectedMember}
             setSelectedMember={setSelectedMember}
-            appUsers={appUsers}
-            isLoadingUsers={isLoadingUsers}
             projects={projects}
             editingTask={editingTask}
             currentProjectId={currentProjectId}
