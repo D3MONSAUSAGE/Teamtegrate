@@ -10,7 +10,6 @@ import TaskCardDescription from "./task/TaskCardDescription";
 import TaskCardMetadata from "./task/TaskCardMetadata";
 import TaskCardFooter from "./task/TaskCardFooter";
 import { useTask } from "@/contexts/task";
-import { View } from "lucide-react";
 
 interface TaskCardProps {
   task: Task;
@@ -64,13 +63,11 @@ const TaskCard: React.FC<TaskCardProps> = ({
     }
   };
 
-  // Process the assignedToName for display
   const getAssignedToName = () => {
     if (!task.assignedToName || task.assignedToName.trim() === '') {
       return 'Unassigned';
     }
     
-    // Check if it's likely a UUID (common format for IDs)
     if (task.assignedToId && (!task.assignedToName || task.assignedToName === task.assignedToId)) {
       return 'Unassigned';
     }
@@ -78,7 +75,6 @@ const TaskCard: React.FC<TaskCardProps> = ({
     return task.assignedToName;
   };
 
-  // Card styling improvements
   return (
     <>
       <Card
@@ -93,21 +89,6 @@ const TaskCard: React.FC<TaskCardProps> = ({
         role="button"
         style={{ minHeight: 190, marginBottom: 2 }}
       >
-        {/* View Button */}
-        <div className="absolute top-3 left-3 z-10">
-          <button
-            className="bg-white/70 dark:bg-card/90 p-1 rounded shadow hover:bg-white/90 dark:hover:bg-card outline-none border border-gray-200 focus:ring-2 focus:ring-primary"
-            aria-label="View Task"
-            onClick={e => {
-              e.stopPropagation();
-              setShowDrawer(true);
-            }}
-            type="button"
-          >
-            <View className="h-4 w-4 text-primary" />
-          </button>
-        </div>
-
         {/* Actions button (three dots) */}
         <div className="absolute top-2 right-2 z-10">
           <TaskCardActions
