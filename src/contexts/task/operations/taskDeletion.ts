@@ -1,5 +1,5 @@
 
-import { User, Project } from '@/types';
+import { User, Project, Task } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { playErrorSound } from '@/utils/sounds';

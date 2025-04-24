@@ -1,6 +1,4 @@
-
 import { User, Task, Project } from '@/types';
-import { fetchTasks } from './api/tasks';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 
@@ -14,7 +12,50 @@ export const fetchUserTasks = async (
     return;
   }
 
-  await fetchTasks(user, setTasks);
+  try {
+    // Fetch tasks from supabase
+    const { data: taskData, error } = await supabase
+      .from('tasks')
+      .select('*')
+      .eq('user_id', user.id);
+
+    if (error) {
+      console.error('Error fetching tasks:', error);
+      toast.error('Failed to load tasks');
+      return;
+    }
+
+    const parseDate = (dateStr: string | null): Date => {
+      if (!dateStr) return new Date();
+      return new Date(dateStr);
+    };
+
+    // Map tasks with their comments
+    const tasks: Task[] = taskData.map((task) => {
+      return {
+        id: task.id,
+        userId: task.user_id,
+        projectId: task.project_id,
+        title: task.title || '',
+        description: task.description || '',
+        deadline: parseDate(task.deadline),
+        priority: (task.priority as Task['priority']) || 'Medium',
+        status: (task.status || 'To Do') as Task['status'],
+        createdAt: parseDate(task.created_at),
+        updatedAt: parseDate(task.updated_at),
+        completedAt: task.completed_at ? parseDate(task.completed_at) : undefined,
+        assignedToId: task.assigned_to_id,
+        assignedToName: task.assigned_to_id,
+        comments: [],
+        cost: task.cost || 0
+      };
+    });
+
+    setTasks(tasks);
+  } catch (error) {
+    console.error('Error in fetchTasks:', error);
+    toast.error('Failed to load tasks');
+  }
 };
 
 // Fetch projects for a user

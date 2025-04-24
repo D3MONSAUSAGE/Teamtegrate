@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { playSuccessSound, playErrorSound } from '@/utils/sounds';
 import { v4 as uuidv4 } from 'uuid';
+import { Project } from '@/types';
 
 export const addTask = async (
   task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>,
