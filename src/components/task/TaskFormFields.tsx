@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -22,6 +21,7 @@ import {
 } from "@/components/ui/popover";
 import { format } from 'date-fns';
 import { cn } from "@/lib/utils";
+import { supabase } from '@/integrations/supabase/client';
 
 interface AppUser {
   id: string;
@@ -55,15 +55,42 @@ const TaskFormFields: React.FC<TaskFormFieldsProps> = ({
   editingTask,
   currentProjectId
 }) => {
-  // Use state for the date and time
   const [date, setDate] = useState<Date | undefined>(
     editingTask ? new Date(editingTask.deadline) : undefined
   );
   
-  // Handle time input separately (HH:MM)
   const [timeInput, setTimeInput] = useState<string>(
     editingTask ? format(new Date(editingTask.deadline), 'HH:mm') : '12:00'
   );
+  
+  const [users, setUsers] = useState<AppUser[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(true);
+
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .select('id, name, email, role')
+          .order('name');
+          
+        if (error) {
+          console.error('Error loading users:', error);
+          return;
+        }
+        
+        if (data) {
+          setUsers(data);
+        }
+      } catch (error) {
+        console.error('Error loading users:', error);
+      } finally {
+        setLoadingUsers(false);
+      }
+    };
+
+    loadUsers();
+  }, []);
 
   const handleDateChange = (selectedDate: Date | undefined) => {
     if (!selectedDate) return;
@@ -84,6 +111,19 @@ const TaskFormFields: React.FC<TaskFormFieldsProps> = ({
       const newDate = new Date(date);
       newDate.setHours(hours || 0, minutes || 0, 0, 0);
       setValue('deadline', newDate.toISOString());
+    }
+  };
+
+  const handleUserAssignment = (userId: string) => {
+    const selectedUser = users.find(user => user.id === userId);
+    if (selectedUser) {
+      setSelectedMember(userId);
+      setValue('assignedToId', userId);
+      setValue('assignedToName', selectedUser.name);
+    } else {
+      setSelectedMember(undefined);
+      setValue('assignedToId', undefined);
+      setValue('assignedToName', undefined);
     }
   };
 
@@ -134,29 +174,23 @@ const TaskFormFields: React.FC<TaskFormFieldsProps> = ({
         <Label htmlFor="assignedTo">Assigned To</Label>
         <Select
           value={selectedMember}
-          onValueChange={setSelectedMember}
+          onValueChange={handleUserAssignment}
         >
           <SelectTrigger>
             <SelectValue placeholder="Assign to user (optional)" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="unassigned">Unassigned</SelectItem>
-            {isLoadingUsers ? (
+            {loadingUsers ? (
               <div className="flex items-center justify-center py-2">
                 <Loader2 className="h-4 w-4 animate-spin mr-2" /> 
                 <span className="text-sm">Loading users...</span>
               </div>
-            ) : appUsers && appUsers.length > 0 ? (
-              appUsers.map(appUser => (
-                <SelectItem key={appUser.id} value={appUser.id}>
-                  {appUser.name} ({appUser.role})
-                </SelectItem>
-              ))
-            ) : (
-              <SelectItem value="no-users" disabled>
-                No users found
+            ) : users.map(user => (
+              <SelectItem key={user.id} value={user.id}>
+                {user.name} ({user.role})
               </SelectItem>
-            )}
+            ))}
           </SelectContent>
         </Select>
       </div>

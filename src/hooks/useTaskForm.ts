@@ -31,6 +31,8 @@ export const useTaskForm = (editingTask?: Task, currentProjectId?: string) => {
       deadline: defaultDeadline,
       projectId: editingTask?.projectId || currentProjectId || '',
       cost: editingTask?.cost || '',
+      assignedToId: editingTask?.assignedToId || '',
+      assignedToName: editingTask?.assignedToName || ''
     },
   });
 
