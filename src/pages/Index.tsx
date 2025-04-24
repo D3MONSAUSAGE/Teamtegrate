@@ -1,12 +1,16 @@
 
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 
 const Index = () => {
   const { user, isLoading } = useAuth();
+  const location = useLocation();
+
+  // Debug the current route
+  console.log('Current path:', location.pathname);
 
   if (isLoading) {
     return (

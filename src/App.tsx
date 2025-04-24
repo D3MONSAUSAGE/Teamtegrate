@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { TaskProvider } from "./contexts/task";
 import AppLayout from "./components/AppLayout";
@@ -35,6 +35,8 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/login" element={<LoginPage />} />
+              {/* Add a redirect from /auth/login to /login */}
+              <Route path="/auth/login" element={<Navigate to="/login" replace />} />
               <Route path="/" element={<Index />} />
               <Route path="/dashboard" element={<AppLayout />}>
                 <Route index element={<DashboardPage />} />
@@ -49,7 +51,6 @@ const App = () => (
                 <Route path="documents" element={<DocumentsPage />} />
                 <Route path="finance" element={<FinancePage />} />
                 <Route path="journal" element={<JournalPage />} />
-                {/* ChecklistsPage route removed */}
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
