@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Outlet, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -8,6 +7,7 @@ import { Menu } from 'lucide-react';
 import { Button } from './ui/button';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
 import { useIsMobile } from '@/hooks/use-mobile';
+import ChatbotBubble from './chat/ChatbotBubble';
 
 const SIDEBAR_WIDTH = 256; // Tailwind w-64
 
@@ -33,7 +33,6 @@ const AppLayout = () => {
       {/* Mobile sidebar with Sheet component */}
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
         <SheetTrigger asChild>
-          {/* Changed from fixed to absolute */}
           <Button 
             variant="outline" 
             size="icon" 
@@ -73,6 +72,9 @@ const AppLayout = () => {
           <Outlet />
         </main>
       </div>
+
+      {/* Chatbot Bubble */}
+      <ChatbotBubble />
     </div>
   );
 };
