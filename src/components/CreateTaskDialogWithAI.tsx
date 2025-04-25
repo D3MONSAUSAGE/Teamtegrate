@@ -1,16 +1,14 @@
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Task, AppUser } from '@/types';
+import { Task } from '@/types';
 import { useTask } from '@/contexts/task';
 import { useAuth } from '@/contexts/AuthContext';
-import { useForm } from "react-hook-form";
 import TaskFormFieldsWithAI from './task/TaskFormFieldsWithAI';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useUsers } from '@/hooks/useUsers';
 import { Form } from "@/components/ui/form";
-import { format } from 'date-fns';
+import { useTaskFormWithAI } from '@/hooks/useTaskFormWithAI';
+import TaskFormActions from './task/form/TaskFormActions';
 
 interface CreateTaskDialogProps {
   open: boolean;
@@ -29,96 +27,22 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
   const { addTask, updateTask, projects } = useTask();
   const isEditMode = !!editingTask;
   const isMobile = useIsMobile();
-  const { users, isLoading: isLoadingUsers } = useUsers();
   
-  // Add deadline state management
-  const [deadlineDate, setDeadlineDate] = useState<Date | undefined>(
-    editingTask ? new Date(editingTask.deadline) : new Date()
-  );
-  const [timeInput, setTimeInput] = useState(
-    editingTask ? format(new Date(editingTask.deadline), 'HH:mm') : "12:00"
-  );
-  
-  // Setup form with react-hook-form
-  const form = useForm({
-    defaultValues: {
-      title: editingTask?.title || '',
-      description: editingTask?.description || '',
-      priority: editingTask?.priority || 'Medium',
-      deadline: editingTask?.deadline ? new Date(editingTask.deadline).toISOString() : new Date().toISOString(),
-      projectId: editingTask?.projectId || currentProjectId || '',
-      cost: editingTask?.cost || '',
-      assignedToId: editingTask?.assignedToId || '',
-      assignedToName: editingTask?.assignedToName || ''
-    }
-  });
-  
-  const { register, handleSubmit, formState: { errors }, reset, setValue } = form;
-  const [selectedMember, setSelectedMember] = useState<string | undefined>(
-    editingTask?.assignedToId
-  );
-
-  // Update deadline state when editing task changes
-  useEffect(() => {
-    if (editingTask) {
-      const taskDate = new Date(editingTask.deadline);
-      setDeadlineDate(taskDate);
-      setTimeInput(format(taskDate, 'HH:mm'));
-    } else {
-      const today = new Date();
-      setDeadlineDate(today);
-      setTimeInput("12:00");
-    }
-  }, [editingTask]);
-
-  // Set initial projectId value when: dialog opens, or currentProjectId changes, and only if not editing
-  useEffect(() => {
-    if (open && !editingTask && currentProjectId) {
-      setValue('projectId', currentProjectId);
-    }
-    // If dialog closed and not editing, reset form
-    if (!open && !editingTask) {
-      reset();
-      setSelectedMember(undefined);
-    }
-    // If editing, always update form fields properly
-    if (editingTask) {
-      setValue('title', editingTask.title);
-      setValue('description', editingTask.description);
-      setValue('priority', editingTask.priority);
-      setValue('deadline', new Date(editingTask.deadline).toISOString());
-      setValue('projectId', editingTask.projectId || '');
-      setSelectedMember(editingTask.assignedToId);
-    }
-  }, [open, editingTask, currentProjectId, setValue, reset]);
-
-  const handleDateChange = (date: Date | undefined) => {
-    if (!date) return;
-    
-    setDeadlineDate(date);
-    
-    // Preserve time if time was already set
-    if (timeInput) {
-      const [hours, minutes] = timeInput.split(':').map(Number);
-      const newDate = new Date(date);
-      newDate.setHours(hours || 0, minutes || 0);
-      setValue('deadline', newDate.toISOString());
-    } else {
-      setValue('deadline', date.toISOString());
-    }
-  };
-
-  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newTimeInput = e.target.value;
-    setTimeInput(newTimeInput);
-    
-    if (deadlineDate && newTimeInput) {
-      const [hours, minutes] = newTimeInput.split(':').map(Number);
-      const newDate = new Date(deadlineDate);
-      newDate.setHours(hours || 0, minutes || 0);
-      setValue('deadline', newDate.toISOString());
-    }
-  };
+  // Use our custom hook for form management
+  const {
+    form,
+    handleSubmit,
+    register,
+    errors, 
+    reset,
+    setValue,
+    selectedMember,
+    setSelectedMember,
+    deadlineDate,
+    timeInput,
+    handleDateChange,
+    handleTimeChange
+  } = useTaskFormWithAI(editingTask, currentProjectId);
 
   const onSubmit = (data: any) => {
     // Handle the case where deadline might come as string or Date
@@ -151,6 +75,12 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
     setSelectedMember(undefined);
   };
 
+  const handleCancel = () => {
+    onOpenChange(false);
+    reset();
+    setSelectedMember(undefined);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={`${isMobile ? 'w-[95%] p-4' : 'sm:max-w-[500px]'} max-h-[90vh] overflow-y-auto`}>
@@ -178,26 +108,11 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
               onTimeChange={handleTimeChange}
             />
             
-            <div className="flex justify-end gap-2 pt-2">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => {
-                  onOpenChange(false);
-                  reset();
-                  setSelectedMember(undefined);
-                }}
-                size={isMobile ? "sm" : "default"}
-              >
-                Cancel
-              </Button>
-              <Button 
-                type="submit"
-                size={isMobile ? "sm" : "default"}
-              >
-                {isEditMode ? 'Update' : 'Create'}
-              </Button>
-            </div>
+            <TaskFormActions 
+              isEditMode={isEditMode}
+              onCancel={handleCancel}
+              isMobile={isMobile}
+            />
           </form>
         </Form>
       </DialogContent>
