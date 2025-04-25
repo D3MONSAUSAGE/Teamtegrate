@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Project } from '@/types';
+import { Project, ProjectStatus } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/components/ui/sonner';
@@ -81,7 +81,7 @@ export const useProjectOperations = () => {
         teamMembers: project.teamMembers || [],
         is_completed: false,
         budgetSpent: 0,
-        status: project.status || 'To Do',
+        status: project.status as ProjectStatus,
         tasks_count: 0
       };
 

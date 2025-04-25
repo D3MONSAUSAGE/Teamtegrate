@@ -1,5 +1,5 @@
 
-import { Project, User } from '@/types';
+import { Project, User, ProjectStatus } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { v4 as uuidv4 } from 'uuid';
@@ -37,7 +37,7 @@ export const fetchProjects = async (
       budget: project.budget || 0,
       is_completed: project.is_completed || false,
       budgetSpent: project.budget_spent || 0,
-      status: project.status || 'To Do',
+      status: (project.status || 'To Do') as ProjectStatus,
       tasks_count: project.tasks_count || 0
     }));
 
@@ -111,7 +111,7 @@ export const addProject = async (
       teamMembers: project.teamMembers || [],
       is_completed: false,
       budgetSpent: 0,
-      status: project.status || 'To Do',
+      status: project.status as ProjectStatus,
       tasks_count: 0
     };
 

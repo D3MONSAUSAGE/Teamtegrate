@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { Project } from '@/types';
+import { Project, ProjectStatus } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { useAuth } from '@/contexts/AuthContext';
@@ -53,7 +53,7 @@ export const useProjects = () => {
         budget: project.budget || 0,
         budgetSpent: project.budget_spent || 0,
         is_completed: project.is_completed || false,
-        status: project.status || 'To Do',
+        status: (project.status || 'To Do') as ProjectStatus,
         tasks_count: project.tasks_count || 0
       }));
 
