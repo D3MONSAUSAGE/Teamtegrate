@@ -19,27 +19,25 @@ interface WeeklyTimeRowProps {
 }
 
 const WeeklyTimeRow: React.FC<WeeklyTimeRowProps> = ({ day, dayEntries }) => {
-  const { rawMinutes, bonusMinutes, total } = dayEntries.reduce((acc, entry) => {
+  const dailyMinutes = dayEntries.reduce((acc, entry) => {
     let duration = entry.duration_minutes || 0;
     if (!duration && entry.clock_out) {
       duration = differenceInMinutes(parseISO(entry.clock_out), parseISO(entry.clock_in));
     }
-    acc.rawMinutes += duration;
-    acc.bonusMinutes = acc.rawMinutes >= 480 ? 20 : 10;
-    acc.total = acc.rawMinutes + acc.bonusMinutes;
-    return acc;
-  }, { rawMinutes: 0, bonusMinutes: 0, total: 0 });
+    return acc + duration;
+  }, 0);
 
-  const { mealBreaks, restBreaks } = calculateBreakRequirements(rawMinutes);
+  const { mealBreaks, restBreaks, earnedBreakMinutes } = calculateBreakRequirements(dailyMinutes);
+  const total = dailyMinutes + earnedBreakMinutes;
 
   return (
     <TableRow>
       <TableCell className="font-medium">
         {new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).format(day)}
       </TableCell>
-      <TableCell>{formatHoursMinutes(rawMinutes)}</TableCell>
+      <TableCell>{formatHoursMinutes(dailyMinutes)}</TableCell>
       <TableCell className="text-emerald-600 dark:text-emerald-400">
-        {bonusMinutes}m
+        {earnedBreakMinutes}m
       </TableCell>
       <TableCell>
         <Tooltip>
