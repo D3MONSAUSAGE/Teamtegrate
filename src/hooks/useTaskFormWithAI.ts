@@ -46,6 +46,7 @@ export const useTaskFormWithAI = (editingTask?: Task, currentProjectId?: string)
       setValue('priority', editingTask.priority);
       setValue('deadline', new Date(editingTask.deadline).toISOString());
       setValue('projectId', editingTask.projectId || '');
+      setValue('cost', editingTask.cost || '');
       setSelectedMember(editingTask.assignedToId);
     } else {
       // For new tasks

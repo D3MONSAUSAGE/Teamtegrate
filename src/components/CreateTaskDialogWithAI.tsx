@@ -83,16 +83,16 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={`${isMobile ? 'w-[95%] p-4' : 'sm:max-w-[500px]'} max-h-[90vh] overflow-y-auto`}>
+      <DialogContent className={`${isMobile ? 'w-[95%] p-4' : 'sm:max-w-[550px]'} max-h-[90vh] overflow-y-auto`}>
         <DialogHeader>
-          <DialogTitle>{isEditMode ? 'Edit Task' : 'Create New Task'}</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-xl">{isEditMode ? 'Edit Task' : 'Create New Task'}</DialogTitle>
+          <DialogDescription className="text-muted-foreground">
             {isEditMode ? 'Update the task details below.' : 'Fill in the details to create a new task.'}
           </DialogDescription>
         </DialogHeader>
         
         <Form {...form}>
-          <form onSubmit={handleSubmit(onSubmit)} className={`space-y-3 ${isMobile ? 'pt-2' : 'pt-4'}`}>
+          <form onSubmit={handleSubmit(onSubmit)} className={`space-y-4 ${isMobile ? 'pt-2' : 'pt-4'}`}>
             <TaskFormFieldsWithAI
               register={register}
               errors={errors}

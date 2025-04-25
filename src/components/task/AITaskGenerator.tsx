@@ -91,12 +91,7 @@ const AITaskGenerator: React.FC<AITaskGeneratorProps> = ({ onGeneratedContent, t
   };
 
   return (
-    <div className="space-y-2 pt-2">
-      <div className="text-sm font-medium flex items-center gap-1.5 text-primary">
-        <Sparkles className="h-4 w-4" />
-        {type === 'description' ? 'Generate Description with AI' : 'Generate Title with AI'}
-      </div>
-      
+    <div className="space-y-2 mt-2">
       {apiError && (
         <div className="bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 rounded p-2 text-xs flex items-center gap-2">
           <AlertTriangle className="h-3.5 w-3.5 text-amber-500" /> 
@@ -110,8 +105,9 @@ const AITaskGenerator: React.FC<AITaskGeneratorProps> = ({ onGeneratedContent, t
         placeholder={type === 'description' 
           ? "Describe what you want the task to be about..." 
           : "Briefly describe the task purpose..."}
-        className="h-20 resize-none"
+        className="h-20 resize-none text-sm"
       />
+      
       <Button 
         onClick={generateContent}
         disabled={isLoading || !prompt.trim()}

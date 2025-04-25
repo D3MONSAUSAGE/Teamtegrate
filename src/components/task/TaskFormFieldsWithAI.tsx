@@ -16,6 +16,7 @@ import TaskDeadlinePicker from './form/TaskDeadlinePicker';
 import AITaskGenerator from './AITaskGenerator';
 import { Switch } from '@/components/ui/switch';
 import { useUsers } from '@/hooks/useUsers';
+import { Sparkles } from 'lucide-react';
 
 interface TaskFormFieldsProps {
   register: any;
@@ -46,7 +47,8 @@ const TaskFormFieldsWithAI: React.FC<TaskFormFieldsProps> = ({
   onDateChange,
   onTimeChange
 }) => {
-  const [useAI, setUseAI] = React.useState(false);
+  const [useTitleAI, setUseTitleAI] = React.useState(false);
+  const [useDescriptionAI, setUseDescriptionAI] = React.useState(false);
   const { users, isLoading: loadingUsers } = useUsers();
 
   const handleGeneratedTitle = (title: string) => {
@@ -73,16 +75,18 @@ const TaskFormFieldsWithAI: React.FC<TaskFormFieldsProps> = ({
   return (
     <>
       <div className="space-y-1">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-1">
           <Label htmlFor="title">Task Title</Label>
           <div className="flex items-center space-x-2">
             <Switch
-              id="use-ai"
-              checked={useAI}
-              onCheckedChange={setUseAI}
-              className="h-4 w-8" 
+              id="use-title-ai"
+              checked={useTitleAI}
+              onCheckedChange={setUseTitleAI}
+              className="h-4 w-8"
             />
-            <Label htmlFor="use-ai" className="text-xs">Use AI</Label>
+            <Label htmlFor="use-title-ai" className="text-xs text-muted-foreground">
+              Use AI
+            </Label>
           </div>
         </div>
         <Input
@@ -96,28 +100,53 @@ const TaskFormFieldsWithAI: React.FC<TaskFormFieldsProps> = ({
           <p className="text-sm font-medium text-destructive">{errors.title.message}</p>
         )}
         
-        {useAI && (
-          <AITaskGenerator 
-            onGeneratedContent={handleGeneratedTitle}
-            type="title"
-          />
+        {useTitleAI && (
+          <div className="mt-2 pt-2 border-t">
+            <div className="text-xs font-medium flex items-center gap-1 text-primary mb-2">
+              <Sparkles className="h-3.5 w-3.5" />
+              Generate Title with AI
+            </div>
+            <AITaskGenerator 
+              onGeneratedContent={handleGeneratedTitle}
+              type="title"
+            />
+          </div>
         )}
       </div>
 
       <div className="space-y-1">
-        <Label htmlFor="description">Description</Label>
+        <div className="flex items-center justify-between mb-1">
+          <Label htmlFor="description">Description</Label>
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="use-description-ai"
+              checked={useDescriptionAI}
+              onCheckedChange={setUseDescriptionAI}
+              className="h-4 w-8"
+            />
+            <Label htmlFor="use-description-ai" className="text-xs text-muted-foreground">
+              Use AI
+            </Label>
+          </div>
+        </div>
         <Textarea
           id="description"
           placeholder="Enter task description"
-          className="resize-none h-20"
+          className="resize-none h-24"
           {...register('description')}
         />
         
-        {useAI && (
-          <AITaskGenerator 
-            onGeneratedContent={handleGeneratedDescription}
-            type="description"
-          />
+        {useDescriptionAI && (
+          <div className="mt-2 pt-2 border-t">
+            <div className="text-xs font-medium flex items-center gap-1 text-primary mb-2">
+              <Sparkles className="h-3.5 w-3.5" />
+              Generate Description with AI
+            </div>
+            <AITaskGenerator 
+              onGeneratedContent={handleGeneratedDescription}
+              type="description"
+            />
+          </div>
         )}
       </div>
 
