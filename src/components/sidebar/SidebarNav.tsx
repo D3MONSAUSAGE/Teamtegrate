@@ -83,8 +83,8 @@ const navItems: NavItem[] = [
     allowed: true,
   },
   {
-    name: "Journal",
-    path: "/dashboard/journal",
+    name: "Notebook",
+    path: "/dashboard/notebook",
     icon: <BookOpen className="h-5 w-5" />,
     allowed: true,
   },
