@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -9,7 +8,6 @@ import {
   Users, 
   BarChart3,
   Timer,
-  Clock,
   FileText,
   DollarSign,
   MessageSquare,
@@ -50,12 +48,6 @@ const navItems: NavItem[] = [
     name: "Time Tracking",
     path: "/dashboard/time-tracking",
     icon: <Timer className="h-5 w-5" />,
-    allowed: true,
-  },
-  {
-    name: "Timeline",
-    path: "/dashboard/timeline",
-    icon: <Clock className="h-5 w-5" />,
     allowed: true,
   },
   {

@@ -14,7 +14,6 @@ import ProjectsPage from "./pages/ProjectsPage";
 import TeamPage from "./pages/TeamPage";
 import SettingsPage from "./pages/SettingsPage";
 import ReportsPage from "./pages/ReportsPage";
-import TimelinePage from "./pages/TimelinePage";
 import TimeTrackingPage from "./pages/TimeTrackingPage";
 import NotFound from "./pages/NotFound";
 import Index from "./pages/Index";
@@ -35,7 +34,6 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/login" element={<LoginPage />} />
-              {/* Add a redirect from /auth/login to /login */}
               <Route path="/auth/login" element={<Navigate to="/login" replace />} />
               <Route path="/" element={<Index />} />
               <Route path="/dashboard" element={<AppLayout />}>
@@ -43,7 +41,6 @@ const App = () => (
                 <Route path="tasks" element={<TasksPage />} />
                 <Route path="tasks/create" element={<TasksPage />} />
                 <Route path="projects" element={<ProjectsPage />} />
-                <Route path="timeline" element={<TimelinePage />} />
                 <Route path="team" element={<TeamPage />} />
                 <Route path="chat" element={<ChatPage />} />
                 <Route path="reports" element={<ReportsPage />} />
