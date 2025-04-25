@@ -10,6 +10,7 @@ import TaskFormFieldsWithAI from './task/TaskFormFieldsWithAI';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useUsers } from '@/hooks/useUsers';
 import { Form } from "@/components/ui/form";
+import { format } from 'date-fns';
 
 interface CreateTaskDialogProps {
   open: boolean;
@@ -32,26 +33,24 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
   
   // Add deadline state management
   const [deadlineDate, setDeadlineDate] = useState<Date | undefined>(
-    editingTask ? new Date(editingTask.deadline) : undefined
+    editingTask ? new Date(editingTask.deadline) : new Date()
   );
   const [timeInput, setTimeInput] = useState(
-    editingTask ? new Date(editingTask.deadline).toTimeString().slice(0, 5) : ""
+    editingTask ? format(new Date(editingTask.deadline), 'HH:mm') : "12:00"
   );
   
   // Setup form with react-hook-form
-  const defaultValues = {
-    title: editingTask?.title || '',
-    description: editingTask?.description || '',
-    priority: editingTask?.priority || 'Medium',
-    deadline: editingTask?.deadline ? new Date(editingTask.deadline).toISOString() : new Date().toISOString(),
-    projectId: editingTask?.projectId || currentProjectId || '',
-    cost: editingTask?.cost || '',
-    assignedToId: editingTask?.assignedToId || '',
-    assignedToName: editingTask?.assignedToName || ''
-  };
-
   const form = useForm({
-    defaultValues
+    defaultValues: {
+      title: editingTask?.title || '',
+      description: editingTask?.description || '',
+      priority: editingTask?.priority || 'Medium',
+      deadline: editingTask?.deadline ? new Date(editingTask.deadline).toISOString() : new Date().toISOString(),
+      projectId: editingTask?.projectId || currentProjectId || '',
+      cost: editingTask?.cost || '',
+      assignedToId: editingTask?.assignedToId || '',
+      assignedToName: editingTask?.assignedToName || ''
+    }
   });
   
   const { register, handleSubmit, formState: { errors }, reset, setValue } = form;
@@ -62,11 +61,13 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
   // Update deadline state when editing task changes
   useEffect(() => {
     if (editingTask) {
-      setDeadlineDate(new Date(editingTask.deadline));
-      setTimeInput(new Date(editingTask.deadline).toTimeString().slice(0, 5));
+      const taskDate = new Date(editingTask.deadline);
+      setDeadlineDate(taskDate);
+      setTimeInput(format(taskDate, 'HH:mm'));
     } else {
-      setDeadlineDate(undefined);
-      setTimeInput("");
+      const today = new Date();
+      setDeadlineDate(today);
+      setTimeInput("12:00");
     }
   }, [editingTask]);
 
@@ -91,26 +92,30 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
     }
   }, [open, editingTask, currentProjectId, setValue, reset]);
 
-  const onDateChange = (date: Date | undefined) => {
+  const handleDateChange = (date: Date | undefined) => {
+    if (!date) return;
+    
     setDeadlineDate(date);
-    if (date) {
-      // Preserve time if time was already set
-      if (timeInput) {
-        const [hours, minutes] = timeInput.split(':').map(Number);
-        date.setHours(hours, minutes);
-      }
+    
+    // Preserve time if time was already set
+    if (timeInput) {
+      const [hours, minutes] = timeInput.split(':').map(Number);
+      const newDate = new Date(date);
+      newDate.setHours(hours || 0, minutes || 0);
+      setValue('deadline', newDate.toISOString());
+    } else {
       setValue('deadline', date.toISOString());
     }
   };
 
-  const onTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newTimeInput = e.target.value;
     setTimeInput(newTimeInput);
     
     if (deadlineDate && newTimeInput) {
       const [hours, minutes] = newTimeInput.split(':').map(Number);
       const newDate = new Date(deadlineDate);
-      newDate.setHours(hours, minutes);
+      newDate.setHours(hours || 0, minutes || 0);
       setValue('deadline', newDate.toISOString());
     }
   };
@@ -148,7 +153,7 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={`${isMobile ? 'w-[95%] p-4' : 'sm:max-w-[500px]'} max-h-[90vh] overflow-y-auto`}>
+      <DialogContent className={`${isMobile ? 'w-[95%] p-4' : 'sm:max-w-[625px]'} max-h-[90vh] overflow-y-auto`}>
         <DialogHeader>
           <DialogTitle>{isEditMode ? 'Edit Task' : 'Create New Task'}</DialogTitle>
           <DialogDescription>
@@ -167,6 +172,10 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
               projects={projects}
               editingTask={editingTask}
               currentProjectId={currentProjectId}
+              date={deadlineDate}
+              timeInput={timeInput}
+              onDateChange={handleDateChange}
+              onTimeChange={handleTimeChange}
             />
             
             <div className="flex justify-end gap-2 pt-4">

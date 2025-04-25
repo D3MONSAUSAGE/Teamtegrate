@@ -15,6 +15,7 @@ import TaskAssigneeSelect from './form/TaskAssigneeSelect';
 import TaskDeadlinePicker from './form/TaskDeadlinePicker';
 import AITaskGenerator from './AITaskGenerator';
 import { Switch } from '@/components/ui/switch';
+import { useUsers } from '@/hooks/useUsers';
 
 interface TaskFormFieldsProps {
   register: any;
@@ -25,6 +26,10 @@ interface TaskFormFieldsProps {
   projects: Project[];
   editingTask?: Task;
   currentProjectId?: string;
+  date: Date | undefined;
+  timeInput: string;
+  onDateChange: (date: Date | undefined) => void;
+  onTimeChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 const TaskFormFieldsWithAI: React.FC<TaskFormFieldsProps> = ({
@@ -35,9 +40,14 @@ const TaskFormFieldsWithAI: React.FC<TaskFormFieldsProps> = ({
   setSelectedMember,
   projects,
   editingTask,
-  currentProjectId
+  currentProjectId,
+  date,
+  timeInput,
+  onDateChange,
+  onTimeChange
 }) => {
   const [useAI, setUseAI] = React.useState(false);
+  const { users, isLoading: loadingUsers } = useUsers();
 
   const handleGeneratedTitle = (title: string) => {
     setValue('title', title);
@@ -45,6 +55,19 @@ const TaskFormFieldsWithAI: React.FC<TaskFormFieldsProps> = ({
 
   const handleGeneratedDescription = (description: string) => {
     setValue('description', description);
+  };
+
+  const handleUserAssignment = (userId: string) => {
+    const selectedUser = users.find(user => user.id === userId);
+    if (selectedUser) {
+      setSelectedMember(userId);
+      setValue('assignedToId', userId);
+      setValue('assignedToName', selectedUser.name);
+    } else if (userId === "unassigned") {
+      setSelectedMember(undefined);
+      setValue('assignedToId', undefined);
+      setValue('assignedToName', undefined);
+    }
   };
 
   return (
@@ -117,18 +140,11 @@ const TaskFormFieldsWithAI: React.FC<TaskFormFieldsProps> = ({
         </div>
         
         <TaskDeadlinePicker 
-          date={editingTask ? new Date(editingTask.deadline) : undefined}
-          timeInput={editingTask ? new Date(editingTask.deadline).toTimeString().slice(0, 5) : ""}
-          onDateChange={(date) => setValue('deadline', date?.toISOString())}
-          onTimeChange={(e) => {
-            // Handle time change logic
-            if (e.target.value) {
-              const currentDeadline = new Date(editingTask?.deadline || new Date());
-              const [hours, minutes] = e.target.value.split(':').map(Number);
-              currentDeadline.setHours(hours, minutes);
-              setValue('deadline', currentDeadline.toISOString());
-            }
-          }}
+          date={date}
+          timeInput={timeInput}
+          onDateChange={onDateChange}
+          onTimeChange={onTimeChange}
+          error={errors.deadline?.message}
         />
       </div>
 
@@ -142,7 +158,7 @@ const TaskFormFieldsWithAI: React.FC<TaskFormFieldsProps> = ({
             <SelectTrigger>
               <SelectValue placeholder="Select project" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent position="popper" className="w-[200px]">
               <SelectItem value="none">No Project</SelectItem>
               {projects.map((project) => (
                 <SelectItem key={project.id} value={project.id}>
@@ -155,9 +171,9 @@ const TaskFormFieldsWithAI: React.FC<TaskFormFieldsProps> = ({
         
         <TaskAssigneeSelect 
           selectedMember={selectedMember}
-          onAssign={(userId) => setSelectedMember(userId)}
-          users={[]} // We need to pass users here
-          isLoading={false} // And indicate if loading
+          onAssign={handleUserAssignment}
+          users={users} 
+          isLoading={loadingUsers}
         />
       </div>
 
