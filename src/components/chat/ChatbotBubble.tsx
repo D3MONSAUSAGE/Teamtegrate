@@ -61,7 +61,7 @@ const ChatbotBubble = () => {
         </SheetTrigger>
         <SheetContent 
           side="right" 
-          className="w-[90vw] sm:w-[440px] p-0 flex flex-col h-[85vh] max-h-[85vh] rounded-l-xl shadow-2xl border-l border-border"
+          className="w-[90vw] sm:w-[440px] p-0 flex flex-col h-[100vh] inset-y-0 rounded-l-xl shadow-2xl border-l border-border"
         >
           <SheetHeader className="p-4 border-b bg-secondary/30">
             <SheetTitle className="text-foreground">AI Assistant</SheetTitle>
@@ -109,7 +109,7 @@ const ChatbotBubble = () => {
             )}
           </div>
           
-          <div className="p-4 border-t mt-auto bg-secondary/20">
+          <div className="p-4 border-t bg-secondary/20">
             <div className="flex gap-2 items-center">
               <Textarea
                 value={message}
