@@ -31,6 +31,8 @@ serve(async (req) => {
     console.log("Processing message:", message);
 
     try {
+      console.log("Sending request to OpenAI with key:", openaiApiKey.substring(0, 3) + "...");
+      
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -61,7 +63,7 @@ serve(async (req) => {
       }
 
       const data = await response.json();
-      console.log("OpenAI response received:", data);
+      console.log("OpenAI response received");
       
       // Extract the response text from OpenAI's response format
       const aiResponse = data.choices[0].message.content;

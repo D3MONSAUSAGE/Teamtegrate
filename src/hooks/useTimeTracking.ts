@@ -17,19 +17,28 @@ export const useTimeTracking = () => {
   useEffect(() => {
     if (!user) return;
     const fetchCurrentEntry = async () => {
-      const { data, error } = await supabase
-        .from('time_entries')
-        .select('*')
-        .eq('user_id', user.id)
-        .is('clock_out', null)
-        .single();
+      try {
+        const { data, error } = await supabase
+          .from('time_entries')
+          .select('*')
+          .eq('user_id', user.id)
+          .is('clock_out', null)
+          .maybeSingle();
 
-      if (data) {
-        setCurrentEntry({ 
-          id: data.id, 
-          clock_in: new Date(data.clock_in), 
-          isClocked: true 
-        });
+        if (error) {
+          console.error('Error fetching current time entry:', error);
+          return;
+        }
+
+        if (data) {
+          setCurrentEntry({ 
+            id: data.id, 
+            clock_in: new Date(data.clock_in), 
+            isClocked: true 
+          });
+        }
+      } catch (error) {
+        console.error('Error in fetchCurrentEntry:', error);
       }
     };
 
@@ -47,26 +56,31 @@ export const useTimeTracking = () => {
       return;
     }
 
-    const { data, error } = await supabase
-      .from('time_entries')
-      .insert({ 
-        user_id: user.id, 
-        notes: notes || null 
-      })
-      .select()
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('time_entries')
+        .insert({ 
+          user_id: user.id, 
+          notes: notes || null 
+        })
+        .select()
+        .single();
 
-    if (error) {
-      toast.error('Failed to clock in', { description: error.message });
-      return;
+      if (error) {
+        toast.error('Failed to clock in', { description: error.message });
+        return;
+      }
+
+      setCurrentEntry({ 
+        id: data.id, 
+        clock_in: new Date(data.clock_in), 
+        isClocked: true 
+      });
+      toast.success('Clocked in successfully');
+    } catch (error) {
+      console.error('Error in clockIn:', error);
+      toast.error('An unexpected error occurred');
     }
-
-    setCurrentEntry({ 
-      id: data.id, 
-      clock_in: new Date(data.clock_in), 
-      isClocked: true 
-    });
-    toast.success('Clocked in successfully');
   };
 
   const clockOut = async (notes?: string) => {
@@ -75,72 +89,88 @@ export const useTimeTracking = () => {
       return;
     }
 
-    const { error } = await supabase
-      .from('time_entries')
-      .update({ 
-        clock_out: new Date().toISOString(),
-        notes: notes || null 
-      })
-      .eq('id', currentEntry.id);
+    try {
+      const { error } = await supabase
+        .from('time_entries')
+        .update({ 
+          clock_out: new Date().toISOString(),
+          notes: notes || null 
+        })
+        .eq('id', currentEntry.id);
 
-    if (error) {
-      toast.error('Failed to clock out', { description: error.message });
-      return;
+      if (error) {
+        toast.error('Failed to clock out', { description: error.message });
+        return;
+      }
+
+      setCurrentEntry({ isClocked: false });
+      toast.success('Clocked out successfully');
+    } catch (error) {
+      console.error('Error in clockOut:', error);
+      toast.error('An unexpected error occurred');
     }
-
-    setCurrentEntry({ isClocked: false });
-    toast.success('Clocked out successfully');
   };
 
   // Accepts an optional weekStart: Date to fetch entries in ANY specific week
   const getWeeklyTimeEntries = async (weekStart?: Date) => {
     if (!user) return [];
-    let start: Date;
-    if (weekStart) {
-      start = startOfWeek(weekStart, { weekStartsOn: 1 });
-    } else {
-      start = startOfWeek(new Date(), { weekStartsOn: 1 });
-    }
-    // End: start + 7 days, i.e. next week's Monday
-    const end = addDays(start, 7);
+    
+    try {
+      let start: Date;
+      if (weekStart) {
+        start = startOfWeek(weekStart, { weekStartsOn: 1 });
+      } else {
+        start = startOfWeek(new Date(), { weekStartsOn: 1 });
+      }
+      // End: start + 7 days, i.e. next week's Monday
+      const end = addDays(start, 7);
 
-    const { data, error } = await supabase
-      .from('time_entries')
-      .select('*')
-      .eq('user_id', user.id)
-      .gte('clock_in', start.toISOString())
-      .lt('clock_in', end.toISOString())
-      .order('clock_in', { ascending: true });
+      const { data, error } = await supabase
+        .from('time_entries')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('clock_in', start.toISOString())
+        .lt('clock_in', end.toISOString())
+        .order('clock_in', { ascending: true });
 
-    if (error) {
-      console.error('Error fetching weekly time entries:', error);
+      if (error) {
+        console.error('Error fetching weekly time entries:', error);
+        return [];
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Error in getWeeklyTimeEntries:', error);
       return [];
     }
-
-    return data || [];
   };
 
   // New function to fetch time entries for a specific team member
   const getTeamMemberTimeEntries = async (teamMemberId: string, weekStart: Date) => {
     if (!user) return [];
     
-    const start = startOfWeek(weekStart, { weekStartsOn: 1 });
-    const end = addDays(start, 7);
+    try {
+      const start = startOfWeek(weekStart, { weekStartsOn: 1 });
+      const end = addDays(start, 7);
 
-    const { data, error } = await supabase
-      .from('time_entries')
-      .select('*')
-      .eq('user_id', teamMemberId)
-      .gte('clock_in', start.toISOString())
-      .lt('clock_in', end.toISOString())
-      .order('clock_in', { ascending: true });
+      const { data, error } = await supabase
+        .from('time_entries')
+        .select('*')
+        .eq('user_id', teamMemberId)
+        .gte('clock_in', start.toISOString())
+        .lt('clock_in', end.toISOString())
+        .order('clock_in', { ascending: true });
 
-    if (error) {
-      console.error(`Error fetching time entries for team member ${teamMemberId}:`, error);
+      if (error) {
+        console.error(`Error fetching time entries for team member ${teamMemberId}:`, error);
+        return [];
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Error in getTeamMemberTimeEntries:', error);
       return [];
     }
-
-    return data || [];
   };
 
   return {
