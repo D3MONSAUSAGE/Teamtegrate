@@ -38,6 +38,7 @@ interface TaskContextType {
   tasks: Task[];
   projects: Project[];
   dailyScore: DailyScore;
+  refreshProjects: () => Promise<void>;
   addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateTask: (taskId: string, updates: Partial<Task>) => void;
   updateTaskStatus: (taskId: string, status: TaskStatus) => void;
@@ -84,6 +85,20 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     date: new Date(),
   });
 
+  const refreshProjects = async () => {
+    if (!user) return;
+    
+    try {
+      setIsLoading(true);
+      await fetchUserProjects(user, setProjects);
+    } catch (error) {
+      console.error("Error refreshing projects:", error);
+      toast.error("Failed to refresh projects");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     const loadData = async () => {
       if (!user) {
@@ -121,6 +136,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     tasks,
     projects,
     dailyScore,
+    refreshProjects,
     addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => 
       addTask(task, user, tasks, setTasks, projects, setProjects),
     updateTask: (taskId: string, updates: Partial<Task>) => 
