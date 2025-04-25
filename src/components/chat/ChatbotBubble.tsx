@@ -59,11 +59,11 @@ const ChatbotBubble = () => {
             )}
           </Button>
         </SheetTrigger>
-        <SheetContent side="right" className="w-[90vw] sm:w-[440px] p-0 flex flex-col h-[85vh]">
+        <SheetContent side="right" className="w-[90vw] sm:w-[440px] p-0 flex flex-col h-[85vh] max-h-[85vh]">
           <SheetHeader className="p-4 border-b">
             <SheetTitle>Chat Assistant</SheetTitle>
           </SheetHeader>
-          <div className="flex-1 overflow-y-auto p-4">
+          <div className="flex-1 overflow-y-auto p-4 h-full">
             {messages.length === 0 ? (
               <div className="text-muted-foreground text-center">
                 How can I help you today?
