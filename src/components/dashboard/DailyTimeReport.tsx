@@ -1,10 +1,13 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { FileText } from 'lucide-react';
 import { parseISO, differenceInMinutes } from 'date-fns';
-import { FileText, Coffee } from 'lucide-react';
-import { formatTime12Hour, calculateBonusMinutes, formatHoursMinutes } from '@/utils/timeUtils';
+import { calculateBonusMinutes } from '@/utils/timeUtils';
 import { calculateBreakRequirements } from '@/utils/breakTracking';
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import TimeSummary from './time/TimeSummary';
+import TimeDetailsRow from './time/TimeDetailsRow';
+import BreakRequirementsAlert from './time/BreakRequirementsAlert';
 
 interface DailyTimeReportProps {
   entries: Array<{
@@ -16,7 +19,6 @@ interface DailyTimeReportProps {
 }
 
 const DailyTimeReport: React.FC<DailyTimeReportProps> = ({ entries }) => {
-  // Calculate total duration from all entries
   const totalMinutes = entries.reduce((total, entry) => {
     if (entry.duration_minutes) {
       return total + entry.duration_minutes;
@@ -30,10 +32,8 @@ const DailyTimeReport: React.FC<DailyTimeReportProps> = ({ entries }) => {
     return total;
   }, 0);
 
-  // Add bonus minutes based on total time worked
   const bonusMinutes = calculateBonusMinutes(totalMinutes);
   const totalWithBonus = totalMinutes + bonusMinutes;
-
   const { mealBreaks, restBreaks } = calculateBreakRequirements(totalMinutes);
 
   return (
@@ -46,57 +46,22 @@ const DailyTimeReport: React.FC<DailyTimeReportProps> = ({ entries }) => {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          <div className="flex flex-col gap-1">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Worked Time:</span>
-              <span className="font-medium">{formatHoursMinutes(totalMinutes)}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Bonus Time:</span>
-              <span className="font-medium text-emerald-600 dark:text-emerald-400">{bonusMinutes} minutes</span>
-            </div>
-            <div className="flex justify-between text-sm border-t pt-1">
-              <span className="font-medium">Total Time:</span>
-              <span className="font-bold">{formatHoursMinutes(totalWithBonus)}</span>
-            </div>
-          </div>
-          <Alert className="bg-muted">
-            <Coffee className="h-4 w-4" />
-            <AlertTitle>Required Breaks</AlertTitle>
-            <AlertDescription>
-              <div className="mt-2 space-y-1 text-sm">
-                <p>Meal Breaks (30 min): {mealBreaks} required</p>
-                <p>Rest Breaks (10 min): {restBreaks} required</p>
-                {totalMinutes > 300 && (
-                  <p className="text-muted-foreground text-xs mt-1">
-                    CA Law: 30-min meal break required after 5 hours, additional after 12 hours.
-                    10-min rest break per 4 hours worked.
-                  </p>
-                )}
-              </div>
-            </AlertDescription>
-          </Alert>
+          <TimeSummary 
+            totalMinutes={totalMinutes} 
+            bonusMinutes={bonusMinutes} 
+            totalWithBonus={totalWithBonus} 
+          />
+          
+          <BreakRequirementsAlert
+            mealBreaks={mealBreaks}
+            restBreaks={restBreaks}
+            totalMinutes={totalMinutes}
+          />
+
           <div className="space-y-1 mt-3">
-            {entries.map((entry, index) => {
-              let durationMinutes = entry.duration_minutes || 0;
-              if (!durationMinutes && entry.clock_out) {
-                durationMinutes = differenceInMinutes(
-                  parseISO(entry.clock_out),
-                  parseISO(entry.clock_in)
-                );
-              }
-              
-              return (
-                <div key={index} className="text-xs text-muted-foreground">
-                  {formatTime12Hour(entry.clock_in)} - {' '}
-                  {entry.clock_out ? formatTime12Hour(entry.clock_out) : 'ongoing'}
-                  {durationMinutes > 0 && entry.clock_out && (
-                    <span className="ml-1">• {formatHoursMinutes(durationMinutes)}</span>
-                  )}
-                  {entry.notes && <span className="ml-1">• {entry.notes}</span>}
-                </div>
-              );
-            })}
+            {entries.map((entry, index) => (
+              <TimeDetailsRow key={index} entry={entry} />
+            ))}
           </div>
         </div>
       </CardContent>
