@@ -6,6 +6,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { formatTime12Hour, formatHoursMinutes } from '@/utils/timeUtils';
 import { parseISO, differenceInMinutes } from 'date-fns';
 import { calculateBreakRequirements } from '@/utils/breakTracking';
+import TimeDetailsRow from './TimeDetailsRow';
 
 interface WeeklyTimeRowProps {
   day: Date;
