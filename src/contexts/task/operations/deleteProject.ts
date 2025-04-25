@@ -19,6 +19,7 @@ export const deleteProject = async (
 
     const projectTasks = tasks.filter(task => task.projectId === projectId);
 
+    // First update any tasks associated with this project to remove the project reference
     for (const task of projectTasks) {
       const { error } = await supabase
         .from('tasks')
@@ -30,6 +31,7 @@ export const deleteProject = async (
       }
     }
 
+    // Then delete the project
     const { error } = await supabase
       .from('projects')
       .delete()
@@ -42,7 +44,10 @@ export const deleteProject = async (
       return;
     }
 
+    // Update the projects state by filtering out the deleted project
     setProjects(prevProjects => prevProjects.filter(project => project.id !== projectId));
+    
+    // Update tasks state to reflect the project removal
     setTasks(prevTasks => prevTasks.map(task => {
       if (task.projectId === projectId) {
         return { ...task, projectId: undefined };
@@ -50,6 +55,7 @@ export const deleteProject = async (
       return task;
     }));
 
+    playSuccessSound();
     toast.success('Project deleted successfully!');
   } catch (error) {
     console.error('Error in deleteProject:', error);

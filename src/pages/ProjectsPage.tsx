@@ -41,6 +41,10 @@ const ProjectsPage = () => {
     setShowCreateTaskDialog(true);
   };
 
+  const handleProjectDeleted = () => {
+    refreshProjects();
+  };
+
   const handleCreateSuccess = () => {
     refreshProjects();
     toast.success("Project created successfully!");
@@ -70,6 +74,7 @@ const ProjectsPage = () => {
             project={project}
             onViewTasks={() => handleViewTasks(project.id)}
             onCreateTask={() => handleCreateTask(project.id)}
+            onDeleted={handleProjectDeleted}
           />
         ))}
         

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,21 +22,29 @@ interface ProjectCardProps {
   project: Project;
   onViewTasks?: () => void;
   onCreateTask?: () => void;
+  onDeleted?: () => void;
 }
 
-const ProjectCard: React.FC<ProjectCardProps> = ({ project, onViewTasks, onCreateTask }) => {
+const ProjectCard: React.FC<ProjectCardProps> = ({ project, onViewTasks, onCreateTask, onDeleted }) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { deleteProject } = useTask();
 
   const handleDelete = async () => {
     try {
+      setIsDeleting(true);
       await deleteProject(project.id);
       toast.success("Project deleted successfully");
+      if (onDeleted) {
+        onDeleted();
+      }
     } catch (error) {
       console.error('Error deleting project:', error);
       toast.error("Failed to delete project");
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteDialog(false);
     }
-    setShowDeleteDialog(false);
   };
 
   return (
@@ -57,6 +66,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onViewTasks, onCreat
               size="icon"
               className="text-destructive hover:text-destructive"
               onClick={() => setShowDeleteDialog(true)}
+              disabled={isDeleting}
             >
               <Trash2 className="h-4 w-4" />
             </Button>
@@ -105,12 +115,13 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onViewTasks, onCreat
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={isDeleting}
             >
-              Delete Project
+              {isDeleting ? "Deleting..." : "Delete Project"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

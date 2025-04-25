@@ -11,12 +11,14 @@ interface RecentProjectsProps {
   projects: Project[];
   onViewTasks: (project: Project) => void;
   onCreateTask: (project: Project) => void;
+  onRefresh: () => void;
 }
 
 const RecentProjects: React.FC<RecentProjectsProps> = ({
   projects,
   onViewTasks,
-  onCreateTask
+  onCreateTask,
+  onRefresh
 }) => {
   const isMobile = useIsMobile();
   
@@ -39,6 +41,7 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({
               project={project} 
               onViewTasks={() => onViewTasks(project)} 
               onCreateTask={() => onCreateTask(project)}
+              onDeleted={onRefresh}
             />
           ))}
         </div>
