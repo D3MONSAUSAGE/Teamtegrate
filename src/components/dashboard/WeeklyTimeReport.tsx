@@ -16,7 +16,8 @@ interface WeeklyTimeReportProps {
 }
 
 const WeeklyTimeReport: React.FC<WeeklyTimeReportProps> = ({ entries }) => {
-  const weekStart = startOfWeek(new Date(), { weekStartsOn: 0 });
+  // Changed weekStartsOn to 1 (Monday) instead of 0 (Sunday)
+  const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   const weekRange = `${format(weekStart, 'MMM d')} - ${format(weekDays[6], 'MMM d, yyyy')}`;
 
