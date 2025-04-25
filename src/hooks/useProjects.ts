@@ -25,11 +25,10 @@ export const useProjects = () => {
       
       console.log('Fetching projects for user:', user.id);
       
-      // Using a simplified query approach to avoid RLS recursion
+      // Fetch all projects instead of filtering by manager_id
       const { data, error } = await supabase
         .from('projects')
-        .select('*')
-        .eq('manager_id', user.id);
+        .select('*');
 
       if (error) {
         console.error('Error fetching projects:', error);
