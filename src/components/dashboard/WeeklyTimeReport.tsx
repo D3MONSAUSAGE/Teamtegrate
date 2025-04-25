@@ -2,7 +2,8 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
-import { startOfWeek, addDays, format, parseISO, differenceInMinutes } from 'date-fns';
+import { startOfWeek, addDays, parseISO, differenceInMinutes } from 'date-fns';
+import { formatTime12Hour, calculateBonusMinutes, formatHoursMinutes } from '@/utils/timeUtils';
 
 interface WeeklyTimeReportProps {
   entries: Array<{
@@ -15,20 +16,17 @@ interface WeeklyTimeReportProps {
 
 const WeeklyTimeReport: React.FC<WeeklyTimeReportProps> = ({ entries }) => {
   const getDayEntries = (date: Date) => {
-    const dateString = format(date, 'yyyy-MM-dd');
     return entries.filter(entry => {
-      const entryDate = format(parseISO(entry.clock_in), 'yyyy-MM-dd');
-      return entryDate === dateString;
+      const entryDate = new Date(entry.clock_in).toISOString().split('T')[0];
+      return entryDate === date.toISOString().split('T')[0];
     });
   };
 
   const calculateDayTotal = (dayEntries: typeof entries) => {
-    return dayEntries.reduce((total, entry) => {
+    const rawMinutes = dayEntries.reduce((total, entry) => {
       if (entry.duration_minutes) {
-        // If we have a pre-calculated duration, use it
         return total + entry.duration_minutes;
       } else if (entry.clock_out) {
-        // If we have clock_out but no duration, calculate it
         const minutesDiff = differenceInMinutes(
           parseISO(entry.clock_out),
           parseISO(entry.clock_in)
@@ -36,10 +34,13 @@ const WeeklyTimeReport: React.FC<WeeklyTimeReportProps> = ({ entries }) => {
         return total + minutesDiff;
       }
       return total;
-    }, 0) / 60; // Convert minutes to hours
+    }, 0);
+
+    // Add bonus minutes
+    const bonusMinutes = calculateBonusMinutes(rawMinutes);
+    return { rawMinutes, bonusMinutes, total: rawMinutes + bonusMinutes };
   };
 
-  // Get the start of the current week (Monday)
   const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
@@ -53,26 +54,32 @@ const WeeklyTimeReport: React.FC<WeeklyTimeReportProps> = ({ entries }) => {
           <TableHeader>
             <TableRow>
               <TableHead>Day</TableHead>
-              <TableHead>Hours</TableHead>
+              <TableHead>Worked</TableHead>
+              <TableHead>Bonus</TableHead>
+              <TableHead>Total</TableHead>
               <TableHead>Details</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {weekDays.map((day) => {
               const dayEntries = getDayEntries(day);
-              const totalHours = calculateDayTotal(dayEntries);
+              const { rawMinutes, bonusMinutes, total } = calculateDayTotal(dayEntries);
               
               return (
                 <TableRow key={day.toString()}>
                   <TableCell className="font-medium">
-                    {format(day, 'EEEE (MM/dd)')}
+                    {new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).format(day)}
                   </TableCell>
-                  <TableCell>{totalHours.toFixed(2)}</TableCell>
+                  <TableCell>{formatHoursMinutes(rawMinutes)}</TableCell>
+                  <TableCell className="text-emerald-600 dark:text-emerald-400">
+                    {bonusMinutes}m
+                  </TableCell>
+                  <TableCell className="font-bold">{formatHoursMinutes(total)}</TableCell>
                   <TableCell>
                     {dayEntries.map((entry, index) => (
                       <div key={index} className="text-sm text-muted-foreground">
-                        {format(parseISO(entry.clock_in), 'HH:mm')} - {' '}
-                        {entry.clock_out ? format(parseISO(entry.clock_out), 'HH:mm') : 'ongoing'}
+                        {formatTime12Hour(entry.clock_in)} - {' '}
+                        {entry.clock_out ? formatTime12Hour(entry.clock_out) : 'ongoing'}
                         {entry.notes && ` - ${entry.notes}`}
                       </div>
                     ))}

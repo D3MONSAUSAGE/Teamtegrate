@@ -1,8 +1,9 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { format, parseISO, differenceInMinutes } from 'date-fns';
+import { parseISO, differenceInMinutes } from 'date-fns';
 import { FileText } from 'lucide-react';
+import { formatTime12Hour, calculateBonusMinutes, formatHoursMinutes } from '@/utils/timeUtils';
 
 interface DailyTimeReportProps {
   entries: Array<{
@@ -17,10 +18,8 @@ const DailyTimeReport: React.FC<DailyTimeReportProps> = ({ entries }) => {
   // Calculate total duration from all entries
   const totalMinutes = entries.reduce((total, entry) => {
     if (entry.duration_minutes) {
-      // If we already have duration_minutes, use that
       return total + entry.duration_minutes;
     } else if (entry.clock_out) {
-      // If we have clock_out but no duration, calculate it
       const minutesDiff = differenceInMinutes(
         parseISO(entry.clock_out),
         parseISO(entry.clock_in)
@@ -30,8 +29,9 @@ const DailyTimeReport: React.FC<DailyTimeReportProps> = ({ entries }) => {
     return total;
   }, 0);
 
-  // Calculate total hours from minutes
-  const totalHours = totalMinutes / 60;
+  // Add bonus minutes based on total time worked
+  const bonusMinutes = calculateBonusMinutes(totalMinutes);
+  const totalWithBonus = totalMinutes + bonusMinutes;
   
   return (
     <Card className="mt-4">
@@ -43,13 +43,22 @@ const DailyTimeReport: React.FC<DailyTimeReportProps> = ({ entries }) => {
       </CardHeader>
       <CardContent>
         <div className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Total Hours:</span>
-            <span className="font-medium">{totalHours.toFixed(2)}h</span>
+          <div className="flex flex-col gap-1">
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Worked Time:</span>
+              <span className="font-medium">{formatHoursMinutes(totalMinutes)}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Bonus Time:</span>
+              <span className="font-medium text-emerald-600 dark:text-emerald-400">{bonusMinutes} minutes</span>
+            </div>
+            <div className="flex justify-between text-sm border-t pt-1">
+              <span className="font-medium">Total Time:</span>
+              <span className="font-bold">{formatHoursMinutes(totalWithBonus)}</span>
+            </div>
           </div>
-          <div className="space-y-1">
+          <div className="space-y-1 mt-3">
             {entries.map((entry, index) => {
-              // Calculate duration for this entry
               let durationMinutes = entry.duration_minutes || 0;
               if (!durationMinutes && entry.clock_out) {
                 durationMinutes = differenceInMinutes(
@@ -60,10 +69,10 @@ const DailyTimeReport: React.FC<DailyTimeReportProps> = ({ entries }) => {
               
               return (
                 <div key={index} className="text-xs text-muted-foreground">
-                  {format(parseISO(entry.clock_in), 'HH:mm')} - {' '}
-                  {entry.clock_out ? format(parseISO(entry.clock_out), 'HH:mm') : 'ongoing'}
+                  {formatTime12Hour(entry.clock_in)} - {' '}
+                  {entry.clock_out ? formatTime12Hour(entry.clock_out) : 'ongoing'}
                   {durationMinutes > 0 && entry.clock_out && (
-                    <span className="ml-1">• {(durationMinutes / 60).toFixed(2)}h</span>
+                    <span className="ml-1">• {formatHoursMinutes(durationMinutes)}</span>
                   )}
                   {entry.notes && <span className="ml-1">• {entry.notes}</span>}
                 </div>
