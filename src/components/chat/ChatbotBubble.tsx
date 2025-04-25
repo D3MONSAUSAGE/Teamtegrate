@@ -65,7 +65,7 @@ const ChatbotBubble = () => {
           </SheetHeader>
           <div className="flex-1 overflow-y-auto p-4 h-full">
             {messages.length === 0 ? (
-              <div className="text-muted-foreground text-center">
+              <div className="text-muted-foreground text-center mt-8">
                 How can I help you today?
               </div>
             ) : (
@@ -111,13 +111,14 @@ const ChatbotBubble = () => {
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Type your message..."
-                className="min-h-[60px] max-h-[120px] resize-none"
+                className="min-h-[60px] max-h-[120px] resize-none rounded-full px-4"
                 disabled={isProcessing}
               />
               <Button 
                 size="icon"
                 onClick={handleSendMessage}
                 disabled={!message.trim() || isProcessing}
+                className="rounded-full h-12 w-12 flex items-center justify-center"
               >
                 <Send className="h-4 w-4" />
               </Button>
