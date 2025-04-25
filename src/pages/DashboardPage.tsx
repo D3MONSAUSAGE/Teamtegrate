@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { useTask } from '@/contexts/task';
@@ -17,7 +18,7 @@ import TimeTracking from '@/components/dashboard/TimeTracking';
 
 const DashboardPage = () => {
   const { user } = useAuth();
-  const { tasks, projects, dailyScore } = useTask();
+  const { tasks, projects, dailyScore, refreshProjects } = useTask();
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
@@ -106,6 +107,7 @@ const DashboardPage = () => {
               projects={recentProjects}
               onViewTasks={handleViewTasks}
               onCreateTask={handleCreateTask}
+              onRefresh={refreshProjects}
             />
             
             <TeamManagement />
