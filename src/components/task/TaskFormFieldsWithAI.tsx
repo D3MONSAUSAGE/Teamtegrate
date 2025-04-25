@@ -72,7 +72,7 @@ const TaskFormFieldsWithAI: React.FC<TaskFormFieldsProps> = ({
 
   return (
     <>
-      <div className="space-y-2">
+      <div className="space-y-1">
         <div className="flex items-center justify-between">
           <Label htmlFor="title">Task Title</Label>
           <div className="flex items-center space-x-2">
@@ -104,12 +104,12 @@ const TaskFormFieldsWithAI: React.FC<TaskFormFieldsProps> = ({
         )}
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-1">
         <Label htmlFor="description">Description</Label>
         <Textarea
           id="description"
           placeholder="Enter task description"
-          className="resize-none h-24"
+          className="resize-none h-20"
           {...register('description')}
         />
         
@@ -121,8 +121,8 @@ const TaskFormFieldsWithAI: React.FC<TaskFormFieldsProps> = ({
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="space-y-1">
           <Label htmlFor="priority">Priority</Label>
           <Select 
             defaultValue={editingTask?.priority || "Medium"} 
@@ -148,8 +148,8 @@ const TaskFormFieldsWithAI: React.FC<TaskFormFieldsProps> = ({
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="space-y-1">
           <Label htmlFor="project">Project</Label>
           <Select 
             defaultValue={currentProjectId || editingTask?.projectId || "none"} 
@@ -177,7 +177,7 @@ const TaskFormFieldsWithAI: React.FC<TaskFormFieldsProps> = ({
         />
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-1">
         <Label htmlFor="cost">Cost</Label>
         <Input
           id="cost"
