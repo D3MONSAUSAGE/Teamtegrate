@@ -15,8 +15,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { useTask } from '@/contexts/task';
 import { toast } from '@/components/ui/sonner';
+import { Badge } from "@/components/ui/badge";
 
 interface ProjectCardProps {
   project: Project;
@@ -25,10 +33,16 @@ interface ProjectCardProps {
   onDeleted?: () => void;
 }
 
+const statusColors = {
+  'To Do': 'bg-yellow-500',
+  'In Progress': 'bg-blue-500',
+  'Completed': 'bg-green-500'
+};
+
 const ProjectCard: React.FC<ProjectCardProps> = ({ project, onViewTasks, onCreateTask, onDeleted }) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const { deleteProject } = useTask();
+  const { deleteProject, updateProject } = useTask();
 
   const handleDelete = async () => {
     try {
@@ -47,18 +61,36 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onViewTasks, onCreat
     }
   };
 
+  const handleStatusChange = async (newStatus: string) => {
+    try {
+      await updateProject(project.id, { 
+        status: newStatus as Project['status'],
+        is_completed: newStatus === 'Completed'
+      });
+      toast.success("Project status updated");
+    } catch (error) {
+      console.error('Error updating project status:', error);
+      toast.error("Failed to update project status");
+    }
+  };
+
   return (
     <>
       <Card className="h-full flex flex-col">
         <CardHeader>
           <div className="flex justify-between items-start">
-            <div>
+            <div className="space-y-2">
               <h3 className="text-lg font-semibold">{project.title}</h3>
-              <div className="flex items-center text-sm text-gray-500 mt-1">
-                <Calendar className="w-4 h-4 mr-1" />
-                <span>
+              <div className="flex items-center space-x-2">
+                <Calendar className="w-4 h-4 text-gray-500" />
+                <span className="text-sm text-gray-500">
                   {format(project.startDate, 'MMM d')} - {format(project.endDate, 'MMM d, yyyy')}
                 </span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Badge variant="secondary" className="text-xs">
+                  {project.tasks_count} {project.tasks_count === 1 ? 'task' : 'tasks'}
+                </Badge>
               </div>
             </div>
             <Button 
@@ -77,6 +109,19 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onViewTasks, onCreat
             {project.description || 'No description provided'}
           </p>
           
+          <div className="mb-4">
+            <Select defaultValue={project.status} onValueChange={handleStatusChange}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="To Do">To Do</SelectItem>
+                <SelectItem value="In Progress">In Progress</SelectItem>
+                <SelectItem value="Completed">Completed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           {project.budget > 0 && (
             <div className="text-sm text-gray-600 mb-4">
               <span className="font-medium">Budget:</span> ${project.budget.toFixed(2)}

@@ -51,6 +51,8 @@ export interface Task {
   cost?: number;
 }
 
+export type ProjectStatus = 'To Do' | 'In Progress' | 'Completed';
+
 export interface Project {
   id: string;
   title: string;
@@ -65,6 +67,8 @@ export interface Project {
   tags?: string[];
   budget?: number;
   budgetSpent?: number;
+  status: ProjectStatus;
+  tasks_count: number;
   is_completed?: boolean;
 }
 

@@ -569,7 +569,9 @@ export type Database = {
           is_completed: boolean | null
           manager_id: string | null
           start_date: string | null
+          status: string | null
           tags: string[] | null
+          tasks_count: number | null
           team_members: string[] | null
           title: string | null
           updated_at: string | null
@@ -584,7 +586,9 @@ export type Database = {
           is_completed?: boolean | null
           manager_id?: string | null
           start_date?: string | null
+          status?: string | null
           tags?: string[] | null
+          tasks_count?: number | null
           team_members?: string[] | null
           title?: string | null
           updated_at?: string | null
@@ -599,7 +603,9 @@ export type Database = {
           is_completed?: boolean | null
           manager_id?: string | null
           start_date?: string | null
+          status?: string | null
           tags?: string[] | null
+          tasks_count?: number | null
           team_members?: string[] | null
           title?: string | null
           updated_at?: string | null
