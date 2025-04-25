@@ -16,7 +16,6 @@ interface WeeklyTimeReportProps {
 }
 
 const WeeklyTimeReport: React.FC<WeeklyTimeReportProps> = ({ entries }) => {
-  // Changed weekStartsOn to 1 (Monday) instead of 0 (Sunday)
   const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   const weekRange = `${format(weekStart, 'MMM d')} - ${format(weekDays[6], 'MMM d, yyyy')}`;
@@ -45,8 +44,8 @@ const WeeklyTimeReport: React.FC<WeeklyTimeReportProps> = ({ entries }) => {
             <TableHeader>
               <TableRow className="bg-muted/50">
                 <TableHead className="w-[120px]">Day</TableHead>
-                <TableHead className="w-[100px]">Worked</TableHead>
-                <TableHead className="w-[80px]">Bonus</TableHead>
+                <TableHead className="w-[100px] hidden md:table-cell">Worked</TableHead>
+                <TableHead className="w-[80px] hidden md:table-cell">Bonus</TableHead>
                 <TableHead className="w-[100px] text-center">Breaks</TableHead>
                 <TableHead className="w-[100px]">Total</TableHead>
                 <TableHead className="w-[400px]">Time Log</TableHead>
@@ -58,6 +57,7 @@ const WeeklyTimeReport: React.FC<WeeklyTimeReportProps> = ({ entries }) => {
                   key={index}
                   day={day}
                   dayEntries={getDayEntries(day)}
+                  isMobile={true}
                 />
               ))}
             </TableBody>

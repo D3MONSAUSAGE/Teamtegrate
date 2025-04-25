@@ -18,9 +18,10 @@ interface WeeklyTimeRowProps {
     duration_minutes?: number | null;
     notes?: string | null;
   }>;
+  isMobile?: boolean;
 }
 
-const WeeklyTimeRow: React.FC<WeeklyTimeRowProps> = ({ day, dayEntries }) => {
+const WeeklyTimeRow: React.FC<WeeklyTimeRowProps> = ({ day, dayEntries, isMobile }) => {
   const isCurrentDay = isToday(day);
   
   const dailyMinutes = dayEntries.reduce((acc, entry) => {
@@ -42,8 +43,8 @@ const WeeklyTimeRow: React.FC<WeeklyTimeRowProps> = ({ day, dayEntries }) => {
       <TableCell className="font-medium w-[120px]">
         {new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).format(day)}
       </TableCell>
-      <TableCell className="w-[100px]">{formatHoursMinutes(dailyMinutes)}</TableCell>
-      <TableCell className="text-emerald-600 dark:text-emerald-400 font-medium w-[80px]">
+      <TableCell className="w-[100px] hidden md:table-cell">{formatHoursMinutes(dailyMinutes)}</TableCell>
+      <TableCell className="text-emerald-600 dark:text-emerald-400 font-medium w-[80px] hidden md:table-cell">
         +{earnedBreakMinutes}m
       </TableCell>
       <TableCell className="w-[100px]">
