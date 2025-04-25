@@ -1,22 +1,15 @@
 
 import React from 'react';
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
 import { Project, Task } from '@/types';
-import { Label } from "@/components/ui/label";
+import TaskTitleField from './form/TaskTitleField';
+import TaskDescriptionField from './form/TaskDescriptionField';
+import TaskProjectField from './form/TaskProjectField';
 import TaskAssigneeSelect from './form/TaskAssigneeSelect';
 import TaskDeadlinePicker from './form/TaskDeadlinePicker';
-import AITaskGenerator from './AITaskGenerator';
-import { Switch } from '@/components/ui/switch';
 import { useUsers } from '@/hooks/useUsers';
-import { Sparkles } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
 interface TaskFormFieldsProps {
   register: any;
@@ -47,17 +40,7 @@ const TaskFormFieldsWithAI: React.FC<TaskFormFieldsProps> = ({
   onDateChange,
   onTimeChange
 }) => {
-  const [useTitleAI, setUseTitleAI] = React.useState(false);
-  const [useDescriptionAI, setUseDescriptionAI] = React.useState(false);
   const { users, isLoading: loadingUsers } = useUsers();
-
-  const handleGeneratedTitle = (title: string) => {
-    setValue('title', title);
-  };
-
-  const handleGeneratedDescription = (description: string) => {
-    setValue('description', description);
-  };
 
   const handleUserAssignment = (userId: string) => {
     const selectedUser = users.find(user => user.id === userId);
@@ -74,81 +57,16 @@ const TaskFormFieldsWithAI: React.FC<TaskFormFieldsProps> = ({
 
   return (
     <>
-      <div className="space-y-1">
-        <div className="flex items-center justify-between mb-1">
-          <Label htmlFor="title">Task Title</Label>
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="use-title-ai"
-              checked={useTitleAI}
-              onCheckedChange={setUseTitleAI}
-              className="h-4 w-8"
-            />
-            <Label htmlFor="use-title-ai" className="text-xs text-muted-foreground">
-              Use AI
-            </Label>
-          </div>
-        </div>
-        <Input
-          id="title"
-          placeholder="Enter task title"
-          {...register('title', { 
-            required: "Title is required" 
-          })}
-        />
-        {errors.title && (
-          <p className="text-sm font-medium text-destructive">{errors.title.message}</p>
-        )}
-        
-        {useTitleAI && (
-          <div className="mt-2 pt-2 border-t">
-            <div className="text-xs font-medium flex items-center gap-1 text-primary mb-2">
-              <Sparkles className="h-3.5 w-3.5" />
-              Generate Title with AI
-            </div>
-            <AITaskGenerator 
-              onGeneratedContent={handleGeneratedTitle}
-              type="title"
-            />
-          </div>
-        )}
-      </div>
+      <TaskTitleField 
+        register={register}
+        errors={errors}
+        setValue={setValue}
+      />
 
-      <div className="space-y-1">
-        <div className="flex items-center justify-between mb-1">
-          <Label htmlFor="description">Description</Label>
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="use-description-ai"
-              checked={useDescriptionAI}
-              onCheckedChange={setUseDescriptionAI}
-              className="h-4 w-8"
-            />
-            <Label htmlFor="use-description-ai" className="text-xs text-muted-foreground">
-              Use AI
-            </Label>
-          </div>
-        </div>
-        <Textarea
-          id="description"
-          placeholder="Enter task description"
-          className="resize-none h-24"
-          {...register('description')}
-        />
-        
-        {useDescriptionAI && (
-          <div className="mt-2 pt-2 border-t">
-            <div className="text-xs font-medium flex items-center gap-1 text-primary mb-2">
-              <Sparkles className="h-3.5 w-3.5" />
-              Generate Description with AI
-            </div>
-            <AITaskGenerator 
-              onGeneratedContent={handleGeneratedDescription}
-              type="description"
-            />
-          </div>
-        )}
-      </div>
+      <TaskDescriptionField 
+        register={register}
+        setValue={setValue}
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div className="space-y-1">
@@ -178,25 +96,12 @@ const TaskFormFieldsWithAI: React.FC<TaskFormFieldsProps> = ({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div className="space-y-1">
-          <Label htmlFor="project">Project</Label>
-          <Select 
-            defaultValue={currentProjectId || editingTask?.projectId || "none"} 
-            onValueChange={(value) => setValue('projectId', value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select project" />
-            </SelectTrigger>
-            <SelectContent position="popper" className="w-[200px]">
-              <SelectItem value="none">No Project</SelectItem>
-              {projects.map((project) => (
-                <SelectItem key={project.id} value={project.id}>
-                  {project.title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <TaskProjectField 
+          projects={projects}
+          currentProjectId={currentProjectId}
+          editingTask={editingTask}
+          setValue={setValue}
+        />
         
         <TaskAssigneeSelect 
           selectedMember={selectedMember}
