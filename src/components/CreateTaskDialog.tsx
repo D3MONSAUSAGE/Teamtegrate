@@ -1,13 +1,14 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { Form } from "@/components/ui/form";
 import { Task } from '@/types';
 import { useTask } from '@/contexts/task';
 import { useAuth } from '@/contexts/AuthContext';
-import { useTaskForm } from '@/hooks/useTaskForm';
 import TaskFormFields from './task/TaskFormFields';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useTaskForm } from '@/hooks/useTaskForm';
+import TaskFormActions from './task/form/TaskFormActions';
 
 interface CreateTaskDialogProps {
   open: boolean;
@@ -36,27 +37,6 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
     selectedMember,
     setSelectedMember
   } = useTaskForm(editingTask, currentProjectId);
-
-  // Set initial projectId value when: dialog opens, or currentProjectId changes, and only if not editing
-  useEffect(() => {
-    if (open && !editingTask && currentProjectId) {
-      setValue('projectId', currentProjectId);
-    }
-    // If dialog closed and not editing, reset form
-    if (!open && !editingTask) {
-      reset();
-      setSelectedMember(undefined);
-    }
-    // If editing, always update form fields properly
-    if (editingTask) {
-      setValue('title', editingTask.title);
-      setValue('description', editingTask.description);
-      setValue('priority', editingTask.priority);
-      setValue('deadline', new Date(editingTask.deadline).toISOString());
-      setValue('projectId', editingTask.projectId || '');
-      setSelectedMember(editingTask.assignedToId);
-    }
-  }, [open, editingTask, currentProjectId, setValue, reset, setSelectedMember]);
 
   const onSubmit = (data: any) => {
     // Handle the case where deadline might come as string or Date
@@ -89,6 +69,12 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
     setSelectedMember(undefined);
   };
 
+  const handleCancel = () => {
+    onOpenChange(false);
+    reset();
+    setSelectedMember(undefined);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={`${isMobile ? 'w-[95%] p-4' : 'sm:max-w-[500px]'} max-h-[90vh] overflow-y-auto`}>
@@ -111,26 +97,11 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
             currentProjectId={currentProjectId}
           />
           
-          <div className="flex justify-end gap-2 pt-4">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => {
-                onOpenChange(false);
-                reset();
-                setSelectedMember(undefined);
-              }}
-              size={isMobile ? "sm" : "default"}
-            >
-              Cancel
-            </Button>
-            <Button 
-              type="submit"
-              size={isMobile ? "sm" : "default"}
-            >
-              {isEditMode ? 'Update' : 'Create'}
-            </Button>
-          </div>
+          <TaskFormActions 
+            isEditMode={isEditMode}
+            onCancel={handleCancel}
+            isMobile={isMobile}
+          />
         </form>
       </DialogContent>
     </Dialog>
