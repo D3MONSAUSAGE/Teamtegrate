@@ -1,9 +1,11 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { startOfWeek, addDays, parseISO, differenceInMinutes } from 'date-fns';
 import { formatTime12Hour, calculateBonusMinutes, formatHoursMinutes } from '@/utils/timeUtils';
+import { calculateBreakRequirements } from '@/utils/breakTracking';
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Coffee } from 'lucide-react';
 
 interface WeeklyTimeReportProps {
   entries: Array<{
@@ -36,7 +38,6 @@ const WeeklyTimeReport: React.FC<WeeklyTimeReportProps> = ({ entries }) => {
       return total;
     }, 0);
 
-    // Add bonus minutes
     const bonusMinutes = calculateBonusMinutes(rawMinutes);
     return { rawMinutes, bonusMinutes, total: rawMinutes + bonusMinutes };
   };
@@ -56,6 +57,7 @@ const WeeklyTimeReport: React.FC<WeeklyTimeReportProps> = ({ entries }) => {
               <TableHead>Day</TableHead>
               <TableHead>Worked</TableHead>
               <TableHead>Bonus</TableHead>
+              <TableHead>Breaks</TableHead>
               <TableHead>Total</TableHead>
               <TableHead>Details</TableHead>
             </TableRow>
@@ -64,6 +66,7 @@ const WeeklyTimeReport: React.FC<WeeklyTimeReportProps> = ({ entries }) => {
             {weekDays.map((day) => {
               const dayEntries = getDayEntries(day);
               const { rawMinutes, bonusMinutes, total } = calculateDayTotal(dayEntries);
+              const { mealBreaks, restBreaks } = calculateBreakRequirements(rawMinutes);
               
               return (
                 <TableRow key={day.toString()}>
@@ -73,6 +76,20 @@ const WeeklyTimeReport: React.FC<WeeklyTimeReportProps> = ({ entries }) => {
                   <TableCell>{formatHoursMinutes(rawMinutes)}</TableCell>
                   <TableCell className="text-emerald-600 dark:text-emerald-400">
                     {bonusMinutes}m
+                  </TableCell>
+                  <TableCell>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <div className="flex items-center gap-1">
+                          <Coffee className="h-4 w-4" />
+                          <span>{mealBreaks + restBreaks}</span>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{mealBreaks} meal breaks (30 min)</p>
+                        <p>{restBreaks} rest breaks (10 min)</p>
+                      </TooltipContent>
+                    </Tooltip>
                   </TableCell>
                   <TableCell className="font-bold">{formatHoursMinutes(total)}</TableCell>
                   <TableCell>

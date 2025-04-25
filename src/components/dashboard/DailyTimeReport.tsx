@@ -1,9 +1,10 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { parseISO, differenceInMinutes } from 'date-fns';
-import { FileText } from 'lucide-react';
+import { FileText, Coffee } from 'lucide-react';
 import { formatTime12Hour, calculateBonusMinutes, formatHoursMinutes } from '@/utils/timeUtils';
+import { calculateBreakRequirements } from '@/utils/breakTracking';
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 interface DailyTimeReportProps {
   entries: Array<{
@@ -32,7 +33,9 @@ const DailyTimeReport: React.FC<DailyTimeReportProps> = ({ entries }) => {
   // Add bonus minutes based on total time worked
   const bonusMinutes = calculateBonusMinutes(totalMinutes);
   const totalWithBonus = totalMinutes + bonusMinutes;
-  
+
+  const { mealBreaks, restBreaks } = calculateBreakRequirements(totalMinutes);
+
   return (
     <Card className="mt-4">
       <CardHeader className="pb-2">
@@ -42,7 +45,7 @@ const DailyTimeReport: React.FC<DailyTimeReportProps> = ({ entries }) => {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-2">
+        <div className="space-y-4">
           <div className="flex flex-col gap-1">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Worked Time:</span>
@@ -57,6 +60,22 @@ const DailyTimeReport: React.FC<DailyTimeReportProps> = ({ entries }) => {
               <span className="font-bold">{formatHoursMinutes(totalWithBonus)}</span>
             </div>
           </div>
+          <Alert className="bg-muted">
+            <Coffee className="h-4 w-4" />
+            <AlertTitle>Required Breaks</AlertTitle>
+            <AlertDescription>
+              <div className="mt-2 space-y-1 text-sm">
+                <p>Meal Breaks (30 min): {mealBreaks} required</p>
+                <p>Rest Breaks (10 min): {restBreaks} required</p>
+                {totalMinutes > 300 && (
+                  <p className="text-muted-foreground text-xs mt-1">
+                    CA Law: 30-min meal break required after 5 hours, additional after 12 hours.
+                    10-min rest break per 4 hours worked.
+                  </p>
+                )}
+              </div>
+            </AlertDescription>
+          </Alert>
           <div className="space-y-1 mt-3">
             {entries.map((entry, index) => {
               let durationMinutes = entry.duration_minutes || 0;
