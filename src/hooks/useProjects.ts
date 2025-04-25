@@ -9,10 +9,12 @@ export const useProjects = () => {
   const { user } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
   const fetchProjects = useCallback(async () => {
     try {
       setIsLoading(true);
+      setError(null);
       
       if (!user) {
         console.log('No user found, skipping project fetch');
@@ -31,8 +33,8 @@ export const useProjects = () => {
 
       if (error) {
         console.error('Error fetching projects:', error);
+        setError(new Error(error.message));
         setProjects([]);
-        toast.error('Failed to load projects');
         return;
       }
 
@@ -57,7 +59,7 @@ export const useProjects = () => {
       setProjects(formattedProjects);
     } catch (error) {
       console.error('Error fetching projects:', error);
-      toast.error('Failed to load projects');
+      setError(error instanceof Error ? error : new Error('Unknown error'));
       setProjects([]);
     } finally {
       setIsLoading(false);
@@ -76,6 +78,7 @@ export const useProjects = () => {
   return {
     projects,
     isLoading,
-    refreshProjects: fetchProjects
+    refreshProjects: fetchProjects,
+    error
   };
 };

@@ -14,23 +14,26 @@ const ProjectsPage = () => {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showCreateTaskDialog, setShowCreateTaskDialog] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>(undefined);
+  const [hasAttemptedRefresh, setHasAttemptedRefresh] = useState(false);
   const navigate = useNavigate();
 
-  // Add effect to detect and handle loading errors
+  // Modified effect to prevent infinite refreshing
   useEffect(() => {
-    const handleRefresh = async () => {
-      try {
-        await refreshProjects();
-      } catch (error) {
-        console.error("Error refreshing projects:", error);
-        toast.error("Failed to load projects. Please try again.");
-      }
-    };
-    
-    if (projects.length === 0 && !isLoading) {
+    // Only try refreshing once if no projects and not loading
+    if (projects.length === 0 && !isLoading && !hasAttemptedRefresh) {
+      const handleRefresh = async () => {
+        try {
+          setHasAttemptedRefresh(true); // Mark that we've tried refreshing
+          await refreshProjects();
+        } catch (error) {
+          console.error("Error refreshing projects:", error);
+          toast.error("Failed to load projects. Please try again.");
+        }
+      };
+      
       handleRefresh();
     }
-  }, [projects.length, isLoading]);
+  }, [projects.length, isLoading, hasAttemptedRefresh, refreshProjects]);
 
   const handleViewTasks = (projectId: string) => {
     navigate(`/dashboard/tasks?projectId=${projectId}`);
