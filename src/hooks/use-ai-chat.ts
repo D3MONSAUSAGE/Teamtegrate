@@ -36,27 +36,20 @@ export const useAIChat = () => {
 
       if (error) {
         console.error('Supabase function error:', error);
-        // Even with errors, we'll still check if there's a response message
-        if (data && data.response) {
-          // If we have a response despite the error, use it
-          const assistantMessage: Message = {
-            id: (Date.now() + 1).toString(),
-            content: data.response,
-            sender: 'assistant',
-            timestamp: new Date()
-          };
-          
-          console.log("Using fallback response from error handler");
-          setMessages(prev => [...prev, assistantMessage]);
-          return;
-        }
-        
         throw new Error(error.message || 'Failed to get AI response');
       }
 
       if (!data || !data.response) {
         console.error('Invalid response from AI:', data);
         throw new Error('Received invalid response from AI');
+      }
+
+      // Check if this is a quota exceeded error
+      if (data.error === 'quota_exceeded') {
+        toast.error('OpenAI API quota exceeded', { 
+          description: 'The administrator needs to check the billing details on the OpenAI account.',
+          duration: 6000
+        });
       }
 
       const assistantMessage: Message = {
@@ -74,13 +67,13 @@ export const useAIChat = () => {
       // Create a fallback assistant message when API fails
       const fallbackMessage: Message = {
         id: (Date.now() + 1).toString(),
-        content: "I'm sorry, I couldn't process your request right now. The AI service might be temporarily unavailable.",
+        content: "I'm sorry, I couldn't process your request right now. The AI service might be temporarily unavailable or the account needs to check billing status.",
         sender: 'assistant',
         timestamp: new Date()
       };
       
       setMessages(prev => [...prev, fallbackMessage]);
-      toast.error('Failed to get AI response. Please try again later.');
+      toast.error('Failed to get AI response', { description: 'Please try again later or contact the administrator.' });
     } finally {
       setIsProcessing(false);
     }

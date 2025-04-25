@@ -58,7 +58,19 @@ serve(async (req) => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error("OpenAI API error:", errorData);
+        console.error("OpenAI API error:", JSON.stringify(errorData));
+        
+        // Check specifically for quota exceeded error
+        if (errorData.error?.code === "insufficient_quota") {
+          return new Response(
+            JSON.stringify({ 
+              response: "I apologize, but the AI service is currently unavailable due to quota limitations. The administrator needs to check the OpenAI account billing status or upgrade the plan.",
+              error: "quota_exceeded"
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        
         throw new Error(`OpenAI API error: ${JSON.stringify(errorData)}`);
       }
 
@@ -76,6 +88,17 @@ serve(async (req) => {
       
     } catch (openaiError) {
       console.error("Error with OpenAI request:", openaiError);
+      
+      // Check if the error is related to quota
+      if (openaiError.message && openaiError.message.includes("insufficient_quota")) {
+        return new Response(
+          JSON.stringify({ 
+            response: "I apologize, but the AI service is currently unavailable due to quota limitations. Please try again later or contact the administrator to check the OpenAI account billing status.",
+            error: "quota_exceeded"
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
       
       return new Response(
         JSON.stringify({ 

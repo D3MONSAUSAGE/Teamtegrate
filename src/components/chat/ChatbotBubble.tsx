@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { MessageCircle, X, Send } from "lucide-react";
+import { MessageCircle, X, Send, AlertTriangle } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Sheet,
@@ -38,6 +38,11 @@ const ChatbotBubble = () => {
       handleSendMessage();
     }
   };
+
+  // Check if the last message contains an error about quota
+  const hasQuotaError = messages.length > 0 && 
+    messages[messages.length - 1].sender === 'assistant' && 
+    messages[messages.length - 1].content.includes('quota');
 
   return (
     <div className="fixed bottom-4 right-4 z-50">
@@ -83,6 +88,15 @@ const ChatbotBubble = () => {
                       <span className="animate-bounce">•</span>
                       <span className="animate-bounce" style={{ animationDelay: '0.2s' }}>•</span>
                       <span className="animate-bounce" style={{ animationDelay: '0.4s' }}>•</span>
+                    </div>
+                  </div>
+                )}
+                {hasQuotaError && (
+                  <div className="bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 rounded-lg p-3 flex items-start gap-2">
+                    <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                    <div className="text-sm">
+                      <p className="font-medium">OpenAI API Quota Exceeded</p>
+                      <p className="mt-1">The administrator needs to check the OpenAI account billing status or upgrade the plan.</p>
                     </div>
                   </div>
                 )}

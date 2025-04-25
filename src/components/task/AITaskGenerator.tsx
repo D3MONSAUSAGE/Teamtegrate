@@ -2,8 +2,9 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Sparkles } from "lucide-react";
-import { toast } from "@/components/ui/sonner";
+import { Loader2, Sparkles, AlertTriangle } from "lucide-react";
+import { toast } from "sonner";
+import { supabase } from '@/integrations/supabase/client';
 
 interface AITaskGeneratorProps {
   onGeneratedContent: (content: string) => void;
@@ -13,6 +14,7 @@ interface AITaskGeneratorProps {
 const AITaskGenerator: React.FC<AITaskGeneratorProps> = ({ onGeneratedContent, type }) => {
   const [prompt, setPrompt] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   const generateContent = async () => {
     if (!prompt.trim()) {
@@ -21,11 +23,38 @@ const AITaskGenerator: React.FC<AITaskGeneratorProps> = ({ onGeneratedContent, t
     }
 
     setIsLoading(true);
+    setApiError(null);
 
     try {
-      // For now, we'll simulate the AI response with a timeout
-      // In a real implementation, this would make an API call to OpenAI, Perplexity, or another AI service
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Try to use the OpenAI API via our Edge Function
+      try {
+        const { data: aiData, error: aiError } = await supabase.functions.invoke('chat-with-ai', {
+          body: { 
+            message: `Generate a ${type === 'description' ? 'detailed task description' : 'concise task title'} for: ${prompt}` 
+          }
+        });
+
+        if (!aiError && aiData && aiData.response) {
+          // If we got a successful response, use it
+          onGeneratedContent(aiData.response);
+          toast.success("Content generated successfully using AI!");
+          setPrompt('');
+          setIsLoading(false);
+          return;
+        }
+
+        // If there was a quota error, show it
+        if (aiData?.error === 'quota_exceeded') {
+          setApiError('OpenAI API quota exceeded. Using fallback generator instead.');
+          // Continue to fallback
+        }
+      } catch (aiError) {
+        console.warn("AI API error, using fallback:", aiError);
+        // Continue to fallback
+      }
+
+      // Fallback to simulated AI response
+      await new Promise(resolve => setTimeout(resolve, 800));
       
       let generatedContent = '';
       if (type === 'description') {
@@ -35,7 +64,7 @@ const AITaskGenerator: React.FC<AITaskGeneratorProps> = ({ onGeneratedContent, t
       }
       
       onGeneratedContent(generatedContent);
-      toast.success("Content generated successfully!");
+      toast.success("Content generated with fallback system!");
       setPrompt('');
     } catch (error) {
       console.error("Error generating content:", error);
@@ -67,6 +96,14 @@ const AITaskGenerator: React.FC<AITaskGeneratorProps> = ({ onGeneratedContent, t
         <Sparkles className="h-4 w-4" />
         {type === 'description' ? 'Generate Description with AI' : 'Generate Title with AI'}
       </div>
+      
+      {apiError && (
+        <div className="bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 rounded p-2 text-xs flex items-center gap-2">
+          <AlertTriangle className="h-3.5 w-3.5 text-amber-500" /> 
+          {apiError}
+        </div>
+      )}
+      
       <Textarea 
         value={prompt}
         onChange={(e) => setPrompt(e.target.value)}
