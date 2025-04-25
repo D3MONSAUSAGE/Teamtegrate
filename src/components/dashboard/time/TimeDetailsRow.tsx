@@ -1,8 +1,8 @@
 
 import React from 'react';
-import { formatTime12Hour, formatHoursMinutes } from '@/utils/timeUtils';
-import { TableCell } from "@/components/ui/table";
-import { ClockIcon } from 'lucide-react';
+import { formatTime12Hour } from '@/utils/timeUtils';
+import { Coffee, Clock } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface TimeDetailsRowProps {
   entry: {
@@ -14,44 +14,33 @@ interface TimeDetailsRowProps {
 }
 
 const TimeDetailsRow: React.FC<TimeDetailsRowProps> = ({ entry }) => {
-  const durationMinutes = entry.duration_minutes || 0;
   const isBreak = entry.notes?.toLowerCase().includes('break') || false;
   const isLunch = entry.notes?.toLowerCase().includes('lunch') || false;
   
-  const getEntryTypeIcon = () => {
+  const getEntryIcon = () => {
     if (isBreak || isLunch) {
-      return <ClockIcon size={14} className="text-muted-foreground mr-1" />;
+      return <Coffee className="h-4 w-4 text-muted-foreground" />;
     }
-    return null;
+    return <Clock className="h-4 w-4 text-muted-foreground" />;
   };
   
   return (
-    <div className={`rounded-md py-1 px-1 flex items-center gap-2 text-xs ${
-      isBreak 
-        ? 'text-amber-700 dark:text-amber-400' 
-        : isLunch 
-          ? 'text-blue-700 dark:text-blue-400' 
-          : 'text-muted-foreground'
-    }`}>
-      {getEntryTypeIcon()}
-      <div className="flex-1 flex items-center">
-        <div className="w-[75px]">
-          {formatTime12Hour(entry.clock_in)}
-        </div>
-        <div className="mx-1">-</div>
-        <div>
-          {entry.clock_out ? formatTime12Hour(entry.clock_out) : 'ongoing'}
-        </div>
+    <div className={cn(
+      "rounded-md py-2 px-3 flex items-center gap-3 text-sm border",
+      isBreak || isLunch ? "bg-muted/30 border-muted" : "border-border",
+      "hover:bg-accent/50 transition-colors"
+    )}>
+      {getEntryIcon()}
+      <div className="flex items-center gap-2 font-medium">
+        <span>{formatTime12Hour(entry.clock_in)}</span>
+        <span className="text-muted-foreground">→</span>
+        <span>{entry.clock_out ? formatTime12Hour(entry.clock_out) : 'ongoing'}</span>
       </div>
       
-      {durationMinutes > 0 && entry.clock_out && (
-        <div className="font-medium ml-auto">
-          {formatHoursMinutes(durationMinutes)}
-        </div>
-      )}
-      
-      {entry.notes && !isBreak && !isLunch && (
-        <div className="ml-1 italic truncate max-w-[100px]">{entry.notes}</div>
+      {(isBreak || isLunch) && (
+        <span className="ml-auto text-sm text-muted-foreground capitalize">
+          {entry.notes?.split(' ')[0]}
+        </span>
       )}
     </div>
   );

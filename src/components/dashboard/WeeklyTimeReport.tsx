@@ -24,10 +24,7 @@ const WeeklyTimeReport: React.FC<WeeklyTimeReportProps> = ({ entries }) => {
     return entries.filter(entry => {
       const entryDate = new Date(entry.clock_in).toISOString().split('T')[0];
       return entryDate === date.toISOString().split('T')[0];
-    }).sort((a, b) => {
-      // Sort by clock_in time
-      return new Date(a.clock_in).getTime() - new Date(b.clock_in).getTime();
-    });
+    }).sort((a, b) => new Date(a.clock_in).getTime() - new Date(b.clock_in).getTime());
   };
 
   return (
@@ -46,12 +43,12 @@ const WeeklyTimeReport: React.FC<WeeklyTimeReportProps> = ({ entries }) => {
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
-                <TableHead className="w-[140px]">Day</TableHead>
-                <TableHead>Worked</TableHead>
-                <TableHead>Bonus</TableHead>
-                <TableHead className="text-center">Breaks</TableHead>
-                <TableHead>Total</TableHead>
-                <TableHead className="w-[300px]">Details</TableHead>
+                <TableHead className="w-[120px]">Day</TableHead>
+                <TableHead className="w-[100px]">Worked</TableHead>
+                <TableHead className="w-[80px]">Bonus</TableHead>
+                <TableHead className="w-[100px] text-center">Breaks</TableHead>
+                <TableHead className="w-[100px]">Total</TableHead>
+                <TableHead className="w-[400px]">Time Log</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

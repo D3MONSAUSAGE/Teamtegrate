@@ -3,7 +3,7 @@ import React from 'react';
 import { TableRow, TableCell } from "@/components/ui/table";
 import { Coffee } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { formatTime12Hour, formatHoursMinutes } from '@/utils/timeUtils';
+import { formatHoursMinutes } from '@/utils/timeUtils';
 import { parseISO, differenceInMinutes, isToday } from 'date-fns';
 import { calculateBreakRequirements } from '@/utils/breakTracking';
 import TimeDetailsRow from './TimeDetailsRow';
@@ -39,14 +39,14 @@ const WeeklyTimeRow: React.FC<WeeklyTimeRowProps> = ({ day, dayEntries }) => {
       isCurrentDay && "bg-primary/5",
       "hover:bg-muted/50 transition-colors"
     )}>
-      <TableCell className="font-medium">
+      <TableCell className="font-medium w-[120px]">
         {new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).format(day)}
       </TableCell>
-      <TableCell>{formatHoursMinutes(dailyMinutes)}</TableCell>
-      <TableCell className="text-emerald-600 dark:text-emerald-400 font-medium">
+      <TableCell className="w-[100px]">{formatHoursMinutes(dailyMinutes)}</TableCell>
+      <TableCell className="text-emerald-600 dark:text-emerald-400 font-medium w-[80px]">
         +{earnedBreakMinutes}m
       </TableCell>
-      <TableCell>
+      <TableCell className="w-[100px]">
         <Tooltip>
           <TooltipTrigger className="mx-auto block">
             <div className="flex items-center gap-2 justify-center">
@@ -62,11 +62,11 @@ const WeeklyTimeRow: React.FC<WeeklyTimeRowProps> = ({ day, dayEntries }) => {
           </TooltipContent>
         </Tooltip>
       </TableCell>
-      <TableCell className="font-bold">{formatHoursMinutes(total)}</TableCell>
-      <TableCell>
+      <TableCell className="font-bold w-[100px]">{formatHoursMinutes(total)}</TableCell>
+      <TableCell className="w-[400px]">
         {dayEntries.length > 0 ? (
-          <ScrollArea className="h-[90px] w-full pr-4">
-            <div className="space-y-1">
+          <ScrollArea className="h-auto max-h-[200px] w-full pr-4">
+            <div className="space-y-2">
               {dayEntries.map((entry, index) => (
                 <TimeDetailsRow key={index} entry={entry} />
               ))}
