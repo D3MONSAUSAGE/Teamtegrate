@@ -8,6 +8,7 @@ import { parseISO, differenceInMinutes, isToday } from 'date-fns';
 import { calculateBreakRequirements } from '@/utils/breakTracking';
 import TimeDetailsRow from './TimeDetailsRow';
 import { cn } from '@/lib/utils';
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface WeeklyTimeRowProps {
   day: Date;
@@ -63,15 +64,17 @@ const WeeklyTimeRow: React.FC<WeeklyTimeRowProps> = ({ day, dayEntries }) => {
       </TableCell>
       <TableCell className="font-bold">{formatHoursMinutes(total)}</TableCell>
       <TableCell>
-        <div className="space-y-1">
-          {dayEntries.length > 0 ? (
-            dayEntries.map((entry, index) => (
-              <TimeDetailsRow key={index} entry={entry} />
-            ))
-          ) : (
-            <span className="text-sm text-muted-foreground">No entries</span>
-          )}
-        </div>
+        {dayEntries.length > 0 ? (
+          <ScrollArea className="h-[90px] w-full pr-4">
+            <div className="space-y-1">
+              {dayEntries.map((entry, index) => (
+                <TimeDetailsRow key={index} entry={entry} />
+              ))}
+            </div>
+          </ScrollArea>
+        ) : (
+          <span className="text-sm text-muted-foreground">No entries</span>
+        )}
       </TableCell>
     </TableRow>
   );

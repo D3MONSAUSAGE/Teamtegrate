@@ -24,6 +24,9 @@ const WeeklyTimeReport: React.FC<WeeklyTimeReportProps> = ({ entries }) => {
     return entries.filter(entry => {
       const entryDate = new Date(entry.clock_in).toISOString().split('T')[0];
       return entryDate === date.toISOString().split('T')[0];
+    }).sort((a, b) => {
+      // Sort by clock_in time
+      return new Date(a.clock_in).getTime() - new Date(b.clock_in).getTime();
     });
   };
 
