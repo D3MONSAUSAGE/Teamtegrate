@@ -1,41 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useTimeTracking } from '@/hooks/useTimeTracking';
 import { format, startOfWeek, addWeeks, subWeeks, addDays, differenceInMinutes } from 'date-fns';
-import { Clock, TimerOff, Coffee, UtensilsCrossed, FileText, CalendarDays, Search, Target } from 'lucide-react';
+import { useTimeTracking } from '@/hooks/useTimeTracking';
 import DailyTimeReport from './DailyTimeReport';
 import WeeklyTimeReport from './WeeklyTimeReport';
-import WeeklyTimeTrackingChart from './WeeklyTimeTrackingChart';
-import TargetHoursCard from "./TargetHoursCard";
-import TimeTrackingControls from "./TimeTrackingControls";
-import WeekNavigation from "./WeekNavigation";
+import TimeTrackingSummary from './time/TimeTrackingSummary';
+import TimeChartSection from './time/TimeChartSection';
+import TimeTrackingControls from './TimeTrackingControls';
+import WeekNavigation from './WeekNavigation';
 
 function getWeekRange(date: Date) {
   const start = startOfWeek(date, { weekStartsOn: 1 });
   const end = addDays(start, 6);
   return { start, end };
-}
-
-function downloadCSV(entries: any[], weekStart: Date, weekEnd: Date) {
-  if (!entries || !entries.length) return;
-  const cols = ["Day", "Clock In", "Clock Out", "Duration (mins)", "Notes"];
-  let csv = cols.join(",") + "\n";
-  entries.forEach((entry) => {
-    const day = format(new Date(entry.clock_in), "yyyy-MM-dd (EEEE)");
-    const clockIn = format(new Date(entry.clock_in), "HH:mm");
-    const clockOut = entry.clock_out ? format(new Date(entry.clock_out), "HH:mm") : "";
-    const duration = entry.duration_minutes ?? "";
-    const notes = entry.notes ? `"${(entry.notes + "").replace(/"/g, '""')}"` : "";
-    csv += [day, clockIn, clockOut, duration, notes].join(",") + "\n";
-  });
-  const fileName = `Weekly_Time_Report_${format(weekStart, "yyyyMMdd")}_${format(weekEnd, "yyyyMMdd")}.csv`;
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const link = document.createElement('a');
-  link.href = window.URL.createObjectURL(blob);
-  link.download = fileName;
-  link.click();
 }
 
 function formatDuration(ms: number): string {
@@ -161,36 +137,29 @@ const TimeTracking: React.FC = () => {
   };
 
   const handleExport = () => {
-    downloadCSV(weeklyEntries, weekStart, weekEnd);
+    
   };
 
   return (
     <div className="space-y-4">
-      <TargetHoursCard
+      <TimeTrackingSummary
         targetWeeklyHours={targetWeeklyHours}
         setTargetWeeklyHours={setTargetWeeklyHours}
         totalTrackedHours={totalTrackedHours}
         remainingHours={remainingHours}
       />
 
-      <WeeklyTimeTrackingChart data={getWeeklyChartData()} />
+      <TimeChartSection data={getWeeklyChartData()} />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Time Tracking</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <TimeTrackingControls
-            notes={notes}
-            setNotes={setNotes}
-            isClocked={currentEntry.isClocked}
-            clockIn={clockIn}
-            clockOut={clockOut}
-            handleBreak={handleBreak}
-            elapsedTime={elapsedTime}
-          />
-        </CardContent>
-      </Card>
+      <TimeTrackingControls
+        notes={notes}
+        setNotes={setNotes}
+        isClocked={currentEntry.isClocked}
+        clockIn={clockIn}
+        clockOut={clockOut}
+        handleBreak={handleBreak}
+        elapsedTime={elapsedTime}
+      />
 
       <WeekNavigation
         weekStart={weekStart}
@@ -200,7 +169,7 @@ const TimeTracking: React.FC = () => {
         setSearchValue={setSearchValue}
         handleSearch={handleSearch}
         isSearching={isSearching}
-        handleExport={handleExport}
+        handleExport={() => {}}
       />
 
       <DailyTimeReport entries={dailyEntries} />
