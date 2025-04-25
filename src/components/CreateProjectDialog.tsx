@@ -55,6 +55,8 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
         managerId: user.id,
         budget: data.budget,
         teamMembers: [],
+        status: 'To Do',
+        tasks_count: 0
       });
       
       if (project) {

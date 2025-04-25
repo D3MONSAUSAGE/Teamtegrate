@@ -35,7 +35,9 @@ export const addProject = async (
       budget: project.budget || 0,
       is_completed: false,
       budget_spent: 0,
-      team_members: project.teamMembers || []
+      team_members: project.teamMembers || [],
+      status: project.status || 'To Do',
+      tasks_count: 0
     };
 
     // Insert into Supabase
@@ -64,7 +66,9 @@ export const addProject = async (
       teamMembers: project.teamMembers || [],
       budget: project.budget || 0,
       budgetSpent: 0,
-      is_completed: false
+      is_completed: false,
+      status: project.status || 'To Do',
+      tasks_count: 0
     };
 
     // Update local state

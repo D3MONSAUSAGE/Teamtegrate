@@ -52,7 +52,9 @@ export const useProjects = () => {
         teamMembers: project.team_members || [],
         budget: project.budget || 0,
         budgetSpent: project.budget_spent || 0,
-        is_completed: project.is_completed || false
+        is_completed: project.is_completed || false,
+        status: project.status || 'To Do',
+        tasks_count: project.tasks_count || 0
       }));
 
       setProjects(formattedProjects);
