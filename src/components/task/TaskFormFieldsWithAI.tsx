@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Project, Task } from '@/types';
 import TaskTitleField from './form/TaskTitleField';
@@ -6,10 +5,10 @@ import TaskDescriptionField from './form/TaskDescriptionField';
 import TaskProjectField from './form/TaskProjectField';
 import TaskAssigneeSelect from './form/TaskAssigneeSelect';
 import TaskDeadlinePicker from './form/TaskDeadlinePicker';
+import TaskPriorityField from './form/TaskPriorityField';
 import { useUsers } from '@/hooks/useUsers';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface TaskFormFieldsProps {
   register: any;
@@ -69,22 +68,10 @@ const TaskFormFieldsWithAI: React.FC<TaskFormFieldsProps> = ({
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div className="space-y-1">
-          <Label htmlFor="priority">Priority</Label>
-          <Select 
-            defaultValue={editingTask?.priority || "Medium"} 
-            onValueChange={(value) => setValue('priority', value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select priority" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Low">Low</SelectItem>
-              <SelectItem value="Medium">Medium</SelectItem>
-              <SelectItem value="High">High</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        <TaskPriorityField 
+          defaultValue={editingTask?.priority || "Medium"}
+          setValue={setValue}
+        />
         
         <TaskDeadlinePicker 
           date={date}
