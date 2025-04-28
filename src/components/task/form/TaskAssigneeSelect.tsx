@@ -31,7 +31,7 @@ const TaskAssigneeSelect: React.FC<TaskAssigneeSelectProps> = ({
         value={selectedMember}
         onValueChange={onAssign}
       >
-        <SelectTrigger>
+        <SelectTrigger id="assignedTo" className="w-full">
           <SelectValue placeholder="Assign to user (optional)" />
         </SelectTrigger>
         <SelectContent>
@@ -41,11 +41,15 @@ const TaskAssigneeSelect: React.FC<TaskAssigneeSelectProps> = ({
               <Loader2 className="h-4 w-4 animate-spin mr-2" /> 
               <span className="text-sm">Loading users...</span>
             </div>
-          ) : users.map(user => (
-            <SelectItem key={user.id} value={user.id}>
-              {user.name} ({user.role})
-            </SelectItem>
-          ))}
+          ) : users && users.length > 0 ? (
+            users.map(user => (
+              <SelectItem key={user.id} value={user.id}>
+                {user.name || user.email} ({user.role || 'User'})
+              </SelectItem>
+            ))
+          ) : (
+            <div className="text-sm text-muted-foreground p-2">No users found</div>
+          )}
         </SelectContent>
       </Select>
     </div>

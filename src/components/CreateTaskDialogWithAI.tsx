@@ -45,6 +45,8 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
   } = useTaskFormWithAI(editingTask, currentProjectId);
 
   const onSubmit = (data: any) => {
+    console.log('Form submission data:', data);
+    
     // Handle the case where deadline might come as string or Date
     const deadlineDate = typeof data.deadline === 'string' 
       ? new Date(data.deadline)

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Project, Task } from '@/types';
 import TaskTitleField from './form/TaskTitleField';
@@ -42,15 +43,23 @@ const TaskFormFieldsWithAI: React.FC<TaskFormFieldsProps> = ({
   const { users, isLoading: loadingUsers } = useUsers();
 
   const handleUserAssignment = (userId: string) => {
-    const selectedUser = users.find(user => user.id === userId);
-    if (selectedUser) {
-      setSelectedMember(userId);
-      setValue('assignedToId', userId);
-      setValue('assignedToName', selectedUser.name);
-    } else if (userId === "unassigned") {
+    console.log('Assigning user:', userId);
+    
+    if (userId === "unassigned") {
+      console.log('Setting user to unassigned');
       setSelectedMember(undefined);
       setValue('assignedToId', undefined);
       setValue('assignedToName', undefined);
+      return;
+    }
+    
+    const selectedUser = users.find(user => user.id === userId);
+    console.log('Selected user:', selectedUser);
+    
+    if (selectedUser) {
+      setSelectedMember(userId);
+      setValue('assignedToId', userId);
+      setValue('assignedToName', selectedUser.name || selectedUser.email);
     }
   };
 
