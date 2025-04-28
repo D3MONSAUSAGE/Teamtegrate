@@ -18,6 +18,7 @@ const TimeTracking: React.FC = () => {
     currentEntry,
     weekStart,
     weekEnd,
+    weekDate,
     searchValue,
     setSearchValue,
     isSearching,
@@ -66,7 +67,10 @@ const TimeTracking: React.FC = () => {
       />
 
       <DailyTimeReport entries={dailyEntries} />
-      <WeeklyTimeReport entries={weeklyEntries} />
+      <WeeklyTimeReport 
+        entries={weeklyEntries} 
+        weekDate={weekDate} // Pass the selected week date
+      />
     </div>
   );
 };
