@@ -6,6 +6,7 @@ import TaskCardMetadata from "./TaskCardMetadata";
 import TaskCardFooter from "./TaskCardFooter";
 import { Task, TaskStatus } from "@/types";
 import { CardContent } from "@/components/ui/card";
+import { motion } from "framer-motion";
 
 interface TaskCardContentProps {
   task: Task;
@@ -21,7 +22,12 @@ const TaskCardContent: React.FC<TaskCardContentProps> = ({
   onShowComments,
 }) => {
   return (
-    <div className="pt-6 px-4 md:px-6 pb-2 flex flex-col gap-1">
+    <motion.div 
+      className="pt-6 px-4 md:px-6 pb-2 flex flex-col gap-1"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay: 0.1 }}
+    >
       <TaskCardHeader title={task.title} priority={task.priority} />
       <CardContent className="space-y-2 p-0">
         <TaskCardDescription description={task.description} />
@@ -31,13 +37,13 @@ const TaskCardContent: React.FC<TaskCardContentProps> = ({
         />
         <TaskCardFooter
           status={task.status}
-          isOverdue={false} // Will be calculated in parent component
+          isOverdue={new Date(task.deadline) < new Date()}
           commentCount={commentCount}
           onShowComments={onShowComments}
           onStatusChange={handleStatusChange}
         />
       </CardContent>
-    </div>
+    </motion.div>
   );
 };
 
