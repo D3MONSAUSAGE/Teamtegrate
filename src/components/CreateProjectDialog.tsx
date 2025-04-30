@@ -49,10 +49,10 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
     name: "teamMembers"
   });
 
-  // Use proper typing for the tags field array
-  const { fields: tagFields, append: appendTag, remove: removeTag } = useFieldArray<FormValues>({
+  // Fix the useFieldArray for tags to make it work with string array
+  const { fields: tagFields, append: appendTag, remove: removeTag } = useFieldArray({
     control,
-    name: "tags"
+    name: "tags" as const // Using as const to assert this is a literal type
   });
 
   const handleAddTag = () => {
@@ -61,8 +61,8 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
       
       // Check if the tag already exists
       if (!tags.includes(newTag.trim())) {
-        // Append the tag directly
-        appendTag(newTag.trim());
+        // Add tag as string directly
+        appendTag(newTag.trim() as any);
         setNewTag('');
       }
     }
