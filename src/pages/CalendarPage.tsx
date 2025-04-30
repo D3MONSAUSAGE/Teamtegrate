@@ -7,7 +7,7 @@ import { format, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval } from '
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import TaskCard from '@/components/TaskCard';
+import TaskCard from '@/components/task-card'; // Updated import path
 import TaskDetailDrawer from '@/components/calendar/TaskDetailDrawer';
 import CalendarDayView from '@/components/calendar/CalendarDayView';
 import CalendarWeekView from '@/components/calendar/CalendarWeekView';
