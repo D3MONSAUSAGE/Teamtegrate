@@ -52,11 +52,13 @@ export const useProjects = () => {
         teamMembers: project.team_members || [],
         budget: project.budget || 0,
         budgetSpent: project.budget_spent || 0,
-        is_completed: project.is_completed || false,
+        // Ensure is_completed and status are synchronized
+        is_completed: project.status === 'Completed' ? true : project.is_completed || false,
         status: (project.status || 'To Do') as ProjectStatus,
         tasks_count: project.tasks_count || 0
       }));
 
+      console.log('Formatted projects:', formattedProjects);
       setProjects(formattedProjects);
     } catch (error) {
       console.error('Error fetching projects:', error);

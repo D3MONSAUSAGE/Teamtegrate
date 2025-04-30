@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -64,10 +63,16 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onViewTasks, onCreat
 
   const handleStatusChange = async (newStatus: string) => {
     try {
+      // Synchronize is_completed with status
+      const isCompleted = newStatus === 'Completed';
+      
+      console.log(`Updating project ${project.id} status to: ${newStatus}, is_completed: ${isCompleted}`);
+      
       await updateProject(project.id, { 
         status: newStatus as Project['status'],
-        is_completed: newStatus === 'Completed'
+        is_completed: isCompleted
       });
+      
       toast.success("Project status updated");
     } catch (error) {
       console.error('Error updating project status:', error);
@@ -180,7 +185,11 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onViewTasks, onCreat
             </div>
             
             <div className="mb-4">
-              <Select defaultValue={project.status} onValueChange={handleStatusChange}>
+              <Select 
+                defaultValue={project.status} 
+                value={project.status}
+                onValueChange={handleStatusChange}
+              >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>

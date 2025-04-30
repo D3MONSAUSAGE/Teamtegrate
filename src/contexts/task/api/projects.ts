@@ -23,23 +23,38 @@ export const fetchProjects = async (
 
     console.log('Projects data from API:', data);
 
-    const formattedProjects: Project[] = data.map(project => ({
-      id: project.id,
-      title: project.title || '',
-      description: project.description || '',
-      startDate: project.start_date ? new Date(project.start_date) : new Date(),
-      endDate: project.end_date ? new Date(project.end_date) : new Date(),
-      managerId: project.manager_id || user.id,
-      createdAt: project.created_at ? new Date(project.created_at) : new Date(),
-      updatedAt: project.updated_at ? new Date(project.updated_at) : new Date(),
-      tasks: [],
-      teamMembers: project.team_members || [],
-      budget: project.budget || 0,
-      is_completed: project.is_completed || false,
-      budgetSpent: project.budget_spent || 0,
-      status: (project.status || 'To Do') as ProjectStatus,
-      tasks_count: project.tasks_count || 0
-    }));
+    const formattedProjects: Project[] = data.map(project => {
+      // Ensure status and is_completed are synchronized
+      let status = project.status || 'To Do';
+      let isCompleted = project.is_completed || false;
+      
+      // If status is Completed but is_completed is false, set is_completed to true
+      if (status === 'Completed' && !isCompleted) {
+        isCompleted = true;
+      }
+      // If status is not Completed but is_completed is true, adjust status to Completed
+      else if (status !== 'Completed' && isCompleted) {
+        status = 'Completed';
+      }
+      
+      return {
+        id: project.id,
+        title: project.title || '',
+        description: project.description || '',
+        startDate: project.start_date ? new Date(project.start_date) : new Date(),
+        endDate: project.end_date ? new Date(project.end_date) : new Date(),
+        managerId: project.manager_id || user.id,
+        createdAt: project.created_at ? new Date(project.created_at) : new Date(),
+        updatedAt: project.updated_at ? new Date(project.updated_at) : new Date(),
+        tasks: [],
+        teamMembers: project.team_members || [],
+        budget: project.budget || 0,
+        is_completed: isCompleted,
+        budgetSpent: project.budget_spent || 0,
+        status: status as ProjectStatus,
+        tasks_count: project.tasks_count || 0
+      };
+    });
 
     console.log('Formatted projects:', formattedProjects);
     setProjects(formattedProjects);
@@ -60,6 +75,16 @@ export const addProject = async (
     const now = new Date();
     const nowISO = now.toISOString();
     
+    // Ensure status and is_completed are synchronized
+    let status = project.status || 'To Do';
+    let isCompleted = project.is_completed || false;
+    
+    if (status === 'Completed') {
+      isCompleted = true;
+    } else if (isCompleted) {
+      status = 'Completed';
+    }
+    
     console.log('Creating project:', {
       id: projectId,
       title: project.title,
@@ -68,8 +93,8 @@ export const addProject = async (
       end_date: project.endDate.toISOString(),
       manager_id: user.id,
       budget: project.budget || 0,
-      is_completed: false,
-      status: project.status || 'To Do',
+      is_completed: isCompleted,
+      status: status,
       tasks_count: 0
     });
     
@@ -83,11 +108,11 @@ export const addProject = async (
         end_date: project.endDate.toISOString(),
         manager_id: user.id,
         budget: project.budget || 0,
-        is_completed: false,
+        is_completed: isCompleted,
         created_at: nowISO,
         updated_at: nowISO,
         team_members: project.teamMembers || [],
-        status: project.status || 'To Do',
+        status: status,
         tasks_count: 0
       });
 
@@ -109,9 +134,9 @@ export const addProject = async (
       updatedAt: now,
       tasks: [],
       teamMembers: project.teamMembers || [],
-      is_completed: false,
+      is_completed: isCompleted,
       budgetSpent: 0,
-      status: project.status as ProjectStatus,
+      status: status as ProjectStatus,
       tasks_count: 0
     };
 
