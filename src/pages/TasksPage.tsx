@@ -7,7 +7,7 @@ import TaskCommentsDialog from '@/components/TaskCommentsDialog';
 import TaskHeader from '@/components/task/TaskHeader';
 import TaskTabs from '@/components/task/TaskTabs';
 import ProjectTasksView from '@/components/task/ProjectTasksView';
-import CreateTaskDialogWithAI from '@/components/CreateTaskDialogWithAI';
+import CreateTaskDialog from '@/components/CreateTaskDialog';
 
 const TasksPage = () => {
   const [searchParams] = useSearchParams();
@@ -94,7 +94,7 @@ const TasksPage = () => {
         }}
       />
       
-      <CreateTaskDialogWithAI
+      <CreateTaskDialog
         open={isCreateTaskOpen} 
         onOpenChange={setIsCreateTaskOpen}
         editingTask={editingTask}
