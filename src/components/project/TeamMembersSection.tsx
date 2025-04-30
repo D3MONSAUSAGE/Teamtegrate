@@ -20,8 +20,7 @@ export type FormValues = {
   endDate: string;
   budget?: number;
   teamMembers: { memberId: string }[];
-  tags?: string[]; // Add tags to make it compatible with the CreateProjectDialog
-  newTag?: string; // Add this as well for consistency
+  tags: string[]; // Add tags to make it compatible with the CreateProjectDialog
 };
 
 interface TeamMembersSectionProps {
