@@ -26,6 +26,10 @@ export const fetchTasks = async (
     }
 
     console.log(`Fetched ${taskData.length} tasks from database`);
+    
+    // Log project IDs to help debug task assignments
+    const projectIds = [...new Set(taskData.map(task => task.project_id))].filter(Boolean);
+    console.log(`Tasks belong to ${projectIds.length} projects:`, projectIds);
 
     // Fetch comments for all tasks
     const { data: commentData, error: commentError } = await supabase
@@ -130,11 +134,15 @@ export const fetchTasks = async (
       }
     }
 
-    console.log(`Final task count being set: ${tasks.length}`);
-    console.log(`Tasks by project: ${JSON.stringify(tasks.reduce((acc, task) => {
-      acc[task.projectId || 'unassigned'] = (acc[task.projectId || 'unassigned'] || 0) + 1;
+    // Add additional logging for task count by project
+    const tasksByProject = tasks.reduce((acc, task) => {
+      const projectId = task.projectId || 'unassigned';
+      acc[projectId] = (acc[projectId] || 0) + 1;
       return acc;
-    }, {} as Record<string, number>))}`);
+    }, {} as Record<string, number>);
+    
+    console.log(`Final task count being set: ${tasks.length}`);
+    console.log('Tasks by project:', tasksByProject);
 
     setTasks(tasks);
   } catch (error) {
