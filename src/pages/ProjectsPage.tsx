@@ -1,13 +1,24 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Plus, Search, SlidersHorizontal } from "lucide-react";
 import { useProjects } from '@/hooks/useProjects';
 import ProjectCard from '@/components/ProjectCard';
 import CreateProjectDialog from '@/components/CreateProjectDialog';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from '@/components/ui/sonner';
 import CreateTaskDialogWithAI from '@/components/CreateTaskDialogWithAI';
+import { ProjectStatus } from '@/types';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const ProjectsPage = () => {
   const { projects, isLoading, refreshProjects } = useProjects();
@@ -15,6 +26,8 @@ const ProjectsPage = () => {
   const [showCreateTaskDialog, setShowCreateTaskDialog] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>(undefined);
   const [hasAttemptedRefresh, setHasAttemptedRefresh] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'All'>('All');
   const navigate = useNavigate();
 
   // Modified effect to prevent infinite refreshing
@@ -53,6 +66,16 @@ const ProjectsPage = () => {
     toast.success("Project created successfully!");
   };
 
+  // Filter projects based on search query and status
+  const filteredProjects = projects.filter(project => {
+    const matchesSearch = project.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                         project.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesStatus = statusFilter === 'All' || project.status === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  });
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-32">
@@ -70,8 +93,38 @@ const ProjectsPage = () => {
         </Button>
       </div>
 
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <Input
+            placeholder="Search projects..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="flex gap-2">
+              <SlidersHorizontal className="h-4 w-4" />
+              {statusFilter === 'All' ? 'All Statuses' : statusFilter}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuLabel>Filter by Status</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuRadioGroup value={statusFilter} onValueChange={(value) => setStatusFilter(value as ProjectStatus | 'All')}>
+              <DropdownMenuRadioItem value="All">All</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="To Do">To Do</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="In Progress">In Progress</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="Completed">Completed</DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {projects.map(project => (
+        {filteredProjects.map(project => (
           <ProjectCard 
             key={project.id} 
             project={project}
@@ -87,6 +140,12 @@ const ProjectsPage = () => {
             <Button onClick={() => setShowCreateDialog(true)}>
               <Plus className="w-4 h-4 mr-2" /> Create First Project
             </Button>
+          </div>
+        )}
+        
+        {projects.length > 0 && filteredProjects.length === 0 && (
+          <div className="col-span-1 md:col-span-2 lg:col-span-3 p-8 text-center border rounded-lg bg-white dark:bg-card">
+            <p className="text-gray-500">No matching projects found</p>
           </div>
         )}
       </div>
