@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Search, SlidersHorizontal } from "lucide-react";
 import { useProjects } from '@/hooks/useProjects';
-import ProjectCard from '@/components/ProjectCard';
+import ProjectCard from '@/components/project-card';
 import CreateProjectDialog from '@/components/CreateProjectDialog';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from '@/components/ui/sonner';
