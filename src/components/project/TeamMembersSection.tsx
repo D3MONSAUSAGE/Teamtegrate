@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -18,7 +17,7 @@ export type FormValues = {
   description: string;
   startDate: string;
   endDate: string;
-  budget?: string | number; // Changed from required to optional with ?
+  budget?: number; // Changed to just number type and kept it optional
   teamMembers: { memberId: string }[];
 };
 

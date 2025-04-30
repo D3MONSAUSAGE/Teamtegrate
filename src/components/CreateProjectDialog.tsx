@@ -12,7 +12,7 @@ import { toast } from '@/components/ui/sonner';
 import { format } from 'date-fns';
 import { useUsers } from '@/hooks/useUsers';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TeamMembersSection } from "@/components/project/TeamMembersSection";
+import { TeamMembersSection, FormValues as TeamMembersFormValues } from "@/components/project/TeamMembersSection";
 
 interface CreateProjectDialogProps {
   open: boolean;
@@ -20,14 +20,8 @@ interface CreateProjectDialogProps {
   onSuccess?: () => void;
 }
 
-interface FormValues {
-  title: string;
-  description: string;
-  startDate: string;
-  endDate: string;
-  budget?: number;
-  teamMembers: { memberId: string }[];
-}
+// Use the imported type from TeamMembersSection
+interface FormValues extends TeamMembersFormValues {}
 
 const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
   open,
