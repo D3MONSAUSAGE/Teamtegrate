@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -17,8 +18,10 @@ export type FormValues = {
   description: string;
   startDate: string;
   endDate: string;
-  budget?: number; // Changed to just number type and kept it optional
+  budget?: number;
   teamMembers: { memberId: string }[];
+  tags?: string[]; // Add tags to make it compatible with the CreateProjectDialog
+  newTag?: string; // Add this as well for consistency
 };
 
 interface TeamMembersSectionProps {

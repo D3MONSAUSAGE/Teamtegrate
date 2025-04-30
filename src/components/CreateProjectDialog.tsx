@@ -16,16 +16,8 @@ import { TeamMembersSection, FormValues as TeamMembersFormValues } from "@/compo
 import { X, Plus, Tag } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
-// Extended form values to include tags
-interface FormValues extends TeamMembersFormValues {
-  title: string;
-  description: string;
-  startDate: string;
-  endDate: string;
-  budget?: number;
-  tags: string[];
-  newTag?: string;
-}
+// We no longer need to extend the FormValues interface, we can use the one from TeamMembersSection directly
+type FormValues = TeamMembersFormValues;
 
 interface CreateProjectDialogProps {
   open: boolean;
@@ -71,6 +63,7 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
       
       // Check if the tag already exists
       if (!tags.includes(newTag.trim())) {
+        // Correctly append to the tags array
         appendTag(newTag.trim());
         setNewTag('');
       }
@@ -99,8 +92,8 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
         teamMembers: teamMemberIds,
         status: 'To Do',
         tasks_count: 0,
-        tags: data.tags,
-        is_completed: false // Add this missing property
+        tags: data.tags || [],
+        is_completed: false
       });
       
       if (project) {
