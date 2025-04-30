@@ -4,8 +4,9 @@ import { CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Project } from '@/types';
-import { Calendar, AlertTriangle, Users, Trash2 } from 'lucide-react';
+import { Calendar, AlertTriangle, Users, Trash2, Tag } from 'lucide-react';
 import { format, isAfter } from 'date-fns';
+import ProjectTags from './ProjectTags';
 
 interface ProjectCardHeaderProps {
   project: Project;
@@ -95,6 +96,11 @@ const ProjectCardHeader: React.FC<ProjectCardHeaderProps> = ({ project, onDelete
           </Badge>
         )}
       </div>
+      
+      {/* Display project tags if any */}
+      {project.tags && project.tags.length > 0 && (
+        <ProjectTags tags={project.tags} />
+      )}
     </CardHeader>
   );
 };

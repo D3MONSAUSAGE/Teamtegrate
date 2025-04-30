@@ -38,7 +38,8 @@ export const useProjectOperations = () => {
         updated_at: nowISO,
         team_members: project.teamMembers || [],
         status: project.status || 'To Do',
-        tasks_count: 0
+        tasks_count: 0,
+        tags: project.tags || []
       });
 
       const { error } = await supabase
@@ -56,7 +57,8 @@ export const useProjectOperations = () => {
           updated_at: nowISO,
           team_members: project.teamMembers || [],
           status: project.status || 'To Do',
-          tasks_count: 0
+          tasks_count: 0,
+          tags: project.tags || []
         });
 
       if (error) {
@@ -82,7 +84,8 @@ export const useProjectOperations = () => {
         is_completed: false,
         budgetSpent: 0,
         status: project.status as ProjectStatus,
-        tasks_count: 0
+        tasks_count: 0,
+        tags: project.tags || []
       };
 
       console.log('Project created successfully:', newProject);

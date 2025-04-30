@@ -10,6 +10,7 @@ import {
 import { Project } from '@/types';
 import { useTask } from '@/contexts/task';
 import { toast } from '@/components/ui/sonner';
+import { playSuccessSound, playErrorSound } from '@/utils/sounds';
 
 interface ProjectStatusSelectProps {
   project: Project;
@@ -31,9 +32,23 @@ export const ProjectStatusSelect: React.FC<ProjectStatusSelectProps> = ({ projec
       });
       
       toast.success("Project status updated");
+      playSuccessSound();
     } catch (error) {
       console.error('Error updating project status:', error);
       toast.error("Failed to update project status");
+      playErrorSound();
+    }
+  };
+
+  // Create a style object based on the current status
+  const getStatusStyle = (status: string) => {
+    switch(status) {
+      case 'Completed':
+        return "bg-green-500/10 text-green-700 border-green-500";
+      case 'In Progress':
+        return "bg-blue-500/10 text-blue-700 border-blue-500";
+      default: // To Do
+        return "bg-yellow-500/10 text-yellow-700 border-yellow-500";
     }
   };
 
@@ -43,7 +58,7 @@ export const ProjectStatusSelect: React.FC<ProjectStatusSelectProps> = ({ projec
       value={project.status}
       onValueChange={handleStatusChange}
     >
-      <SelectTrigger className="w-full">
+      <SelectTrigger className={`w-full ${getStatusStyle(project.status)}`}>
         <SelectValue placeholder="Select status" />
       </SelectTrigger>
       <SelectContent>

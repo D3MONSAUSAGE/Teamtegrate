@@ -1,4 +1,3 @@
-
 export type UserRole = 'user' | 'manager';
 
 export interface User {
@@ -58,20 +57,20 @@ export type ProjectStatus = 'To Do' | 'In Progress' | 'Completed';
 export interface Project {
   id: string;
   title: string;
-  description: string;
+  description?: string;
   startDate: Date;
   endDate: Date;
   managerId: string;
   createdAt: Date;
   updatedAt: Date;
   tasks: Task[];
-  teamMembers?: string[];
-  tags?: string[];
-  budget?: number;
+  teamMembers: string[];
+  budget: number;
   budgetSpent?: number;
+  is_completed: boolean;
   status: ProjectStatus;
   tasks_count: number;
-  is_completed?: boolean;
+  tags?: string[];
 }
 
 export interface DailyScore {

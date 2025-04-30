@@ -28,6 +28,7 @@ export const updateProject = async (
     if (updates.startDate !== undefined) updatedFields.start_date = updates.startDate.toISOString();
     if (updates.endDate !== undefined) updatedFields.end_date = updates.endDate.toISOString();
     if (updates.budget !== undefined) updatedFields.budget = updates.budget;
+    if (updates.tags !== undefined) updatedFields.tags = updates.tags;
     if (updates.is_completed !== undefined) updatedFields.is_completed = updates.is_completed;
     if (updates.status !== undefined) {
       updatedFields.status = updates.status;

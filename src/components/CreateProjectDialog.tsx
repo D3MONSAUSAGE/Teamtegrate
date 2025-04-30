@@ -1,11 +1,11 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { useProjectOperations } from '@/hooks/useProjectOperations';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/components/ui/sonner';
@@ -13,15 +13,20 @@ import { format } from 'date-fns';
 import { useUsers } from '@/hooks/useUsers';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TeamMembersSection, FormValues as TeamMembersFormValues } from "@/components/project/TeamMembersSection";
+import { X, Plus, Tag } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+
+// Extended form values to include tags
+interface FormValues extends TeamMembersFormValues {
+  tags?: string[];
+  newTag?: string;
+}
 
 interface CreateProjectDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
 }
-
-// Use the imported type from TeamMembersSection
-interface FormValues extends TeamMembersFormValues {}
 
 const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
   open,
@@ -31,6 +36,7 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
   const { user } = useAuth();
   const { createProject, isLoading } = useProjectOperations();
   const { users } = useUsers();
+  const [newTag, setNewTag] = useState('');
   
   const { register, handleSubmit, reset, control, watch, setValue, formState: { errors } } = useForm<FormValues>({
     defaultValues: {
@@ -39,7 +45,8 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
       startDate: format(new Date(), 'yyyy-MM-dd'),
       endDate: format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'),
       budget: undefined,
-      teamMembers: []
+      teamMembers: [],
+      tags: [],
     }
   });
   
@@ -47,6 +54,23 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
     control,
     name: "teamMembers"
   });
+
+  const { fields: tagFields, append: appendTag, remove: removeTag } = useFieldArray({
+    control,
+    name: "tags"
+  });
+
+  const handleAddTag = () => {
+    if (newTag && newTag.trim() !== '') {
+      const tags = watch('tags') || [];
+      
+      // Check if the tag already exists
+      if (!tags.includes(newTag.trim())) {
+        appendTag(newTag.trim());
+        setNewTag('');
+      }
+    }
+  };
 
   const onSubmit = async (data: FormValues) => {
     if (!user) {
@@ -69,7 +93,8 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
         budget: data.budget,
         teamMembers: teamMemberIds,
         status: 'To Do',
-        tasks_count: 0
+        tasks_count: 0,
+        tags: data.tags
       });
       
       if (project) {
@@ -98,6 +123,7 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
             <TabsList className="mb-4">
               <TabsTrigger value="details">Project Details</TabsTrigger>
               <TabsTrigger value="team">Team Members</TabsTrigger>
+              <TabsTrigger value="tags">Tags</TabsTrigger>
             </TabsList>
             
             <TabsContent value="details" className="space-y-4">
@@ -172,6 +198,61 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
                   remove: removeTeamMember
                 }}
               />
+            </TabsContent>
+
+            <TabsContent value="tags">
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <div className="flex-1">
+                    <Label htmlFor="newTag" className="sr-only">Add Tag</Label>
+                    <div className="flex">
+                      <Input
+                        id="newTag"
+                        placeholder="Enter a tag"
+                        value={newTag}
+                        onChange={(e) => setNewTag(e.target.value)}
+                        className="rounded-r-none"
+                      />
+                      <Button 
+                        type="button" 
+                        onClick={handleAddTag} 
+                        className="rounded-l-none"
+                      >
+                        <Plus className="h-4 w-4 mr-1" /> Add
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2 mt-2">
+                  <Controller
+                    control={control}
+                    name="tags"
+                    render={({ field }) => (
+                      <>
+                        {field.value && field.value.length > 0 ? (
+                          field.value.map((tag, index) => (
+                            <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                              <Tag className="h-3 w-3" /> {tag}
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-4 w-4 p-0 ml-1 hover:bg-transparent"
+                                onClick={() => removeTag(index)}
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </Badge>
+                          ))
+                        ) : (
+                          <p className="text-sm text-muted-foreground">No tags added yet. Add tags to categorize your project.</p>
+                        )}
+                      </>
+                    )}
+                  />
+                </div>
+              </div>
             </TabsContent>
           </Tabs>
           

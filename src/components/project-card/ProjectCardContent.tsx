@@ -4,8 +4,11 @@ import { CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Project } from '@/types';
-import { List, Plus } from 'lucide-react';
+import { List, Plus, ChevronRight, Calendar, Users } from 'lucide-react';
 import { ProjectStatusSelect } from './ProjectStatusSelect';
+import { format } from 'date-fns';
+import ProjectBudgetInfo from './ProjectBudgetInfo';
+import { Link } from 'react-router-dom';
 
 interface ProjectCardContentProps {
   project: Project;
@@ -37,7 +40,13 @@ const ProjectCardContent: React.FC<ProjectCardContentProps> = ({ project, onView
             <span>Progress</span>
             <span>{progress}%</span>
           </div>
-          <Progress value={progress} />
+          <Progress value={progress} 
+            className={`h-2 ${
+              progress < 30 ? 'bg-red-100' : 
+              progress < 70 ? 'bg-yellow-100' : 
+              'bg-green-100'
+            }`}
+          />
         </div>
         
         <div className="mb-4">
@@ -51,6 +60,20 @@ const ProjectCardContent: React.FC<ProjectCardContentProps> = ({ project, onView
           budgetSpent={project.budgetSpent || 0} 
         />
       )}
+
+      <div className="mt-2 mb-4 text-xs text-gray-500">
+        {project.teamMembers && project.teamMembers.length > 0 && (
+          <div className="flex items-center gap-1 mb-1">
+            <Users className="h-3 w-3" /> 
+            <span>{project.teamMembers.length} team member{project.teamMembers.length !== 1 ? 's' : ''}</span>
+          </div>
+        )}
+        
+        <div className="flex items-center gap-1">
+          <Calendar className="h-3 w-3" /> 
+          <span>Deadline: {format(new Date(project.endDate), 'MMM d, yyyy')}</span>
+        </div>
+      </div>
       
       {(onViewTasks || onCreateTask) && (
         <div className="mt-auto pt-4 flex gap-2 justify-end">
@@ -67,28 +90,6 @@ const ProjectCardContent: React.FC<ProjectCardContentProps> = ({ project, onView
         </div>
       )}
     </CardContent>
-  );
-};
-
-// Nested component for budget information
-interface ProjectBudgetInfoProps {
-  budget: number;
-  budgetSpent: number;
-}
-
-const ProjectBudgetInfo: React.FC<ProjectBudgetInfoProps> = ({ budget, budgetSpent }) => {
-  return (
-    <div className="text-sm text-gray-600 mb-4">
-      <span className="font-medium">Budget:</span> ${budget.toFixed(2)}
-      {budgetSpent > 0 && (
-        <div className="flex justify-between mt-1">
-          <span className="text-xs">Spent: ${budgetSpent.toFixed(2)}</span>
-          <span className="text-xs">
-            {Math.round((budgetSpent / budget) * 100)}%
-          </span>
-        </div>
-      )}
-    </div>
   );
 };
 

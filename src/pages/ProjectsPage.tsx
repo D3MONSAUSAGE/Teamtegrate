@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, SlidersHorizontal } from "lucide-react";
+import { Plus, Search, SlidersHorizontal, Tag } from "lucide-react";
 import { useProjects } from '@/hooks/useProjects';
 import ProjectCard from '@/components/project-card';
 import CreateProjectDialog from '@/components/CreateProjectDialog';
@@ -19,6 +19,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Badge } from '@/components/ui/badge';
 
 const ProjectsPage = () => {
   const { projects, isLoading, refreshProjects } = useProjects();
@@ -28,6 +29,7 @@ const ProjectsPage = () => {
   const [hasAttemptedRefresh, setHasAttemptedRefresh] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'All'>('All');
+  const [tagFilter, setTagFilter] = useState<string | 'All'>('All');
   const navigate = useNavigate();
 
   // Modified effect to prevent infinite refreshing
@@ -66,14 +68,28 @@ const ProjectsPage = () => {
     toast.success("Project created successfully!");
   };
 
-  // Filter projects based on search query and status
+  // Extract all unique tags from projects
+  const allTags = React.useMemo(() => {
+    const tagsSet = new Set<string>();
+    projects.forEach(project => {
+      if (project.tags && project.tags.length) {
+        project.tags.forEach(tag => tagsSet.add(tag));
+      }
+    });
+    return Array.from(tagsSet);
+  }, [projects]);
+
+  // Filter projects based on search query, status, and tags
   const filteredProjects = projects.filter(project => {
     const matchesSearch = project.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                         project.description?.toLowerCase().includes(searchQuery.toLowerCase());
+                          project.description?.toLowerCase().includes(searchQuery.toLowerCase());
     
     const matchesStatus = statusFilter === 'All' || project.status === statusFilter;
     
-    return matchesSearch && matchesStatus;
+    const matchesTag = tagFilter === 'All' || 
+                      (project.tags && project.tags.includes(tagFilter));
+    
+    return matchesSearch && matchesStatus && matchesTag;
   });
 
   if (isLoading) {
@@ -121,6 +137,33 @@ const ProjectsPage = () => {
             </DropdownMenuRadioGroup>
           </DropdownMenuContent>
         </DropdownMenu>
+
+        {allTags.length > 0 && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="flex gap-2">
+                <Tag className="h-4 w-4" />
+                {tagFilter === 'All' ? 'All Tags' : tagFilter}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48 max-h-80 overflow-auto">
+              <DropdownMenuLabel>Filter by Tag</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuRadioGroup value={tagFilter} onValueChange={(value) => setTagFilter(value)}>
+                <DropdownMenuRadioItem value="All">All Tags</DropdownMenuRadioItem>
+                {allTags.map((tag) => (
+                  <DropdownMenuRadioItem key={tag} value={tag}>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="h-5 flex items-center">
+                        <Tag className="h-3 w-3 mr-1" /> {tag}
+                      </Badge>
+                    </div>
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

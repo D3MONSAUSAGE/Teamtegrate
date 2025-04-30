@@ -52,7 +52,8 @@ export const fetchProjects = async (
         is_completed: isCompleted,
         budgetSpent: project.budget_spent || 0,
         status: status as ProjectStatus,
-        tasks_count: project.tasks_count || 0
+        tasks_count: project.tasks_count || 0,
+        tags: project.tags || []
       };
     });
 
@@ -95,7 +96,8 @@ export const addProject = async (
       budget: project.budget || 0,
       is_completed: isCompleted,
       status: status,
-      tasks_count: 0
+      tasks_count: 0,
+      tags: project.tags || []
     });
     
     const { error } = await supabase
@@ -113,7 +115,8 @@ export const addProject = async (
         updated_at: nowISO,
         team_members: project.teamMembers || [],
         status: status,
-        tasks_count: 0
+        tasks_count: 0,
+        tags: project.tags || []
       });
 
     if (error) {
@@ -137,7 +140,8 @@ export const addProject = async (
       is_completed: isCompleted,
       budgetSpent: 0,
       status: status as ProjectStatus,
-      tasks_count: 0
+      tasks_count: 0,
+      tags: project.tags || []
     };
 
     console.log('New project created:', newProject);

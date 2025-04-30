@@ -55,7 +55,8 @@ export const useProjects = () => {
         // Ensure is_completed and status are synchronized
         is_completed: project.status === 'Completed' ? true : project.is_completed || false,
         status: (project.status || 'To Do') as ProjectStatus,
-        tasks_count: project.tasks_count || 0
+        tasks_count: project.tasks_count || 0,
+        tags: project.tags || []
       }));
 
       console.log('Formatted projects:', formattedProjects);
