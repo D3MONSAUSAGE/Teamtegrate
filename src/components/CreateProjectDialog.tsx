@@ -52,6 +52,7 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
     name: "teamMembers"
   });
 
+  // Fix: Correctly define the tags field array
   const { fields: tagFields, append: appendTag, remove: removeTag } = useFieldArray({
     control,
     name: "tags"
@@ -63,8 +64,8 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
       
       // Check if the tag already exists
       if (!tags.includes(newTag.trim())) {
-        // Correctly append to the tags array
-        appendTag(newTag.trim());
+        // Fix: Append the string tag correctly to the tags array
+        appendTag(newTag.trim() as any);
         setNewTag('');
       }
     }
