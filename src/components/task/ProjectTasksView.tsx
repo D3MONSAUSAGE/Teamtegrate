@@ -1,11 +1,10 @@
-
 import React, { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTask } from '@/contexts/task';
 import TaskHeader from './TaskHeader';
 import TaskTabs from './TaskTabs';
 import { Task, Project } from '@/types';
-import CreateTaskDialogWithAI from '../CreateTaskDialogWithAI';
+import CreateTaskDialog from '../CreateTaskDialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Calendar, ChevronLeft, Clock, Filter, List, PieChart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -234,7 +233,7 @@ const ProjectTasksView = () => {
         }}
       />
       
-      <CreateTaskDialogWithAI
+      <CreateTaskDialog
         open={isCreateTaskOpen} 
         onOpenChange={setIsCreateTaskOpen}
         editingTask={editingTask}
