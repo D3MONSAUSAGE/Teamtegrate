@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -12,12 +11,9 @@ import { toast } from '@/components/ui/sonner';
 import { format } from 'date-fns';
 import { useUsers } from '@/hooks/useUsers';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TeamMembersSection, FormValues as TeamMembersFormValues } from "@/components/project/TeamMembersSection";
+import { TeamMembersSection, FormValues } from "@/components/project/TeamMembersSection";
 import { X, Plus, Tag } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-
-// We no longer need to extend the FormValues interface, we can use the one from TeamMembersSection directly
-type FormValues = TeamMembersFormValues;
 
 interface CreateProjectDialogProps {
   open: boolean;
@@ -52,14 +48,10 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
     name: "teamMembers"
   });
 
-  // Fix: Define the tags field array with correct typing
-  const tagsFieldArray = useFieldArray({
+  const { fields: tagFields, append: appendTag, remove: removeTag } = useFieldArray({
     control,
-    name: "tags" as const // Explicitly specify this as a const to match expected type
+    name: "tags"
   });
-  const tagFields = tagsFieldArray.fields;
-  const appendTag = tagsFieldArray.append;
-  const removeTag = tagsFieldArray.remove;
 
   const handleAddTag = () => {
     if (newTag && newTag.trim() !== '') {
@@ -67,8 +59,7 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
       
       // Check if the tag already exists
       if (!tags.includes(newTag.trim())) {
-        // Fix: Append the tag correctly
-        appendTag(newTag.trim() as any);
+        appendTag(newTag.trim());
         setNewTag('');
       }
     }
@@ -228,32 +219,24 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
                 </div>
 
                 <div className="flex flex-wrap gap-2 mt-2">
-                  <Controller
-                    control={control}
-                    name="tags"
-                    render={({ field }) => (
-                      <>
-                        {field.value && field.value.length > 0 ? (
-                          field.value.map((tag, index) => (
-                            <Badge key={index} variant="secondary" className="flex items-center gap-1">
-                              <Tag className="h-3 w-3" /> {tag}
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="h-4 w-4 p-0 ml-1 hover:bg-transparent"
-                                onClick={() => removeTag(index)}
-                              >
-                                <X className="h-3 w-3" />
-                              </Button>
-                            </Badge>
-                          ))
-                        ) : (
-                          <p className="text-sm text-muted-foreground">No tags added yet. Add tags to categorize your project.</p>
-                        )}
-                      </>
-                    )}
-                  />
+                  {tagFields.length > 0 ? (
+                    tagFields.map((field, index) => (
+                      <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                        <Tag className="h-3 w-3" /> {field.value}
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-4 w-4 p-0 ml-1 hover:bg-transparent"
+                          onClick={() => removeTag(index)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </Badge>
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No tags added yet. Add tags to categorize your project.</p>
+                  )}
                 </div>
               </div>
             </TabsContent>
