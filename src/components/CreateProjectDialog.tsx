@@ -18,7 +18,12 @@ import { Badge } from '@/components/ui/badge';
 
 // Extended form values to include tags
 interface FormValues extends TeamMembersFormValues {
-  tags?: string[];
+  title: string;
+  description: string;
+  startDate: string;
+  endDate: string;
+  budget?: number;
+  tags: string[];
   newTag?: string;
 }
 
@@ -94,7 +99,8 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
         teamMembers: teamMemberIds,
         status: 'To Do',
         tasks_count: 0,
-        tags: data.tags
+        tags: data.tags,
+        is_completed: false // Add this missing property
       });
       
       if (project) {

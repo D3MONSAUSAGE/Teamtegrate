@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils";
 
 interface ProjectBudgetInfoProps {
   budget: number;
@@ -34,8 +35,7 @@ const ProjectBudgetInfo: React.FC<ProjectBudgetInfoProps> = ({ budget, budgetSpe
         </div>
         <Progress 
           value={percentSpent} 
-          className="h-2"
-          indicatorClassName={progressColor}
+          className={cn("h-2", progressColor)}
         />
       </div>
     </div>
