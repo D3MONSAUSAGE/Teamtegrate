@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -48,7 +49,8 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
     name: "teamMembers"
   });
 
-  const { fields: tagFields, append: appendTag, remove: removeTag } = useFieldArray({
+  // Use proper typing for the tags field array
+  const { fields: tagFields, append: appendTag, remove: removeTag } = useFieldArray<FormValues>({
     control,
     name: "tags"
   });
@@ -59,6 +61,7 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
       
       // Check if the tag already exists
       if (!tags.includes(newTag.trim())) {
+        // Append the tag directly
         appendTag(newTag.trim());
         setNewTag('');
       }
@@ -221,8 +224,8 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
                 <div className="flex flex-wrap gap-2 mt-2">
                   {tagFields.length > 0 ? (
                     tagFields.map((field, index) => (
-                      <Badge key={index} variant="secondary" className="flex items-center gap-1">
-                        <Tag className="h-3 w-3" /> {field.value}
+                      <Badge key={field.id} variant="secondary" className="flex items-center gap-1">
+                        <Tag className="h-3 w-3" /> {field as unknown as string}
                         <Button
                           type="button"
                           variant="ghost"
