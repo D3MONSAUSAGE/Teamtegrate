@@ -12,6 +12,13 @@ const TaskCardDescription: React.FC<TaskCardDescriptionProps> = ({ description }
   // If the description is short, don't enable expansion
   const isExpandable = description.length > 100;
 
+  // Handle empty descriptions
+  if (!description || description.trim() === '') {
+    return (
+      <p className="text-xs md:text-sm text-gray-400 italic">No description provided</p>
+    );
+  }
+
   return (
     <div 
       className="relative"

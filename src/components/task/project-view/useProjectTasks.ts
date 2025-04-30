@@ -1,10 +1,20 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Task, TaskStatus } from '@/types';
+import { useTask } from '@/contexts/task';
 
 export const useProjectTasks = (tasks: Task[], projectId: string | null) => {
   const [sortBy, setSortBy] = useState('deadline');
   const [searchQuery, setSearchQuery] = useState('');
+  const { refreshProjects } = useTask();
+  
+  // Effect to refresh projects data when viewing a specific project
+  useEffect(() => {
+    if (projectId) {
+      // Refresh projects data to ensure we have the latest task count
+      refreshProjects();
+    }
+  }, [projectId, refreshProjects]);
 
   // Filter tasks by project and search query
   const projectTasks = tasks.filter((task) => task.projectId === projectId)

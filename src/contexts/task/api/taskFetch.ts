@@ -13,17 +13,19 @@ export const fetchTasks = async (
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>
 ): Promise<void> => {
   try {
-    // Fetch tasks from supabase
+    // Fetch tasks from supabase with more detailed logging
+    console.log('Fetching tasks for user:', user.id);
     const { data: taskData, error } = await supabase
       .from('tasks')
-      .select('*')
-      .eq('user_id', user.id);
+      .select('*');
 
     if (error) {
       console.error('Error fetching tasks:', error);
       toast.error('Failed to load tasks');
       return;
     }
+
+    console.log(`Fetched ${taskData.length} tasks from database`);
 
     // Fetch comments for all tasks
     const { data: commentData, error: commentError } = await supabase
@@ -32,6 +34,8 @@ export const fetchTasks = async (
 
     if (commentError) {
       console.error('Error fetching comments:', commentError);
+    } else {
+      console.log(`Fetched ${commentData?.length || 0} comments from database`);
     }
 
     // Get all user IDs that are assigned to tasks to fetch their names
@@ -41,6 +45,7 @@ export const fetchTasks = async (
 
     // Remove duplicates
     const uniqueUserIds = [...new Set(assignedUserIds)];
+    console.log(`Found ${uniqueUserIds.length} unique assigned users`);
     
     // Fetch user names for assigned users
     let userMap = new Map();
@@ -56,6 +61,7 @@ export const fetchTasks = async (
         userData.forEach(user => {
           userMap.set(user.id, user.name || user.email);
         });
+        console.log(`Loaded ${userData.length} user details`);
       }
     }
 
@@ -78,7 +84,7 @@ export const fetchTasks = async (
 
       return {
         id: task.id,
-        userId: task.user_id,
+        userId: task.user_id || user.id, // Default to current user if not set
         projectId: task.project_id,
         title: task.title || '',
         description: task.description || '',
@@ -120,8 +126,15 @@ export const fetchTasks = async (
             }));
           }
         });
+        console.log(`Updated comment user names for ${userData.length} users`);
       }
     }
+
+    console.log(`Final task count being set: ${tasks.length}`);
+    console.log(`Tasks by project: ${JSON.stringify(tasks.reduce((acc, task) => {
+      acc[task.projectId || 'unassigned'] = (acc[task.projectId || 'unassigned'] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>))}`);
 
     setTasks(tasks);
   } catch (error) {
