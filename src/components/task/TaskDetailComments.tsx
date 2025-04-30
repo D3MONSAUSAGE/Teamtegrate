@@ -13,7 +13,7 @@ const TaskDetailComments: React.FC<TaskDetailCommentsProps> = ({
   taskId,
   comments,
 }) => (
-  <div className="space-y-2">
+  <div className="p-4 pt-0 space-y-2">
     <div className="font-medium text-sm flex items-center">
       <MessageCircle className="h-4 w-4 mr-2" />
       Comments
