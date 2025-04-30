@@ -18,7 +18,7 @@ export type FormValues = {
   description: string;
   startDate: string;
   endDate: string;
-  budget: string | number;
+  budget?: string | number; // Changed from required to optional with ?
   teamMembers: { memberId: string }[];
 };
 
