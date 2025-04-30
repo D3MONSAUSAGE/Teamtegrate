@@ -31,9 +31,11 @@ export const useUsers = () => {
     queryKey: ['users'],
     queryFn: fetchUsers,
     staleTime: 1000 * 60 * 5, // 5 minutes
-    onError: (err: Error) => {
-      console.error('Error in useUsers hook:', err);
-      toast.error('Failed to load users');
+    meta: {
+      onError: (err: Error) => {
+        console.error('Error in useUsers hook:', err);
+        toast.error('Failed to load users');
+      }
     }
   });
   

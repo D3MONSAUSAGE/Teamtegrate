@@ -1,3 +1,4 @@
+
 export type UserRole = 'user' | 'manager';
 
 export interface User {
@@ -14,6 +15,7 @@ export interface AppUser {
   name: string;
   email: string;
   role: string;
+  avatar_url?: string;
 }
 
 export type TaskPriority = 'Low' | 'Medium' | 'High';
