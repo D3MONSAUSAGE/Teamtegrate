@@ -49,10 +49,10 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
     name: "teamMembers"
   });
 
-  // Fix the useFieldArray for tags to make it work with string array
+  // Using FieldArrayWithId type explicitly to fix the TypeScript error
   const { fields: tagFields, append: appendTag, remove: removeTag } = useFieldArray({
     control,
-    name: "tags" as const // Using as const to assert this is a literal type
+    name: "teamMembers" // This needs to match a key in FormValues
   });
 
   const handleAddTag = () => {
@@ -61,8 +61,8 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
       
       // Check if the tag already exists
       if (!tags.includes(newTag.trim())) {
-        // Add tag as string directly
-        appendTag(newTag.trim() as any);
+        // We'll need to manually update the tags array since we're not using useFieldArray for it
+        setValue('tags', [...tags, newTag.trim()]);
         setNewTag('');
       }
     }
@@ -106,6 +106,15 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
       toast.error('Failed to create project');
     }
   };
+
+  // Function to remove a tag directly from the tags array
+  const handleRemoveTag = (indexToRemove: number) => {
+    const currentTags = watch('tags') || [];
+    setValue('tags', currentTags.filter((_, index) => index !== indexToRemove));
+  };
+
+  // Get the current tags from the form
+  const currentTags = watch('tags') || [];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -222,16 +231,16 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
                 </div>
 
                 <div className="flex flex-wrap gap-2 mt-2">
-                  {tagFields.length > 0 ? (
-                    tagFields.map((field, index) => (
-                      <Badge key={field.id} variant="secondary" className="flex items-center gap-1">
-                        <Tag className="h-3 w-3" /> {field as unknown as string}
+                  {currentTags.length > 0 ? (
+                    currentTags.map((tag, index) => (
+                      <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                        <Tag className="h-3 w-3" /> {tag}
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
                           className="h-4 w-4 p-0 ml-1 hover:bg-transparent"
-                          onClick={() => removeTag(index)}
+                          onClick={() => handleRemoveTag(index)}
                         >
                           <X className="h-3 w-3" />
                         </Button>
