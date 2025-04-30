@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Task } from '@/types';
-import TaskCard from '../TaskCard';
+import TaskCard from '@/components/task-card';
 import { Button } from "@/components/ui/button";
 import { Plus } from 'lucide-react';
 import TaskDetailDrawer from './TaskDetailDrawer';

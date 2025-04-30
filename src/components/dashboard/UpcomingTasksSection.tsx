@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import TaskCard from '@/components/TaskCard';
+import TaskCard from '@/components/task-card';
 import { Task } from '@/types';
 import { Plus, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
