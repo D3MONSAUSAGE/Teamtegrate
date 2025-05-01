@@ -94,7 +94,7 @@ export const useProjectTasksView = (projectId: string | null) => {
     project,
     searchQuery,
     sortBy,
-    setSortBy, // Make sure we return setSortBy here
+    setSortBy, // Make sure to return setSortBy here
     todoTasks,
     inProgressTasks,
     pendingTasks,
