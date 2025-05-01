@@ -25,7 +25,7 @@ const ChatTypingIndicator: React.FC<ChatTypingIndicatorProps> = ({ typingUsers }
         <span className="dot">.</span>
         <span className="dot">.</span>
       </span>
-      <style jsx>
+      <style>
         {`
           .typing-animation .dot {
             animation: typing 1.5s infinite;

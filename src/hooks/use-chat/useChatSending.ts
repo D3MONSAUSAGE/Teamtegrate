@@ -1,6 +1,6 @@
 
-import { sendChatMessage } from "./useChatSendMessage";
 import { useState } from "react";
+import { useChatSendMessage } from "./useChatSendMessage";
 
 interface Message {
   id: string;
@@ -22,12 +22,6 @@ interface FileUpload {
   progress: number;
 }
 
-interface SendMessageParams {
-  roomId: string;
-  userId: string | undefined;
-  replyTo: Message | null;
-}
-
 export function useChatSending(
   roomId: string,
   userId: string | undefined
@@ -35,26 +29,34 @@ export function useChatSending(
   const [newMessage, setNewMessage] = useState("");
   const [fileUploads, setFileUploads] = useState<FileUpload[]>([]);
   const [replyTo, setReplyTo] = useState<Message | null>(null);
-  const [isSending, setIsSending] = useState(false);
+  const { sendMessage: sendMessageToSupabase, isSending } = useChatSendMessage(roomId, userId);
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if ((!newMessage.trim() && fileUploads.length === 0) || !userId) return;
 
-    setIsSending(true);
-
-    await sendChatMessage(e, {
-      newMessage,
-      fileUploads,
-      setIsSending,
-      setNewMessage,
-      setFileUploads,
-      setReplyTo,
-      roomId,
-      userId,
-      replyTo,
-    });
+    try {
+      // Upload files if any and get attachments
+      let attachments: { file_path: string; file_name: string; file_size: number; file_type: string }[] = [];
+      
+      // Send message with attachments
+      await sendMessageToSupabase(newMessage.trim(), replyTo?.id, attachments);
+      
+      // Reset state
+      setNewMessage("");
+      setFileUploads([]);
+      setReplyTo(null);
+      
+      // Scroll to bottom
+      setTimeout(() => {
+        const messagesEnd = document.getElementById('messages-end');
+        messagesEnd?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+      
+    } catch (error) {
+      console.error('Error sending message:', error);
+    }
   };
 
   return {
