@@ -13,7 +13,7 @@ interface WeeklyTimeReportProps {
     duration_minutes?: number | null;
     notes?: string | null;
   }>;
-  weekDate?: Date;  // Add weekDate prop
+  weekDate?: Date;
 }
 
 const WeeklyTimeReport: React.FC<WeeklyTimeReportProps> = ({ entries, weekDate = new Date() }) => {
@@ -22,9 +22,12 @@ const WeeklyTimeReport: React.FC<WeeklyTimeReportProps> = ({ entries, weekDate =
   const weekRange = `${format(weekStart, 'MMM d')} - ${format(weekDays[6], 'MMM d, yyyy')}`;
 
   const getDayEntries = (date: Date) => {
+    const formattedDate = date.toISOString().split('T')[0];
+    
+    // Filter entries for the specified day
     return entries.filter(entry => {
       const entryDate = new Date(entry.clock_in).toISOString().split('T')[0];
-      return entryDate === date.toISOString().split('T')[0];
+      return entryDate === formattedDate;
     }).sort((a, b) => new Date(a.clock_in).getTime() - new Date(b.clock_in).getTime());
   };
 

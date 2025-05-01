@@ -24,12 +24,23 @@ interface WeeklyTimeRowProps {
 const WeeklyTimeRow: React.FC<WeeklyTimeRowProps> = ({ day, dayEntries, isMobile }) => {
   const isCurrentDay = isToday(day);
   
+  // Calculate total minutes for all entries for this day
   const dailyMinutes = dayEntries.reduce((acc, entry) => {
-    let duration = entry.duration_minutes || 0;
-    if (!duration && entry.clock_out) {
-      duration = differenceInMinutes(parseISO(entry.clock_out), parseISO(entry.clock_in));
+    // If duration_minutes is available, use it
+    if (entry.duration_minutes !== null && entry.duration_minutes !== undefined) {
+      return acc + entry.duration_minutes;
+    } 
+    // If clock_out exists, calculate duration
+    else if (entry.clock_out) {
+      const duration = differenceInMinutes(parseISO(entry.clock_out), parseISO(entry.clock_in));
+      return acc + duration;
     }
-    return acc + duration;
+    // For ongoing entries, calculate duration up to now
+    else if (entry.clock_in) {
+      const duration = differenceInMinutes(new Date(), parseISO(entry.clock_in));
+      return acc + duration;
+    }
+    return acc;
   }, 0);
 
   const { mealBreaks, restBreaks, earnedBreakMinutes } = calculateBreakRequirements(dailyMinutes);
