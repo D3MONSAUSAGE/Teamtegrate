@@ -1,45 +1,29 @@
 
-import { useState, useEffect, useCallback } from 'react';
-import { Task, TaskStatus } from '@/types';
-import { useTask } from '@/contexts/task';
+import { useState, useMemo } from 'react';
+import { Task } from '@/types';
 
-export const useProjectTasks = (tasks: Task[], projectId: string | null) => {
-  const [sortBy, setSortBy] = useState('deadline');
+export const useProjectTasks = (allTasks: Task[], projectId: string | null) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const { refreshProjects } = useTask();
-  
-  // Effect to refresh projects data when viewing a specific project
-  useEffect(() => {
-    if (projectId) {
-      console.log(`useProjectTasks: Initializing for project ${projectId}`);
-    }
-  }, [projectId]);
+  const [sortBy, setSortBy] = useState('deadline');
 
-  // Filter tasks by project and search query
-  const projectTasks = tasks.filter((task) => {
-    // Make sure to convert the task.projectId to string if needed
-    const taskProjectId = typeof task.projectId === 'string' ? task.projectId : String(task.projectId);
-    return taskProjectId === projectId;
-  }).filter((task) => 
-    task.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    task.description?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Filter tasks that belong to the selected project
+  const projectTasks = useMemo(() => {
+    return allTasks.filter(task => task.project_id === projectId);
+  }, [allTasks, projectId]);
 
-  // Log for debugging
-  useEffect(() => {
-    if (projectId) {
-      console.log(`useProjectTasks: Found ${projectTasks.length} tasks for project ${projectId}`);
-    }
-  }, [projectId, projectTasks.length]);
+  // Filter tasks by search query
+  const filteredTasks = useMemo(() => {
+    if (!searchQuery) return projectTasks;
+    
+    const query = searchQuery.toLowerCase();
+    return projectTasks.filter(task => 
+      task.title.toLowerCase().includes(query) || 
+      (task.description && task.description.toLowerCase().includes(query))
+    );
+  }, [projectTasks, searchQuery]);
 
-  // Filter tasks by status
-  const todoTasks = projectTasks.filter((task) => task.status === 'To Do');
-  const inProgressTasks = projectTasks.filter((task) => task.status === 'In Progress');
-  const pendingTasks = projectTasks.filter((task) => task.status === 'Pending');
-  const completedTasks = projectTasks.filter((task) => task.status === 'Completed');
-
-  // Sort tasks based on the selected option
-  const sortTasks = useCallback((tasksToSort: Task[]) => {
+  // Sort tasks
+  const sortTasks = (tasksToSort: Task[]) => {
     return [...tasksToSort].sort((a, b) => {
       switch (sortBy) {
         case 'deadline':
@@ -62,34 +46,32 @@ export const useProjectTasks = (tasks: Task[], projectId: string | null) => {
           return 0;
       }
     });
-  }, [sortBy]);
+  };
 
-  // Sort filtered tasks
-  const sortedTodo = sortTasks(todoTasks);
-  const sortedInProgress = sortTasks(inProgressTasks);
-  const sortedPending = sortTasks(pendingTasks);
-  const sortedCompleted = sortTasks(completedTasks);
+  // Group tasks by status
+  const todoTasks = sortTasks(filteredTasks.filter(task => task.status === 'To Do'));
+  const inProgressTasks = sortTasks(filteredTasks.filter(task => task.status === 'In Progress'));
+  const pendingTasks = sortTasks(filteredTasks.filter(task => task.status === 'Pending'));
+  const completedTasks = sortTasks(filteredTasks.filter(task => task.status === 'Completed'));
 
-  // Calculate project progress
-  const calculateProgress = useCallback(() => {
-    const total = projectTasks.length;
+  // Calculate progress
+  const progress = useMemo(() => {
+    const total = filteredTasks.length;
     if (total === 0) return 0;
     
-    const completed = completedTasks.length;
+    const completed = filteredTasks.filter(task => task.status === 'Completed').length;
     return Math.round((completed / total) * 100);
-  }, [projectTasks.length, completedTasks.length]);
-
-  const progress = calculateProgress();
+  }, [filteredTasks]);
 
   return {
     searchQuery,
     setSearchQuery,
     sortBy,
     setSortBy,
-    todoTasks: sortedTodo,
-    inProgressTasks: sortedInProgress,
-    pendingTasks: sortedPending,
-    completedTasks: sortedCompleted,
+    todoTasks,
+    inProgressTasks,
+    pendingTasks,
+    completedTasks,
     progress,
     projectTasks
   };

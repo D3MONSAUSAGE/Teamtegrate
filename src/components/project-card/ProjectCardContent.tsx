@@ -78,9 +78,11 @@ const ProjectCardContent: React.FC<ProjectCardContentProps> = ({ project, onView
       {(onViewTasks || onCreateTask) && (
         <div className="mt-auto pt-4 flex gap-2 justify-end">
           {onViewTasks && (
-            <Button variant="outline" size="sm" onClick={onViewTasks}>
-              <List className="w-4 h-4 mr-1" /> Tasks
-            </Button>
+            <Link to={`/dashboard/tasks?projectId=${project.id}`}>
+              <Button variant="outline" size="sm">
+                <List className="w-4 h-4 mr-1" /> Tasks
+              </Button>
+            </Link>
           )}
           {onCreateTask && (
             <Button size="sm" onClick={onCreateTask}>

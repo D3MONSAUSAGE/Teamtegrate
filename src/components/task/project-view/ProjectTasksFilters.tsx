@@ -1,60 +1,44 @@
 
 import React from 'react';
-import { List } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Calendar, Filter, Clock } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Search } from 'lucide-react';
 
 interface ProjectTasksFiltersProps {
   searchQuery: string;
-  onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onSearchChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   sortBy: string;
-  onSortByChange: (sortType: string) => void;
+  onSortByChange: (value: string) => void;
 }
 
 const ProjectTasksFilters: React.FC<ProjectTasksFiltersProps> = ({
   searchQuery,
   onSearchChange,
   sortBy,
-  onSortByChange,
+  onSortByChange
 }) => {
   return (
-    <div className="flex justify-between items-center mb-6">
-      <div className="relative flex-1 max-w-sm">
+    <div className="flex flex-col sm:flex-row gap-2">
+      <div className="relative flex-1">
+        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="Search tasks..."
           value={searchQuery}
           onChange={onSearchChange}
-          className="pl-9"
+          className="pl-8"
         />
-        <List className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
       </div>
-      <div className="flex gap-2">
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={() => onSortByChange('deadline')}
-        >
-          <Calendar className={`h-4 w-4 ${sortBy === 'deadline' ? 'text-primary' : ''} mr-1`} />
-          By Date
-        </Button>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={() => onSortByChange('priority')}
-        >
-          <Filter className={`h-4 w-4 ${sortBy === 'priority' ? 'text-primary' : ''} mr-1`} />
-          Priority
-        </Button>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={() => onSortByChange('created')}
-        >
-          <Clock className={`h-4 w-4 ${sortBy === 'created' ? 'text-primary' : ''} mr-1`} />
-          Recent
-        </Button>
-      </div>
+      <Select value={sortBy} onValueChange={onSortByChange}>
+        <SelectTrigger className="w-full sm:w-[180px]">
+          <SelectValue placeholder="Sort by" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="deadline">Deadline (Nearest)</SelectItem>
+          <SelectItem value="priority">Priority (Highest)</SelectItem>
+          <SelectItem value="created">Recently Created</SelectItem>
+          <SelectItem value="upcoming">Upcoming</SelectItem>
+        </SelectContent>
+      </Select>
     </div>
   );
 };
