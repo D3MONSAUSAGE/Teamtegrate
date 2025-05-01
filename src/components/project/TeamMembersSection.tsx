@@ -14,7 +14,7 @@ import { Plus, X } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { FormValues } from "./EditProjectDialog";
 
-interface TeamMembersSectionProps {
+export interface TeamMembersSectionProps {
   teamMembers: any[];
   teamMemberFields: { id: string; memberId: string }[];
   setValue: UseFormSetValue<FormValues>;
@@ -127,3 +127,4 @@ export const TeamMembersSection: React.FC<TeamMembersSectionProps> = ({
     </div>
   );
 };
+

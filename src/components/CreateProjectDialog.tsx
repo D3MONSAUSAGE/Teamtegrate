@@ -9,11 +9,12 @@ import { toast } from '@/components/ui/sonner';
 import { format } from 'date-fns';
 import { useUsers } from '@/hooks/useUsers';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TeamMembersSection, FormValues } from "@/components/project/TeamMembersSection";
+import { TeamMembersSection } from "@/components/project/TeamMembersSection";
 import { ProjectDetailsSection } from '@/components/project/ProjectDetailsSection';
 import { TagsSection } from '@/components/project/TagsSection';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { FormValues } from '@/components/project/EditProjectDialog';
 
 // Define the validation schema
 const projectFormSchema = z.object({
@@ -69,7 +70,7 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
       console.log("Submitting project data:", data);
       
       // Extract team member IDs from the form data
-      const teamMemberIds = data.teamMembers.map(member => member.memberId);
+      const teamMemberIds = data.teamMembers?.map(member => member.memberId) || [];
       
       const project = await createProject({
         title: data.title,
@@ -124,7 +125,7 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
             <TabsContent value="team">
               <TeamMembersSection 
                 teamMembers={users}
-                teamMemberFields={teamMemberFields}
+                teamMemberFields={teamMemberFields as { id: string; memberId: string }[]}
                 setValue={setValue}
                 watch={watch}
                 fieldArrayProps={{
