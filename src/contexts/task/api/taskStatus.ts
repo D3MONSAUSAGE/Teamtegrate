@@ -6,7 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 export const updateTaskStatus = async (
   taskId: string,
   status: Task['status'],
-  user: { id: string },
+  user: { id: string, name?: string },
   tasks: Task[],
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>,
   projects: any[],
@@ -26,21 +26,24 @@ export const updateTaskStatus = async (
     }
 
     const now = new Date();
-    const updates: Partial<Task> = {
-      status: status,
-      completedAt: status === 'Completed' ? now : undefined,
-      completedById: status === 'Completed' ? user.id : undefined,
-    };
+    
+    // If completing the task, add who completed it
+    let completedById = undefined;
+    let completedByName = undefined;
+    
+    if (status === 'Completed') {
+      completedById = user.id;
+      completedByName = user.name || task.assignedToName;
+    }
 
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('tasks')
       .update({
         status: status,
         completed_at: status === 'Completed' ? now.toISOString() : null,
-        completed_by_id: status === 'Completed' ? user.id : null,
+        completed_by_id: completedById,
       })
-      .eq('id', taskId)
-      .select();
+      .eq('id', taskId);
 
     if (error) {
       console.error('Error updating task status:', error);
@@ -48,17 +51,31 @@ export const updateTaskStatus = async (
       return;
     }
 
+    // Update tasks in local state
     setTasks(
       tasks.map((t) =>
-        t.id === taskId ? { ...t, status: status, completedAt: now } : t
+        t.id === taskId ? { 
+          ...t, 
+          status: status, 
+          completedAt: status === 'Completed' ? now : undefined,
+          completedById: status === 'Completed' ? user.id : undefined,
+          completedByName: status === 'Completed' ? (user.name || t.assignedToName) : undefined
+        } : t
       )
     );
 
+    // Update tasks in projects
     setProjects((prevProjects) =>
       prevProjects.map((project) => ({
         ...project,
-        tasks: project.tasks.map((task) =>
-          task.id === taskId ? { ...task, status: status, completedAt: now } : task
+        tasks: project.tasks.map((t) =>
+          t.id === taskId ? { 
+            ...t, 
+            status: status, 
+            completedAt: status === 'Completed' ? now : undefined,
+            completedById: status === 'Completed' ? user.id : undefined,
+            completedByName: status === 'Completed' ? (user.name || t.assignedToName) : undefined
+          } : t
         ),
       }))
     );
@@ -72,7 +89,7 @@ export const updateTaskStatus = async (
             ? prevScore.completedTasks + 1
             : prevScore.completedTasks - 1;
         const totalTasks = prevScore.totalTasks;
-        const percentage = (completedTasks / totalTasks) * 100;
+        const percentage = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
         return {
           ...prevScore,
           completedTasks,

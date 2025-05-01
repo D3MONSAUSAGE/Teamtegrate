@@ -15,6 +15,7 @@ export function buildTimelineData({ tasks, projects, teamMembers, journalEntries
         type: "task",
         ...task,
         date: task.completedAt,
+        completedByName: task.completedByName || task.assignedToName,
       })),
     ...projects
       .filter(project => project.is_completed)
