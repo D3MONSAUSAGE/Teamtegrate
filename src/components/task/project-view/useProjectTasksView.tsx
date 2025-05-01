@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useTask } from '@/contexts/task';
 import { Task, Project } from '@/types';
 import { toast } from '@/components/ui/sonner';
@@ -55,21 +55,25 @@ export const useProjectTasksView = (projectId: string | null) => {
     loadData();
   }, [projectId, refreshProjects]);
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
-  };
+  }, [setSearchQuery]);
 
-  const handleEditTask = (task: Task) => {
+  const handleSortByChange = useCallback((value: string) => {
+    setSortBy(value);
+  }, [setSortBy]);
+
+  const handleEditTask = useCallback((task: Task) => {
     setEditingTask(task);
     setIsCreateTaskOpen(true);
-  };
+  }, []);
 
-  const handleCreateTask = () => {
+  const handleCreateTask = useCallback(() => {
     setEditingTask(undefined);
     setIsCreateTaskOpen(true);
-  };
+  }, []);
   
-  const handleManualRefresh = async () => {
+  const handleManualRefresh = useCallback(async () => {
     if (!projectId) return;
     
     setIsRefreshing(true);
@@ -85,7 +89,7 @@ export const useProjectTasksView = (projectId: string | null) => {
     } finally {
       setIsRefreshing(false);
     }
-  };
+  }, [projectId, refreshProjects]);
 
   return {
     isLoading,
@@ -94,7 +98,6 @@ export const useProjectTasksView = (projectId: string | null) => {
     project,
     searchQuery,
     sortBy,
-    setSortBy,
     todoTasks,
     inProgressTasks,
     pendingTasks,
@@ -106,6 +109,7 @@ export const useProjectTasksView = (projectId: string | null) => {
     handleSearchChange,
     handleEditTask,
     handleCreateTask,
-    handleManualRefresh
+    handleManualRefresh,
+    onSortByChange: handleSortByChange // Expose the sort handler correctly
   };
 };

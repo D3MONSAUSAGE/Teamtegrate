@@ -18,7 +18,6 @@ const ProjectTasksView = () => {
     project,
     searchQuery,
     sortBy,
-    setSortBy,
     todoTasks,
     inProgressTasks,
     pendingTasks,
@@ -31,7 +30,8 @@ const ProjectTasksView = () => {
     handleSearchChange,
     handleEditTask,
     handleCreateTask,
-    handleManualRefresh
+    handleManualRefresh,
+    onSortByChange
   } = useProjectTasksView(projectId);
 
   if (isLoading) {
@@ -70,7 +70,7 @@ const ProjectTasksView = () => {
         searchQuery={searchQuery}
         sortBy={sortBy}
         onSearchChange={handleSearchChange}
-        onSortByChange={setSortBy}
+        onSortByChange={onSortByChange}
         onRefresh={handleManualRefresh}
         isRefreshing={isRefreshing}
         onEditTask={handleEditTask}

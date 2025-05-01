@@ -49,10 +49,10 @@ export const useProjectTasks = (allTasks: Task[], projectId: string | null) => {
   };
 
   // Group tasks by status
-  const todoTasks = sortTasks(filteredTasks.filter(task => task.status === 'To Do'));
-  const inProgressTasks = sortTasks(filteredTasks.filter(task => task.status === 'In Progress'));
-  const pendingTasks = sortTasks(filteredTasks.filter(task => task.status === 'Pending'));
-  const completedTasks = sortTasks(filteredTasks.filter(task => task.status === 'Completed'));
+  const todoTasks = useMemo(() => sortTasks(filteredTasks.filter(task => task.status === 'To Do')), [filteredTasks, sortBy]);
+  const inProgressTasks = useMemo(() => sortTasks(filteredTasks.filter(task => task.status === 'In Progress')), [filteredTasks, sortBy]);
+  const pendingTasks = useMemo(() => sortTasks(filteredTasks.filter(task => task.status === 'Pending')), [filteredTasks, sortBy]);
+  const completedTasks = useMemo(() => sortTasks(filteredTasks.filter(task => task.status === 'Completed')), [filteredTasks, sortBy]);
 
   // Calculate progress
   const progress = useMemo(() => {
