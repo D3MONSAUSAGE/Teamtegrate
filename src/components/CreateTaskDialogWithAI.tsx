@@ -4,11 +4,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Task } from '@/types';
 import { useTask } from '@/contexts/task';
 import { useAuth } from '@/contexts/AuthContext';
-import TaskFormFieldsWithAI from './task/TaskFormFieldsWithAI';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Form } from "@/components/ui/form";
 import { useTaskFormWithAI } from '@/hooks/useTaskFormWithAI';
-import TaskFormActions from './task/form/TaskFormActions';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TaskDetailsWithAISection } from '@/components/task/form/TaskDetailsWithAISection';
+import { TaskAssignmentSection } from '@/components/task/form/TaskAssignmentSection';
 
 interface CreateTaskDialogProps {
   open: boolean;
@@ -94,27 +96,50 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
         </DialogHeader>
         
         <Form {...form}>
-          <form onSubmit={handleSubmit(onSubmit)} className={`space-y-4 ${isMobile ? 'pt-2' : 'pt-4'}`}>
-            <TaskFormFieldsWithAI
-              register={register}
-              errors={errors}
-              setValue={setValue}
-              selectedMember={selectedMember}
-              setSelectedMember={setSelectedMember}
-              projects={projects}
-              editingTask={editingTask}
-              currentProjectId={currentProjectId}
-              date={deadlineDate}
-              timeInput={timeInput}
-              onDateChange={handleDateChange}
-              onTimeChange={handleTimeChange}
-            />
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <Tabs defaultValue="details" className="w-full">
+              <TabsList className="mb-4">
+                <TabsTrigger value="details">Task Details</TabsTrigger>
+                <TabsTrigger value="assignment">Assignment</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="details" className="space-y-4">
+                <TaskDetailsWithAISection
+                  register={register}
+                  errors={errors}
+                  setValue={setValue}
+                  projects={projects}
+                  editingTask={editingTask}
+                  currentProjectId={currentProjectId}
+                  date={deadlineDate}
+                  timeInput={timeInput}
+                  onDateChange={handleDateChange}
+                  onTimeChange={handleTimeChange}
+                />
+              </TabsContent>
+              
+              <TabsContent value="assignment">
+                <TaskAssignmentSection 
+                  register={register}
+                  selectedMember={selectedMember}
+                  setSelectedMember={setSelectedMember}
+                  setValue={setValue}
+                />
+              </TabsContent>
+            </Tabs>
             
-            <TaskFormActions 
-              isEditMode={isEditMode}
-              onCancel={handleCancel}
-              isMobile={isMobile}
-            />
+            <div className="flex justify-end gap-2">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={handleCancel}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" className="bg-green-500 hover:bg-green-600">
+                {isEditMode ? 'Update Task' : 'Create Task'}
+              </Button>
+            </div>
           </form>
         </Form>
       </DialogContent>
