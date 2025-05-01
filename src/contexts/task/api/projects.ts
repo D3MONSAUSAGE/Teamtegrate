@@ -24,11 +24,11 @@ export const fetchProjects = async (
     console.log('Projects data from API:', data);
 
     const formattedProjects: Project[] = data.map(project => {
-      // Ensure status and is_completed are synchronized
+      // Explicitly ensure status and is_completed are synchronized
       let status = project.status || 'To Do';
       let isCompleted = project.is_completed || false;
       
-      // Ensure proper synchronization
+      // Always enforce consistency between status and is_completed
       if (status === 'Completed') {
         isCompleted = true;
       } else if (isCompleted) {
@@ -74,18 +74,14 @@ export const addProject = async (
     const now = new Date();
     const nowISO = now.toISOString();
     
-    // Ensure status and is_completed are synchronized
+    // Explicitly ensure status and is_completed are synchronized
     let status = project.status || 'To Do';
     let isCompleted = project.is_completed || false;
     
-    // Proper synchronization
+    // Always enforce consistency
     if (status === 'Completed') {
       isCompleted = true;
-    } else {
-      isCompleted = false;
-    }
-    
-    if (isCompleted) {
+    } else if (isCompleted) {
       status = 'Completed';
     }
     

@@ -30,21 +30,26 @@ export const updateProject = async (
     if (updates.budget !== undefined) updatedFields.budget = updates.budget;
     if (updates.tags !== undefined) updatedFields.tags = updates.tags;
     
-    // Always synchronize is_completed and status together
-    if (updates.status !== undefined) {
-      updatedFields.status = updates.status;
-      updatedFields.is_completed = updates.status === 'Completed';
-    }
-    
-    if (updates.is_completed !== undefined) {
-      updatedFields.is_completed = updates.is_completed;
-      // If marking as completed, ensure status is also set to 'Completed'
-      if (updates.is_completed === true) {
-        updatedFields.status = 'Completed';
-      } 
-      // If explicitly marking as not completed and status isn't set, default to 'In Progress'
-      else if (!updates.status) {
-        updatedFields.status = 'In Progress';
+    // Handle status and is_completed together to ensure they are synchronized
+    if (updates.status !== undefined || updates.is_completed !== undefined) {
+      // If is_completed is explicitly set, use that value
+      if (updates.is_completed !== undefined) {
+        updatedFields.is_completed = updates.is_completed;
+        
+        // If marking as completed, ensure status is 'Completed'
+        if (updates.is_completed === true) {
+          updatedFields.status = 'Completed';
+        } 
+        // If marking as not completed and status isn't set, default to 'In Progress'
+        else if (!updates.status) {
+          updatedFields.status = 'In Progress';
+        }
+      }
+      
+      // If status is explicitly set, use that value and update is_completed accordingly
+      if (updates.status !== undefined) {
+        updatedFields.status = updates.status;
+        updatedFields.is_completed = updates.status === 'Completed';
       }
     }
 
@@ -62,6 +67,7 @@ export const updateProject = async (
       return;
     }
 
+    // Handle team members updates
     if (updates.teamMembers !== undefined) {
       try {
         const { data: currentMembers } = await supabase
@@ -114,7 +120,7 @@ export const updateProject = async (
       if (project.id === projectId) {
         const updatedProject = { ...project, ...updates, updatedAt: now };
         
-        // Ensure status and is_completed are always in sync
+        // Ensure status and is_completed are always in sync in local state
         if (updatedFields.status === 'Completed') {
           updatedProject.is_completed = true;
         } else if (updatedFields.status) {
@@ -125,6 +131,7 @@ export const updateProject = async (
           updatedProject.status = 'Completed';
         }
         
+        console.log('Updated project in local state:', updatedProject);
         return updatedProject;
       }
       return project;

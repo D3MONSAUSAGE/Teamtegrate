@@ -7,7 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Project } from '@/types';
+import { Project, ProjectStatus } from '@/types';
 import { useTask } from '@/contexts/task';
 import { toast } from '@/components/ui/sonner';
 import { playSuccessSound, playErrorSound } from '@/utils/sounds';
@@ -21,13 +21,14 @@ const ProjectStatusSelect: React.FC<ProjectStatusSelectProps> = ({ project }) =>
 
   const handleStatusChange = async (newStatus: string) => {
     try {
-      // Synchronize is_completed with status
+      // Explicitly set is_completed based on the status
       const isCompleted = newStatus === 'Completed';
       
-      console.log(`Updating project ${project.id} status to: ${newStatus}, is_completed: ${isCompleted}`);
+      console.log(`Updating project ${project.id} status to:`, newStatus);
+      console.log(`Setting is_completed to:`, isCompleted);
       
       await updateProject(project.id, { 
-        status: newStatus as Project['status'],
+        status: newStatus as ProjectStatus,
         is_completed: isCompleted
       });
       

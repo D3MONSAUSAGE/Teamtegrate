@@ -40,16 +40,21 @@ export const useProjects = () => {
       console.log('Projects fetched:', data);
 
       const formattedProjects: Project[] = data.map(project => {
-        // Ensure status and is_completed are synchronized
+        // Explicitly ensure status and is_completed are synchronized
         let status = project.status || 'To Do';
         let isCompleted = project.is_completed || false;
         
-        // Ensure synchronization between status and is_completed
+        // Enforce the rule: if status is 'Completed', is_completed must be true
         if (status === 'Completed') {
           isCompleted = true;
-        } else if (isCompleted) {
+        }
+        
+        // Enforce the rule: if is_completed is true, status must be 'Completed'
+        if (isCompleted) {
           status = 'Completed';
         }
+        
+        console.log(`Project ${project.id}: status=${status}, is_completed=${isCompleted}`);
         
         return {
           id: project.id,
