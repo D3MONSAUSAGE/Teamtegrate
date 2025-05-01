@@ -3,11 +3,10 @@ import React, { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Task } from '@/types';
 import CreateTaskDialog from '../CreateTaskDialog';
-import ProjectTasksLoading from './project-view/ProjectTasksLoading';
-import ProjectTasksError from './project-view/ProjectTasksError';
 import ProjectTasksContent from './project-view/ProjectTasksContent';
 import { useProjectTasksView } from './project-view/useProjectTasksView';
-import { Skeleton } from '@/components/ui/skeleton';
+import ProjectTasksLoading from './project-view/ProjectTasksLoading';
+import ProjectTasksError from './project-view/ProjectTasksError';
 
 const ProjectTasksView = () => {
   const [searchParams] = useSearchParams();
@@ -40,41 +39,19 @@ const ProjectTasksView = () => {
     console.log("ProjectTasksView rendering", {
       projectId,
       isLoading,
-      hasProject: !!project,
-      hasError: !!loadError
+      hasError: !!loadError,
+      hasProject: !!project
     });
-  }, [projectId, isLoading, project, loadError]);
+  }, [projectId, isLoading, loadError, project]);
 
   if (isLoading) {
-    return (
-      <div className="p-4 md:p-6">
-        <div className="mb-6">
-          <Skeleton className="h-16 w-full mb-4" />
-          <div className="flex gap-4">
-            <Skeleton className="h-8 w-24" />
-            <Skeleton className="h-8 w-24" />
-            <Skeleton className="h-8 w-24" />
-          </div>
-        </div>
-        <ProjectTasksLoading />
-      </div>
-    );
+    return <ProjectTasksLoading />;
   }
   
-  if (loadError) {
+  if (loadError || !project) {
     return (
       <ProjectTasksError 
-        errorMessage={loadError}
-        onRefresh={handleManualRefresh}
-        isRefreshing={isRefreshing}
-      />
-    );
-  }
-
-  if (!project) {
-    return (
-      <ProjectTasksError 
-        errorMessage="Project not found or not accessible."
+        errorMessage={loadError || "Project not found or not accessible."}
         onRefresh={handleManualRefresh}
         isRefreshing={isRefreshing}
       />

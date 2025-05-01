@@ -1,15 +1,21 @@
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Task } from '@/types';
 
 export const useProjectTasks = (allTasks: Task[], projectId: string | null) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('deadline');
 
+  // Reset search query when project changes
+  useEffect(() => {
+    setSearchQuery('');
+  }, [projectId]);
+
   // Filter tasks that belong to the selected project - memoized to prevent recalculations
   const projectTasks = useMemo(() => {
+    if (!projectId || !allTasks || allTasks.length === 0) return [];
+    
     console.log(`Filtering tasks for project ${projectId}. Total tasks: ${allTasks.length}`);
-    if (!projectId) return [];
     return allTasks.filter(task => task.projectId === projectId);
   }, [allTasks, projectId]);
 
@@ -26,6 +32,8 @@ export const useProjectTasks = (allTasks: Task[], projectId: string | null) => {
 
   // Sort tasks function
   const sortTasks = useCallback((tasksToSort: Task[]) => {
+    if (!tasksToSort || tasksToSort.length === 0) return [];
+    
     return [...tasksToSort].sort((a, b) => {
       switch (sortBy) {
         case 'deadline':
