@@ -20,7 +20,7 @@ export type FormValues = {
   endDate: string;
   budget?: number;
   teamMembers: { memberId: string }[];
-  tags: string[]; // This is important for the form values
+  tags: string[];
 };
 
 interface TeamMembersSectionProps {

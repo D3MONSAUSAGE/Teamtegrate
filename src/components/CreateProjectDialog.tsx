@@ -1,11 +1,8 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { useForm, useFieldArray, Controller } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import { useProjectOperations } from '@/hooks/useProjectOperations';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/components/ui/sonner';
@@ -13,8 +10,8 @@ import { format } from 'date-fns';
 import { useUsers } from '@/hooks/useUsers';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TeamMembersSection, FormValues } from "@/components/project/TeamMembersSection";
-import { X, Plus, Tag } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { ProjectDetailsSection } from '@/components/project/ProjectDetailsSection';
+import { TagsSection } from '@/components/project/TagsSection';
 
 interface CreateProjectDialogProps {
   open: boolean;
@@ -30,7 +27,6 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
   const { user } = useAuth();
   const { createProject, isLoading } = useProjectOperations();
   const { users } = useUsers();
-  const [newTag, setNewTag] = useState('');
   
   const { register, handleSubmit, reset, control, watch, setValue, formState: { errors } } = useForm<FormValues>({
     defaultValues: {
@@ -48,21 +44,6 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
     control,
     name: "teamMembers"
   });
-
-  // Removed useFieldArray for tags - we'll manage tags using standard state
-  
-  const handleAddTag = () => {
-    if (newTag && newTag.trim() !== '') {
-      const tags = watch('tags') || [];
-      
-      // Check if the tag already exists
-      if (!tags.includes(newTag.trim())) {
-        // We'll need to manually update the tags array since we're not using useFieldArray for it
-        setValue('tags', [...tags, newTag.trim()]);
-        setNewTag('');
-      }
-    }
-  };
 
   const onSubmit = async (data: FormValues) => {
     if (!user) {
@@ -103,15 +84,6 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
     }
   };
 
-  // Function to remove a tag directly from the tags array
-  const handleRemoveTag = (indexToRemove: number) => {
-    const currentTags = watch('tags') || [];
-    setValue('tags', currentTags.filter((_, index) => index !== indexToRemove));
-  };
-
-  // Get the current tags from the form
-  const currentTags = watch('tags') || [];
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
@@ -129,64 +101,10 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
             </TabsList>
             
             <TabsContent value="details" className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">Project Title</Label>
-                <Input
-                  id="title"
-                  {...register('title', { required: 'Title is required' })}
-                />
-                {errors.title && (
-                  <p className="text-sm text-red-500">{errors.title.message}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  {...register('description')}
-                  placeholder="Describe the project goals, scope, and other relevant details..."
-                  className="h-24 resize-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="startDate">Start Date</Label>
-                  <Input
-                    id="startDate"
-                    type="date"
-                    {...register('startDate', { required: 'Start date is required' })}
-                  />
-                  {errors.startDate && (
-                    <p className="text-sm text-red-500">{errors.startDate.message}</p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="endDate">End Date</Label>
-                  <Input
-                    id="endDate"
-                    type="date"
-                    {...register('endDate', { required: 'End date is required' })}
-                  />
-                  {errors.endDate && (
-                    <p className="text-sm text-red-500">{errors.endDate.message}</p>
-                  )}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="budget">Budget</Label>
-                <Input
-                  id="budget"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  {...register('budget', { valueAsNumber: true })}
-                  placeholder="Enter project budget (optional)"
-                />
-              </div>
+              <ProjectDetailsSection 
+                register={register}
+                errors={errors}
+              />
             </TabsContent>
             
             <TabsContent value="team">
@@ -203,50 +121,10 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
             </TabsContent>
 
             <TabsContent value="tags">
-              <div className="space-y-4">
-                <div className="flex items-center space-x-2">
-                  <div className="flex-1">
-                    <Label htmlFor="newTag" className="sr-only">Add Tag</Label>
-                    <div className="flex">
-                      <Input
-                        id="newTag"
-                        placeholder="Enter a tag"
-                        value={newTag}
-                        onChange={(e) => setNewTag(e.target.value)}
-                        className="rounded-r-none"
-                      />
-                      <Button 
-                        type="button" 
-                        onClick={handleAddTag} 
-                        className="rounded-l-none"
-                      >
-                        <Plus className="h-4 w-4 mr-1" /> Add
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {currentTags.length > 0 ? (
-                    currentTags.map((tag, index) => (
-                      <Badge key={index} variant="secondary" className="flex items-center gap-1">
-                        <Tag className="h-3 w-3" /> {tag}
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="h-4 w-4 p-0 ml-1 hover:bg-transparent"
-                          onClick={() => handleRemoveTag(index)}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </Badge>
-                    ))
-                  ) : (
-                    <p className="text-sm text-muted-foreground">No tags added yet. Add tags to categorize your project.</p>
-                  )}
-                </div>
-              </div>
+              <TagsSection 
+                watch={watch}
+                setValue={setValue}
+              />
             </TabsContent>
           </Tabs>
           
