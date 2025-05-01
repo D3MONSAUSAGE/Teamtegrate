@@ -4,13 +4,14 @@ import { CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Project } from '@/types';
-import { Calendar, AlertTriangle, Users, Trash2, Tag } from 'lucide-react';
+import { Calendar, AlertTriangle, Users, Trash2, PencilLine } from 'lucide-react';
 import { format, isAfter } from 'date-fns';
 import ProjectTags from './ProjectTags';
 
 interface ProjectCardHeaderProps {
   project: Project;
   onDeleteClick: () => void;
+  onEditClick: () => void;
   isDeleting: boolean;
 }
 
@@ -20,7 +21,7 @@ const statusColors = {
   'Completed': 'bg-green-500/10 text-green-700 border-green-500'
 };
 
-const ProjectCardHeader: React.FC<ProjectCardHeaderProps> = ({ project, onDeleteClick, isDeleting }) => {
+const ProjectCardHeader: React.FC<ProjectCardHeaderProps> = ({ project, onDeleteClick, onEditClick, isDeleting }) => {
   // Calculate days left or overdue
   const calculateDaysRemaining = () => {
     const today = new Date();
@@ -53,15 +54,25 @@ const ProjectCardHeader: React.FC<ProjectCardHeaderProps> = ({ project, onDelete
             </span>
           </div>
         </div>
-        <Button 
-          variant="ghost" 
-          size="icon"
-          className="text-destructive hover:text-destructive"
-          onClick={onDeleteClick}
-          disabled={isDeleting}
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
+        <div className="flex space-x-1">
+          <Button 
+            variant="ghost" 
+            size="icon"
+            className="text-blue-600 hover:text-blue-800"
+            onClick={onEditClick}
+          >
+            <PencilLine className="h-4 w-4" />
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="icon"
+            className="text-destructive hover:text-destructive"
+            onClick={onDeleteClick}
+            disabled={isDeleting}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
       
       <div className="flex flex-wrap gap-2 mt-2">

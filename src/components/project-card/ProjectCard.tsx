@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Card } from "@/components/ui/card";
 import { Project } from '@/types';
 import ProjectCardHeader from './ProjectCardHeader';
@@ -7,6 +7,7 @@ import ProjectCardContent from './ProjectCardContent';
 import ProjectDeleteDialog from './ProjectDeleteDialog';
 import { useTask } from '@/contexts/task';
 import { toast } from '@/components/ui/sonner';
+import EditProjectDialog from '../project/EditProjectDialog';
 
 interface ProjectCardProps {
   project: Project;
@@ -15,39 +16,41 @@ interface ProjectCardProps {
   onDeleted?: () => void;
 }
 
-const ProjectCard: React.FC<ProjectCardProps> = ({ 
-  project, 
-  onViewTasks, 
-  onCreateTask, 
-  onDeleted 
-}) => {
+const ProjectCard = ({ project, onViewTasks, onCreateTask, onDeleted }: ProjectCardProps) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const { deleteProject } = useTask();
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const { deleteProject, refreshProjects } = useTask();
 
   const handleDelete = async () => {
     try {
       setIsDeleting(true);
       await deleteProject(project.id);
-      toast.success("Project deleted successfully");
+      toast.success('Project deleted successfully');
       if (onDeleted) {
         onDeleted();
       }
     } catch (error) {
       console.error('Error deleting project:', error);
-      toast.error("Failed to delete project");
+      toast.error('Failed to delete project');
     } finally {
       setIsDeleting(false);
       setShowDeleteDialog(false);
     }
   };
 
+  const handleEditSuccess = () => {
+    refreshProjects();
+    toast.success("Project updated successfully");
+  };
+
   return (
     <>
-      <Card className="h-full flex flex-col overflow-hidden border hover:shadow-md transition-shadow">
+      <Card className="overflow-hidden">
         <ProjectCardHeader 
           project={project} 
-          onDeleteClick={() => setShowDeleteDialog(true)} 
+          onDeleteClick={() => setShowDeleteDialog(true)}
+          onEditClick={() => setShowEditDialog(true)}
           isDeleting={isDeleting} 
         />
         <ProjectCardContent 
@@ -60,8 +63,16 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
       <ProjectDeleteDialog
         open={showDeleteDialog}
         onOpenChange={setShowDeleteDialog}
+        onConfirm={handleDelete}
+        projectTitle={project.title}
         isDeleting={isDeleting}
-        onDelete={handleDelete}
+      />
+
+      <EditProjectDialog 
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        project={project}
+        onSuccess={handleEditSuccess}
       />
     </>
   );
