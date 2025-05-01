@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { format, startOfWeek, addWeeks, subWeeks, addDays, differenceInMinutes } from 'date-fns';
+import { format, startOfWeek, addWeeks, subWeeks, addDays, differenceInMinutes, isToday, parseISO } from 'date-fns';
 import { useTimeTracking } from './useTimeTracking';
 
 interface TimeEntry {
@@ -28,6 +28,8 @@ export const useTimeTrackingPage = () => {
     const stored = localStorage.getItem("targetWeeklyHours");
     return stored ? Number(stored) : 40;
   });
+  // Selected date for daily entries, defaults to today
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
   const { start: weekStart, end: weekEnd } = getWeekRange(weekDate);
 
@@ -73,16 +75,26 @@ export const useTimeTrackingPage = () => {
   const totalTrackedHours = +(totalTrackedMinutes / 60).toFixed(2);
   const remainingHours = Math.max(targetWeeklyHours - totalTrackedHours, 0);
 
+  // Filter daily entries based on selected date (today or a specific date)
+  const filterDailyEntries = (entries: TimeEntry[], date: Date) => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    return entries.filter(entry => {
+      const entryDate = format(new Date(entry.clock_in), 'yyyy-MM-dd');
+      return entryDate === dateStr;
+    });
+  };
+
   useEffect(() => {
     const fetchEntries = async () => {
       const entries = await getWeeklyTimeEntries(weekStart);
-      const today = new Date().toISOString().split('T')[0];
-      const todayEntries = entries.filter(entry => entry.clock_in.startsWith(today));
-      setDailyEntries(todayEntries);
       setWeeklyEntries(entries);
+      
+      // Set daily entries based on selected date (defaults to today)
+      const filteredDailyEntries = filterDailyEntries(entries, selectedDate);
+      setDailyEntries(filteredDailyEntries);
     };
     fetchEntries();
-  }, [currentEntry, weekStart]);
+  }, [currentEntry, weekStart, selectedDate]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -117,6 +129,7 @@ export const useTimeTrackingPage = () => {
     try {
       if (/^\d{4}-\d{2}-\d{2}$/.test(searchValue)) {
         date = new Date(searchValue);
+        setSelectedDate(date); // Update selected date when searching
       } else if (/^\d{4}-\d{2}$/.test(searchValue)) {
         date = new Date(searchValue + "-01");
       } else {
@@ -127,6 +140,23 @@ export const useTimeTrackingPage = () => {
       // Ignore and do nothing if invalid
     }
     setIsSearching(false);
+  };
+
+  // Handler for changing the selected date for daily view
+  const handleDateChange = (date: Date) => {
+    setSelectedDate(date);
+    
+    // If the new date is outside the current week, update week view too
+    const currentWeekStart = startOfWeek(weekDate, { weekStartsOn: 1 });
+    const currentWeekEnd = addDays(currentWeekStart, 6);
+    
+    if (date < currentWeekStart || date > currentWeekEnd) {
+      setWeekDate(date);
+    }
+    
+    // Update daily entries based on the new selected date
+    const filteredEntries = filterDailyEntries(weeklyEntries, date);
+    setDailyEntries(filteredEntries);
   };
 
   return {
@@ -151,7 +181,9 @@ export const useTimeTrackingPage = () => {
     handleWeekChange,
     handleSearch,
     clockIn,
-    clockOut
+    clockOut,
+    selectedDate,
+    handleDateChange
   };
 };
 
@@ -170,4 +202,3 @@ function formatDuration(ms: number): string {
   const pad = (n: number) => (n < 10 ? '0' + n : n.toString());
   return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
 }
-

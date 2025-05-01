@@ -1,8 +1,8 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText } from 'lucide-react';
-import { parseISO, differenceInMinutes } from 'date-fns';
+import { FileText, Calendar } from 'lucide-react';
+import { parseISO, differenceInMinutes, format, isToday } from 'date-fns';
 import { calculateBonusMinutes } from '@/utils/timeUtils';
 import { calculateBreakRequirements } from '@/utils/breakTracking';
 import TimeSummary from './time/TimeSummary';
@@ -16,9 +16,10 @@ interface DailyTimeReportProps {
     duration_minutes?: number | null;
     notes?: string | null;
   }>;
+  selectedDate?: Date;
 }
 
-const DailyTimeReport: React.FC<DailyTimeReportProps> = ({ entries }) => {
+const DailyTimeReport: React.FC<DailyTimeReportProps> = ({ entries, selectedDate = new Date() }) => {
   const totalMinutes = entries.reduce((total, entry) => {
     if (entry.duration_minutes) {
       return total + entry.duration_minutes;
@@ -41,7 +42,12 @@ const DailyTimeReport: React.FC<DailyTimeReportProps> = ({ entries }) => {
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-medium flex items-center gap-2">
           <FileText className="h-4 w-4" />
-          Today's Time Report
+          {isToday(selectedDate) ? 'Today\'s Time Report' : (
+            <div className="flex items-center gap-1">
+              <Calendar className="h-4 w-4" />
+              <span>{format(selectedDate, 'MMMM d, yyyy')}</span>
+            </div>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -59,9 +65,15 @@ const DailyTimeReport: React.FC<DailyTimeReportProps> = ({ entries }) => {
           />
 
           <div className="space-y-1 mt-3">
-            {entries.map((entry, index) => (
-              <TimeDetailsRow key={index} entry={entry} />
-            ))}
+            {entries.length > 0 ? (
+              entries.map((entry, index) => (
+                <TimeDetailsRow key={index} entry={entry} />
+              ))
+            ) : (
+              <div className="text-center py-4 text-muted-foreground">
+                No time entries for this day
+              </div>
+            )}
           </div>
         </div>
       </CardContent>

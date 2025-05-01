@@ -7,6 +7,7 @@ import TimeTrackingSummary from './time/TimeTrackingSummary';
 import TimeChartSection from './time/TimeChartSection';
 import TimeTrackingControls from './TimeTrackingControls';
 import WeekNavigation from './WeekNavigation';
+import { format } from 'date-fns';
 
 const TimeTracking: React.FC = () => {
   const {
@@ -31,7 +32,9 @@ const TimeTracking: React.FC = () => {
     handleWeekChange,
     handleSearch,
     clockIn,
-    clockOut
+    clockOut,
+    selectedDate,
+    handleDateChange
   } = useTimeTrackingPage();
 
   return (
@@ -64,12 +67,20 @@ const TimeTracking: React.FC = () => {
         handleSearch={handleSearch}
         isSearching={isSearching}
         handleExport={() => {}}
+        selectedDate={selectedDate}
+        onDateChange={handleDateChange}
       />
 
-      <DailyTimeReport entries={dailyEntries} />
+      <DailyTimeReport 
+        entries={dailyEntries} 
+        selectedDate={selectedDate} 
+      />
+      
       <WeeklyTimeReport 
         entries={weeklyEntries} 
-        weekDate={weekDate} // Pass the selected week date
+        weekDate={weekDate}
+        selectedDate={selectedDate}
+        onDateSelect={handleDateChange}
       />
     </div>
   );

@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableHeader, TableRow, TableHead, TableBody } from "@/components/ui/table";
-import { startOfWeek, addDays, format } from 'date-fns';
+import { startOfWeek, addDays, format, isSameDay } from 'date-fns';
 import WeeklyTimeRow from './time/WeeklyTimeRow';
 import { CalendarDays } from 'lucide-react';
 
@@ -14,19 +14,26 @@ interface WeeklyTimeReportProps {
     notes?: string | null;
   }>;
   weekDate?: Date;
+  selectedDate?: Date;
+  onDateSelect?: (date: Date) => void;
 }
 
-const WeeklyTimeReport: React.FC<WeeklyTimeReportProps> = ({ entries, weekDate = new Date() }) => {
+const WeeklyTimeReport: React.FC<WeeklyTimeReportProps> = ({ 
+  entries, 
+  weekDate = new Date(),
+  selectedDate,
+  onDateSelect
+}) => {
   const weekStart = startOfWeek(weekDate, { weekStartsOn: 1 });
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   const weekRange = `${format(weekStart, 'MMM d')} - ${format(weekDays[6], 'MMM d, yyyy')}`;
 
   const getDayEntries = (date: Date) => {
-    const formattedDate = date.toISOString().split('T')[0];
+    const formattedDate = format(date, 'yyyy-MM-dd');
     
     // Filter entries for the specified day
     return entries.filter(entry => {
-      const entryDate = new Date(entry.clock_in).toISOString().split('T')[0];
+      const entryDate = format(new Date(entry.clock_in), 'yyyy-MM-dd');
       return entryDate === formattedDate;
     }).sort((a, b) => new Date(a.clock_in).getTime() - new Date(b.clock_in).getTime());
   };
@@ -56,14 +63,18 @@ const WeeklyTimeReport: React.FC<WeeklyTimeReportProps> = ({ entries, weekDate =
               </TableRow>
             </TableHeader>
             <TableBody>
-              {weekDays.map((day, index) => (
-                <WeeklyTimeRow
-                  key={index}
-                  day={day}
-                  dayEntries={getDayEntries(day)}
-                  isMobile={true}
-                />
-              ))}
+              {weekDays.map((day, index) => {
+                const isSelected = selectedDate && isSameDay(day, selectedDate);
+                return (
+                  <WeeklyTimeRow
+                    key={index}
+                    day={day}
+                    dayEntries={getDayEntries(day)}
+                    isSelected={isSelected}
+                    onClick={onDateSelect ? () => onDateSelect(day) : undefined}
+                  />
+                );
+              })}
             </TableBody>
           </Table>
         </div>

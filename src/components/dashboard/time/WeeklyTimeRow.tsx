@@ -18,10 +18,11 @@ interface WeeklyTimeRowProps {
     duration_minutes?: number | null;
     notes?: string | null;
   }>;
-  isMobile?: boolean;
+  isSelected?: boolean;
+  onClick?: () => void;
 }
 
-const WeeklyTimeRow: React.FC<WeeklyTimeRowProps> = ({ day, dayEntries, isMobile }) => {
+const WeeklyTimeRow: React.FC<WeeklyTimeRowProps> = ({ day, dayEntries, isSelected, onClick }) => {
   const isCurrentDay = isToday(day);
   
   // Calculate total minutes for all entries for this day
@@ -47,10 +48,14 @@ const WeeklyTimeRow: React.FC<WeeklyTimeRowProps> = ({ day, dayEntries, isMobile
   const total = dailyMinutes + earnedBreakMinutes;
 
   return (
-    <TableRow className={cn(
-      isCurrentDay && "bg-primary/5",
-      "hover:bg-muted/50 transition-colors"
-    )}>
+    <TableRow 
+      className={cn(
+        isCurrentDay && "bg-primary/5",
+        isSelected && "bg-secondary/20",
+        "hover:bg-muted/50 transition-colors cursor-pointer"
+      )}
+      onClick={onClick}
+    >
       <TableCell className="font-medium w-[120px]">
         {new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).format(day)}
       </TableCell>
