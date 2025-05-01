@@ -12,6 +12,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TeamMembersSection, FormValues } from "@/components/project/TeamMembersSection";
 import { ProjectDetailsSection } from '@/components/project/ProjectDetailsSection';
 import { TagsSection } from '@/components/project/TagsSection';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+
+// Define the validation schema
+const projectFormSchema = z.object({
+  title: z.string().min(1, { message: "Title is required" }),
+  description: z.string().optional(),
+  startDate: z.string().min(1, { message: "Start date is required" }),
+  endDate: z.string().min(1, { message: "End date is required" }),
+  budget: z.number().optional(),
+  teamMembers: z.array(z.object({ memberId: z.string() })).optional().default([]),
+  tags: z.array(z.string()).optional().default([])
+});
 
 interface CreateProjectDialogProps {
   open: boolean;
@@ -29,6 +42,7 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
   const { users } = useUsers();
   
   const { register, handleSubmit, reset, control, watch, setValue, formState: { errors } } = useForm<FormValues>({
+    resolver: zodResolver(projectFormSchema),
     defaultValues: {
       title: '',
       description: '',
