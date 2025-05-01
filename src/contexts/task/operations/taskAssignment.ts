@@ -156,6 +156,19 @@ export const assignTaskToUser = async (
         console.error('Error sending notification:', notifyError);
         // Don't block the task assignment if notification fails
       }
+    } else if (userId === user.id) {
+      // Self-assignment notification
+      try {
+        await supabase.from('notifications').insert({
+          user_id: userId,
+          title: 'Task Self-Assigned',
+          content: `You assigned yourself to task: ${task.title}`,
+          type: 'task_assignment'
+        });
+        console.log('Self-assignment notification created');
+      } catch (notifyError) {
+        console.error('Error sending self-assignment notification:', notifyError);
+      }
     }
     
     const projectId = task.projectId;

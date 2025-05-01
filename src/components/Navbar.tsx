@@ -27,7 +27,7 @@ const Navbar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const { notifications, unreadCount, markAsRead } = useNotifications();
+  const { notifications, unreadCount, markAsRead, fetchNotifications } = useNotifications();
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -57,6 +57,12 @@ const Navbar = () => {
     }
   }, [user]);
 
+  // Refresh notifications when component mounts
+  useEffect(() => {
+    fetchNotifications();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleLogout = async () => {
     try {
       await logout();
@@ -73,6 +79,19 @@ const Navbar = () => {
   };
 
   const handleNotificationsOpen = () => {
+    fetchNotifications(); // Refresh notifications when opened
+    console.log("Opening notifications, current count:", unreadCount);
+    // Don't mark as read immediately, let the user see which ones are new
+  };
+
+  const handleNotificationClick = (notificationType: string) => {
+    // Navigate based on notification type
+    if (notificationType.includes('task')) {
+      navigate('/dashboard/tasks');
+    } else if (notificationType.includes('chat')) {
+      navigate('/dashboard/chat');
+    }
+    // Mark all as read when user interacts with notifications
     markAsRead();
   };
 
@@ -92,11 +111,18 @@ const Navbar = () => {
 
   const NotificationContent = () => (
     <div className="max-h-[400px] overflow-y-auto">
-      {notifications.length > 0 ? (
+      {notifications && notifications.length > 0 ? (
         notifications.map((notification) => (
-          <div key={notification.id} className="flex flex-col items-start gap-0.5 py-2 px-3 cursor-pointer border-b last:border-b-0">
+          <div 
+            key={notification.id} 
+            className={`flex flex-col items-start gap-0.5 py-2 px-3 cursor-pointer border-b last:border-b-0 ${!notification.read ? 'bg-primary/5' : ''}`}
+            onClick={() => handleNotificationClick(notification.type)}
+          >
             <div className="flex items-center justify-between w-full">
-              <span className="font-medium">{notification.title}</span>
+              <span className={`font-medium ${!notification.read ? 'text-primary' : ''}`}>
+                {notification.title}
+                {!notification.read && <span className="ml-2 w-2 h-2 rounded-full bg-primary inline-block"></span>}
+              </span>
               <span className="text-xs text-muted-foreground">{formatNotificationTime(notification.created_at)}</span>
             </div>
             <span className="text-sm">{notification.content}</span>
@@ -108,6 +134,16 @@ const Navbar = () => {
                 onClick={() => navigate('/dashboard/chat')}
               >
                 Go to Chat
+              </Button>
+            )}
+            {notification.type === 'task_assignment' && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="mt-1 h-7 text-xs text-primary"
+                onClick={() => navigate('/dashboard/tasks')}
+              >
+                View Task
               </Button>
             )}
           </div>
@@ -148,7 +184,9 @@ const Navbar = () => {
                 <div className="flex justify-between items-center mb-2">
                   <h3 className="font-semibold text-lg">Notifications</h3>
                   <DrawerClose asChild>
-                    <Button variant="ghost" size="sm">Done</Button>
+                    <Button variant="ghost" size="sm" onClick={() => markAsRead()}>
+                      Mark all as read
+                    </Button>
                   </DrawerClose>
                 </div>
                 <NotificationContent />
@@ -172,7 +210,12 @@ const Navbar = () => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-80">
-              <div className="px-3 pt-2 pb-1 text-sm font-semibold">Notifications</div>
+              <div className="flex justify-between items-center px-3 pt-2 pb-1">
+                <div className="text-sm font-semibold">Notifications</div>
+                <Button variant="ghost" size="sm" onClick={() => markAsRead()} className="h-7 text-xs">
+                  Mark all as read
+                </Button>
+              </div>
               <DropdownMenuSeparator />
               <NotificationContent />
             </DropdownMenuContent>

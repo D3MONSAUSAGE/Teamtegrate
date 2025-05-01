@@ -34,7 +34,13 @@ export function useNotifications() {
       .order("created_at", { ascending: false })
       .limit(limit);
 
-    if (!error && data) {
+    if (error) {
+      console.error("Error fetching notifications:", error);
+      return;
+    }
+    
+    if (data) {
+      console.log("Fetched notifications:", data);
       setNotifications(data as Notification[]);
       setUnreadCount(data.filter((n: any) => !n.read).length);
     }
@@ -44,6 +50,7 @@ export function useNotifications() {
     fetchNotifications();
 
     if (!user) return;
+    
     // Real-time subscription for new notifications
     const channel = supabase
       .channel("public:notifications:user_" + user.id)
@@ -51,6 +58,7 @@ export function useNotifications() {
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
         (payload) => {
+          console.log("Received new notification:", payload);
           const notif = payload.new as Notification;
           setNotifications((prev) => [notif, ...prev]);
           setUnreadCount((prev) => prev + 1);
@@ -66,6 +74,8 @@ export function useNotifications() {
         }
       )
       .subscribe();
+
+    console.log("Subscribed to real-time notifications for user:", user.id);
 
     return () => {
       supabase.removeChannel(channel);
