@@ -4,7 +4,7 @@ import { CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Project } from '@/types';
-import { List, Plus, ChevronRight, Calendar, Users } from 'lucide-react';
+import { List, Plus, Calendar, Users } from 'lucide-react';
 import { ProjectStatusSelect } from './ProjectStatusSelect';
 import { format } from 'date-fns';
 import ProjectBudgetInfo from './ProjectBudgetInfo';
@@ -78,7 +78,7 @@ const ProjectCardContent: React.FC<ProjectCardContentProps> = ({ project, onView
       {(onViewTasks || onCreateTask) && (
         <div className="mt-auto pt-4 flex gap-2 justify-end">
           {onViewTasks && (
-            <Link to={`/dashboard/tasks?projectId=${project.id}`}>
+            <Link to={`/dashboard/projects/${project.id}/tasks`}>
               <Button variant="outline" size="sm">
                 <List className="w-4 h-4 mr-1" /> Tasks
               </Button>

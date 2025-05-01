@@ -1,6 +1,5 @@
 
 import React, { useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import { Task } from '@/types';
 import CreateTaskDialog from '../CreateTaskDialog';
 import ProjectTasksContent from './project-view/ProjectTasksContent';
@@ -8,10 +7,11 @@ import { useProjectTasksView } from './project-view/useProjectTasksView';
 import ProjectTasksLoading from './project-view/ProjectTasksLoading';
 import ProjectTasksError from './project-view/ProjectTasksError';
 
-const ProjectTasksView = () => {
-  const [searchParams] = useSearchParams();
-  const projectId = searchParams.get('projectId');
-  
+interface ProjectTasksViewProps {
+  projectId: string | undefined;
+}
+
+const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
   const {
     isLoading,
     loadError,

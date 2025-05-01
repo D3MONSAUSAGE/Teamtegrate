@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,7 +50,7 @@ const ProjectsPage = () => {
   }, [projects.length, isLoading, hasAttemptedRefresh, refreshProjects]);
 
   const handleViewTasks = (projectId: string) => {
-    navigate(`/dashboard/tasks?projectId=${projectId}`);
+    navigate(`/dashboard/projects/${projectId}/tasks`);
   };
 
   const handleCreateTask = (projectId: string) => {

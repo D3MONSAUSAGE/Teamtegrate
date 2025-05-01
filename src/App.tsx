@@ -21,6 +21,7 @@ import DocumentsPage from "./pages/DocumentsPage";
 import FinancePage from "./pages/FinancePage";
 import ChatPage from "./pages/ChatPage";
 import NotebookPage from "./pages/NotebookPage";
+import ProjectTasksPage from "./pages/ProjectTasksPage";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +41,7 @@ const App = () => (
                 <Route index element={<DashboardPage />} />
                 <Route path="tasks" element={<TasksPage />} />
                 <Route path="tasks/create" element={<TasksPage />} />
+                <Route path="projects/:projectId/tasks" element={<ProjectTasksPage />} />
                 <Route path="projects" element={<ProjectsPage />} />
                 <Route path="team" element={<TeamPage />} />
                 <Route path="chat" element={<ChatPage />} />
