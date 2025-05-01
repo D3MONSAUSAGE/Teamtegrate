@@ -3,7 +3,7 @@ export * from './taskAddition';
 export * from './taskUpdate';
 export * from './taskDeletion';
 export * from './taskStatus';
-export * from './taskAssignment';
+export * from './assignment';
 export * from './addProject';
 export * from './updateProject';
 export * from './deleteProject';
