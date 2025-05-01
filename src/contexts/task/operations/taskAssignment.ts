@@ -135,13 +135,27 @@ export const assignTaskToUser = async (
       return;
     }
 
-    console.log('Task assigned to user successfully in database', { taskId, userId, actualUserName });
-
-    // Find the task to get its project ID
+    // Find the task to send in notification
     const task = tasks.find(t => t.id === taskId);
     if (!task) {
       console.error('Task not found:', taskId);
       return;
+    }
+
+    // Create notification for the assigned user
+    if (userId && userId !== user.id) {
+      try {
+        await supabase.from('notifications').insert({
+          user_id: userId,
+          title: 'Task Assigned',
+          content: `You've been assigned to task: ${task.title}`,
+          type: 'task_assignment'
+        });
+        console.log('Task assignment notification sent to user:', userId);
+      } catch (notifyError) {
+        console.error('Error sending notification:', notifyError);
+        // Don't block the task assignment if notification fails
+      }
     }
     
     const projectId = task.projectId;
