@@ -15,14 +15,16 @@ interface ProjectDeleteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   isDeleting: boolean;
-  onDelete: () => void;
+  projectTitle: string;
+  onConfirm: () => void;
 }
 
 const ProjectDeleteDialog: React.FC<ProjectDeleteDialogProps> = ({
   open,
   onOpenChange,
   isDeleting,
-  onDelete
+  projectTitle,
+  onConfirm
 }) => {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -31,13 +33,13 @@ const ProjectDeleteDialog: React.FC<ProjectDeleteDialogProps> = ({
           <AlertDialogTitle>Are you sure you want to delete this project?</AlertDialogTitle>
           <AlertDialogDescription>
             This action cannot be undone. This will permanently delete the project
-            and all associated tasks.
+            "{projectTitle}" and all associated tasks.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
           <AlertDialogAction 
-            onClick={onDelete}
+            onClick={onConfirm}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             disabled={isDeleting}
           >

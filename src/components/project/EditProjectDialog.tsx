@@ -17,10 +17,12 @@ const projectFormSchema = z.object({
   description: z.string().optional(),
   startDate: z.string().min(1, { message: "Start date is required" }),
   endDate: z.string().min(1, { message: "End date is required" }),
-  budget: z.number().optional()
+  budget: z.number().optional(),
+  teamMembers: z.array(z.object({ memberId: z.string() })).optional().default([]),
+  tags: z.array(z.string()).optional().default([])
 });
 
-type FormValues = z.infer<typeof projectFormSchema>;
+export type FormValues = z.infer<typeof projectFormSchema>;
 
 interface EditProjectDialogProps {
   open: boolean;
@@ -44,7 +46,9 @@ const EditProjectDialog: React.FC<EditProjectDialogProps> = ({
       description: project?.description || '',
       startDate: project?.startDate ? format(new Date(project.startDate), 'yyyy-MM-dd') : '',
       endDate: project?.endDate ? format(new Date(project.endDate), 'yyyy-MM-dd') : '',
-      budget: project?.budget
+      budget: project?.budget,
+      teamMembers: [],
+      tags: project?.tags || []
     }
   });
   
@@ -56,7 +60,9 @@ const EditProjectDialog: React.FC<EditProjectDialogProps> = ({
         description: project.description || '',
         startDate: project.startDate ? format(new Date(project.startDate), 'yyyy-MM-dd') : '',
         endDate: project.endDate ? format(new Date(project.endDate), 'yyyy-MM-dd') : '',
-        budget: project.budget
+        budget: project.budget,
+        teamMembers: [],
+        tags: project.tags || []
       });
     }
   }, [project, open, reset]);
@@ -68,7 +74,8 @@ const EditProjectDialog: React.FC<EditProjectDialogProps> = ({
         description: data.description,
         startDate: new Date(data.startDate),
         endDate: new Date(data.endDate),
-        budget: data.budget
+        budget: data.budget,
+        tags: data.tags
       });
       
       toast.success("Project updated successfully");
