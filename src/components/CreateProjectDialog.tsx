@@ -49,12 +49,8 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
     name: "teamMembers"
   });
 
-  // Using FieldArrayWithId type explicitly to fix the TypeScript error
-  const { fields: tagFields, append: appendTag, remove: removeTag } = useFieldArray({
-    control,
-    name: "teamMembers" // This needs to match a key in FormValues
-  });
-
+  // Removed useFieldArray for tags - we'll manage tags using standard state
+  
   const handleAddTag = () => {
     if (newTag && newTag.trim() !== '') {
       const tags = watch('tags') || [];
