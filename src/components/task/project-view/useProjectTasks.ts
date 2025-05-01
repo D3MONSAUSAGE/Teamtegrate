@@ -1,13 +1,15 @@
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Task } from '@/types';
 
 export const useProjectTasks = (allTasks: Task[], projectId: string | null) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('deadline');
 
-  // Filter tasks that belong to the selected project
+  // Filter tasks that belong to the selected project - memoized to prevent recalculations
   const projectTasks = useMemo(() => {
+    console.log(`Filtering tasks for project ${projectId}. Total tasks: ${allTasks.length}`);
+    if (!projectId) return [];
     return allTasks.filter(task => task.projectId === projectId);
   }, [allTasks, projectId]);
 
@@ -15,15 +17,15 @@ export const useProjectTasks = (allTasks: Task[], projectId: string | null) => {
   const filteredTasks = useMemo(() => {
     if (!searchQuery) return projectTasks;
     
-    const query = searchQuery.toLowerCase();
+    const query = searchQuery.toLowerCase().trim();
     return projectTasks.filter(task => 
       task.title.toLowerCase().includes(query) || 
       (task.description && task.description.toLowerCase().includes(query))
     );
   }, [projectTasks, searchQuery]);
 
-  // Sort tasks
-  const sortTasks = (tasksToSort: Task[]) => {
+  // Sort tasks function
+  const sortTasks = useCallback((tasksToSort: Task[]) => {
     return [...tasksToSort].sort((a, b) => {
       switch (sortBy) {
         case 'deadline':
@@ -46,13 +48,28 @@ export const useProjectTasks = (allTasks: Task[], projectId: string | null) => {
           return 0;
       }
     });
-  };
+  }, [sortBy]);
 
-  // Group tasks by status
-  const todoTasks = useMemo(() => sortTasks(filteredTasks.filter(task => task.status === 'To Do')), [filteredTasks, sortBy]);
-  const inProgressTasks = useMemo(() => sortTasks(filteredTasks.filter(task => task.status === 'In Progress')), [filteredTasks, sortBy]);
-  const pendingTasks = useMemo(() => sortTasks(filteredTasks.filter(task => task.status === 'Pending')), [filteredTasks, sortBy]);
-  const completedTasks = useMemo(() => sortTasks(filteredTasks.filter(task => task.status === 'Completed')), [filteredTasks, sortBy]);
+  // Group tasks by status - memoized with sortTasks as dependency
+  const todoTasks = useMemo(() => 
+    sortTasks(filteredTasks.filter(task => task.status === 'To Do')),
+    [filteredTasks, sortTasks]
+  );
+  
+  const inProgressTasks = useMemo(() => 
+    sortTasks(filteredTasks.filter(task => task.status === 'In Progress')),
+    [filteredTasks, sortTasks]
+  );
+  
+  const pendingTasks = useMemo(() => 
+    sortTasks(filteredTasks.filter(task => task.status === 'Pending')),
+    [filteredTasks, sortTasks]
+  );
+  
+  const completedTasks = useMemo(() => 
+    sortTasks(filteredTasks.filter(task => task.status === 'Completed')),
+    [filteredTasks, sortTasks]
+  );
 
   // Calculate progress
   const progress = useMemo(() => {

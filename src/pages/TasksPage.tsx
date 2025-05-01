@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useTask } from '@/contexts/task';
 import { Task } from '@/types';
 import TaskCommentsDialog from '@/components/TaskCommentsDialog';
@@ -11,6 +10,7 @@ import CreateTaskDialog from '@/components/CreateTaskDialog';
 
 const TasksPage = () => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const projectId = searchParams.get('projectId');
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   
@@ -21,10 +21,20 @@ const TasksPage = () => {
     }
   }, []);
 
+  useEffect(() => {
+    console.log("TasksPage rendering with projectId:", projectId);
+  }, [projectId]);
+
+  // If we have a projectId, render the ProjectTasksView component
   if (projectId) {
-    return <ProjectTasksView />;
+    return (
+      <div key={`project-${projectId}`} className="h-full">
+        <ProjectTasksView />
+      </div>
+    );
   }
 
+  // Otherwise, render the general tasks view
   const { tasks } = useTask();
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [sortBy, setSortBy] = useState('deadline');

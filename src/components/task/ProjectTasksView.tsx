@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Task } from '@/types';
 import CreateTaskDialog from '../CreateTaskDialog';
@@ -7,6 +7,7 @@ import ProjectTasksLoading from './project-view/ProjectTasksLoading';
 import ProjectTasksError from './project-view/ProjectTasksError';
 import ProjectTasksContent from './project-view/ProjectTasksContent';
 import { useProjectTasksView } from './project-view/useProjectTasksView';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const ProjectTasksView = () => {
   const [searchParams] = useSearchParams();
@@ -34,8 +35,30 @@ const ProjectTasksView = () => {
     onSortByChange
   } = useProjectTasksView(projectId);
 
+  // Log component rendering for debugging
+  useEffect(() => {
+    console.log("ProjectTasksView rendering", {
+      projectId,
+      isLoading,
+      hasProject: !!project,
+      hasError: !!loadError
+    });
+  }, [projectId, isLoading, project, loadError]);
+
   if (isLoading) {
-    return <ProjectTasksLoading />;
+    return (
+      <div className="p-4 md:p-6">
+        <div className="mb-6">
+          <Skeleton className="h-16 w-full mb-4" />
+          <div className="flex gap-4">
+            <Skeleton className="h-8 w-24" />
+            <Skeleton className="h-8 w-24" />
+            <Skeleton className="h-8 w-24" />
+          </div>
+        </div>
+        <ProjectTasksLoading />
+      </div>
+    );
   }
   
   if (loadError) {

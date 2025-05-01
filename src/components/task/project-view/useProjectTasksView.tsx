@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTask } from '@/contexts/task';
 import { Task, Project } from '@/types';
 import { toast } from '@/components/ui/sonner';
@@ -12,9 +12,12 @@ export const useProjectTasksView = (projectId: string | null) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   
-  // Get project details
-  const project = projects.find(p => p.id === projectId);
+  // Memoize project data to prevent unnecessary re-renders
+  const project = useMemo(() => {
+    return projects.find(p => p.id === projectId);
+  }, [projects, projectId]);
   
   // Use custom hook for task filtering and sorting
   const {
@@ -47,13 +50,25 @@ export const useProjectTasksView = (projectId: string | null) => {
       } catch (error) {
         console.error('Error refreshing project data:', error);
         setLoadError('Failed to load project data. Please try refreshing.');
+        
+        // Auto-retry logic (maximum 3 attempts)
+        if (retryCount < 3) {
+          console.log(`Auto-retrying (attempt ${retryCount + 1})...`);
+          setRetryCount(prev => prev + 1);
+          setTimeout(() => loadData(), 1500); // Retry after 1.5 seconds
+        }
       } finally {
         setIsLoading(false);
       }
     };
     
     loadData();
-  }, [projectId, refreshProjects]);
+  }, [projectId, refreshProjects, retryCount]);
+
+  // Reset retry count when project ID changes
+  useEffect(() => {
+    setRetryCount(0);
+  }, [projectId]);
 
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
@@ -110,6 +125,6 @@ export const useProjectTasksView = (projectId: string | null) => {
     handleEditTask,
     handleCreateTask,
     handleManualRefresh,
-    onSortByChange: handleSortByChange // Expose the sort handler correctly
+    onSortByChange: handleSortByChange
   };
 };
