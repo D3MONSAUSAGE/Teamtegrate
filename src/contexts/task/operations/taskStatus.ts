@@ -60,29 +60,79 @@ export const updateTaskStatus = async (
       return task;
     }));
 
-    // Also update the task in the project
+    // Also update the task in the project and check if all tasks are completed
     if (projectId) {
-      setProjects(prevProjects => {
-        return prevProjects.map(project => {
-          if (project.id === projectId) {
-            return {
-              ...project,
-              tasks: project.tasks.map(projectTask => {
-                if (projectTask.id === taskId) {
-                  return {
-                    ...projectTask,
-                    status,
-                    updatedAt: now,
-                    completedAt: status === 'Completed' ? now : undefined
-                  };
-                }
-                return projectTask;
-              })
-            };
+      // Find the project for this task
+      const project = projects.find(p => p.id === projectId);
+      
+      if (project) {
+        // Get updated tasks for this project after this change
+        const updatedProjectTasks = [...tasks.filter(t => t.projectId === projectId && t.id !== taskId), 
+          {...task!, status, updatedAt: now, completedAt: status === 'Completed' ? now : undefined}];
+        
+        // Check if all tasks are now completed
+        const allTasksCompleted = 
+          updatedProjectTasks.length > 0 && 
+          updatedProjectTasks.every(t => t.status === 'Completed');
+        
+        // If all tasks are completed, update the project status too
+        if (allTasksCompleted && project.status !== 'Completed') {
+          console.log(`All tasks completed for project ${projectId}. Updating project status to Completed`);
+          
+          // Update project in database
+          const { error: projectError } = await supabase
+            .from('projects')
+            .update({
+              status: 'Completed',
+              is_completed: true,
+              updated_at: now.toISOString()
+            })
+            .eq('id', projectId);
+            
+          if (projectError) {
+            console.error('Error updating project status:', projectError);
+          } else {
+            console.log(`Project ${projectId} marked as completed in database`);
           }
-          return project;
-        });
-      });
+          
+          // Update local state for projects
+          setProjects(prevProjects => prevProjects.map(p => {
+            if (p.id === projectId) {
+              return {
+                ...p,
+                status: 'Completed',
+                is_completed: true,
+                updatedAt: now,
+                tasks: updatedProjectTasks
+              };
+            }
+            return p;
+          }));
+        } else {
+          // Just update the task in the project
+          setProjects(prevProjects => {
+            return prevProjects.map(project => {
+              if (project.id === projectId) {
+                return {
+                  ...project,
+                  tasks: project.tasks.map(projectTask => {
+                    if (projectTask.id === taskId) {
+                      return {
+                        ...projectTask,
+                        status,
+                        updatedAt: now,
+                        completedAt: status === 'Completed' ? now : undefined
+                      };
+                    }
+                    return projectTask;
+                  })
+                };
+              }
+              return project;
+            });
+          });
+        }
+      }
     }
 
     playStatusChangeSound();

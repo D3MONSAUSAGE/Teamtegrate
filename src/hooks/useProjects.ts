@@ -1,15 +1,17 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { Project, ProjectStatus } from '@/types';
+import { Project, ProjectStatus, Task } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTask } from '@/contexts/task';
 
 export const useProjects = () => {
   const { user } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const { tasks } = useTask();
 
   const fetchProjects = useCallback(async () => {
     try {
@@ -25,7 +27,7 @@ export const useProjects = () => {
       
       console.log('Fetching projects for user:', user.id);
       
-      // Fetch all projects instead of filtering by manager_id
+      // Fetch all projects
       const { data, error } = await supabase
         .from('projects')
         .select('*');
@@ -40,21 +42,27 @@ export const useProjects = () => {
       console.log('Projects fetched:', data);
 
       const formattedProjects: Project[] = data.map(project => {
-        // Explicitly ensure status and is_completed are synchronized
+        // Get project tasks to calculate accurate status
+        const projectTasks = tasks.filter(task => task.projectId === project.id);
+        const totalTasks = project.tasks_count || 0;
+        const completedTasks = projectTasks.filter(task => task.status === 'Completed').length;
+        
+        // Determine status based on task completion
         let status = project.status || 'To Do';
         let isCompleted = project.is_completed || false;
         
-        // Enforce the rule: if status is 'Completed', is_completed must be true
-        if (status === 'Completed') {
+        // Auto-mark project as completed if all tasks are done (and there are tasks)
+        if (totalTasks > 0 && completedTasks === totalTasks) {
+          status = 'Completed';
           isCompleted = true;
-        }
-        
-        // Enforce the rule: if is_completed is true, status must be 'Completed'
-        if (isCompleted) {
+        } else if (status === 'Completed') {
+          // Ensure consistency
+          isCompleted = true;
+        } else if (isCompleted) {
           status = 'Completed';
         }
         
-        console.log(`Project ${project.id}: status=${status}, is_completed=${isCompleted}`);
+        console.log(`Project ${project.id}: status=${status}, is_completed=${isCompleted}, tasks=${totalTasks}, completed=${completedTasks}`);
         
         return {
           id: project.id,
@@ -65,18 +73,18 @@ export const useProjects = () => {
           managerId: project.manager_id || '',
           createdAt: project.created_at ? new Date(project.created_at) : new Date(),
           updatedAt: project.updated_at ? new Date(project.updated_at) : new Date(),
-          tasks: [],
+          tasks: projectTasks,
           teamMembers: project.team_members || [],
           budget: project.budget || 0,
           budgetSpent: project.budget_spent || 0,
           is_completed: isCompleted,
           status: status as ProjectStatus,
-          tasks_count: project.tasks_count || 0,
+          tasks_count: totalTasks,
           tags: project.tags || []
         };
       });
 
-      console.log('Formatted projects:', formattedProjects);
+      console.log('Formatted projects with task data:', formattedProjects);
       setProjects(formattedProjects);
     } catch (error) {
       console.error('Error fetching projects:', error);
@@ -85,7 +93,7 @@ export const useProjects = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
+  }, [user, tasks]);
 
   useEffect(() => {
     if (user) {
