@@ -9,9 +9,10 @@ import { supabase } from '@/integrations/supabase/client';
 interface AITaskGeneratorProps {
   onGeneratedContent: (content: string) => void;
   type: 'description' | 'title';
+  setValue?: (name: string, value: any) => void;
 }
 
-const AITaskGenerator: React.FC<AITaskGeneratorProps> = ({ onGeneratedContent, type }) => {
+const AITaskGenerator: React.FC<AITaskGeneratorProps> = ({ onGeneratedContent, type, setValue }) => {
   const [prompt, setPrompt] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);

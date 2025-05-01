@@ -114,7 +114,7 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
                   date={deadlineDate}
                   timeInput={timeInput}
                   onDateChange={handleDateChange}
-                  onTimeChange={handleTimeChange}
+                  onTimeChange={(time: string) => handleTimeChange({ target: { value: time } } as React.ChangeEvent<HTMLInputElement>)}
                 />
               </TabsContent>
               

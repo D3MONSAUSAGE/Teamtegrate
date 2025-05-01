@@ -17,7 +17,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Button } from "@/components/ui/button";
 import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
-import { AITaskGenerator } from "@/components/task/AITaskGenerator";
+import AITaskGenerator from "@/components/task/AITaskGenerator";
 
 interface TaskDetailsWithAISectionProps {
   register: UseFormRegister<any>;
@@ -59,7 +59,11 @@ export const TaskDetailsWithAISection: React.FC<TaskDetailsWithAISectionProps> =
         )}
       </div>
       
-      <AITaskGenerator setValue={setValue} />
+      <AITaskGenerator 
+        setValue={setValue}
+        onGeneratedContent={(content: string) => setValue('title', content)}
+        type="title" 
+      />
       
       <div className="space-y-2">
         <Label htmlFor="description">Description</Label>
