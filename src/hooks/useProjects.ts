@@ -39,25 +39,37 @@ export const useProjects = () => {
 
       console.log('Projects fetched:', data);
 
-      const formattedProjects: Project[] = data.map(project => ({
-        id: project.id,
-        title: project.title || '',
-        description: project.description || '',
-        startDate: project.start_date ? new Date(project.start_date) : new Date(),
-        endDate: project.end_date ? new Date(project.end_date) : new Date(),
-        managerId: project.manager_id || '',
-        createdAt: project.created_at ? new Date(project.created_at) : new Date(),
-        updatedAt: project.updated_at ? new Date(project.updated_at) : new Date(),
-        tasks: [],
-        teamMembers: project.team_members || [],
-        budget: project.budget || 0,
-        budgetSpent: project.budget_spent || 0,
-        // Ensure is_completed and status are synchronized
-        is_completed: project.status === 'Completed' ? true : project.is_completed || false,
-        status: (project.status || 'To Do') as ProjectStatus,
-        tasks_count: project.tasks_count || 0,
-        tags: project.tags || []
-      }));
+      const formattedProjects: Project[] = data.map(project => {
+        // Ensure status and is_completed are synchronized
+        let status = project.status || 'To Do';
+        let isCompleted = project.is_completed || false;
+        
+        // Ensure synchronization between status and is_completed
+        if (status === 'Completed') {
+          isCompleted = true;
+        } else if (isCompleted) {
+          status = 'Completed';
+        }
+        
+        return {
+          id: project.id,
+          title: project.title || '',
+          description: project.description || '',
+          startDate: project.start_date ? new Date(project.start_date) : new Date(),
+          endDate: project.end_date ? new Date(project.end_date) : new Date(),
+          managerId: project.manager_id || '',
+          createdAt: project.created_at ? new Date(project.created_at) : new Date(),
+          updatedAt: project.updated_at ? new Date(project.updated_at) : new Date(),
+          tasks: [],
+          teamMembers: project.team_members || [],
+          budget: project.budget || 0,
+          budgetSpent: project.budget_spent || 0,
+          is_completed: isCompleted,
+          status: status as ProjectStatus,
+          tasks_count: project.tasks_count || 0,
+          tags: project.tags || []
+        };
+      });
 
       console.log('Formatted projects:', formattedProjects);
       setProjects(formattedProjects);

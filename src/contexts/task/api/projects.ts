@@ -28,12 +28,10 @@ export const fetchProjects = async (
       let status = project.status || 'To Do';
       let isCompleted = project.is_completed || false;
       
-      // If status is Completed but is_completed is false, set is_completed to true
-      if (status === 'Completed' && !isCompleted) {
+      // Ensure proper synchronization
+      if (status === 'Completed') {
         isCompleted = true;
-      }
-      // If status is not Completed but is_completed is true, adjust status to Completed
-      else if (status !== 'Completed' && isCompleted) {
+      } else if (isCompleted) {
         status = 'Completed';
       }
       
@@ -80,9 +78,14 @@ export const addProject = async (
     let status = project.status || 'To Do';
     let isCompleted = project.is_completed || false;
     
+    // Proper synchronization
     if (status === 'Completed') {
       isCompleted = true;
-    } else if (isCompleted) {
+    } else {
+      isCompleted = false;
+    }
+    
+    if (isCompleted) {
       status = 'Completed';
     }
     

@@ -29,15 +29,22 @@ export const updateProject = async (
     if (updates.endDate !== undefined) updatedFields.end_date = updates.endDate.toISOString();
     if (updates.budget !== undefined) updatedFields.budget = updates.budget;
     if (updates.tags !== undefined) updatedFields.tags = updates.tags;
-    if (updates.is_completed !== undefined) updatedFields.is_completed = updates.is_completed;
+    
+    // Always synchronize is_completed and status together
     if (updates.status !== undefined) {
       updatedFields.status = updates.status;
-      
-      // Automatically set is_completed based on status
-      if (updates.status === 'Completed') {
-        updatedFields.is_completed = true;
-      } else if (updates.status === 'To Do' || updates.status === 'In Progress') {
-        updatedFields.is_completed = false;
+      updatedFields.is_completed = updates.status === 'Completed';
+    }
+    
+    if (updates.is_completed !== undefined) {
+      updatedFields.is_completed = updates.is_completed;
+      // If marking as completed, ensure status is also set to 'Completed'
+      if (updates.is_completed === true) {
+        updatedFields.status = 'Completed';
+      } 
+      // If explicitly marking as not completed and status isn't set, default to 'In Progress'
+      else if (!updates.status) {
+        updatedFields.status = 'In Progress';
       }
     }
 
@@ -102,17 +109,20 @@ export const updateProject = async (
       }
     }
 
-    // Update the local state
+    // Update the local state with proper synchronization of status and is_completed
     setProjects(prevProjects => prevProjects.map(project => {
       if (project.id === projectId) {
-        // Make sure the status and is_completed fields are synchronized
         const updatedProject = { ...project, ...updates, updatedAt: now };
         
-        // Ensure status and is_completed are in sync
-        if (updatedProject.status === 'Completed' && !updatedProject.is_completed) {
+        // Ensure status and is_completed are always in sync
+        if (updatedFields.status === 'Completed') {
           updatedProject.is_completed = true;
-        } else if ((updatedProject.status === 'To Do' || updatedProject.status === 'In Progress') && updatedProject.is_completed) {
+        } else if (updatedFields.status) {
           updatedProject.is_completed = false;
+        }
+        
+        if (updatedFields.is_completed === true) {
+          updatedProject.status = 'Completed';
         }
         
         return updatedProject;
