@@ -10,6 +10,7 @@ import { ProjectDetailsSection } from './ProjectDetailsSection';
 import { toast } from '@/components/ui/sonner';
 import { format } from 'date-fns';
 import { useTask } from '@/contexts/task';
+import { TagsSection } from './TagsSection';
 
 // Define the validation schema
 const projectFormSchema = z.object({
@@ -39,7 +40,7 @@ const EditProjectDialog: React.FC<EditProjectDialogProps> = ({
 }) => {
   const { updateProject } = useTask();
   
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<FormValues>({
+  const { register, handleSubmit, reset, watch, setValue, formState: { errors, isSubmitting } } = useForm<FormValues>({
     resolver: zodResolver(projectFormSchema),
     defaultValues: {
       title: project?.title || '',
@@ -100,6 +101,11 @@ const EditProjectDialog: React.FC<EditProjectDialogProps> = ({
           <ProjectDetailsSection 
             register={register}
             errors={errors}
+          />
+          
+          <TagsSection
+            watch={watch}
+            setValue={setValue}
           />
           
           <div className="flex justify-end gap-2">

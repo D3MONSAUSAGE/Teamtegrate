@@ -12,16 +12,7 @@ import {
 import { UseFormWatch, UseFormSetValue } from "react-hook-form";
 import { Plus, X } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
-export type FormValues = {
-  title: string;
-  description: string;
-  startDate: string;
-  endDate: string;
-  budget?: number;
-  teamMembers: { memberId: string }[];
-  tags: string[];
-};
+import { FormValues } from "./EditProjectDialog";
 
 interface TeamMembersSectionProps {
   teamMembers: any[];

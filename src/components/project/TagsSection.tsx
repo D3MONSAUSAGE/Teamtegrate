@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from '@/components/ui/badge';
 import { Plus, Tag, X } from 'lucide-react';
 import { UseFormWatch, UseFormSetValue } from "react-hook-form";
-import { FormValues } from "./TeamMembersSection";
+import { FormValues } from "./EditProjectDialog";
 
 interface TagsSectionProps {
   watch: UseFormWatch<FormValues>;
