@@ -10,6 +10,7 @@ import {
 import { Project } from '@/types';
 import { useTask } from '@/contexts/task';
 import { toast } from '@/components/ui/sonner';
+import { playSuccessSound, playErrorSound } from '@/utils/sounds';
 
 interface ProjectStatusSelectProps {
   project: Project;
@@ -31,9 +32,11 @@ const ProjectStatusSelect: React.FC<ProjectStatusSelectProps> = ({ project }) =>
       });
       
       toast.success("Project status updated");
+      playSuccessSound();
     } catch (error) {
       console.error('Error updating project status:', error);
       toast.error("Failed to update project status");
+      playErrorSound();
     }
   };
 
