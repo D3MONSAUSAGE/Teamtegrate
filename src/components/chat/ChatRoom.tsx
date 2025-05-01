@@ -11,11 +11,10 @@ import { toast } from 'sonner';
 import ChatRoomHeader from './ChatRoomHeader';
 import ChatParticipantsSidebar from './ChatParticipantsSidebar';
 import ChatMessageGroups from './ChatMessageGroups';
-import AddChatParticipantDialog from './AddChatParticipantDialog';
-import DeleteChatRoomDialog from './DeleteChatRoomDialog';
-import { Button } from '@/components/ui/button';
-import { UserPlus, Loader2 } from 'lucide-react';
-import { playSuccessSound } from '@/utils/sounds';
+import ChatTypingIndicator from './ChatTypingIndicator';
+import ChatMessageLoader from './ChatMessageLoader';
+import ChatRoomActions from './ChatRoomActions';
+import { FileUpload } from '@/hooks/use-chat/useChatFileUpload';
 
 interface ChatRoomProps {
   room: {
@@ -51,8 +50,6 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, onRoomDeleted }) => {
   const [leaving, setLeaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showParticipants, setShowParticipants] = useState(false);
-  const [showAddParticipant, setShowAddParticipant] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [autoScrollEnabled, setAutoScrollEnabled] = useState(true);
   const [initialScrollDone, setInitialScrollDone] = useState(false);
   
@@ -154,7 +151,6 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, onRoomDeleted }) => {
       toast.error('Failed to delete the chat room');
     } finally {
       setIsDeleting(false);
-      setShowDeleteConfirm(false);
     }
   };
 
@@ -192,35 +188,6 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, onRoomDeleted }) => {
     return Object.entries(groups);
   }, [messages]);
 
-  const handleParticipantAdded = () => {
-    playSuccessSound();
-    toast.success('Member added to the chat room');
-  };
-
-  const renderTypingIndicator = () => {
-    if (typingUsers.length === 0) return null;
-    
-    let typingText = '';
-    if (typingUsers.length === 1) {
-      typingText = `${typingUsers[0]} is typing...`;
-    } else if (typingUsers.length === 2) {
-      typingText = `${typingUsers[0]} and ${typingUsers[1]} are typing...`;
-    } else {
-      typingText = `${typingUsers[0]} and ${typingUsers.length - 1} others are typing...`;
-    }
-    
-    return (
-      <div className="px-4 py-1 text-xs text-muted-foreground italic">
-        {typingText}
-        <span className="typing-animation">
-          <span className="dot">.</span>
-          <span className="dot">.</span>
-          <span className="dot">.</span>
-        </span>
-      </div>
-    );
-  };
-
   return (
     <Card className="flex flex-col h-full border-border dark:border-gray-800 shadow-none bg-background dark:bg-[#111827] overflow-hidden">
       <ChatRoomHeader
@@ -230,33 +197,17 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, onRoomDeleted }) => {
         onBack={onBack}
         toggleParticipants={toggleParticipants}
         onLeave={handleLeaveChat}
-        onDelete={() => setShowDeleteConfirm(true)}
+        onDelete={() => setIsDeleting(true)}
         leaving={leaving}
         canDelete={isCreator}
       />
 
-      <div className="absolute right-3 top-5 z-20 flex gap-2">
-        <Button variant="outline" size="sm" onClick={() => setShowAddParticipant(true)}>
-          <UserPlus className="h-4 w-4 mr-1" /> Add Member
-        </Button>
-      </div>
-      {showAddParticipant && (
-        <AddChatParticipantDialog
-          open={showAddParticipant}
-          onOpenChange={setShowAddParticipant}
-          roomId={room.id}
-          onAdded={handleParticipantAdded}
-        />
-      )}
-      
-      {showDeleteConfirm && (
-        <DeleteChatRoomDialog
-          open={showDeleteConfirm}
-          onOpenChange={setShowDeleteConfirm}
-          onConfirm={handleDeleteRoom}
-          isDeleting={isDeleting}
-        />
-      )}
+      <ChatRoomActions
+        roomId={room.id}
+        isCreator={isCreator}
+        handleDeleteRoom={handleDeleteRoom}
+        isDeleting={isDeleting}
+      />
 
       {showParticipants && (
         <ChatParticipantsSidebar
@@ -270,24 +221,11 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, onRoomDeleted }) => {
         className="flex-1 p-3 bg-[url('https://web.whatsapp.com/img/bg-chat-tile-light_04fcacde539c58cca6745483d4858c52.png')] dark:bg-[url('https://web.whatsapp.com/img/bg-chat-tile-dark_f1e8c06e8d4e3296352ae4682c0632c3.png')] bg-repeat"
         onScroll={handleScroll}
       >
-        {isLoading && (
-          <div className="flex justify-center items-center p-4">
-            <Loader2 className="h-6 w-6 animate-spin text-primary" />
-          </div>
-        )}
-        
-        {hasMoreMessages && !isLoading && (
-          <div className="flex justify-center my-2">
-            <Button 
-              variant="outline" 
-              size="sm"
-              className="text-xs"
-              onClick={loadMoreMessages}
-            >
-              Load earlier messages
-            </Button>
-          </div>
-        )}
+        <ChatMessageLoader 
+          isLoading={isLoading}
+          hasMoreMessages={hasMoreMessages}
+          loadMoreMessages={loadMoreMessages}
+        />
         
         <ChatMessageGroups
           groupedMessages={groupedMessages}
@@ -299,7 +237,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, onRoomDeleted }) => {
         <div ref={messagesEndRef} />
       </ScrollArea>
 
-      {renderTypingIndicator()}
+      <ChatTypingIndicator typingUsers={typingUsers} />
 
       <ChatMessageInput
         newMessage={newMessage}
@@ -311,35 +249,6 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, onRoomDeleted }) => {
         setReplyTo={setReplyTo}
         isSending={isSending}
       />
-      
-      {/* Fix: Replacing jsx and global properties with standard style tag */}
-      <style>
-        {`
-        .typing-animation .dot {
-          animation: typing 1.5s infinite;
-          display: inline-block;
-          opacity: 0;
-        }
-        
-        .typing-animation .dot:nth-child(1) {
-          animation-delay: 0s;
-        }
-        
-        .typing-animation .dot:nth-child(2) {
-          animation-delay: 0.5s;
-        }
-        
-        .typing-animation .dot:nth-child(3) {
-          animation-delay: 1s;
-        }
-        
-        @keyframes typing {
-          0% { opacity: 0; }
-          50% { opacity: 1; }
-          100% { opacity: 0; }
-        }
-        `}
-      </style>
     </Card>
   );
 };

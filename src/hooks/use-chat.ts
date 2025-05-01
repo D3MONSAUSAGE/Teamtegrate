@@ -1,23 +1,23 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useChatMessages } from './use-chat/useChatMessages';
-import { useChatSendMessage } from './use-chat/useChatSendMessage'; 
+import { useChatSendMessage } from './use-chat/useChatSendMessage';
 import { useChatSubscription } from './use-chat/useChatSubscription';
-import { useChatFileUpload } from './use-chat/useChatFileUpload';
+import { useChatFileUpload, FileUpload } from './use-chat/useChatFileUpload';
 
 export function useChat(roomId: string, userId?: string) {
   const [newMessage, setNewMessage] = useState('');
   const [replyTo, setReplyTo] = useState<any | null>(null);
-  const [fileUploads, setFileUploads] = useState<File[]>([]);
+  const [fileUploads, setFileUploads] = useState<FileUpload[]>([]);
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
   
   // Use custom hooks
   const { 
     messages, 
-    isLoading, 
+    isLoading,
     setMessages,
     hasMoreMessages,
-    loadMoreMessages
+    fetchMoreMessages
   } = useChatMessages(roomId);
   
   const { sendTypingStatus, typingTimeout } = useChatSubscription(roomId, userId, setTypingUsers, setMessages);
@@ -89,6 +89,6 @@ export function useChat(roomId: string, userId?: string) {
     typingUsers,
     isSending,
     hasMoreMessages,
-    loadMoreMessages
+    loadMoreMessages: fetchMoreMessages
   };
 }
