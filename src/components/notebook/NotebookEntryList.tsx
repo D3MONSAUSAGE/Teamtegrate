@@ -53,9 +53,12 @@ const NotebookEntryList: React.FC<NotebookEntryListProps> = ({
               <span className="text-muted-foreground font-mono">
                 {new Date(entry.created_at).toLocaleString()}
               </span>
-              {/* Show author for public entries */}
-              {entry.is_public && entry.user_id !== user?.id && (
-                <span className="ml-2 text-foreground font-medium">by {entry.author_name || "Unknown"}</span>
+              
+              {/* Always show author name for public entries */}
+              {entry.is_public && (
+                <span className="ml-2 text-foreground font-medium">
+                  by {entry.user_id === user?.id ? "You" : (entry.author_name || "Unknown")}
+                </span>
               )}
             </div>
             <h3 className="font-bold text-lg mb-1 text-gradient">{entry.title}</h3>

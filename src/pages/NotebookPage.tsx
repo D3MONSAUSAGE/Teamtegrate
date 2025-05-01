@@ -26,6 +26,8 @@ const NotebookPage = () => {
   async function fetchEntries() {
     if (!user) return;
     setIsLoading(true);
+    
+    // First get all entries (both public and your own)
     const { data, error } = await supabase
       .from("journal_entries")
       .select("*")
@@ -38,25 +40,23 @@ const NotebookPage = () => {
       return;
     }
 
-    // Find all public entries not by you
-    const publicEntries = (data as NotebookEntry[]).filter(
-      (e) => e.is_public && e.user_id !== user.id
-    );
-    const publicUserIds = [
-      ...new Set(publicEntries.map((e) => e.user_id).filter(Boolean)),
-    ];
-
+    // Get all user IDs from entries to fetch their names
+    const userIds = [...new Set((data as NotebookEntry[])
+      .map(entry => entry.user_id)
+      .filter(Boolean))];
+    
     let userMap: Record<string, string> = {};
-    if (publicUserIds.length > 0) {
-      // Fetch names from users table
+    if (userIds.length > 0) {
+      // Fetch names for all users who have entries
       const { data: usersData } = await supabase
         .from("users")
-        .select("id, name")
-        .in("id", publicUserIds);
+        .select("id, name, email")
+        .in("id", userIds);
+        
       if (usersData) {
         userMap = usersData.reduce(
           (acc: Record<string, string>, u: any) => {
-            acc[u.id] = u.name;
+            acc[u.id] = u.name || u.email;
             return acc;
           },
           {}
@@ -64,15 +64,12 @@ const NotebookPage = () => {
       }
     }
 
-    // Attach author_name to each entry if public and not your own
+    // Attach author_name to all entries
     const entriesWithAuthors = (data as NotebookEntry[]).map((entry) => {
-      if (entry.is_public && entry.user_id !== user.id) {
-        return {
-          ...entry,
-          author_name: userMap[entry.user_id] || "Unknown",
-        };
-      }
-      return entry;
+      return {
+        ...entry,
+        author_name: userMap[entry.user_id] || "Unknown",
+      };
     });
 
     setEntries(entriesWithAuthors);
