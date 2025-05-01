@@ -8,7 +8,7 @@ export const useProjectTasks = (allTasks: Task[], projectId: string | null) => {
 
   // Filter tasks that belong to the selected project
   const projectTasks = useMemo(() => {
-    return allTasks.filter(task => task.project_id === projectId);
+    return allTasks.filter(task => task.projectId === projectId);
   }, [allTasks, projectId]);
 
   // Filter tasks by search query
