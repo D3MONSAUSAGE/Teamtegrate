@@ -2,13 +2,13 @@
 import React from 'react';
 import { CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { Project } from '@/types';
 import { List, Plus, Calendar, Users } from 'lucide-react';
-import { ProjectStatusSelect } from './ProjectStatusSelect';
 import { format } from 'date-fns';
-import ProjectBudgetInfo from './ProjectBudgetInfo';
 import { Link } from 'react-router-dom';
+import ProjectProgressBar from '@/components/ProjectProgressBar';
+import ProjectStatusSelect from '@/components/ProjectStatusSelect';
+import ProjectBudgetInfo from './ProjectBudgetInfo';
 
 interface ProjectCardContentProps {
   project: Project;
@@ -17,17 +17,6 @@ interface ProjectCardContentProps {
 }
 
 const ProjectCardContent: React.FC<ProjectCardContentProps> = ({ project, onViewTasks, onCreateTask }) => {
-  // Calculate progress based on task completion
-  const calculateProgress = () => {
-    const totalTasks = project.tasks_count;
-    if (totalTasks === 0) return 0;
-    
-    const completedTasks = project.tasks?.filter(task => task.status === 'Completed').length || 0;
-    return Math.round((completedTasks / totalTasks) * 100);
-  };
-
-  const progress = calculateProgress();
-
   return (
     <CardContent className="flex-1 flex flex-col pt-0">
       <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-4">
@@ -35,19 +24,7 @@ const ProjectCardContent: React.FC<ProjectCardContentProps> = ({ project, onView
       </p>
       
       <div className="space-y-4 mb-4">
-        <div className="space-y-1">
-          <div className="flex justify-between items-center text-xs">
-            <span>Progress</span>
-            <span>{progress}%</span>
-          </div>
-          <Progress value={progress} 
-            className={`h-2 ${
-              progress < 30 ? 'bg-red-100' : 
-              progress < 70 ? 'bg-yellow-100' : 
-              'bg-green-100'
-            }`}
-          />
-        </div>
+        <ProjectProgressBar project={project} />
         
         <div className="mb-4">
           <ProjectStatusSelect project={project} />

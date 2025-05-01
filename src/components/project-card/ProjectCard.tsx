@@ -6,6 +6,7 @@ import ProjectCardHeader from './ProjectCardHeader';
 import ProjectCardContent from './ProjectCardContent';
 import ProjectDeleteDialog from './ProjectDeleteDialog';
 import { useTask } from '@/contexts/task';
+import { toast } from '@/components/ui/sonner';
 
 interface ProjectCardProps {
   project: Project;
@@ -14,7 +15,12 @@ interface ProjectCardProps {
   onDeleted?: () => void;
 }
 
-const ProjectCard: React.FC<ProjectCardProps> = ({ project, onViewTasks, onCreateTask, onDeleted }) => {
+const ProjectCard: React.FC<ProjectCardProps> = ({ 
+  project, 
+  onViewTasks, 
+  onCreateTask, 
+  onDeleted 
+}) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const { deleteProject } = useTask();
@@ -23,11 +29,13 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onViewTasks, onCreat
     try {
       setIsDeleting(true);
       await deleteProject(project.id);
+      toast.success("Project deleted successfully");
       if (onDeleted) {
         onDeleted();
       }
     } catch (error) {
       console.error('Error deleting project:', error);
+      toast.error("Failed to delete project");
     } finally {
       setIsDeleting(false);
       setShowDeleteDialog(false);
