@@ -44,8 +44,11 @@ export const useProjects = () => {
       const formattedProjects: Project[] = data.map(project => {
         // Get project tasks to calculate accurate status
         const projectTasks = tasks.filter(task => task.projectId === project.id);
-        const totalTasks = project.tasks_count || 0;
+        const totalTasks = projectTasks.length;
         const completedTasks = projectTasks.filter(task => task.status === 'Completed').length;
+        
+        // Calculate progress based on completed tasks
+        const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
         
         // Determine status based on task completion
         let status = project.status || 'To Do';
@@ -62,7 +65,7 @@ export const useProjects = () => {
           status = 'Completed';
         }
         
-        console.log(`Project ${project.id}: status=${status}, is_completed=${isCompleted}, tasks=${totalTasks}, completed=${completedTasks}`);
+        console.log(`Project ${project.id}: status=${status}, is_completed=${isCompleted}, tasks=${totalTasks}, completed=${completedTasks}, progress=${progress}%`);
         
         return {
           id: project.id,

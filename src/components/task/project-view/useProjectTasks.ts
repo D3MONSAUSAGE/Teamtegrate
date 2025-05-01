@@ -79,14 +79,14 @@ export const useProjectTasks = (allTasks: Task[], projectId: string | null) => {
     [filteredTasks, sortTasks]
   );
 
-  // Calculate progress
+  // Calculate progress - use the same calculation method as ProjectProgressBar
   const progress = useMemo(() => {
-    const total = filteredTasks.length;
+    const total = projectTasks.length;
     if (total === 0) return 0;
     
-    const completed = filteredTasks.filter(task => task.status === 'Completed').length;
+    const completed = projectTasks.filter(task => task.status === 'Completed').length;
     return Math.round((completed / total) * 100);
-  }, [filteredTasks]);
+  }, [projectTasks]);
 
   return {
     searchQuery,

@@ -43,39 +43,54 @@ export const updateTaskStatus = async (
       return;
     }
 
-    // Find the task
+    // Find the task and its project
     const task = tasks.find(t => t.id === taskId);
-    const projectId = task?.projectId;
+    if (!task) {
+      console.error('Task not found:', taskId);
+      return;
+    }
+    
+    const projectId = task.projectId;
     
     // Update local tasks state
-    setTasks(prevTasks => prevTasks.map(task => {
-      if (task.id === taskId) {
-        return { 
-          ...task, 
+    setTasks(prevTasks => 
+      prevTasks.map(t => 
+        t.id === taskId ? { 
+          ...t, 
           status, 
           updatedAt: now,
           completedAt: status === 'Completed' ? now : undefined
-        };
-      }
-      return task;
-    }));
+        } : t
+      )
+    );
 
-    // Also update the task in the project and check if all tasks are completed
+    // If task belongs to a project, update project tasks and check completion status
     if (projectId) {
-      // Find the project for this task
+      // Get all tasks for this project (including the updated one)
+      const updatedProjectTasks = tasks
+        .filter(t => t.projectId === projectId)
+        .map(t => t.id === taskId ? { 
+          ...t, 
+          status, 
+          updatedAt: now,
+          completedAt: status === 'Completed' ? now : undefined 
+        } : t);
+      
+      // Check if all tasks are now completed
+      const allTasksCompleted = 
+        updatedProjectTasks.length > 0 && 
+        updatedProjectTasks.every(t => t.status === 'Completed');
+      
+      // Get the project
       const project = projects.find(p => p.id === projectId);
       
       if (project) {
-        // Get updated tasks for this project after this change
-        const updatedProjectTasks = [...tasks.filter(t => t.projectId === projectId && t.id !== taskId), 
-          {...task!, status, updatedAt: now, completedAt: status === 'Completed' ? now : undefined}];
+        console.log(
+          `Task ${taskId} updated to ${status}. Project ${projectId} has ${updatedProjectTasks.length} tasks, ` +
+          `all completed: ${allTasksCompleted}, current status: ${project.status}`
+        );
         
-        // Check if all tasks are now completed
-        const allTasksCompleted = 
-          updatedProjectTasks.length > 0 && 
-          updatedProjectTasks.every(t => t.status === 'Completed');
-        
-        // If all tasks are completed, update the project status too
+        // If all tasks are completed and project isn't marked as completed, update it
         if (allTasksCompleted && project.status !== 'Completed') {
           console.log(`All tasks completed for project ${projectId}. Updating project status to Completed`);
           
@@ -93,42 +108,53 @@ export const updateTaskStatus = async (
             console.error('Error updating project status:', projectError);
           } else {
             console.log(`Project ${projectId} marked as completed in database`);
+            
+            // Update local projects state
+            setProjects(prevProjects => prevProjects.map(p => {
+              if (p.id === projectId) {
+                return {
+                  ...p,
+                  status: 'Completed',
+                  is_completed: true,
+                  updatedAt: now,
+                  tasks: updatedProjectTasks
+                };
+              }
+              return p;
+            }));
+            
+            toast.success('All tasks completed! Project marked as Complete.');
           }
-          
-          // Update local state for projects
-          setProjects(prevProjects => prevProjects.map(p => {
-            if (p.id === projectId) {
-              return {
-                ...p,
-                status: 'Completed',
-                is_completed: true,
-                updatedAt: now,
-                tasks: updatedProjectTasks
-              };
-            }
-            return p;
-          }));
         } else {
           // Just update the task in the project
           setProjects(prevProjects => {
-            return prevProjects.map(project => {
-              if (project.id === projectId) {
+            return prevProjects.map(p => {
+              if (p.id === projectId) {
+                const updatedTasks = p.tasks.map(projectTask => {
+                  if (projectTask.id === taskId) {
+                    return {
+                      ...projectTask,
+                      status,
+                      updatedAt: now,
+                      completedAt: status === 'Completed' ? now : undefined
+                    };
+                  }
+                  return projectTask;
+                });
+                
+                // Calculate completion percentage
+                const completedCount = updatedTasks.filter(t => t.status === 'Completed').length;
+                const totalCount = updatedTasks.length;
+                const progress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+                
+                console.log(`Project ${projectId} progress updated: ${progress}% tasks completed`);
+                
                 return {
-                  ...project,
-                  tasks: project.tasks.map(projectTask => {
-                    if (projectTask.id === taskId) {
-                      return {
-                        ...projectTask,
-                        status,
-                        updatedAt: now,
-                        completedAt: status === 'Completed' ? now : undefined
-                      };
-                    }
-                    return projectTask;
-                  })
+                  ...p,
+                  tasks: updatedTasks
                 };
               }
-              return project;
+              return p;
             });
           });
         }
