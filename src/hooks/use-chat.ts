@@ -1,197 +1,84 @@
 
-import { useEffect, useReducer, useState } from "react";
-import { useChatMessages } from "./use-chat/useChatMessages";
-import { useChatSending } from "./use-chat/useChatSending";
-import { useChatSubscription } from "./use-chat/useChatSubscription";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { useState, useEffect, useCallback } from 'react';
+import { useChatMessages } from './use-chat/useChatMessages';
+import { useChatSendMessage } from './use-chat/useChatSendMessage'; 
+import { useChatSubscription } from './use-chat/useChatSubscription';
+import { useChatFileUpload } from './use-chat/useChatFileUpload';
 
-// Define typing indicator state
-interface TypingState {
-  [userId: string]: {
-    isTyping: boolean;
-    name: string | null;
-    lastTyped: number;
-  };
-}
-
-// Action types for the typing reducer
-type TypingAction = 
-  | { type: 'SET_TYPING'; userId: string; name: string | null } 
-  | { type: 'SET_NOT_TYPING'; userId: string }
-  | { type: 'CLEANUP' };
-
-// Typing state reducer
-function typingReducer(state: TypingState, action: TypingAction): TypingState {
-  switch (action.type) {
-    case 'SET_TYPING':
-      return {
-        ...state,
-        [action.userId]: {
-          isTyping: true,
-          name: action.name,
-          lastTyped: Date.now()
-        }
-      };
-    case 'SET_NOT_TYPING':
-      if (!state[action.userId]) return state;
-      return {
-        ...state,
-        [action.userId]: {
-          ...state[action.userId],
-          isTyping: false
-        }
-      };
-    case 'CLEANUP':
-      const now = Date.now();
-      const newState = { ...state };
-      
-      // Remove typing indicators older than 5 seconds
-      Object.keys(newState).forEach(userId => {
-        if (now - newState[userId].lastTyped > 5000) {
-          delete newState[userId];
-        }
-      });
-      
-      return newState;
-    default:
-      return state;
-  }
-}
-
-export const useChat = (roomId: string, userId: string | undefined) => {
-  const { messages, fetchAndSetMessages, setMessages, isLoading, hasMoreMessages, fetchMoreMessages } = useChatMessages(roomId);
-  const {
-    newMessage,
-    setNewMessage,
-    fileUploads,
-    setFileUploads,
-    replyTo,
-    setReplyTo,
-    isSending,
-    sendMessage,
-  } = useChatSending(roomId, userId);
-
-  const [typingState, dispatchTyping] = useReducer(typingReducer, {});
-  const [isTyping, setIsTyping] = useState(false);
+export function useChat(roomId: string, userId?: string) {
+  const [newMessage, setNewMessage] = useState('');
+  const [replyTo, setReplyTo] = useState<any | null>(null);
+  const [fileUploads, setFileUploads] = useState<File[]>([]);
+  const [typingUsers, setTypingUsers] = useState<string[]>([]);
   
-  const subscribeToMessages = useChatSubscription(roomId, userId, fetchAndSetMessages);
+  // Use custom hooks
+  const { 
+    messages, 
+    isLoading, 
+    setMessages,
+    hasMoreMessages,
+    loadMoreMessages
+  } = useChatMessages(roomId);
   
-  // Handle user typing status
+  const { sendTypingStatus, typingTimeout } = useChatSubscription(roomId, userId, setTypingUsers, setMessages);
+  const { uploadFiles } = useChatFileUpload();
+  const { sendMessage: sendMessageToSupabase, isSending } = useChatSendMessage(roomId, userId);
+  
+  // Reset state when room changes
   useEffect(() => {
-    if (!userId || !roomId) return;
+    setNewMessage('');
+    setReplyTo(null);
+    setFileUploads([]);
+    setTypingUsers([]);
+  }, [roomId]);
+  
+  // Send typing status when user types
+  useEffect(() => {
+    if (newMessage && userId) {
+      sendTypingStatus();
+    }
+  }, [newMessage, userId, sendTypingStatus]);
+  
+  // Send message
+  const sendMessage = useCallback(async () => {
+    if ((!newMessage && fileUploads.length === 0) || !userId) return;
     
-    let typingTimeout: ReturnType<typeof setTimeout>;
-    let cleanupInterval: ReturnType<typeof setInterval>;
-
-    const handleUserTyping = async () => {
-      if (!isTyping) {
-        setIsTyping(true);
-        try {
-          await supabase.channel(`typing:${roomId}`).send({
-            type: 'broadcast',
-            event: 'typing',
-            payload: { userId, isTyping: true }
-          });
-        } catch (error) {
-          console.error('Error sending typing indicator:', error);
-        }
+    try {
+      // Clear typing timeout
+      if (typingTimeout.current) {
+        clearTimeout(typingTimeout.current);
+        typingTimeout.current = null;
       }
       
-      // Clear previous timeout and set a new one
-      clearTimeout(typingTimeout);
-      typingTimeout = setTimeout(async () => {
-        setIsTyping(false);
-        try {
-          await supabase.channel(`typing:${roomId}`).send({
-            type: 'broadcast',
-            event: 'typing',
-            payload: { userId, isTyping: false }
-          });
-        } catch (error) {
-          console.error('Error sending typing stopped indicator:', error);
-        }
-      }, 2000);
-    };
-    
-    // Setup typing interval cleanup
-    cleanupInterval = setInterval(() => {
-      dispatchTyping({ type: 'CLEANUP' });
-    }, 2000);
-    
-    // Watch for changes in the message input
-    if (newMessage) {
-      handleUserTyping();
+      // Upload files if any
+      let attachments: { file_path: string; file_name: string; file_size: number; file_type: string }[] = [];
+      
+      if (fileUploads.length > 0) {
+        attachments = await uploadFiles(fileUploads, roomId);
+      }
+      
+      // Send message
+      await sendMessageToSupabase(newMessage.trim(), replyTo?.id, attachments);
+      
+      // Reset state
+      setNewMessage('');
+      setReplyTo(null);
+      setFileUploads([]);
+      
+      // Scroll to bottom
+      setTimeout(() => {
+        const messagesEnd = document.getElementById('messages-end');
+        messagesEnd?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+      
+    } catch (error) {
+      console.error('Error sending message:', error);
     }
-    
-    return () => {
-      clearTimeout(typingTimeout);
-      clearInterval(cleanupInterval);
-    };
-  }, [newMessage, roomId, userId, isTyping]);
+  }, [newMessage, roomId, userId, fileUploads, replyTo, sendMessageToSupabase, uploadFiles, typingTimeout]);
   
-  // Subscribe to typing indicators from other users
-  useEffect(() => {
-    if (!roomId || !userId) return;
-    
-    const typingChannel = supabase.channel(`typing:${roomId}`);
-    
-    typingChannel
-      .on('broadcast', { event: 'typing' }, async ({ payload }) => {
-        if (payload.userId === userId) return; // Ignore own typing events
-        
-        // Get user name from supabase if not already in state
-        let userName = typingState[payload.userId]?.name;
-        
-        if (!userName && payload.isTyping) {
-          try {
-            const { data } = await supabase
-              .from('users')
-              .select('name')
-              .eq('id', payload.userId)
-              .single();
-            
-            userName = data?.name || 'Someone';
-          } catch (error) {
-            console.error('Error fetching user name for typing indicator:', error);
-            userName = 'Someone';
-          }
-        }
-        
-        if (payload.isTyping) {
-          dispatchTyping({ 
-            type: 'SET_TYPING', 
-            userId: payload.userId,
-            name: userName 
-          });
-        } else {
-          dispatchTyping({ 
-            type: 'SET_NOT_TYPING', 
-            userId: payload.userId 
-          });
-        }
-      })
-      .subscribe();
-    
-    return () => {
-      supabase.removeChannel(typingChannel);
-    };
-  }, [roomId, userId, typingState]);
-
-  useEffect(() => {
-    const unsubscribe = subscribeToMessages();
-    return () => {
-      unsubscribe();
-    };
-  }, [roomId, userId, subscribeToMessages]);
-
-  // Get active typers (currently typing)
-  const activeTypers = Object.values(typingState)
-    .filter(status => status.isTyping)
-    .map(status => status.name);
-
   return {
     messages,
+    isLoading,
     newMessage,
     setNewMessage,
     fileUploads,
@@ -199,10 +86,9 @@ export const useChat = (roomId: string, userId: string | undefined) => {
     sendMessage,
     replyTo,
     setReplyTo,
+    typingUsers,
     isSending,
-    typingUsers: activeTypers,
-    isLoading,
     hasMoreMessages,
-    loadMoreMessages: fetchMoreMessages
+    loadMoreMessages
   };
-};
+}

@@ -1,21 +1,24 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, LogOut, Info } from 'lucide-react';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { ChevronLeft, LogOut, Info, Trash2 } from 'lucide-react';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import ChatParticipants from './ChatParticipants';
 
 interface ChatRoomHeaderProps {
-  room: { id: string; name: string };
+  room: { id: string; name: string; created_by: string };
   isMobile: boolean;
+  currentUserId?: string;
   onBack?: () => void;
   toggleParticipants: () => void;
   onLeave: () => void;
+  onDelete?: () => void;
   leaving: boolean;
+  canDelete: boolean;
 }
 
 const ChatRoomHeader: React.FC<ChatRoomHeaderProps> = ({
-  room, isMobile, onBack, toggleParticipants, onLeave, leaving,
+  room, isMobile, currentUserId, onBack, toggleParticipants, onLeave, onDelete, leaving, canDelete,
 }) => (
   <div className="p-2 border-b border-border dark:border-gray-800 flex items-center gap-1 bg-card dark:bg-[#1f2133] shadow-sm">
     {isMobile && (
@@ -63,6 +66,19 @@ const ChatRoomHeader: React.FC<ChatRoomHeaderProps> = ({
             <LogOut className="h-4 w-4 mr-2" />
             Leave Chat
           </DropdownMenuItem>
+          
+          {canDelete && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem 
+                className="text-red-600 cursor-pointer"
+                onClick={onDelete}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete Room
+              </DropdownMenuItem>
+            </>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
     </div>

@@ -12,6 +12,7 @@ import ChatRoomHeader from './ChatRoomHeader';
 import ChatParticipantsSidebar from './ChatParticipantsSidebar';
 import ChatMessageGroups from './ChatMessageGroups';
 import AddChatParticipantDialog from './AddChatParticipantDialog';
+import DeleteChatRoomDialog from './DeleteChatRoomDialog';
 import { Button } from '@/components/ui/button';
 import { UserPlus, Loader2 } from 'lucide-react';
 import { playSuccessSound } from '@/utils/sounds';
@@ -20,11 +21,13 @@ interface ChatRoomProps {
   room: {
     id: string;
     name: string;
+    created_by: string;
   };
   onBack?: () => void;
+  onRoomDeleted?: () => void;
 }
 
-const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
+const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, onRoomDeleted }) => {
   const { user } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -46,10 +49,15 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
   } = useChat(room.id, user?.id);
 
   const [leaving, setLeaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [showParticipants, setShowParticipants] = useState(false);
   const [showAddParticipant, setShowAddParticipant] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [autoScrollEnabled, setAutoScrollEnabled] = useState(true);
   const [initialScrollDone, setInitialScrollDone] = useState(false);
+  
+  // Check if user is the creator of the room
+  const isCreator = user?.id === room.created_by;
 
   const scrollToBottom = (behavior: ScrollBehavior = 'auto') => {
     if (autoScrollEnabled) {
@@ -104,6 +112,49 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
       toast.error('Failed to leave the chat');
     } finally {
       setLeaving(false);
+    }
+  };
+  
+  const handleDeleteRoom = async () => {
+    if (!user || !isCreator) return;
+    setIsDeleting(true);
+    
+    try {
+      // First delete all messages in the room
+      const { error: messagesError } = await supabase
+        .from('chat_messages')
+        .delete()
+        .eq('room_id', room.id);
+      
+      if (messagesError) throw messagesError;
+      
+      // Then delete all participants
+      const { error: participantsError } = await supabase
+        .from('chat_room_participants')
+        .delete()
+        .eq('room_id', room.id);
+      
+      if (participantsError) throw participantsError;
+      
+      // Finally delete the room itself
+      const { error: roomError } = await supabase
+        .from('chat_rooms')
+        .delete()
+        .eq('id', room.id);
+      
+      if (roomError) throw roomError;
+      
+      toast.success('Chat room deleted successfully');
+      
+      // Notify parent component that room was deleted
+      if (onRoomDeleted) onRoomDeleted();
+      else if (onBack) onBack();
+    } catch (error) {
+      console.error('Error deleting chat room:', error);
+      toast.error('Failed to delete the chat room');
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
     }
   };
 
@@ -175,10 +226,13 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
       <ChatRoomHeader
         room={room}
         isMobile={isMobile}
+        currentUserId={user?.id}
         onBack={onBack}
         toggleParticipants={toggleParticipants}
         onLeave={handleLeaveChat}
+        onDelete={() => setShowDeleteConfirm(true)}
         leaving={leaving}
+        canDelete={isCreator}
       />
 
       <div className="absolute right-3 top-5 z-20 flex gap-2">
@@ -192,6 +246,15 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
           onOpenChange={setShowAddParticipant}
           roomId={room.id}
           onAdded={handleParticipantAdded}
+        />
+      )}
+      
+      {showDeleteConfirm && (
+        <DeleteChatRoomDialog
+          open={showDeleteConfirm}
+          onOpenChange={setShowDeleteConfirm}
+          onConfirm={handleDeleteRoom}
+          isDeleting={isDeleting}
         />
       )}
 
