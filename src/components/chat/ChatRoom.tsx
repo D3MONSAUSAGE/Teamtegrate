@@ -249,7 +249,9 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
         isSending={isSending}
       />
       
-      <style jsx global>{`
+      {/* Fix: Replacing jsx and global properties with standard style tag */}
+      <style>
+        {`
         .typing-animation .dot {
           animation: typing 1.5s infinite;
           display: inline-block;
@@ -273,7 +275,8 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
           50% { opacity: 1; }
           100% { opacity: 0; }
         }
-      `}</style>
+        `}
+      </style>
     </Card>
   );
 };

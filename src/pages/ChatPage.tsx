@@ -5,8 +5,18 @@ import ChatRoom from '@/components/chat/ChatRoom';
 import ChatLayout from '@/components/chat/ChatLayout';
 import { useIsMobile } from '@/hooks/use-mobile';
 
+// Update the interface to match the expected ChatRoomData type
+interface ChatRoomData {
+  id: string;
+  name: string;
+  created_at: string;
+  created_by: string;
+  last_message_at?: string;
+  unread_count?: number;
+}
+
 const ChatPage = () => {
-  const [selectedRoom, setSelectedRoom] = useState<{ id: string; name: string } | null>(null);
+  const [selectedRoom, setSelectedRoom] = useState<ChatRoomData | null>(null);
   const isMobile = useIsMobile();
 
   // On mobile, show either the room list or the selected chat room
