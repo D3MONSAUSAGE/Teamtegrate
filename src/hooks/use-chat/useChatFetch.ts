@@ -3,13 +3,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 // Types must be shared with parent
-export async function fetchMessages(roomId: string) {
+export async function fetchMessages(roomId: string, limit = 20, offset = 0) {
   try {
     const { data: messagesData, error: messagesError } = await supabase
       .from('chat_messages')
       .select('*')
       .eq('room_id', roomId)
-      .order('created_at', { ascending: true });
+      .order('created_at', { ascending: true })
+      .limit(limit)
+      .range(offset, offset + limit - 1);
 
     if (messagesError) {
       console.error('Error fetching messages:', messagesError);

@@ -2,46 +2,67 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from '@/contexts/AuthContext';
-import ChatRoom from './ChatRoom';
 import CreateRoomDialog from './CreateRoomDialog';
 import { Button } from '@/components/ui/button';
-import { Plus, ChevronLeft } from 'lucide-react';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { Plus, Search, MessagesSquare } from 'lucide-react';
 import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
 
 interface ChatRoomData {
   id: string;
   name: string;
   created_at: string;
   created_by: string;
+  last_message_at?: string;
+  unread_count?: number;
 }
 
-const ChatRooms = () => {
+interface ChatRoomsProps {
+  selectedRoom: ChatRoomData | null;
+  onRoomSelect: (room: ChatRoomData) => void;
+}
+
+const ChatRooms: React.FC<ChatRoomsProps> = ({ selectedRoom, onRoomSelect }) => {
   const [rooms, setRooms] = useState<ChatRoomData[]>([]);
-  const [selectedRoom, setSelectedRoom] = useState<ChatRoomData | null>(null);
   const [isCreateRoomOpen, setIsCreateRoomOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const { user } = useAuth();
-  const isMobile = useIsMobile();
   
   useEffect(() => {
     fetchRooms();
-    subscribeToRooms();
+    const channel = subscribeToRooms();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const fetchRooms = async () => {
-    const { data, error } = await supabase
-      .from('chat_rooms')
-      .select('*')
-      .order('created_at', { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from('chat_rooms')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('Error fetching rooms:', error);
-      return;
-    }
+      if (error) {
+        console.error('Error fetching rooms:', error);
+        toast.error('Failed to load chat rooms');
+        return;
+      }
 
-    setRooms(data);
-    if (data.length > 0 && !selectedRoom) {
-      setSelectedRoom(data[0]);
+      // Add dummy unread counts for demo purposes - in a real app, you would fetch this from the database
+      const roomsWithMeta = data.map(room => ({
+        ...room,
+        unread_count: Math.floor(Math.random() * 5)
+      }));
+
+      setRooms(roomsWithMeta);
+    } catch (error) {
+      console.error('Unexpected error fetching rooms:', error);
+      toast.error('Failed to load chat rooms');
     }
   };
 
@@ -57,65 +78,70 @@ const ChatRooms = () => {
       )
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return channel;
   };
 
-  const handleBackToRooms = () => {
-    setSelectedRoom(null);
-  };
-
-  if (isMobile && selectedRoom) {
-    return (
-      <div className="h-full">
-        <ChatRoom room={selectedRoom} onBack={handleBackToRooms} />
-      </div>
-    );
-  }
+  const filteredRooms = rooms.filter(room => 
+    room.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
-    <div className="flex h-full gap-4">
-      <Card className={`${
-        isMobile || !selectedRoom ? 'w-full' : 'w-64'
-      } bg-card dark:bg-[#1f2133] border-border dark:border-gray-800 flex flex-col`}>
-        <div className="p-4 border-b border-border dark:border-gray-800 flex items-center justify-between">
-          <h2 className="font-semibold">Chat Rooms</h2>
+    <Card className="h-full flex flex-col border-0 rounded-none">
+      <div className="p-4 border-b border-border dark:border-gray-800">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-semibold text-lg flex items-center gap-2">
+            <MessagesSquare className="h-5 w-5 text-primary" />
+            Team Chat
+          </h2>
           <Button
             size="sm"
-            variant="outline"
             onClick={() => setIsCreateRoomOpen(true)}
-            className="dark:border-gray-700 dark:bg-[#181928]/70 dark:hover:bg-gray-800"
+            className="bg-primary hover:bg-primary/90"
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="h-4 w-4 mr-1" /> New
           </Button>
         </div>
         
-        <div className="flex-1 overflow-y-auto p-4 space-y-2">
-          {rooms.map((room) => (
-            <Button
-              key={room.id}
-              variant={selectedRoom?.id === room.id ? "default" : "ghost"}
-              className="w-full justify-start"
-              onClick={() => setSelectedRoom(room)}
-            >
-              {room.name}
-            </Button>
-          ))}
+        <div className="relative">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input 
+            placeholder="Search rooms..." 
+            className="pl-9"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
-      </Card>
-
-      {selectedRoom && !isMobile && (
-        <div className="flex-1">
-          <ChatRoom room={selectedRoom} />
+      </div>
+      
+      <ScrollArea className="flex-1 p-3">
+        <div className="space-y-1">
+          {filteredRooms.length > 0 ? (
+            filteredRooms.map((room) => (
+              <Button
+                key={room.id}
+                variant={selectedRoom?.id === room.id ? "default" : "ghost"}
+                className="w-full justify-start font-normal relative"
+                onClick={() => onRoomSelect(room)}
+              >
+                <div className="truncate flex-1 text-left">{room.name}</div>
+                {room.unread_count > 0 && selectedRoom?.id !== room.id && (
+                  <Badge className="ml-2 bg-primary hover:bg-primary">{room.unread_count}</Badge>
+                )}
+              </Button>
+            ))
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              {searchQuery ? 'No matching rooms found' : 'No chat rooms available'}
+            </div>
+          )}
         </div>
-      )}
+      </ScrollArea>
 
       <CreateRoomDialog
         open={isCreateRoomOpen}
         onOpenChange={setIsCreateRoomOpen}
       />
-    </div>
+    </Card>
   );
 };
 
