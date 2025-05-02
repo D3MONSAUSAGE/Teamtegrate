@@ -70,6 +70,14 @@ const TaskFormFieldsWithAI: React.FC<TaskFormFieldsProps> = ({
     }
   }, [editingTask]);
 
+  // Create a handler function to properly handle time changes
+  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement> | string) => {
+    // If e is a string, it's already the time value
+    // If e is an event, extract the value from it
+    const timeValue = typeof e === 'string' ? e : e.target.value;
+    onTimeChange(timeValue);
+  };
+
   return (
     <>
       <TaskTitleField 
@@ -93,8 +101,7 @@ const TaskFormFieldsWithAI: React.FC<TaskFormFieldsProps> = ({
           date={date}
           timeInput={timeInput}
           onDateChange={onDateChange}
-          onTimeChange={typeof onTimeChange === 'function' ? onTimeChange : 
-            (e) => onTimeChange(typeof e === 'string' ? e : e.target.value)}
+          onTimeChange={handleTimeChange}
           error={errors.deadline?.message}
         />
       </div>
