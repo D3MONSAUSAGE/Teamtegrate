@@ -1,7 +1,7 @@
 
 import React, { useEffect } from 'react';
 import { Task } from '@/types';
-import CreateTaskDialog from '../CreateTaskDialog';
+import CreateTaskDialogWithAI from '../CreateTaskDialogWithAI';
 import ProjectTasksContent from './project-view/ProjectTasksContent';
 import { useProjectTasksView } from './project-view/useProjectTasksView';
 import ProjectTasksLoading from './project-view/ProjectTasksLoading';
@@ -40,9 +40,10 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
       projectId,
       isLoading,
       hasError: !!loadError,
-      hasProject: !!project
+      hasProject: !!project,
+      editingTask
     });
-  }, [projectId, isLoading, loadError, project]);
+  }, [projectId, isLoading, loadError, project, editingTask]);
 
   if (isLoading) {
     return <ProjectTasksLoading />;
@@ -77,7 +78,7 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
         onCreateTask={handleCreateTask}
       />
       
-      <CreateTaskDialog
+      <CreateTaskDialogWithAI
         open={isCreateTaskOpen} 
         onOpenChange={setIsCreateTaskOpen}
         editingTask={editingTask}

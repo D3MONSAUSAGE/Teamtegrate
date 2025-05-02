@@ -11,11 +11,11 @@ export const useTaskFormWithAI = (editingTask?: Task, currentProjectId?: string)
   
   // Add deadline state management
   const [deadlineDate, setDeadlineDate] = useState<Date | undefined>(
-    editingTask ? new Date(editingTask.deadline) : new Date()
+    editingTask?.deadline ? new Date(editingTask.deadline) : new Date()
   );
   
   const [timeInput, setTimeInput] = useState(
-    editingTask ? format(new Date(editingTask.deadline), 'HH:mm') : "12:00"
+    editingTask?.deadline ? format(new Date(editingTask.deadline), 'HH:mm') : "12:00"
   );
 
   // Set default values for the form
@@ -26,7 +26,7 @@ export const useTaskFormWithAI = (editingTask?: Task, currentProjectId?: string)
       priority: editingTask?.priority || 'Medium',
       deadline: editingTask?.deadline ? new Date(editingTask.deadline).toISOString() : new Date().toISOString(),
       projectId: editingTask?.projectId || currentProjectId || '',
-      cost: editingTask?.cost || '',
+      cost: editingTask?.cost !== undefined ? editingTask.cost : '',
       assignedToId: editingTask?.assignedToId || '',
       assignedToName: editingTask?.assignedToName || ''
     }
@@ -36,18 +36,22 @@ export const useTaskFormWithAI = (editingTask?: Task, currentProjectId?: string)
   
   // Update form fields when editingTask or currentProjectId changes
   useEffect(() => {
+    console.log('useTaskFormWithAI effect triggered', { editingTask });
+    
     if (editingTask) {
       const taskDate = new Date(editingTask.deadline);
       setDeadlineDate(taskDate);
       setTimeInput(format(taskDate, 'HH:mm'));
       
       setValue('title', editingTask.title);
-      setValue('description', editingTask.description);
+      setValue('description', editingTask.description || '');
       setValue('priority', editingTask.priority);
       setValue('deadline', new Date(editingTask.deadline).toISOString());
       setValue('projectId', editingTask.projectId || '');
-      setValue('cost', editingTask.cost || '');
+      setValue('cost', editingTask.cost !== undefined ? editingTask.cost : '');
       setSelectedMember(editingTask.assignedToId);
+      setValue('assignedToId', editingTask.assignedToId || '');
+      setValue('assignedToName', editingTask.assignedToName || '');
     } else {
       // For new tasks
       const today = new Date();

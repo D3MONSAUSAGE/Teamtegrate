@@ -19,19 +19,32 @@ export const updateTask = async (
       updatedAt: new Date(),
     };
 
+    // Prepare the supabase update payload
+    const updatePayload: any = {
+      title: updatedTask.title,
+      description: updatedTask.description,
+      priority: updatedTask.priority,
+      status: updatedTask.status,
+      updated_at: updatedTask.updatedAt.toISOString(),
+      assigned_to_id: updatedTask.assignedToId,
+      assigned_to_name: updatedTask.assignedToName,
+      cost: updatedTask.cost || 0,
+    };
+    
+    // Only add deadline if it exists and is valid
+    if (updatedTask.deadline) {
+      const deadlineDate = updatedTask.deadline instanceof Date 
+        ? updatedTask.deadline 
+        : new Date(updatedTask.deadline);
+      
+      if (!isNaN(deadlineDate.getTime())) {
+        updatePayload.deadline = deadlineDate.toISOString();
+      }
+    }
+
     const { data, error } = await supabase
       .from('tasks')
-      .update({
-        title: updatedTask.title,
-        description: updatedTask.description,
-        deadline: updatedTask.deadline.toISOString(),
-        priority: updatedTask.priority,
-        status: updatedTask.status,
-        updated_at: updatedTask.updatedAt.toISOString(),
-        assigned_to_id: updatedTask.assignedToId,
-        assigned_to_name: updatedTask.assignedToName,
-        cost: updatedTask.cost || 0,
-      })
+      .update(updatePayload)
       .eq('id', taskId)
       .select();
 
@@ -41,10 +54,12 @@ export const updateTask = async (
       return;
     }
 
+    // Update local state
     setTasks(
       tasks.map((task) => (task.id === taskId ? { ...task, ...updates } : task))
     );
 
+    // Update project state if task belongs to a project
     if (updatedTask.projectId) {
       setProjects((prevProjects) =>
         prevProjects.map((project) =>

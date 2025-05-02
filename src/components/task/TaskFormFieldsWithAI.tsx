@@ -23,7 +23,7 @@ interface TaskFormFieldsProps {
   date: Date | undefined;
   timeInput: string;
   onDateChange: (date: Date | undefined) => void;
-  onTimeChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onTimeChange: (e: React.ChangeEvent<HTMLInputElement> | string) => void;
 }
 
 const TaskFormFieldsWithAI: React.FC<TaskFormFieldsProps> = ({
@@ -63,6 +63,13 @@ const TaskFormFieldsWithAI: React.FC<TaskFormFieldsProps> = ({
     }
   };
 
+  // Log when component renders with editing task
+  React.useEffect(() => {
+    if (editingTask) {
+      console.log('TaskFormFieldsWithAI rendering with editingTask:', editingTask);
+    }
+  }, [editingTask]);
+
   return (
     <>
       <TaskTitleField 
@@ -86,7 +93,8 @@ const TaskFormFieldsWithAI: React.FC<TaskFormFieldsProps> = ({
           date={date}
           timeInput={timeInput}
           onDateChange={onDateChange}
-          onTimeChange={onTimeChange}
+          onTimeChange={typeof onTimeChange === 'function' ? onTimeChange : 
+            (e) => onTimeChange(typeof e === 'string' ? e : e.target.value)}
           error={errors.deadline?.message}
         />
       </div>

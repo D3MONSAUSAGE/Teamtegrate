@@ -9,7 +9,7 @@ import { Form } from "@/components/ui/form";
 import { useTaskFormWithAI } from '@/hooks/useTaskFormWithAI';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TaskDetailsWithAISection } from '@/components/task/form/TaskDetailsWithAISection';
+import TaskFormFieldsWithAI from './task/TaskFormFieldsWithAI';
 import { TaskAssignmentSection } from '@/components/task/form/TaskAssignmentSection';
 
 interface CreateTaskDialogProps {
@@ -45,6 +45,13 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
     handleDateChange,
     handleTimeChange
   } = useTaskFormWithAI(editingTask, currentProjectId);
+
+  // Log when dialog opens/closes with editing task
+  React.useEffect(() => {
+    if (open) {
+      console.log('Dialog opened with editingTask:', editingTask);
+    }
+  }, [open, editingTask]);
 
   const onSubmit = (data: any) => {
     console.log('Form submission data:', data);
@@ -104,17 +111,19 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
               </TabsList>
               
               <TabsContent value="details" className="space-y-4">
-                <TaskDetailsWithAISection
+                <TaskFormFieldsWithAI
                   register={register}
                   errors={errors}
                   setValue={setValue}
                   projects={projects}
                   editingTask={editingTask}
                   currentProjectId={currentProjectId}
+                  selectedMember={selectedMember}
+                  setSelectedMember={setSelectedMember}
                   date={deadlineDate}
                   timeInput={timeInput}
                   onDateChange={handleDateChange}
-                  onTimeChange={(time: string) => handleTimeChange({ target: { value: time } } as React.ChangeEvent<HTMLInputElement>)}
+                  onTimeChange={handleTimeChange}
                 />
               </TabsContent>
               
