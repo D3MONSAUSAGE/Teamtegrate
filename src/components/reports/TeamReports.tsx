@@ -5,6 +5,7 @@ import useTeamMembers from '@/hooks/useTeamMembers';
 import TeamPerformanceBarChart from './team/TeamPerformanceBarChart';
 import TeamProductivityTrend from './team/TeamProductivityTrend';
 import TeamRankingsTable from './team/TeamRankingsTable';
+import TeamSkillMatrix from './team/TeamSkillMatrix';
 
 const TeamReports: React.FC = () => {
   const { tasks } = useTask();
@@ -39,15 +40,48 @@ const TeamReports: React.FC = () => {
     return data;
   }, [teamMembersPerformance]);
   
+  // Skill matrix data (simulated)
+  const skillMatrixData = React.useMemo(() => {
+    const skills = [
+      'Task Execution',
+      'Communication',
+      'Collaboration',
+      'Technical Skills',
+      'Problem Solving'
+    ];
+    
+    return skills.map(skill => {
+      const data: Record<string, any> = { subject: skill };
+      
+      // Add data for top 5 team members (or less if there are fewer)
+      const topMembers = teamMembersPerformance.slice(0, 5);
+      
+      // Add randomly generated skill scores for each member
+      ['A', 'B', 'C', 'D', 'E'].forEach((key, index) => {
+        if (index < topMembers.length) {
+          // Generate a score between 50-90 for each skill
+          data[key] = Math.floor(Math.random() * 40) + 50;
+        } else {
+          data[key] = 0; // No data for non-existent team members
+        }
+      });
+      
+      return data;
+    });
+  }, [teamMembersPerformance]);
+  
   return (
     <div className="space-y-6">
       <TeamPerformanceBarChart memberPerformanceData={memberPerformanceData} />
       
-      {/* Full width productivity trend */}
-      <TeamProductivityTrend 
-        productivityTrend={productivityTrend}
-        teamMembers={teamMembersPerformance}
-      />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <TeamProductivityTrend 
+          productivityTrend={productivityTrend}
+          teamMembers={teamMembersPerformance}
+        />
+        
+        <TeamSkillMatrix skillMatrixData={skillMatrixData} />
+      </div>
       
       <TeamRankingsTable teamMembersPerformance={teamMembersPerformance} />
     </div>
