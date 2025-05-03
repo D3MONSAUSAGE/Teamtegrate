@@ -9,7 +9,8 @@ import { PerformanceChartData } from '@/types/performance';
 import { 
   calculateTeamMembersPerformance,
   generateMemberPerformanceChartData,
-  calculateTeamSummaryStats
+  calculateTeamSummaryStats,
+  getWeeklyTeamPerformance
 } from '@/utils/teamPerformanceUtils';
 
 const useTeamMembers = () => {
@@ -117,21 +118,34 @@ const useTeamMembers = () => {
   // Calculate team members performance using the utility function
   const teamMembersPerformance: TeamMemberPerformance[] = calculateTeamMembersPerformance(teamMembers, tasks);
   
-  // Generate chart data using the utility function
+  // Calculate weekly team performance
+  const weeklyTeamPerformance: TeamMemberPerformance[] = getWeeklyTeamPerformance(teamMembers, tasks);
+  
+  // Generate chart data using the utility function for overall performance
   const memberPerformanceChartData: PerformanceChartData[] = generateMemberPerformanceChartData(teamMembersPerformance);
   
+  // Generate chart data for weekly performance
+  const weeklyPerformanceChartData: PerformanceChartData[] = generateMemberPerformanceChartData(weeklyTeamPerformance);
+  
   // Calculate summary statistics using the utility function
-  const { totalTasksAssigned, totalTasksCompleted } = calculateTeamSummaryStats(teamMembersPerformance);
+  const { totalTasksAssigned, totalTasksCompleted, totalCompletionRate } = calculateTeamSummaryStats(teamMembersPerformance);
+  
+  // Calculate weekly summary statistics
+  const weeklyStats = calculateTeamSummaryStats(weeklyTeamPerformance);
   
   return {
     teamMembers,
     teamMembersPerformance,
+    weeklyTeamPerformance,
     memberPerformanceChartData,
+    weeklyPerformanceChartData,
     isLoading,
     removeTeamMember,
     refreshTeamMembers,
     totalTasksAssigned,
     totalTasksCompleted,
+    totalCompletionRate,
+    weeklyStats,
     teamMembersCount: teamMembers.length,
     projectsCount: projects.length,
   };
