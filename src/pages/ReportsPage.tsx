@@ -1,10 +1,11 @@
+
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ProjectReports from '@/components/reports/ProjectReports';
 import TeamReports from '@/components/reports/TeamReports';
 import TaskReports from '@/components/reports/TaskReports';
 import TeamTimeReports from '@/components/reports/TeamTimeReports';
-import DailyPerformanceReport from '@/components/reports/DailyPerformanceReport';
+import WeeklyPerformanceReport from '@/components/reports/DailyPerformanceReport';
 import { Timeline } from "@/components/ui/timeline";
 import TimelinePage from './TimelinePage';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -62,7 +63,7 @@ const ReportsPage: React.FC = () => {
         </div>
 
         <TabsContent value="performance" className="space-y-4">
-          <DailyPerformanceReport />
+          <WeeklyPerformanceReport />
         </TabsContent>
         <TabsContent value="tasks" className="space-y-4">
           <TaskReports />

@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTask } from "@/contexts/task/TaskContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { differenceInMinutes, isToday, format } from "date-fns";
+import { differenceInMinutes, isWithinInterval, format, startOfWeek, endOfWeek, subDays } from "date-fns";
 import { Timer, FileCheck2, FolderKanban, Download } from "lucide-react";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -19,39 +19,42 @@ interface TimeEntry {
   notes?: string | null;
 }
 
-const DailyPerformanceReport: React.FC = () => {
+const WeeklyPerformanceReport: React.FC = () => {
   const { tasks } = useTask();
   const { user } = useAuth();
 
-  const [todayEntries, setTodayEntries] = useState<TimeEntry[]>([]);
+  const [weeklyEntries, setWeeklyEntries] = useState<TimeEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch today's time entries
+  // Calculate date ranges for the current week
+  const today = new Date();
+  const weekStart = startOfWeek(today, { weekStartsOn: 1 }); // Week starts on Monday
+  const weekEnd = endOfWeek(today, { weekStartsOn: 1 });
+  
+  const formattedDateRange = `${format(weekStart, "MMM d")} - ${format(weekEnd, "MMM d, yyyy")}`;
+
+  // Fetch this week's time entries
   useEffect(() => {
     if (!user) return;
-    const fetchTodayEntries = async () => {
+    const fetchWeeklyEntries = async () => {
       setLoading(true);
-      const today = new Date();
-      const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-      const end = new Date(start);
-      end.setDate(start.getDate() + 1);
-
+      
       const { data, error } = await supabase
         .from("time_entries")
         .select("*")
         .eq("user_id", user.id)
-        .gte("clock_in", start.toISOString())
-        .lt("clock_in", end.toISOString())
+        .gte("clock_in", weekStart.toISOString())
+        .lt("clock_in", new Date(weekEnd.setHours(23, 59, 59)).toISOString())
         .order("clock_in", { ascending: true });
 
-      setTodayEntries(data || []);
+      setWeeklyEntries(data || []);
       setLoading(false);
     };
-    fetchTodayEntries();
+    fetchWeeklyEntries();
   }, [user]);
 
-  // Calculate total tracked minutes for today
-  const totalMinutes = todayEntries.reduce((total, entry) => {
+  // Calculate total tracked minutes for the week
+  const totalMinutes = weeklyEntries.reduce((total, entry) => {
     if (entry.duration_minutes) {
       return total + entry.duration_minutes;
     }
@@ -65,44 +68,51 @@ const DailyPerformanceReport: React.FC = () => {
 
   const totalHours = (totalMinutes / 60).toFixed(2);
 
-  // Find today's completed tasks and project tasks
-  const today = new Date();
-  const completedToday = tasks.filter(
-    t => t.status === "Completed" && isToday(t.updatedAt)
+  // Find this week's completed tasks and project tasks
+  const completedThisWeek = tasks.filter(
+    t => t.status === "Completed" && t.updatedAt && 
+    isWithinInterval(new Date(t.updatedAt), { 
+      start: weekStart, 
+      end: new Date(weekEnd.setHours(23, 59, 59)) 
+    })
   );
-  const completedProjectTasks = completedToday.filter(
+  
+  const completedProjectTasks = completedThisWeek.filter(
     t => !!t.projectId
   );
-  const completedPersonalTasks = completedToday.filter(
+  
+  const completedPersonalTasks = completedThisWeek.filter(
     t => !t.projectId
   );
 
   // CSV export implementation
   const exportCSV = () => {
-    const dateStr = format(today, "yyyy-MM-dd");
+    const dateStr = format(weekStart, "yyyy-MM-dd");
     let csv = [
-      ["Performance Report", dateStr],
+      ["Weekly Performance Report", `${format(weekStart, "yyyy-MM-dd")} to ${format(weekEnd, "yyyy-MM-dd")}`],
       [],
       ["Summary"],
       ["Total Hours Tracked", totalHours],
-      ["Completed Tasks", completedToday.length],
+      ["Completed Tasks", completedThisWeek.length],
       ["Project Tasks Done", completedProjectTasks.length],
       ["Personal Tasks Done", completedPersonalTasks.length],
       [],
       ["Completed Tasks Detail"],
-      ["Time", "Task", "Type"]
+      ["Date", "Task", "Type"]
     ];
-    completedToday.forEach(task => {
-      const time = task.updatedAt ? format(new Date(task.updatedAt), "p") : "-";
+    
+    completedThisWeek.forEach(task => {
+      const date = task.updatedAt ? format(new Date(task.updatedAt), "MMM d") : "-";
       const type = task.projectId ? "Project" : "Personal";
-      csv.push([time, task.title, type]);
+      csv.push([date, task.title, type]);
     });
+    
     // Join and export file
     const csvContent = csv.map(row => row.map(v => `"${(v ?? "").toString().replace(/"/g, '""')}"`).join(",")).join("\n");
     const blob = new Blob([csvContent], { type: "text/csv" });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `Daily_Performance_Report_${dateStr}.csv`;
+    link.download = `Weekly_Performance_Report_${dateStr}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -113,7 +123,7 @@ const DailyPerformanceReport: React.FC = () => {
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold flex gap-2 items-center">
           <Timer className="w-5 h-5" />
-          Daily Performance Report
+          Weekly Performance Report
         </h2>
         <Button variant="secondary" onClick={exportCSV} className="gap-2" size="sm">
           <Download className="w-4 h-4" />
@@ -124,7 +134,7 @@ const DailyPerformanceReport: React.FC = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Timer className="w-5 h-5" />
-            Today's Performance Summary
+            Weekly Performance Summary ({formattedDateRange})
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4 md:flex-row md:gap-12">
@@ -134,7 +144,7 @@ const DailyPerformanceReport: React.FC = () => {
           </div>
           <div className="flex flex-col gap-1 min-w-[150px]">
             <span className="text-muted-foreground text-xs flex gap-1 items-center"><FileCheck2 size={14}/>Completed Tasks</span>
-            <span className="text-xl font-semibold">{completedToday.length}</span>
+            <span className="text-xl font-semibold">{completedThisWeek.length}</span>
           </div>
           <div className="flex flex-col gap-1 min-w-[150px]">
             <span className="text-muted-foreground text-xs flex gap-1 items-center"><FolderKanban size={14}/>Project Tasks Done</span>
@@ -149,25 +159,25 @@ const DailyPerformanceReport: React.FC = () => {
       {/* List Completed Tasks */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2"><FileCheck2 size={18}/> Completed Tasks Today</CardTitle>
+          <CardTitle className="flex items-center gap-2"><FileCheck2 size={18}/> Completed Tasks This Week</CardTitle>
         </CardHeader>
         <CardContent>
-          {completedToday.length === 0 ? (
-            <div className="text-muted-foreground">No tasks completed today.</div>
+          {completedThisWeek.length === 0 ? (
+            <div className="text-muted-foreground">No tasks completed this week.</div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Time</TableHead>
+                  <TableHead>Date</TableHead>
                   <TableHead>Task</TableHead>
                   <TableHead>Project</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {completedToday.map(task => (
+                {completedThisWeek.map(task => (
                   <TableRow key={task.id}>
                     <TableCell>
-                      {task.updatedAt ? format(new Date(task.updatedAt), "p") : "-"}
+                      {task.updatedAt ? format(new Date(task.updatedAt), "MMM d") : "-"}
                     </TableCell>
                     <TableCell className="max-w-[200px] whitespace-pre-line">
                       {task.title}
@@ -189,5 +199,4 @@ const DailyPerformanceReport: React.FC = () => {
   );
 };
 
-export default DailyPerformanceReport;
-
+export default WeeklyPerformanceReport;
