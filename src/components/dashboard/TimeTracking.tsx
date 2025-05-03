@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useTimeTrackingPage } from '@/hooks/useTimeTrackingPage';
 import DailyTimeReport from './DailyTimeReport';
@@ -6,6 +7,7 @@ import TimeTrackingSummary from './time/TimeTrackingSummary';
 import TimeChartSection from './time/TimeChartSection';
 import TimeTrackingControls from './TimeTrackingControls';
 import WeekNavigation from './WeekNavigation';
+import { format } from 'date-fns';
 
 const TimeTracking: React.FC = () => {
   const {
