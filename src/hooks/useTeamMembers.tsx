@@ -21,6 +21,7 @@ interface TeamMemberPerformance extends TeamMember {
   completionRate: number;
   dueTodayTasks: number;
   projects: number;
+  projectIds: string[]; // Added to store actual project IDs
 }
 
 const useTeamMembers = () => {
@@ -127,28 +128,40 @@ const useTeamMembers = () => {
   
   // Calculate completion rates and assigned tasks for each member
   const teamMembersPerformance: TeamMemberPerformance[] = teamMembers.map((member) => {
+    // Get all tasks assigned to this team member
     const assignedTasks = tasks.filter(task => task.assignedToId === member.id);
     
+    // Count completed tasks
     const completedTasks = assignedTasks.filter(task => task.status === 'Completed');
     
+    // Calculate completion rate
     const completionRate = assignedTasks.length > 0
       ? Math.round((completedTasks.length / assignedTasks.length) * 100)
       : 0;
     
-    // Tasks due today
+    // Get tasks due today
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
     const dueTodayTasks = assignedTasks.filter((task) => {
+      if (!task.deadline) return false;
+      
       const taskDate = new Date(task.deadline);
       taskDate.setHours(0, 0, 0, 0);
       return taskDate.getTime() === today.getTime();
     });
     
-    // Get projects this member is involved in
-    const memberProjects = projects.filter(project => 
-      project.tasks.some(task => task.assignedToId === member.id)
-    );
+    // Track projects this member is involved in
+    // This now stores actual project IDs for reference
+    const memberProjectIds = new Set<string>();
+    assignedTasks.forEach(task => {
+      if (task.projectId) {
+        memberProjectIds.add(task.projectId);
+      }
+    });
+    
+    // Convert Set to Array for convenient access
+    const projectIdsArray = Array.from(memberProjectIds);
     
     return {
       ...member,
@@ -157,7 +170,8 @@ const useTeamMembers = () => {
       totalTasks: assignedTasks.length,
       completionRate,
       dueTodayTasks: dueTodayTasks.length,
-      projects: memberProjects.length,
+      projects: projectIdsArray.length,
+      projectIds: projectIdsArray,
     };
   });
   
@@ -165,7 +179,7 @@ const useTeamMembers = () => {
   const memberPerformanceChartData = teamMembersPerformance.map(member => ({
     name: member.name,
     assignedTasks: member.totalTasks,
-    completedTasks: member.completedTasks,
+    completedTasks: member.completedTasks.length || 0,
     completionRate: member.completionRate
   }));
   
