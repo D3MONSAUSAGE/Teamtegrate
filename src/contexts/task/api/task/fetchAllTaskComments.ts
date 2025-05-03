@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
-export const fetchTaskComments = async () => {
+export const fetchAllTaskComments = async () => {
   const { data: commentData, error: commentError } = await supabase
     .from('comments')
     .select('*');
