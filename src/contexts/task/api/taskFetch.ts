@@ -80,13 +80,14 @@ export const fetchTasks = async (
     // Resolve user names for comments
     if (commentData && commentData.length > 0) {
       // Extract user IDs from comments and ensure they are strings
-      const userIds = [...new Set(commentData
+      const commentUserIds = commentData
         .map(comment => comment.user_id)
-        .filter(id => typeof id === 'string'))] as string[];
+        .filter((id): id is string => typeof id === 'string');
       
       // Only proceed if we have valid user IDs
-      if (userIds.length > 0) {
-        const commentUserMap = await resolveUserNames(userIds);
+      if (commentUserIds.length > 0) {
+        const uniqueCommentUserIds = [...new Set(commentUserIds)];
+        const commentUserMap = await resolveUserNames(uniqueCommentUserIds);
         
         tasks = tasks.map(task => ({
           ...task,
