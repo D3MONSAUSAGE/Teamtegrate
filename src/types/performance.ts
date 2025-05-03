@@ -33,4 +33,5 @@ export interface SkillMatrixData {
   C: number;
   D: number;
   E: number;
+  [key: string]: string | number; // Allow additional dynamic properties
 }

@@ -6,6 +6,7 @@ import TeamPerformanceBarChart from './team/TeamPerformanceBarChart';
 import TeamProductivityTrend from './team/TeamProductivityTrend';
 import TeamRankingsTable from './team/TeamRankingsTable';
 import TeamSkillMatrix from './team/TeamSkillMatrix';
+import { SkillMatrixData } from '@/types/performance';
 
 const TeamReports: React.FC = () => {
   const { tasks } = useTask();
@@ -51,7 +52,15 @@ const TeamReports: React.FC = () => {
     ];
     
     return skills.map(skill => {
-      const data: Record<string, any> = { subject: skill };
+      // Create a properly typed skill data object
+      const data: SkillMatrixData = { 
+        subject: skill,
+        A: 0,
+        B: 0,
+        C: 0,
+        D: 0,
+        E: 0
+      };
       
       // Add data for top 5 team members (or less if there are fewer)
       const topMembers = teamMembersPerformance.slice(0, 5);
