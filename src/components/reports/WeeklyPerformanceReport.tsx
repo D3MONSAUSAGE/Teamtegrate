@@ -2,27 +2,29 @@
 import React from "react";
 import { Timer, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useDailyPerformance } from "@/hooks/useDailyPerformance";
-import DailySummaryCard from "./daily-performance/DailySummaryCard";
-import CompletedTasksTable from "./daily-performance/CompletedTasksTable";
-import { exportDailyReportCSV } from "./daily-performance/exportUtils";
+import { useWeeklyPerformance } from "@/hooks/useWeeklyPerformance";
+import WeeklySummaryCard from "./weekly-performance/WeeklySummaryCard";
+import CompletedTasksTable from "./weekly-performance/CompletedTasksTable";
+import { exportWeeklyReportCSV } from "./weekly-performance/exportUtils";
 
-const DailyPerformanceReport: React.FC = () => {
+const WeeklyPerformanceReport: React.FC = () => {
   const {
     totalHours,
     loading,
-    completedToday,
+    completedThisWeek,
     completedProjectTasks,
     completedPersonalTasks,
-    dayStart,
-    formattedDate
-  } = useDailyPerformance();
+    weekStart,
+    weekEnd,
+    formattedDateRange
+  } = useWeeklyPerformance();
 
   const handleExportCSV = () => {
-    exportDailyReportCSV(
-      dayStart,
+    exportWeeklyReportCSV(
+      weekStart,
+      weekEnd,
       totalHours,
-      completedToday,
+      completedThisWeek,
       completedProjectTasks.length,
       completedPersonalTasks.length
     );
@@ -33,7 +35,7 @@ const DailyPerformanceReport: React.FC = () => {
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold flex gap-2 items-center">
           <Timer className="w-5 h-5" />
-          Daily Performance Report
+          Weekly Performance Report
         </h2>
         <Button variant="secondary" onClick={handleExportCSV} className="gap-2" size="sm">
           <Download className="w-4 h-4" />
@@ -41,18 +43,18 @@ const DailyPerformanceReport: React.FC = () => {
         </Button>
       </div>
       
-      <DailySummaryCard
+      <WeeklySummaryCard
         totalHours={totalHours}
         loading={loading}
-        completedTasksCount={completedToday.length}
+        completedTasksCount={completedThisWeek.length}
         completedProjectTasksCount={completedProjectTasks.length}
         completedPersonalTasksCount={completedPersonalTasks.length}
-        formattedDate={formattedDate}
+        formattedDateRange={formattedDateRange}
       />
       
-      <CompletedTasksTable completedTasks={completedToday} />
+      <CompletedTasksTable completedTasks={completedThisWeek} />
     </div>
   );
 };
 
-export default DailyPerformanceReport;
+export default WeeklyPerformanceReport;
