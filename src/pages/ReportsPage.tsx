@@ -5,7 +5,7 @@ import ProjectReports from '@/components/reports/ProjectReports';
 import TeamReports from '@/components/reports/TeamReports';
 import TaskReports from '@/components/reports/TaskReports';
 import TeamTimeReports from '@/components/reports/TeamTimeReports';
-import WeeklyPerformanceReport from '@/components/reports/DailyPerformanceReport';
+import WeeklyPerformanceReport from '@/components/reports/WeeklyPerformanceReport';
 import { Timeline } from "@/components/ui/timeline";
 import TimelinePage from './TimelinePage';
 import { useIsMobile } from '@/hooks/use-mobile';
