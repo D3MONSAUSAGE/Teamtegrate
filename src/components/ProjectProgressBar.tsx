@@ -25,26 +25,34 @@ const ProjectProgressBar: React.FC<ProjectProgressBarProps> = ({ project }) => {
 
   const progress = calculateProgress();
   
-  // Auto-update project status when all tasks are complete and progress reaches 100%
+  // Auto-update project status when progress changes
   useEffect(() => {
     const projectTasks = tasks.filter(task => task.projectId === project.id);
     const totalTasks = projectTasks.length;
     
     if (totalTasks === 0) return;
     
-    const shouldBeCompleted = progress === 100;
+    const completedTasks = projectTasks.filter(task => task.status === 'Completed').length;
+    const allTasksCompleted = completedTasks === totalTasks;
     
-    console.log(`Project ${project.id} progress: ${progress}%, tasks: ${totalTasks}, status: ${project.status}, should be completed: ${shouldBeCompleted}`);
+    console.log(`Project ${project.id} progress check: ${completedTasks}/${totalTasks} tasks completed (${progress}%)`);
+    console.log(`Current status: ${project.status}, All completed: ${allTasksCompleted}, Is completed flag: ${project.is_completed}`);
     
-    // Only update if the status doesn't match what it should be
-    if (shouldBeCompleted && project.status !== 'Completed') {
+    // Make sure project status is consistent with task completion
+    if (allTasksCompleted && project.status !== 'Completed') {
       console.log(`Auto-updating project ${project.id} to Completed status as all tasks are done`);
       updateProject(project.id, { 
         status: 'Completed' as ProjectStatus,
         is_completed: true
       });
+    } else if (!allTasksCompleted && project.status === 'Completed') {
+      console.log(`Auto-updating project ${project.id} to In Progress status as not all tasks are done`);
+      updateProject(project.id, { 
+        status: 'In Progress' as ProjectStatus,
+        is_completed: false
+      });
     }
-  }, [progress, project.id, project.status, tasks, updateProject]);
+  }, [progress, project.id, project.status, project.is_completed, tasks, updateProject]);
 
   return (
     <div className="space-y-1">

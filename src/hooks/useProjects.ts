@@ -54,15 +54,23 @@ export const useProjects = () => {
         let status = project.status || 'To Do';
         let isCompleted = project.is_completed || false;
         
-        // Auto-mark project as completed if all tasks are done (and there are tasks)
-        if (totalTasks > 0 && completedTasks === totalTasks) {
-          status = 'Completed';
-          isCompleted = true;
-        } else if (status === 'Completed') {
-          // Ensure consistency
-          isCompleted = true;
-        } else if (isCompleted) {
-          status = 'Completed';
+        // Fix any status inconsistencies
+        if (totalTasks > 0) {
+          const allTasksCompleted = completedTasks === totalTasks;
+          
+          if (allTasksCompleted) {
+            status = 'Completed';
+            isCompleted = true;
+          } else {
+            // If not all tasks are completed, project cannot be marked as completed
+            if (status === 'Completed' || isCompleted) {
+              status = 'In Progress';
+              isCompleted = false;
+              
+              // Log the status correction
+              console.log(`Project ${project.id} status corrected: not all tasks complete but was marked as Completed`);
+            }
+          }
         }
         
         console.log(`Project ${project.id}: status=${status}, is_completed=${isCompleted}, tasks=${totalTasks}, completed=${completedTasks}, progress=${progress}%`);
@@ -88,6 +96,24 @@ export const useProjects = () => {
       });
 
       console.log('Formatted projects with task data:', formattedProjects);
+      
+      // Check for any projects with status inconsistencies that need to be fixed in database
+      for (const project of formattedProjects) {
+        const dbProject = data.find(p => p.id === project.id);
+        
+        if (dbProject && (dbProject.status !== project.status || dbProject.is_completed !== project.is_completed)) {
+          console.log(`Fixing project ${project.id} status in database: ${dbProject.status}→${project.status}, ${dbProject.is_completed}→${project.is_completed}`);
+          
+          await supabase
+            .from('projects')
+            .update({
+              status: project.status,
+              is_completed: project.is_completed
+            })
+            .eq('id', project.id);
+        }
+      }
+      
       setProjects(formattedProjects);
     } catch (error) {
       console.error('Error fetching projects:', error);

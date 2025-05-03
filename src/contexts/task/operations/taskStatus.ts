@@ -81,6 +81,14 @@ export const updateTaskStatus = async (
         updatedProjectTasks.length > 0 && 
         updatedProjectTasks.every(t => t.status === 'Completed');
       
+      // Calculate completion percentage
+      const completedCount = updatedProjectTasks.filter(t => t.status === 'Completed').length;
+      const totalCount = updatedProjectTasks.length;
+      const completionRate = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+      
+      console.log(`Project ${projectId} task update: ${completedCount}/${totalCount} tasks completed (${completionRate}%)`);
+      console.log(`All tasks completed: ${allTasksCompleted}`);
+      
       // Get the project
       const project = projects.find(p => p.id === projectId);
       
@@ -90,7 +98,7 @@ export const updateTaskStatus = async (
           `all completed: ${allTasksCompleted}, current status: ${project.status}`
         );
         
-        // If all tasks are completed and project isn't marked as completed, update it
+        // Update project status based on task completion
         if (allTasksCompleted && project.status !== 'Completed') {
           console.log(`All tasks completed for project ${projectId}. Updating project status to Completed`);
           
@@ -125,33 +133,50 @@ export const updateTaskStatus = async (
             
             toast.success('All tasks completed! Project marked as Complete.');
           }
+        } else if (!allTasksCompleted && project.status === 'Completed') {
+          // If not all tasks are completed and project is marked as completed,
+          // update project status to 'In Progress'
+          console.log(`Not all tasks completed for project ${projectId}. Updating project status to In Progress`);
+          
+          // Update project in database
+          const { error: projectError } = await supabase
+            .from('projects')
+            .update({
+              status: 'In Progress',
+              is_completed: false,
+              updated_at: now.toISOString()
+            })
+            .eq('id', projectId);
+            
+          if (projectError) {
+            console.error('Error updating project status:', projectError);
+          } else {
+            console.log(`Project ${projectId} marked as in progress in database`);
+            
+            // Update local projects state
+            setProjects(prevProjects => prevProjects.map(p => {
+              if (p.id === projectId) {
+                return {
+                  ...p,
+                  status: 'In Progress',
+                  is_completed: false,
+                  updatedAt: now,
+                  tasks: updatedProjectTasks
+                };
+              }
+              return p;
+            }));
+            
+            toast.info('Project status updated to In Progress.');
+          }
         } else {
           // Just update the task in the project
           setProjects(prevProjects => {
             return prevProjects.map(p => {
               if (p.id === projectId) {
-                const updatedTasks = p.tasks.map(projectTask => {
-                  if (projectTask.id === taskId) {
-                    return {
-                      ...projectTask,
-                      status,
-                      updatedAt: now,
-                      completedAt: status === 'Completed' ? now : undefined
-                    };
-                  }
-                  return projectTask;
-                });
-                
-                // Calculate completion percentage
-                const completedCount = updatedTasks.filter(t => t.status === 'Completed').length;
-                const totalCount = updatedTasks.length;
-                const progress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
-                
-                console.log(`Project ${projectId} progress updated: ${progress}% tasks completed`);
-                
                 return {
                   ...p,
-                  tasks: updatedTasks
+                  tasks: updatedProjectTasks
                 };
               }
               return p;
