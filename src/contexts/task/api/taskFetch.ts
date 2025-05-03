@@ -3,7 +3,7 @@ import { Task } from '@/types';
 import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchTaskData } from './task/fetchTaskData';
-import { fetchTaskComments } from './task/fetchTaskComments';
+import { fetchAllTaskComments } from './task/fetchAllTaskComments';
 import { resolveUserNames } from './task/resolveUserNames';
 import { logTaskFetchResults } from './task/logTaskFetchResults';
 
@@ -22,7 +22,7 @@ export const fetchTasks = async (
     }
     
     // Fetch comments for all tasks
-    const commentData = await fetchTaskComments();
+    const commentData = await fetchAllTaskComments();
     
     // Get all user IDs that are assigned to tasks to fetch their names
     const assignedUserIds = taskData
@@ -79,16 +79,23 @@ export const fetchTasks = async (
 
     // Resolve user names for comments
     if (commentData && commentData.length > 0) {
-      const userIds = [...new Set(commentData.map(comment => comment.user_id))];
-      const commentUserMap = await resolveUserNames(userIds);
+      // Extract user IDs from comments and ensure they are strings
+      const userIds = [...new Set(commentData
+        .map(comment => comment.user_id)
+        .filter(id => typeof id === 'string'))] as string[];
       
-      tasks = tasks.map(task => ({
-        ...task,
-        comments: task.comments?.map(comment => ({
-          ...comment,
-          userName: commentUserMap.get(comment.userId) || comment.userName
-        }))
-      }));
+      // Only proceed if we have valid user IDs
+      if (userIds.length > 0) {
+        const commentUserMap = await resolveUserNames(userIds);
+        
+        tasks = tasks.map(task => ({
+          ...task,
+          comments: task.comments?.map(comment => ({
+            ...comment,
+            userName: commentUserMap.get(comment.userId) || comment.userName
+          }))
+        }));
+      }
     }
 
     // Log detailed information about the task fetch results

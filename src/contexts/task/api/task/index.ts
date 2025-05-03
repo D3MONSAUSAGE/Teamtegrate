@@ -1,5 +1,5 @@
 
 export * from './fetchTaskData';
-export * from './fetchTaskComments';
+export * from './fetchAllTaskComments';
 export * from './resolveUserNames';
 export * from './logTaskFetchResults';
