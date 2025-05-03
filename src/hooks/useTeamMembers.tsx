@@ -179,7 +179,7 @@ const useTeamMembers = () => {
   const memberPerformanceChartData = teamMembersPerformance.map(member => ({
     name: member.name,
     assignedTasks: member.totalTasks,
-    completedTasks: member.completedTasks.length || 0,
+    completedTasks: member.completedTasks, // Fixed: removed .length as completedTasks is already a number
     completionRate: member.completionRate
   }));
   
