@@ -102,6 +102,7 @@ export const fetchTasks = async (
     // Log detailed information about the task fetch results
     logTaskFetchResults(tasks);
 
+    console.log('Setting tasks, final count:', tasks.length);
     setTasks(tasks);
   } catch (error) {
     console.error('Error in fetchTasks:', error);
