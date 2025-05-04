@@ -31,3 +31,43 @@ export const calculateDailyScore = (tasks: Task[]): DailyScore => {
     date: today
   };
 };
+
+/**
+ * Gets task completion data for a specific number of days
+ * @param tasks Array of tasks
+ * @param days Number of past days to include
+ * @returns Array of daily completion data
+ */
+export const getTasksCompletionByDate = (tasks: Task[], days: number = 14) => {
+  const result = [];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  // Generate data for each day in the range
+  for (let i = days - 1; i >= 0; i--) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - i);
+    
+    // Set the date to midnight for accurate comparison
+    date.setHours(0, 0, 0, 0);
+    
+    // Filter tasks for the specific date
+    const dateTasks = tasks.filter(task => {
+      const taskDate = new Date(task.deadline);
+      taskDate.setHours(0, 0, 0, 0);
+      return taskDate.getTime() === date.getTime();
+    });
+    
+    // Count completed tasks
+    const completed = dateTasks.filter(task => task.status === 'Completed').length;
+    const total = dateTasks.length;
+    
+    result.push({
+      date,
+      completed,
+      total
+    });
+  }
+  
+  return result;
+};
