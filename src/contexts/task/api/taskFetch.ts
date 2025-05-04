@@ -57,7 +57,7 @@ export const fetchTasks = async (
 
 // Helper function to process tasks data and set state
 const processAndSetTasks = async (
-  taskData: any,
+  taskData: any[],
   user: { id: string },
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>
 ) => {

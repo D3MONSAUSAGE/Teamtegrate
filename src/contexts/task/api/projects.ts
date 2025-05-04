@@ -11,7 +11,7 @@ export const fetchProjects = async (
   try {
     console.log('Fetching projects for user:', user.id);
     
-    // Using direct SQL query to bypass RLS policies
+    // Using RPC to bypass RLS policies
     const { data, error } = await supabase.rpc('get_all_projects' as any);
     
     if (error) {
@@ -39,7 +39,7 @@ export const fetchProjects = async (
         return;
       }
 
-      // Set projects with the direct data
+      // Process the direct data
       processAndSetProjects(directData, setProjects);
       return;
     }
@@ -55,7 +55,7 @@ export const fetchProjects = async (
 
 // Helper function to process projects data and set state
 const processAndSetProjects = (
-  data: any, 
+  data: any[], 
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
 ) => {
   if (!data || !Array.isArray(data) || data.length === 0) {

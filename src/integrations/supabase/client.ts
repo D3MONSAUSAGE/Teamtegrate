@@ -21,11 +21,10 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
 // Helper function to create and execute SQL-based RPC functions
 export const setupRpcFunctions = async () => {
   try {
-    // Create a function to get all tasks without RLS restrictions
+    // Call the helper functions that ensure our RPC functions exist
     const tasksResult = await supabase.rpc('create_get_all_tasks_function' as any);
     console.log('Created get_all_tasks function result:', tasksResult);
 
-    // Create a function to get all projects without RLS restrictions
     const projectsResult = await supabase.rpc('create_get_all_projects_function' as any);
     console.log('Created get_all_projects function result:', projectsResult);
 

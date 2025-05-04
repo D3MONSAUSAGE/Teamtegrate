@@ -17,8 +17,10 @@ export const createRpcFunctions = async () => {
 };
 
 // Helper function to execute RPC calls with proper error handling
-const executeRpc = async (functionName: string, params?: any) => {
+export const executeRpc = async (functionName: string, params?: any) => {
   try {
+    // Explicitly type the functionName as any to bypass TypeScript's strict checking
+    // since we're dynamically adding functions to Supabase
     const { data, error } = await supabase.rpc(functionName as any, params);
     
     if (error) {

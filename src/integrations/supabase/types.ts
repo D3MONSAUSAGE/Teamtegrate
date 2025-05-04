@@ -749,6 +749,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_get_all_projects_function: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      create_get_all_tasks_function: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       create_user_admin: {
         Args: {
           email: string
@@ -757,6 +765,43 @@ export type Database = {
           user_role: string
         }
         Returns: Json
+      }
+      get_all_projects: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          budget: number | null
+          budget_spent: number | null
+          created_at: string | null
+          description: string | null
+          end_date: string | null
+          id: string
+          is_completed: boolean | null
+          manager_id: string | null
+          start_date: string | null
+          status: string | null
+          tags: string[] | null
+          tasks_count: number | null
+          team_members: string[] | null
+          title: string | null
+          updated_at: string | null
+        }[]
+      }
+      get_all_tasks: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          assigned_to_id: string | null
+          completed_at: string | null
+          cost: number | null
+          created_at: string | null
+          deadline: string | null
+          description: string | null
+          id: string
+          priority: string | null
+          project_id: string
+          status: string | null
+          title: string
+          updated_at: string | null
+        }[]
       }
       user_is_project_team_member: {
         Args: { project_id_val: string; user_id_val: string }
