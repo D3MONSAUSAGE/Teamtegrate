@@ -66,7 +66,7 @@ export const fetchTasks = async (
 
       return {
         id: task.id,
-        userId: task.user_id || user.id, // Default to current user if not set
+        userId: user.id, // Use the current user's ID instead of task.user_id which doesn't exist
         projectId: task.project_id,
         title: task.title || '',
         description: task.description || '',

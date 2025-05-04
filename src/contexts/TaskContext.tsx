@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { Task, Project, TaskStatus, TaskPriority, DailyScore } from '@/types';
 import { useAuth } from './AuthContext';
@@ -33,12 +32,15 @@ import {
   getTasksByDate, 
   getOverdueTasks 
 } from './task/taskFilters';
+import { fetchTasks } from './task/api';
 
 interface TaskContextType {
   tasks: Task[];
   projects: Project[];
   dailyScore: DailyScore;
+  isLoading: boolean;
   refreshProjects: () => Promise<void>;
+  refreshTasks: () => Promise<void>;
   addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateTask: (taskId: string, updates: Partial<Task>) => void;
   updateTaskStatus: (taskId: string, status: TaskStatus) => void;
@@ -99,6 +101,21 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const refreshTasks = async () => {
+    if (!user) return;
+    
+    try {
+      setIsLoading(true);
+      // Use the fetchTasks function from the new api module
+      await fetchTasks(user, setTasks);
+    } catch (error) {
+      console.error("Error refreshing tasks:", error);
+      toast.error("Failed to refresh tasks");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     const loadData = async () => {
       if (!user) {
@@ -113,7 +130,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log("Loading data for user:", user.id);
         await Promise.all([
           fetchUserProjects(user, setProjects),
-          fetchUserTasks(user, setTasks)
+          fetchTasks(user, setTasks) // Use the fetchTasks from our api module
         ]);
       } catch (error) {
         console.error("Error loading data:", error);
@@ -137,7 +154,9 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     tasks,
     projects,
     dailyScore,
+    isLoading,
     refreshProjects,
+    refreshTasks,
     addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => 
       addTask(task, user, tasks, setTasks, projects, setProjects),
     updateTask: (taskId: string, updates: Partial<Task>) => 
