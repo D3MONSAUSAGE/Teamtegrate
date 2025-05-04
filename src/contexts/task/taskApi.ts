@@ -14,11 +14,12 @@ export const fetchUserTasks = async (
   }
 
   try {
+    console.log('Fetching user tasks for user ID:', user.id);
+    
     // Fetch tasks from supabase
     const { data: taskData, error } = await supabase
       .from('tasks')
-      .select('*')
-      .eq('user_id', user.id);
+      .select('*');
 
     if (error) {
       console.error('Error fetching tasks:', error);
@@ -26,6 +27,8 @@ export const fetchUserTasks = async (
       return;
     }
 
+    console.log(`Retrieved ${taskData.length} tasks from database`);
+    
     const parseDate = (dateStr: string | null): Date => {
       if (!dateStr) return new Date();
       return new Date(dateStr);
@@ -76,13 +79,15 @@ export const fetchUserTasks = async (
         assignedToId: task.assigned_to_id,
         assignedToName: assignedUserName,
         comments: [],
-        cost: task.cost || 0
+        cost: task.cost || 0,
+        tags: []
       };
     });
 
+    console.log('Setting tasks, final count:', tasks.length);
     setTasks(tasks);
   } catch (error) {
-    console.error('Error in fetchTasks:', error);
+    console.error('Error in fetchUserTasks:', error);
     toast.error('Failed to load tasks');
   }
 };
@@ -98,6 +103,8 @@ export const fetchUserProjects = async (
   }
 
   try {
+    console.log('Fetching user projects for user ID:', user.id);
+    
     const { data, error } = await supabase
       .from('projects')
       .select('*')
@@ -108,6 +115,8 @@ export const fetchUserProjects = async (
       toast.error('Failed to load projects');
       return;
     }
+
+    console.log(`Retrieved ${data.length} projects from database`);
 
     const formattedProjects: Project[] = data.map(project => ({
       id: project.id,
@@ -123,12 +132,14 @@ export const fetchUserProjects = async (
       budget: project.budget || 0,
       is_completed: project.is_completed || false,
       status: (project.status || 'To Do') as ProjectStatus,
-      tasks_count: project.tasks_count || 0
+      tasks_count: project.tasks_count || 0,
+      tags: project.tags || []
     }));
 
+    console.log('Setting projects, final count:', formattedProjects.length);
     setProjects(formattedProjects);
   } catch (error) {
-    console.error('Error in fetchProjects:', error);
+    console.error('Error in fetchUserProjects:', error);
     toast.error('Failed to load projects');
   }
 };

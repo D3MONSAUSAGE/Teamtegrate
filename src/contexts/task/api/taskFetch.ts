@@ -73,7 +73,8 @@ export const fetchTasks = async (
         assignedToId: task.assigned_to_id,
         assignedToName: assignedUserName,
         comments: taskComments,
-        cost: task.cost || 0
+        cost: task.cost || 0,
+        tags: []
       };
     });
 

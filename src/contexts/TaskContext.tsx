@@ -1,8 +1,9 @@
+
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { Task, Project, TaskStatus, TaskPriority, DailyScore } from '@/types';
-import { useAuth } from '../AuthContext';
-import { fetchTasks } from './task/api'; // Fix import path
-import { calculateDailyScore } from './taskMetrics';
+import { useAuth } from './AuthContext';
+import { fetchUserTasks, fetchUserProjects } from './task/taskApi';
+import { calculateDailyScore } from './task/taskMetrics';
 import { toast } from '@/components/ui/sonner';
 import { 
   addTask, 
@@ -16,14 +17,14 @@ import {
   deleteProject,
   addTeamMemberToProject,
   removeTeamMemberFromProject
-} from './operations';
+} from './task/operations';
 import { 
   addCommentToTask, 
   addTagToTask, 
   removeTagFromTask, 
   addTagToProject, 
   removeTagFromProject 
-} from './contentOperations';
+} from './task/contentOperations';
 import { 
   getTasksWithTag, 
   getProjectsWithTag, 
@@ -31,7 +32,7 @@ import {
   getTasksByPriority, 
   getTasksByDate, 
   getOverdueTasks 
-} from './taskFilters';
+} from './task/taskFilters';
 
 interface TaskContextType {
   tasks: Task[];
@@ -109,9 +110,10 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       setIsLoading(true);
       try {
+        console.log("Loading data for user:", user.id);
         await Promise.all([
           fetchUserProjects(user, setProjects),
-          fetchTasks(user, setTasks)
+          fetchUserTasks(user, setTasks)
         ]);
       } catch (error) {
         console.error("Error loading data:", error);
