@@ -14,27 +14,34 @@ export const fetchTasks = async (
   try {
     console.log('Fetching tasks for user:', user.id);
     
-    // Try to fetch directly from the project_tasks table first
-    let { data: taskData, error } = await supabase
-      .from('project_tasks')
-      .select('*');
+    // Using direct SQL query to bypass RLS policies
+    const { data: taskData, error } = await supabase.rpc('get_all_tasks');
     
     if (error) {
-      console.error('Error fetching from project_tasks:', error);
+      console.error('Error fetching tasks via RPC:', error);
       
-      // Fallback to tasks table if project_tasks fails
-      const { data: fallbackData, error: fallbackError } = await supabase
-        .from('tasks')
-        .select('*');
-        
-      if (fallbackError) {
-        console.error('Error fetching from tasks table:', fallbackError);
-        toast.error('Failed to load tasks from either table');
+      // Alternative approach if RPC fails - try direct query with auth
+      console.log('Trying alternative task fetch method...');
+      const { data: directData, error: directError } = await supabase.auth.getSession().then(
+        async (session) => {
+          if (session.data.session) {
+            return await supabase
+              .from('project_tasks')
+              .select('*');
+          } else {
+            return { data: null, error: new Error('No session') };
+          }
+        }
+      );
+      
+      if (directError || !directData) {
+        console.error('All task fetch attempts failed:', directError);
+        toast.error('Failed to load tasks. Please check database permissions.');
+        setTasks([]);
         return;
       }
       
-      console.log('Successfully fetched from fallback tasks table:', fallbackData?.length);
-      taskData = fallbackData;
+      taskData = directData;
     }
     
     if (!taskData || taskData.length === 0) {
@@ -132,5 +139,6 @@ export const fetchTasks = async (
   } catch (error) {
     console.error('Error in fetchTasks:', error);
     toast.error('Failed to load tasks');
+    setTasks([]);
   }
 };

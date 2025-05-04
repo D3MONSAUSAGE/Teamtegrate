@@ -81,6 +81,8 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [tasks, setTasks] = useState<Task[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [maxRetries] = useState(3);
+  const [currentRetry, setCurrentRetry] = useState(0);
   const [dailyScore, setDailyScore] = useState<DailyScore>({
     completedTasks: 0,
     totalTasks: 0,
@@ -107,7 +109,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     try {
       setIsLoading(true);
-      // Use the fetchTasks function from our api module
       await fetchTasks(user, setTasks);
     } catch (error) {
       console.error("Error refreshing tasks:", error);
@@ -130,9 +131,46 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         console.log("Loading data for user:", user.id);
         
-        // Fetch tasks first and then projects
-        await fetchTasks(user, setTasks);
-        await fetchProjects(user, setProjects);
+        // Try to fetch tasks and projects with exponential backoff
+        let tasksSuccess = false;
+        let projectsSuccess = false;
+        
+        // Reset retry counter
+        setCurrentRetry(0);
+        
+        while ((!tasksSuccess || !projectsSuccess) && currentRetry < maxRetries) {
+          if (!tasksSuccess) {
+            try {
+              await fetchTasks(user, setTasks);
+              tasksSuccess = true;
+              console.log("Tasks loaded successfully on attempt:", currentRetry + 1);
+            } catch (error) {
+              console.error(`Tasks fetch failed on attempt ${currentRetry + 1}:`, error);
+            }
+          }
+          
+          if (!projectsSuccess) {
+            try {
+              await fetchProjects(user, setProjects);
+              projectsSuccess = true;
+              console.log("Projects loaded successfully on attempt:", currentRetry + 1);
+            } catch (error) {
+              console.error(`Projects fetch failed on attempt ${currentRetry + 1}:`, error);
+            }
+          }
+          
+          if (!tasksSuccess || !projectsSuccess) {
+            setCurrentRetry(prev => prev + 1);
+            const backoffTime = Math.min(1000 * Math.pow(2, currentRetry), 5000);
+            console.log(`Retrying in ${backoffTime}ms (attempt ${currentRetry + 1}/${maxRetries})...`);
+            await new Promise(resolve => setTimeout(resolve, backoffTime));
+          }
+        }
+        
+        if (!tasksSuccess || !projectsSuccess) {
+          console.warn("Failed to load all data after multiple attempts");
+          toast.error("Some data could not be loaded. Please try refreshing.");
+        }
       } catch (error) {
         console.error("Error loading data:", error);
         toast.error("Failed to load data");
@@ -142,7 +180,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
     
     loadData();
-  }, [user]);
+  }, [user, currentRetry, maxRetries]);
 
   useEffect(() => {
     if (user) {

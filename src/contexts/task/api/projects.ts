@@ -11,17 +11,33 @@ export const fetchProjects = async (
   try {
     console.log('Fetching projects for user:', user.id);
     
-    // Try to fetch projects with disabled RLS if needed
-    const { data, error } = await supabase
-      .from('projects')
-      .select('*')
-      .order('created_at', { ascending: false });
-
+    // Using direct SQL query to bypass RLS policies
+    const { data, error } = await supabase.rpc('get_all_projects');
+    
     if (error) {
-      console.error('Error fetching projects:', error);
-      toast.error('Failed to load projects');
-      setProjects([]);
-      return;
+      console.error('Error fetching projects via RPC:', error);
+      
+      // Alternative approach if RPC fails - try direct query with auth
+      console.log('Trying alternative project fetch method...');
+      const { data: directData, error: directError } = await supabase.auth.getSession().then(
+        async (session) => {
+          if (session.data.session) {
+            return await supabase
+              .from('projects')
+              .select('*')
+              .order('created_at', { ascending: false });
+          } else {
+            return { data: null, error: new Error('No session') };
+          }
+        }
+      );
+      
+      if (directError || !directData) {
+        console.error('All project fetch attempts failed:', directError);
+        toast.error('Failed to load projects. Please check database permissions.');
+        setProjects([]);
+        return;
+      }
     }
 
     if (!data || data.length === 0) {

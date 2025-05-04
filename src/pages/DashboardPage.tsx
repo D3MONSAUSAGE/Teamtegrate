@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { useTask } from '@/contexts/task';
 import { useAuth } from '@/contexts/AuthContext';
 import { Task, Project } from '@/types';
-import { Plus, RefreshCw } from 'lucide-react';
+import { Plus, RefreshCw, AlertTriangle } from 'lucide-react';
 import CreateTaskDialog from '@/components/CreateTaskDialog';
 import { format } from 'date-fns';
 import TasksSummary from '@/components/dashboard/TasksSummary';
@@ -24,6 +23,7 @@ const DashboardPage = () => {
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [hasError, setHasError] = useState(false);
   const isMobile = useIsMobile();
   
   console.log('Dashboard render - tasks count:', tasks.length, 'projects count:', projects.length);
@@ -56,13 +56,33 @@ const DashboardPage = () => {
       try {
         console.log('Dashboard - Initial data refresh starting...');
         setIsRefreshing(true);
+        setHasError(false);
         
-        await refreshTasks();
-        await refreshProjects();
+        // Refresh tasks then projects
+        try {
+          await refreshTasks();
+          console.log('Tasks refreshed successfully');
+        } catch (error) {
+          console.error('Error refreshing tasks:', error);
+          setHasError(true);
+        }
+        
+        try {
+          await refreshProjects();
+          console.log('Projects refreshed successfully');
+        } catch (error) {
+          console.error('Error refreshing projects:', error);
+          setHasError(true);
+        }
         
         console.log('Dashboard - Initial data refresh complete');
+        
+        if (tasks.length === 0 && projects.length === 0) {
+          console.warn('No data loaded - both tasks and projects are empty');
+        }
       } catch (error) {
         console.error("Error refreshing dashboard data:", error);
+        setHasError(true);
       } finally {
         setIsRefreshing(false);
       }
@@ -75,14 +95,37 @@ const DashboardPage = () => {
     if (isRefreshing) return;
     
     setIsRefreshing(true);
+    setHasError(false);
     try {
       console.log('Manual refresh starting...');
-      await refreshTasks();
-      await refreshProjects();
+      
+      // Refresh tasks then projects
+      try {
+        await refreshTasks();
+        console.log('Tasks refreshed successfully');
+      } catch (error) {
+        console.error('Error refreshing tasks:', error);
+        setHasError(true);
+      }
+      
+      try {
+        await refreshProjects();
+        console.log('Projects refreshed successfully');
+      } catch (error) {
+        console.error('Error refreshing projects:', error);
+        setHasError(true);
+      }
+      
       console.log('Manual refresh complete - tasks:', tasks.length, 'projects:', projects.length);
-      toast.success("Dashboard data refreshed");
+      
+      if (hasError) {
+        toast.error("Some data couldn't be refreshed due to database errors");
+      } else {
+        toast.success("Dashboard data refreshed");
+      }
     } catch (error) {
       console.error("Error refreshing dashboard data:", error);
+      setHasError(true);
       toast.error("Failed to refresh dashboard data");
     } finally {
       setIsRefreshing(false);
@@ -133,11 +176,23 @@ const DashboardPage = () => {
           </div>
         </div>
         
+        {/* Database status alert */}
+        {hasError && (
+          <div className="p-4 mb-4 rounded border-red-300 border bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300 flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5" />
+            <div>
+              <p className="font-semibold">Database connection issues detected</p>
+              <p className="text-sm">There may be RLS policy recursion errors in your Supabase project.</p>
+            </div>
+          </div>
+        )}
+        
         {/* Debug info */}
         <div className="p-4 mb-4 rounded bg-gray-100 dark:bg-gray-800 text-sm">
           <p>Tasks loaded: {tasks.length}</p>
           <p>Projects loaded: {projects.length}</p>
           <p>Loading state: {isLoading ? "Loading..." : "Complete"}</p>
+          <p>Error state: {hasError ? "Errors detected" : "No errors"}</p>
         </div>
         
         <TasksSummary 
