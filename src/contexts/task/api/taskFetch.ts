@@ -14,7 +14,7 @@ export const fetchTasks = async (
   try {
     console.log('Fetching tasks for user:', user.id);
     
-    // Fetch base task data from project_tasks table instead of the tasks table
+    // Fetch base task data from project_tasks table
     const { data: taskData, error } = await supabase
       .from('project_tasks')
       .select('*');
@@ -25,7 +25,7 @@ export const fetchTasks = async (
       return;
     }
     
-    console.log(`Retrieved ${taskData.length} tasks from database`);
+    console.log(`Retrieved ${taskData.length} tasks from database:`, taskData);
     
     // Fetch comments for all tasks
     const commentData = await fetchAllTaskComments();
@@ -66,7 +66,7 @@ export const fetchTasks = async (
 
       return {
         id: task.id,
-        userId: user.id, // Use the current user's ID instead of task.user_id which doesn't exist
+        userId: user.id, // Use the current user's ID 
         projectId: task.project_id,
         title: task.title || '',
         description: task.description || '',

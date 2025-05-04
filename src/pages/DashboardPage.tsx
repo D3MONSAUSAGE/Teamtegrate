@@ -26,6 +26,8 @@ const DashboardPage = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const isMobile = useIsMobile();
   
+  console.log('Dashboard render - tasks count:', tasks.length, 'projects count:', projects.length);
+  
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const tomorrow = new Date(today);
@@ -52,12 +54,17 @@ const DashboardPage = () => {
     // Initial refresh when dashboard loads
     const refreshAllData = async () => {
       try {
-        await Promise.all([
-          refreshProjects(),
-          refreshTasks()
-        ]);
+        console.log('Dashboard - Initial data refresh starting...');
+        setIsRefreshing(true);
+        
+        await refreshTasks();
+        await refreshProjects();
+        
+        console.log('Dashboard - Initial data refresh complete');
       } catch (error) {
         console.error("Error refreshing dashboard data:", error);
+      } finally {
+        setIsRefreshing(false);
       }
     };
     
@@ -69,10 +76,10 @@ const DashboardPage = () => {
     
     setIsRefreshing(true);
     try {
-      await Promise.all([
-        refreshProjects(),
-        refreshTasks()
-      ]);
+      console.log('Manual refresh starting...');
+      await refreshTasks();
+      await refreshProjects();
+      console.log('Manual refresh complete - tasks:', tasks.length, 'projects:', projects.length);
       toast.success("Dashboard data refreshed");
     } catch (error) {
       console.error("Error refreshing dashboard data:", error);
@@ -124,6 +131,13 @@ const DashboardPage = () => {
               <Plus className="h-4 w-4 mr-2" /> New Task
             </Button>
           </div>
+        </div>
+        
+        {/* Debug info */}
+        <div className="p-4 mb-4 rounded bg-gray-100 dark:bg-gray-800 text-sm">
+          <p>Tasks loaded: {tasks.length}</p>
+          <p>Projects loaded: {projects.length}</p>
+          <p>Loading state: {isLoading ? "Loading..." : "Complete"}</p>
         </div>
         
         <TasksSummary 
