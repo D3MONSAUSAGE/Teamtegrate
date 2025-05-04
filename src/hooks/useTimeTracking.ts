@@ -18,6 +18,8 @@ export const useTimeTracking = () => {
     if (!user) return;
     const fetchCurrentEntry = async () => {
       try {
+        console.log('Checking for active time entry for user:', user.id);
+        
         const { data, error } = await supabase
           .from('time_entries')
           .select('*')
@@ -31,11 +33,14 @@ export const useTimeTracking = () => {
         }
 
         if (data) {
+          console.log('Found active time entry:', data);
           setCurrentEntry({ 
             id: data.id, 
             clock_in: new Date(data.clock_in), 
             isClocked: true 
           });
+        } else {
+          console.log('No active time entry found for user');
         }
       } catch (error) {
         console.error('Error in fetchCurrentEntry:', error);
@@ -57,6 +62,8 @@ export const useTimeTracking = () => {
     }
 
     try {
+      console.log('Clocking in user:', user.id);
+      
       const { data, error } = await supabase
         .from('time_entries')
         .insert({ 
@@ -71,6 +78,7 @@ export const useTimeTracking = () => {
         return;
       }
 
+      console.log('Clock in successful:', data);
       setCurrentEntry({ 
         id: data.id, 
         clock_in: new Date(data.clock_in), 
@@ -90,6 +98,8 @@ export const useTimeTracking = () => {
     }
 
     try {
+      console.log('Clocking out entry:', currentEntry.id);
+      
       const { error } = await supabase
         .from('time_entries')
         .update({ 
@@ -103,6 +113,7 @@ export const useTimeTracking = () => {
         return;
       }
 
+      console.log('Clock out successful');
       setCurrentEntry({ isClocked: false });
       toast.success('Clocked out successfully');
     } catch (error) {
@@ -125,6 +136,8 @@ export const useTimeTracking = () => {
       // End: start + 7 days, i.e. next week's Monday
       const end = addDays(start, 7);
 
+      console.log(`Fetching time entries from ${start.toISOString()} to ${end.toISOString()} for user:`, user.id);
+
       const { data, error } = await supabase
         .from('time_entries')
         .select('*')
@@ -138,6 +151,12 @@ export const useTimeTracking = () => {
         return [];
       }
 
+      console.log(`Retrieved ${data?.length || 0} time entries`);
+      
+      if (data && data.length > 0) {
+        console.log('Sample time entry:', data[0]);
+      }
+      
       return data || [];
     } catch (error) {
       console.error('Error in getWeeklyTimeEntries:', error);
@@ -153,6 +172,8 @@ export const useTimeTracking = () => {
       const start = startOfWeek(weekStart, { weekStartsOn: 1 });
       const end = addDays(start, 7);
 
+      console.log(`Fetching time entries for team member ${teamMemberId} from ${start.toISOString()} to ${end.toISOString()}`);
+
       const { data, error } = await supabase
         .from('time_entries')
         .select('*')
@@ -166,6 +187,8 @@ export const useTimeTracking = () => {
         return [];
       }
 
+      console.log(`Retrieved ${data?.length || 0} time entries for team member ${teamMemberId}`);
+      
       return data || [];
     } catch (error) {
       console.error('Error in getTeamMemberTimeEntries:', error);

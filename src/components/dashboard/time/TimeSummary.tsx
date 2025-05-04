@@ -15,7 +15,8 @@ const TimeSummary: React.FC<TimeSummaryProps> = ({
   totalWithBonus 
 }) => {
   const { earnedBreakMinutes } = calculateBreakRequirements(totalMinutes);
-  const finalTotal = totalWithBonus || (totalMinutes + earnedBreakMinutes);
+  const calculatedBonus = bonusMinutes !== undefined ? bonusMinutes : earnedBreakMinutes;
+  const finalTotal = totalWithBonus !== undefined ? totalWithBonus : (totalMinutes + calculatedBonus);
 
   return (
     <div className="flex flex-col gap-1">
@@ -25,14 +26,8 @@ const TimeSummary: React.FC<TimeSummaryProps> = ({
       </div>
       <div className="flex justify-between text-sm">
         <span className="text-muted-foreground">Break Time Earned:</span>
-        <span className="font-medium text-emerald-600 dark:text-emerald-400">{earnedBreakMinutes} minutes</span>
+        <span className="font-medium text-emerald-600 dark:text-emerald-400">{calculatedBonus} minutes</span>
       </div>
-      {bonusMinutes !== undefined && (
-        <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">Bonus Time:</span>
-          <span className="font-medium text-blue-600 dark:text-blue-400">{bonusMinutes} minutes</span>
-        </div>
-      )}
       <div className="flex justify-between text-sm border-t pt-1">
         <span className="font-medium">Total Time:</span>
         <span className="font-bold">{formatHoursMinutes(finalTotal)}</span>

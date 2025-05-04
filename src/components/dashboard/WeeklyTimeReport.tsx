@@ -65,11 +65,13 @@ const WeeklyTimeReport: React.FC<WeeklyTimeReportProps> = ({
             <TableBody>
               {weekDays.map((day, index) => {
                 const isSelected = selectedDate && isSameDay(day, selectedDate);
+                const dayEntries = getDayEntries(day);
+                
                 return (
                   <WeeklyTimeRow
                     key={index}
                     day={day}
-                    dayEntries={getDayEntries(day)}
+                    dayEntries={dayEntries}
                     isSelected={isSelected}
                     onClick={onDateSelect ? () => onDateSelect(day) : undefined}
                   />
