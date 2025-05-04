@@ -14,12 +14,18 @@ export const fetchTasks = async (
   try {
     console.log('Fetching tasks for user:', user.id);
     
-    // Fetch base task data
-    const taskData = await fetchTaskData();
-    if (!taskData) {
+    // Fetch base task data from project_tasks table instead of the tasks table
+    const { data: taskData, error } = await supabase
+      .from('project_tasks')
+      .select('*');
+
+    if (error) {
+      console.error('Error fetching tasks:', error);
       toast.error('Failed to load tasks');
       return;
     }
+    
+    console.log(`Retrieved ${taskData.length} tasks from database`);
     
     // Fetch comments for all tasks
     const commentData = await fetchAllTaskComments();

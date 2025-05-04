@@ -1,10 +1,10 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { useTask } from '@/contexts/task';
 import { useAuth } from '@/contexts/AuthContext';
 import { Task, Project } from '@/types';
-import { Plus } from 'lucide-react';
+import { Plus, RefreshCw } from 'lucide-react';
 import CreateTaskDialog from '@/components/CreateTaskDialog';
 import { format } from 'date-fns';
 import TasksSummary from '@/components/dashboard/TasksSummary';
@@ -15,13 +15,15 @@ import TeamManagement from '@/components/dashboard/TeamManagement';
 import { useIsMobile } from '@/hooks/use-mobile';
 import AnalyticsSection from '@/components/dashboard/AnalyticsSection';
 import TimeTracking from '@/components/dashboard/TimeTracking';
+import { toast } from '@/components/ui/sonner';
 
 const DashboardPage = () => {
   const { user } = useAuth();
-  const { tasks, projects, dailyScore, refreshProjects } = useTask();
+  const { tasks, projects, dailyScore, refreshProjects, refreshTasks, isLoading } = useTask();
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const isMobile = useIsMobile();
   
   const today = new Date();
@@ -46,6 +48,40 @@ const DashboardPage = () => {
   
   const recentProjects = projects.slice(0, 3);
   
+  useEffect(() => {
+    // Initial refresh when dashboard loads
+    const refreshAllData = async () => {
+      try {
+        await Promise.all([
+          refreshProjects(),
+          refreshTasks()
+        ]);
+      } catch (error) {
+        console.error("Error refreshing dashboard data:", error);
+      }
+    };
+    
+    refreshAllData();
+  }, []);
+  
+  const handleRefreshData = async () => {
+    if (isRefreshing) return;
+    
+    setIsRefreshing(true);
+    try {
+      await Promise.all([
+        refreshProjects(),
+        refreshTasks()
+      ]);
+      toast.success("Dashboard data refreshed");
+    } catch (error) {
+      console.error("Error refreshing dashboard data:", error);
+      toast.error("Failed to refresh dashboard data");
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   const handleEditTask = (task: Task) => {
     setEditingTask(task);
     setIsCreateTaskOpen(true);
@@ -71,15 +107,30 @@ const DashboardPage = () => {
               {format(new Date(), "EEEE, MMMM d")} · Here's your overview
             </p>
           </div>
-          <Button onClick={() => handleCreateTask()} size={isMobile ? "sm" : "default"} className="self-start sm:self-auto">
-            <Plus className="h-4 w-4 mr-2" /> New Task
-          </Button>
+          <div className="flex gap-2 self-start sm:self-auto">
+            <Button 
+              variant="outline" 
+              size={isMobile ? "sm" : "default"}
+              onClick={handleRefreshData}
+              disabled={isRefreshing || isLoading}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`} /> 
+              Refresh
+            </Button>
+            <Button 
+              onClick={() => handleCreateTask()} 
+              size={isMobile ? "sm" : "default"}
+            >
+              <Plus className="h-4 w-4 mr-2" /> New Task
+            </Button>
+          </div>
         </div>
         
         <TasksSummary 
           dailyScore={dailyScore}
           todaysTasks={todaysTasks}
           upcomingTasks={upcomingTasks}
+          isLoading={isLoading}
         />
 
         <TimeTracking />
@@ -93,12 +144,14 @@ const DashboardPage = () => {
           tasks={todaysTasks}
           onCreateTask={() => handleCreateTask()}
           onEditTask={handleEditTask}
+          isLoading={isLoading}
         />
         
         <UpcomingTasksSection 
           tasks={upcomingTasks}
           onCreateTask={() => handleCreateTask()}
           onEditTask={handleEditTask}
+          isLoading={isLoading}
         />
         
         {user?.role === 'manager' && (
@@ -108,6 +161,7 @@ const DashboardPage = () => {
               onViewTasks={handleViewTasks}
               onCreateTask={handleCreateTask}
               onRefresh={refreshProjects}
+              isLoading={isLoading}
             />
             
             <TeamManagement />

@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import TaskCard from '@/components/task-card';
 import { Task } from '@/types';
 import { Plus, ChevronRight } from 'lucide-react';
@@ -13,12 +14,14 @@ interface DailyTasksSectionProps {
   tasks: Task[];
   onCreateTask: () => void;
   onEditTask: (task: Task) => void;
+  isLoading?: boolean;
 }
 
 const DailyTasksSection: React.FC<DailyTasksSectionProps> = ({
   tasks,
   onCreateTask,
-  onEditTask
+  onEditTask,
+  isLoading = false
 }) => {
   const isMobile = useIsMobile();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -41,6 +44,39 @@ const DailyTasksSection: React.FC<DailyTasksSectionProps> = ({
     setIsCreateTaskOpen(true);
     onEditTask(task);
   };
+
+  if (isLoading) {
+    return (
+      <div>
+        <div className="flex items-center justify-between mb-3 md:mb-4">
+          <h2 className="text-lg md:text-xl font-semibold">Today's Tasks</h2>
+          <Link to="/dashboard/tasks">
+            <Button variant="ghost" size="sm" className="text-primary">
+              View all <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
+          </Link>
+        </div>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="bg-white dark:bg-card p-4 rounded-lg border">
+              <div className="space-y-2">
+                <Skeleton className="h-5 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+                <div className="h-2"></div>
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-full" />
+                <div className="flex justify-between mt-4">
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-4 w-16" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div>
