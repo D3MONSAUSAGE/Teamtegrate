@@ -3,6 +3,7 @@ import { Project, User, ProjectStatus } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { v4 as uuidv4 } from 'uuid';
+import { executeRpc } from '@/integrations/supabase/rpc';
 
 export const fetchProjects = async (
   user: { id: string },
@@ -11,41 +12,44 @@ export const fetchProjects = async (
   try {
     console.log('Fetching projects for user:', user.id);
     
-    // Using RPC to bypass RLS policies
-    const { data, error } = await supabase.rpc('get_all_projects' as any);
+    // First attempt: Using RPC to bypass RLS policies
+    console.log('Attempting to fetch projects via RPC function...');
+    const rpcData = await executeRpc('get_all_projects');
     
-    if (error) {
-      console.error('Error fetching projects via RPC:', error);
-      
-      // Alternative approach if RPC fails - try direct query with auth
-      console.log('Trying alternative project fetch method...');
-      const { data: directData, error: directError } = await supabase.auth.getSession().then(
-        async (session) => {
-          if (session.data.session) {
-            return await supabase
-              .from('projects')
-              .select('*')
-              .order('created_at', { ascending: false });
-          } else {
-            return { data: null, error: new Error('No session') };
-          }
+    if (rpcData !== null) {
+      console.log(`RPC returned project data successfully: ${Array.isArray(rpcData) ? rpcData.length : 0} projects found`);
+      processAndSetProjects(rpcData, setProjects);
+      return;
+    }
+    
+    console.log('RPC fetch failed or returned null, trying direct query...');
+    
+    // Second attempt: Direct query with auth
+    const { data: directData, error: directError } = await supabase.auth.getSession().then(
+      async (session) => {
+        if (session.data.session) {
+          console.log('Session found, attempting direct query to projects...');
+          return await supabase
+            .from('projects')
+            .select('*')
+            .order('created_at', { ascending: false });
+        } else {
+          console.log('No session available for direct query');
+          return { data: null, error: new Error('No session') };
         }
-      );
-      
-      if (directError || !directData) {
-        console.error('All project fetch attempts failed:', directError);
-        toast.error('Failed to load projects. Please check database permissions.');
-        setProjects([]);
-        return;
       }
-
-      // Process the direct data
-      processAndSetProjects(directData, setProjects);
+    );
+    
+    if (directError || !directData) {
+      console.error('All project fetch attempts failed:', directError);
+      toast.error('Failed to load projects. Please check database permissions.');
+      setProjects([]);
       return;
     }
 
-    // Process the RPC data
-    processAndSetProjects(data, setProjects);
+    // Process the direct data
+    console.log(`Retrieved ${directData.length} projects from direct query`);
+    processAndSetProjects(directData, setProjects);
   } catch (error) {
     console.error('Error in fetchProjects:', error);
     toast.error('Failed to load projects');
@@ -78,6 +82,36 @@ const processAndSetProjects = (
       status = 'Completed';
     }
     
+    // Handle team_members properly whether it's an array or not
+    let teamMembers: string[] = [];
+    if (project.team_members) {
+      if (Array.isArray(project.team_members)) {
+        teamMembers = project.team_members;
+      } else if (typeof project.team_members === 'string') {
+        try {
+          // Try to parse if it's a JSON string
+          teamMembers = JSON.parse(project.team_members);
+        } catch (e) {
+          console.warn('Failed to parse team_members string:', e);
+        }
+      }
+    }
+
+    // Handle tags properly whether it's an array or not
+    let tags: string[] = [];
+    if (project.tags) {
+      if (Array.isArray(project.tags)) {
+        tags = project.tags;
+      } else if (typeof project.tags === 'string') {
+        try {
+          // Try to parse if it's a JSON string
+          tags = JSON.parse(project.tags);
+        } catch (e) {
+          console.warn('Failed to parse tags string:', e);
+        }
+      }
+    }
+    
     return {
       id: project.id,
       title: project.title || '',
@@ -88,13 +122,13 @@ const processAndSetProjects = (
       createdAt: project.created_at ? new Date(project.created_at) : new Date(),
       updatedAt: project.updated_at ? new Date(project.updated_at) : new Date(),
       tasks: [],
-      teamMembers: Array.isArray(project.team_members) ? project.team_members : [],
+      teamMembers: teamMembers,
       budget: project.budget || 0,
       is_completed: isCompleted,
       budgetSpent: project.budget_spent || 0,
       status: status as ProjectStatus,
       tasks_count: project.tasks_count || 0,
-      tags: Array.isArray(project.tags) ? project.tags : []
+      tags: tags
     };
   });
 

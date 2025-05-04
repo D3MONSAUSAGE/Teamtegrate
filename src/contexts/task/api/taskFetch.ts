@@ -6,6 +6,7 @@ import { fetchTaskData } from './task/fetchTaskData';
 import { fetchAllTaskComments } from './task/fetchAllTaskComments';
 import { resolveUserNames } from './task/resolveUserNames';
 import { logTaskFetchResults } from './task/logTaskFetchResults';
+import { executeRpc } from '@/integrations/supabase/rpc';
 
 export const fetchTasks = async (
   user: { id: string },
@@ -14,40 +15,57 @@ export const fetchTasks = async (
   try {
     console.log('Fetching tasks for user:', user.id);
     
-    // Using RPC to bypass RLS policies
-    const { data, error } = await supabase.rpc('get_all_tasks' as any);
+    // First attempt: Using RPC to bypass RLS policies
+    console.log('Attempting to fetch tasks via RPC function...');
+    const rpcData = await executeRpc('get_all_tasks');
     
-    if (error) {
-      console.error('Error fetching tasks via RPC:', error);
-      
-      // Alternative approach if RPC fails - try direct query with auth
-      console.log('Trying alternative task fetch method...');
-      const { data: directData, error: directError } = await supabase.auth.getSession().then(
-        async (session) => {
-          if (session.data.session) {
-            return await supabase
-              .from('project_tasks')
-              .select('*');
-          } else {
-            return { data: null, error: new Error('No session') };
-          }
+    if (rpcData !== null) {
+      console.log(`RPC returned task data successfully: ${rpcData.length} tasks found`);
+      processAndSetTasks(rpcData, user, setTasks);
+      return;
+    }
+    
+    console.log('RPC fetch failed or returned null, trying direct query...');
+    
+    // Second attempt: Direct query with auth
+    const { data: directData, error: directError } = await supabase.auth.getSession().then(
+      async (session) => {
+        if (session.data.session) {
+          console.log('Session found, attempting direct query to project_tasks...');
+          return await supabase
+            .from('project_tasks')
+            .select('*');
+        } else {
+          console.log('No session available for direct query');
+          return { data: null, error: new Error('No session') };
         }
-      );
+      }
+    );
+    
+    if (directError || !directData) {
+      console.error('All task fetch attempts failed:', directError);
       
-      if (directError || !directData) {
-        console.error('All task fetch attempts failed:', directError);
+      // Third attempt: Try legacy tasks table as last resort
+      console.log('Trying legacy tasks table as last resort...');
+      const { data: legacyData, error: legacyError } = await supabase
+        .from('tasks')
+        .select('*');
+        
+      if (legacyError || !legacyData) {
+        console.error('Legacy tasks fetch failed:', legacyError);
         toast.error('Failed to load tasks. Please check database permissions.');
         setTasks([]);
         return;
       }
       
-      // Process the direct data
-      processAndSetTasks(directData, user, setTasks);
+      console.log(`Retrieved ${legacyData.length} tasks from legacy table`);
+      processAndSetTasks(legacyData, user, setTasks);
       return;
     }
     
-    // Process the RPC data
-    processAndSetTasks(data, user, setTasks);
+    // Process the direct data
+    console.log(`Retrieved ${directData.length} tasks from direct query`);
+    processAndSetTasks(directData, user, setTasks);
   } catch (error) {
     console.error('Error in fetchTasks:', error);
     toast.error('Failed to load tasks');
@@ -67,7 +85,7 @@ const processAndSetTasks = async (
     return;
   }
   
-  console.log(`Retrieved ${taskData.length} tasks from database:`, taskData);
+  console.log(`Processing ${taskData.length} tasks from database:`, taskData);
   
   // Fetch comments for all tasks
   const commentData = await fetchAllTaskComments();
@@ -78,11 +96,11 @@ const processAndSetTasks = async (
     .map(task => task.assigned_to_id);
 
   // Remove duplicates
-  const uniqueUserIds: string[] = [...new Set(assignedUserIds.filter(Boolean))] as string[];
+  const uniqueUserIds = [...new Set(assignedUserIds.filter(Boolean))];
   console.log(`Found ${uniqueUserIds.length} unique assigned users`);
   
   // Build user name mapping
-  const userMap = await resolveUserNames(uniqueUserIds);
+  const userMap = await resolveUserNames(uniqueUserIds as string[]);
   
   // Process task data with comments and user information
   let tasks: Task[] = taskData.map((task: any) => {
@@ -122,7 +140,7 @@ const processAndSetTasks = async (
       assignedToName: assignedUserName,
       comments: taskComments,
       cost: task.cost || 0,
-      tags: []
+      tags: task.tags || []
     };
   });
 

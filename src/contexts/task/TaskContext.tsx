@@ -33,7 +33,7 @@ import {
   getTasksByDate, 
   getOverdueTasks 
 } from './taskFilters';
-import { setupRpcFunctions } from '@/integrations/supabase/client';
+import { setupRpcFunctions, createRpcFunctions } from '@/integrations/supabase/client';
 
 interface TaskContextType {
   tasks: Task[];
@@ -101,6 +101,15 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log('RPC functions setup complete');
       } catch (err) {
         console.error('Failed to setup RPC functions:', err);
+        // Try creating our own RPC functions as fallback
+        try {
+          console.log('Attempting to create RPC functions directly...');
+          await createRpcFunctions();
+          console.log('Direct RPC function creation complete');
+          setRpcSetupDone(true);
+        } catch (createErr) {
+          console.error('Failed to create RPC functions directly:', createErr);
+        }
       }
     };
     
@@ -147,6 +156,20 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(true);
       try {
         console.log("Loading data for user:", user.id);
+        
+        // Wait for RPC setup to complete before loading data
+        if (!rpcSetupDone) {
+          console.log("Waiting for RPC functions to be set up...");
+          // Wait for up to 2 seconds for RPC setup
+          for (let i = 0; i < 5; i++) {
+            if (rpcSetupDone) break;
+            await new Promise(resolve => setTimeout(resolve, 400));
+          }
+          
+          if (!rpcSetupDone) {
+            console.warn("RPC setup didn't complete in time, proceeding anyway");
+          }
+        }
         
         // Try to fetch tasks and projects with exponential backoff
         let tasksSuccess = false;
@@ -197,7 +220,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
     
     loadData();
-  }, [user, currentRetry, maxRetries]);
+  }, [user, currentRetry, maxRetries, rpcSetupDone]);
 
   useEffect(() => {
     if (user) {
