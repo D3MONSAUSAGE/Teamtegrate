@@ -33,7 +33,8 @@ import {
   getTasksByDate, 
   getOverdueTasks 
 } from './taskFilters';
-import { setupRpcFunctions, createRpcFunctions } from '@/integrations/supabase/client';
+import { setupRpcFunctions } from '@/integrations/supabase/client';
+import { createRpcFunctions } from '@/integrations/supabase/rpc';
 
 interface TaskContextType {
   tasks: Task[];
