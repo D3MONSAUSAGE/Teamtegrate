@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useTimeTrackingPage } from '@/hooks/useTimeTrackingPage';
 import DailyTimeReport from './DailyTimeReport';
@@ -7,7 +6,6 @@ import TimeTrackingSummary from './time/TimeTrackingSummary';
 import TimeChartSection from './time/TimeChartSection';
 import TimeTrackingControls from './TimeTrackingControls';
 import WeekNavigation from './WeekNavigation';
-import { Loader2 } from 'lucide-react';
 
 const TimeTracking: React.FC = () => {
   const {
@@ -34,18 +32,8 @@ const TimeTracking: React.FC = () => {
     clockIn,
     clockOut,
     selectedDate,
-    handleDateChange,
-    isLoading
+    handleDateChange
   } = useTimeTrackingPage();
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <span className="ml-2">Loading time entries...</span>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-4">

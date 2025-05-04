@@ -15,7 +15,6 @@ export const useTimeTrackingPage = () => {
   const [elapsedTime, setElapsedTime] = useState('');
   const [dailyEntries, setDailyEntries] = useState([]);
   const [weeklyEntries, setWeeklyEntries] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
 
   const {
     targetWeeklyHours,
@@ -51,30 +50,13 @@ export const useTimeTrackingPage = () => {
   // Effects for data fetching
   useEffect(() => {
     const fetchEntries = async () => {
-      try {
-        setIsLoading(true);
-        console.log('Fetching time entries for week starting:', weekStart);
-        const entries = await getWeeklyTimeEntries(weekStart);
-        
-        if (entries && entries.length > 0) {
-          console.log(`Successfully retrieved ${entries.length} time entries`);
-        } else {
-          console.log('No time entries found for selected week');
-        }
-        
-        setWeeklyEntries(entries);
-        
-        // Set daily entries based on selected date
-        const filteredDailyEntries = filterDailyEntries(entries, selectedDate);
-        console.log(`Filtered ${filteredDailyEntries.length} entries for selected date:`, selectedDate);
-        setDailyEntries(filteredDailyEntries);
-      } catch (error) {
-        console.error('Error fetching time entries:', error);
-      } finally {
-        setIsLoading(false);
-      }
+      const entries = await getWeeklyTimeEntries(weekStart);
+      setWeeklyEntries(entries);
+      
+      // Set daily entries based on selected date
+      const filteredDailyEntries = filterDailyEntries(entries, selectedDate);
+      setDailyEntries(filteredDailyEntries);
     };
-    
     fetchEntries();
   }, [currentEntry, weekStart, selectedDate, getWeeklyTimeEntries]);
 
@@ -121,7 +103,6 @@ export const useTimeTrackingPage = () => {
     clockIn,
     clockOut,
     selectedDate,
-    handleDateChange,
-    isLoading
+    handleDateChange
   };
 };

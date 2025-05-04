@@ -33,32 +33,8 @@ export function formatDuration(ms: number): string {
 // Filter entries by date
 export function filterDailyEntries(entries: TimeEntry[], date: Date) {
   const dateStr = format(date, 'yyyy-MM-dd');
-  console.log('Filtering entries for date:', dateStr);
-  
   return entries.filter(entry => {
-    try {
-      const entryDate = format(new Date(entry.clock_in), 'yyyy-MM-dd');
-      const match = entryDate === dateStr;
-      return match;
-    } catch (error) {
-      console.error('Error filtering entry:', error, entry);
-      return false;
-    }
+    const entryDate = format(new Date(entry.clock_in), 'yyyy-MM-dd');
+    return entryDate === dateStr;
   });
-}
-
-// Calculate total minutes from time entries
-export function calculateTotalMinutes(entries: TimeEntry[]): number {
-  return entries.reduce((total, entry) => {
-    if (entry.duration_minutes) {
-      return total + entry.duration_minutes;
-    } else if (entry.clock_out) {
-      const minutesDiff = differenceInMinutes(
-        new Date(entry.clock_out),
-        new Date(entry.clock_in)
-      );
-      return total + minutesDiff;
-    }
-    return total;
-  }, 0);
 }
