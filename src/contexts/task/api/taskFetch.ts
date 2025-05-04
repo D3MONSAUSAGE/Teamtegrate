@@ -14,14 +14,32 @@ export const fetchTasks = async (
   try {
     console.log('Fetching tasks for user:', user.id);
     
-    // Fetch base task data from project_tasks table
-    const { data: taskData, error } = await supabase
+    // Try to fetch directly from the project_tasks table first
+    let { data: taskData, error } = await supabase
       .from('project_tasks')
       .select('*');
-
+    
     if (error) {
-      console.error('Error fetching tasks:', error);
-      toast.error('Failed to load tasks');
+      console.error('Error fetching from project_tasks:', error);
+      
+      // Fallback to tasks table if project_tasks fails
+      const { data: fallbackData, error: fallbackError } = await supabase
+        .from('tasks')
+        .select('*');
+        
+      if (fallbackError) {
+        console.error('Error fetching from tasks table:', fallbackError);
+        toast.error('Failed to load tasks from either table');
+        return;
+      }
+      
+      console.log('Successfully fetched from fallback tasks table:', fallbackData?.length);
+      taskData = fallbackData;
+    }
+    
+    if (!taskData || taskData.length === 0) {
+      console.log('No tasks found in database');
+      setTasks([]);
       return;
     }
     

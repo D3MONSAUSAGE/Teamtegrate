@@ -9,6 +9,9 @@ export const fetchProjects = async (
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
 ): Promise<void> => {
   try {
+    console.log('Fetching projects for user:', user.id);
+    
+    // Try to fetch projects with disabled RLS if needed
     const { data, error } = await supabase
       .from('projects')
       .select('*')
@@ -17,6 +20,12 @@ export const fetchProjects = async (
     if (error) {
       console.error('Error fetching projects:', error);
       toast.error('Failed to load projects');
+      setProjects([]);
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      console.log('No projects found in database');
       setProjects([]);
       return;
     }

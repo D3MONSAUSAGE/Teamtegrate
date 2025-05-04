@@ -3,7 +3,7 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import { Task, Project, TaskStatus, TaskPriority, DailyScore } from '@/types';
 import { useAuth } from '../AuthContext';
 import { fetchTasks } from './api/taskFetch';
-import { fetchUserProjects } from './taskApi';
+import { fetchProjects } from './api/projects';
 import { calculateDailyScore } from './taskMetrics';
 import { toast } from '@/components/ui/sonner';
 import { 
@@ -93,7 +93,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     try {
       setIsLoading(true);
-      await fetchUserProjects(user, setProjects);
+      await fetchProjects(user, setProjects);
     } catch (error) {
       console.error("Error refreshing projects:", error);
       toast.error("Failed to refresh projects");
@@ -107,6 +107,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     try {
       setIsLoading(true);
+      // Use the fetchTasks function from our api module
       await fetchTasks(user, setTasks);
     } catch (error) {
       console.error("Error refreshing tasks:", error);
@@ -128,10 +129,10 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(true);
       try {
         console.log("Loading data for user:", user.id);
-        await Promise.all([
-          fetchUserProjects(user, setProjects),
-          fetchTasks(user, setTasks)
-        ]);
+        
+        // Fetch tasks first and then projects
+        await fetchTasks(user, setTasks);
+        await fetchProjects(user, setProjects);
       } catch (error) {
         console.error("Error loading data:", error);
         toast.error("Failed to load data");
