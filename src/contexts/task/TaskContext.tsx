@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { Task, Project, TaskStatus, TaskPriority, DailyScore } from '@/types';
 import { useAuth } from '../AuthContext';
@@ -34,6 +33,7 @@ import {
   getTasksByDate, 
   getOverdueTasks 
 } from './taskFilters';
+import { setupRpcFunctions } from '@/integrations/supabase/client';
 
 interface TaskContextType {
   tasks: Task[];
@@ -83,12 +83,29 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
   const [maxRetries] = useState(3);
   const [currentRetry, setCurrentRetry] = useState(0);
+  const [rpcSetupDone, setRpcSetupDone] = useState(false);
   const [dailyScore, setDailyScore] = useState<DailyScore>({
     completedTasks: 0,
     totalTasks: 0,
     percentage: 0,
     date: new Date(),
   });
+
+  // Set up RPC functions once when the app loads
+  useEffect(() => {
+    const setupRpc = async () => {
+      try {
+        console.log('Setting up RPC functions...');
+        await setupRpcFunctions();
+        setRpcSetupDone(true);
+        console.log('RPC functions setup complete');
+      } catch (err) {
+        console.error('Failed to setup RPC functions:', err);
+      }
+    };
+    
+    setupRpc();
+  }, []);
 
   const refreshProjects = async () => {
     if (!user) return;
@@ -169,7 +186,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (!tasksSuccess || !projectsSuccess) {
           console.warn("Failed to load all data after multiple attempts");
-          toast.error("Some data could not be loaded. Please try refreshing.");
+          toast.error("Some data couldn't be loaded. Please try refreshing.");
         }
       } catch (error) {
         console.error("Error loading data:", error);

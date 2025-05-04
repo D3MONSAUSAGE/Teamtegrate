@@ -12,7 +12,7 @@ export const fetchProjects = async (
     console.log('Fetching projects for user:', user.id);
     
     // Using direct SQL query to bypass RLS policies
-    const { data, error } = await supabase.rpc('get_all_projects');
+    const { data, error } = await supabase.rpc('get_all_projects' as any);
     
     if (error) {
       console.error('Error fetching projects via RPC:', error);
@@ -38,55 +38,68 @@ export const fetchProjects = async (
         setProjects([]);
         return;
       }
-    }
 
-    if (!data || data.length === 0) {
-      console.log('No projects found in database');
-      setProjects([]);
+      // Set projects with the direct data
+      processAndSetProjects(directData, setProjects);
       return;
     }
 
-    console.log('Projects data from API:', data);
-
-    const formattedProjects: Project[] = data.map(project => {
-      // Explicitly ensure status and is_completed are synchronized
-      let status = project.status || 'To Do';
-      let isCompleted = project.is_completed || false;
-      
-      // Always enforce consistency between status and is_completed
-      if (status === 'Completed') {
-        isCompleted = true;
-      } else if (isCompleted) {
-        status = 'Completed';
-      }
-      
-      return {
-        id: project.id,
-        title: project.title || '',
-        description: project.description || '',
-        startDate: project.start_date ? new Date(project.start_date) : new Date(),
-        endDate: project.end_date ? new Date(project.end_date) : new Date(),
-        managerId: project.manager_id || user.id,
-        createdAt: project.created_at ? new Date(project.created_at) : new Date(),
-        updatedAt: project.updated_at ? new Date(project.updated_at) : new Date(),
-        tasks: [],
-        teamMembers: project.team_members || [],
-        budget: project.budget || 0,
-        is_completed: isCompleted,
-        budgetSpent: project.budget_spent || 0,
-        status: status as ProjectStatus,
-        tasks_count: project.tasks_count || 0,
-        tags: project.tags || []
-      };
-    });
-
-    console.log('Formatted projects:', formattedProjects);
-    setProjects(formattedProjects);
+    // Process the RPC data
+    processAndSetProjects(data, setProjects);
   } catch (error) {
     console.error('Error in fetchProjects:', error);
     toast.error('Failed to load projects');
     setProjects([]);
   }
+};
+
+// Helper function to process projects data and set state
+const processAndSetProjects = (
+  data: any, 
+  setProjects: React.Dispatch<React.SetStateAction<Project[]>>
+) => {
+  if (!data || !Array.isArray(data) || data.length === 0) {
+    console.log('No projects found in database');
+    setProjects([]);
+    return;
+  }
+
+  console.log('Projects data from API:', data);
+
+  const formattedProjects: Project[] = data.map(project => {
+    // Explicitly ensure status and is_completed are synchronized
+    let status = project.status || 'To Do';
+    let isCompleted = project.is_completed || false;
+    
+    // Always enforce consistency between status and is_completed
+    if (status === 'Completed') {
+      isCompleted = true;
+    } else if (isCompleted) {
+      status = 'Completed';
+    }
+    
+    return {
+      id: project.id,
+      title: project.title || '',
+      description: project.description || '',
+      startDate: project.start_date ? new Date(project.start_date) : new Date(),
+      endDate: project.end_date ? new Date(project.end_date) : new Date(),
+      managerId: project.manager_id || '',
+      createdAt: project.created_at ? new Date(project.created_at) : new Date(),
+      updatedAt: project.updated_at ? new Date(project.updated_at) : new Date(),
+      tasks: [],
+      teamMembers: Array.isArray(project.team_members) ? project.team_members : [],
+      budget: project.budget || 0,
+      is_completed: isCompleted,
+      budgetSpent: project.budget_spent || 0,
+      status: status as ProjectStatus,
+      tasks_count: project.tasks_count || 0,
+      tags: Array.isArray(project.tags) ? project.tags : []
+    };
+  });
+
+  console.log('Formatted projects:', formattedProjects);
+  setProjects(formattedProjects);
 };
 
 export const addProject = async (

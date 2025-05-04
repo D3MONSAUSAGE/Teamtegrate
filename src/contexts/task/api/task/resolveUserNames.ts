@@ -5,7 +5,7 @@ export const resolveUserNames = async (userIds: string[]): Promise<Map<string, s
   const userMap = new Map<string, string>();
   
   try {
-    if (userIds.length === 0) {
+    if (!userIds || userIds.length === 0) {
       return userMap;
     }
     
