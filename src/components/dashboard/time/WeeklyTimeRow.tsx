@@ -4,7 +4,7 @@ import { TableRow, TableCell } from "@/components/ui/table";
 import { Coffee, Clock } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { formatHoursMinutes } from '@/utils/timeUtils';
-import { parseISO, differenceInMinutes, isToday, format } from 'date-fns';
+import { parseISO, differenceInMinutes, isToday } from 'date-fns';
 import { calculateBreakRequirements } from '@/utils/breakTracking';
 import TimeDetailsRow from './TimeDetailsRow';
 import { cn } from '@/lib/utils';
@@ -53,18 +53,14 @@ const WeeklyTimeRow: React.FC<WeeklyTimeRowProps> = ({
   const { mealBreaks, restBreaks, earnedBreakMinutes } = calculateBreakRequirements(dailyMinutes);
   const total = dailyMinutes + earnedBreakMinutes;
   const hasEntries = dayEntries.length > 0;
-  const hasOngoingEntry = dayEntries.some(entry => !entry.clock_out);
-
-  const dateStr = format(day, 'EEE, MMM d');
 
   return (
     <TableRow 
       className={cn(
-        "transition-all duration-200 border-l-2 cursor-pointer",
+        "transition-colors border-l-2 cursor-pointer",
         isCurrentDay && "bg-primary/5 border-l-primary",
         isSelected && "bg-secondary/10 border-l-secondary",
-        hasOngoingEntry && "bg-blue-50/50 dark:bg-blue-900/10",
-        !isCurrentDay && !isSelected && !hasOngoingEntry && "border-l-transparent",
+        !isCurrentDay && !isSelected && "border-l-transparent",
         hasEntries ? "hover:bg-muted/40" : "hover:bg-muted/20"
       )}
       onClick={onClick}
@@ -72,10 +68,10 @@ const WeeklyTimeRow: React.FC<WeeklyTimeRowProps> = ({
       <TableCell className="font-medium">
         <div className="flex items-center gap-1.5">
           <span className={cn(
-            "font-medium",
-            isCurrentDay && "text-primary"
+            "",
+            isCurrentDay && "text-primary font-semibold"
           )}>
-            {dateStr}
+            {new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).format(day)}
           </span>
           {isCurrentDay && (
             <Badge variant="outline" className="text-xs px-1.5 py-0 border-primary text-primary">Today</Badge>
@@ -108,7 +104,7 @@ const WeeklyTimeRow: React.FC<WeeklyTimeRowProps> = ({
             <TooltipTrigger className="mx-auto block">
               <div className="flex items-center gap-1 justify-center">
                 <Coffee className="h-4 w-4 text-amber-500" />
-                <span className="text-sm font-medium">{mealBreaks + restBreaks}</span>
+                <span className="text-sm">{mealBreaks + restBreaks}</span>
               </div>
             </TooltipTrigger>
             <TooltipContent className="bg-white dark:bg-gray-800 border shadow-lg">
@@ -127,7 +123,7 @@ const WeeklyTimeRow: React.FC<WeeklyTimeRowProps> = ({
         {total > 0 ? (
           <div className="flex items-center gap-1">
             <Clock className="h-3.5 w-3.5 text-primary" />
-            <span className="font-semibold">{formatHoursMinutes(total)}</span>
+            {formatHoursMinutes(total)}
           </div>
         ) : (
           <span className="text-muted-foreground">-</span>

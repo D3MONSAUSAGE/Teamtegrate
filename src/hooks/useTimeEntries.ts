@@ -40,9 +40,7 @@ export const useTimeEntries = () => {
       if (error) {
         console.error('Error fetching time entries:', error);
         setError('Failed to load time entries');
-        toast.error('Failed to load time entries', {
-          description: error.message,
-        });
+        toast.error('Failed to load time entries');
         return;
       }
 
@@ -51,9 +49,7 @@ export const useTimeEntries = () => {
     } catch (err) {
       console.error('Unexpected error in fetchTimeEntries:', err);
       setError('An unexpected error occurred');
-      toast.error('Failed to load time entries', {
-        description: 'Please try again later or contact support',
-      });
+      toast.error('Failed to load time entries');
     } finally {
       setIsLoading(false);
     }
@@ -67,11 +63,8 @@ export const useTimeEntries = () => {
       .channel('time_entries_changes')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'time_entries' }, 
-        (payload) => {
-          console.log('Time entry change detected:', payload);
-          toast.success('Time entry updated', {
-            description: 'Refreshing your time data...',
-          });
+        () => {
+          console.log('Time entry change detected, refreshing data...');
           fetchTimeEntries();
         }
       )
@@ -83,7 +76,6 @@ export const useTimeEntries = () => {
   }, [fetchTimeEntries]);
 
   const refresh = useCallback(() => {
-    toast.info('Refreshing time entries...');
     return fetchTimeEntries();
   }, [fetchTimeEntries]);
 

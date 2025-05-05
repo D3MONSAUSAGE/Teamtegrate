@@ -29,22 +29,14 @@ const TimeDetailsRow: React.FC<TimeDetailsRowProps> = ({ entry }) => {
   
   return (
     <div className={cn(
-      "text-sm p-3 rounded-md border transition-all duration-300 hover:shadow-md",
+      "text-sm p-3 rounded-md border transition-colors",
       isOngoing 
-        ? "border-blue-300 bg-blue-50 dark:bg-blue-900/30 dark:border-blue-800 shadow-sm" 
-        : "border-muted-foreground/20 hover:bg-muted/20"
+        ? "border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800 shadow-sm" 
+        : "border-muted-foreground/20 hover:bg-muted/30"
     )}>
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className={cn(
-            "p-1 rounded-full",
-            isOngoing ? "bg-blue-100 dark:bg-blue-800/40" : "bg-muted/40"
-          )}>
-            <Clock className={cn(
-              "h-3.5 w-3.5", 
-              isOngoing ? "text-blue-600 dark:text-blue-400" : "text-muted-foreground"
-            )} />
-          </div>
+        <div className="flex items-center gap-1.5">
+          <Clock className="h-4 w-4 text-muted-foreground" />
           <span className="font-medium">
             {format(clockIn, 'h:mm a')}
             {clockOut && (
@@ -63,7 +55,7 @@ const TimeDetailsRow: React.FC<TimeDetailsRowProps> = ({ entry }) => {
         </div>
         
         {durationMinutes && (
-          <span className="text-xs px-2.5 py-0.5 rounded-full bg-muted font-medium shadow-sm">
+          <span className="text-xs px-2.5 py-0.5 rounded-full bg-muted font-medium">
             {formatDuration(durationMinutes)}
           </span>
         )}
@@ -71,7 +63,7 @@ const TimeDetailsRow: React.FC<TimeDetailsRowProps> = ({ entry }) => {
       
       {entry.notes && (
         <Tooltip>
-          <TooltipTrigger className="flex items-center gap-1.5 mt-2 text-muted-foreground text-xs italic group">
+          <TooltipTrigger className="flex items-center gap-1.5 mt-1.5 text-muted-foreground text-xs italic group">
             <Info className="h-3 w-3 group-hover:text-primary transition-colors" />
             <span className="truncate max-w-[250px] group-hover:text-foreground transition-colors">{entry.notes}</span>
           </TooltipTrigger>
