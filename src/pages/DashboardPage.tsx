@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { useTask } from '@/contexts/task';
@@ -225,14 +226,6 @@ const DashboardPage = () => {
             </div>
           </div>
         )}
-        
-        {/* Debug info */}
-        <div className="p-4 mb-4 rounded bg-gray-100 dark:bg-gray-800 text-sm">
-          <p>Tasks loaded: {tasks.length}</p>
-          <p>Projects loaded: {projects.length}</p>
-          <p>Loading state: {isLoading ? "Loading..." : "Complete"}</p>
-          <p>Error state: {hasError ? "Errors detected" : "No errors"}</p>
-        </div>
         
         <TasksSummary 
           dailyScore={dailyScore}
