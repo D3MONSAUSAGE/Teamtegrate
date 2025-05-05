@@ -80,13 +80,27 @@ export const useProjectTasksView = (projectId: string | null) => {
     loadData();
   }, [projectId, refreshProjects, refreshTasks, retryCount, initialLoadAttempted]);
 
+  // Enhanced refresh function after task update with debounce
   const refreshAfterTaskUpdate = useCallback(async () => {
     console.log("Refreshing tasks after task update");
+    
+    // Show the refreshing indicator
+    setIsRefreshing(true);
+    
     try {
+      // Add small delay to ensure database has time to update
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // First refresh tasks, then projects to ensure we have the latest data
       await refreshTasks();
       await refreshProjects();
+      
+      console.log("Tasks and projects refreshed successfully after update");
     } catch (error) {
       console.error("Error refreshing after task update:", error);
+      toast.error("Failed to refresh latest task data");
+    } finally {
+      setIsRefreshing(false);
     }
   }, [refreshTasks, refreshProjects]);
 

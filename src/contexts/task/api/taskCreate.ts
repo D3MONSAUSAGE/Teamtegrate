@@ -32,37 +32,73 @@ export const addTask = async (
       assignedToId: task.assignedToId
     });
 
-    // Create the task in Supabase
-    const { data, error } = await supabase
-      .from('tasks')
-      .insert([
-        {
-          id: taskId,
-          user_id: user.id,
-          project_id: task.projectId || null,
-          title: task.title,
-          description: task.description || '',
-          deadline: task.deadline.toISOString(),
-          priority: task.priority,
-          status: task.status,
-          created_at: now.toISOString(),
-          updated_at: now.toISOString(),
-          assigned_to_id: task.assignedToId || null,
-          cost: task.cost || 0,
-        },
-      ])
-      .select('*');
+    // First try creating the task in the project_tasks table (preferred)
+    let success = false;
+    
+    try {
+      const { data: projectTaskData, error: projectTaskError } = await supabase
+        .from('project_tasks')
+        .insert([
+          {
+            id: taskId,
+            project_id: task.projectId || null,
+            title: task.title,
+            description: task.description || '',
+            deadline: task.deadline.toISOString(),
+            priority: task.priority,
+            status: task.status,
+            created_at: now.toISOString(),
+            updated_at: now.toISOString(),
+            assigned_to_id: task.assignedToId || null,
+            cost: task.cost || 0,
+          },
+        ])
+        .select('*');
 
-    if (error) {
-      console.error('Error adding task:', error);
-      toast.error('Failed to create task');
-      playErrorSound();
-      return;
+      if (!projectTaskError) {
+        console.log('Task created successfully in project_tasks:', projectTaskData);
+        success = true;
+      } else {
+        console.error('Error adding to project_tasks:', projectTaskError);
+      }
+    } catch (err) {
+      console.error('Exception when adding to project_tasks:', err);
     }
 
-    console.log('Task created successfully in database:', data);
+    // Fall back to legacy tasks table if project_tasks failed
+    if (!success) {
+      console.log('Falling back to legacy tasks table');
+      const { data, error } = await supabase
+        .from('tasks')
+        .insert([
+          {
+            id: taskId,
+            user_id: user.id,
+            project_id: task.projectId || null,
+            title: task.title,
+            description: task.description || '',
+            deadline: task.deadline.toISOString(),
+            priority: task.priority,
+            status: task.status,
+            created_at: now.toISOString(),
+            updated_at: now.toISOString(),
+            assigned_to_id: task.assignedToId || null,
+            cost: task.cost || 0,
+          },
+        ])
+        .select('*');
 
-    // Create new task object for state
+      if (error) {
+        console.error('Error adding task to legacy table:', error);
+        toast.error('Failed to create task');
+        playErrorSound();
+        return;
+      }
+
+      console.log('Task created successfully in legacy table:', data);
+    }
+
+    // Create new task object for state updates
     const newTask: Task = {
       id: taskId,
       userId: user.id,

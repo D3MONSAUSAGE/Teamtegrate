@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import CreateTaskDialogWithAI from '../CreateTaskDialogWithAI';
 import ProjectTasksContent from './project-view/ProjectTasksContent';
 import { useProjectTasksView } from './project-view/useProjectTasksView';
@@ -51,6 +51,12 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
     });
   }, [projectId, isLoading, loadError, project, editingTask, todoTasks, inProgressTasks, pendingTasks, completedTasks]);
 
+  // Callback for task creation - ensures we refresh data
+  const handleTaskCreated = useCallback(async () => {
+    console.log("Task created callback triggered in ProjectTasksView");
+    await refreshAfterTaskUpdate();
+  }, [refreshAfterTaskUpdate]);
+
   if (isLoading) {
     return <ProjectTasksLoading />;
   }
@@ -89,7 +95,7 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
         onOpenChange={setIsCreateTaskOpen}
         editingTask={editingTask}
         currentProjectId={projectId}
-        onTaskCreated={refreshAfterTaskUpdate}
+        onTaskCreated={handleTaskCreated}
       />
     </>
   );

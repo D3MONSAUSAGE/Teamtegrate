@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Task } from '@/types';
@@ -41,7 +41,16 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
     setSelectedMember
   } = useTaskForm(editingTask, currentProjectId);
 
+  // Log when dialog opens/closes to debug task creation flow
+  useEffect(() => {
+    if (open) {
+      console.log('CreateTaskDialog opened', { editingTask, currentProjectId });
+    }
+  }, [open, editingTask, currentProjectId]);
+
   const onSubmit = async (data: any) => {
+    console.log('CreateTaskDialog form submission:', data);
+    
     // Handle the case where deadline might come as string or Date
     const deadlineDate = typeof data.deadline === 'string' 
       ? new Date(data.deadline)
@@ -74,7 +83,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
         console.log("Calling onTaskCreated callback from CreateTaskDialog");
         setTimeout(() => {
           onTaskCreated();
-        }, 100);
+        }, 200); // Add a small delay to allow the database to update
       }
       
       onOpenChange(false);

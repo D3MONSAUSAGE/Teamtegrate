@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Task } from '@/types';
 import { useTask } from '@/contexts/task';
@@ -49,11 +49,12 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
   } = useTaskFormWithAI(editingTask, currentProjectId);
 
   // Log when dialog opens/closes with editing task
-  React.useEffect(() => {
+  useEffect(() => {
     if (open) {
       console.log('Dialog opened with editingTask:', editingTask);
+      console.log('CreateTaskDialogWithAI opened with currentProjectId:', currentProjectId);
     }
-  }, [open, editingTask]);
+  }, [open, editingTask, currentProjectId]);
 
   const onSubmit = async (data: any) => {
     console.log('Form submission data:', data);
@@ -96,12 +97,12 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
         });
       }
       
-      // Call onTaskCreated callback to refresh the task list
+      // Call onTaskCreated callback to refresh the task list with a small delay
       if (onTaskCreated) {
         console.log("Calling onTaskCreated callback");
         setTimeout(() => {
           onTaskCreated();
-        }, 100);
+        }, 200); // Delay to allow database to update
       }
       
       onOpenChange(false);
