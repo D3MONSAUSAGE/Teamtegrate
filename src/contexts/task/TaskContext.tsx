@@ -137,6 +137,8 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setIsLoading(true);
       await fetchTasks(user, setTasks);
+      // After successful task fetch, log the results
+      console.log(`Tasks refreshed successfully. Total tasks: ${tasks.length}`);
     } catch (error) {
       console.error("Error refreshing tasks:", error);
       toast.error("Failed to refresh tasks");

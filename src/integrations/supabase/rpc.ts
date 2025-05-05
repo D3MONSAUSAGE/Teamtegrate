@@ -37,7 +37,16 @@ export const executeRpc = async (functionName: string, params?: any) => {
       return null;
     }
     
-    console.log(`RPC function ${functionName} executed successfully`);
+    if (functionName === 'get_all_tasks' && Array.isArray(data)) {
+      console.log(`RPC function ${functionName} executed successfully, returned ${data.length} tasks`);
+      // Log a sample task if available
+      if (data.length > 0) {
+        console.log('Sample task:', data[0]);
+      }
+    } else {
+      console.log(`RPC function ${functionName} executed successfully`);
+    }
+    
     return data;
   } catch (err) {
     console.error(`Exception in RPC function ${functionName}:`, err);

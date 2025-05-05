@@ -19,53 +19,50 @@ export const fetchTasks = async (
     console.log('Attempting to fetch tasks via RPC function...');
     const rpcData = await executeRpc('get_all_tasks');
     
-    if (rpcData !== null) {
+    if (rpcData !== null && Array.isArray(rpcData) && rpcData.length > 0) {
       console.log(`RPC returned task data successfully: ${rpcData.length} tasks found`);
       processAndSetTasks(rpcData, user, setTasks);
       return;
     }
     
-    console.log('RPC fetch failed or returned null, trying direct query...');
+    console.log('RPC fetch returned no data or failed, trying direct query...');
     
-    // Second attempt: Direct query with auth
-    const { data: directData, error: directError } = await supabase.auth.getSession().then(
-      async (session) => {
-        if (session.data.session) {
-          console.log('Session found, attempting direct query to project_tasks...');
-          return await supabase
-            .from('project_tasks')
-            .select('*');
-        } else {
-          console.log('No session available for direct query');
-          return { data: null, error: new Error('No session') };
-        }
-      }
-    );
+    // Second attempt: Direct query to project_tasks table
+    const { data: directData, error: directError } = await supabase
+      .from('project_tasks')
+      .select('*');
     
-    if (directError || !directData) {
-      console.error('All task fetch attempts failed:', directError);
+    if (directError) {
+      console.error('Direct project_tasks query failed:', directError);
+      toast.error('Failed to load tasks from project_tasks table');
+    } else if (directData && Array.isArray(directData) && directData.length > 0) {
+      console.log(`Retrieved ${directData.length} tasks from direct project_tasks query`);
+      processAndSetTasks(directData, user, setTasks);
+      return;
+    } else {
+      console.log('No tasks found in project_tasks table, trying legacy tasks table...');
+    }
+    
+    // Third attempt: Try legacy tasks table as last resort
+    const { data: legacyData, error: legacyError } = await supabase
+      .from('tasks')
+      .select('*');
       
-      // Third attempt: Try legacy tasks table as last resort
-      console.log('Trying legacy tasks table as last resort...');
-      const { data: legacyData, error: legacyError } = await supabase
-        .from('tasks')
-        .select('*');
-        
-      if (legacyError || !legacyData) {
-        console.error('Legacy tasks fetch failed:', legacyError);
-        toast.error('Failed to load tasks. Please check database permissions.');
-        setTasks([]);
-        return;
-      }
-      
+    if (legacyError) {
+      console.error('Legacy tasks fetch failed:', legacyError);
+      toast.error('Failed to load tasks. Please check database permissions.');
+      setTasks([]);
+      return;
+    }
+    
+    if (legacyData && Array.isArray(legacyData) && legacyData.length > 0) {
       console.log(`Retrieved ${legacyData.length} tasks from legacy table`);
       processAndSetTasks(legacyData, user, setTasks);
       return;
     }
     
-    // Process the direct data
-    console.log(`Retrieved ${directData.length} tasks from direct query`);
-    processAndSetTasks(directData, user, setTasks);
+    console.log('No tasks found in any table');
+    setTasks([]);
   } catch (error) {
     console.error('Error in fetchTasks:', error);
     toast.error('Failed to load tasks');

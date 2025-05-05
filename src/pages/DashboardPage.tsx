@@ -132,6 +132,45 @@ const DashboardPage = () => {
     }
   };
 
+  const handleForcefulRefresh = async () => {
+    if (isRefreshing) return;
+    
+    setIsRefreshing(true);
+    setHasError(false);
+    try {
+      console.log('Manual forceful refresh starting...');
+      
+      // Refresh tasks then projects
+      try {
+        await refreshTasks();
+        console.log('Tasks refreshed successfully, count:', tasks.length);
+      } catch (error) {
+        console.error('Error refreshing tasks:', error);
+        setHasError(true);
+      }
+      
+      try {
+        await refreshProjects();
+        console.log('Projects refreshed successfully, count:', projects.length);
+      } catch (error) {
+        console.error('Error refreshing projects:', error);
+        setHasError(true);
+      }
+      
+      if (hasError) {
+        toast.error("Some data couldn't be refreshed due to database errors");
+      } else {
+        toast.success("Dashboard data refreshed");
+      }
+    } catch (error) {
+      console.error("Error refreshing dashboard data:", error);
+      setHasError(true);
+      toast.error("Failed to refresh dashboard data");
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   const handleEditTask = (task: Task) => {
     setEditingTask(task);
     setIsCreateTaskOpen(true);
@@ -161,7 +200,7 @@ const DashboardPage = () => {
             <Button 
               variant="outline" 
               size={isMobile ? "sm" : "default"}
-              onClick={handleRefreshData}
+              onClick={handleForcefulRefresh}
               disabled={isRefreshing || isLoading}
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`} /> 
@@ -200,6 +239,7 @@ const DashboardPage = () => {
           todaysTasks={todaysTasks}
           upcomingTasks={upcomingTasks}
           isLoading={isLoading}
+          onRefresh={handleForcefulRefresh}
         />
 
         <TimeTracking />
