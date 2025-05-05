@@ -33,7 +33,6 @@ import {
   getTasksByDate, 
   getOverdueTasks 
 } from './taskFilters';
-import { setupRpcFunctions } from '@/integrations/supabase/client';
 import { createRpcFunctions } from '@/integrations/supabase/rpc';
 
 interface TaskContextType {
@@ -97,20 +96,15 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const setupRpc = async () => {
       try {
         console.log('Setting up RPC functions...');
-        await setupRpcFunctions();
-        setRpcSetupDone(true);
-        console.log('RPC functions setup complete');
+        const result = await createRpcFunctions();
+        setRpcSetupDone(result.success);
+        console.log(`RPC functions setup ${result.success ? 'successful' : 'failed'}`);
+        if (result.success) {
+          console.log(`Available data: ${result.tasksCount} tasks, ${result.projectsCount} projects`);
+        }
       } catch (err) {
         console.error('Failed to setup RPC functions:', err);
-        // Try creating our own RPC functions as fallback
-        try {
-          console.log('Attempting to create RPC functions directly...');
-          await createRpcFunctions();
-          console.log('Direct RPC function creation complete');
-          setRpcSetupDone(true);
-        } catch (createErr) {
-          console.error('Failed to create RPC functions directly:', createErr);
-        }
+        setRpcSetupDone(false);
       }
     };
     

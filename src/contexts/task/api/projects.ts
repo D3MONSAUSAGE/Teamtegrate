@@ -17,29 +17,7 @@ export const fetchProjects = async (
     
     if (rpcData !== null && Array.isArray(rpcData)) {
       console.log(`RPC returned project data successfully: ${rpcData.length} projects found`);
-      console.log('Projects data from API:', rpcData);
-      
-      const formattedProjects = rpcData.map(project => ({
-        id: project.id,
-        title: project.title || '',
-        description: project.description || '',
-        startDate: project.start_date ? new Date(project.start_date) : new Date(),
-        endDate: project.end_date ? new Date(project.end_date) : new Date(),
-        managerId: project.manager_id || user.id,
-        createdAt: project.created_at ? new Date(project.created_at) : new Date(),
-        updatedAt: project.updated_at ? new Date(project.updated_at) : new Date(),
-        tasks: [],
-        teamMembers: project.team_members || [],
-        budget: project.budget || 0,
-        budgetSpent: project.budget_spent || 0,
-        is_completed: project.is_completed || false,
-        status: (project.status || 'To Do') as any,
-        tasks_count: project.tasks_count || 0,
-        tags: project.tags || []
-      }));
-      
-      console.log('Formatted projects:', formattedProjects);
-      setProjects(formattedProjects);
+      processAndSetProjects(rpcData, user, setProjects);
       return;
     }
     
@@ -54,6 +32,7 @@ export const fetchProjects = async (
     if (error) {
       console.error('Error fetching projects:', error);
       toast.error('Failed to load projects');
+      setProjects([]);
       return;
     }
     
@@ -64,31 +43,44 @@ export const fetchProjects = async (
     }
     
     console.log(`Retrieved ${directData.length} projects from database`);
-    
-    const formattedProjects: Project[] = directData.map(project => ({
-      id: project.id,
-      title: project.title || '',
-      description: project.description || '',
-      startDate: project.start_date ? new Date(project.start_date) : new Date(),
-      endDate: project.end_date ? new Date(project.end_date) : new Date(),
-      managerId: project.manager_id || user.id,
-      createdAt: project.created_at ? new Date(project.created_at) : new Date(),
-      updatedAt: project.updated_at ? new Date(project.updated_at) : new Date(),
-      tasks: [],
-      teamMembers: project.team_members || [],
-      budget: project.budget || 0,
-      budgetSpent: project.budget_spent || 0,
-      is_completed: project.is_completed || false,
-      status: (project.status || 'To Do') as any,
-      tasks_count: project.tasks_count || 0,
-      tags: project.tags || []
-    }));
-    
-    console.log('Setting projects, final count:', formattedProjects.length);
-    setProjects(formattedProjects);
+    processAndSetProjects(directData, user, setProjects);
   } catch (error) {
     console.error('Error in fetchProjects:', error);
     toast.error('Failed to load projects');
     setProjects([]);
   }
+};
+
+// Helper function to process and format projects
+const processAndSetProjects = (
+  projectData: any[],
+  user: { id: string },
+  setProjects: React.Dispatch<React.SetStateAction<Project[]>>
+) => {
+  if (!projectData || !Array.isArray(projectData)) {
+    setProjects([]);
+    return;
+  }
+  
+  const formattedProjects: Project[] = projectData.map(project => ({
+    id: project.id,
+    title: project.title || '',
+    description: project.description || '',
+    startDate: project.start_date ? new Date(project.start_date) : new Date(),
+    endDate: project.end_date ? new Date(project.end_date) : new Date(),
+    managerId: project.manager_id || user.id,
+    createdAt: project.created_at ? new Date(project.created_at) : new Date(),
+    updatedAt: project.updated_at ? new Date(project.updated_at) : new Date(),
+    tasks: [],
+    teamMembers: project.team_members || [],
+    budget: project.budget || 0,
+    budgetSpent: project.budget_spent || 0,
+    is_completed: project.is_completed || false,
+    status: (project.status || 'To Do') as any,
+    tasks_count: project.tasks_count || 0,
+    tags: project.tags || []
+  }));
+  
+  console.log('Setting projects, final count:', formattedProjects.length);
+  setProjects(formattedProjects);
 };

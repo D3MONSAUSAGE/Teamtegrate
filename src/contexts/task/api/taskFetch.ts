@@ -21,7 +21,7 @@ export const fetchTasks = async (
     
     if (rpcData !== null && Array.isArray(rpcData) && rpcData.length > 0) {
       console.log(`RPC returned task data successfully: ${rpcData.length} tasks found`);
-      processAndSetTasks(rpcData, user, setTasks);
+      await processAndSetTasks(rpcData, user, setTasks);
       return;
     }
     
@@ -37,7 +37,7 @@ export const fetchTasks = async (
       toast.error('Failed to load tasks from project_tasks table');
     } else if (directData && Array.isArray(directData) && directData.length > 0) {
       console.log(`Retrieved ${directData.length} tasks from direct project_tasks query`);
-      processAndSetTasks(directData, user, setTasks);
+      await processAndSetTasks(directData, user, setTasks);
       return;
     } else {
       console.log('No tasks found in project_tasks table, trying legacy tasks table...');
@@ -57,7 +57,7 @@ export const fetchTasks = async (
     
     if (legacyData && Array.isArray(legacyData) && legacyData.length > 0) {
       console.log(`Retrieved ${legacyData.length} tasks from legacy table`);
-      processAndSetTasks(legacyData, user, setTasks);
+      await processAndSetTasks(legacyData, user, setTasks);
       return;
     }
     
@@ -82,93 +82,94 @@ const processAndSetTasks = async (
     return;
   }
   
-  console.log(`Processing ${taskData.length} tasks from database:`, taskData);
-  
-  // Fetch comments for all tasks
-  const commentData = await fetchAllTaskComments();
-  
-  // Get all user IDs that are assigned to tasks to fetch their names
-  const assignedUserIds = taskData
-    .filter(task => task.assigned_to_id)
-    .map(task => task.assigned_to_id);
-
-  // Remove duplicates
-  const uniqueUserIds = [...new Set(assignedUserIds.filter(Boolean))];
-  console.log(`Found ${uniqueUserIds.length} unique assigned users`);
-  
-  // Build user name mapping
-  const userMap = await resolveUserNames(uniqueUserIds as string[]);
-  
-  // Process task data with comments and user information
-  let tasks: Task[] = taskData.map((task: any) => {
-    const taskComments = commentData && Array.isArray(commentData)
-      ? commentData
-          .filter(comment => comment.task_id === task.id)
-          .map(comment => ({
-            id: comment.id,
-            userId: comment.user_id,
-            userName: comment.user_id,
-            text: comment.content,
-            createdAt: new Date(comment.created_at || new Date())
-          }))
-      : [];
-
-    // Get the assigned user name from our map
-    const assignedUserName = task.assigned_to_id ? userMap.get(task.assigned_to_id) : undefined;
-
-    const parseDate = (dateStr: string | null): Date => {
-      if (!dateStr) return new Date();
-      return new Date(dateStr);
-    };
-
-    return {
-      id: task.id,
-      userId: user.id, // Use the current user's ID 
-      projectId: task.project_id,
-      title: task.title || '',
-      description: task.description || '',
-      deadline: parseDate(task.deadline),
-      priority: (task.priority as Task['priority']) || 'Medium',
-      status: (task.status || 'To Do') as Task['status'],
-      createdAt: parseDate(task.created_at),
-      updatedAt: parseDate(task.updated_at),
-      completedAt: task.completed_at ? parseDate(task.completed_at) : undefined,
-      assignedToId: task.assigned_to_id,
-      assignedToName: assignedUserName,
-      comments: taskComments,
-      cost: task.cost || 0,
-      tags: task.tags || []
-    };
-  });
-
-  // Resolve user names for comments
-  if (commentData && Array.isArray(commentData) && commentData.length > 0) {
-    // Extract user IDs from comments
-    const commentUserIds: string[] = [];
-    commentData.forEach(comment => {
-      if (comment.user_id && typeof comment.user_id === 'string') {
-        commentUserIds.push(comment.user_id);
-      }
-    });
+  try {
+    console.log(`Processing ${taskData.length} tasks from database`);
     
-    // Only proceed if we have valid user IDs
-    if (commentUserIds.length > 0) {
-      const uniqueCommentUserIds = [...new Set(commentUserIds)];
-      const commentUserMap = await resolveUserNames(uniqueCommentUserIds);
+    // Fetch comments for all tasks
+    const commentData = await fetchAllTaskComments();
+    
+    // Get all user IDs that are assigned to tasks
+    const assignedUserIds = taskData
+      .filter(task => task.assigned_to_id)
+      .map(task => task.assigned_to_id);
+    
+    // Remove duplicates
+    const uniqueUserIds = [...new Set(assignedUserIds.filter(Boolean))];
+    console.log(`Found ${uniqueUserIds.length} unique assigned users`);
+    
+    // Build user name mapping
+    const userMap = await resolveUserNames(uniqueUserIds as string[]);
+    
+    // Process task data with comments and user information
+    let tasks: Task[] = taskData.map((task: any) => {
+      // Get task comments
+      const taskComments = commentData && Array.isArray(commentData)
+        ? commentData
+            .filter(comment => comment.task_id === task.id)
+            .map(comment => ({
+              id: comment.id,
+              userId: comment.user_id,
+              userName: comment.user_id,
+              text: comment.content,
+              createdAt: new Date(comment.created_at || new Date())
+            }))
+        : [];
+  
+      // Get the assigned user name from our map
+      const assignedUserName = task.assigned_to_id ? userMap.get(task.assigned_to_id) : undefined;
+  
+      // Helper function to safely parse dates
+      const parseDate = (dateStr: string | null): Date => {
+        if (!dateStr) return new Date();
+        return new Date(dateStr);
+      };
+  
+      return {
+        id: task.id,
+        userId: user.id, // Use the current user's ID
+        projectId: task.project_id,
+        title: task.title || '',
+        description: task.description || '',
+        deadline: parseDate(task.deadline),
+        priority: (task.priority as Task['priority']) || 'Medium',
+        status: (task.status || 'To Do') as Task['status'],
+        createdAt: parseDate(task.created_at),
+        updatedAt: parseDate(task.updated_at),
+        completedAt: task.completed_at ? parseDate(task.completed_at) : undefined,
+        assignedToId: task.assigned_to_id,
+        assignedToName: assignedUserName,
+        comments: taskComments,
+        cost: task.cost || 0,
+        tags: task.tags || []
+      };
+    });
+  
+    // Resolve user names for comments
+    if (commentData && Array.isArray(commentData) && commentData.length > 0) {
+      // Extract user IDs from comments
+      const commentUserIds = commentData
+        .filter(comment => comment.user_id && typeof comment.user_id === 'string')
+        .map(comment => comment.user_id);
       
-      tasks = tasks.map(task => ({
-        ...task,
-        comments: task.comments?.map(comment => ({
-          ...comment,
-          userName: comment.userId && commentUserMap.get(comment.userId) || comment.userName
-        }))
-      }));
+      if (commentUserIds.length > 0) {
+        const uniqueCommentUserIds = [...new Set(commentUserIds)];
+        const commentUserMap = await resolveUserNames(uniqueCommentUserIds);
+        
+        tasks = tasks.map(task => ({
+          ...task,
+          comments: task.comments?.map(comment => ({
+            ...comment,
+            userName: comment.userId && commentUserMap.get(comment.userId) || comment.userName
+          }))
+        }));
+      }
     }
+  
+    logTaskFetchResults(tasks);
+    console.log('Setting tasks, final count:', tasks.length);
+    setTasks(tasks);
+  } catch (error) {
+    console.error('Error processing task data:', error);
+    setTasks([]);
   }
-
-  // Log detailed information about the task fetch results
-  logTaskFetchResults(tasks);
-
-  console.log('Setting tasks, final count:', tasks.length);
-  setTasks(tasks);
 };
