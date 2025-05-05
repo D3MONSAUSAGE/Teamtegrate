@@ -29,7 +29,8 @@ export const addTask = async (
       deadline: task.deadline,
       priority: task.priority,
       projectId: task.projectId,
-      assignedToId: task.assignedToId
+      assignedToId: task.assignedToId,
+      assignedToName: task.assignedToName
     });
 
     // First try creating the task in the project_tasks table (preferred)
@@ -98,7 +99,7 @@ export const addTask = async (
       console.log('Task created successfully in legacy table:', data);
     }
 
-    // Create new task object for state updates
+    // Create new task object for state updates with correctly assigned user
     const newTask: Task = {
       id: taskId,
       userId: user.id,
@@ -111,11 +112,17 @@ export const addTask = async (
       createdAt: now,
       updatedAt: now,
       assignedToId: task.assignedToId,
-      assignedToName: task.assignedToName,
+      assignedToName: task.assignedToName, // Make sure this is correctly passed
       tags: [],
       comments: [],
       cost: task.cost || 0,
     };
+
+    console.log('New task object for state update:', {
+      id: newTask.id,
+      assignedToId: newTask.assignedToId,
+      assignedToName: newTask.assignedToName
+    });
 
     // Update local state
     setTasks(prevTasks => [...prevTasks, newTask]);

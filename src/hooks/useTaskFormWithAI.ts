@@ -14,9 +14,13 @@ export const useTaskFormWithAI = (editingTask?: Task, currentProjectId?: string)
     editingTask?.deadline ? new Date(editingTask.deadline) : new Date()
   );
   
-  const [timeInput, setTimeInput] = useState(
-    editingTask?.deadline ? format(new Date(editingTask.deadline), 'HH:mm') : "12:00"
-  );
+  const [timeInput, setTimeInput] = useState(() => {
+    if (editingTask?.deadline) {
+      const date = new Date(editingTask.deadline);
+      return format(date, 'HH:mm');
+    }
+    return "12:00";
+  });
 
   // Set default values for the form
   const form = useForm({
@@ -52,6 +56,12 @@ export const useTaskFormWithAI = (editingTask?: Task, currentProjectId?: string)
       setSelectedMember(editingTask.assignedToId);
       setValue('assignedToId', editingTask.assignedToId || '');
       setValue('assignedToName', editingTask.assignedToName || '');
+      
+      console.log('Form values set for editing task:', {
+        title: editingTask.title,
+        assignedToId: editingTask.assignedToId,
+        assignedToName: editingTask.assignedToName
+      });
     } else {
       // For new tasks
       const today = new Date();
@@ -89,6 +99,7 @@ export const useTaskFormWithAI = (editingTask?: Task, currentProjectId?: string)
       const newDate = new Date(deadlineDate);
       newDate.setHours(hours || 0, minutes || 0);
       setValue('deadline', newDate.toISOString());
+      console.log(`Time updated to ${newTimeInput}, new deadline:`, newDate);
     }
   };
 

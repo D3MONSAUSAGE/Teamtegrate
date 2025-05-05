@@ -28,23 +28,59 @@ export const assignTaskToUser = async (
     // Find user's name if not provided or get updated name
     let actualUserName = userName;
     if ((!actualUserName || actualUserName === userId) && userId) {
-      actualUserName = await fetchUserInfo(userId) || userName;
+      console.log('Fetching user info for assignment, userId:', userId);
+      const fetchedName = await fetchUserInfo(userId);
+      if (fetchedName) {
+        actualUserName = fetchedName;
+        console.log('Got user name from DB:', actualUserName);
+      }
     }
 
-    // Only send assigned_to_id to the database
-    const { error } = await supabase
-      .from('tasks')
-      .update({ 
-        assigned_to_id: userId,
-        updated_at: now.toISOString() 
-      })
-      .eq('id', taskId);
+    console.log('Assigning task to user:', {
+      taskId,
+      userId,
+      userName: actualUserName
+    });
 
-    if (error) {
-      console.error('Error assigning task to user:', error);
-      playErrorSound();
-      toast.error('Failed to assign task to user');
-      return;
+    // Try project_tasks table first
+    let projectTableError = null;
+    try {
+      const { error } = await supabase
+        .from('project_tasks')
+        .update({ 
+          assigned_to_id: userId,
+          updated_at: now.toISOString() 
+        })
+        .eq('id', taskId);
+      
+      projectTableError = error;
+      if (error) {
+        console.error('Error assigning task in project_tasks:', error);
+      } else {
+        console.log('Successfully updated assignment in project_tasks');
+      }
+    } catch (error) {
+      console.error('Exception when updating project_tasks:', error);
+      projectTableError = error;
+    }
+
+    // Fall back to legacy tasks table if needed
+    if (projectTableError) {
+      console.log('Falling back to legacy tasks table for assignment');
+      const { error } = await supabase
+        .from('tasks')
+        .update({ 
+          assigned_to_id: userId,
+          updated_at: now.toISOString() 
+        })
+        .eq('id', taskId);
+
+      if (error) {
+        console.error('Error assigning task to user in legacy table:', error);
+        playErrorSound();
+        toast.error('Failed to assign task to user');
+        return;
+      }
     }
 
     // Find the task to send in notification
