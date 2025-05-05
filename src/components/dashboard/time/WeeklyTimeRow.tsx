@@ -57,11 +57,11 @@ const WeeklyTimeRow: React.FC<WeeklyTimeRowProps> = ({
   return (
     <TableRow 
       className={cn(
-        "transition-colors border-l-2",
+        "transition-colors border-l-2 cursor-pointer",
         isCurrentDay && "bg-primary/5 border-l-primary",
         isSelected && "bg-secondary/10 border-l-secondary",
         !isCurrentDay && !isSelected && "border-l-transparent",
-        hasEntries ? "hover:bg-muted/50 cursor-pointer" : "hover:bg-muted/30 cursor-default"
+        hasEntries ? "hover:bg-muted/50" : "hover:bg-muted/30"
       )}
       onClick={onClick}
     >

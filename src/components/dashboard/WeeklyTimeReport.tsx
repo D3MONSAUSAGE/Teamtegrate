@@ -4,9 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableHeader, TableRow, TableHead, TableBody } from "@/components/ui/table";
 import { startOfWeek, addDays, format, isSameDay, isToday } from 'date-fns';
 import WeeklyTimeRow from './time/WeeklyTimeRow';
-import { CalendarDays, Clock } from 'lucide-react';
+import { CalendarDays, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 interface WeeklyTimeReportProps {
   entries: Array<{
@@ -18,6 +19,7 @@ interface WeeklyTimeReportProps {
   weekDate?: Date;
   selectedDate?: Date;
   onDateSelect?: (date: Date) => void;
+  onWeekChange?: (direction: 'prev' | 'next' | 'current') => void;
 }
 
 const WeeklyTimeReport: React.FC<WeeklyTimeReportProps> = ({ 
@@ -56,11 +58,11 @@ const WeeklyTimeReport: React.FC<WeeklyTimeReportProps> = ({
   };
 
   return (
-    <Card className="mt-6 shadow-sm border-slate-200 dark:border-slate-700">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+    <div>
+      <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-2">
-          <CalendarDays className="h-5 w-5 text-primary" />
-          <CardTitle>Weekly Time Report</CardTitle>
+          <CalendarDays className="h-5 w-5 text-muted-foreground" />
+          <span className="text-lg font-medium">Weekly Summary</span>
         </div>
         <div className="flex items-center gap-3">
           <Badge variant="outline" className="flex items-center gap-1 px-3 py-1">
@@ -71,9 +73,10 @@ const WeeklyTimeReport: React.FC<WeeklyTimeReportProps> = ({
             {weekRange}
           </p>
         </div>
-      </CardHeader>
-      <CardContent>
-        <div className="rounded-md border overflow-hidden">
+      </div>
+
+      <Card className="border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50 hover:bg-muted/50">
@@ -103,8 +106,8 @@ const WeeklyTimeReport: React.FC<WeeklyTimeReportProps> = ({
             </TableBody>
           </Table>
         </div>
-      </CardContent>
-    </Card>
+      </Card>
+    </div>
   );
 };
 
