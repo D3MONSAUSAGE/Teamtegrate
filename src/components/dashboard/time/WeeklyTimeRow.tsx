@@ -61,14 +61,14 @@ const WeeklyTimeRow: React.FC<WeeklyTimeRowProps> = ({
         isCurrentDay && "bg-primary/5 border-l-primary",
         isSelected && "bg-secondary/10 border-l-secondary",
         !isCurrentDay && !isSelected && "border-l-transparent",
-        hasEntries ? "hover:bg-muted/50" : "hover:bg-muted/30"
+        hasEntries ? "hover:bg-muted/40" : "hover:bg-muted/20"
       )}
       onClick={onClick}
     >
       <TableCell className="font-medium">
-        <div className="flex items-center">
+        <div className="flex items-center gap-1.5">
           <span className={cn(
-            "mr-2",
+            "",
             isCurrentDay && "text-primary font-semibold"
           )}>
             {new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).format(day)}
@@ -102,12 +102,12 @@ const WeeklyTimeRow: React.FC<WeeklyTimeRowProps> = ({
         {mealBreaks + restBreaks > 0 ? (
           <Tooltip>
             <TooltipTrigger className="mx-auto block">
-              <div className="flex items-center gap-2 justify-center">
+              <div className="flex items-center gap-1 justify-center">
                 <Coffee className="h-4 w-4 text-amber-500" />
                 <span className="text-sm">{mealBreaks + restBreaks}</span>
               </div>
             </TooltipTrigger>
-            <TooltipContent>
+            <TooltipContent className="bg-white dark:bg-gray-800 border shadow-lg">
               <div className="text-sm space-y-1">
                 <p>{mealBreaks} meal break{mealBreaks !== 1 ? 's' : ''} (30 min)</p>
                 <p>{restBreaks} rest break{restBreaks !== 1 ? 's' : ''} (10 min)</p>
@@ -121,8 +121,8 @@ const WeeklyTimeRow: React.FC<WeeklyTimeRowProps> = ({
 
       <TableCell className="font-bold">
         {total > 0 ? (
-          <div className="flex items-center">
-            <Clock className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
+          <div className="flex items-center gap-1">
+            <Clock className="h-3.5 w-3.5 text-primary" />
             {formatHoursMinutes(total)}
           </div>
         ) : (
@@ -132,7 +132,7 @@ const WeeklyTimeRow: React.FC<WeeklyTimeRowProps> = ({
 
       <TableCell>
         {dayEntries.length > 0 ? (
-          <ScrollArea className="h-auto max-h-[200px] w-full pr-4">
+          <ScrollArea className="h-auto max-h-[250px] w-full pr-4">
             <div className="space-y-2">
               {dayEntries.map((entry, index) => (
                 <TimeDetailsRow key={index} entry={entry} />
@@ -140,7 +140,7 @@ const WeeklyTimeRow: React.FC<WeeklyTimeRowProps> = ({
             </div>
           </ScrollArea>
         ) : (
-          <span className="text-sm text-muted-foreground">No entries</span>
+          <span className="text-sm text-muted-foreground italic">No entries</span>
         )}
       </TableCell>
     </TableRow>

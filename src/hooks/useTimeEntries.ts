@@ -57,6 +57,22 @@ export const useTimeEntries = () => {
 
   useEffect(() => {
     fetchTimeEntries();
+    
+    // Set up realtime subscription
+    const timeEntriesSubscription = supabase
+      .channel('time_entries_changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'time_entries' }, 
+        () => {
+          console.log('Time entry change detected, refreshing data...');
+          fetchTimeEntries();
+        }
+      )
+      .subscribe();
+      
+    return () => {
+      timeEntriesSubscription.unsubscribe();
+    };
   }, [fetchTimeEntries]);
 
   const refresh = useCallback(() => {
