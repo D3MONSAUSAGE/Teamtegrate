@@ -10,6 +10,7 @@ import { exportWeeklyReportCSV } from "./weekly-performance/exportUtils";
 const WeeklyPerformanceReport: React.FC = () => {
   const {
     totalHours,
+    displayTotalHours,
     loading,
     completedThisWeek,
     completedProjectTasks,
@@ -44,7 +45,7 @@ const WeeklyPerformanceReport: React.FC = () => {
       </div>
       
       <WeeklySummaryCard
-        totalHours={totalHours}
+        totalHours={displayTotalHours}
         loading={loading}
         completedTasksCount={completedThisWeek.length}
         completedProjectTasksCount={completedProjectTasks.length}

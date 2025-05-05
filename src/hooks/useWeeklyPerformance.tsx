@@ -20,6 +20,7 @@ interface WeeklyPerformanceData {
   loading: boolean;
   totalMinutes: number;
   totalHours: string;
+  displayTotalHours: string; // Added for formatted display
   completedThisWeek: Task[];
   completedProjectTasks: Task[];
   completedPersonalTasks: Task[];
@@ -76,6 +77,8 @@ export const useWeeklyPerformance = (): WeeklyPerformanceData => {
   }, 0);
 
   const totalHours = (totalMinutes / 60).toFixed(2);
+  // Format hours for display (ensure it's never blank)
+  const displayTotalHours = totalHours === '0.00' ? '0' : totalHours;
 
   // Find this week's completed tasks and project tasks
   const completedThisWeek = tasks.filter(
@@ -100,6 +103,7 @@ export const useWeeklyPerformance = (): WeeklyPerformanceData => {
     loading,
     totalMinutes,
     totalHours,
+    displayTotalHours,
     completedThisWeek,
     completedProjectTasks,
     completedPersonalTasks,

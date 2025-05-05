@@ -32,7 +32,11 @@ const WeeklySummaryCard: React.FC<WeeklySummaryCardProps> = ({
       <CardContent className="flex flex-col gap-4 md:flex-row md:gap-12">
         <div className="flex flex-col gap-1 min-w-[150px]">
           <span className="text-muted-foreground text-xs">Total Hours Tracked</span>
-          <span className="text-2xl font-bold text-primary">{loading ? <Skeleton className="w-14 h-6" /> : `${totalHours} h`}</span>
+          {loading ? (
+            <Skeleton className="w-14 h-6" />
+          ) : (
+            <span className="text-2xl font-bold text-primary">{totalHours} h</span>
+          )}
         </div>
         <div className="flex flex-col gap-1 min-w-[150px]">
           <span className="text-muted-foreground text-xs flex gap-1 items-center"><FileCheck2 size={14}/>Completed Tasks</span>
