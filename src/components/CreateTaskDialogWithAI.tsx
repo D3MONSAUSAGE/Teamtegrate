@@ -56,34 +56,49 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
   const onSubmit = (data: any) => {
     console.log('Form submission data:', data);
     
-    // Handle the case where deadline might come as string or Date
-    const deadlineDate = typeof data.deadline === 'string' 
-      ? new Date(data.deadline)
-      : data.deadline;
+    try {
+      // Ensure we have a valid deadline
+      const deadlineDate = typeof data.deadline === 'string' 
+        ? new Date(data.deadline)
+        : data.deadline;
+      
+      if (isNaN(deadlineDate.getTime())) {
+        console.error('Invalid deadline date');
+        return;
+      }
 
-    if (isEditMode && editingTask) {
-      updateTask(editingTask.id, {
-        ...data,
-        deadline: deadlineDate,
-        assignedToId: selectedMember === "unassigned" ? undefined : selectedMember,
-        assignedToName: data.assignedToName
-      });
-    } else {
-      addTask({
-        title: data.title,
-        description: data.description,
-        priority: data.priority,
-        deadline: deadlineDate,
-        status: 'To Do',
-        userId: user?.id || '',
-        projectId: data.projectId === "none" ? undefined : data.projectId,
-        assignedToId: selectedMember === "unassigned" ? undefined : selectedMember,
-        assignedToName: data.assignedToName
-      });
+      if (isEditMode && editingTask) {
+        updateTask(editingTask.id, {
+          ...data,
+          deadline: deadlineDate,
+          assignedToId: selectedMember === "unassigned" ? undefined : selectedMember,
+          assignedToName: data.assignedToName
+        });
+      } else {
+        // Make sure we have a valid projectId or set it to undefined
+        const projectId = data.projectId === "none" ? undefined : data.projectId;
+        
+        console.log('Adding task with projectId:', projectId);
+        
+        addTask({
+          title: data.title,
+          description: data.description || '',
+          priority: data.priority,
+          deadline: deadlineDate,
+          status: 'To Do',
+          userId: user?.id || '',
+          projectId: projectId,
+          assignedToId: selectedMember === "unassigned" ? undefined : selectedMember,
+          assignedToName: data.assignedToName,
+          cost: data.cost ? Number(data.cost) : 0
+        });
+      }
+      onOpenChange(false);
+      reset();
+      setSelectedMember(undefined);
+    } catch (error) {
+      console.error('Error submitting task form:', error);
     }
-    onOpenChange(false);
-    reset();
-    setSelectedMember(undefined);
   };
 
   const handleCancel = () => {
