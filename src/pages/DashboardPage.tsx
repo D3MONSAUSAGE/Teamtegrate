@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { RefreshCw } from 'lucide-react';
 import { format, addDays, isAfter, isBefore, startOfDay, endOfDay } from 'date-fns';
 import { getTodaysTasks } from '@/contexts/task/taskFilters';
+import { toast } from '@/components/ui/sonner';
 
 const DashboardPage = () => {
   const { tasks, projects, dailyScore, refreshTasks, refreshProjects } = useTask();
@@ -19,7 +20,9 @@ const DashboardPage = () => {
   
   // Calculate today's and upcoming tasks properly
   useEffect(() => {
-    const calculateTasks = () => {
+    if (!tasks || tasks.length === 0) return;
+    
+    try {
       // Get today's tasks using the fixed filter function
       const today = getTodaysTasks(tasks);
       
@@ -30,6 +33,8 @@ const DashboardPage = () => {
       const nextWeek = addDays(now, 7);
       
       const upcoming = tasks.filter(task => {
+        if (!task.deadline) return false;
+        
         const taskDate = new Date(task.deadline);
         
         // Skip invalid dates
@@ -44,9 +49,9 @@ const DashboardPage = () => {
       // Update state with today's and upcoming tasks
       setTodaysTasks(today);
       setUpcomingTasks(upcoming);
-    };
-    
-    calculateTasks();
+    } catch (error) {
+      console.error("Error calculating tasks for dashboard:", error);
+    }
   }, [tasks]);
   
   // Initial data loading
@@ -54,11 +59,14 @@ const DashboardPage = () => {
     const loadData = async () => {
       setIsLoading(true);
       try {
-        await refreshTasks();
-        await refreshProjects();
+        await Promise.all([
+          refreshTasks(),
+          refreshProjects()
+        ]);
+        setIsLoading(false);
       } catch (error) {
         console.error('Error loading dashboard data:', error);
-      } finally {
+        toast.error("Failed to load dashboard data");
         setIsLoading(false);
       }
     };
@@ -70,11 +78,15 @@ const DashboardPage = () => {
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
     try {
-      await refreshTasks();
-      await refreshProjects();
+      await Promise.all([
+        refreshTasks(),
+        refreshProjects()
+      ]);
       console.log(`After refresh: ${tasks.length} tasks, Today's tasks: ${todaysTasks.length}`);
+      toast.success("Dashboard refreshed");
     } catch (error) {
       console.error('Error refreshing dashboard data:', error);
+      toast.error("Failed to refresh dashboard");
     } finally {
       setIsRefreshing(false);
     }
@@ -88,8 +100,6 @@ const DashboardPage = () => {
   const handleEditTask = (task: Task) => {
     // This function will be passed to child components
   };
-  
-  console.log(`Dashboard render - tasks count: ${tasks.length} projects count: ${projects.length}`);
   
   return (
     <div className="p-4 md:p-6 space-y-6">

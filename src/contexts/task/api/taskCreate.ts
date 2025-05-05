@@ -35,6 +35,7 @@ export const addTask = async (
     
     // Ensure we have a proper Date object
     const deadlineDate = new Date(task.deadline);
+    
     // Format deadline as ISO string for database storage
     const formattedDeadline = deadlineDate.toISOString();
 
@@ -65,52 +66,20 @@ export const addTask = async (
       cost: task.cost || 0,
     };
 
-    // First try creating the task in the project_tasks table (preferred)
-    let success = false;
-    let projectTaskData = null;
-    
-    try {
-      const { data, error } = await supabase
-        .from('project_tasks')
-        .insert([taskData])
-        .select('*');
+    // Try creating the task in the database
+    const { data, error } = await supabase
+      .from('tasks')
+      .insert([taskData])
+      .select('*');
 
-      if (!error) {
-        console.log('Task created successfully in project_tasks:', data);
-        projectTaskData = data;
-        success = true;
-      } else {
-        console.error('Error adding to project_tasks:', error);
-      }
-    } catch (err) {
-      console.error('Exception when adding to project_tasks:', err);
+    if (error) {
+      console.error('Error adding task:', error);
+      playErrorSound();
+      toast.error('Failed to create task');
+      return;
     }
 
-    // Fall back to legacy tasks table if project_tasks failed
-    if (!success) {
-      console.log('Falling back to legacy tasks table');
-      const legacyTaskData = {
-        ...taskData,
-        user_id: user.id,
-      };
-
-      const { data, error } = await supabase
-        .from('tasks')
-        .insert([legacyTaskData])
-        .select('*');
-
-      if (error) {
-        console.error('Error adding task to legacy table:', error);
-        playErrorSound();
-        toast.error('Failed to create task');
-        return;
-      }
-
-      console.log('Task created successfully in legacy table:', data);
-      projectTaskData = data;
-    }
-
-    // Create new task object for state updates with correctly assigned user
+    // Create new task object for state updates
     const newTask: Task = {
       id: taskId,
       userId: user.id,

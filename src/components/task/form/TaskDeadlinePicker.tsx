@@ -6,7 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Button } from "@/components/ui/button";
 import { CalendarIcon, Clock } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { format, isValid, parseISO } from "date-fns";
+import { format, isValid, parseISO, set } from "date-fns";
 
 interface TaskDeadlinePickerProps {
   date: Date | undefined;
@@ -46,30 +46,40 @@ const TaskDeadlinePicker: React.FC<TaskDeadlinePickerProps> = ({
   const handleInitialDateSelect = (selectedDate: Date | undefined) => {
     if (!selectedDate) return;
     
-    // If we're setting the date for the first time, also set a default time (noon)
-    if (!date) {
-      const newDate = new Date(selectedDate);
-      newDate.setHours(12, 0, 0, 0);
-      console.log('Setting initial date with default time (noon):', newDate.toISOString());
-      onDateChange(newDate);
-    } else {
-      // Preserve the existing time when changing just the date
-      const newDate = new Date(selectedDate);
-      if (timeInput) {
-        try {
-          const [hours, minutes] = timeInput.split(':').map(Number);
-          newDate.setHours(hours || 0, minutes || 0, 0, 0);
-        } catch (e) {
-          console.error('Error parsing time for date selection:', e);
-          // Fallback to noon
+    try {
+      // If we're setting the date for the first time, also set a default time (noon)
+      if (!date) {
+        const newDate = new Date(selectedDate);
+        newDate.setHours(12, 0, 0, 0);
+        console.log('Setting initial date with default time (noon):', newDate.toISOString());
+        onDateChange(newDate);
+      } else {
+        // Preserve the existing time when changing just the date
+        const newDate = new Date(selectedDate);
+        
+        if (timeInput) {
+          try {
+            const [hours, minutes] = timeInput.split(':').map(Number);
+            newDate.setHours(hours || 0, minutes || 0, 0, 0);
+          } catch (e) {
+            console.error('Error parsing time for date selection:', e);
+            // Fallback to noon
+            newDate.setHours(12, 0, 0, 0);
+          }
+        } else {
+          // Default to noon if no time input
           newDate.setHours(12, 0, 0, 0);
         }
-      } else {
-        // Default to noon if no time input
-        newDate.setHours(12, 0, 0, 0);
+        
+        console.log('Updated date with preserved time:', newDate.toISOString());
+        onDateChange(newDate);
       }
-      console.log('Updated date with preserved time:', newDate.toISOString());
-      onDateChange(newDate);
+    } catch (err) {
+      console.error("Error in handleInitialDateSelect:", err);
+      // Fallback to a safe default
+      const safeDate = new Date(selectedDate);
+      safeDate.setHours(12, 0, 0, 0);
+      onDateChange(safeDate);
     }
   };
 
@@ -117,6 +127,18 @@ const TaskDeadlinePicker: React.FC<TaskDeadlinePickerProps> = ({
                 onChange={(e) => {
                   console.log('Time changed to:', e.target.value);
                   onTimeChange(e);
+                  
+                  // Also update the date with the new time
+                  if (date && e.target.value) {
+                    try {
+                      const [hours, minutes] = e.target.value.split(':').map(Number);
+                      const newDate = new Date(date);
+                      newDate.setHours(hours || 0, minutes || 0);
+                      onDateChange(newDate);
+                    } catch (err) {
+                      console.error("Error updating date with new time:", err);
+                    }
+                  }
                 }}
                 className="w-[120px]"
               />

@@ -1,6 +1,6 @@
 
 import { Task, Project, TaskStatus, TaskPriority } from '@/types';
-import { isToday, isSameDay, startOfDay, parseISO, isValid, endOfDay } from 'date-fns';
+import { isToday, isSameDay, startOfDay, parseISO, isValid, endOfDay, isAfter, isBefore } from 'date-fns';
 
 // Helper function to safely parse date strings
 const safeParseDate = (dateStr: string | Date): Date | null => {
@@ -13,7 +13,7 @@ const safeParseDate = (dateStr: string | Date): Date | null => {
     }
     
     // Try to parse the string as a date
-    const parsedDate = parseISO(dateStr);
+    const parsedDate = parseISO(dateStr.toString());
     return isValid(parsedDate) ? parsedDate : null;
   } catch (error) {
     console.error("Error parsing date:", dateStr, error);
@@ -65,6 +65,8 @@ export const getTodaysTasks = (tasks: Task[]): Task[] => {
   const endToday = endOfDay(today);
   
   const todaysTasks = tasks.filter(task => {
+    if (!task.deadline) return false;
+    
     const taskDate = safeParseDate(task.deadline);
     if (!taskDate) return false;
     
@@ -88,6 +90,7 @@ export const getOverdueTasks = (tasks: Task[]): Task[] => {
   
   return tasks.filter(task => {
     if (task.status === 'Completed') return false;
+    if (!task.deadline) return false;
     
     const taskDate = safeParseDate(task.deadline);
     if (!taskDate) return false;
