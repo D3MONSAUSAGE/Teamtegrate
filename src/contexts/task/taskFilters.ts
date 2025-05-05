@@ -1,6 +1,6 @@
 
 import { Task, Project, TaskStatus, TaskPriority } from '@/types';
-import { isToday, isSameDay, startOfDay, parseISO, isValid } from 'date-fns';
+import { isToday, isSameDay, startOfDay, parseISO, isValid, endOfDay } from 'date-fns';
 
 // Helper function to safely parse date strings
 const safeParseDate = (dateStr: string | Date): Date | null => {
@@ -46,23 +46,40 @@ export const getTasksByDate = (date: Date, tasks: Task[]): Task[] => {
   if (!date || !isValid(date)) return [];
   
   const targetDate = startOfDay(date);
+  const targetEndOfDay = endOfDay(date);
   
   return tasks.filter(task => {
     const taskDate = safeParseDate(task.deadline);
     if (!taskDate) return false;
     
-    return isSameDay(taskDate, targetDate);
+    // Consider a task as due on a date if it falls anywhere within that date
+    return taskDate >= targetDate && taskDate <= targetEndOfDay;
   });
 };
 
 // Get tasks scheduled for today - with improved validation
 export const getTodaysTasks = (tasks: Task[]): Task[] => {
-  return tasks.filter(task => {
+  console.log(`Filtering today's tasks from ${tasks.length} total tasks`);
+  const today = new Date();
+  const startToday = startOfDay(today);
+  const endToday = endOfDay(today);
+  
+  const todaysTasks = tasks.filter(task => {
     const taskDate = safeParseDate(task.deadline);
     if (!taskDate) return false;
     
-    return isToday(taskDate);
+    // Check if task deadline falls within today (between start and end of today)
+    const isTaskToday = taskDate >= startToday && taskDate <= endToday;
+    
+    if (isTaskToday) {
+      console.log(`Task "${task.title}" (${taskDate.toISOString()}) is due today`);
+    }
+    
+    return isTaskToday;
   });
+  
+  console.log(`Found ${todaysTasks.length} tasks due today`);
+  return todaysTasks;
 };
 
 // Get overdue tasks - with improved validation

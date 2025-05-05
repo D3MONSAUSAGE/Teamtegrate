@@ -11,7 +11,9 @@ export const useTaskFormWithAI = (editingTask?: Task, currentProjectId?: string)
       const date = new Date(editingTask.deadline);
       return isValid(date) ? date : new Date();
     }
-    return new Date();
+    const now = new Date();
+    now.setHours(12, 0, 0, 0); // Set default time to noon
+    return now;
   };
   
   // Get initial time from editing task or use noon
@@ -62,6 +64,7 @@ export const useTaskFormWithAI = (editingTask?: Task, currentProjectId?: string)
           // Handle invalid date
           console.warn('Invalid date in editing task:', editingTask.deadline);
           const now = new Date();
+          now.setHours(12, 0, 0, 0);
           setDeadlineDate(now);
           setTimeInput('12:00');
           setValue('deadline', now.toISOString());
@@ -86,12 +89,14 @@ export const useTaskFormWithAI = (editingTask?: Task, currentProjectId?: string)
         console.error('Error setting form values:', error);
         // Set fallback values
         const now = new Date();
+        now.setHours(12, 0, 0, 0);
         setDeadlineDate(now);
         setTimeInput('12:00');
       }
     } else {
       // For new tasks, initialize with current date and noon
       const today = new Date();
+      today.setHours(12, 0, 0, 0);
       setDeadlineDate(today);
       setTimeInput("12:00");
       setValue('deadline', today.toISOString());
@@ -113,7 +118,7 @@ export const useTaskFormWithAI = (editingTask?: Task, currentProjectId?: string)
       try {
         const [hours, minutes] = timeInput.split(':').map(Number);
         const newDate = new Date(date);
-        newDate.setHours(hours || 0, minutes || 0, 0, 0);
+        newDate.setHours(hours || 12, minutes || 0, 0, 0);
         setValue('deadline', newDate.toISOString());
         console.log(`Date changed to ${date.toDateString()}, new deadline with time:`, newDate.toISOString());
       } catch (error) {
@@ -121,7 +126,10 @@ export const useTaskFormWithAI = (editingTask?: Task, currentProjectId?: string)
         setValue('deadline', date.toISOString());
       }
     } else {
-      setValue('deadline', date.toISOString());
+      // Default to noon if no time set
+      const newDate = new Date(date);
+      newDate.setHours(12, 0, 0, 0);
+      setValue('deadline', newDate.toISOString());
     }
   };
 
@@ -134,7 +142,7 @@ export const useTaskFormWithAI = (editingTask?: Task, currentProjectId?: string)
       try {
         const [hours, minutes] = newTimeInput.split(':').map(Number);
         const newDate = new Date(deadlineDate);
-        newDate.setHours(hours || 0, minutes || 0, 0, 0);
+        newDate.setHours(hours || 12, minutes || 0, 0, 0);
         setValue('deadline', newDate.toISOString());
         console.log(`Time updated to ${newTimeInput}, new deadline with date:`, newDate.toISOString());
       } catch (error) {

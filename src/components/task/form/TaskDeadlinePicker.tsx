@@ -50,9 +50,26 @@ const TaskDeadlinePicker: React.FC<TaskDeadlinePickerProps> = ({
     if (!date) {
       const newDate = new Date(selectedDate);
       newDate.setHours(12, 0, 0, 0);
+      console.log('Setting initial date with default time (noon):', newDate.toISOString());
       onDateChange(newDate);
     } else {
-      onDateChange(selectedDate);
+      // Preserve the existing time when changing just the date
+      const newDate = new Date(selectedDate);
+      if (timeInput) {
+        try {
+          const [hours, minutes] = timeInput.split(':').map(Number);
+          newDate.setHours(hours || 0, minutes || 0, 0, 0);
+        } catch (e) {
+          console.error('Error parsing time for date selection:', e);
+          // Fallback to noon
+          newDate.setHours(12, 0, 0, 0);
+        }
+      } else {
+        // Default to noon if no time input
+        newDate.setHours(12, 0, 0, 0);
+      }
+      console.log('Updated date with preserved time:', newDate.toISOString());
+      onDateChange(newDate);
     }
   };
 
@@ -97,7 +114,10 @@ const TaskDeadlinePicker: React.FC<TaskDeadlinePickerProps> = ({
                 id="time"
                 type="time"
                 value={timeInput}
-                onChange={onTimeChange}
+                onChange={(e) => {
+                  console.log('Time changed to:', e.target.value);
+                  onTimeChange(e);
+                }}
                 className="w-[120px]"
               />
             </div>

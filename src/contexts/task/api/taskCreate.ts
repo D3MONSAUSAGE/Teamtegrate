@@ -32,13 +32,18 @@ export const addTask = async (
 
     const now = new Date();
     const taskId = uuidv4();
-    const formattedDeadline = task.deadline.toISOString();
+    
+    // Ensure we have a proper Date object
+    const deadlineDate = new Date(task.deadline);
+    // Format deadline as ISO string for database storage
+    const formattedDeadline = deadlineDate.toISOString();
 
     console.log('Creating new task with data:', {
       id: taskId,
       title: task.title,
       description: task.description,
       deadline: formattedDeadline,
+      deadlineReadable: format(deadlineDate, 'yyyy-MM-dd HH:mm:ss'),
       priority: task.priority,
       projectId: task.projectId,
       assignedToId: task.assignedToId,
@@ -104,9 +109,6 @@ export const addTask = async (
       console.log('Task created successfully in legacy table:', data);
       projectTaskData = data;
     }
-
-    // Parse the deadline properly for local state update
-    const deadlineDate = new Date(task.deadline);
 
     // Create new task object for state updates with correctly assigned user
     const newTask: Task = {
