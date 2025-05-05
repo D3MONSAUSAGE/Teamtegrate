@@ -30,7 +30,8 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
     handleEditTask,
     handleCreateTask,
     handleManualRefresh,
-    onSortByChange
+    onSortByChange,
+    refreshAfterTaskUpdate
   } = useProjectTasksView(projectId);
 
   // Log component rendering for debugging
@@ -40,9 +41,15 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
       isLoading,
       hasError: !!loadError,
       hasProject: !!project,
-      editingTask
+      editingTask,
+      taskCounts: {
+        todo: todoTasks.length,
+        inProgress: inProgressTasks.length,
+        pending: pendingTasks.length,
+        completed: completedTasks.length
+      }
     });
-  }, [projectId, isLoading, loadError, project, editingTask]);
+  }, [projectId, isLoading, loadError, project, editingTask, todoTasks, inProgressTasks, pendingTasks, completedTasks]);
 
   if (isLoading) {
     return <ProjectTasksLoading />;
@@ -82,6 +89,7 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
         onOpenChange={setIsCreateTaskOpen}
         editingTask={editingTask}
         currentProjectId={projectId}
+        onTaskCreated={refreshAfterTaskUpdate}
       />
     </>
   );

@@ -17,13 +17,15 @@ interface CreateTaskDialogProps {
   onOpenChange: (open: boolean) => void;
   editingTask?: Task;
   currentProjectId?: string;
+  onTaskCreated?: () => void;
 }
 
 const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({ 
   open, 
   onOpenChange, 
   editingTask,
-  currentProjectId 
+  currentProjectId,
+  onTaskCreated
 }) => {
   const { user } = useAuth();
   const { addTask, updateTask, projects } = useTask();
@@ -53,7 +55,7 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
     }
   }, [open, editingTask]);
 
-  const onSubmit = (data: any) => {
+  const onSubmit = async (data: any) => {
     console.log('Form submission data:', data);
     
     try {
@@ -68,7 +70,7 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
       }
 
       if (isEditMode && editingTask) {
-        updateTask(editingTask.id, {
+        await updateTask(editingTask.id, {
           ...data,
           deadline: deadlineDate,
           assignedToId: selectedMember === "unassigned" ? undefined : selectedMember,
@@ -80,7 +82,7 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
         
         console.log('Adding task with projectId:', projectId);
         
-        addTask({
+        await addTask({
           title: data.title,
           description: data.description || '',
           priority: data.priority,
@@ -93,6 +95,15 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
           cost: data.cost ? Number(data.cost) : 0
         });
       }
+      
+      // Call onTaskCreated callback to refresh the task list
+      if (onTaskCreated) {
+        console.log("Calling onTaskCreated callback");
+        setTimeout(() => {
+          onTaskCreated();
+        }, 100);
+      }
+      
       onOpenChange(false);
       reset();
       setSelectedMember(undefined);

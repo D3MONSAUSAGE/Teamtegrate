@@ -16,13 +16,15 @@ interface CreateTaskDialogProps {
   onOpenChange: (open: boolean) => void;
   editingTask?: Task;
   currentProjectId?: string;
+  onTaskCreated?: () => void;
 }
 
 const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({ 
   open, 
   onOpenChange, 
   editingTask,
-  currentProjectId 
+  currentProjectId,
+  onTaskCreated
 }) => {
   const { user } = useAuth();
   const { addTask, updateTask, projects } = useTask();
@@ -39,35 +41,48 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
     setSelectedMember
   } = useTaskForm(editingTask, currentProjectId);
 
-  const onSubmit = (data: any) => {
+  const onSubmit = async (data: any) => {
     // Handle the case where deadline might come as string or Date
     const deadlineDate = typeof data.deadline === 'string' 
       ? new Date(data.deadline)
       : data.deadline;
 
-    if (isEditMode && editingTask) {
-      updateTask(editingTask.id, {
-        ...data,
-        deadline: deadlineDate,
-        assignedToId: selectedMember === "unassigned" ? undefined : selectedMember,
-        assignedToName: data.assignedToName
-      });
-    } else {
-      addTask({
-        title: data.title,
-        description: data.description,
-        priority: data.priority,
-        deadline: deadlineDate,
-        status: 'To Do',
-        userId: user?.id || '',
-        projectId: data.projectId === "none" ? undefined : data.projectId,
-        assignedToId: selectedMember === "unassigned" ? undefined : selectedMember,
-        assignedToName: data.assignedToName
-      });
+    try {
+      if (isEditMode && editingTask) {
+        await updateTask(editingTask.id, {
+          ...data,
+          deadline: deadlineDate,
+          assignedToId: selectedMember === "unassigned" ? undefined : selectedMember,
+          assignedToName: data.assignedToName
+        });
+      } else {
+        await addTask({
+          title: data.title,
+          description: data.description,
+          priority: data.priority,
+          deadline: deadlineDate,
+          status: 'To Do',
+          userId: user?.id || '',
+          projectId: data.projectId === "none" ? undefined : data.projectId,
+          assignedToId: selectedMember === "unassigned" ? undefined : selectedMember,
+          assignedToName: data.assignedToName
+        });
+      }
+      
+      // Call the onTaskCreated callback if provided
+      if (onTaskCreated) {
+        console.log("Calling onTaskCreated callback from CreateTaskDialog");
+        setTimeout(() => {
+          onTaskCreated();
+        }, 100);
+      }
+      
+      onOpenChange(false);
+      reset();
+      setSelectedMember(undefined);
+    } catch (error) {
+      console.error("Error submitting task:", error);
     }
-    onOpenChange(false);
-    reset();
-    setSelectedMember(undefined);
   };
 
   const handleCancel = () => {

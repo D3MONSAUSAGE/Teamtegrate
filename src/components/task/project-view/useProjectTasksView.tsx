@@ -6,7 +6,7 @@ import { toast } from '@/components/ui/sonner';
 import { useProjectTasks } from './useProjectTasks';
 
 export const useProjectTasksView = (projectId: string | null) => {
-  const { tasks, projects, refreshProjects } = useTask();
+  const { tasks, projects, refreshProjects, refreshTasks } = useTask();
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
@@ -56,7 +56,8 @@ export const useProjectTasksView = (projectId: string | null) => {
       try {
         console.log(`Loading projects data for project ID: ${projectId}`);
         await refreshProjects();
-        console.log(`Successfully loaded projects data`);
+        await refreshTasks();
+        console.log(`Successfully loaded projects and tasks data`);
         setInitialLoadAttempted(true);
       } catch (error) {
         console.error('Error refreshing project data:', error);
@@ -77,7 +78,17 @@ export const useProjectTasksView = (projectId: string | null) => {
     };
     
     loadData();
-  }, [projectId, refreshProjects, retryCount, initialLoadAttempted]);
+  }, [projectId, refreshProjects, refreshTasks, retryCount, initialLoadAttempted]);
+
+  const refreshAfterTaskUpdate = useCallback(async () => {
+    console.log("Refreshing tasks after task update");
+    try {
+      await refreshTasks();
+      await refreshProjects();
+    } catch (error) {
+      console.error("Error refreshing after task update:", error);
+    }
+  }, [refreshTasks, refreshProjects]);
 
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
@@ -104,6 +115,7 @@ export const useProjectTasksView = (projectId: string | null) => {
     setLoadError(null);
     
     try {
+      await refreshTasks();
       await refreshProjects();
       toast.success("Project data refreshed successfully");
     } catch (error) {
@@ -113,7 +125,7 @@ export const useProjectTasksView = (projectId: string | null) => {
     } finally {
       setIsRefreshing(false);
     }
-  }, [projectId, refreshProjects]);
+  }, [projectId, refreshProjects, refreshTasks]);
 
   return {
     isLoading,
@@ -134,6 +146,7 @@ export const useProjectTasksView = (projectId: string | null) => {
     handleEditTask,
     handleCreateTask,
     handleManualRefresh,
-    onSortByChange: handleSortByChange
+    onSortByChange: handleSortByChange,
+    refreshAfterTaskUpdate
   };
 };
