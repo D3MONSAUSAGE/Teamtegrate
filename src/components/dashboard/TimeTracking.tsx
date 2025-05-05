@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Clock, PlusCircle, CalendarRange } from 'lucide-react';
+import { Clock, PlusCircle } from 'lucide-react';
 import WeeklyTimeReport from './WeeklyTimeReport';
 import { useTimeEntries } from '@/hooks/useTimeEntries';
 import TimeEntryDialog from './time/TimeEntryDialog';
@@ -43,68 +43,45 @@ const TimeTracking = () => {
   
   return (
     <>
-      <Card className="shadow-md border-slate-200 dark:border-slate-700 overflow-hidden bg-card">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 bg-muted/20">
+      <Card className="shadow-sm border-slate-200 dark:border-slate-700">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <div className="flex items-center space-x-2">
-            <div className="bg-primary/10 p-1.5 rounded-full">
-              <Clock className="h-5 w-5 text-primary" />
-            </div>
+            <Clock className="h-5 w-5 text-primary" />
             <CardTitle className="text-xl">Time Tracking</CardTitle>
           </div>
           <div className="flex gap-2">
             <div className="hidden lg:flex gap-1">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={handlePrevWeek}
-                className="hover:bg-muted transition-colors"
-              >
+              <Button variant="ghost" size="sm" onClick={handlePrevWeek}>
                 Previous
               </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={handleCurrentWeek}
-                className="hover:bg-muted transition-colors"
-              >
-                <CalendarRange className="h-3.5 w-3.5 mr-1" />
+              <Button variant="ghost" size="sm" onClick={handleCurrentWeek}>
                 Current Week
               </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={handleNextWeek}
-                className="hover:bg-muted transition-colors"
-              >
+              <Button variant="ghost" size="sm" onClick={handleNextWeek}>
                 Next
               </Button>
             </div>
-            <Button 
-              size="sm" 
-              onClick={handleAddTimeEntry} 
-              className="gap-1 bg-primary hover:bg-primary/90"
-            >
+            <Button size="sm" onClick={handleAddTimeEntry} className="gap-1">
               <PlusCircle className="h-4 w-4" />
               <span className="hidden sm:inline">Add Time</span>
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="p-4 md:p-6">
+        <CardContent>
           <div className="flex justify-between mb-4 md:hidden">
-            <Button variant="ghost" size="sm" onClick={handlePrevWeek} className="hover:bg-muted transition-colors">
+            <Button variant="ghost" size="sm" onClick={handlePrevWeek}>
               &larr;
             </Button>
-            <Button variant="ghost" size="sm" onClick={handleCurrentWeek} className="hover:bg-muted transition-colors">
-              <CalendarRange className="h-3.5 w-3.5 mr-1" />
+            <Button variant="ghost" size="sm" onClick={handleCurrentWeek}>
               Today
             </Button>
-            <Button variant="ghost" size="sm" onClick={handleNextWeek} className="hover:bg-muted transition-colors">
+            <Button variant="ghost" size="sm" onClick={handleNextWeek}>
               &rarr;
             </Button>
           </div>
           
           {isLoading ? (
-            <div className="space-y-4 animate-pulse">
+            <div className="space-y-4">
               <Skeleton className="h-10 w-full" />
               <div className="grid gap-2">
                 {Array.from({ length: 7 }).map((_, i) => (

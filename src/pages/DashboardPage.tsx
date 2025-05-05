@@ -188,103 +188,95 @@ const DashboardPage = () => {
   };
   
   return (
-    <div className="p-2 md:p-6 bg-background/40 min-h-screen">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col gap-4 md:gap-8 animate-fade-in">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-card/80 p-4 rounded-lg shadow-sm">
-            <div>
-              <h1 className="text-xl md:text-2xl font-bold text-foreground">Welcome, {user?.name}!</h1>
-              <p className="text-sm md:text-base text-muted-foreground">
-                {format(new Date(), "EEEE, MMMM d")} · Here's your overview
-              </p>
-            </div>
-            <div className="flex gap-2 self-start sm:self-auto">
-              <Button 
-                variant="outline" 
-                size={isMobile ? "sm" : "default"}
-                onClick={handleForcefulRefresh}
-                disabled={isRefreshing || isLoading}
-                className="hover:bg-muted/50 transition-colors"
-              >
-                <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`} /> 
-                Refresh
-              </Button>
-              <Button 
-                onClick={() => handleCreateTask()} 
-                size={isMobile ? "sm" : "default"}
-                className="bg-primary hover:bg-primary/90 transition-colors"
-              >
-                <Plus className="h-4 w-4 mr-2" /> New Task
-              </Button>
-            </div>
+    <div className="p-2 md:p-6">
+      <div className="flex flex-col gap-4 md:gap-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h1 className="text-xl md:text-2xl font-bold">Welcome, {user?.name}!</h1>
+            <p className="text-sm md:text-base text-gray-600">
+              {format(new Date(), "EEEE, MMMM d")} · Here's your overview
+            </p>
           </div>
-          
-          {/* Database status alert */}
-          {hasError && (
-            <div className="p-4 mb-4 rounded-lg border-red-300 border bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300 flex items-center gap-3 shadow-sm animate-fade-in">
-              <AlertTriangle className="h-5 w-5 flex-shrink-0" />
-              <div>
-                <p className="font-semibold">Database connection issues detected</p>
-                <p className="text-sm">There may be RLS policy recursion errors in your Supabase project.</p>
-              </div>
-            </div>
-          )}
-          
-          <TasksSummary 
-            dailyScore={dailyScore}
-            todaysTasks={todaysTasks}
-            upcomingTasks={upcomingTasks}
-            isLoading={isLoading}
-            onRefresh={handleForcefulRefresh}
-          />
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <TimeTracking />
-            
-            <AnalyticsSection 
-              tasks={tasks} 
-              projects={projects}
-            />
+          <div className="flex gap-2 self-start sm:self-auto">
+            <Button 
+              variant="outline" 
+              size={isMobile ? "sm" : "default"}
+              onClick={handleForcefulRefresh}
+              disabled={isRefreshing || isLoading}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`} /> 
+              Refresh
+            </Button>
+            <Button 
+              onClick={() => handleCreateTask()} 
+              size={isMobile ? "sm" : "default"}
+            >
+              <Plus className="h-4 w-4 mr-2" /> New Task
+            </Button>
           </div>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <DailyTasksSection 
-              tasks={todaysTasks}
-              onCreateTask={() => handleCreateTask()}
-              onEditTask={handleEditTask}
-              isLoading={isLoading}
-            />
-            
-            <UpcomingTasksSection 
-              tasks={upcomingTasks}
-              onCreateTask={() => handleCreateTask()}
-              onEditTask={handleEditTask}
-              isLoading={isLoading}
-            />
-          </div>
-          
-          {user?.role === 'manager' && (
-            <>
-              <RecentProjects 
-                projects={recentProjects}
-                onViewTasks={handleViewTasks}
-                onCreateTask={handleCreateTask}
-                onRefresh={refreshProjects}
-                isLoading={isLoading}
-              />
-              
-              <TeamManagement />
-            </>
-          )}
         </div>
         
-        <CreateTaskDialog 
-          open={isCreateTaskOpen} 
-          onOpenChange={setIsCreateTaskOpen}
-          editingTask={editingTask}
-          currentProjectId={selectedProject?.id}
+        {/* Database status alert */}
+        {hasError && (
+          <div className="p-4 mb-4 rounded border-red-300 border bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300 flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5" />
+            <div>
+              <p className="font-semibold">Database connection issues detected</p>
+              <p className="text-sm">There may be RLS policy recursion errors in your Supabase project.</p>
+            </div>
+          </div>
+        )}
+        
+        <TasksSummary 
+          dailyScore={dailyScore}
+          todaysTasks={todaysTasks}
+          upcomingTasks={upcomingTasks}
+          isLoading={isLoading}
+          onRefresh={handleForcefulRefresh}
         />
+
+        <TimeTracking />
+
+        <AnalyticsSection 
+          tasks={tasks} 
+          projects={projects}
+        />
+        
+        <DailyTasksSection 
+          tasks={todaysTasks}
+          onCreateTask={() => handleCreateTask()}
+          onEditTask={handleEditTask}
+          isLoading={isLoading}
+        />
+        
+        <UpcomingTasksSection 
+          tasks={upcomingTasks}
+          onCreateTask={() => handleCreateTask()}
+          onEditTask={handleEditTask}
+          isLoading={isLoading}
+        />
+        
+        {user?.role === 'manager' && (
+          <>
+            <RecentProjects 
+              projects={recentProjects}
+              onViewTasks={handleViewTasks}
+              onCreateTask={handleCreateTask}
+              onRefresh={refreshProjects}
+              isLoading={isLoading}
+            />
+            
+            <TeamManagement />
+          </>
+        )}
       </div>
+      
+      <CreateTaskDialog 
+        open={isCreateTaskOpen} 
+        onOpenChange={setIsCreateTaskOpen}
+        editingTask={editingTask}
+        currentProjectId={selectedProject?.id}
+      />
     </div>
   );
 };
