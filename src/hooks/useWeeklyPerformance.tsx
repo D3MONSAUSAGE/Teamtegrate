@@ -57,6 +57,10 @@ export const useWeeklyPerformance = (): WeeklyPerformanceData => {
         .lt("clock_in", new Date(weekEnd.setHours(23, 59, 59)).toISOString())
         .order("clock_in", { ascending: true });
 
+      if (error) {
+        console.error("Error fetching weekly entries:", error);
+      }
+
       setWeeklyEntries(data || []);
       setLoading(false);
     };
