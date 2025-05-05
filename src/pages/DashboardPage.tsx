@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useTask } from '@/contexts/task';
 import { useAuth } from '@/contexts/AuthContext';
 import { Task, Project } from '@/types';
-import { Plus, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Plus, RefreshCw, AlertTriangle, LayoutDashboard } from 'lucide-react';
 import CreateTaskDialog from '@/components/CreateTaskDialog';
 import { format } from 'date-fns';
 import TasksSummary from '@/components/dashboard/TasksSummary';
@@ -16,6 +16,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import AnalyticsSection from '@/components/dashboard/AnalyticsSection';
 import TimeTracking from '@/components/dashboard/TimeTracking';
 import { toast } from '@/components/ui/sonner';
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 
 const DashboardPage = () => {
   const { user } = useAuth();
@@ -190,38 +191,45 @@ const DashboardPage = () => {
   return (
     <div className="p-2 md:p-6 bg-background/40 min-h-screen">
       <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col gap-4 md:gap-8 animate-fade-in">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-card/80 p-4 rounded-lg shadow-sm">
-            <div>
-              <h1 className="text-xl md:text-2xl font-bold text-foreground">Welcome, {user?.name}!</h1>
-              <p className="text-sm md:text-base text-muted-foreground">
-                {format(new Date(), "EEEE, MMMM d")} · Here's your overview
-              </p>
-            </div>
-            <div className="flex gap-2 self-start sm:self-auto">
-              <Button 
-                variant="outline" 
-                size={isMobile ? "sm" : "default"}
-                onClick={handleForcefulRefresh}
-                disabled={isRefreshing || isLoading}
-                className="hover:bg-muted/50 transition-colors"
-              >
-                <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`} /> 
-                Refresh
-              </Button>
-              <Button 
-                onClick={() => handleCreateTask()} 
-                size={isMobile ? "sm" : "default"}
-                className="bg-primary hover:bg-primary/90 transition-colors"
-              >
-                <Plus className="h-4 w-4 mr-2" /> New Task
-              </Button>
-            </div>
-          </div>
+        <div className="flex flex-col gap-4 md:gap-6 animate-fade-in">
+          <Card className="border-slate-200 dark:border-slate-700 shadow-sm">
+            <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary/10 rounded-full">
+                  <LayoutDashboard className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl md:text-2xl font-bold text-foreground">Welcome, {user?.name}!</CardTitle>
+                  <p className="text-sm md:text-base text-muted-foreground">
+                    {format(new Date(), "EEEE, MMMM d, yyyy")} · Here's your overview
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-2 self-start sm:self-auto">
+                <Button 
+                  variant="outline" 
+                  size={isMobile ? "sm" : "default"}
+                  onClick={handleForcefulRefresh}
+                  disabled={isRefreshing || isLoading}
+                  className="border-slate-200 dark:border-slate-700 hover:bg-muted/50 transition-colors"
+                >
+                  <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`} /> 
+                  Refresh
+                </Button>
+                <Button 
+                  onClick={() => handleCreateTask()} 
+                  size={isMobile ? "sm" : "default"}
+                  className="bg-primary hover:bg-primary/90 transition-colors"
+                >
+                  <Plus className="h-4 w-4 mr-2" /> New Task
+                </Button>
+              </div>
+            </CardHeader>
+          </Card>
           
           {/* Database status alert */}
           {hasError && (
-            <div className="p-4 mb-4 rounded-lg border-red-300 border bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300 flex items-center gap-3 shadow-sm animate-fade-in">
+            <div className="p-4 mb-2 rounded-lg border-red-300 border bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300 flex items-center gap-3 shadow-sm animate-fade-in">
               <AlertTriangle className="h-5 w-5 flex-shrink-0" />
               <div>
                 <p className="font-semibold">Database connection issues detected</p>
@@ -247,7 +255,7 @@ const DashboardPage = () => {
             />
           </div>
           
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-2">
             <DailyTasksSection 
               tasks={todaysTasks}
               onCreateTask={() => handleCreateTask()}
