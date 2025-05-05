@@ -46,6 +46,13 @@ export const formatDuration = (minutes: number | null | undefined): string => {
   return `${hours}h ${mins}m`;
 };
 
+// Calculate bonus minutes based on worked time (for incentive programs, etc.)
+export const calculateBonusMinutes = (workedMinutes: number): number => {
+  // Bonus calculation logic - can be adjusted as needed
+  // Example: 5 bonus minutes for every hour worked
+  return Math.floor(workedMinutes / 60) * 5;
+};
+
 export const calculateBreakRequirements = (workedMinutes: number) => {
   // California labor law: 30min meal break for 5+ hours, 
   // second meal break for 10+ hours, 10min rest break per 4 hours
