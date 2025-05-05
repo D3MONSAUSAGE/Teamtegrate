@@ -49,35 +49,70 @@ export const getTasksByDate = (date: Date, tasks: Task[]): Task[] => {
   const targetEndOfDay = endOfDay(date);
   
   return tasks.filter(task => {
-    const taskDate = safeParseDate(task.deadline);
-    if (!taskDate) return false;
-    
-    // Consider a task as due on a date if it falls anywhere within that date
-    return taskDate >= targetDate && taskDate <= targetEndOfDay;
-  });
-};
-
-// Get tasks scheduled for today - with improved validation
-export const getTodaysTasks = (tasks: Task[]): Task[] => {
-  console.log(`Filtering today's tasks from ${tasks.length} total tasks`);
-  const today = new Date();
-  const startToday = startOfDay(today);
-  const endToday = endOfDay(today);
-  
-  const todaysTasks = tasks.filter(task => {
     if (!task.deadline) return false;
     
     const taskDate = safeParseDate(task.deadline);
     if (!taskDate) return false;
     
-    // Check if task deadline falls within today (between start and end of today)
-    const isTaskToday = taskDate >= startToday && taskDate <= endToday;
-    
-    if (isTaskToday) {
-      console.log(`Task "${task.title}" (${taskDate.toISOString()}) is due today`);
+    // Consider a task as due on a date if it falls anywhere within that date
+    return (taskDate >= targetDate && taskDate <= targetEndOfDay);
+  });
+};
+
+// Get tasks scheduled for today - completely rewritten for reliability
+export const getTodaysTasks = (tasks: Task[]): Task[] => {
+  if (!tasks || tasks.length === 0) {
+    console.log("No tasks provided to getTodaysTasks");
+    return [];
+  }
+  
+  console.log(`Filtering today's tasks from ${tasks.length} total tasks`);
+  
+  // Create exact start and end of today for comparison
+  const now = new Date();
+  const startToday = startOfDay(now);
+  const endToday = endOfDay(now);
+  
+  // Log date boundaries for debugging
+  console.log(`Today's boundaries: ${startToday.toISOString()} to ${endToday.toISOString()}`);
+  
+  const todaysTasks = tasks.filter(task => {
+    // Skip tasks without deadlines
+    if (!task.deadline) {
+      return false;
     }
     
-    return isTaskToday;
+    try {
+      // Handle all possible date formats
+      let deadlineDate: Date;
+      
+      if (task.deadline instanceof Date) {
+        deadlineDate = task.deadline;
+      } else if (typeof task.deadline === 'string') {
+        deadlineDate = new Date(task.deadline);
+      } else {
+        console.log(`Skipping task with invalid deadline type: ${typeof task.deadline}`);
+        return false;
+      }
+      
+      // Safety check for validity
+      if (!isValid(deadlineDate)) {
+        console.log(`Skipping task with invalid date: ${task.title}`);
+        return false;
+      }
+      
+      // Check if task falls within today's boundaries
+      const isTaskToday = (deadlineDate >= startToday && deadlineDate <= endToday);
+      
+      if (isTaskToday) {
+        console.log(`Task due today: "${task.title}" (${deadlineDate.toISOString()})`);
+      }
+      
+      return isTaskToday;
+    } catch (error) {
+      console.error(`Error processing task deadline for "${task.title}":`, error);
+      return false;
+    }
   });
   
   console.log(`Found ${todaysTasks.length} tasks due today`);
@@ -86,15 +121,31 @@ export const getTodaysTasks = (tasks: Task[]): Task[] => {
 
 // Get overdue tasks - with improved validation
 export const getOverdueTasks = (tasks: Task[]): Task[] => {
+  if (!tasks || tasks.length === 0) return [];
+  
   const today = startOfDay(new Date());
   
   return tasks.filter(task => {
     if (task.status === 'Completed') return false;
     if (!task.deadline) return false;
     
-    const taskDate = safeParseDate(task.deadline);
-    if (!taskDate) return false;
-    
-    return startOfDay(taskDate) < today;
+    try {
+      let deadlineDate: Date;
+      
+      if (task.deadline instanceof Date) {
+        deadlineDate = task.deadline;
+      } else if (typeof task.deadline === 'string') {
+        deadlineDate = new Date(task.deadline);
+      } else {
+        return false;
+      }
+      
+      if (!isValid(deadlineDate)) return false;
+      
+      return startOfDay(deadlineDate) < today;
+    } catch (error) {
+      console.error(`Error processing overdue task "${task.title}":`, error);
+      return false;
+    }
   });
 };

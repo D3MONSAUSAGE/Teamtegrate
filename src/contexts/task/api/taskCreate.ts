@@ -23,7 +23,28 @@ export const addTask = async (
     }
 
     // Validate the deadline date
-    if (!task.deadline || !isValid(new Date(task.deadline))) {
+    if (!task.deadline) {
+      console.error('Missing deadline date');
+      playErrorSound();
+      toast.error('Please specify a deadline date');
+      return;
+    }
+
+    let deadlineDate: Date;
+    
+    // Handle different deadline formats
+    if (task.deadline instanceof Date) {
+      deadlineDate = task.deadline;
+    } else if (typeof task.deadline === 'string') {
+      deadlineDate = new Date(task.deadline);
+    } else {
+      console.error('Invalid deadline type:', typeof task.deadline);
+      playErrorSound();
+      toast.error('Invalid deadline format');
+      return;
+    }
+    
+    if (!isValid(deadlineDate)) {
       console.error('Invalid deadline date:', task.deadline);
       playErrorSound();
       toast.error('Invalid deadline date');
@@ -32,9 +53,6 @@ export const addTask = async (
 
     const now = new Date();
     const taskId = uuidv4();
-    
-    // Ensure we have a proper Date object
-    const deadlineDate = new Date(task.deadline);
     
     // Format deadline as ISO string for database storage
     const formattedDeadline = deadlineDate.toISOString();
@@ -98,7 +116,7 @@ export const addTask = async (
       cost: task.cost || 0,
     };
 
-    console.log('New task object for state update:', {
+    console.log('Task created successfully, updating state with:', {
       id: newTask.id,
       title: newTask.title,
       deadline: format(deadlineDate, 'yyyy-MM-dd HH:mm:ss'),
