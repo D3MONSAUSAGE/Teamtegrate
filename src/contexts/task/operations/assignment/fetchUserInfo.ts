@@ -9,6 +9,17 @@ import { supabase } from '@/integrations/supabase/client';
 export const fetchUserInfo = async (userId: string): Promise<string | undefined> => {
   if (!userId) return undefined;
   
+  // Validate UUID format before sending to database
+  const isValidUuid = (id: string) => {
+    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return uuidPattern.test(id);
+  };
+
+  if (!isValidUuid(userId)) {
+    console.error('Invalid UUID format in fetchUserInfo:', userId);
+    return undefined;
+  }
+  
   try {
     // Query the users table for the user with the given ID
     const { data: userData, error } = await supabase

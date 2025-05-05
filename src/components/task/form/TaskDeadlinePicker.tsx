@@ -6,7 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Button } from "@/components/ui/button";
 import { CalendarIcon, Clock } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { format } from "date-fns";
+import { format, isValid, parseISO } from "date-fns";
 
 interface TaskDeadlinePickerProps {
   date: Date | undefined;
@@ -24,10 +24,37 @@ const TaskDeadlinePicker: React.FC<TaskDeadlinePickerProps> = ({
   error
 }) => {
   // Format the display time in a more readable format
-  const displayTime = timeInput ? format(
-    new Date(`2000-01-01T${timeInput}`), 
-    'h:mm a'
-  ) : '12:00 PM';
+  const getDisplayTime = () => {
+    if (!timeInput) return '12:00 PM';
+    
+    try {
+      // Create a dummy date with the time to format it
+      const dummyDate = new Date();
+      const [hours, minutes] = timeInput.split(':').map(Number);
+      dummyDate.setHours(hours || 0, minutes || 0);
+      
+      return isValid(dummyDate) 
+        ? format(dummyDate, 'h:mm a')
+        : '12:00 PM';
+    } catch (error) {
+      console.error('Error formatting time:', error);
+      return '12:00 PM';
+    }
+  };
+
+  // Handle initial selection if date is undefined
+  const handleInitialDateSelect = (selectedDate: Date | undefined) => {
+    if (!selectedDate) return;
+    
+    // If we're setting the date for the first time, also set a default time (noon)
+    if (!date) {
+      const newDate = new Date(selectedDate);
+      newDate.setHours(12, 0, 0, 0);
+      onDateChange(newDate);
+    } else {
+      onDateChange(selectedDate);
+    }
+  };
 
   return (
     <div className="space-y-2">
@@ -40,14 +67,14 @@ const TaskDeadlinePicker: React.FC<TaskDeadlinePickerProps> = ({
               className="w-full justify-start text-left font-normal"
             >
               <CalendarIcon className="mr-2 h-4 w-4" />
-              {date ? format(date, "PPP") : <span>Pick a date</span>}
+              {date && isValid(date) ? format(date, "PPP") : <span>Pick a date</span>}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="start">
             <Calendar
               mode="single"
               selected={date}
-              onSelect={onDateChange}
+              onSelect={handleInitialDateSelect}
               initialFocus
             />
           </PopoverContent>
@@ -60,7 +87,7 @@ const TaskDeadlinePicker: React.FC<TaskDeadlinePickerProps> = ({
               className="w-[120px] px-3 justify-between"
             >
               <Clock className="h-4 w-4 mr-1" />
-              <span className="ml-1">{displayTime}</span>
+              <span className="ml-1">{getDisplayTime()}</span>
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-2" align="start">

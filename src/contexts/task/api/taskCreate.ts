@@ -4,6 +4,7 @@ import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
 import { playSuccessSound, playErrorSound } from '@/utils/sounds';
+import { isValid, format } from 'date-fns';
 
 export const addTask = async (
   task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>,
@@ -16,51 +17,65 @@ export const addTask = async (
   try {
     if (!user) {
       console.error('No user found when creating task');
+      playErrorSound();
+      toast.error('Please log in to create tasks');
+      return;
+    }
+
+    // Validate the deadline date
+    if (!task.deadline || !isValid(new Date(task.deadline))) {
+      console.error('Invalid deadline date:', task.deadline);
+      playErrorSound();
+      toast.error('Invalid deadline date');
       return;
     }
 
     const now = new Date();
     const taskId = uuidv4();
+    const formattedDeadline = task.deadline.toISOString();
 
     console.log('Creating new task with data:', {
       id: taskId,
       title: task.title,
       description: task.description,
-      deadline: task.deadline,
+      deadline: formattedDeadline,
       priority: task.priority,
       projectId: task.projectId,
       assignedToId: task.assignedToId,
       assignedToName: task.assignedToName
     });
 
+    // Create task data for insertion
+    const taskData = {
+      id: taskId,
+      project_id: task.projectId || null,
+      title: task.title,
+      description: task.description || '',
+      deadline: formattedDeadline,
+      priority: task.priority,
+      status: task.status,
+      created_at: now.toISOString(),
+      updated_at: now.toISOString(),
+      assigned_to_id: task.assignedToId || null,
+      cost: task.cost || 0,
+    };
+
     // First try creating the task in the project_tasks table (preferred)
     let success = false;
+    let projectTaskData = null;
     
     try {
-      const { data: projectTaskData, error: projectTaskError } = await supabase
+      const { data, error } = await supabase
         .from('project_tasks')
-        .insert([
-          {
-            id: taskId,
-            project_id: task.projectId || null,
-            title: task.title,
-            description: task.description || '',
-            deadline: task.deadline.toISOString(),
-            priority: task.priority,
-            status: task.status,
-            created_at: now.toISOString(),
-            updated_at: now.toISOString(),
-            assigned_to_id: task.assignedToId || null,
-            cost: task.cost || 0,
-          },
-        ])
+        .insert([taskData])
         .select('*');
 
-      if (!projectTaskError) {
-        console.log('Task created successfully in project_tasks:', projectTaskData);
+      if (!error) {
+        console.log('Task created successfully in project_tasks:', data);
+        projectTaskData = data;
         success = true;
       } else {
-        console.error('Error adding to project_tasks:', projectTaskError);
+        console.error('Error adding to project_tasks:', error);
       }
     } catch (err) {
       console.error('Exception when adding to project_tasks:', err);
@@ -69,35 +84,29 @@ export const addTask = async (
     // Fall back to legacy tasks table if project_tasks failed
     if (!success) {
       console.log('Falling back to legacy tasks table');
+      const legacyTaskData = {
+        ...taskData,
+        user_id: user.id,
+      };
+
       const { data, error } = await supabase
         .from('tasks')
-        .insert([
-          {
-            id: taskId,
-            user_id: user.id,
-            project_id: task.projectId || null,
-            title: task.title,
-            description: task.description || '',
-            deadline: task.deadline.toISOString(),
-            priority: task.priority,
-            status: task.status,
-            created_at: now.toISOString(),
-            updated_at: now.toISOString(),
-            assigned_to_id: task.assignedToId || null,
-            cost: task.cost || 0,
-          },
-        ])
+        .insert([legacyTaskData])
         .select('*');
 
       if (error) {
         console.error('Error adding task to legacy table:', error);
-        toast.error('Failed to create task');
         playErrorSound();
+        toast.error('Failed to create task');
         return;
       }
 
       console.log('Task created successfully in legacy table:', data);
+      projectTaskData = data;
     }
+
+    // Parse the deadline properly for local state update
+    const deadlineDate = new Date(task.deadline);
 
     // Create new task object for state updates with correctly assigned user
     const newTask: Task = {
@@ -106,13 +115,13 @@ export const addTask = async (
       projectId: task.projectId,
       title: task.title,
       description: task.description || '',
-      deadline: new Date(task.deadline),
+      deadline: deadlineDate,
       priority: task.priority,
       status: task.status,
       createdAt: now,
       updatedAt: now,
       assignedToId: task.assignedToId,
-      assignedToName: task.assignedToName, // Make sure this is correctly passed
+      assignedToName: task.assignedToName, 
       tags: [],
       comments: [],
       cost: task.cost || 0,
@@ -120,6 +129,8 @@ export const addTask = async (
 
     console.log('New task object for state update:', {
       id: newTask.id,
+      title: newTask.title,
+      deadline: format(deadlineDate, 'yyyy-MM-dd HH:mm:ss'),
       assignedToId: newTask.assignedToId,
       assignedToName: newTask.assignedToName
     });

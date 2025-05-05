@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Task, Project } from '@/types';
 import { Plus, RefreshCw, AlertTriangle } from 'lucide-react';
 import CreateTaskDialog from '@/components/CreateTaskDialog';
-import { format, isToday } from 'date-fns';
+import { format } from 'date-fns';
 import TasksSummary from '@/components/dashboard/TasksSummary';
 import DailyTasksSection from '@/components/dashboard/DailyTasksSection';
 import UpcomingTasksSection from '@/components/dashboard/UpcomingTasksSection';
@@ -15,6 +15,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import AnalyticsSection from '@/components/dashboard/AnalyticsSection';
 import TimeTracking from '@/components/dashboard/TimeTracking';
 import { toast } from '@/components/ui/sonner';
+import { getTodaysTasks } from '@/contexts/task/taskFilters';
 
 const DashboardPage = () => {
   const { user } = useAuth();
@@ -28,11 +29,8 @@ const DashboardPage = () => {
   
   console.log('Dashboard render - tasks count:', tasks.length, 'projects count:', projects.length);
   
-  // Modified to use isToday from date-fns for accurate date comparison
-  const todaysTasks = tasks.filter((task) => {
-    const taskDate = new Date(task.deadline);
-    return isToday(taskDate);
-  });
+  // Use our improved date handling function from taskFilters.ts
+  const todaysTasks = getTodaysTasks(tasks);
   
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
@@ -40,10 +38,16 @@ const DashboardPage = () => {
   const nextWeek = new Date();
   nextWeek.setDate(nextWeek.getDate() + 7);
   
+  // For upcoming tasks, exclude today's tasks and only show future tasks within the next week
   const upcomingTasks = tasks.filter((task) => {
-    const taskDate = new Date(task.deadline);
-    // Exclude today's tasks and include only future tasks within the next week
-    return !isToday(taskDate) && taskDate >= tomorrow && taskDate <= nextWeek;
+    try {
+      const taskDate = new Date(task.deadline);
+      // Not today's task and within next week
+      return !taskDate || !todaysTasks.includes(task) && taskDate >= tomorrow && taskDate <= nextWeek;
+    } catch (error) {
+      console.error("Error processing task date:", task.id);
+      return false;
+    }
   }).sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime());
   
   const recentProjects = projects.slice(0, 3);
@@ -174,23 +178,33 @@ const DashboardPage = () => {
     setIsCreateTaskOpen(true);
   };
 
-  // Modified handleCreateTask to refresh after task creation
+  // Improved handleCreateTask to refresh after task creation
   const handleCreateTask = (project?: Project) => {
     setEditingTask(undefined);
     setSelectedProject(project || null);
     setIsCreateTaskOpen(true);
   };
 
-  // New function to refresh tasks after creation/editing
+  // Improved refresh logic with better error handling
   const handleTaskCreated = async () => {
     try {
       console.log("Task created/updated, refreshing data...");
       setIsRefreshing(true);
+      
+      // Add a small delay to ensure the database has updated
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      // First refresh tasks, then projects
       await refreshTasks();
       await refreshProjects();
+      
+      // Log the tasks count after refresh for debugging
+      console.log(`After refresh: ${tasks.length} tasks, Today's tasks: ${todaysTasks.length}`);
+      
       toast.success("Tasks refreshed");
     } catch (error) {
       console.error("Error refreshing after task update:", error);
+      toast.error("Error refreshing tasks. Try again or reload the page.");
     } finally {
       setIsRefreshing(false);
     }

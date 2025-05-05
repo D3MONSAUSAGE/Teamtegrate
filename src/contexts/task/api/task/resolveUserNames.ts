@@ -9,12 +9,24 @@ export const resolveUserNames = async (userIds: string[]): Promise<Map<string, s
       return userMap;
     }
     
-    console.log(`Resolving names for ${userIds.length} users`);
+    // Filter out invalid UUIDs to prevent database errors
+    const validUserIds = userIds.filter(id => {
+      // Simple UUID validation pattern
+      const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      return uuidPattern.test(id);
+    });
+    
+    if (validUserIds.length === 0) {
+      console.log('No valid UUIDs found in user IDs list');
+      return userMap;
+    }
+    
+    console.log(`Resolving names for ${validUserIds.length} valid users`);
     
     const { data: userData, error } = await supabase
       .from('users')
       .select('id, name, email')
-      .in('id', userIds);
+      .in('id', validUserIds);
     
     if (error) {
       console.error('Error fetching user data:', error);
@@ -26,7 +38,7 @@ export const resolveUserNames = async (userIds: string[]): Promise<Map<string, s
       return userMap;
     }
     
-    console.log(`Found ${userData.length} users of ${userIds.length} requested`);
+    console.log(`Found ${userData.length} users of ${validUserIds.length} requested`);
     
     userData.forEach(user => {
       userMap.set(user.id, user.name || user.email || 'Unknown User');
