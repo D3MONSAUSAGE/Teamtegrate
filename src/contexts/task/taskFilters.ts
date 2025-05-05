@@ -1,5 +1,6 @@
 
 import { Task, Project, TaskStatus, TaskPriority } from '@/types';
+import { isToday, isSameDay, startOfDay } from 'date-fns';
 
 // Filter tasks by tag
 export const getTasksWithTag = (tag: string, tasks: Task[]): Task[] => {
@@ -21,28 +22,47 @@ export const getTasksByPriority = (priority: TaskPriority, tasks: Task[]): Task[
   return tasks.filter(task => task.priority === priority);
 };
 
-// Filter tasks by date
+// Filter tasks by date - improved to handle time zones better
 export const getTasksByDate = (date: Date, tasks: Task[]): Task[] => {
-  const targetDate = new Date(date);
-  targetDate.setHours(0, 0, 0, 0);
+  const targetDate = startOfDay(date);
   
   return tasks.filter(task => {
-    const taskDate = new Date(task.deadline);
-    taskDate.setHours(0, 0, 0, 0);
-    return taskDate.getTime() === targetDate.getTime();
+    try {
+      const taskDate = new Date(task.deadline);
+      return isSameDay(taskDate, targetDate);
+    } catch (error) {
+      console.error("Invalid date in task:", task.id);
+      return false;
+    }
+  });
+};
+
+// Get tasks scheduled for today
+export const getTodaysTasks = (tasks: Task[]): Task[] => {
+  return tasks.filter(task => {
+    try {
+      const taskDate = new Date(task.deadline);
+      return isToday(taskDate);
+    } catch (error) {
+      console.error("Invalid date in task:", task.id);
+      return false;
+    }
   });
 };
 
 // Get overdue tasks
 export const getOverdueTasks = (tasks: Task[]): Task[] => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = startOfDay(new Date());
   
   return tasks.filter(task => {
     if (task.status === 'Completed') return false;
     
-    const deadlineDate = new Date(task.deadline);
-    deadlineDate.setHours(0, 0, 0, 0);
-    return deadlineDate < today;
+    try {
+      const deadlineDate = startOfDay(new Date(task.deadline));
+      return deadlineDate < today;
+    } catch (error) {
+      console.error("Invalid date in task:", task.id);
+      return false;
+    }
   });
 };

@@ -85,6 +85,7 @@ export const useTaskFormWithAI = (editingTask?: Task, currentProjectId?: string)
       const newDate = new Date(date);
       newDate.setHours(hours || 0, minutes || 0);
       setValue('deadline', newDate.toISOString());
+      console.log(`Date changed to ${date.toDateString()}, new deadline:`, newDate);
     } else {
       setValue('deadline', date.toISOString());
     }

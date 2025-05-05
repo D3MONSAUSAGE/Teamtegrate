@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Task, Project } from '@/types';
 import { Plus, RefreshCw, AlertTriangle } from 'lucide-react';
 import CreateTaskDialog from '@/components/CreateTaskDialog';
-import { format } from 'date-fns';
+import { format, isToday } from 'date-fns';
 import TasksSummary from '@/components/dashboard/TasksSummary';
 import DailyTasksSection from '@/components/dashboard/DailyTasksSection';
 import UpcomingTasksSection from '@/components/dashboard/UpcomingTasksSection';
@@ -28,24 +28,22 @@ const DashboardPage = () => {
   
   console.log('Dashboard render - tasks count:', tasks.length, 'projects count:', projects.length);
   
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  
+  // Modified to use isToday from date-fns for accurate date comparison
   const todaysTasks = tasks.filter((task) => {
     const taskDate = new Date(task.deadline);
-    taskDate.setHours(0, 0, 0, 0);
-    return taskDate.getTime() === today.getTime();
+    return isToday(taskDate);
   });
   
-  const nextWeek = new Date(today);
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  
+  const nextWeek = new Date();
   nextWeek.setDate(nextWeek.getDate() + 7);
   
   const upcomingTasks = tasks.filter((task) => {
     const taskDate = new Date(task.deadline);
-    taskDate.setHours(0, 0, 0, 0);
-    return taskDate > today && taskDate <= nextWeek;
+    // Exclude today's tasks and include only future tasks within the next week
+    return !isToday(taskDate) && taskDate >= tomorrow && taskDate <= nextWeek;
   }).sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime());
   
   const recentProjects = projects.slice(0, 3);
