@@ -18,14 +18,14 @@ const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({
   const isUnassigned = !assignedToId;
   
   // Format the display name - if empty or undefined, show "Unassigned"
-  const displayName = !isUnassigned && assignedToName && assignedToName.trim() !== '' 
-    ? assignedToName 
+  const displayName = !isUnassigned && assignedToName 
+    ? assignedToName.trim() 
     : 'Unassigned';
 
   // Debug logging for assignment troubleshooting
   console.log('TaskCardMetadata render:', {
-    assignedToId,
-    assignedToName,
+    assignedToId: assignedToId || 'none',
+    assignedToName: assignedToName || 'none',
     isUnassigned,
     displayName
   });
@@ -35,13 +35,16 @@ const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({
       <div className="flex items-center text-xs text-gray-500 gap-1">
         <Clock className="h-3 w-3 flex-shrink-0" />
         <span className="truncate">
-          {format(deadline, 'MMM d')} at {format(deadline, 'h:mm a')}
+          {format(new Date(deadline), 'MMM d')} at {format(new Date(deadline), 'h:mm a')}
         </span>
       </div>
       
       <div className="flex items-center text-xs text-gray-500 gap-1">
         <User className="h-3 w-3 flex-shrink-0" />
-        <span className="truncate max-w-[100px]" title={displayName}>
+        <span 
+          className={`truncate max-w-[100px] ${isUnassigned ? 'italic text-gray-400' : ''}`}
+          title={displayName}
+        >
           {displayName}
         </span>
       </div>

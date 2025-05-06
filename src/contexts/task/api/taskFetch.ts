@@ -7,7 +7,7 @@ import { fetchAllTaskComments } from './task/fetchAllTaskComments';
 import { resolveUserNames } from './task/resolveUserNames';
 import { logTaskFetchResults } from './task/logTaskFetchResults';
 import { executeRpc } from '@/integrations/supabase/rpc';
-import { isValid, isToday } from 'date-fns';
+import { isValid, isToday, isSameDay, format } from 'date-fns';
 
 export const fetchTasks = async (
   user: { id: string },
@@ -40,10 +40,6 @@ export const fetchTasks = async (
       toast.error('Failed to load tasks from project_tasks table');
     } else if (directData && Array.isArray(directData) && directData.length > 0) {
       console.log(`Retrieved ${directData.length} tasks from direct project_tasks query`);
-      // Log sample task ID and type to debug
-      if (directData.length > 0) {
-        console.log('Sample task ID from project_tasks:', directData[0].id, 'Type:', typeof directData[0].id);
-      }
       await processAndSetTasks(directData, user, setTasks);
       return;
     } else {
@@ -64,10 +60,6 @@ export const fetchTasks = async (
     
     if (legacyData && Array.isArray(legacyData) && legacyData.length > 0) {
       console.log(`Retrieved ${legacyData.length} tasks from legacy table`);
-      // Log sample task ID and type to debug
-      if (legacyData.length > 0) {
-        console.log('Sample task ID from legacy tasks:', legacyData[0].id, 'Type:', typeof legacyData[0].id);
-      }
       await processAndSetTasks(legacyData, user, setTasks);
       return;
     }
@@ -180,6 +172,15 @@ const processAndSetTasks = async (
       }
       
       const assignedUserName = assignedToId ? userMap.get(assignedToId) : undefined;
+      
+      // Log assignment details for debugging
+      if (assignedToId) {
+        console.log(`Task ${normalizedTaskId} assignment:`, {
+          assignedToId,
+          assignedUserName,
+          fromUserMap: userMap.has(assignedToId)
+        });
+      }
   
       return {
         id: normalizedTaskId,
@@ -222,10 +223,20 @@ const processAndSetTasks = async (
       }
     }
     
-    // Log task distribution
-    const todayTasks = tasks.filter(task => isToday(new Date(task.deadline)));
+    // Log task distribution and specifically today's tasks
+    const today = new Date();
+    const todayTasks = tasks.filter(task => {
+      const taskDate = new Date(task.deadline);
+      return isSameDay(taskDate, today);
+    });
+    
     console.log(`Found ${todayTasks.length} tasks scheduled for today. Task titles:`, 
-      todayTasks.map(t => t.title));
+      todayTasks.map(t => ({ 
+        title: t.title, 
+        date: format(new Date(t.deadline), 'yyyy-MM-dd'),
+        assignedToId: t.assignedToId,
+        assignedToName: t.assignedToName
+      })));
       
     logTaskFetchResults(tasks);
     console.log('Setting tasks, final count:', tasks.length);

@@ -8,7 +8,7 @@ import { Link } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import TaskDetailDrawer from '@/components/task/TaskDetailDrawer';
 import CreateTaskDialog from '@/components/CreateTaskDialog';
-import { isToday, format } from 'date-fns';
+import { isToday, isSameDay, format } from 'date-fns';
 
 interface DailyTasksSectionProps {
   tasks: Task[];
@@ -38,8 +38,8 @@ const DailyTasksSection: React.FC<DailyTasksSectionProps> = ({
       ? task.deadline 
       : new Date(task.deadline);
       
-    const isForToday = isToday(deadline);
-    return isForToday;
+    // Use isSameDay for more reliable comparison
+    return isSameDay(deadline, new Date());
   });
   
   // Debug log to see when tasks change

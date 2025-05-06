@@ -57,6 +57,14 @@ export const addTask = async (
       return null;
     }
     
+    // Log the incoming task data for debugging
+    console.log('Adding task with data:', { 
+      ...task,
+      deadline: task.deadline ? new Date(task.deadline).toISOString() : null,
+      assignedToId: task.assignedToId || 'none',
+      assignedToName: task.assignedToName || 'none'
+    });
+    
     // Normalize and validate the deadline
     const normalizedDeadline = normalizeDate(task.deadline);
     
@@ -84,8 +92,20 @@ export const addTask = async (
       return null;
     }
 
+    // Log the returned data from database
+    console.log('Task created successfully, returned data:', data);
+    
     // Normalize task data from database format to app format
     const newTask = normalizeTaskData(data, userId, task.assignedToName);
+    
+    // Log assignment data for the new task
+    console.log('New task assignment data:', {
+      assignedToId: newTask.assignedToId,
+      assignedToName: newTask.assignedToName,
+      fromDb: {
+        assigned_to_id: data.assigned_to_id,
+      }
+    });
     
     // Update state with the new task
     updateStateWithNewTask(newTask, setTasks, setProjects);

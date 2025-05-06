@@ -1,77 +1,65 @@
 
 import { Task } from '@/types';
-import { format } from 'date-fns';
 
 /**
- * Parses and validates a date string with fallback to a default date
- */
-const parseAndValidateDate = (dateStr: string | null | undefined, defaultDate: Date = new Date()): Date => {
-  if (!dateStr) return defaultDate;
-  
-  try {
-    const date = new Date(dateStr);
-    if (isNaN(date.getTime())) {
-      console.warn(`Invalid date string: "${dateStr}", using default date instead`);
-      return defaultDate;
-    }
-    return date;
-  } catch (e) {
-    console.warn(`Error parsing date: "${dateStr}", using default date instead:`, e);
-    return defaultDate;
-  }
-};
-
-/**
- * Normalizes a task from database format to application format
+ * Normalizes task data from database format to application format
  */
 export const normalizeTaskData = (
-  taskData: any, 
+  dbTask: any, 
   userId: string,
-  assignedToName?: string,
-  now = new Date()
+  assignedName?: string
 ): Task => {
-  // Ensure we have a valid deadline
-  const deadline = parseAndValidateDate(taskData.deadline);
-  
-  // Parse other dates with appropriate fallbacks
-  const createdAt = parseAndValidateDate(taskData.created_at, now);
-  const updatedAt = parseAndValidateDate(taskData.updated_at, now);
-  const completedAt = taskData.completed_at ? parseAndValidateDate(taskData.completed_at) : undefined;
+  // Parse dates with validation
+  const parseDate = (dateStr: string | null | undefined): Date => {
+    if (!dateStr) return new Date();
+    
+    try {
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) {
+        console.warn(`Invalid date string: "${dateStr}", using current date`);
+        return new Date();
+      }
+      return date;
+    } catch (e) {
+      console.warn(`Error parsing date: "${dateStr}"`, e);
+      return new Date();
+    }
+  };
 
-  // Normalize assigned user information - make sure we have both ID and name
-  let normalizedAssignedToId = undefined;
-  let normalizedAssignedToName = undefined;
-  
-  if (taskData.assigned_to_id) {
-    normalizedAssignedToId = String(taskData.assigned_to_id);
-    // Use task data assigned_to_name if available, fall back to provided name
-    normalizedAssignedToName = taskData.assigned_to_name || assignedToName;
+  // Handle assigned user data
+  let assignedToId = dbTask.assigned_to_id || undefined;
+  if (assignedToId && typeof assignedToId !== 'string') {
+    assignedToId = String(assignedToId);
   }
 
-  // Debug log assignment info
-  console.log('Normalizing task:', taskData.id, 'Assignment:', {
-    rawId: taskData.assigned_to_id,
-    rawName: taskData.assigned_to_name,
-    normalizedId: normalizedAssignedToId,
-    normalizedName: normalizedAssignedToName
+  // Create a normalized task object
+  const normalizedTask: Task = {
+    id: String(dbTask.id),
+    userId: userId,
+    projectId: dbTask.project_id || undefined,
+    title: dbTask.title || '',
+    description: dbTask.description || '',
+    deadline: dbTask.deadline ? parseDate(dbTask.deadline) : new Date(),
+    priority: (dbTask.priority || 'Medium') as Task['priority'],
+    status: (dbTask.status || 'To Do') as Task['status'],
+    createdAt: parseDate(dbTask.created_at),
+    updatedAt: parseDate(dbTask.updated_at),
+    completedAt: dbTask.completed_at ? parseDate(dbTask.completed_at) : undefined,
+    assignedToId: assignedToId,
+    assignedToName: assignedName || 'Unknown User',
+    comments: [],
+    cost: dbTask.cost || 0,
+    tags: dbTask.tags || []
+  };
+
+  // Log the normalized task data for debugging
+  console.log('Normalized task data:', {
+    id: normalizedTask.id,
+    title: normalizedTask.title,
+    deadline: normalizedTask.deadline.toISOString(),
+    assignedToId: normalizedTask.assignedToId || 'unassigned',
+    assignedToName: normalizedTask.assignedToName || 'unassigned'
   });
 
-  return {
-    id: String(taskData.id),
-    userId: String(userId),
-    projectId: taskData.project_id || undefined,
-    title: taskData.title || '',
-    description: taskData.description || '',
-    deadline: deadline,
-    priority: (taskData.priority as Task['priority']) || 'Medium',
-    status: (taskData.status as Task['status']) || 'To Do',
-    createdAt: createdAt,
-    updatedAt: updatedAt,
-    completedAt: completedAt,
-    assignedToId: normalizedAssignedToId,
-    assignedToName: normalizedAssignedToName,
-    tags: taskData.tags || [],
-    comments: taskData.comments || [],
-    cost: taskData.cost || 0
-  };
+  return normalizedTask;
 };

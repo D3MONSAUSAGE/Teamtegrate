@@ -1,9 +1,8 @@
-
 import { useState, useEffect, useMemo } from 'react';
 import { useTask } from '@/contexts/task';
 import { useAuth } from '@/contexts/AuthContext';
 import { Task, Project } from '@/types';
-import { startOfDay, isToday, format } from 'date-fns';
+import { startOfDay, isToday, format, isSameDay } from 'date-fns';
 import { toast } from '@/components/ui/sonner';
 
 export const useDashboardData = () => {
@@ -44,12 +43,9 @@ export const useDashboardData = () => {
     return date;
   }, [today]);
   
-  // Improved task filtering logic with better debugging
+  // Improved task filtering logic for today's tasks
   const todaysTasks = useMemo(() => {
     console.log('Filtering tasks for today, total tasks:', tasks.length);
-    
-    // Create today date object at midnight for better comparison
-    const todayStart = startOfDay(new Date());
     
     return tasks.filter((task) => {
       if (!task.deadline) {
@@ -58,7 +54,9 @@ export const useDashboardData = () => {
       
       // Convert to date object if it's a string
       const deadlineDate = new Date(task.deadline);
-      const result = isToday(deadlineDate);
+      
+      // Use isSameDay for more reliable date comparison
+      const result = isSameDay(deadlineDate, new Date());
       
       if (result) {
         console.log(`Task "${task.title}" (${task.id}) matched today's date:`, format(deadlineDate, 'yyyy-MM-dd'));

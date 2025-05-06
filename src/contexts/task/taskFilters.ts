@@ -1,5 +1,6 @@
 
 import { Task, Project, TaskStatus, TaskPriority } from '@/types';
+import { isSameDay } from 'date-fns';
 
 // Filter tasks by tag
 export const getTasksWithTag = (tag: string, tasks: Task[]): Task[] => {
@@ -21,15 +22,13 @@ export const getTasksByPriority = (priority: TaskPriority, tasks: Task[]): Task[
   return tasks.filter(task => task.priority === priority);
 };
 
-// Filter tasks by date
+// Filter tasks by date - improved with isSameDay for more reliable comparison
 export const getTasksByDate = (date: Date, tasks: Task[]): Task[] => {
-  const targetDate = new Date(date);
-  targetDate.setHours(0, 0, 0, 0);
-  
   return tasks.filter(task => {
+    if (!task.deadline) return false;
+    
     const taskDate = new Date(task.deadline);
-    taskDate.setHours(0, 0, 0, 0);
-    return taskDate.getTime() === targetDate.getTime();
+    return isSameDay(taskDate, date);
   });
 };
 
