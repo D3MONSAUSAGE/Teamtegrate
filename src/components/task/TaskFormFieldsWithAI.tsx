@@ -52,7 +52,7 @@ const TaskFormFieldsWithAI: React.FC<TaskFormFieldsProps> = ({
   };
 
   return (
-    <>
+    <div className="space-y-4">
       <TaskTitleField 
         register={register}
         errors={errors}
@@ -64,7 +64,7 @@ const TaskFormFieldsWithAI: React.FC<TaskFormFieldsProps> = ({
         setValue={setValue}
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <TaskPriorityField 
           defaultValue={editingTask?.priority || "Medium"}
           setValue={setValue}
@@ -79,14 +79,12 @@ const TaskFormFieldsWithAI: React.FC<TaskFormFieldsProps> = ({
         />
       </div>
 
-      <div className="space-y-1">
-        <TaskProjectField 
-          projects={projects}
-          currentProjectId={currentProjectId}
-          editingTask={editingTask}
-          setValue={setValue}
-        />
-      </div>
+      <TaskProjectField 
+        projects={projects}
+        currentProjectId={currentProjectId}
+        editingTask={editingTask}
+        setValue={setValue}
+      />
 
       <div className="space-y-1">
         <Label htmlFor="cost">Cost</Label>
@@ -94,11 +92,12 @@ const TaskFormFieldsWithAI: React.FC<TaskFormFieldsProps> = ({
           id="cost"
           type="number"
           step="0.01"
+          min="0"
           placeholder="Enter cost (optional)"
           {...register('cost')}
         />
       </div>
-    </>
+    </div>
   );
 };
 

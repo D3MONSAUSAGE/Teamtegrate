@@ -1,17 +1,12 @@
 
 import React from 'react';
-import { format } from 'date-fns';
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
 import { Input } from "@/components/ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { CalendarIcon, Clock } from 'lucide-react';
-import { cn } from "@/lib/utils";
 
 interface TaskDeadlinePickerProps {
   date: Date | undefined;
@@ -26,49 +21,45 @@ const TaskDeadlinePicker: React.FC<TaskDeadlinePickerProps> = ({
   timeInput,
   onDateChange,
   onTimeChange,
-  error
+  error,
 }) => {
   return (
-    <div className="space-y-2">
-      <Label>Deadline <span className="text-red-500">*</span></Label>
-      <div className="flex flex-col sm:flex-row gap-2">
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button 
-              variant="outline" 
-              className={cn(
-                "w-full sm:w-[240px] justify-start text-left font-normal",
-                !date && "text-muted-foreground"
-              )}
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {date ? format(date, "PPP") : <span>Select date</span>}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="single"
-              selected={date}
-              onSelect={onDateChange}
-              initialFocus
-              className={cn("p-3 pointer-events-auto")}
-            />
-          </PopoverContent>
-        </Popover>
-        
-        <div className="flex items-center">
-          <Clock className="mr-2 h-4 w-4" />
-          <Input
-            type="time"
+    <div className="space-y-1">
+      <Label htmlFor="deadline">Deadline</Label>
+      <div className="grid grid-cols-3 gap-2">
+        <div className="col-span-2">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                id="deadline"
+                variant={"outline"}
+                className="w-full justify-start text-left font-normal"
+                type="button"
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {date ? format(date, "MMM dd, yyyy") : <span>Pick a date</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={date}
+                onSelect={onDateChange}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+        <div className="col-span-1">
+          <Input 
+            type="time" 
             value={timeInput}
             onChange={onTimeChange}
-            className="w-[120px]"
+            className="w-full" 
           />
         </div>
       </div>
-      {error && (
-        <span className="text-xs text-red-500">{error}</span>
-      )}
+      {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
     </div>
   );
 };
