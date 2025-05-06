@@ -5,11 +5,15 @@ import { Task } from '@/types';
 import TasksSummary from '@/components/dashboard/TasksSummary';
 import DailyTasksSection from '@/components/dashboard/DailyTasksSection';
 import UpcomingTasksSection from '@/components/dashboard/UpcomingTasksSection';
+import TimeTracking from '@/components/dashboard/TimeTracking';
 import { Button } from "@/components/ui/button";
-import { RefreshCw } from 'lucide-react';
+import { PlusCircle, RefreshCw } from 'lucide-react';
 import { format, addDays, startOfDay, endOfDay } from 'date-fns';
 import { getTodaysTasks } from '@/contexts/task/taskFilters';
 import { toast } from '@/components/ui/sonner';
+import { useDialog } from '@/hooks/useDialog';
+import { useTimeTracking } from '@/hooks/useTimeTracking';
+import TimeTrackingControls from '@/components/dashboard/TimeTrackingControls';
 
 const DashboardPage = () => {
   const { tasks, projects, dailyScore, refreshTasks, refreshProjects } = useTask();
@@ -19,6 +23,33 @@ const DashboardPage = () => {
   const [upcomingTasks, setUpcomingTasks] = useState<Task[]>([]);
   const [retryCount, setRetryCount] = useState(0);
   const [dataLoadStarted, setDataLoadStarted] = useState(false);
+  const { openCreateTaskDialog } = useDialog();
+  const { currentEntry, clockIn, clockOut } = useTimeTracking();
+  const [notes, setNotes] = useState('');
+  const [elapsedTime, setElapsedTime] = useState('');
+  
+  // Track elapsed time when clocked in
+  useEffect(() => {
+    let interval: NodeJS.Timeout | undefined;
+    
+    if (currentEntry.isClocked && currentEntry.clock_in) {
+      interval = setInterval(() => {
+        const startTime = new Date(currentEntry.clock_in!).getTime();
+        const elapsed = Date.now() - startTime;
+        const hours = Math.floor(elapsed / (1000 * 60 * 60));
+        const minutes = Math.floor((elapsed % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((elapsed % (1000 * 60)) / 1000);
+        
+        setElapsedTime(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
+      }, 1000);
+    } else {
+      setElapsedTime('');
+    }
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [currentEntry]);
   
   // Calculate today's and upcoming tasks
   useEffect(() => {
@@ -151,28 +182,43 @@ const DashboardPage = () => {
     }
   }, [refreshTasks, refreshProjects, tasks.length, todaysTasks.length, isRefreshing]);
   
-  // Handlers for task operations (to be passed to child components)
-  const handleCreateTask = () => {
-    // Placeholder for task creation function
-  };
+  // Handle time tracking
+  const handleBreak = useCallback((breakType: string) => {
+    clockOut(`${breakType} break started`);
+  }, [clockOut]);
   
-  const handleEditTask = (task: Task) => {
-    // Placeholder for task editing function
-  };
+  // Create task handler
+  const handleCreateTask = useCallback(() => {
+    openCreateTaskDialog();
+  }, [openCreateTaskDialog]);
+  
+  // Edit task handler
+  const handleEditTask = useCallback((task: Task) => {
+    openCreateTaskDialog(task);
+  }, [openCreateTaskDialog]);
   
   return (
     <div className="p-4 md:p-6 space-y-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-xl md:text-2xl font-bold">Dashboard</h1>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={handleRefresh}
-          disabled={isRefreshing}
-        >
-          <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`} />
-          Refresh
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
+          <Button 
+            onClick={handleCreateTask} 
+            size="sm"
+          >
+            <PlusCircle className="h-4 w-4 mr-2" />
+            New Task
+          </Button>
+        </div>
       </div>
       
       <TasksSummary 
@@ -182,6 +228,22 @@ const DashboardPage = () => {
         isLoading={isLoading}
         onRefresh={handleRefresh}
       />
+      
+      <div className="mb-6">
+        <div className="mb-4">
+          <h2 className="text-lg font-semibold mb-2">Time Tracking</h2>
+          <TimeTrackingControls 
+            notes={notes}
+            setNotes={setNotes}
+            isClocked={currentEntry.isClocked}
+            clockIn={clockIn}
+            clockOut={clockOut}
+            handleBreak={handleBreak}
+            elapsedTime={elapsedTime}
+          />
+        </div>
+        <TimeTracking />
+      </div>
       
       <DailyTasksSection
         tasks={todaysTasks}
