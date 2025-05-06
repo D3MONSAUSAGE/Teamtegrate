@@ -36,6 +36,14 @@ const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({
                        isTomorrow ? "text-amber-500" : 
                        "text-gray-500";
 
+  // Debug logging for assignment issues
+  console.log('Task assignment details:', {
+    assignedToId,
+    assignedToName,
+    isUnassigned,
+    displayName
+  });
+
   return (
     <div className="flex items-center justify-between pt-1 md:pt-2">
       <motion.div 

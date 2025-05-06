@@ -61,6 +61,11 @@ export const useTaskDetailHelpers = (task: Task) => {
 
   // Handle assigned to name
   const getAssignedToName = () => {
+    console.log('getAssignedToName called with:', {
+      assignedToId: task.assignedToId,
+      assignedToName: task.assignedToName 
+    });
+    
     // Check if there's an assignedToId (meaning it's assigned)
     if (task.assignedToId) {
       // If we have a name, use it

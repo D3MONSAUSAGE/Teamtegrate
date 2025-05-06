@@ -23,6 +23,14 @@ const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({
     ? assignedToName 
     : isUnassigned ? 'Unassigned' : 'Loading user...';
 
+  // Debug logging for assignment troubleshooting
+  console.log('TaskCardMetadata render:', {
+    assignedToId: assignedToId,
+    assignedToName: assignedToName,
+    isUnassigned: isUnassigned,
+    displayName: displayName
+  });
+
   return (
     <div className="flex items-center justify-between pt-1 md:pt-2">
       <div className="flex items-center text-xs text-gray-500 gap-1">

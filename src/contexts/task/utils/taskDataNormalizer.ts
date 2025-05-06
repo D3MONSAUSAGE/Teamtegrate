@@ -41,6 +41,20 @@ export const normalizeTaskData = (
   const updatedAt = parseAndValidateDate(taskData.updated_at, now);
   const completedAt = taskData.completed_at ? parseAndValidateDate(taskData.completed_at) : undefined;
 
+  // Normalize assigned user information
+  const normalizedAssignedToId = taskData.assigned_to_id ? String(taskData.assigned_to_id) : undefined;
+  const normalizedAssignedToName = taskData.assigned_to_name || assignedToName;
+
+  // Log assignment info for debugging
+  if (normalizedAssignedToId) {
+    console.log('Task has assignment:', {
+      id: normalizedAssignedToId,
+      name: normalizedAssignedToName || 'Unknown',
+      rawId: taskData.assigned_to_id,
+      rawName: taskData.assigned_to_name
+    });
+  }
+
   return {
     id: taskData.id,
     userId: userId,
@@ -53,8 +67,8 @@ export const normalizeTaskData = (
     createdAt: createdAt,
     updatedAt: updatedAt,
     completedAt: completedAt,
-    assignedToId: taskData.assigned_to_id || undefined,
-    assignedToName: assignedToName,
+    assignedToId: normalizedAssignedToId,
+    assignedToName: normalizedAssignedToName,
     tags: taskData.tags || [],
     comments: taskData.comments || [],
     cost: taskData.cost || 0

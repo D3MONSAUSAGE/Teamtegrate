@@ -48,14 +48,17 @@ export const assignTaskToUser = async (
         .from('tasks')
         .update({ 
           assigned_to_id: userId,
+          assigned_to_name: actualUserName, // Add explicit assignment of user name
           updated_at: now.toISOString() 
         })
         .eq('id', normalizedTaskId);
       
       if (!error) {
         updateSuccessful = true;
+        console.log('Successfully updated tasks table with assignment');
       } else {
         dbError = error;
+        console.error('Error updating tasks table:', error);
       }
     } catch (err) {
       console.error('Error updating tasks table:', err);
@@ -68,6 +71,7 @@ export const assignTaskToUser = async (
           .from('project_tasks')
           .update({ 
             assigned_to_id: userId,
+            assigned_to_name: actualUserName, // Add explicit assignment of user name
             updated_at: now.toISOString() 
           })
           .eq('id', normalizedTaskId);
@@ -80,6 +84,8 @@ export const assignTaskToUser = async (
           playErrorSound();
           toast.error('Failed to assign task to user');
           return;
+        } else {
+          console.log('Successfully updated project_tasks table with assignment');
         }
         
         updateSuccessful = true;
@@ -92,7 +98,7 @@ export const assignTaskToUser = async (
     }
 
     // Find the task to send in notification
-    const task = tasks.find(t => t.id === normalizedTaskId);
+    const task = tasks.find(t => String(t.id) === normalizedTaskId);
     if (!task) {
       console.error('Task not found:', normalizedTaskId);
       return;
