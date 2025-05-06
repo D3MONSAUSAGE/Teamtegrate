@@ -1,20 +1,53 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Clock, PlusCircle } from 'lucide-react';
+import { Clock, PlusCircle, TimerOff } from 'lucide-react';
 import WeeklyTimeReport from './WeeklyTimeReport';
 import { useTimeEntries } from '@/hooks/useTimeEntries';
 import TimeEntryDialog from './time/TimeEntryDialog';
-import { startOfWeek, addDays, format } from 'date-fns';
+import { startOfWeek, addDays, format, differenceInSeconds } from 'date-fns';
 import { Skeleton } from "@/components/ui/skeleton";
+import TimeTrackingControls from './TimeTrackingControls';
+import { useTimeTracking } from '@/hooks/useTimeTracking';
 
 const TimeTracking = () => {
   const [showTimeEntryDialog, setShowTimeEntryDialog] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [currentWeekDate, setCurrentWeekDate] = useState<Date>(new Date());
+  const [notes, setNotes] = useState('');
+  const [elapsedTime, setElapsedTime] = useState('00:00:00');
   
   const { timeEntries, isLoading, refresh } = useTimeEntries();
+  const { currentEntry, clockIn, clockOut } = useTimeTracking();
+  
+  // Timer for elapsed time
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    
+    if (currentEntry.isClocked && currentEntry.clock_in) {
+      interval = setInterval(() => {
+        const elapsedSeconds = differenceInSeconds(
+          new Date(),
+          new Date(currentEntry.clock_in)
+        );
+        
+        const hours = Math.floor(elapsedSeconds / 3600);
+        const minutes = Math.floor((elapsedSeconds % 3600) / 60);
+        const seconds = elapsedSeconds % 60;
+        
+        setElapsedTime(
+          `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+        );
+      }, 1000);
+    } else {
+      setElapsedTime('00:00:00');
+    }
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [currentEntry]);
   
   const handleAddTimeEntry = () => {
     setShowTimeEntryDialog(true);
@@ -39,6 +72,10 @@ const TimeTracking = () => {
   
   const handleCurrentWeek = () => {
     setCurrentWeekDate(new Date());
+  };
+
+  const handleBreak = (breakType: string) => {
+    clockOut(`Taking a ${breakType} break`);
   };
   
   return (
@@ -68,6 +105,19 @@ const TimeTracking = () => {
           </div>
         </CardHeader>
         <CardContent>
+          {/* Clock in/out controls */}
+          <div className="mb-4">
+            <TimeTrackingControls
+              notes={notes}
+              setNotes={setNotes}
+              isClocked={currentEntry.isClocked}
+              clockIn={clockIn}
+              clockOut={clockOut}
+              handleBreak={handleBreak}
+              elapsedTime={elapsedTime}
+            />
+          </div>
+          
           <div className="flex justify-between mb-4 md:hidden">
             <Button variant="ghost" size="sm" onClick={handlePrevWeek}>
               &larr;
