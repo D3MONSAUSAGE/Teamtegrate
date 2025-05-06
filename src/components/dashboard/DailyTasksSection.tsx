@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import TaskCard from '@/components/task-card';
@@ -28,6 +27,11 @@ const DailyTasksSection: React.FC<DailyTasksSectionProps> = ({
   const [showDetails, setShowDetails] = useState(false);
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
+  
+  // Debug log to see when tasks change
+  useEffect(() => {
+    console.log('DailyTasksSection - tasks updated:', tasks.length);
+  }, [tasks]);
 
   const handleOpenDetails = (task: Task) => {
     setSelectedTask(task);
@@ -81,7 +85,7 @@ const DailyTasksSection: React.FC<DailyTasksSectionProps> = ({
   return (
     <div>
       <div className="flex items-center justify-between mb-3 md:mb-4">
-        <h2 className="text-lg md:text-xl font-semibold">Today's Tasks</h2>
+        <h2 className="text-lg md:text-xl font-semibold">Today's Tasks ({tasks.length})</h2>
         <Link to="/dashboard/tasks">
           <Button variant="ghost" size="sm" className="text-primary">
             View all <ChevronRight className="h-4 w-4 ml-1" />

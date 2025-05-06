@@ -34,6 +34,16 @@ const TasksSummary: React.FC<TasksSummaryProps> = ({
     }
   };
 
+  // Count tasks based on current props
+  const todaysTaskCount = todaysTasks.length;
+  const completedTodayCount = todaysTasks.filter(task => task.status === 'Completed').length;
+  const upcomingTaskCount = upcomingTasks.length;
+
+  // Debug log to track task counts
+  React.useEffect(() => {
+    console.log('TasksSummary updated - Today\'s tasks:', todaysTaskCount, 'Completed:', completedTodayCount);
+  }, [todaysTaskCount, completedTodayCount]);
+
   // Task card component to avoid duplication
   const TaskCard = ({ title, count, completed, subtitle }: { 
     title: string; 
@@ -80,13 +90,13 @@ const TasksSummary: React.FC<TasksSummaryProps> = ({
       <div className="col-span-1 md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
         <TaskCard 
           title="Today's Tasks" 
-          count={todaysTasks.length} 
-          completed={todaysTasks.filter(task => task.status === 'Completed').length}
+          count={todaysTaskCount} 
+          completed={completedTodayCount}
           subtitle=""
         />
         <TaskCard 
           title="Upcoming Tasks" 
-          count={upcomingTasks.length} 
+          count={upcomingTaskCount} 
           subtitle="Next 7 days"
         />
       </div>

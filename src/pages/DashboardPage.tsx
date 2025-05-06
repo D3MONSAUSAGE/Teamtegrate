@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
 import { useTask } from '@/contexts/task';
 import { useAuth } from '@/contexts/AuthContext';
@@ -29,27 +28,54 @@ const DashboardPage = () => {
   
   console.log('Dashboard render - tasks count:', tasks.length, 'projects count:', projects.length);
   
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
+  // Calculate today's date once
+  const today = useMemo(() => {
+    const date = new Date();
+    date.setHours(0, 0, 0, 0);
+    return date;
+  }, []);
   
-  const todaysTasks = tasks.filter((task) => {
-    const taskDate = new Date(task.deadline);
-    taskDate.setHours(0, 0, 0, 0);
-    return taskDate.getTime() === today.getTime();
-  });
+  // Memoize tomorrow's date
+  const tomorrow = useMemo(() => {
+    const date = new Date(today);
+    date.setDate(date.getDate() + 1);
+    return date;
+  }, [today]);
+
+  // Memoize next week's date
+  const nextWeek = useMemo(() => {
+    const date = new Date(today);
+    date.setDate(date.getDate() + 7);
+    return date;
+  }, [today]);
   
-  const nextWeek = new Date(today);
-  nextWeek.setDate(nextWeek.getDate() + 7);
+  // Memoize task lists to prevent recalculations on every render
+  const todaysTasks = useMemo(() => {
+    return tasks.filter((task) => {
+      if (!task.deadline) return false;
+      const taskDate = new Date(task.deadline);
+      taskDate.setHours(0, 0, 0, 0);
+      return taskDate.getTime() === today.getTime();
+    });
+  }, [tasks, today]);
   
-  const upcomingTasks = tasks.filter((task) => {
-    const taskDate = new Date(task.deadline);
-    taskDate.setHours(0, 0, 0, 0);
-    return taskDate > today && taskDate <= nextWeek;
-  }).sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime());
+  const upcomingTasks = useMemo(() => {
+    return tasks.filter((task) => {
+      if (!task.deadline) return false;
+      const taskDate = new Date(task.deadline);
+      taskDate.setHours(0, 0, 0, 0);
+      return taskDate > today && taskDate <= nextWeek;
+    }).sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime());
+  }, [tasks, today, nextWeek]);
   
-  const recentProjects = projects.slice(0, 3);
+  const recentProjects = useMemo(() => {
+    return projects.slice(0, 3);
+  }, [projects]);
+  
+  // Debug log for today's tasks
+  useEffect(() => {
+    console.log('Today\'s tasks updated:', todaysTasks.length, 'Upcoming tasks:', upcomingTasks.length);
+  }, [todaysTasks, upcomingTasks]);
   
   useEffect(() => {
     // Initial refresh when dashboard loads
@@ -187,6 +213,17 @@ const DashboardPage = () => {
     console.log("View tasks for project:", project.title);
   };
   
+  // When create task dialog closes, refresh tasks to ensure all data is up to date
+  const handleCreateTaskDialogChange = (open: boolean) => {
+    setIsCreateTaskOpen(open);
+    if (!open) {
+      // Dialog was closed, refresh tasks after a short delay
+      setTimeout(() => {
+        refreshTasks();
+      }, 500);
+    }
+  };
+  
   return (
     <div className="p-2 md:p-6">
       <div className="flex flex-col gap-4 md:gap-8">
@@ -232,7 +269,7 @@ const DashboardPage = () => {
           todaysTasks={todaysTasks}
           upcomingTasks={upcomingTasks}
           isLoading={isLoading}
-          onRefresh={handleForcefulRefresh}
+          onRefresh={refreshTasks}
         />
 
         <TimeTracking />
@@ -273,7 +310,7 @@ const DashboardPage = () => {
       
       <CreateTaskDialog 
         open={isCreateTaskOpen} 
-        onOpenChange={setIsCreateTaskOpen}
+        onOpenChange={handleCreateTaskDialogChange}
         editingTask={editingTask}
         currentProjectId={selectedProject?.id}
       />

@@ -20,6 +20,8 @@ export const addTask = async (
     const now = new Date();
     const taskId = uuidv4();
 
+    console.log('Creating new task with deadline:', task.deadline);
+
     const taskToInsert = {
       id: taskId,
       user_id: user.id,
@@ -48,6 +50,7 @@ export const addTask = async (
     }
 
     if (data) {
+      // Construct a properly formatted Task object
       const newTask: Task = {
         id: data.id,
         userId: data.user_id || user.id,
@@ -66,15 +69,19 @@ export const addTask = async (
         cost: data.cost || 0,
       };
 
+      console.log('Task created successfully, updating state with new task:', newTask);
+      
+      // Update the tasks state
       setTasks(prevTasks => [...prevTasks, newTask]);
       
+      // Update the project's tasks if needed
       if (newTask.projectId) {
         setProjects(prevProjects => 
           prevProjects.map(project => {
             if (project.id === newTask.projectId) {
               return {
                 ...project,
-                tasks: [...project.tasks, newTask]
+                tasks: [...(project.tasks || []), newTask]
               };
             }
             return project;

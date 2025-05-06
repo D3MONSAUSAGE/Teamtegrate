@@ -3,6 +3,7 @@ import { Task } from '@/types';
 import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
+import { playSuccessSound } from '@/utils/sounds';
 
 export const addTask = async (
   task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>,
@@ -13,6 +14,7 @@ export const addTask = async (
   setProjects: React.Dispatch<React.SetStateAction<any[]>>
 ): Promise<void> => {
   try {
+    console.log('Adding new task:', task);
     const newTask = {
       ...task,
       id: uuidv4(),
@@ -48,18 +50,22 @@ export const addTask = async (
       return;
     }
 
-    setTasks([...tasks, newTask]);
+    console.log('Task added successfully, adding to state');
+    // Immediately update the tasks array with the new task
+    setTasks(prevTasks => [...prevTasks, newTask]);
 
+    // Update the project's tasks if the task is assigned to a project
     if (newTask.projectId) {
       setProjects((prevProjects) =>
         prevProjects.map((project) =>
           project.id === newTask.projectId
-            ? { ...project, tasks: [...project.tasks, newTask] }
+            ? { ...project, tasks: [...(project.tasks || []), newTask] }
             : project
         )
       );
     }
 
+    playSuccessSound();
     toast.success('Task added successfully!');
   } catch (error) {
     console.error('Error adding task:', error);
