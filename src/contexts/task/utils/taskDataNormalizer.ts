@@ -27,10 +27,24 @@ export const normalizeTaskData = (
     }
   };
 
-  // Handle assigned user data
-  let assignedToId = dbTask.assigned_to_id || undefined;
-  if (assignedToId && typeof assignedToId !== 'string') {
-    assignedToId = String(assignedToId);
+  // Handle assigned user data - ensure proper data types and consistency
+  let assignedToId = dbTask.assigned_to_id;
+  let assignedToName = assignedName || dbTask.assigned_to_name;
+  
+  // Log the assigned data for debugging
+  console.log(`Task ${dbTask.id} assignment data:`, {
+    rawAssignedToId: dbTask.assigned_to_id,
+    rawAssignedToName: dbTask.assigned_to_name,
+    providedName: assignedName,
+    finalAssignedToId: assignedToId,
+    finalAssignedToName: assignedToName
+  });
+  
+  // Ensure we're consistent about nullish values
+  if (!assignedToId) {
+    assignedToId = undefined;
+    // If no ID, we should consider this unassigned regardless of name
+    assignedToName = undefined;
   }
   
   // Create a normalized task object
@@ -49,21 +63,11 @@ export const normalizeTaskData = (
     updatedAt: parseDate(dbTask.updated_at),
     completedAt: dbTask.completed_at ? parseDate(dbTask.completed_at) : undefined,
     assignedToId: assignedToId,
-    assignedToName: assignedName || 'Unknown User',
+    assignedToName: assignedToName,
     comments: [],
     cost: dbTask.cost || 0,
     tags: dbTask.tags || []
   };
-
-  // Log the normalized task data for debugging
-  console.log('Normalized task data:', {
-    id: normalizedTask.id,
-    title: normalizedTask.title,
-    deadline: normalizedTask.deadline.toISOString(),
-    deadlineDate: format(normalizedTask.deadline, 'yyyy-MM-dd'),
-    assignedToId: normalizedTask.assignedToId || 'unassigned',
-    assignedToName: normalizedTask.assignedToName || 'unassigned'
-  });
 
   return normalizedTask;
 };

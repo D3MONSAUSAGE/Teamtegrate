@@ -33,16 +33,13 @@ export const useTaskCard = (task: Task) => {
     await deleteTask(taskId);
   };
 
+  // Only consider a task unassigned if there's no assignedToId
   const getAssignedToName = () => {
-    if (!task.assignedToName || task.assignedToName.trim() === '') {
+    if (!task.assignedToId) {
       return 'Unassigned';
     }
     
-    if (task.assignedToId && (!task.assignedToName || task.assignedToName === task.assignedToId)) {
-      return 'Unassigned';
-    }
-    
-    return task.assignedToName;
+    return task.assignedToName || 'Unassigned';
   };
 
   return {

@@ -17,18 +17,10 @@ const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({
   // Only consider a task unassigned if there's no assignedToId
   const isUnassigned = !assignedToId;
   
-  // Format the display name - if empty or undefined, show "Unassigned"
+  // Format the display name - if no ID, show "Unassigned" regardless of name
   const displayName = !isUnassigned && assignedToName 
-    ? assignedToName.trim() 
+    ? assignedToName 
     : 'Unassigned';
-
-  // Debug logging for assignment troubleshooting
-  console.log('TaskCardMetadata render:', {
-    assignedToId: assignedToId || 'none',
-    assignedToName: assignedToName || 'none',
-    isUnassigned,
-    displayName
-  });
 
   return (
     <div className="flex items-center justify-between pt-1 md:pt-2">

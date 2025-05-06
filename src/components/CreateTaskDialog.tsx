@@ -47,20 +47,31 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
     setSelectedMember
   } = useTaskForm(editingTask, currentProjectId);
 
-  // Log available projects whenever they change
+  // Log assignment data for debugging
   useEffect(() => {
-    if (open) {
-      console.log('Available projects in CreateTaskDialog:', 
-        projects.map(p => ({ id: p.id, title: p.title, created: p.createdAt }))
-      );
+    if (editingTask) {
+      console.log('Editing task assignment data:', {
+        id: editingTask.id,
+        assignedToId: editingTask.assignedToId,
+        assignedToName: editingTask.assignedToName,
+        selectedMember
+      });
     }
-  }, [projects, open]);
+  }, [editingTask, selectedMember]);
 
   const onSubmit = (data: any) => {
+    console.log('Form submission data:', data);
+    
     // Handle the case where deadline might come as string or Date
     const deadlineDate = typeof data.deadline === 'string' 
       ? new Date(data.deadline)
       : data.deadline;
+    
+    // Log the assignment data that will be saved
+    console.log('Task assignment data to save:', {
+      assignedToId: selectedMember === "unassigned" ? undefined : selectedMember,
+      assignedToName: data.assignedToName
+    });
 
     if (isEditMode && editingTask) {
       updateTask(editingTask.id, {
