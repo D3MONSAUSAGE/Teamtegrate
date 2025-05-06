@@ -31,11 +31,12 @@ export const assignTaskToUser = async (
       actualUserName = await fetchUserInfo(userId) || userName;
     }
 
-    // Only send assigned_to_id to the database
+    // Send both assigned_to_id AND assigned_to_name to the database
     const { error } = await supabase
       .from('tasks')
       .update({ 
         assigned_to_id: userId,
+        assigned_to_name: actualUserName,
         updated_at: now.toISOString() 
       })
       .eq('id', taskId);

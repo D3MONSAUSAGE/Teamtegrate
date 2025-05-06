@@ -34,11 +34,13 @@ export const useTaskCard = (task: Task) => {
   };
 
   const getAssignedToName = () => {
+    // More robust check for valid assignedToName
     if (!task.assignedToName || task.assignedToName.trim() === '') {
       return 'Unassigned';
     }
     
-    if (task.assignedToId && (!task.assignedToName || task.assignedToName === task.assignedToId)) {
+    // Check if assignedToId is there but name is same as ID (common issue)
+    if (task.assignedToId && task.assignedToName === task.assignedToId) {
       return 'Unassigned';
     }
     

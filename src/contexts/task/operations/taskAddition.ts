@@ -32,6 +32,8 @@ export const addTask = async (
       created_at: now.toISOString(),
       updated_at: now.toISOString(),
       assigned_to_id: task.assignedToId || null,
+      assigned_to_name: task.assignedToName || null, // Make sure we're sending this to the database
+      cost: task.cost || 0
     };
 
     const { data, error } = await supabase
@@ -60,7 +62,7 @@ export const addTask = async (
         createdAt: new Date(data.created_at || now),
         updatedAt: new Date(data.updated_at || now),
         assignedToId: data.assigned_to_id || undefined,
-        assignedToName: task.assignedToName,
+        assignedToName: data.assigned_to_name || task.assignedToName,
         tags: [],
         comments: [],
         cost: data.cost || 0,

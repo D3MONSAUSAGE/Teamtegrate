@@ -13,8 +13,9 @@ const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({
   deadline,
   assignedToName,
 }) => {
-  // Format the display name - if empty or undefined, show "Unassigned"
-  const displayName = assignedToName && assignedToName.trim() !== '' 
+  // More robust check for display name
+  const displayName = assignedToName && assignedToName.trim() !== '' && 
+                     (!assignedToName.includes('-') || assignedToName.length < 30)
     ? assignedToName 
     : 'Unassigned';
 
@@ -51,7 +52,7 @@ const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({
       >
         <User className="h-3 w-3 flex-shrink-0" />
         <span 
-          className={`truncate max-w-[100px] ${assignedToName ? "" : "italic text-gray-400"}`}
+          className={`truncate max-w-[100px] ${assignedToName && displayName !== 'Unassigned' ? "" : "italic text-gray-400"}`}
         >
           {displayName}
         </span>
