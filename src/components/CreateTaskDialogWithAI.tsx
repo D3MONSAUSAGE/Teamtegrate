@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Task } from '@/types';
 import { useTask } from '@/contexts/task';
@@ -26,9 +26,17 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
   currentProjectId 
 }) => {
   const { user } = useAuth();
-  const { addTask, updateTask, projects } = useTask();
+  const { addTask, updateTask, projects, refreshProjects } = useTask();
   const isEditMode = !!editingTask;
   const isMobile = useIsMobile();
+  
+  // Refresh projects when dialog opens
+  useEffect(() => {
+    if (open) {
+      console.log('CreateTaskDialogWithAI opened, refreshing projects');
+      refreshProjects();
+    }
+  }, [open, refreshProjects]);
   
   // Use our custom hook for form management
   const {
@@ -45,6 +53,15 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
     handleDateChange,
     handleTimeChange
   } = useTaskFormWithAI(editingTask, currentProjectId);
+
+  // Log available projects whenever they change
+  useEffect(() => {
+    if (open) {
+      console.log('Available projects in CreateTaskDialogWithAI:', 
+        projects.map(p => ({ id: p.id, title: p.title, created: p.createdAt }))
+      );
+    }
+  }, [projects, open]);
 
   // Log when dialog opens/closes with editing task
   React.useEffect(() => {

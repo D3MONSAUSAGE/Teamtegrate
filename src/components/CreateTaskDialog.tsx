@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Task } from '@/types';
@@ -25,9 +25,17 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
   currentProjectId 
 }) => {
   const { user } = useAuth();
-  const { addTask, updateTask, projects } = useTask();
+  const { addTask, updateTask, projects, refreshProjects } = useTask();
   const isEditMode = !!editingTask;
   const isMobile = useIsMobile();
+  
+  // Refresh projects when dialog opens
+  useEffect(() => {
+    if (open) {
+      console.log('CreateTaskDialog opened, refreshing projects');
+      refreshProjects();
+    }
+  }, [open, refreshProjects]);
   
   const {
     register,
@@ -38,6 +46,15 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
     selectedMember,
     setSelectedMember
   } = useTaskForm(editingTask, currentProjectId);
+
+  // Log available projects whenever they change
+  useEffect(() => {
+    if (open) {
+      console.log('Available projects in CreateTaskDialog:', 
+        projects.map(p => ({ id: p.id, title: p.title, created: p.createdAt }))
+      );
+    }
+  }, [projects, open]);
 
   const onSubmit = (data: any) => {
     // Handle the case where deadline might come as string or Date

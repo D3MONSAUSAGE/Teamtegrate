@@ -23,11 +23,12 @@ export const fetchProjects = async (
     
     console.log('RPC fetch failed or returned null, trying direct query...');
     
-    // Second attempt: Direct query
+    // Second attempt: Direct query with fresh cache
     const { data: directData, error } = await supabase
       .from('projects')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .throwOnError();
     
     if (error) {
       console.error('Error fetching projects:', error);
@@ -62,6 +63,9 @@ const processAndSetProjects = (
     return;
   }
   
+  // Log the raw project data for debugging
+  console.log('Raw project data from database:', projectData);
+  
   const formattedProjects: Project[] = projectData.map(project => ({
     id: project.id,
     title: project.title || '',
@@ -81,6 +85,10 @@ const processAndSetProjects = (
     tags: project.tags || []
   }));
   
+  // Sort projects by creation date (newest first)
+  formattedProjects.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  
   console.log('Setting projects, final count:', formattedProjects.length);
+  console.log('Sorted projects (newest first):', formattedProjects.map(p => ({ id: p.id, title: p.title, created: p.createdAt })));
   setProjects(formattedProjects);
 };
