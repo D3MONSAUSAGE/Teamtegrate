@@ -1,5 +1,5 @@
 
-import { Task } from '@/types';
+import { Task, User, UserRole } from '@/types';
 import { toast } from '@/components/ui/sonner';
 import { playSuccessSound } from '@/utils/sounds';
 import { addTask as addTaskOperation } from '../operations/taskAddition';
@@ -7,23 +7,20 @@ import { addTask as addTaskOperation } from '../operations/taskAddition';
 /**
  * Normalizes a user object or ID to ensure consistent format
  */
-const normalizeUser = (user: { id: string } | null): { 
-  id: string;
-  email: string;
-  name: string;
-  role: string;
-  createdAt: Date;
-} | null => {
+const normalizeUser = (user: { id: string } | null): User | null => {
   if (!user) return null;
   
   // Ensure user.id is a string
   const userId = typeof user.id === 'string' ? user.id : String(user.id);
   
+  // Use a valid UserRole type value
+  const userRole: UserRole = 'user';
+  
   return {
     id: userId,
     email: '',  // Not used in the operation
     name: '',   // Not used in the operation
-    role: 'user', // Not used in the operation
+    role: userRole, // Now correctly typed as UserRole
     createdAt: new Date() // Not used in the operation
   };
 };
