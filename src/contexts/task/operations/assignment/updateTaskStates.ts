@@ -15,6 +15,13 @@ export const updateTaskStates = (
 ): void => {
   const now = new Date();
   
+  // Find the original task to preserve any other properties
+  const originalTask = tasks.find(t => t.id === taskId);
+  if (!originalTask) {
+    console.error('Task not found when updating task states:', taskId);
+    return;
+  }
+  
   // Update the task in the tasks array
   setTasks(prevTasks => prevTasks.map(task => {
     if (task.id === taskId) {
@@ -23,7 +30,8 @@ export const updateTaskStates = (
         userId, 
         userName,
         before: task.assignedToName || 'none',
-        after: userName || 'none'
+        after: userName || 'none',
+        status: task.status // Keep existing status
       });
       return { 
         ...task, 
@@ -50,7 +58,8 @@ export const updateTaskStates = (
                   userId,
                   userName,
                   before: projectTask.assignedToName || 'none',
-                  after: userName || 'none'
+                  after: userName || 'none',
+                  status: projectTask.status // Keep existing status
                 });
                 return { 
                   ...projectTask, 

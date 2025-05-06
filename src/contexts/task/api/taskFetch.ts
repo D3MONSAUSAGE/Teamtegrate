@@ -124,6 +124,10 @@ const processAndSetTasks = async (
         return new Date(dateStr);
       };
   
+      // Fix: Ensure status is preserved correctly from the database
+      const status = task.status || 'To Do';
+      
+      // Fix: Ensure assigned user information is preserved correctly  
       return {
         id: task.id,
         userId: user.id, // Use the current user's ID
@@ -132,12 +136,14 @@ const processAndSetTasks = async (
         description: task.description || '',
         deadline: parseDate(task.deadline),
         priority: (task.priority as Task['priority']) || 'Medium',
-        status: (task.status || 'To Do') as Task['status'],
+        status: status as Task['status'],
         createdAt: parseDate(task.created_at),
         updatedAt: parseDate(task.updated_at),
         completedAt: task.completed_at ? parseDate(task.completed_at) : undefined,
+        completedById: task.completed_by_id,
+        completedByName: task.completed_by_name,
         assignedToId: task.assigned_to_id,
-        assignedToName: assignedUserName,
+        assignedToName: assignedUserName || task.assigned_to_name,
         comments: taskComments,
         cost: task.cost || 0,
         tags: task.tags || []
