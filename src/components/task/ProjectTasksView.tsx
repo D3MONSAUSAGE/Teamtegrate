@@ -1,5 +1,6 @@
 
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect } from 'react';
+import { Task } from '@/types';
 import CreateTaskDialogWithAI from '../CreateTaskDialogWithAI';
 import ProjectTasksContent from './project-view/ProjectTasksContent';
 import { useProjectTasksView } from './project-view/useProjectTasksView';
@@ -30,8 +31,7 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
     handleEditTask,
     handleCreateTask,
     handleManualRefresh,
-    onSortByChange,
-    refreshAfterTaskUpdate
+    onSortByChange
   } = useProjectTasksView(projectId);
 
   // Log component rendering for debugging
@@ -41,21 +41,9 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
       isLoading,
       hasError: !!loadError,
       hasProject: !!project,
-      editingTask,
-      taskCounts: {
-        todo: todoTasks.length,
-        inProgress: inProgressTasks.length,
-        pending: pendingTasks.length,
-        completed: completedTasks.length
-      }
+      editingTask
     });
-  }, [projectId, isLoading, loadError, project, editingTask, todoTasks, inProgressTasks, pendingTasks, completedTasks]);
-
-  // Callback for task creation - ensures we refresh data
-  const handleTaskCreated = useCallback(async () => {
-    console.log("Task created callback triggered in ProjectTasksView");
-    await refreshAfterTaskUpdate();
-  }, [refreshAfterTaskUpdate]);
+  }, [projectId, isLoading, loadError, project, editingTask]);
 
   if (isLoading) {
     return <ProjectTasksLoading />;
@@ -94,8 +82,7 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
         open={isCreateTaskOpen} 
         onOpenChange={setIsCreateTaskOpen}
         editingTask={editingTask}
-        currentProjectId={projectId}
-        onTaskCreated={handleTaskCreated}
+        currentProjectId={projectId ?? undefined}
       />
     </>
   );

@@ -6,7 +6,7 @@ import { toast } from '@/components/ui/sonner';
 import { useProjectTasks } from './useProjectTasks';
 
 export const useProjectTasksView = (projectId: string | null) => {
-  const { tasks, projects, refreshProjects, refreshTasks } = useTask();
+  const { tasks, projects, refreshProjects } = useTask();
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
@@ -56,8 +56,7 @@ export const useProjectTasksView = (projectId: string | null) => {
       try {
         console.log(`Loading projects data for project ID: ${projectId}`);
         await refreshProjects();
-        await refreshTasks();
-        console.log(`Successfully loaded projects and tasks data`);
+        console.log(`Successfully loaded projects data`);
         setInitialLoadAttempted(true);
       } catch (error) {
         console.error('Error refreshing project data:', error);
@@ -78,31 +77,7 @@ export const useProjectTasksView = (projectId: string | null) => {
     };
     
     loadData();
-  }, [projectId, refreshProjects, refreshTasks, retryCount, initialLoadAttempted]);
-
-  // Enhanced refresh function after task update with debounce
-  const refreshAfterTaskUpdate = useCallback(async () => {
-    console.log("Refreshing tasks after task update");
-    
-    // Show the refreshing indicator
-    setIsRefreshing(true);
-    
-    try {
-      // Add small delay to ensure database has time to update
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // First refresh tasks, then projects to ensure we have the latest data
-      await refreshTasks();
-      await refreshProjects();
-      
-      console.log("Tasks and projects refreshed successfully after update");
-    } catch (error) {
-      console.error("Error refreshing after task update:", error);
-      toast.error("Failed to refresh latest task data");
-    } finally {
-      setIsRefreshing(false);
-    }
-  }, [refreshTasks, refreshProjects]);
+  }, [projectId, refreshProjects, retryCount, initialLoadAttempted]);
 
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
@@ -129,7 +104,6 @@ export const useProjectTasksView = (projectId: string | null) => {
     setLoadError(null);
     
     try {
-      await refreshTasks();
       await refreshProjects();
       toast.success("Project data refreshed successfully");
     } catch (error) {
@@ -139,7 +113,7 @@ export const useProjectTasksView = (projectId: string | null) => {
     } finally {
       setIsRefreshing(false);
     }
-  }, [projectId, refreshProjects, refreshTasks]);
+  }, [projectId, refreshProjects]);
 
   return {
     isLoading,
@@ -160,7 +134,6 @@ export const useProjectTasksView = (projectId: string | null) => {
     handleEditTask,
     handleCreateTask,
     handleManualRefresh,
-    onSortByChange: handleSortByChange,
-    refreshAfterTaskUpdate
+    onSortByChange: handleSortByChange
   };
 };

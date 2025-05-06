@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Task } from '@/types';
 import { useTask } from '@/contexts/task';
@@ -17,15 +17,13 @@ interface CreateTaskDialogProps {
   onOpenChange: (open: boolean) => void;
   editingTask?: Task;
   currentProjectId?: string;
-  onTaskCreated?: () => void;
 }
 
 const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({ 
   open, 
   onOpenChange, 
   editingTask,
-  currentProjectId,
-  onTaskCreated
+  currentProjectId 
 }) => {
   const { user } = useAuth();
   const { addTask, updateTask, projects } = useTask();
@@ -49,68 +47,43 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
   } = useTaskFormWithAI(editingTask, currentProjectId);
 
   // Log when dialog opens/closes with editing task
-  useEffect(() => {
+  React.useEffect(() => {
     if (open) {
       console.log('Dialog opened with editingTask:', editingTask);
-      console.log('CreateTaskDialogWithAI opened with currentProjectId:', currentProjectId);
     }
-  }, [open, editingTask, currentProjectId]);
+  }, [open, editingTask]);
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = (data: any) => {
     console.log('Form submission data:', data);
     
-    try {
-      // Ensure we have a valid deadline
-      const deadlineDate = typeof data.deadline === 'string' 
-        ? new Date(data.deadline)
-        : data.deadline;
-      
-      if (isNaN(deadlineDate.getTime())) {
-        console.error('Invalid deadline date');
-        return;
-      }
+    // Handle the case where deadline might come as string or Date
+    const deadlineDate = typeof data.deadline === 'string' 
+      ? new Date(data.deadline)
+      : data.deadline;
 
-      if (isEditMode && editingTask) {
-        await updateTask(editingTask.id, {
-          ...data,
-          deadline: deadlineDate,
-          assignedToId: selectedMember === "unassigned" ? undefined : selectedMember,
-          assignedToName: data.assignedToName
-        });
-      } else {
-        // Make sure we have a valid projectId or set it to undefined
-        const projectId = data.projectId === "none" ? undefined : data.projectId;
-        
-        console.log('Adding task with projectId:', projectId);
-        
-        await addTask({
-          title: data.title,
-          description: data.description || '',
-          priority: data.priority,
-          deadline: deadlineDate,
-          status: 'To Do',
-          userId: user?.id || '',
-          projectId: projectId,
-          assignedToId: selectedMember === "unassigned" ? undefined : selectedMember,
-          assignedToName: data.assignedToName,
-          cost: data.cost ? Number(data.cost) : 0
-        });
-      }
-      
-      // Call onTaskCreated callback to refresh the task list with a small delay
-      if (onTaskCreated) {
-        console.log("Calling onTaskCreated callback");
-        setTimeout(() => {
-          onTaskCreated();
-        }, 200); // Delay to allow database to update
-      }
-      
-      onOpenChange(false);
-      reset();
-      setSelectedMember(undefined);
-    } catch (error) {
-      console.error('Error submitting task form:', error);
+    if (isEditMode && editingTask) {
+      updateTask(editingTask.id, {
+        ...data,
+        deadline: deadlineDate,
+        assignedToId: selectedMember === "unassigned" ? undefined : selectedMember,
+        assignedToName: data.assignedToName
+      });
+    } else {
+      addTask({
+        title: data.title,
+        description: data.description,
+        priority: data.priority,
+        deadline: deadlineDate,
+        status: 'To Do',
+        userId: user?.id || '',
+        projectId: data.projectId === "none" ? undefined : data.projectId,
+        assignedToId: selectedMember === "unassigned" ? undefined : selectedMember,
+        assignedToName: data.assignedToName
+      });
     }
+    onOpenChange(false);
+    reset();
+    setSelectedMember(undefined);
   };
 
   const handleCancel = () => {

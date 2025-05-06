@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { useTask } from '@/contexts/task';
@@ -176,26 +177,10 @@ const DashboardPage = () => {
     setIsCreateTaskOpen(true);
   };
 
-  // Modified handleCreateTask to refresh after task creation
   const handleCreateTask = (project?: Project) => {
     setEditingTask(undefined);
     setSelectedProject(project || null);
     setIsCreateTaskOpen(true);
-  };
-
-  // New function to refresh tasks after creation/editing
-  const handleTaskCreated = async () => {
-    try {
-      console.log("Task created/updated, refreshing data...");
-      setIsRefreshing(true);
-      await refreshTasks();
-      await refreshProjects();
-      toast.success("Tasks refreshed");
-    } catch (error) {
-      console.error("Error refreshing after task update:", error);
-    } finally {
-      setIsRefreshing(false);
-    }
   };
 
   const handleViewTasks = (project: Project) => {
@@ -291,7 +276,6 @@ const DashboardPage = () => {
         onOpenChange={setIsCreateTaskOpen}
         editingTask={editingTask}
         currentProjectId={selectedProject?.id}
-        onTaskCreated={handleTaskCreated}
       />
     </div>
   );
