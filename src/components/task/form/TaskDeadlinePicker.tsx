@@ -39,12 +39,13 @@ const TaskDeadlinePicker: React.FC<TaskDeadlinePickerProps> = ({
               {date ? format(date, "MMM dd, yyyy") : <span>Pick a date</span>}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
+          <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
             <Calendar
               mode="single"
               selected={date}
               onSelect={onDateChange}
               initialFocus
+              className="pointer-events-auto"
             />
           </PopoverContent>
         </Popover>

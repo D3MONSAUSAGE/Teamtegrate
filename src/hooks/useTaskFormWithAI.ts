@@ -87,7 +87,7 @@ export const useTaskFormWithAI = (editingTask?: Task, currentProjectId?: string)
     if (deadlineDate && newTimeInput) {
       const [hours, minutes] = newTimeInput.split(':').map(Number);
       const newDate = new Date(deadlineDate);
-      newDate.setHours(hours || 0, minutes || 0);
+      newDate.setHours(hours || 0, minutes || 0, 0, 0);
       setValue('deadline', newDate.toISOString());
     }
   };
