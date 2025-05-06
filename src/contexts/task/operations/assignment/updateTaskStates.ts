@@ -29,9 +29,16 @@ export const updateTaskStates = (
         taskId, 
         userId, 
         userName,
-        before: task.assignedToName || 'none',
-        after: userName || 'none',
-        status: task.status // Keep existing status
+        before: {
+          assignedToId: task.assignedToId || 'none',
+          assignedToName: task.assignedToName || 'none',
+          status: task.status
+        },
+        after: {
+          assignedToId: userId || 'none',
+          assignedToName: userName || 'none',
+          status: task.status // Keep existing status
+        }
       });
       return { 
         ...task, 
@@ -57,9 +64,16 @@ export const updateTaskStates = (
                   taskId,
                   userId,
                   userName,
-                  before: projectTask.assignedToName || 'none',
-                  after: userName || 'none',
-                  status: projectTask.status // Keep existing status
+                  before: {
+                    assignedToId: projectTask.assignedToId || 'none',
+                    assignedToName: projectTask.assignedToName || 'none',
+                    status: projectTask.status
+                  },
+                  after: {
+                    assignedToId: userId || 'none',
+                    assignedToName: userName || 'none',
+                    status: projectTask.status // Keep existing status
+                  }
                 });
                 return { 
                   ...projectTask, 

@@ -115,26 +115,44 @@ const processAndSetTasks = async (
             }))
         : [];
   
-      // Get the assigned user name from our map
-      const assignedUserName = task.assigned_to_id ? userMap.get(task.assigned_to_id) : undefined;
+      // Get the assigned user name from our map or use the stored name
+      let assignedUserName = task.assigned_to_name;
+      if (task.assigned_to_id && userMap.has(task.assigned_to_id)) {
+        assignedUserName = userMap.get(task.assigned_to_id) || assignedUserName;
+      }
   
       // Helper function to safely parse dates
       const parseDate = (dateStr: string | null): Date => {
         if (!dateStr) return new Date();
-        return new Date(dateStr);
+        try {
+          const date = new Date(dateStr);
+          return isNaN(date.getTime()) ? new Date() : date;
+        } catch (e) {
+          console.error('Failed to parse date:', dateStr);
+          return new Date();
+        }
       };
   
-      // Fix: Ensure status is preserved correctly from the database
+      // Ensure status is preserved correctly from the database
+      // Default to 'To Do' only if status is null or undefined
       const status = task.status || 'To Do';
       
-      // Fix: Ensure assigned user information is preserved correctly  
+      // Ensure deadlines are properly parsed
+      let deadline: Date;
+      try {
+        deadline = parseDate(task.deadline);
+      } catch (e) {
+        console.error('Failed to parse deadline:', task.deadline);
+        deadline = new Date();
+      }
+      
       return {
         id: task.id,
-        userId: user.id, // Use the current user's ID
+        userId: task.user_id || user.id,
         projectId: task.project_id,
         title: task.title || '',
         description: task.description || '',
-        deadline: parseDate(task.deadline),
+        deadline: deadline,
         priority: (task.priority as Task['priority']) || 'Medium',
         status: status as Task['status'],
         createdAt: parseDate(task.created_at),
@@ -143,7 +161,7 @@ const processAndSetTasks = async (
         completedById: task.completed_by_id,
         completedByName: task.completed_by_name,
         assignedToId: task.assigned_to_id,
-        assignedToName: assignedUserName || task.assigned_to_name,
+        assignedToName: assignedUserName,
         comments: taskComments,
         cost: task.cost || 0,
         tags: task.tags || []

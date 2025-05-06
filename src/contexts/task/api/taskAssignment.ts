@@ -14,6 +14,14 @@ export const assignTaskToProject = async (
   setProjects: React.Dispatch<React.SetStateAction<any[]>>
 ): Promise<void> => {
   try {
+    // Find original task to preserve its properties
+    const originalTask = tasks.find(t => t.id === taskId);
+    if (!originalTask) {
+      console.error('Task not found for project assignment:', taskId);
+      toast.error('Failed to assign task to project: Task not found');
+      return;
+    }
+
     const { data, error } = await supabase
       .from('tasks')
       .update({ project_id: projectId })
@@ -55,8 +63,8 @@ export const assignTaskToProject = async (
 
 export const assignTaskToUser = async (
   taskId: string,
-  userId: string,
-  userName: string,
+  userId: string | undefined,
+  userName: string | undefined,
   user: { id: string },
   tasks: Task[],
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>,
@@ -64,8 +72,16 @@ export const assignTaskToUser = async (
   setProjects: React.Dispatch<React.SetStateAction<any[]>>
 ): Promise<void> => {
   try {
-    // If userName is the same as userId, it means we need to fetch the name
-    if (userName === userId || !userName) {
+    // Find the original task to preserve its properties
+    const originalTask = tasks.find(t => t.id === taskId);
+    if (!originalTask) {
+      console.error('Task not found for user assignment:', taskId);
+      toast.error('Failed to assign task to user: Task not found');
+      return;
+    }
+
+    // If userName is the same as userId or undefined, fetch the name
+    if ((userName === userId || !userName) && userId) {
       try {
         const fetchedName = await fetchUserInfo(userId);
         if (fetchedName) {
@@ -79,14 +95,26 @@ export const assignTaskToUser = async (
 
     console.log('Assigning task to user:', {
       taskId,
-      userId,
-      userName
+      userId: userId || 'unassigned',
+      userName: userName || 'unassigned',
+      originalAssignment: {
+        id: originalTask.assignedToId,
+        name: originalTask.assignedToName
+      }
     });
 
-    const updateData = { 
-      assigned_to_id: userId, 
-      assigned_to_name: userName 
+    const updateData: any = { 
+      updated_at: new Date().toISOString() 
     };
+    
+    // Only set these fields if they're provided
+    if (userId !== undefined) {
+      updateData.assigned_to_id = userId || null;
+    }
+    
+    if (userName !== undefined) {
+      updateData.assigned_to_name = userName || null;
+    }
 
     // Try to update in both tables to ensure consistency
     let updateError = null;
@@ -127,27 +155,42 @@ export const assignTaskToUser = async (
     setTasks(
       tasks.map((task) =>
         task.id === taskId
-          ? { ...task, assignedToId: userId, assignedToName: userName }
+          ? { 
+              ...task, 
+              assignedToId: userId, 
+              assignedToName: userName,
+              updatedAt: new Date()
+            }
           : task
       )
     );
 
     // Update task in projects state if needed
-    const task = tasks.find(t => t.id === taskId);
-    if (task?.projectId) {
+    const projectId = originalTask.projectId;
+    if (projectId) {
       setProjects((prevProjects) =>
-        prevProjects.map((project) => ({
-          ...project,
-          tasks: project.tasks?.map((t) =>
-            t.id === taskId
-              ? { ...t, assignedToId: userId, assignedToName: userName }
-              : t
-          ) || [],
-        }))
+        prevProjects.map((project) => {
+          if (project.id === projectId) {
+            return {
+              ...project,
+              tasks: project.tasks?.map((t) =>
+                t.id === taskId
+                  ? { 
+                      ...t, 
+                      assignedToId: userId, 
+                      assignedToName: userName,
+                      updatedAt: new Date()
+                    }
+                  : t
+              ) || [],
+            };
+          }
+          return project;
+        })
       );
     }
 
-    toast.success('Task assigned to user successfully!');
+    toast.success(userId ? 'Task assigned to user successfully!' : 'Task unassigned successfully!');
   } catch (error) {
     console.error('Error assigning task to user:', error);
     toast.error('Failed to assign task to user');
