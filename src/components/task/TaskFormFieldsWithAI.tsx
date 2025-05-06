@@ -20,7 +20,7 @@ interface TaskFormFieldsProps {
   date: Date | undefined;
   timeInput: string;
   onDateChange: (date: Date | undefined) => void;
-  onTimeChange: (e: React.ChangeEvent<HTMLInputElement> | string) => void;
+  onTimeChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 const TaskFormFieldsWithAI: React.FC<TaskFormFieldsProps> = ({
@@ -43,14 +43,6 @@ const TaskFormFieldsWithAI: React.FC<TaskFormFieldsProps> = ({
     }
   }, [editingTask]);
 
-  // Create a handler function to properly handle time changes
-  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement> | string) => {
-    // If e is a string, it's already the time value
-    // If e is an event, extract the value from it
-    const timeValue = typeof e === 'string' ? e : e.target.value;
-    onTimeChange(timeValue);
-  };
-
   return (
     <div className="space-y-4">
       <TaskTitleField 
@@ -64,7 +56,7 @@ const TaskFormFieldsWithAI: React.FC<TaskFormFieldsProps> = ({
         setValue={setValue}
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3">
         <TaskPriorityField 
           defaultValue={editingTask?.priority || "Medium"}
           setValue={setValue}
@@ -74,7 +66,7 @@ const TaskFormFieldsWithAI: React.FC<TaskFormFieldsProps> = ({
           date={date}
           timeInput={timeInput}
           onDateChange={onDateChange}
-          onTimeChange={handleTimeChange}
+          onTimeChange={onTimeChange}
           error={errors.deadline?.message}
         />
       </div>

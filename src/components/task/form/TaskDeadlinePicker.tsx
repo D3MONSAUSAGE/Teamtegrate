@@ -24,40 +24,36 @@ const TaskDeadlinePicker: React.FC<TaskDeadlinePickerProps> = ({
   error,
 }) => {
   return (
-    <div className="space-y-1">
+    <div className="space-y-2 w-full">
       <Label htmlFor="deadline">Deadline</Label>
-      <div className="grid grid-cols-3 gap-2">
-        <div className="col-span-2">
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                id="deadline"
-                variant={"outline"}
-                className="w-full justify-start text-left font-normal"
-                type="button"
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {date ? format(date, "MMM dd, yyyy") : <span>Pick a date</span>}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={date}
-                onSelect={onDateChange}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
-        <div className="col-span-1">
-          <Input 
-            type="time" 
-            value={timeInput}
-            onChange={onTimeChange}
-            className="w-full" 
-          />
-        </div>
+      <div className="flex flex-col sm:flex-row gap-2">
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              id="deadline"
+              variant={"outline"}
+              className="w-full justify-start text-left font-normal"
+              type="button"
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {date ? format(date, "MMM dd, yyyy") : <span>Pick a date</span>}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={date}
+              onSelect={onDateChange}
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
+        <Input 
+          type="time" 
+          value={timeInput}
+          onChange={onTimeChange}
+          className="w-full sm:w-auto" 
+        />
       </div>
       {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
     </div>
