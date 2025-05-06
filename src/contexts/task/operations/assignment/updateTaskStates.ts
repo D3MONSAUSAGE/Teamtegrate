@@ -18,16 +18,28 @@ export const updateTaskStates = (
   // Ensure taskId is normalized as a string
   const normalizedTaskId = String(taskId);
   
+  console.log('Updating task states with:', {
+    taskId: normalizedTaskId,
+    userId,
+    userName,
+    projectId
+  });
+  
   // Update the task in the tasks array
   setTasks(prevTasks => prevTasks.map(task => {
     if (String(task.id) === normalizedTaskId) {
-      console.log('Updating task in tasks array', { 
-        taskId: normalizedTaskId, 
-        userId, 
-        userName,
-        before: task.assignedToName || 'none',
-        after: userName || 'none'
+      console.log('Updating task assignment in tasks array:', {
+        taskId: normalizedTaskId,
+        before: {
+          assignedToId: task.assignedToId,
+          assignedToName: task.assignedToName
+        },
+        after: {
+          assignedToId: userId,
+          assignedToName: userName
+        }
       });
+      
       return { 
         ...task, 
         assignedToId: userId, 
@@ -47,14 +59,19 @@ export const updateTaskStates = (
             ...project,
             tasks: project.tasks.map(projectTask => {
               if (String(projectTask.id) === normalizedTaskId) {
-                console.log('Updating task in project', {
+                console.log('Updating task assignment in project:', {
                   projectId,
                   taskId: normalizedTaskId,
-                  userId,
-                  userName,
-                  before: projectTask.assignedToName || 'none',
-                  after: userName || 'none'
+                  before: {
+                    assignedToId: projectTask.assignedToId,
+                    assignedToName: projectTask.assignedToName
+                  },
+                  after: {
+                    assignedToId: userId,
+                    assignedToName: userName
+                  }
                 });
+                
                 return { 
                   ...projectTask, 
                   assignedToId: userId, 

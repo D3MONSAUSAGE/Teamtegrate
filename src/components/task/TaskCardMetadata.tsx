@@ -14,21 +14,20 @@ const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({
   assignedToName,
   assignedToId,
 }) => {
-  // Only show as unassigned if there's no assignedToId
-  // This ensures tasks with IDs but pending names still show as assigned
+  // Only consider a task unassigned if there's no assignedToId
   const isUnassigned = !assignedToId;
   
   // Format the display name - if empty or undefined, show "Unassigned"
   const displayName = !isUnassigned && assignedToName && assignedToName.trim() !== '' 
     ? assignedToName 
-    : isUnassigned ? 'Unassigned' : 'Loading user...';
+    : 'Unassigned';
 
   // Debug logging for assignment troubleshooting
   console.log('TaskCardMetadata render:', {
-    assignedToId: assignedToId,
-    assignedToName: assignedToName,
-    isUnassigned: isUnassigned,
-    displayName: displayName
+    assignedToId,
+    assignedToName,
+    isUnassigned,
+    displayName
   });
 
   return (
@@ -42,7 +41,9 @@ const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({
       
       <div className="flex items-center text-xs text-gray-500 gap-1">
         <User className="h-3 w-3 flex-shrink-0" />
-        <span className="truncate max-w-[100px]" title={displayName}>{displayName}</span>
+        <span className="truncate max-w-[100px]" title={displayName}>
+          {displayName}
+        </span>
       </div>
     </div>
   );

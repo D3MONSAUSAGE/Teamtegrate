@@ -27,17 +27,26 @@ export const assignTaskToUser = async (
     
     // Ensure taskId is a string
     const normalizedTaskId = String(taskId);
-    console.log(`Normalized task ID for assignment: ${normalizedTaskId}`);
     
     // Find user's name if not provided or get updated name
     let actualUserName = userName;
     if ((!actualUserName || actualUserName === userId) && userId) {
       console.log('Fetching user info for:', userId);
-      actualUserName = await fetchUserInfo(userId) || userName;
-      console.log('Resolved user name:', actualUserName);
+      const fetchedName = await fetchUserInfo(userId);
+      if (fetchedName) {
+        actualUserName = fetchedName;
+        console.log('Resolved user name:', actualUserName);
+      }
     }
 
     console.log(`Assigning task ${normalizedTaskId} to user ${userId} (${actualUserName})`);
+
+    // Prepare update payload
+    const updatePayload = { 
+      assigned_to_id: userId,
+      assigned_to_name: actualUserName,
+      updated_at: now.toISOString() 
+    };
 
     // First try the tasks table
     let dbError = null;
@@ -46,11 +55,7 @@ export const assignTaskToUser = async (
     try {
       const { error } = await supabase
         .from('tasks')
-        .update({ 
-          assigned_to_id: userId,
-          assigned_to_name: actualUserName, // Add explicit assignment of user name
-          updated_at: now.toISOString() 
-        })
+        .update(updatePayload)
         .eq('id', normalizedTaskId);
       
       if (!error) {
@@ -69,11 +74,7 @@ export const assignTaskToUser = async (
       try {
         const { error } = await supabase
           .from('project_tasks')
-          .update({ 
-            assigned_to_id: userId,
-            assigned_to_name: actualUserName, // Add explicit assignment of user name
-            updated_at: now.toISOString() 
-          })
+          .update(updatePayload)
           .eq('id', normalizedTaskId);
         
         if (error) {
@@ -86,9 +87,8 @@ export const assignTaskToUser = async (
           return;
         } else {
           console.log('Successfully updated project_tasks table with assignment');
+          updateSuccessful = true;
         }
-        
-        updateSuccessful = true;
       } catch (err) {
         console.error('Error updating project_tasks table:', err);
         playErrorSound();

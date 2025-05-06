@@ -24,13 +24,13 @@ const TaskDetailMeta: React.FC<TaskDetailMetaProps> = ({
   formatTime,
   getPriorityColor
 }) => {
-  // Only show as unassigned if there's no assignedToId
+  // Only consider a task unassigned if there's no assignedToId
   const isUnassigned = !assignedToId;
   
   // Format the display name
   const displayName = !isUnassigned && assignedToName && assignedToName.trim() !== '' 
     ? assignedToName 
-    : isUnassigned ? 'Unassigned' : 'Loading user...';
+    : 'Unassigned';
 
   console.log('TaskDetailMeta render:', { 
     assignedToId, 

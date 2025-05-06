@@ -15,13 +15,13 @@ const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({
   assignedToName,
   assignedToId,
 }) => {
-  // Only show as unassigned if there's no assignedToId
+  // Only consider a task unassigned if there's no assignedToId
   const isUnassigned = !assignedToId;
   
   // Format the display name - if empty or undefined, show "Unassigned"
   const displayName = !isUnassigned && assignedToName && assignedToName.trim() !== '' 
     ? assignedToName 
-    : isUnassigned ? 'Unassigned' : 'Loading user...';
+    : 'Unassigned';
 
   // Check if deadline is today
   const isToday = new Date().toDateString() === new Date(deadline).toDateString();

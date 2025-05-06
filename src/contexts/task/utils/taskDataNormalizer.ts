@@ -30,34 +30,35 @@ export const normalizeTaskData = (
   assignedToName?: string,
   now = new Date()
 ): Task => {
-  console.log('Normalizing task data:', JSON.stringify(taskData));
-  
   // Ensure we have a valid deadline
   const deadline = parseAndValidateDate(taskData.deadline);
-  console.log('Parsed deadline:', format(deadline, 'yyyy-MM-dd HH:mm:ss'));
-
+  
   // Parse other dates with appropriate fallbacks
   const createdAt = parseAndValidateDate(taskData.created_at, now);
   const updatedAt = parseAndValidateDate(taskData.updated_at, now);
   const completedAt = taskData.completed_at ? parseAndValidateDate(taskData.completed_at) : undefined;
 
-  // Normalize assigned user information
-  const normalizedAssignedToId = taskData.assigned_to_id ? String(taskData.assigned_to_id) : undefined;
-  const normalizedAssignedToName = taskData.assigned_to_name || assignedToName;
-
-  // Log assignment info for debugging
-  if (normalizedAssignedToId) {
-    console.log('Task has assignment:', {
-      id: normalizedAssignedToId,
-      name: normalizedAssignedToName || 'Unknown',
-      rawId: taskData.assigned_to_id,
-      rawName: taskData.assigned_to_name
-    });
+  // Normalize assigned user information - make sure we have both ID and name
+  let normalizedAssignedToId = undefined;
+  let normalizedAssignedToName = undefined;
+  
+  if (taskData.assigned_to_id) {
+    normalizedAssignedToId = String(taskData.assigned_to_id);
+    // Use task data assigned_to_name if available, fall back to provided name
+    normalizedAssignedToName = taskData.assigned_to_name || assignedToName;
   }
 
+  // Debug log assignment info
+  console.log('Normalizing task:', taskData.id, 'Assignment:', {
+    rawId: taskData.assigned_to_id,
+    rawName: taskData.assigned_to_name,
+    normalizedId: normalizedAssignedToId,
+    normalizedName: normalizedAssignedToName
+  });
+
   return {
-    id: taskData.id,
-    userId: userId,
+    id: String(taskData.id),
+    userId: String(userId),
     projectId: taskData.project_id || undefined,
     title: taskData.title || '',
     description: taskData.description || '',

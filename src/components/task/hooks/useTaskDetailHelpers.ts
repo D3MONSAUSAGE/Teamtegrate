@@ -1,4 +1,3 @@
-
 import { Task } from "@/types";
 import { format as formatDateFns } from "date-fns";
 
@@ -61,21 +60,20 @@ export const useTaskDetailHelpers = (task: Task) => {
 
   // Handle assigned to name
   const getAssignedToName = () => {
-    console.log('getAssignedToName called with:', {
-      assignedToId: task.assignedToId,
-      assignedToName: task.assignedToName 
-    });
+    // Only consider unassigned if there's no ID
+    const isUnassigned = !task.assignedToId;
     
-    // Check if there's an assignedToId (meaning it's assigned)
-    if (task.assignedToId) {
-      // If we have a name, use it
-      if (task.assignedToName && task.assignedToName.trim() !== "" && task.assignedToName !== task.assignedToId) {
-        return task.assignedToName;
-      }
-      // If name is missing but ID exists, show "Loading"
+    // If task has ID but no name, it might be loading
+    if (!isUnassigned && (!task.assignedToName || task.assignedToName.trim() === '')) {
       return "Loading user info...";
     }
-    // If no ID, then truly unassigned
+    
+    // If task has ID and name, use the name
+    if (!isUnassigned && task.assignedToName) {
+      return task.assignedToName;
+    }
+    
+    // Otherwise, truly unassigned
     return "Unassigned";
   };
 
