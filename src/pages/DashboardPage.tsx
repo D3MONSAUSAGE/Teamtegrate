@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useCallback } from 'react';
 import { useTask } from '@/contexts/task';
 import { Task } from '@/types';
@@ -22,7 +21,6 @@ const DashboardPage = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [todaysTasks, setTodaysTasks] = useState<Task[]>([]);
   const [upcomingTasks, setUpcomingTasks] = useState<Task[]>([]);
-  const [retryCount, setRetryCount] = useState(0);
   const [dataLoadStarted, setDataLoadStarted] = useState(false);
   const { isOpen, setIsOpen, currentTask, openCreateTaskDialog } = useCreateTaskDialog();
   const { currentEntry, clockIn, clockOut } = useTimeTracking();
@@ -52,7 +50,7 @@ const DashboardPage = () => {
     };
   }, [currentEntry]);
   
-  // Calculate today's and upcoming tasks
+  // Calculate today's and upcoming tasks whenever tasks change
   useEffect(() => {
     if (!tasks || tasks.length === 0) {
       console.log('No tasks available for dashboard calculations');
@@ -119,7 +117,7 @@ const DashboardPage = () => {
     }
   }, [tasks]);
   
-  // Initial data loading
+  // Initial data loading - optimized to only load once
   useEffect(() => {
     const loadData = async () => {
       // Prevent multiple load attempts
@@ -129,39 +127,22 @@ const DashboardPage = () => {
       setIsLoading(true);
       try {
         console.log("Dashboard: Starting initial data load");
-        await Promise.all([
-          refreshTasks(),
-          refreshProjects()
-        ]);
+        // Load data sequentially to avoid race conditions
+        await refreshTasks();
+        await refreshProjects();
         console.log("Dashboard: Initial data loaded successfully");
-        setIsLoading(false);
       } catch (error) {
         console.error('Error loading dashboard data:', error);
         toast.error("Failed to load dashboard data");
-        
-        // Auto-retry logic (max 3 attempts with exponential backoff)
-        if (retryCount < 3) {
-          const nextRetry = retryCount + 1;
-          const delayMs = 1000 * Math.pow(2, retryCount);
-          
-          console.log(`Auto-retrying dashboard data load (${nextRetry}/3) after ${delayMs}ms`);
-          setRetryCount(nextRetry);
-          
-          // Schedule retry
-          setTimeout(() => {
-            setDataLoadStarted(false); // Allow retry
-          }, delayMs);
-        } else {
-          console.error("Dashboard data load failed after multiple attempts");
-          setIsLoading(false);
-        }
+      } finally {
+        setIsLoading(false);
       }
     };
     
     loadData();
-  }, [refreshTasks, refreshProjects, retryCount, dataLoadStarted]);
+  }, [refreshTasks, refreshProjects, dataLoadStarted]);
   
-  // Handle manual refresh
+  // Handle manual refresh with debounce to prevent multiple simultaneous calls
   const handleRefresh = useCallback(async () => {
     // Prevent multiple refreshes at once
     if (isRefreshing) return;
@@ -169,11 +150,9 @@ const DashboardPage = () => {
     setIsRefreshing(true);
     try {
       console.log("Dashboard: Manual refresh started");
-      await Promise.all([
-        refreshTasks(),
-        refreshProjects()
-      ]);
-      console.log(`After refresh: ${tasks.length} tasks, Today's tasks: ${todaysTasks.length}`);
+      // Refresh data sequentially to avoid race conditions
+      await refreshTasks();
+      await refreshProjects();
       toast.success("Dashboard refreshed");
     } catch (error) {
       console.error('Error refreshing dashboard data:', error);
@@ -181,7 +160,7 @@ const DashboardPage = () => {
     } finally {
       setIsRefreshing(false);
     }
-  }, [refreshTasks, refreshProjects, tasks.length, todaysTasks.length, isRefreshing]);
+  }, [refreshTasks, refreshProjects, isRefreshing]);
   
   // Handle time tracking
   const handleBreak = useCallback((breakType: string) => {

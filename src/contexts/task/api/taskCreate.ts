@@ -97,14 +97,14 @@ export const addTask = async (
       return;
     }
 
-    // Create new task object for state updates
+    // Create new task object for state updates with consistent date formatting
     const newTask: Task = {
       id: taskId,
       userId: user.id,
       projectId: task.projectId,
       title: task.title,
       description: task.description || '',
-      deadline: deadlineDate,
+      deadline: deadlineDate, // Use the same Date object we validated earlier
       priority: task.priority,
       status: task.status,
       createdAt: now,
