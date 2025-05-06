@@ -93,15 +93,40 @@ const processAndSetTasks = async (
       .filter(task => task.assigned_to_id)
       .map(task => task.assigned_to_id);
     
-    // Remove duplicates
-    const uniqueUserIds = [...new Set(assignedUserIds.filter(Boolean))];
-    console.log(`Found ${uniqueUserIds.length} unique assigned users`);
+    // Remove duplicates and filter out any non-UUID values
+    const uniqueUserIds = [...new Set(assignedUserIds.filter(id => {
+      // Check if id is a valid UUID-like string
+      return id && typeof id === 'string' && 
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    }))];
+    
+    console.log(`Found ${uniqueUserIds.length} unique assigned users with valid UUIDs`);
     
     // Build user name mapping
     const userMap = await resolveUserNames(uniqueUserIds as string[]);
     
     // Process task data with comments and user information
     let tasks: Task[] = taskData.map((task: any) => {
+      // Normalize user_id to ensure it's valid
+      const normalizedUserId = typeof user.id === 'string' ? user.id : String(user.id);
+      
+      // Helper function to safely parse dates
+      const parseDate = (dateStr: string | null): Date => {
+        if (!dateStr) return new Date();
+        try {
+          const date = new Date(dateStr);
+          // Check if date is valid
+          if (isNaN(date.getTime())) {
+            console.warn(`Invalid date string: ${dateStr}, using current date instead`);
+            return new Date();
+          }
+          return date;
+        } catch (e) {
+          console.warn(`Error parsing date: ${dateStr}, using current date instead`);
+          return new Date();
+        }
+      };
+      
       // Get task comments
       const taskComments = commentData && Array.isArray(commentData)
         ? commentData
@@ -118,15 +143,9 @@ const processAndSetTasks = async (
       // Get the assigned user name from our map
       const assignedUserName = task.assigned_to_id ? userMap.get(task.assigned_to_id) : undefined;
   
-      // Helper function to safely parse dates
-      const parseDate = (dateStr: string | null): Date => {
-        if (!dateStr) return new Date();
-        return new Date(dateStr);
-      };
-  
       return {
         id: task.id,
-        userId: user.id, // Use the current user's ID
+        userId: normalizedUserId, // Use normalized user ID
         projectId: task.project_id,
         title: task.title || '',
         description: task.description || '',

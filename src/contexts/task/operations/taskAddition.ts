@@ -15,16 +15,23 @@ export const addTask = async (
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
 ) => {
   try {
-    if (!user) return;
+    if (!user) {
+      console.error('Cannot add task: No user provided');
+      return;
+    }
+    
+    // Ensure we have a valid string user ID
+    const userId = typeof user.id === 'string' ? user.id : String(user.id);
 
     const now = new Date();
     const taskId = uuidv4();
 
     console.log('Creating new task with deadline:', task.deadline);
+    console.log('Task creator user ID:', userId);
 
     const taskToInsert = {
       id: taskId,
-      user_id: user.id,
+      user_id: userId,
       project_id: task.projectId || null,
       title: task.title,
       description: task.description,
@@ -53,7 +60,7 @@ export const addTask = async (
       // Construct a properly formatted Task object with ALL required properties
       const newTask: Task = {
         id: data.id,
-        userId: data.user_id || user.id,
+        userId: userId, // Use normalized user ID
         projectId: data.project_id || undefined,
         title: data.title || '',
         description: data.description || '',

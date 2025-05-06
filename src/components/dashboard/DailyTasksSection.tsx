@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -9,6 +8,7 @@ import { Link } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import TaskDetailDrawer from '@/components/task/TaskDetailDrawer';
 import CreateTaskDialog from '@/components/CreateTaskDialog';
+import { isToday } from 'date-fns';
 
 interface DailyTasksSectionProps {
   tasks: Task[];
@@ -29,10 +29,16 @@ const DailyTasksSection: React.FC<DailyTasksSectionProps> = ({
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   
+  // Double-check that tasks are actually for today (extra validation)
+  const todaysTasks = tasks.filter(task => {
+    if (!task.deadline) return false;
+    return isToday(new Date(task.deadline));
+  });
+  
   // Debug log to see when tasks change
   useEffect(() => {
-    console.log('DailyTasksSection - tasks updated:', tasks.length, tasks.map(t => t.title));
-  }, [tasks]);
+    console.log('DailyTasksSection - tasks updated:', todaysTasks.length, todaysTasks.map(t => t.title));
+  }, [todaysTasks]);
 
   const handleOpenDetails = (task: Task) => {
     setSelectedTask(task);
@@ -86,7 +92,7 @@ const DailyTasksSection: React.FC<DailyTasksSectionProps> = ({
   return (
     <div>
       <div className="flex items-center justify-between mb-3 md:mb-4">
-        <h2 className="text-lg md:text-xl font-semibold">Today's Tasks ({tasks.length})</h2>
+        <h2 className="text-lg md:text-xl font-semibold">Today's Tasks ({todaysTasks.length})</h2>
         <Link to="/dashboard/tasks">
           <Button variant="ghost" size="sm" className="text-primary">
             View all <ChevronRight className="h-4 w-4 ml-1" />
@@ -94,9 +100,9 @@ const DailyTasksSection: React.FC<DailyTasksSectionProps> = ({
         </Link>
       </div>
       
-      {tasks.length > 0 ? (
+      {todaysTasks.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-          {tasks.map((task) => (
+          {todaysTasks.map((task) => (
             <TaskCard 
               key={task.id} 
               task={task} 
