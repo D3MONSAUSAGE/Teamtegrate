@@ -50,7 +50,7 @@ export const addTask = async (
     }
 
     if (data) {
-      // Construct a properly formatted Task object
+      // Construct a properly formatted Task object with ALL required properties
       const newTask: Task = {
         id: data.id,
         userId: data.user_id || user.id,
@@ -71,7 +71,7 @@ export const addTask = async (
 
       console.log('Task created successfully, updating state with new task:', newTask);
       
-      // Update the tasks state
+      // Update the tasks state with the new task
       setTasks(prevTasks => [...prevTasks, newTask]);
       
       // Update the project's tasks if needed

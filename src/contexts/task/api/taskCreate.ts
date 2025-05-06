@@ -50,16 +50,24 @@ export const addTask = async (
       return;
     }
 
-    console.log('Task added successfully, adding to state');
+    console.log('Task added successfully, updating state');
+    
+    // Create a proper formatted task object to ensure all properties are set
+    const formattedTask: Task = {
+      ...newTask,
+      tags: [],
+      comments: [],
+    };
+    
     // Immediately update the tasks array with the new task
-    setTasks(prevTasks => [...prevTasks, newTask]);
+    setTasks(prevTasks => [...prevTasks, formattedTask]);
 
     // Update the project's tasks if the task is assigned to a project
     if (newTask.projectId) {
       setProjects((prevProjects) =>
         prevProjects.map((project) =>
           project.id === newTask.projectId
-            ? { ...project, tasks: [...(project.tasks || []), newTask] }
+            ? { ...project, tasks: [...(project.tasks || []), formattedTask] }
             : project
         )
       );

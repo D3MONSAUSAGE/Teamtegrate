@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -30,7 +31,7 @@ const DailyTasksSection: React.FC<DailyTasksSectionProps> = ({
   
   // Debug log to see when tasks change
   useEffect(() => {
-    console.log('DailyTasksSection - tasks updated:', tasks.length);
+    console.log('DailyTasksSection - tasks updated:', tasks.length, tasks.map(t => t.title));
   }, [tasks]);
 
   const handleOpenDetails = (task: Task) => {

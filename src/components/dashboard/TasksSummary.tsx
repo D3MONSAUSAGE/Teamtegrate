@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Skeleton } from "@/components/ui/skeleton";
 import DailyScoreCard from '@/components/DailyScoreCard';
 import { DailyScore, Task } from '@/types';
@@ -40,7 +40,7 @@ const TasksSummary: React.FC<TasksSummaryProps> = ({
   const upcomingTaskCount = upcomingTasks.length;
 
   // Debug log to track task counts
-  React.useEffect(() => {
+  useEffect(() => {
     console.log('TasksSummary updated - Today\'s tasks:', todaysTaskCount, 'Completed:', completedTodayCount);
   }, [todaysTaskCount, completedTodayCount]);
 
