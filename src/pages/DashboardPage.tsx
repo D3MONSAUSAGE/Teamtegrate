@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Task, Project } from '@/types';
 import { Plus, RefreshCw, AlertTriangle } from 'lucide-react';
 import CreateTaskDialog from '@/components/CreateTaskDialog';
-import { format } from 'date-fns';
+import { format, isToday, startOfDay, endOfDay } from 'date-fns';
 import TasksSummary from '@/components/dashboard/TasksSummary';
 import DailyTasksSection from '@/components/dashboard/DailyTasksSection';
 import UpcomingTasksSection from '@/components/dashboard/UpcomingTasksSection';
@@ -49,15 +49,19 @@ const DashboardPage = () => {
     return date;
   }, [today]);
   
-  // Memoize task lists to prevent recalculations on every render
+  // Improved task filtering logic
   const todaysTasks = useMemo(() => {
+    console.log('Filtering tasks for today, total tasks:', tasks.length);
     return tasks.filter((task) => {
       if (!task.deadline) return false;
-      const taskDate = new Date(task.deadline);
-      taskDate.setHours(0, 0, 0, 0);
-      return taskDate.getTime() === today.getTime();
+      
+      // Convert to date object if it's a string
+      const deadlineDate = new Date(task.deadline);
+      
+      // Use isToday from date-fns for more reliable comparison
+      return isToday(deadlineDate);
     });
-  }, [tasks, today]);
+  }, [tasks]);
   
   const upcomingTasks = useMemo(() => {
     return tasks.filter((task) => {
@@ -75,6 +79,9 @@ const DashboardPage = () => {
   // Debug log for today's tasks
   useEffect(() => {
     console.log('Today\'s tasks updated:', todaysTasks.length, 'Upcoming tasks:', upcomingTasks.length);
+    if (todaysTasks.length > 0) {
+      console.log('Today\'s task titles:', todaysTasks.map(t => t.title));
+    }
   }, [todaysTasks, upcomingTasks]);
   
   useEffect(() => {
@@ -219,7 +226,9 @@ const DashboardPage = () => {
     if (!open) {
       // Dialog was closed, refresh tasks after a short delay
       setTimeout(() => {
-        refreshTasks();
+        refreshTasks().then(() => {
+          console.log('Tasks refreshed after dialog closed');
+        });
       }, 500);
     }
   };

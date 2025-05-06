@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Skeleton } from "@/components/ui/skeleton";
 import DailyScoreCard from '@/components/DailyScoreCard';
@@ -29,6 +28,7 @@ const TasksSummary: React.FC<TasksSummaryProps> = ({
     setIsRefreshing(true);
     try {
       await onRefresh();
+      console.log('Tasks refreshed via TasksSummary component');
     } finally {
       setIsRefreshing(false);
     }
@@ -42,7 +42,10 @@ const TasksSummary: React.FC<TasksSummaryProps> = ({
   // Debug log to track task counts
   useEffect(() => {
     console.log('TasksSummary updated - Today\'s tasks:', todaysTaskCount, 'Completed:', completedTodayCount);
-  }, [todaysTaskCount, completedTodayCount]);
+    if (todaysTasks.length > 0) {
+      console.log('Tasks for today:', todaysTasks.map(t => t.title));
+    }
+  }, [todaysTaskCount, completedTodayCount, todaysTasks]);
 
   // Task card component to avoid duplication
   const TaskCard = ({ title, count, completed, subtitle }: { 

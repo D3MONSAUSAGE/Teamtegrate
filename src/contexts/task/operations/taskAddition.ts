@@ -70,9 +70,14 @@ export const addTask = async (
       };
 
       console.log('Task created successfully, updating state with new task:', newTask);
+      console.log('Task deadline:', newTask.deadline);
       
       // Update the tasks state with the new task
-      setTasks(prevTasks => [...prevTasks, newTask]);
+      setTasks(prevTasks => {
+        const updatedTasks = [...prevTasks, newTask];
+        console.log(`Tasks updated: ${updatedTasks.length} (previous: ${prevTasks.length})`);
+        return updatedTasks;
+      });
       
       // Update the project's tasks if needed
       if (newTask.projectId) {
