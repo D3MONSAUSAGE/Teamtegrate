@@ -3,6 +3,25 @@ import { Task } from '@/types';
 import { format } from 'date-fns';
 
 /**
+ * Parses and validates a date string with fallback to a default date
+ */
+const parseAndValidateDate = (dateStr: string | null | undefined, defaultDate: Date = new Date()): Date => {
+  if (!dateStr) return defaultDate;
+  
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) {
+      console.warn(`Invalid date string: "${dateStr}", using default date instead`);
+      return defaultDate;
+    }
+    return date;
+  } catch (e) {
+    console.warn(`Error parsing date: "${dateStr}", using default date instead:`, e);
+    return defaultDate;
+  }
+};
+
+/**
  * Normalizes a task from database format to application format
  */
 export const normalizeTaskData = (
@@ -13,26 +32,14 @@ export const normalizeTaskData = (
 ): Task => {
   console.log('Normalizing task data:', JSON.stringify(taskData));
   
-  // Parse date with fallback to current date
-  const parseDate = (dateStr: string | null | undefined): Date => {
-    if (!dateStr) return new Date();
-    
-    try {
-      const date = new Date(dateStr);
-      if (isNaN(date.getTime())) {
-        console.warn(`Invalid date string: "${dateStr}", using current date instead`);
-        return new Date();
-      }
-      return date;
-    } catch (e) {
-      console.warn(`Error parsing date: "${dateStr}", using current date instead:`, e);
-      return new Date();
-    }
-  };
-
   // Ensure we have a valid deadline
-  const deadline = parseDate(taskData.deadline);
+  const deadline = parseAndValidateDate(taskData.deadline);
   console.log('Parsed deadline:', format(deadline, 'yyyy-MM-dd HH:mm:ss'));
+
+  // Parse other dates with appropriate fallbacks
+  const createdAt = parseAndValidateDate(taskData.created_at, now);
+  const updatedAt = parseAndValidateDate(taskData.updated_at, now);
+  const completedAt = taskData.completed_at ? parseAndValidateDate(taskData.completed_at) : undefined;
 
   return {
     id: taskData.id,
@@ -43,9 +50,9 @@ export const normalizeTaskData = (
     deadline: deadline,
     priority: (taskData.priority as Task['priority']) || 'Medium',
     status: (taskData.status as Task['status']) || 'To Do',
-    createdAt: parseDate(taskData.created_at),
-    updatedAt: parseDate(taskData.updated_at),
-    completedAt: taskData.completed_at ? parseDate(taskData.completed_at) : undefined,
+    createdAt: createdAt,
+    updatedAt: updatedAt,
+    completedAt: completedAt,
     assignedToId: taskData.assigned_to_id || undefined,
     assignedToName: assignedToName,
     tags: taskData.tags || [],

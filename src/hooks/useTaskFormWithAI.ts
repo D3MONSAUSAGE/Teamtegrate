@@ -1,96 +1,134 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { Task } from '@/types';
-import { format } from 'date-fns';
+import { Task } from "@/types";
+import { format } from "date-fns";
 
-export const useTaskFormWithAI = (editingTask?: Task, currentProjectId?: string) => {
-  const [selectedMember, setSelectedMember] = useState<string | undefined>(
-    editingTask?.assignedToId
-  );
-  
-  // Add deadline state management
+export const useTaskFormWithAI = (
+  editingTask?: Task,
+  currentProjectId?: string
+) => {
+  // Create a default deadline date (tomorrow at noon)
+  const getDefaultDeadline = () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(12, 0, 0, 0);
+    return tomorrow;
+  };
+
+  // Parse and validate a date with fallback
+  const parseAndValidateDate = (date: Date | string | undefined): Date => {
+    if (!date) return getDefaultDeadline();
+    
+    try {
+      const parsedDate = typeof date === 'string' ? new Date(date) : date;
+      if (isNaN(parsedDate.getTime())) {
+        console.warn(`Invalid date: ${date}, using default deadline`);
+        return getDefaultDeadline();
+      }
+      return parsedDate;
+    } catch (error) {
+      console.warn('Error parsing date:', error);
+      return getDefaultDeadline();
+    }
+  };
+
+  // Initialize state for the deadline date and time
   const [deadlineDate, setDeadlineDate] = useState<Date | undefined>(
-    editingTask?.deadline ? new Date(editingTask.deadline) : new Date()
+    editingTask ? parseAndValidateDate(editingTask.deadline) : getDefaultDeadline()
   );
   
-  const [timeInput, setTimeInput] = useState(
-    editingTask?.deadline ? format(new Date(editingTask.deadline), 'HH:mm') : "12:00"
+  // Format time for input field (HH:MM)
+  const formatTimeForInput = (date: Date | undefined): string => {
+    if (!date) return "12:00";
+    try {
+      return format(date, "HH:mm");
+    } catch {
+      return "12:00";
+    }
+  };
+  
+  const [timeInput, setTimeInput] = useState<string>(
+    editingTask?.deadline ? formatTimeForInput(parseAndValidateDate(editingTask.deadline)) : "12:00"
   );
 
-  // Set default values for the form
+  // Setup form with react-hook-form
   const form = useForm({
     defaultValues: {
-      title: editingTask?.title || '',
-      description: editingTask?.description || '',
-      priority: editingTask?.priority || 'Medium',
-      deadline: editingTask?.deadline ? new Date(editingTask.deadline).toISOString() : new Date().toISOString(),
-      projectId: editingTask?.projectId || currentProjectId || '',
-      cost: editingTask?.cost !== undefined ? editingTask.cost : '',
-      assignedToId: editingTask?.assignedToId || '',
-      assignedToName: editingTask?.assignedToName || ''
+      title: editingTask?.title || "",
+      description: editingTask?.description || "",
+      priority: editingTask?.priority || "Medium",
+      projectId: currentProjectId || editingTask?.projectId || "none",
+      deadline: editingTask?.deadline ? parseAndValidateDate(editingTask.deadline) : getDefaultDeadline(),
+      assignedToName: editingTask?.assignedToName || ""
     }
   });
-  
-  const { register, handleSubmit, formState: { errors }, reset, setValue } = form;
-  
-  // Update form fields when editingTask or currentProjectId changes
-  useEffect(() => {
-    console.log('useTaskFormWithAI effect triggered', { editingTask });
-    
-    if (editingTask) {
-      const taskDate = new Date(editingTask.deadline);
-      setDeadlineDate(taskDate);
-      setTimeInput(format(taskDate, 'HH:mm'));
-      
-      setValue('title', editingTask.title);
-      setValue('description', editingTask.description || '');
-      setValue('priority', editingTask.priority);
-      setValue('deadline', new Date(editingTask.deadline).toISOString());
-      setValue('projectId', editingTask.projectId || '');
-      setValue('cost', editingTask.cost !== undefined ? editingTask.cost : '');
-      setSelectedMember(editingTask.assignedToId);
-      setValue('assignedToId', editingTask.assignedToId || '');
-      setValue('assignedToName', editingTask.assignedToName || '');
-    } else {
-      // For new tasks
-      const today = new Date();
-      setDeadlineDate(today);
-      setTimeInput("12:00");
-      
-      if (currentProjectId) {
-        setValue('projectId', currentProjectId);
-      }
-    }
-  }, [editingTask, currentProjectId, setValue]);
-  
+
+  const { register, handleSubmit, formState: { errors }, reset, setValue, watch } = form;
+
+  // State for member selection
+  const [selectedMember, setSelectedMember] = useState<string | undefined>(editingTask?.assignedToId);
+
+  // Handle date changes
   const handleDateChange = (date: Date | undefined) => {
-    if (!date) return;
-    
     setDeadlineDate(date);
     
-    // Preserve time if time was already set
-    if (timeInput) {
-      const [hours, minutes] = timeInput.split(':').map(Number);
+    // If we have both date and time, update the deadline
+    if (date && timeInput) {
+      const [hours, minutes] = timeInput.split(":").map(Number);
       const newDate = new Date(date);
-      newDate.setHours(hours || 0, minutes || 0);
-      setValue('deadline', newDate.toISOString());
-    } else {
-      setValue('deadline', date.toISOString());
+      newDate.setHours(hours || 12, minutes || 0, 0, 0);
+      setValue("deadline", newDate);
     }
   };
 
-  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newTimeInput = e.target.value;
-    setTimeInput(newTimeInput);
+  // Handle time changes
+  const handleTimeChange = (time: string) => {
+    setTimeInput(time);
     
-    if (deadlineDate && newTimeInput) {
-      const [hours, minutes] = newTimeInput.split(':').map(Number);
+    // If we have both date and time, update the deadline
+    if (deadlineDate && time) {
+      const [hours, minutes] = time.split(":").map(Number);
       const newDate = new Date(deadlineDate);
-      newDate.setHours(hours || 0, minutes || 0);
-      setValue('deadline', newDate.toISOString());
+      newDate.setHours(hours || 12, minutes || 0, 0, 0);
+      setValue("deadline", newDate);
     }
   };
+
+  // Reset form if editingTask changes
+  useEffect(() => {
+    if (editingTask) {
+      const taskDeadline = parseAndValidateDate(editingTask.deadline);
+      
+      reset({
+        title: editingTask.title,
+        description: editingTask.description,
+        priority: editingTask.priority,
+        projectId: currentProjectId || editingTask.projectId || "none",
+        deadline: taskDeadline,
+        assignedToName: editingTask.assignedToName
+      });
+      
+      setDeadlineDate(taskDeadline);
+      setTimeInput(formatTimeForInput(taskDeadline));
+      setSelectedMember(editingTask.assignedToId);
+    } else {
+      const defaultDeadline = getDefaultDeadline();
+      
+      reset({
+        title: "",
+        description: "",
+        priority: "Medium",
+        projectId: currentProjectId || "none",
+        deadline: defaultDeadline,
+        assignedToName: ""
+      });
+      
+      setDeadlineDate(defaultDeadline);
+      setTimeInput(formatTimeForInput(defaultDeadline));
+      setSelectedMember(undefined);
+    }
+  }, [editingTask, currentProjectId, reset]);
 
   return {
     form,
@@ -99,6 +137,7 @@ export const useTaskFormWithAI = (editingTask?: Task, currentProjectId?: string)
     errors,
     reset,
     setValue,
+    watch,
     selectedMember,
     setSelectedMember,
     deadlineDate,
@@ -107,3 +146,5 @@ export const useTaskFormWithAI = (editingTask?: Task, currentProjectId?: string)
     handleTimeChange
   };
 };
+
+export default useTaskFormWithAI;

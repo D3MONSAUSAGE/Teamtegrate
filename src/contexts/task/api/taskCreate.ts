@@ -1,10 +1,32 @@
 
 import { Task } from '@/types';
 import { toast } from '@/components/ui/sonner';
-import { supabase } from '@/integrations/supabase/client';
-import { v4 as uuidv4 } from 'uuid';
 import { playSuccessSound } from '@/utils/sounds';
 import { addTask as addTaskOperation } from '../operations/taskAddition';
+
+/**
+ * Normalizes a user object or ID to ensure consistent format
+ */
+const normalizeUser = (user: { id: string } | null): { 
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  createdAt: Date;
+} | null => {
+  if (!user) return null;
+  
+  // Ensure user.id is a string
+  const userId = typeof user.id === 'string' ? user.id : String(user.id);
+  
+  return {
+    id: userId,
+    email: '',  // Not used in the operation
+    name: '',   // Not used in the operation
+    role: 'user', // Not used in the operation
+    createdAt: new Date() // Not used in the operation
+  };
+};
 
 export const addTask = async (
   task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>,
@@ -20,16 +42,13 @@ export const addTask = async (
     return;
   }
   
-  // Simply forward to our new implementation with the user object properly typed
+  // Normalize the user object to ensure consistent format
+  const normalizedUser = normalizeUser(user);
+  
+  // Forward to our implementation with the properly typed user object
   await addTaskOperation(
     task, 
-    {
-      id: user.id,
-      email: '', // Not used in the operation
-      name: '', // Not used in the operation
-      role: 'user', // Not used in the operation
-      createdAt: new Date() // Not used in the operation
-    }, 
+    normalizedUser,
     tasks, 
     setTasks, 
     projects, 
