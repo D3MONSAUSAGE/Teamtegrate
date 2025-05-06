@@ -8,7 +8,7 @@ import { Link } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import TaskDetailDrawer from '@/components/task/TaskDetailDrawer';
 import CreateTaskDialog from '@/components/CreateTaskDialog';
-import { isToday } from 'date-fns';
+import { isToday, format } from 'date-fns';
 
 interface DailyTasksSectionProps {
   tasks: Task[];
@@ -32,12 +32,26 @@ const DailyTasksSection: React.FC<DailyTasksSectionProps> = ({
   // Double-check that tasks are actually for today (extra validation)
   const todaysTasks = tasks.filter(task => {
     if (!task.deadline) return false;
-    return isToday(new Date(task.deadline));
+    
+    // Ensure we're working with a Date object
+    const deadline = task.deadline instanceof Date 
+      ? task.deadline 
+      : new Date(task.deadline);
+      
+    const isForToday = isToday(deadline);
+    return isForToday;
   });
   
   // Debug log to see when tasks change
   useEffect(() => {
-    console.log('DailyTasksSection - tasks updated:', todaysTasks.length, todaysTasks.map(t => t.title));
+    console.log('DailyTasksSection - tasks updated:', todaysTasks.length, todaysTasks.map(t => ({
+      id: t.id,
+      title: t.title,
+      deadline: t.deadline instanceof Date 
+        ? format(t.deadline, 'yyyy-MM-dd') 
+        : (t.deadline ? format(new Date(t.deadline), 'yyyy-MM-dd') : 'no date'),
+      status: t.status
+    })));
   }, [todaysTasks]);
 
   const handleOpenDetails = (task: Task) => {

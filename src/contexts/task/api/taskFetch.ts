@@ -7,13 +7,16 @@ import { fetchAllTaskComments } from './task/fetchAllTaskComments';
 import { resolveUserNames } from './task/resolveUserNames';
 import { logTaskFetchResults } from './task/logTaskFetchResults';
 import { executeRpc } from '@/integrations/supabase/rpc';
+import { isValid } from 'date-fns';
 
 export const fetchTasks = async (
   user: { id: string },
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>
 ): Promise<void> => {
   try {
-    console.log('Fetching tasks for user:', user.id);
+    // Ensure user.id is a string
+    const userId = typeof user.id === 'string' ? user.id : String(user.id);
+    console.log('Fetching tasks for user:', userId);
     
     // First attempt: Using RPC to bypass RLS policies
     console.log('Attempting to fetch tasks via RPC function...');
@@ -110,22 +113,28 @@ const processAndSetTasks = async (
       // Normalize user_id to ensure it's valid
       const normalizedUserId = typeof user.id === 'string' ? user.id : String(user.id);
       
-      // Helper function to safely parse dates
+      // Improved date parsing function with better error handling and validation
       const parseDate = (dateStr: string | null): Date => {
         if (!dateStr) return new Date();
+        
         try {
           const date = new Date(dateStr);
+          
           // Check if date is valid
-          if (isNaN(date.getTime())) {
-            console.warn(`Invalid date string: ${dateStr}, using current date instead`);
+          if (!isValid(date)) {
+            console.warn(`Invalid date string: "${dateStr}", using current date instead`);
             return new Date();
           }
+          
           return date;
         } catch (e) {
-          console.warn(`Error parsing date: ${dateStr}, using current date instead`);
+          console.warn(`Error parsing date: "${dateStr}", using current date instead:`, e);
           return new Date();
         }
       };
+      
+      // Parse the deadline with validation
+      const deadline = task.deadline ? parseDate(task.deadline) : new Date();
       
       // Get task comments
       const taskComments = commentData && Array.isArray(commentData)
@@ -149,7 +158,7 @@ const processAndSetTasks = async (
         projectId: task.project_id,
         title: task.title || '',
         description: task.description || '',
-        deadline: parseDate(task.deadline),
+        deadline: deadline,
         priority: (task.priority as Task['priority']) || 'Medium',
         status: (task.status || 'To Do') as Task['status'],
         createdAt: parseDate(task.created_at),
@@ -183,7 +192,12 @@ const processAndSetTasks = async (
         }));
       }
     }
-  
+    
+    // Log task distribution
+    const todayTasks = tasks.filter(task => isToday(new Date(task.deadline)));
+    console.log(`Found ${todayTasks.length} tasks scheduled for today. Task titles:`, 
+      todayTasks.map(t => t.title));
+      
     logTaskFetchResults(tasks);
     console.log('Setting tasks, final count:', tasks.length);
     setTasks(tasks);

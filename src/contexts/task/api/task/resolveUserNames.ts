@@ -15,20 +15,32 @@ export const resolveUserNames = async (userIds: string[]): Promise<Map<string, s
   }
   
   try {
-    console.log('Resolving names for', userIds.length, 'users');
+    console.log('Resolving names for', userIds.length, 'users. IDs:', userIds);
+    
+    // Normalize user IDs to handle both string and UUID formats
+    const normalizedUserIds = userIds.map(id => {
+      // Convert to string if not already
+      return typeof id === 'string' ? id : String(id);
+    });
     
     // Filter out any invalid UUIDs before querying
-    const validUserIds = userIds.filter(id => {
-      return id && typeof id === 'string' && 
+    const validUserIds = normalizedUserIds.filter(id => {
+      const isValid = id && typeof id === 'string' && 
         /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+      
+      if (!isValid) {
+        console.warn(`Skipping invalid user ID: "${id}"`);
+      }
+      
+      return isValid;
     });
     
     if (validUserIds.length === 0) {
-      console.log('No valid UUIDs to query');
+      console.warn('No valid UUIDs to query after filtering');
       return userMap;
     }
     
-    console.log('Resolving names for', validUserIds.length, 'users');
+    console.log('Querying for', validUserIds.length, 'valid user IDs:', validUserIds);
     
     // Get user data from Supabase
     const { data, error } = await supabase
@@ -46,7 +58,9 @@ export const resolveUserNames = async (userIds: string[]): Promise<Map<string, s
       
       // Build map of user IDs to names
       data.forEach(user => {
-        userMap.set(user.id, user.name || user.email || 'Unknown User');
+        const displayName = user.name || user.email || 'Unknown User';
+        userMap.set(user.id, displayName);
+        console.log(`Mapped user ${user.id} to name "${displayName}"`);
       });
     }
     

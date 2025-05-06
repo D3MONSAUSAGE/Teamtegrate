@@ -49,17 +49,27 @@ const DashboardPage = () => {
     return date;
   }, [today]);
   
-  // Improved task filtering logic
+  // Improved task filtering logic with better debugging
   const todaysTasks = useMemo(() => {
     console.log('Filtering tasks for today, total tasks:', tasks.length);
+    
+    // Create today date object at midnight for better comparison
+    const todayStart = startOfDay(new Date());
+    
     return tasks.filter((task) => {
-      if (!task.deadline) return false;
+      if (!task.deadline) {
+        return false;
+      }
       
       // Convert to date object if it's a string
       const deadlineDate = new Date(task.deadline);
+      const result = isToday(deadlineDate);
       
-      // Use isToday from date-fns for more reliable comparison
-      return isToday(deadlineDate);
+      if (result) {
+        console.log(`Task "${task.title}" (${task.id}) matched today's date:`, format(deadlineDate, 'yyyy-MM-dd'));
+      }
+      
+      return result;
     });
   }, [tasks]);
   
@@ -76,13 +86,20 @@ const DashboardPage = () => {
     return projects.slice(0, 3);
   }, [projects]);
   
-  // Debug log for today's tasks
+  // Debug log for today's tasks with more detail
   useEffect(() => {
-    console.log('Today\'s tasks updated:', todaysTasks.length, 'Upcoming tasks:', upcomingTasks.length);
     if (todaysTasks.length > 0) {
-      console.log('Today\'s task titles:', todaysTasks.map(t => t.title));
+      console.log('Today\'s task details:', todaysTasks.map(t => ({
+        id: t.id,
+        title: t.title,
+        deadline: t.deadline ? format(new Date(t.deadline), 'yyyy-MM-dd') : 'no deadline',
+        status: t.status,
+        userId: t.userId
+      })));
+    } else {
+      console.log('No tasks found for today');
     }
-  }, [todaysTasks, upcomingTasks]);
+  }, [todaysTasks]);
   
   useEffect(() => {
     // Initial refresh when dashboard loads

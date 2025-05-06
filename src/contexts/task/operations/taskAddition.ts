@@ -5,6 +5,7 @@ import { toast } from '@/components/ui/sonner';
 import { playSuccessSound, playErrorSound } from '@/utils/sounds';
 import { v4 as uuidv4 } from 'uuid';
 import { Project } from '@/types';
+import { format } from 'date-fns';
 
 export const addTask = async (
   task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>,
@@ -26,7 +27,10 @@ export const addTask = async (
     const now = new Date();
     const taskId = uuidv4();
 
-    console.log('Creating new task with deadline:', task.deadline);
+    // Make sure deadline is a valid date object
+    const deadline = task.deadline instanceof Date ? task.deadline : new Date(task.deadline);
+    
+    console.log('Creating new task with deadline:', format(deadline, 'yyyy-MM-dd HH:mm:ss'));
     console.log('Task creator user ID:', userId);
 
     const taskToInsert = {
@@ -35,13 +39,15 @@ export const addTask = async (
       project_id: task.projectId || null,
       title: task.title,
       description: task.description,
-      deadline: task.deadline.toISOString(),
+      deadline: deadline.toISOString(),
       priority: task.priority,
       status: task.status,
       created_at: now.toISOString(),
       updated_at: now.toISOString(),
       assigned_to_id: task.assignedToId || null,
     };
+
+    console.log('Inserting task with data:', JSON.stringify(taskToInsert));
 
     const { data, error } = await supabase
       .from('tasks')
@@ -51,9 +57,31 @@ export const addTask = async (
 
     if (error) {
       console.error('Error adding task:', error);
-      playErrorSound();
-      toast.error('Failed to create task');
-      return;
+      
+      // Try project_tasks table as fallback
+      console.log('Attempting to insert into project_tasks table instead...');
+      const { data: projectTasksData, error: projectTasksError } = await supabase
+        .from('project_tasks')
+        .insert(taskToInsert)
+        .select('*')
+        .single();
+        
+      if (projectTasksError) {
+        console.error('Error adding task to project_tasks:', projectTasksError);
+        playErrorSound();
+        toast.error('Failed to create task');
+        return;
+      }
+      
+      if (!projectTasksData) {
+        console.error('No data returned when inserting task');
+        playErrorSound();
+        toast.error('Failed to create task');
+        return;
+      }
+      
+      // Use the data from project_tasks
+      data = projectTasksData;
     }
 
     if (data) {
@@ -77,7 +105,7 @@ export const addTask = async (
       };
 
       console.log('Task created successfully, updating state with new task:', newTask);
-      console.log('Task deadline:', newTask.deadline);
+      console.log('Task deadline:', format(newTask.deadline, 'yyyy-MM-dd'));
       
       // Update the tasks state with the new task
       setTasks(prevTasks => {
