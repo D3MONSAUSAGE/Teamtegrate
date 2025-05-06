@@ -16,6 +16,7 @@ export const addTask = async (
 ): Promise<void> => {
   if (!user) {
     console.error('Cannot add task: No user provided');
+    toast.error('User information required');
     return;
   }
   

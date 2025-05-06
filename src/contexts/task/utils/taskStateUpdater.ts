@@ -11,7 +11,10 @@ export const updateStateWithNewTask = (
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
 ): void => {
   console.log('Updating state with new task:', newTask.title);
-  console.log('Task deadline:', format(newTask.deadline, 'yyyy-MM-dd'));
+  
+  if (newTask.deadline) {
+    console.log('Task deadline:', format(newTask.deadline, 'yyyy-MM-dd'));
+  }
   
   // Update the tasks state with the new task
   setTasks(prevTasks => {
@@ -25,9 +28,11 @@ export const updateStateWithNewTask = (
     setProjects(prevProjects => 
       prevProjects.map(project => {
         if (project.id === newTask.projectId) {
+          console.log(`Adding task to project ${project.title}`);
           return {
             ...project,
-            tasks: [...(project.tasks || []), newTask]
+            tasks: [...(project.tasks || []), newTask],
+            tasks_count: (project.tasks_count || 0) + 1
           };
         }
         return project;

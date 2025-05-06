@@ -48,8 +48,8 @@ export const normalizeTaskData = (
     completedAt: taskData.completed_at ? parseDate(taskData.completed_at) : undefined,
     assignedToId: taskData.assigned_to_id || undefined,
     assignedToName: assignedToName,
-    tags: [],
-    comments: [],
+    tags: taskData.tags || [],
+    comments: taskData.comments || [],
     cost: taskData.cost || 0
   };
 };

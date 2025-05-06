@@ -18,6 +18,8 @@ export const addTask = async (
   try {
     if (!user) {
       console.error('Cannot add task: No user provided');
+      playErrorSound();
+      toast.error('User information is required to create a task');
       return;
     }
     
@@ -30,14 +32,14 @@ export const addTask = async (
     if (error) {
       console.error(`Failed to add task to ${table} table:`, error);
       playErrorSound();
-      toast.error('Failed to create task');
+      toast.error('Failed to create task: ' + (error.message || 'Unknown error'));
       return;
     }
 
     if (!data) {
       console.error('No data returned when inserting task');
       playErrorSound();
-      toast.error('Failed to create task');
+      toast.error('Failed to create task: No data returned from database');
       return;
     }
 
@@ -49,9 +51,11 @@ export const addTask = async (
     
     playSuccessSound();
     toast.success('Task created successfully!');
+    return newTask;
   } catch (error) {
     console.error('Error in addTask:', error);
     playErrorSound();
-    toast.error('Failed to create task');
+    toast.error('Failed to create task: ' + ((error as Error)?.message || 'Unknown error'));
+    return null;
   }
 };

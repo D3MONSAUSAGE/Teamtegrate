@@ -32,6 +32,7 @@ export const insertTaskRecord = async (
     created_at: now.toISOString(),
     updated_at: now.toISOString(),
     assigned_to_id: task.assignedToId || null,
+    cost: task.cost || 0
   };
 
   console.log('Inserting task with data:', JSON.stringify(taskToInsert));

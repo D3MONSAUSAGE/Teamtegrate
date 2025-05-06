@@ -39,7 +39,7 @@ export const updateTaskStates = (
   if (projectId) {
     setProjects(prevProjects => {
       return prevProjects.map(project => {
-        if (project.id === projectId) {
+        if (project.id === projectId && Array.isArray(project.tasks)) {
           return {
             ...project,
             tasks: project.tasks.map(projectTask => {
