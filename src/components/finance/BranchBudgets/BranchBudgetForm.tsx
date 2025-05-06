@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -5,7 +6,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import BudgetCategoriesEditor from "./BudgetCategoriesEditor";
-import { BranchBudgetFormState, Branch } from "./types";
+import { BranchBudgetFormState, Branch, BudgetCategory } from "./types";
 
 type Props = {
   branches: Branch[];
