@@ -15,6 +15,8 @@ import useDashboardData from '@/hooks/dashboard/useDashboardData';
 const DashboardPage = () => {
   const {
     user,
+    tasks,
+    projects,
     dailyScore,
     isLoading,
     isRefreshing,
@@ -54,7 +56,10 @@ const DashboardPage = () => {
 
         <TimeTracking />
 
-        <AnalyticsSection />
+        <AnalyticsSection 
+          tasks={tasks}
+          projects={projects}
+        />
         
         <DailyTasksSection 
           tasks={todaysTasks}
@@ -76,6 +81,7 @@ const DashboardPage = () => {
               projects={recentProjects}
               onViewTasks={handleViewTasks}
               onCreateTask={handleCreateTask}
+              onRefresh={handleRefreshData}
               isLoading={isLoading}
             />
             
