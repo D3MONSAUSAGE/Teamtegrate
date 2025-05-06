@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Task } from '@/types';
@@ -25,17 +25,9 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
   currentProjectId 
 }) => {
   const { user } = useAuth();
-  const { addTask, updateTask, projects, refreshProjects } = useTask();
+  const { addTask, updateTask, projects } = useTask();
   const isEditMode = !!editingTask;
   const isMobile = useIsMobile();
-  
-  // Refresh projects when dialog opens
-  useEffect(() => {
-    if (open) {
-      console.log('CreateTaskDialog opened, refreshing projects');
-      refreshProjects();
-    }
-  }, [open, refreshProjects]);
   
   const {
     register,
@@ -47,31 +39,11 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
     setSelectedMember
   } = useTaskForm(editingTask, currentProjectId);
 
-  // Log assignment data for debugging
-  useEffect(() => {
-    if (editingTask) {
-      console.log('Editing task assignment data:', {
-        id: editingTask.id,
-        assignedToId: editingTask.assignedToId,
-        assignedToName: editingTask.assignedToName,
-        selectedMember
-      });
-    }
-  }, [editingTask, selectedMember]);
-
   const onSubmit = (data: any) => {
-    console.log('Form submission data:', data);
-    
     // Handle the case where deadline might come as string or Date
     const deadlineDate = typeof data.deadline === 'string' 
       ? new Date(data.deadline)
       : data.deadline;
-    
-    // Log the assignment data that will be saved
-    console.log('Task assignment data to save:', {
-      assignedToId: selectedMember === "unassigned" ? undefined : selectedMember,
-      assignedToName: data.assignedToName
-    });
 
     if (isEditMode && editingTask) {
       updateTask(editingTask.id, {

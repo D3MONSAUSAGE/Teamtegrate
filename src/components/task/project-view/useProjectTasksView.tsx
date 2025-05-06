@@ -6,7 +6,7 @@ import { toast } from '@/components/ui/sonner';
 import { useProjectTasks } from './useProjectTasks';
 
 export const useProjectTasksView = (projectId: string | null) => {
-  const { tasks, projects, refreshProjects, refreshTasks } = useTask();
+  const { tasks, projects, refreshProjects } = useTask();
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
@@ -56,8 +56,7 @@ export const useProjectTasksView = (projectId: string | null) => {
       try {
         console.log(`Loading projects data for project ID: ${projectId}`);
         await refreshProjects();
-        await refreshTasks();
-        console.log(`Successfully loaded projects and tasks data`);
+        console.log(`Successfully loaded projects data`);
         setInitialLoadAttempted(true);
       } catch (error) {
         console.error('Error refreshing project data:', error);
@@ -78,7 +77,7 @@ export const useProjectTasksView = (projectId: string | null) => {
     };
     
     loadData();
-  }, [projectId, refreshProjects, refreshTasks, retryCount, initialLoadAttempted]);
+  }, [projectId, refreshProjects, retryCount, initialLoadAttempted]);
 
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
@@ -98,29 +97,6 @@ export const useProjectTasksView = (projectId: string | null) => {
     setIsCreateTaskOpen(true);
   }, []);
   
-  const refreshData = useCallback(async () => {
-    if (!projectId) return;
-    
-    setIsRefreshing(true);
-    setLoadError(null);
-    
-    try {
-      console.log("Refreshing both tasks and projects data...");
-      await Promise.all([
-        refreshProjects(),
-        refreshTasks()
-      ]);
-      
-      console.log(`Data refreshed for project ${projectId}`);
-      // No need for toast here as it would be shown too frequently
-    } catch (error) {
-      console.error('Error refreshing data:', error);
-      setLoadError('Failed to refresh data.');
-    } finally {
-      setIsRefreshing(false);
-    }
-  }, [projectId, refreshProjects, refreshTasks]);
-  
   const handleManualRefresh = useCallback(async () => {
     if (!projectId) return;
     
@@ -128,10 +104,7 @@ export const useProjectTasksView = (projectId: string | null) => {
     setLoadError(null);
     
     try {
-      await Promise.all([
-        refreshProjects(),
-        refreshTasks()
-      ]);
+      await refreshProjects();
       toast.success("Project data refreshed successfully");
     } catch (error) {
       console.error('Error refreshing project data:', error);
@@ -140,7 +113,7 @@ export const useProjectTasksView = (projectId: string | null) => {
     } finally {
       setIsRefreshing(false);
     }
-  }, [projectId, refreshProjects, refreshTasks]);
+  }, [projectId, refreshProjects]);
 
   return {
     isLoading,
@@ -161,7 +134,6 @@ export const useProjectTasksView = (projectId: string | null) => {
     handleEditTask,
     handleCreateTask,
     handleManualRefresh,
-    onSortByChange: handleSortByChange,
-    refreshData
+    onSortByChange: handleSortByChange
   };
 };

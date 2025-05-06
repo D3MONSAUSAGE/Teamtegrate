@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { TableRow, TableCell } from "@/components/ui/table";
-import { Coffee, Clock } from 'lucide-react';
+import { Coffee } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { formatHoursMinutes } from '@/utils/timeUtils';
 import { parseISO, differenceInMinutes, isToday } from 'date-fns';
@@ -9,7 +9,6 @@ import { calculateBreakRequirements } from '@/utils/breakTracking';
 import TimeDetailsRow from './TimeDetailsRow';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from '@/components/ui/badge';
 
 interface WeeklyTimeRowProps {
   day: Date;
@@ -20,17 +19,12 @@ interface WeeklyTimeRowProps {
     notes?: string | null;
   }>;
   isSelected?: boolean;
-  isCurrentDay?: boolean;
   onClick?: () => void;
 }
 
-const WeeklyTimeRow: React.FC<WeeklyTimeRowProps> = ({ 
-  day, 
-  dayEntries, 
-  isSelected, 
-  isCurrentDay, 
-  onClick 
-}) => {
+const WeeklyTimeRow: React.FC<WeeklyTimeRowProps> = ({ day, dayEntries, isSelected, onClick }) => {
+  const isCurrentDay = isToday(day);
+  
   // Calculate total minutes for all entries for this day
   const dailyMinutes = dayEntries.reduce((acc, entry) => {
     // If duration_minutes is available, use it
@@ -52,85 +46,41 @@ const WeeklyTimeRow: React.FC<WeeklyTimeRowProps> = ({
 
   const { mealBreaks, restBreaks, earnedBreakMinutes } = calculateBreakRequirements(dailyMinutes);
   const total = dailyMinutes + earnedBreakMinutes;
-  const hasEntries = dayEntries.length > 0;
 
   return (
     <TableRow 
       className={cn(
-        "transition-colors border-l-2 cursor-pointer",
-        isCurrentDay && "bg-primary/5 border-l-primary",
-        isSelected && "bg-secondary/10 border-l-secondary",
-        !isCurrentDay && !isSelected && "border-l-transparent",
-        hasEntries ? "hover:bg-muted/50" : "hover:bg-muted/30"
+        isCurrentDay && "bg-primary/5",
+        isSelected && "bg-secondary/20",
+        "hover:bg-muted/50 transition-colors cursor-pointer"
       )}
       onClick={onClick}
     >
-      <TableCell className="font-medium">
-        <div className="flex items-center">
-          <span className={cn(
-            "mr-2",
-            isCurrentDay && "text-primary font-semibold"
-          )}>
-            {new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).format(day)}
-          </span>
-          {isCurrentDay && (
-            <Badge variant="outline" className="text-xs px-1.5 py-0 border-primary text-primary">Today</Badge>
-          )}
-        </div>
+      <TableCell className="font-medium w-[120px]">
+        {new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).format(day)}
       </TableCell>
-
-      <TableCell className="hidden md:table-cell">
-        <span className={cn(
-          "font-medium",
-          dailyMinutes > 0 && "text-foreground"
-        )}>
-          {formatHoursMinutes(dailyMinutes)}
-        </span>
+      <TableCell className="w-[100px] hidden md:table-cell">{formatHoursMinutes(dailyMinutes)}</TableCell>
+      <TableCell className="text-emerald-600 dark:text-emerald-400 font-medium w-[80px] hidden md:table-cell">
+        +{earnedBreakMinutes}m
       </TableCell>
-
-      <TableCell className="hidden md:table-cell">
-        {earnedBreakMinutes > 0 ? (
-          <span className="text-emerald-600 dark:text-emerald-400 font-medium">
-            +{earnedBreakMinutes}m
-          </span>
-        ) : (
-          <span className="text-muted-foreground">-</span>
-        )}
+      <TableCell className="w-[100px]">
+        <Tooltip>
+          <TooltipTrigger className="mx-auto block">
+            <div className="flex items-center gap-2 justify-center">
+              <Coffee className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm">{mealBreaks + restBreaks}</span>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>
+            <div className="text-sm space-y-1">
+              <p>{mealBreaks} meal breaks (30 min)</p>
+              <p>{restBreaks} rest breaks (10 min)</p>
+            </div>
+          </TooltipContent>
+        </Tooltip>
       </TableCell>
-
-      <TableCell>
-        {mealBreaks + restBreaks > 0 ? (
-          <Tooltip>
-            <TooltipTrigger className="mx-auto block">
-              <div className="flex items-center gap-2 justify-center">
-                <Coffee className="h-4 w-4 text-amber-500" />
-                <span className="text-sm">{mealBreaks + restBreaks}</span>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              <div className="text-sm space-y-1">
-                <p>{mealBreaks} meal break{mealBreaks !== 1 ? 's' : ''} (30 min)</p>
-                <p>{restBreaks} rest break{restBreaks !== 1 ? 's' : ''} (10 min)</p>
-              </div>
-            </TooltipContent>
-          </Tooltip>
-        ) : (
-          <span className="text-muted-foreground text-center block">-</span>
-        )}
-      </TableCell>
-
-      <TableCell className="font-bold">
-        {total > 0 ? (
-          <div className="flex items-center">
-            <Clock className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
-            {formatHoursMinutes(total)}
-          </div>
-        ) : (
-          <span className="text-muted-foreground">-</span>
-        )}
-      </TableCell>
-
-      <TableCell>
+      <TableCell className="font-bold w-[100px]">{formatHoursMinutes(total)}</TableCell>
+      <TableCell className="w-[400px]">
         {dayEntries.length > 0 ? (
           <ScrollArea className="h-auto max-h-[200px] w-full pr-4">
             <div className="space-y-2">

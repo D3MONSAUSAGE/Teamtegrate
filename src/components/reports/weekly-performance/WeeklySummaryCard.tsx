@@ -32,39 +32,19 @@ const WeeklySummaryCard: React.FC<WeeklySummaryCardProps> = ({
       <CardContent className="flex flex-col gap-4 md:flex-row md:gap-12">
         <div className="flex flex-col gap-1 min-w-[150px]">
           <span className="text-muted-foreground text-xs">Total Hours Tracked</span>
-          {loading ? (
-            <Skeleton className="w-16 h-8" />
-          ) : (
-            <span className="text-2xl font-bold text-primary">{totalHours} h</span>
-          )}
+          <span className="text-2xl font-bold text-primary">{loading ? <Skeleton className="w-14 h-6" /> : `${totalHours} h`}</span>
         </div>
         <div className="flex flex-col gap-1 min-w-[150px]">
-          <span className="text-muted-foreground text-xs flex gap-1 items-center">
-            <FileCheck2 size={14}/>Completed Tasks
-          </span>
-          {loading ? (
-            <Skeleton className="w-10 h-8" />
-          ) : (
-            <span className="text-xl font-semibold">{completedTasksCount}</span>
-          )}
+          <span className="text-muted-foreground text-xs flex gap-1 items-center"><FileCheck2 size={14}/>Completed Tasks</span>
+          <span className="text-xl font-semibold">{completedTasksCount}</span>
         </div>
         <div className="flex flex-col gap-1 min-w-[150px]">
-          <span className="text-muted-foreground text-xs flex gap-1 items-center">
-            <FolderKanban size={14}/>Project Tasks Done
-          </span>
-          {loading ? (
-            <Skeleton className="w-10 h-8" />
-          ) : (
-            <span className="text-xl font-semibold">{completedProjectTasksCount}</span>
-          )}
+          <span className="text-muted-foreground text-xs flex gap-1 items-center"><FolderKanban size={14}/>Project Tasks Done</span>
+          <span className="text-xl font-semibold">{completedProjectTasksCount}</span>
         </div>
         <div className="flex flex-col gap-1 min-w-[150px]">
           <span className="text-muted-foreground text-xs">Personal Tasks Done</span>
-          {loading ? (
-            <Skeleton className="w-10 h-8" />
-          ) : (
-            <span className="text-xl font-semibold">{completedPersonalTasksCount}</span>
-          )}
+          <span className="text-xl font-semibold">{completedPersonalTasksCount}</span>
         </div>
       </CardContent>
     </Card>

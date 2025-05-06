@@ -1,12 +1,24 @@
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import BudgetCategoriesEditor from "./BudgetCategoriesEditor";
-import { BranchBudgetFormState, Branch, BudgetCategory } from "./types";
+import BudgetCategoriesEditor, { BudgetCategory } from "./BudgetCategoriesEditor";
+
+export type BranchBudgetFormState = {
+  branch_id: string;
+  period: string;
+  total_budget: string;
+  notes: string;
+  categories: BudgetCategory[];
+};
+
+type Branch = {
+  id: string;
+  name: string;
+};
 
 type Props = {
   branches: Branch[];
@@ -149,3 +161,4 @@ const BranchBudgetForm: React.FC<Props> = ({
 };
 
 export default BranchBudgetForm;
+export type { BudgetCategory };

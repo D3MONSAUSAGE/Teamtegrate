@@ -25,82 +25,32 @@ export const assignTaskToUser = async (
 
     const now = new Date();
     
-    // Ensure taskId is a string
-    const normalizedTaskId = String(taskId);
-    
     // Find user's name if not provided or get updated name
     let actualUserName = userName;
     if ((!actualUserName || actualUserName === userId) && userId) {
-      console.log('Fetching user info for:', userId);
-      const fetchedName = await fetchUserInfo(userId);
-      if (fetchedName) {
-        actualUserName = fetchedName;
-        console.log('Resolved user name:', actualUserName);
-      }
+      actualUserName = await fetchUserInfo(userId) || userName;
     }
 
-    console.log(`Assigning task ${normalizedTaskId} to user ${userId} (${actualUserName})`);
+    // Only send assigned_to_id to the database
+    const { error } = await supabase
+      .from('tasks')
+      .update({ 
+        assigned_to_id: userId,
+        updated_at: now.toISOString() 
+      })
+      .eq('id', taskId);
 
-    // Prepare update payload
-    const updatePayload = { 
-      assigned_to_id: userId,
-      assigned_to_name: actualUserName,
-      updated_at: now.toISOString() 
-    };
-
-    // First try the tasks table
-    let dbError = null;
-    let updateSuccessful = false;
-    
-    try {
-      const { error } = await supabase
-        .from('tasks')
-        .update(updatePayload)
-        .eq('id', normalizedTaskId);
-      
-      if (!error) {
-        updateSuccessful = true;
-        console.log('Successfully updated tasks table with assignment');
-      } else {
-        dbError = error;
-        console.error('Error updating tasks table:', error);
-      }
-    } catch (err) {
-      console.error('Error updating tasks table:', err);
-    }
-    
-    // If that failed, try the project_tasks table
-    if (!updateSuccessful) {
-      try {
-        const { error } = await supabase
-          .from('project_tasks')
-          .update(updatePayload)
-          .eq('id', normalizedTaskId);
-        
-        if (error) {
-          console.error('Error updating project_tasks table:', error);
-          if (dbError) {
-            console.error('Previous error from tasks table:', dbError);
-          }
-          playErrorSound();
-          toast.error('Failed to assign task to user');
-          return;
-        } else {
-          console.log('Successfully updated project_tasks table with assignment');
-          updateSuccessful = true;
-        }
-      } catch (err) {
-        console.error('Error updating project_tasks table:', err);
-        playErrorSound();
-        toast.error('Failed to assign task to user');
-        return;
-      }
+    if (error) {
+      console.error('Error assigning task to user:', error);
+      playErrorSound();
+      toast.error('Failed to assign task to user');
+      return;
     }
 
     // Find the task to send in notification
-    const task = tasks.find(t => String(t.id) === normalizedTaskId);
+    const task = tasks.find(t => t.id === taskId);
     if (!task) {
-      console.error('Task not found:', normalizedTaskId);
+      console.error('Task not found:', taskId);
       return;
     }
 
@@ -112,7 +62,7 @@ export const assignTaskToUser = async (
     
     // Update the state in both tasks array and projects array
     updateTaskStates(
-      normalizedTaskId, 
+      taskId, 
       userId, 
       actualUserName, 
       task.projectId, 

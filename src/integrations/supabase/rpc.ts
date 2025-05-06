@@ -4,37 +4,32 @@ import { supabase } from './client';
 // Function to create RPC functions in Supabase
 export const createRpcFunctions = async () => {
   try {
-    console.log('Setting up RPC functions...');
-    
-    // Create function to get all tasks
+    // Create function to get all tasks - use executeRpc helper instead of direct call
+    console.log('Setting up get_all_tasks function...');
     await executeRpc('create_get_all_tasks_function');
     
     // Create function to get all projects
+    console.log('Setting up get_all_projects function...');
     await executeRpc('create_get_all_projects_function');
     
     // Verify the functions are working
+    console.log('Testing RPC functions...');
     const tasksTest = await executeRpc('get_all_tasks');
+    console.log(`get_all_tasks test returned: ${tasksTest !== null ? 'Success' : 'Failed'}`);
+    
     const projectsTest = await executeRpc('get_all_projects');
-    
-    const tasksStatus = tasksTest !== null ? 'Success' : 'Failed';
-    const projectsStatus = projectsTest !== null ? 'Success' : 'Failed';
-    
-    console.log(`RPC functions setup complete. Tests: get_all_tasks (${tasksStatus}), get_all_projects (${projectsStatus})`);
-    
-    return {
-      success: tasksTest !== null && projectsTest !== null,
-      tasksCount: Array.isArray(tasksTest) ? tasksTest.length : 0,
-      projectsCount: Array.isArray(projectsTest) ? projectsTest.length : 0
-    };
+    console.log(`get_all_projects test returned: ${projectsTest !== null ? 'Success' : 'Failed'}`);
   } catch (error) {
     console.error('Error setting up RPC functions:', error);
-    return { success: false, tasksCount: 0, projectsCount: 0 };
   }
 };
 
 // Helper function to execute RPC calls with proper error handling
 export const executeRpc = async (functionName: string, params?: any) => {
   try {
+    // Explicitly type the functionName as any to bypass TypeScript's strict checking
+    // since we're dynamically adding functions to Supabase
+    console.log(`Executing RPC function: ${functionName}`);
     const { data, error } = await supabase.rpc(functionName as any, params);
     
     if (error) {
@@ -42,12 +37,14 @@ export const executeRpc = async (functionName: string, params?: any) => {
       return null;
     }
     
-    // Log detailed info for get_all_tasks function
     if (functionName === 'get_all_tasks' && Array.isArray(data)) {
-      console.log(`RPC function ${functionName} returned ${data.length} tasks`);
+      console.log(`RPC function ${functionName} executed successfully, returned ${data.length} tasks`);
+      // Log a sample task if available
       if (data.length > 0) {
-        console.log('Sample task structure:', Object.keys(data[0]).join(', '));
+        console.log('Sample task:', data[0]);
       }
+    } else {
+      console.log(`RPC function ${functionName} executed successfully`);
     }
     
     return data;

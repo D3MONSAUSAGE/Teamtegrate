@@ -33,69 +33,6 @@ serve(async (req) => {
     try {
       console.log("Sending request to OpenAI with key:", openaiApiKey.substring(0, 3) + "...");
       
-      // Create a comprehensive system prompt that describes the app's features
-      const systemPrompt = `
-You are an AI assistant for a productivity and team collaboration application with the following features:
-
-1. Dashboard
-   - Overview of tasks, projects, and team activity
-   - Time tracking with daily and weekly reports
-   - Analytics showing completion rates and progress
-
-2. Tasks
-   - Create, assign, and manage tasks
-   - Set priorities (Low, Medium, High) and deadlines
-   - Track task status (Todo, In Progress, Done)
-   - Add comments and attachments to tasks
-
-3. Projects
-   - Create and manage projects
-   - Assign team members to projects
-   - Track project budget and expenses
-   - Monitor project progress and completion
-
-4. Team Management
-   - Add and manage team members
-   - Assign team members to tasks and projects
-   - Track team member performance and productivity
-
-5. Calendar
-   - Daily, weekly, and monthly views
-   - Task and project deadline visualization
-   - Schedule management
-
-6. Time Tracking
-   - Track time spent on tasks and projects
-   - Generate time reports
-   - Monitor work hours and breaks
-
-7. Chat
-   - Team messaging and collaboration
-   - Create chat rooms for different teams or projects
-   - Share files and links within chats
-
-8. Reports
-   - Weekly and daily performance reports
-   - Project status reports
-   - Team productivity reports
-
-9. Documents
-   - Upload and manage documents
-   - Organize documents in folders
-   - Share documents with team members
-
-10. Journal/Notebook
-    - Keep personal notes and journal entries
-    - Create and organize notebook entries
-
-11. Finance
-    - Track project budgets and expenses
-    - Generate financial reports
-    - Monitor sales and revenue
-
-Be helpful, accurate, and provide specific information about these features when users ask questions. If you're not sure about a specific detail, you can suggest where they might find that information in the application.
-`;
-      
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -107,7 +44,7 @@ Be helpful, accurate, and provide specific information about these features when
           messages: [
             {
               role: "system",
-              content: systemPrompt
+              content: "You are a helpful assistant."
             },
             {
               role: "user", 

@@ -7,16 +7,13 @@ import { fetchAllTaskComments } from './task/fetchAllTaskComments';
 import { resolveUserNames } from './task/resolveUserNames';
 import { logTaskFetchResults } from './task/logTaskFetchResults';
 import { executeRpc } from '@/integrations/supabase/rpc';
-import { isValid, isToday, isSameDay, format } from 'date-fns';
 
 export const fetchTasks = async (
   user: { id: string },
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>
 ): Promise<void> => {
   try {
-    // Ensure user.id is a string
-    const userId = typeof user.id === 'string' ? user.id : String(user.id);
-    console.log('Fetching tasks for user:', userId);
+    console.log('Fetching tasks for user:', user.id);
     
     // First attempt: Using RPC to bypass RLS policies
     console.log('Attempting to fetch tasks via RPC function...');
@@ -24,7 +21,7 @@ export const fetchTasks = async (
     
     if (rpcData !== null && Array.isArray(rpcData) && rpcData.length > 0) {
       console.log(`RPC returned task data successfully: ${rpcData.length} tasks found`);
-      await processAndSetTasks(rpcData, user, setTasks);
+      processAndSetTasks(rpcData, user, setTasks);
       return;
     }
     
@@ -40,7 +37,7 @@ export const fetchTasks = async (
       toast.error('Failed to load tasks from project_tasks table');
     } else if (directData && Array.isArray(directData) && directData.length > 0) {
       console.log(`Retrieved ${directData.length} tasks from direct project_tasks query`);
-      await processAndSetTasks(directData, user, setTasks);
+      processAndSetTasks(directData, user, setTasks);
       return;
     } else {
       console.log('No tasks found in project_tasks table, trying legacy tasks table...');
@@ -60,7 +57,7 @@ export const fetchTasks = async (
     
     if (legacyData && Array.isArray(legacyData) && legacyData.length > 0) {
       console.log(`Retrieved ${legacyData.length} tasks from legacy table`);
-      await processAndSetTasks(legacyData, user, setTasks);
+      processAndSetTasks(legacyData, user, setTasks);
       return;
     }
     
@@ -85,171 +82,93 @@ const processAndSetTasks = async (
     return;
   }
   
-  try {
-    console.log(`Processing ${taskData.length} tasks from database`);
-    
-    // Check for ID inconsistencies
-    const idTypes = new Set(taskData.map(task => typeof task.id));
-    if (idTypes.size > 1) {
-      console.warn('WARNING: Inconsistent ID types detected in tasks:', [...idTypes]);
-    }
-    
-    // Ensure all IDs are strings
-    taskData = taskData.map(task => ({
-      ...task,
-      id: String(task.id)
-    }));
-    
-    // Fetch comments for all tasks
-    const commentData = await fetchAllTaskComments();
-    
-    // Get all user IDs that are assigned to tasks
-    const assignedUserIds = taskData
-      .filter(task => task.assigned_to_id)
-      .map(task => task.assigned_to_id);
-    
-    // Remove duplicates and filter out any non-UUID values
-    const uniqueUserIds = [...new Set(assignedUserIds.filter(id => {
-      // Check if id is a valid UUID-like string
-      return id && typeof id === 'string' && 
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-    }))];
-    
-    console.log(`Found ${uniqueUserIds.length} unique assigned users with valid UUIDs`);
-    
-    // Build user name mapping
-    const userMap = await resolveUserNames(uniqueUserIds as string[]);
-    
-    // Process task data with comments and user information
-    let tasks: Task[] = taskData.map((task: any) => {
-      // Normalize user_id to ensure it's valid
-      const normalizedUserId = typeof user.id === 'string' ? user.id : String(user.id);
-      
-      // Normalize task ID to ensure it's always a string
-      const normalizedTaskId = String(task.id);
-      
-      // Improved date parsing function with better error handling and validation
-      const parseDate = (dateStr: string | null): Date => {
-        if (!dateStr) return new Date();
-        
-        try {
-          const date = new Date(dateStr);
-          
-          // Check if date is valid
-          if (!isValid(date)) {
-            console.warn(`Invalid date string: "${dateStr}", using current date instead`);
-            return new Date();
-          }
-          
-          return date;
-        } catch (e) {
-          console.warn(`Error parsing date: "${dateStr}", using current date instead:`, e);
-          return new Date();
-        }
-      };
-      
-      // Parse the deadline with validation
-      const deadline = task.deadline ? parseDate(task.deadline) : new Date();
-      
-      // Debug info - log deadline details
-      console.log(`Task ${normalizedTaskId} deadline:`, {
-        original: task.deadline,
-        parsed: deadline.toISOString(),
-        formattedDate: format(deadline, 'yyyy-MM-dd')
-      });
-      
-      // Get task comments
-      const taskComments = commentData && Array.isArray(commentData)
-        ? commentData
-            .filter(comment => String(comment.task_id) === normalizedTaskId)
-            .map(comment => ({
-              id: comment.id,
-              userId: comment.user_id,
-              userName: comment.user_id,
-              text: comment.content,
-              createdAt: new Date(comment.created_at || new Date())
-            }))
-        : [];
+  console.log(`Processing ${taskData.length} tasks from database:`, taskData);
   
-      // Get the assigned user name from our map
-      let assignedToId = task.assigned_to_id;
-      if (assignedToId && typeof assignedToId !== 'string') {
-        // Convert UUID object to string if needed
-        assignedToId = String(assignedToId);
-      }
-      
-      const assignedUserName = assignedToId ? userMap.get(assignedToId) : undefined;
-      
-      // Log assignment details for debugging
-      if (assignedToId) {
-        console.log(`Task ${normalizedTaskId} assignment:`, {
-          assignedToId,
-          assignedUserName,
-          fromUserMap: userMap.has(assignedToId)
-        });
-      }
+  // Fetch comments for all tasks
+  const commentData = await fetchAllTaskComments();
   
-      return {
-        id: normalizedTaskId,
-        userId: normalizedUserId, // Use normalized user ID
-        projectId: task.project_id,
-        title: task.title || '',
-        description: task.description || '',
-        deadline: deadline,
-        priority: (task.priority as Task['priority']) || 'Medium',
-        status: (task.status || 'To Do') as Task['status'],
-        createdAt: parseDate(task.created_at),
-        updatedAt: parseDate(task.updated_at),
-        completedAt: task.completed_at ? parseDate(task.completed_at) : undefined,
-        assignedToId: assignedToId,
-        assignedToName: assignedUserName,
-        comments: taskComments,
-        cost: task.cost || 0,
-        tags: task.tags || []
-      };
-    });
+  // Get all user IDs that are assigned to tasks to fetch their names
+  const assignedUserIds = taskData
+    .filter(task => task.assigned_to_id)
+    .map(task => task.assigned_to_id);
+
+  // Remove duplicates
+  const uniqueUserIds = [...new Set(assignedUserIds.filter(Boolean))];
+  console.log(`Found ${uniqueUserIds.length} unique assigned users`);
   
-    // Resolve user names for comments
-    if (commentData && Array.isArray(commentData) && commentData.length > 0) {
-      // Extract user IDs from comments
-      const commentUserIds = commentData
-        .filter(comment => comment.user_id && typeof comment.user_id === 'string')
-        .map(comment => comment.user_id);
-      
-      if (commentUserIds.length > 0) {
-        const uniqueCommentUserIds = [...new Set(commentUserIds)];
-        const commentUserMap = await resolveUserNames(uniqueCommentUserIds);
-        
-        tasks = tasks.map(task => ({
-          ...task,
-          comments: task.comments?.map(comment => ({
-            ...comment,
-            userName: comment.userId && commentUserMap.get(comment.userId) || comment.userName
+  // Build user name mapping
+  const userMap = await resolveUserNames(uniqueUserIds as string[]);
+  
+  // Process task data with comments and user information
+  let tasks: Task[] = taskData.map((task: any) => {
+    const taskComments = commentData && Array.isArray(commentData)
+      ? commentData
+          .filter(comment => comment.task_id === task.id)
+          .map(comment => ({
+            id: comment.id,
+            userId: comment.user_id,
+            userName: comment.user_id,
+            text: comment.content,
+            createdAt: new Date(comment.created_at || new Date())
           }))
-        }));
+      : [];
+
+    // Get the assigned user name from our map
+    const assignedUserName = task.assigned_to_id ? userMap.get(task.assigned_to_id) : undefined;
+
+    const parseDate = (dateStr: string | null): Date => {
+      if (!dateStr) return new Date();
+      return new Date(dateStr);
+    };
+
+    return {
+      id: task.id,
+      userId: user.id, // Use the current user's ID 
+      projectId: task.project_id,
+      title: task.title || '',
+      description: task.description || '',
+      deadline: parseDate(task.deadline),
+      priority: (task.priority as Task['priority']) || 'Medium',
+      status: (task.status || 'To Do') as Task['status'],
+      createdAt: parseDate(task.created_at),
+      updatedAt: parseDate(task.updated_at),
+      completedAt: task.completed_at ? parseDate(task.completed_at) : undefined,
+      assignedToId: task.assigned_to_id,
+      assignedToName: assignedUserName,
+      comments: taskComments,
+      cost: task.cost || 0,
+      tags: task.tags || []
+    };
+  });
+
+  // Resolve user names for comments
+  if (commentData && Array.isArray(commentData) && commentData.length > 0) {
+    // Extract user IDs from comments
+    const commentUserIds: string[] = [];
+    commentData.forEach(comment => {
+      if (comment.user_id && typeof comment.user_id === 'string') {
+        commentUserIds.push(comment.user_id);
       }
-    }
-    
-    // Log task distribution and specifically today's tasks
-    const today = new Date();
-    const todayTasks = tasks.filter(task => {
-      const taskDate = new Date(task.deadline);
-      return isSameDay(taskDate, today);
     });
     
-    console.log(`Found ${todayTasks.length} tasks scheduled for today:`, 
-      todayTasks.map(t => ({ 
-        title: t.title, 
-        date: format(new Date(t.deadline), 'yyyy-MM-dd'),
-        assignedToId: t.assignedToId,
-        assignedToName: t.assignedToName
-      })));
+    // Only proceed if we have valid user IDs
+    if (commentUserIds.length > 0) {
+      const uniqueCommentUserIds = [...new Set(commentUserIds)];
+      const commentUserMap = await resolveUserNames(uniqueCommentUserIds);
       
-    logTaskFetchResults(tasks);
-    console.log('Setting tasks, final count:', tasks.length);
-    setTasks(tasks);
-  } catch (error) {
-    console.error('Error processing task data:', error);
-    setTasks([]);
+      tasks = tasks.map(task => ({
+        ...task,
+        comments: task.comments?.map(comment => ({
+          ...comment,
+          userName: comment.userId && commentUserMap.get(comment.userId) || comment.userName
+        }))
+      }));
+    }
   }
+
+  // Log detailed information about the task fetch results
+  logTaskFetchResults(tasks);
+
+  console.log('Setting tasks, final count:', tasks.length);
+  setTasks(tasks);
 };

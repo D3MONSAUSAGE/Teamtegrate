@@ -1,54 +1,68 @@
 
-import { Task, User, UserRole } from '@/types';
+import { Task } from '@/types';
 import { toast } from '@/components/ui/sonner';
-import { playSuccessSound } from '@/utils/sounds';
-import { addTask as addTaskOperation } from '../operations/taskAddition';
-
-/**
- * Normalizes a user object or ID to ensure consistent format
- */
-const normalizeUser = (user: { id: string } | null): User | null => {
-  if (!user) return null;
-  
-  // Ensure user.id is a string
-  const userId = typeof user.id === 'string' ? user.id : String(user.id);
-  
-  // Use a valid UserRole type value
-  const userRole: UserRole = 'user';
-  
-  return {
-    id: userId,
-    email: '',  // Not used in the operation
-    name: '',   // Not used in the operation
-    role: userRole, // Now correctly typed as UserRole
-    createdAt: new Date() // Not used in the operation
-  };
-};
+import { supabase } from '@/integrations/supabase/client';
+import { v4 as uuidv4 } from 'uuid';
 
 export const addTask = async (
   task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>,
-  user: { id: string } | null,
+  user: { id: string },
   tasks: Task[],
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>,
   projects: any[],
   setProjects: React.Dispatch<React.SetStateAction<any[]>>
 ): Promise<void> => {
-  if (!user) {
-    console.error('Cannot add task: No user provided');
-    toast.error('User information required');
-    return;
+  try {
+    const newTask = {
+      ...task,
+      id: uuidv4(),
+      userId: user.id,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const { data, error } = await supabase
+      .from('tasks')
+      .insert([
+        {
+          id: newTask.id,
+          user_id: newTask.userId,
+          project_id: newTask.projectId,
+          title: newTask.title,
+          description: newTask.description,
+          deadline: newTask.deadline.toISOString(),
+          priority: newTask.priority,
+          status: newTask.status,
+          created_at: newTask.createdAt.toISOString(),
+          updated_at: newTask.updatedAt.toISOString(),
+          assigned_to_id: newTask.assignedToId,
+          assigned_to_name: newTask.assignedToName,
+          cost: newTask.cost || 0,
+        },
+      ])
+      .select();
+
+    if (error) {
+      console.error('Error adding task:', error);
+      toast.error('Failed to add task');
+      return;
+    }
+
+    setTasks([...tasks, newTask]);
+
+    if (newTask.projectId) {
+      setProjects((prevProjects) =>
+        prevProjects.map((project) =>
+          project.id === newTask.projectId
+            ? { ...project, tasks: [...project.tasks, newTask] }
+            : project
+        )
+      );
+    }
+
+    toast.success('Task added successfully!');
+  } catch (error) {
+    console.error('Error adding task:', error);
+    toast.error('Failed to add task');
   }
-  
-  // Normalize the user object to ensure consistent format
-  const normalizedUser = normalizeUser(user);
-  
-  // Forward to our implementation with the properly typed user object
-  await addTaskOperation(
-    task, 
-    normalizedUser,
-    tasks, 
-    setTasks, 
-    projects, 
-    setProjects
-  );
 };

@@ -58,12 +58,18 @@ export const useProjects = () => {
         if (totalTasks > 0) {
           const allTasksCompleted = completedTasks === totalTasks;
           
-          if (allTasksCompleted && completedTasks > 0) {
+          if (allTasksCompleted) {
             status = 'Completed';
             isCompleted = true;
-          } else if (completedTasks > 0) {
-            status = 'In Progress';
-            isCompleted = false;
+          } else {
+            // If not all tasks are completed, project cannot be marked as completed
+            if (status === 'Completed' || isCompleted) {
+              status = 'In Progress';
+              isCompleted = false;
+              
+              // Log the status correction
+              console.log(`Project ${project.id} status corrected: not all tasks complete but was marked as Completed`);
+            }
           }
         }
         
@@ -84,7 +90,7 @@ export const useProjects = () => {
           budgetSpent: project.budget_spent || 0,
           is_completed: isCompleted,
           status: status as ProjectStatus,
-          tasks_count: totalTasks || 0,
+          tasks_count: totalTasks,
           tags: project.tags || []
         };
       });

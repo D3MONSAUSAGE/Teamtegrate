@@ -6,12 +6,10 @@ import { useWeeklyPerformance } from "@/hooks/useWeeklyPerformance";
 import WeeklySummaryCard from "./weekly-performance/WeeklySummaryCard";
 import CompletedTasksTable from "./weekly-performance/CompletedTasksTable";
 import { exportWeeklyReportCSV } from "./weekly-performance/exportUtils";
-import { toast } from "@/components/ui/use-toast";
 
 const WeeklyPerformanceReport: React.FC = () => {
   const {
     totalHours,
-    displayTotalHours,
     loading,
     completedThisWeek,
     completedProjectTasks,
@@ -22,27 +20,14 @@ const WeeklyPerformanceReport: React.FC = () => {
   } = useWeeklyPerformance();
 
   const handleExportCSV = () => {
-    try {
-      exportWeeklyReportCSV(
-        weekStart,
-        weekEnd,
-        totalHours,
-        completedThisWeek,
-        completedProjectTasks.length,
-        completedPersonalTasks.length
-      );
-      toast({
-        title: "Report exported",
-        description: "Your weekly report has been exported as CSV."
-      });
-    } catch (error) {
-      console.error("Error exporting report:", error);
-      toast({
-        title: "Export failed",
-        description: "There was an error exporting your report.",
-        variant: "destructive"
-      });
-    }
+    exportWeeklyReportCSV(
+      weekStart,
+      weekEnd,
+      totalHours,
+      completedThisWeek,
+      completedProjectTasks.length,
+      completedPersonalTasks.length
+    );
   };
 
   return (
@@ -59,7 +44,7 @@ const WeeklyPerformanceReport: React.FC = () => {
       </div>
       
       <WeeklySummaryCard
-        totalHours={displayTotalHours}
+        totalHours={totalHours}
         loading={loading}
         completedTasksCount={completedThisWeek.length}
         completedProjectTasksCount={completedProjectTasks.length}

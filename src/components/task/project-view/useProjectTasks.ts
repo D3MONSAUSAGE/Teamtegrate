@@ -16,17 +16,7 @@ export const useProjectTasks = (allTasks: Task[], projectId: string | null) => {
     if (!projectId || !allTasks || allTasks.length === 0) return [];
     
     console.log(`Filtering tasks for project ${projectId}. Total tasks: ${allTasks.length}`);
-    
-    const filteredTasks = allTasks.filter(task => {
-      const isForProject = task.projectId === projectId;
-      if (isForProject) {
-        console.log(`Found task ${task.id} (${task.title}) for project ${projectId}`);
-      }
-      return isForProject;
-    });
-    
-    console.log(`Total tasks for project ${projectId}: ${filteredTasks.length}`);
-    return filteredTasks;
+    return allTasks.filter(task => task.projectId === projectId);
   }, [allTasks, projectId]);
 
   // Filter tasks by search query

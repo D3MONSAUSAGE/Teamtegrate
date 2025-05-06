@@ -20,7 +20,6 @@ interface WeeklyPerformanceData {
   loading: boolean;
   totalMinutes: number;
   totalHours: string;
-  displayTotalHours: string;
   completedThisWeek: Task[];
   completedProjectTasks: Task[];
   completedPersonalTasks: Task[];
@@ -45,35 +44,21 @@ export const useWeeklyPerformance = (): WeeklyPerformanceData => {
 
   // Fetch this week's time entries
   useEffect(() => {
-    if (!user) {
-      setLoading(false);
-      return;
-    }
-    
+    if (!user) return;
     const fetchWeeklyEntries = async () => {
       setLoading(true);
       
-      try {
-        const { data, error } = await supabase
-          .from("time_entries")
-          .select("*")
-          .eq("user_id", user.id)
-          .gte("clock_in", weekStart.toISOString())
-          .lt("clock_in", new Date(new Date(weekEnd).setHours(23, 59, 59)).toISOString())
-          .order("clock_in", { ascending: true });
+      const { data, error } = await supabase
+        .from("time_entries")
+        .select("*")
+        .eq("user_id", user.id)
+        .gte("clock_in", weekStart.toISOString())
+        .lt("clock_in", new Date(weekEnd.setHours(23, 59, 59)).toISOString())
+        .order("clock_in", { ascending: true });
 
-        if (error) {
-          console.error("Error fetching weekly entries:", error);
-        }
-
-        setWeeklyEntries(data || []);
-      } catch (err) {
-        console.error("Exception when fetching weekly entries:", err);
-      } finally {
-        setLoading(false);
-      }
+      setWeeklyEntries(data || []);
+      setLoading(false);
     };
-    
     fetchWeeklyEntries();
   }, [user, weekStart, weekEnd]);
 
@@ -91,8 +76,6 @@ export const useWeeklyPerformance = (): WeeklyPerformanceData => {
   }, 0);
 
   const totalHours = (totalMinutes / 60).toFixed(2);
-  // Format hours for display (ensure it's never blank)
-  const displayTotalHours = totalMinutes === 0 ? '0' : totalHours;
 
   // Find this week's completed tasks and project tasks
   const completedThisWeek = tasks.filter(
@@ -100,7 +83,7 @@ export const useWeeklyPerformance = (): WeeklyPerformanceData => {
     (t.completedAt || t.updatedAt) && 
     isWithinInterval(new Date(t.completedAt || t.updatedAt), { 
       start: weekStart, 
-      end: new Date(new Date(weekEnd).setHours(23, 59, 59)) 
+      end: new Date(weekEnd.setHours(23, 59, 59)) 
     })
   );
   
@@ -117,7 +100,6 @@ export const useWeeklyPerformance = (): WeeklyPerformanceData => {
     loading,
     totalMinutes,
     totalHours,
-    displayTotalHours,
     completedThisWeek,
     completedProjectTasks,
     completedPersonalTasks,

@@ -6,19 +6,14 @@ import { format } from 'date-fns';
 interface TaskCardMetadataProps {
   deadline: Date;
   assignedToName?: string;
-  assignedToId?: string;
 }
 
 const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({
   deadline,
   assignedToName,
-  assignedToId,
 }) => {
-  // Only consider a task unassigned if there's no assignedToId
-  const isUnassigned = !assignedToId;
-  
-  // Format the display name - if no ID, show "Unassigned" regardless of name
-  const displayName = !isUnassigned && assignedToName 
+  // Format the display name - if empty or undefined, show "Unassigned"
+  const displayName = assignedToName && assignedToName.trim() !== '' 
     ? assignedToName 
     : 'Unassigned';
 
@@ -27,18 +22,13 @@ const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({
       <div className="flex items-center text-xs text-gray-500 gap-1">
         <Clock className="h-3 w-3 flex-shrink-0" />
         <span className="truncate">
-          {format(new Date(deadline), 'MMM d')} at {format(new Date(deadline), 'h:mm a')}
+          {format(deadline, 'MMM d')} at {format(deadline, 'h:mm a')}
         </span>
       </div>
       
       <div className="flex items-center text-xs text-gray-500 gap-1">
         <User className="h-3 w-3 flex-shrink-0" />
-        <span 
-          className={`truncate max-w-[100px] ${isUnassigned ? 'italic text-gray-400' : ''}`}
-          title={displayName}
-        >
-          {displayName}
-        </span>
+        <span className="truncate max-w-[100px]">{displayName}</span>
       </div>
     </div>
   );

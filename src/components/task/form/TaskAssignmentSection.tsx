@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Label } from "@/components/ui/label";
 import { UseFormRegister, UseFormSetValue } from "react-hook-form";
 import { useUsers } from '@/hooks/useUsers';
@@ -27,30 +27,14 @@ export const TaskAssignmentSection: React.FC<TaskAssignmentSectionProps> = ({
 }) => {
   const { users } = useUsers();
 
-  // Log users for debugging
-  useEffect(() => {
-    console.log('Available users for assignment:', users);
-  }, [users]);
-
   const handleUserChange = (userId: string) => {
     if (userId === "unassigned") {
-      // Explicitly set to undefined to mark as unassigned
       setSelectedMember(undefined);
       setValue('assignedToName', '');
-      console.log('Task assigned to: Unassigned');
     } else {
       const user = users.find(u => u.id === userId);
       setSelectedMember(userId);
-      
-      // Make sure we have a name to display
-      const displayName = user?.name || user?.email || '';
-      setValue('assignedToName', displayName);
-      
-      console.log('Task assigned to:', {
-        userId,
-        displayName,
-        user
-      });
+      setValue('assignedToName', user?.name || user?.email || '');
     }
   };
 

@@ -803,14 +803,6 @@ export type Database = {
           updated_at: string | null
         }[]
       }
-      user_is_project_creator: {
-        Args: { project_id: string; user_id: string }
-        Returns: boolean
-      }
-      user_is_project_member: {
-        Args: { project_id: string; user_id: string }
-        Returns: boolean
-      }
       user_is_project_team_member: {
         Args: { project_id_val: string; user_id_val: string }
         Returns: boolean

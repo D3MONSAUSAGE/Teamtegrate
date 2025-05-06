@@ -35,6 +35,9 @@ const ProjectProgressBar: React.FC<ProjectProgressBarProps> = ({ project }) => {
     const completedTasks = projectTasks.filter(task => task.status === 'Completed').length;
     const allTasksCompleted = completedTasks === totalTasks;
     
+    console.log(`Project ${project.id} progress check: ${completedTasks}/${totalTasks} tasks completed (${progress}%)`);
+    console.log(`Current status: ${project.status}, All completed: ${allTasksCompleted}, Is completed flag: ${project.is_completed}`);
+    
     // Make sure project status is consistent with task completion
     if (allTasksCompleted && project.status !== 'Completed') {
       console.log(`Auto-updating project ${project.id} to Completed status as all tasks are done`);
@@ -60,10 +63,9 @@ const ProjectProgressBar: React.FC<ProjectProgressBarProps> = ({ project }) => {
       <Progress 
         value={progress} 
         className={`h-2 ${
-          progress === 0 ? 'bg-slate-100 dark:bg-slate-800' : 
-          progress < 30 ? 'bg-red-100 dark:bg-red-950' : 
-          progress < 70 ? 'bg-yellow-100 dark:bg-yellow-950' : 
-          'bg-green-100 dark:bg-green-950'
+          progress < 30 ? 'bg-red-100' : 
+          progress < 70 ? 'bg-yellow-100' : 
+          'bg-green-100'
         }`}
       />
     </div>

@@ -1,93 +1,30 @@
 
-import { useState, useEffect } from "react";
+import { useState } from 'react';
 import { useForm } from "react-hook-form";
-import { Task } from "@/types";
-import { format } from "date-fns";
+import { Task, TaskPriority } from '@/types';
 
-/**
- * Validates a date string
- */
-const isValidDateString = (dateStr: string): boolean => {
-  const date = new Date(dateStr);
-  return !isNaN(date.getTime());
-};
+export const useTaskForm = (editingTask?: Task, currentProjectId?: string) => {
+  const [selectedMember, setSelectedMember] = useState<string | undefined>(
+    editingTask?.assignedToId
+  );
 
-export const useTaskForm = (
-  editingTask?: Task,
-  currentProjectId?: string
-) => {
-  // Create a default deadline date (tomorrow at noon)
-  const getDefaultDeadline = () => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(12, 0, 0, 0);
-    return tomorrow;
-  };
+  // Set default values for the form, with ISO string for deadline
+  const defaultDeadline = editingTask?.deadline 
+    ? new Date(editingTask.deadline).toISOString()
+    : '';
 
-  // Format the deadline for form display
-  const formatDateForForm = (date: Date | string | undefined): string => {
-    try {
-      if (!date) return '';
-      
-      const dateObj = typeof date === 'string' ? new Date(date) : date;
-      if (isNaN(dateObj.getTime())) {
-        console.warn(`Invalid date: ${date}, using default`);
-        return format(getDefaultDeadline(), 'yyyy-MM-dd');
-      }
-      
-      return format(dateObj, 'yyyy-MM-dd');
-    } catch (error) {
-      console.warn('Error formatting date for form:', error);
-      return format(getDefaultDeadline(), 'yyyy-MM-dd');
-    }
-  };
-
-  // Setup form with react-hook-form
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    reset,
-    setValue,
-    watch
-  } = useForm({
+  const { register, handleSubmit, formState: { errors }, reset, setValue } = useForm({
     defaultValues: {
-      title: editingTask?.title || "",
-      description: editingTask?.description || "",
-      priority: editingTask?.priority || "Medium",
-      projectId: currentProjectId || editingTask?.projectId || "none",
-      deadline: formatDateForForm(editingTask?.deadline || getDefaultDeadline()),
-      assignedToName: editingTask?.assignedToName || ""
-    }
+      title: editingTask?.title || '',
+      description: editingTask?.description || '',
+      priority: editingTask?.priority || 'Medium' as TaskPriority,
+      deadline: defaultDeadline,
+      projectId: editingTask?.projectId || currentProjectId || '',
+      cost: editingTask?.cost || '',
+      assignedToId: editingTask?.assignedToId || '',
+      assignedToName: editingTask?.assignedToName || ''
+    },
   });
-
-  // State for member selection
-  const [selectedMember, setSelectedMember] = useState<string | undefined>(editingTask?.assignedToId);
-
-  // Reset form if editingTask changes
-  useEffect(() => {
-    if (editingTask) {
-      reset({
-        title: editingTask.title,
-        description: editingTask.description,
-        priority: editingTask.priority,
-        projectId: currentProjectId || editingTask.projectId || "none",
-        deadline: formatDateForForm(editingTask.deadline),
-        assignedToName: editingTask.assignedToName
-      });
-      setSelectedMember(editingTask.assignedToId);
-    } else {
-      reset({
-        title: "",
-        description: "",
-        priority: "Medium",
-        projectId: currentProjectId || "none",
-        deadline: formatDateForForm(getDefaultDeadline()),
-        assignedToName: ""
-      });
-      setSelectedMember(undefined);
-    }
-  }, [editingTask, currentProjectId, reset]);
 
   return {
     register,
@@ -95,10 +32,7 @@ export const useTaskForm = (
     errors,
     reset,
     setValue,
-    watch,
     selectedMember,
     setSelectedMember
   };
 };
-
-export default useTaskForm;
