@@ -1,3 +1,4 @@
+
 import { Task } from '@/types';
 import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -39,6 +40,10 @@ export const fetchTasks = async (
       toast.error('Failed to load tasks from project_tasks table');
     } else if (directData && Array.isArray(directData) && directData.length > 0) {
       console.log(`Retrieved ${directData.length} tasks from direct project_tasks query`);
+      // Log sample task ID and type to debug
+      if (directData.length > 0) {
+        console.log('Sample task ID from project_tasks:', directData[0].id, 'Type:', typeof directData[0].id);
+      }
       await processAndSetTasks(directData, user, setTasks);
       return;
     } else {
@@ -59,6 +64,10 @@ export const fetchTasks = async (
     
     if (legacyData && Array.isArray(legacyData) && legacyData.length > 0) {
       console.log(`Retrieved ${legacyData.length} tasks from legacy table`);
+      // Log sample task ID and type to debug
+      if (legacyData.length > 0) {
+        console.log('Sample task ID from legacy tasks:', legacyData[0].id, 'Type:', typeof legacyData[0].id);
+      }
       await processAndSetTasks(legacyData, user, setTasks);
       return;
     }
@@ -87,6 +96,18 @@ const processAndSetTasks = async (
   try {
     console.log(`Processing ${taskData.length} tasks from database`);
     
+    // Check for ID inconsistencies
+    const idTypes = new Set(taskData.map(task => typeof task.id));
+    if (idTypes.size > 1) {
+      console.warn('WARNING: Inconsistent ID types detected in tasks:', [...idTypes]);
+    }
+    
+    // Ensure all IDs are strings
+    taskData = taskData.map(task => ({
+      ...task,
+      id: String(task.id)
+    }));
+    
     // Fetch comments for all tasks
     const commentData = await fetchAllTaskComments();
     
@@ -111,6 +132,9 @@ const processAndSetTasks = async (
     let tasks: Task[] = taskData.map((task: any) => {
       // Normalize user_id to ensure it's valid
       const normalizedUserId = typeof user.id === 'string' ? user.id : String(user.id);
+      
+      // Normalize task ID to ensure it's always a string
+      const normalizedTaskId = String(task.id);
       
       // Improved date parsing function with better error handling and validation
       const parseDate = (dateStr: string | null): Date => {
@@ -138,7 +162,7 @@ const processAndSetTasks = async (
       // Get task comments
       const taskComments = commentData && Array.isArray(commentData)
         ? commentData
-            .filter(comment => comment.task_id === task.id)
+            .filter(comment => String(comment.task_id) === normalizedTaskId)
             .map(comment => ({
               id: comment.id,
               userId: comment.user_id,
@@ -149,10 +173,16 @@ const processAndSetTasks = async (
         : [];
   
       // Get the assigned user name from our map
-      const assignedUserName = task.assigned_to_id ? userMap.get(task.assigned_to_id) : undefined;
+      let assignedToId = task.assigned_to_id;
+      if (assignedToId && typeof assignedToId !== 'string') {
+        // Convert UUID object to string if needed
+        assignedToId = String(assignedToId);
+      }
+      
+      const assignedUserName = assignedToId ? userMap.get(assignedToId) : undefined;
   
       return {
-        id: task.id,
+        id: normalizedTaskId,
         userId: normalizedUserId, // Use normalized user ID
         projectId: task.project_id,
         title: task.title || '',
@@ -163,7 +193,7 @@ const processAndSetTasks = async (
         createdAt: parseDate(task.created_at),
         updatedAt: parseDate(task.updated_at),
         completedAt: task.completed_at ? parseDate(task.completed_at) : undefined,
-        assignedToId: task.assigned_to_id,
+        assignedToId: assignedToId,
         assignedToName: assignedUserName,
         comments: taskComments,
         cost: task.cost || 0,

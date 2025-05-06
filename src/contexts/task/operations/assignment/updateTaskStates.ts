@@ -15,11 +15,14 @@ export const updateTaskStates = (
 ): void => {
   const now = new Date();
   
+  // Ensure taskId is normalized as a string
+  const normalizedTaskId = String(taskId);
+  
   // Update the task in the tasks array
   setTasks(prevTasks => prevTasks.map(task => {
-    if (task.id === taskId) {
+    if (String(task.id) === normalizedTaskId) {
       console.log('Updating task in tasks array', { 
-        taskId, 
+        taskId: normalizedTaskId, 
         userId, 
         userName,
         before: task.assignedToName || 'none',
@@ -43,10 +46,10 @@ export const updateTaskStates = (
           return {
             ...project,
             tasks: project.tasks.map(projectTask => {
-              if (projectTask.id === taskId) {
+              if (String(projectTask.id) === normalizedTaskId) {
                 console.log('Updating task in project', {
                   projectId,
-                  taskId,
+                  taskId: normalizedTaskId,
                   userId,
                   userName,
                   before: projectTask.assignedToName || 'none',

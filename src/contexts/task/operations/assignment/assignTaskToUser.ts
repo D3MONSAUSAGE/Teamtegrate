@@ -25,6 +25,10 @@ export const assignTaskToUser = async (
 
     const now = new Date();
     
+    // Ensure taskId is a string
+    const normalizedTaskId = String(taskId);
+    console.log(`Normalized task ID for assignment: ${normalizedTaskId}`);
+    
     // Find user's name if not provided or get updated name
     let actualUserName = userName;
     if ((!actualUserName || actualUserName === userId) && userId) {
@@ -33,7 +37,7 @@ export const assignTaskToUser = async (
       console.log('Resolved user name:', actualUserName);
     }
 
-    console.log(`Assigning task ${taskId} to user ${userId} (${actualUserName})`);
+    console.log(`Assigning task ${normalizedTaskId} to user ${userId} (${actualUserName})`);
 
     // First try the tasks table
     let dbError = null;
@@ -46,7 +50,7 @@ export const assignTaskToUser = async (
           assigned_to_id: userId,
           updated_at: now.toISOString() 
         })
-        .eq('id', taskId);
+        .eq('id', normalizedTaskId);
       
       if (!error) {
         updateSuccessful = true;
@@ -66,7 +70,7 @@ export const assignTaskToUser = async (
             assigned_to_id: userId,
             updated_at: now.toISOString() 
           })
-          .eq('id', taskId);
+          .eq('id', normalizedTaskId);
         
         if (error) {
           console.error('Error updating project_tasks table:', error);
@@ -88,9 +92,9 @@ export const assignTaskToUser = async (
     }
 
     // Find the task to send in notification
-    const task = tasks.find(t => t.id === taskId);
+    const task = tasks.find(t => t.id === normalizedTaskId);
     if (!task) {
-      console.error('Task not found:', taskId);
+      console.error('Task not found:', normalizedTaskId);
       return;
     }
 
@@ -102,7 +106,7 @@ export const assignTaskToUser = async (
     
     // Update the state in both tasks array and projects array
     updateTaskStates(
-      taskId, 
+      normalizedTaskId, 
       userId, 
       actualUserName, 
       task.projectId, 
