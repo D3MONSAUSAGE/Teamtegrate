@@ -151,6 +151,13 @@ const processAndSetTasks = async (
       // Parse the deadline with validation
       const deadline = task.deadline ? parseDate(task.deadline) : new Date();
       
+      // Debug info - log deadline details
+      console.log(`Task ${normalizedTaskId} deadline:`, {
+        original: task.deadline,
+        parsed: deadline.toISOString(),
+        formattedDate: format(deadline, 'yyyy-MM-dd')
+      });
+      
       // Get task comments
       const taskComments = commentData && Array.isArray(commentData)
         ? commentData
@@ -230,7 +237,7 @@ const processAndSetTasks = async (
       return isSameDay(taskDate, today);
     });
     
-    console.log(`Found ${todayTasks.length} tasks scheduled for today. Task titles:`, 
+    console.log(`Found ${todayTasks.length} tasks scheduled for today:`, 
       todayTasks.map(t => ({ 
         title: t.title, 
         date: format(new Date(t.deadline), 'yyyy-MM-dd'),

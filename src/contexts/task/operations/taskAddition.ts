@@ -95,6 +95,10 @@ export const addTask = async (
     // Log the returned data from database
     console.log('Task created successfully, returned data:', data);
     
+    // Check deadline - log it for debugging
+    const deadlineFromDB = data.deadline ? new Date(data.deadline) : null;
+    console.log('Deadline from DB:', deadlineFromDB ? deadlineFromDB.toISOString() : 'none');
+    
     // Normalize task data from database format to app format
     const newTask = normalizeTaskData(data, userId, task.assignedToName);
     

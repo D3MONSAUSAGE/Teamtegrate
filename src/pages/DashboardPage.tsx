@@ -52,6 +52,7 @@ const DashboardPage = () => {
           todaysTasks={todaysTasks}
           upcomingTasks={upcomingTasks}
           isLoading={isLoading}
+          onRefresh={handleRefreshData}
         />
 
         <TimeTracking />
@@ -65,6 +66,7 @@ const DashboardPage = () => {
           tasks={todaysTasks}
           onCreateTask={() => handleCreateTask()}
           onEditTask={handleEditTask}
+          onRefresh={handleRefreshData}
           isLoading={isLoading}
         />
         

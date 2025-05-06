@@ -1,9 +1,11 @@
-import { useState, useEffect, useMemo } from 'react';
+
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTask } from '@/contexts/task';
 import { useAuth } from '@/contexts/AuthContext';
 import { Task, Project } from '@/types';
-import { startOfDay, isToday, format, isSameDay } from 'date-fns';
+import { format, isSameDay } from 'date-fns';
 import { toast } from '@/components/ui/sonner';
+import { getTodaysTasks } from '@/contexts/task/taskFilters';
 
 export const useDashboardData = () => {
   const { user } = useAuth();
@@ -22,58 +24,49 @@ export const useDashboardData = () => {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   
-  // Calculate today's date once
-  const today = useMemo(() => {
+  // Better implementation of today's tasks using the dedicated helper
+  const todaysTasks = useMemo(() => {
+    const filtered = getTodaysTasks(tasks);
+    console.log('Today\'s tasks count from filters:', filtered.length);
+    
+    if (filtered.length > 0) {
+      console.log('Today\'s task titles:', filtered.map(t => t.title));
+      console.log('Today\'s task deadlines:', filtered.map(t => t.deadline instanceof Date ? 
+        t.deadline.toISOString() : new Date(t.deadline).toISOString()));
+    } else {
+      console.log('No tasks found for today');
+    }
+    
+    return filtered;
+  }, [tasks]);
+  
+  // Calculate next week's date for upcoming tasks
+  const nextWeek = useMemo(() => {
     const date = new Date();
-    date.setHours(0, 0, 0, 0);
+    date.setDate(date.getDate() + 7);
     return date;
   }, []);
   
-  // Memoize tomorrow's date
-  const tomorrow = useMemo(() => {
-    const date = new Date(today);
-    date.setDate(date.getDate() + 1);
-    return date;
-  }, [today]);
-
-  // Memoize next week's date
-  const nextWeek = useMemo(() => {
-    const date = new Date(today);
-    date.setDate(date.getDate() + 7);
-    return date;
-  }, [today]);
-  
-  // Improved task filtering logic for today's tasks
-  const todaysTasks = useMemo(() => {
-    console.log('Filtering tasks for today, total tasks:', tasks.length);
+  const upcomingTasks = useMemo(() => {
+    // Get tasks due in the next 7 days (excluding today)
+    const today = new Date();
     
     return tasks.filter((task) => {
-      if (!task.deadline) {
-        return false;
-      }
-      
-      // Convert to date object if it's a string
-      const deadlineDate = new Date(task.deadline);
-      
-      // Use isSameDay for more reliable date comparison
-      const result = isSameDay(deadlineDate, new Date());
-      
-      if (result) {
-        console.log(`Task "${task.title}" (${task.id}) matched today's date:`, format(deadlineDate, 'yyyy-MM-dd'));
-      }
-      
-      return result;
-    });
-  }, [tasks]);
-  
-  const upcomingTasks = useMemo(() => {
-    return tasks.filter((task) => {
       if (!task.deadline) return false;
+      
       const taskDate = new Date(task.deadline);
-      taskDate.setHours(0, 0, 0, 0);
-      return taskDate > today && taskDate <= nextWeek;
+      
+      // Skip today's tasks (they're in todaysTasks)
+      if (isSameDay(taskDate, today)) return false;
+      
+      // Only include tasks within the next week
+      const taskDay = new Date(taskDate.setHours(0, 0, 0, 0));
+      const todayDay = new Date(today.setHours(0, 0, 0, 0));
+      const daysDifference = Math.floor((taskDay.getTime() - todayDay.getTime()) / (1000 * 60 * 60 * 24));
+      
+      return daysDifference > 0 && daysDifference <= 7;
     }).sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime());
-  }, [tasks, today, nextWeek]);
+  }, [tasks]);
   
   const recentProjects = useMemo(() => {
     return projects.slice(0, 3);

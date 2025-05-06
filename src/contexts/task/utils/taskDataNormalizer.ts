@@ -1,5 +1,6 @@
 
 import { Task } from '@/types';
+import { format } from 'date-fns';
 
 /**
  * Normalizes task data from database format to application format
@@ -31,15 +32,17 @@ export const normalizeTaskData = (
   if (assignedToId && typeof assignedToId !== 'string') {
     assignedToId = String(assignedToId);
   }
-
+  
   // Create a normalized task object
+  const deadline = parseDate(dbTask.deadline);
+  
   const normalizedTask: Task = {
     id: String(dbTask.id),
     userId: userId,
     projectId: dbTask.project_id || undefined,
     title: dbTask.title || '',
     description: dbTask.description || '',
-    deadline: dbTask.deadline ? parseDate(dbTask.deadline) : new Date(),
+    deadline: deadline,
     priority: (dbTask.priority || 'Medium') as Task['priority'],
     status: (dbTask.status || 'To Do') as Task['status'],
     createdAt: parseDate(dbTask.created_at),
@@ -57,6 +60,7 @@ export const normalizeTaskData = (
     id: normalizedTask.id,
     title: normalizedTask.title,
     deadline: normalizedTask.deadline.toISOString(),
+    deadlineDate: format(normalizedTask.deadline, 'yyyy-MM-dd'),
     assignedToId: normalizedTask.assignedToId || 'unassigned',
     assignedToName: normalizedTask.assignedToName || 'unassigned'
   });
