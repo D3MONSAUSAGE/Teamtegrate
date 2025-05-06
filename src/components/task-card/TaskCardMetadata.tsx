@@ -7,16 +7,21 @@ import { motion } from 'framer-motion';
 interface TaskCardMetadataProps {
   deadline: Date;
   assignedToName?: string;
+  assignedToId?: string;
 }
 
 const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({
   deadline,
   assignedToName,
+  assignedToId,
 }) => {
+  // Only show as unassigned if there's no assignedToId
+  const isUnassigned = !assignedToId;
+  
   // Format the display name - if empty or undefined, show "Unassigned"
-  const displayName = assignedToName && assignedToName.trim() !== '' 
+  const displayName = !isUnassigned && assignedToName && assignedToName.trim() !== '' 
     ? assignedToName 
-    : 'Unassigned';
+    : isUnassigned ? 'Unassigned' : 'Loading user...';
 
   // Check if deadline is today
   const isToday = new Date().toDateString() === new Date(deadline).toDateString();
@@ -51,7 +56,8 @@ const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({
       >
         <User className="h-3 w-3 flex-shrink-0" />
         <span 
-          className={`truncate max-w-[100px] ${assignedToName ? "" : "italic text-gray-400"}`}
+          className={`truncate max-w-[100px] ${isUnassigned ? "italic text-gray-400" : ""}`}
+          title={displayName}
         >
           {displayName}
         </span>

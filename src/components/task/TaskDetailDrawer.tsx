@@ -49,6 +49,7 @@ const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
             status={task.status}
             priority={task.priority}
             assignedTo={getAssignedToName()}
+            assignedToId={task.assignedToId}
             isOverdue={isOverdue}
             getPriorityColor={getPriorityColor}
             formatDate={formatDate}

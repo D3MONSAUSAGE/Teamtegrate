@@ -6,16 +6,22 @@ import { format } from 'date-fns';
 interface TaskCardMetadataProps {
   deadline: Date;
   assignedToName?: string;
+  assignedToId?: string;
 }
 
 const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({
   deadline,
   assignedToName,
+  assignedToId,
 }) => {
+  // Only show as unassigned if there's no assignedToId
+  // This ensures tasks with IDs but pending names still show as assigned
+  const isUnassigned = !assignedToId;
+  
   // Format the display name - if empty or undefined, show "Unassigned"
-  const displayName = assignedToName && assignedToName.trim() !== '' 
+  const displayName = !isUnassigned && assignedToName && assignedToName.trim() !== '' 
     ? assignedToName 
-    : 'Unassigned';
+    : isUnassigned ? 'Unassigned' : 'Loading user...';
 
   return (
     <div className="flex items-center justify-between pt-1 md:pt-2">
@@ -28,7 +34,7 @@ const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({
       
       <div className="flex items-center text-xs text-gray-500 gap-1">
         <User className="h-3 w-3 flex-shrink-0" />
-        <span className="truncate max-w-[100px]">{displayName}</span>
+        <span className="truncate max-w-[100px]" title={displayName}>{displayName}</span>
       </div>
     </div>
   );

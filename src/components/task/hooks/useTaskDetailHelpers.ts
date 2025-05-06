@@ -61,13 +61,17 @@ export const useTaskDetailHelpers = (task: Task) => {
 
   // Handle assigned to name
   const getAssignedToName = () => {
-    if (!task.assignedToName || task.assignedToName.trim() === "") {
-      return "Unassigned";
+    // Check if there's an assignedToId (meaning it's assigned)
+    if (task.assignedToId) {
+      // If we have a name, use it
+      if (task.assignedToName && task.assignedToName.trim() !== "" && task.assignedToName !== task.assignedToId) {
+        return task.assignedToName;
+      }
+      // If name is missing but ID exists, show "Loading"
+      return "Loading user info...";
     }
-    if (task.assignedToId && (!task.assignedToName || task.assignedToName === task.assignedToId)) {
-      return "Unassigned";
-    }
-    return task.assignedToName;
+    // If no ID, then truly unassigned
+    return "Unassigned";
   };
 
   return {

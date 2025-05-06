@@ -63,6 +63,33 @@ export const resolveUserNames = async (userIds: string[]): Promise<Map<string, s
         console.log(`Mapped user ${user.id} to name "${displayName}"`);
       });
     }
+
+    // If we're missing some users, try with a fallback method for the missing ones
+    const foundIds = Array.from(userMap.keys());
+    const missingIds = validUserIds.filter(id => !foundIds.includes(id));
+    
+    if (missingIds.length > 0) {
+      console.log(`Trying fallback lookup for ${missingIds.length} missing users`);
+      
+      // Try individual lookups for each missing ID
+      await Promise.all(missingIds.map(async (id) => {
+        try {
+          const { data: userData, error: userError } = await supabase
+            .from('users')
+            .select('id, name, email')
+            .filter('id::text', 'eq', id)
+            .single();
+            
+          if (!userError && userData) {
+            const displayName = userData.name || userData.email || 'Unknown User';
+            userMap.set(id, displayName);
+            console.log(`Fallback: Mapped user ${id} to name "${displayName}"`);
+          }
+        } catch (err) {
+          console.error(`Fallback lookup failed for user ${id}:`, err);
+        }
+      }));
+    }
     
     return userMap;
   } catch (err) {

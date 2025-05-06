@@ -55,6 +55,7 @@ const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
               deadline={task.deadline}
               priority={task.priority}
               assignedToName={task.assignedToName}
+              assignedToId={task.assignedToId}
               isOverdue={isOverdue}
               formatDate={formatDate}
               formatTime={formatTime}

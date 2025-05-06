@@ -28,23 +28,63 @@ export const assignTaskToUser = async (
     // Find user's name if not provided or get updated name
     let actualUserName = userName;
     if ((!actualUserName || actualUserName === userId) && userId) {
+      console.log('Fetching user info for:', userId);
       actualUserName = await fetchUserInfo(userId) || userName;
+      console.log('Resolved user name:', actualUserName);
     }
 
-    // Only send assigned_to_id to the database
-    const { error } = await supabase
-      .from('tasks')
-      .update({ 
-        assigned_to_id: userId,
-        updated_at: now.toISOString() 
-      })
-      .eq('id', taskId);
+    console.log(`Assigning task ${taskId} to user ${userId} (${actualUserName})`);
 
-    if (error) {
-      console.error('Error assigning task to user:', error);
-      playErrorSound();
-      toast.error('Failed to assign task to user');
-      return;
+    // First try the tasks table
+    let dbError = null;
+    let updateSuccessful = false;
+    
+    try {
+      const { error } = await supabase
+        .from('tasks')
+        .update({ 
+          assigned_to_id: userId,
+          updated_at: now.toISOString() 
+        })
+        .eq('id', taskId);
+      
+      if (!error) {
+        updateSuccessful = true;
+      } else {
+        dbError = error;
+      }
+    } catch (err) {
+      console.error('Error updating tasks table:', err);
+    }
+    
+    // If that failed, try the project_tasks table
+    if (!updateSuccessful) {
+      try {
+        const { error } = await supabase
+          .from('project_tasks')
+          .update({ 
+            assigned_to_id: userId,
+            updated_at: now.toISOString() 
+          })
+          .eq('id', taskId);
+        
+        if (error) {
+          console.error('Error updating project_tasks table:', error);
+          if (dbError) {
+            console.error('Previous error from tasks table:', dbError);
+          }
+          playErrorSound();
+          toast.error('Failed to assign task to user');
+          return;
+        }
+        
+        updateSuccessful = true;
+      } catch (err) {
+        console.error('Error updating project_tasks table:', err);
+        playErrorSound();
+        toast.error('Failed to assign task to user');
+        return;
+      }
     }
 
     // Find the task to send in notification
