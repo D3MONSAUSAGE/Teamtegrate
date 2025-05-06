@@ -101,8 +101,8 @@ export const getTodaysTasks = (tasks: Task[]): Task[] => {
         return false;
       }
       
-      // Check if task falls within today's boundaries
-      const isTaskToday = (deadlineDate >= startToday && deadlineDate <= endToday);
+      // Check if task falls within today's boundaries using isSameDay for more reliable comparison
+      const isTaskToday = isSameDay(deadlineDate, now);
       
       if (isTaskToday) {
         console.log(`Task due today: "${task.title}" (${deadlineDate.toISOString()})`);

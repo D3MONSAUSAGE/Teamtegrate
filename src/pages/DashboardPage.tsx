@@ -8,7 +8,7 @@ import UpcomingTasksSection from '@/components/dashboard/UpcomingTasksSection';
 import TimeTracking from '@/components/dashboard/TimeTracking';
 import { Button } from "@/components/ui/button";
 import { PlusCircle, RefreshCw } from 'lucide-react';
-import { format, addDays, startOfDay, endOfDay } from 'date-fns';
+import { format, addDays, startOfDay, endOfDay, isSameDay } from 'date-fns';
 import { getTodaysTasks } from '@/contexts/task/taskFilters';
 import { toast } from '@/components/ui/sonner';
 import { useCreateTaskDialog } from '@/hooks/useDialog';
@@ -64,18 +64,17 @@ const DashboardPage = () => {
     try {
       console.log(`Calculating dashboard tasks from ${tasks.length} total tasks`);
       
-      // Get today's tasks using the fixed filter function
+      // Get today's tasks using the getTodaysTasks function
       const today = getTodaysTasks(tasks);
       console.log(`Dashboard: getTodaysTasks returned ${today.length} tasks`);
       
       // Calculate upcoming tasks (next 7 days, excluding today)
       const now = new Date();
-      const startOfToday = startOfDay(now);
-      const endOfToday = endOfDay(now);
+      const today_date = now;
       const nextWeek = addDays(now, 7);
       
       // For debugging
-      console.log(`Upcoming date range: ${endOfToday.toISOString()} to ${nextWeek.toISOString()}`);
+      console.log(`Upcoming date range: from tomorrow to ${nextWeek.toISOString()}`);
       
       const upcoming = tasks.filter(task => {
         if (!task.deadline) return false;
@@ -98,7 +97,8 @@ const DashboardPage = () => {
           }
           
           // Include tasks after today but within the next 7 days
-          const isUpcoming = (taskDate > endOfToday) && (taskDate <= nextWeek);
+          // Explicitly exclude today's tasks (which are already in the today list)
+          const isUpcoming = !isSameDay(taskDate, today_date) && taskDate <= nextWeek;
           return isUpcoming;
         } catch (error) {
           console.error(`Error processing upcoming task "${task.title}":`, error);

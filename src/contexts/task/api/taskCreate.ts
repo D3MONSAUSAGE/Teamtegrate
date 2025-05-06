@@ -4,7 +4,7 @@ import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
 import { playSuccessSound, playErrorSound } from '@/utils/sounds';
-import { isValid, format } from 'date-fns';
+import { isValid, format, startOfDay, parseISO } from 'date-fns';
 
 export const addTask = async (
   task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>,
