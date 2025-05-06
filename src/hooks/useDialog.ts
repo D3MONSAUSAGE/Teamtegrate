@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Task } from '@/types';
 
 // This is a global state for dialogs across the application
@@ -22,6 +22,28 @@ export const useDialog = () => {
 
   return {
     registerCreateTaskDialog,
+    openCreateTaskDialog
+  };
+};
+
+// Helper hook to easily create and register a task dialog
+export const useCreateTaskDialog = () => {
+  const { registerCreateTaskDialog, openCreateTaskDialog } = useDialog();
+  const [isOpen, setIsOpen] = useState(false);
+  const [currentTask, setCurrentTask] = useState<Task | undefined>(undefined);
+
+  // Register the callback to open the dialog
+  useEffect(() => {
+    registerCreateTaskDialog((task?: Task) => {
+      setCurrentTask(task);
+      setIsOpen(true);
+    });
+  }, [registerCreateTaskDialog]);
+
+  return {
+    isOpen,
+    setIsOpen,
+    currentTask,
     openCreateTaskDialog
   };
 };

@@ -11,9 +11,10 @@ import { PlusCircle, RefreshCw } from 'lucide-react';
 import { format, addDays, startOfDay, endOfDay } from 'date-fns';
 import { getTodaysTasks } from '@/contexts/task/taskFilters';
 import { toast } from '@/components/ui/sonner';
-import { useDialog } from '@/hooks/useDialog';
+import { useCreateTaskDialog } from '@/hooks/useDialog';
 import { useTimeTracking } from '@/hooks/useTimeTracking';
 import TimeTrackingControls from '@/components/dashboard/TimeTrackingControls';
+import CreateTaskDialog from '@/components/CreateTaskDialog';
 
 const DashboardPage = () => {
   const { tasks, projects, dailyScore, refreshTasks, refreshProjects } = useTask();
@@ -23,7 +24,7 @@ const DashboardPage = () => {
   const [upcomingTasks, setUpcomingTasks] = useState<Task[]>([]);
   const [retryCount, setRetryCount] = useState(0);
   const [dataLoadStarted, setDataLoadStarted] = useState(false);
-  const { openCreateTaskDialog } = useDialog();
+  const { isOpen, setIsOpen, currentTask, openCreateTaskDialog } = useCreateTaskDialog();
   const { currentEntry, clockIn, clockOut } = useTimeTracking();
   const [notes, setNotes] = useState('');
   const [elapsedTime, setElapsedTime] = useState('');
@@ -257,6 +258,13 @@ const DashboardPage = () => {
         onCreateTask={handleCreateTask}
         onEditTask={handleEditTask}
         isLoading={isLoading}
+      />
+      
+      {/* Create Task Dialog */}
+      <CreateTaskDialog
+        open={isOpen}
+        onOpenChange={setIsOpen}
+        editingTask={currentTask}
       />
     </div>
   );
