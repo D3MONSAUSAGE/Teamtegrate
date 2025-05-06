@@ -61,9 +61,20 @@ export const addTask = async (
     console.log('Adding task with data:', { 
       ...task,
       deadline: task.deadline ? new Date(task.deadline).toISOString() : null,
+      projectId: task.projectId || 'none',
       assignedToId: task.assignedToId || 'none',
       assignedToName: task.assignedToName || 'none'
     });
+    
+    if (task.projectId) {
+      // Check if the project exists in our state
+      const projectExists = projects.some(p => p.id === task.projectId);
+      console.log(`Checking project ${task.projectId} exists: ${projectExists}`);
+      
+      if (!projectExists) {
+        console.warn(`Task is being assigned to project ${task.projectId} which is not found in state`);
+      }
+    }
     
     // Normalize and validate the deadline
     const normalizedDeadline = normalizeDate(task.deadline);
@@ -99,6 +110,13 @@ export const addTask = async (
     const deadlineFromDB = data.deadline ? new Date(data.deadline) : null;
     console.log('Deadline from DB:', deadlineFromDB ? deadlineFromDB.toISOString() : 'none');
     
+    // Log project assignment info
+    if (data.project_id) {
+      console.log(`Task was saved with project_id: ${data.project_id}`);
+    } else {
+      console.log('Task was not assigned to any project in the database');
+    }
+    
     // Normalize task data from database format to app format
     const newTask = normalizeTaskData(data, userId, task.assignedToName);
     
@@ -106,8 +124,10 @@ export const addTask = async (
     console.log('New task assignment data:', {
       assignedToId: newTask.assignedToId,
       assignedToName: newTask.assignedToName,
+      projectId: newTask.projectId,
       fromDb: {
         assigned_to_id: data.assigned_to_id,
+        project_id: data.project_id
       }
     });
     

@@ -31,7 +31,8 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
     handleEditTask,
     handleCreateTask,
     handleManualRefresh,
-    onSortByChange
+    onSortByChange,
+    refreshData
   } = useProjectTasksView(projectId);
 
   // Log component rendering for debugging
@@ -41,9 +42,22 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
       isLoading,
       hasError: !!loadError,
       hasProject: !!project,
-      editingTask
+      taskCounts: {
+        todo: todoTasks.length,
+        inProgress: inProgressTasks.length,
+        pending: pendingTasks.length,
+        completed: completedTasks.length
+      }
     });
-  }, [projectId, isLoading, loadError, project, editingTask]);
+  }, [projectId, isLoading, loadError, project, todoTasks, inProgressTasks, pendingTasks, completedTasks]);
+
+  // Force refresh when first loaded or projectId changes
+  useEffect(() => {
+    if (projectId && !isLoading && !loadError) {
+      console.log(`ProjectTasksView: Refreshing data for project ${projectId}`);
+      refreshData();
+    }
+  }, [projectId, refreshData]);
 
   if (isLoading) {
     return <ProjectTasksLoading />;

@@ -29,6 +29,7 @@ export const assignTaskToProject = async (
     }
     
     const originalProjectId = task.projectId;
+    console.log(`Assigning task ${taskId} (${task.title}) from project ${originalProjectId || 'none'} to project ${projectId}`);
 
     // First update the database
     const { error } = await supabase
@@ -57,35 +58,54 @@ export const assignTaskToProject = async (
       return t;
     }));
 
-    // Now handle the project state updates - do this in a more predictable way
+    // Now handle the project state updates
     setProjects(prevProjects => {
-      // Create a new array to avoid mutation
-      return prevProjects.map(project => {
-        // If this is the old project and task was previously assigned to a project
-        if (originalProjectId && project.id === originalProjectId) {
-          return {
-            ...project,
-            tasks: project.tasks.filter(t => t.id !== taskId)
-          };
+      // Create a deep copy to avoid mutation
+      const updatedProjects = JSON.parse(JSON.stringify(prevProjects));
+      
+      // If task was previously assigned to a project, remove it from that project
+      if (originalProjectId) {
+        const originalProjectIndex = updatedProjects.findIndex(p => p.id === originalProjectId);
+        if (originalProjectIndex !== -1) {
+          console.log(`Removing task ${taskId} from previous project ${originalProjectId}`);
+          updatedProjects[originalProjectIndex].tasks = updatedProjects[originalProjectIndex].tasks?.filter(
+            t => t.id !== taskId
+          ) || [];
+        } else {
+          console.warn(`Original project ${originalProjectId} not found in state`);
+        }
+      }
+      
+      // Add task to new project
+      const newProjectIndex = updatedProjects.findIndex(p => p.id === projectId);
+      if (newProjectIndex !== -1) {
+        console.log(`Adding task ${taskId} to new project ${projectId}`);
+        
+        // Ensure tasks array exists
+        if (!updatedProjects[newProjectIndex].tasks) {
+          updatedProjects[newProjectIndex].tasks = [];
         }
         
-        // If this is the new project
-        if (project.id === projectId) {
-          // Check if the task is already in the project
-          const taskExists = project.tasks.some(t => t.id === taskId);
-          if (!taskExists) {
-            return {
-              ...project,
-              tasks: [...project.tasks, updatedTask]
-            };
-          }
-        }
+        // Check if task already exists in project
+        const taskExists = updatedProjects[newProjectIndex].tasks.some(t => t.id === taskId);
         
-        return project;
-      });
+        if (!taskExists) {
+          updatedProjects[newProjectIndex].tasks.push(updatedTask);
+        } else {
+          console.log(`Task ${taskId} already exists in project ${projectId}, updating it`);
+          updatedProjects[newProjectIndex].tasks = updatedProjects[newProjectIndex].tasks.map(t => 
+            t.id === taskId ? updatedTask : t
+          );
+        }
+      } else {
+        console.warn(`New project ${projectId} not found in state`);
+      }
+      
+      return updatedProjects;
     });
 
     toast.success('Task assigned to project successfully!');
+    playSuccessSound();
   } catch (error) {
     console.error('Error in assignTaskToProject:', error);
     playErrorSound();
