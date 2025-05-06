@@ -12,8 +12,8 @@ import { updateTaskStates } from './updateTaskStates';
  */
 export const assignTaskToUser = async (
   taskId: string,
-  userId: string | undefined,
-  userName: string | undefined,
+  userId: string,
+  userName: string,
   user: User | null,
   tasks: Task[],
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>,
@@ -22,88 +22,29 @@ export const assignTaskToUser = async (
 ) => {
   try {
     if (!user) return;
-    
-    // Handle task unassignment case
-    const isUnassigning = !userId;
-    
+
     const now = new Date();
     
-    // If unassigning, set name to undefined as well
-    if (isUnassigning) {
-      userName = undefined;
-    }
     // Find user's name if not provided or get updated name
-    else if ((!userName || userName === userId) && userId) {
-      console.log('Fetching user info for assignment, userId:', userId);
-      try {
-        const fetchedName = await fetchUserInfo(userId);
-        if (fetchedName) {
-          userName = fetchedName;
-          console.log('Got user name from DB:', userName);
-        }
-      } catch (error) {
-        console.error('Error fetching user info:', error);
-      }
+    let actualUserName = userName;
+    if ((!actualUserName || actualUserName === userId) && userId) {
+      actualUserName = await fetchUserInfo(userId) || userName;
     }
 
-    console.log('Assigning task to user:', {
-      taskId,
-      userId: userId || 'unassigned',
-      userName: userName || 'unassigned'
-    });
+    // Only send assigned_to_id to the database
+    const { error } = await supabase
+      .from('tasks')
+      .update({ 
+        assigned_to_id: userId,
+        updated_at: now.toISOString() 
+      })
+      .eq('id', taskId);
 
-    // Validate UUID format before sending to database
-    const isValidUuid = (id: string) => {
-      const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      return uuidPattern.test(id);
-    };
-
-    if (userId && !isValidUuid(userId)) {
-      console.error('Invalid UUID format for user ID:', userId);
+    if (error) {
+      console.error('Error assigning task to user:', error);
       playErrorSound();
-      toast.error('Invalid user ID format');
+      toast.error('Failed to assign task to user');
       return;
-    }
-    
-    // Format the task update data correctly
-    const updateData = { 
-      assigned_to_id: userId || null,
-      updated_at: now.toISOString() 
-    };
-
-    // Try project_tasks table first
-    let projectTableError = null;
-    try {
-      const { error } = await supabase
-        .from('project_tasks')
-        .update(updateData)
-        .eq('id', taskId);
-      
-      projectTableError = error;
-      if (error) {
-        console.error('Error assigning task in project_tasks:', error);
-      } else {
-        console.log('Successfully updated assignment in project_tasks');
-      }
-    } catch (error) {
-      console.error('Exception when updating project_tasks:', error);
-      projectTableError = error;
-    }
-
-    // Fall back to legacy tasks table if needed
-    if (projectTableError) {
-      console.log('Falling back to legacy tasks table for assignment');
-      const { error } = await supabase
-        .from('tasks')
-        .update(updateData)
-        .eq('id', taskId);
-
-      if (error) {
-        console.error('Error assigning task to user in legacy table:', error);
-        playErrorSound();
-        toast.error('Failed to assign task to user');
-        return;
-      }
     }
 
     // Find the task to send in notification
@@ -116,29 +57,21 @@ export const assignTaskToUser = async (
     // Create notification for the assigned user
     if (userId) {
       const isSelfAssigned = (userId === user.id);
-      try {
-        await createTaskAssignmentNotification(userId, task.title, isSelfAssigned);
-      } catch (error) {
-        console.error('Error creating task assignment notification:', error);
-      }
+      await createTaskAssignmentNotification(userId, task.title, isSelfAssigned);
     }
     
     // Update the state in both tasks array and projects array
     updateTaskStates(
       taskId, 
       userId, 
-      userName, 
+      actualUserName, 
       task.projectId, 
       tasks, 
       setTasks, 
       setProjects
     );
 
-    if (isUnassigning) {
-      toast.success('Task unassigned successfully');
-    } else {
-      toast.success('Task assigned to user successfully!');
-    }
+    toast.success('Task assigned to user successfully!');
     playSuccessSound();
   } catch (error) {
     console.error('Error in assignTaskToUser:', error);

@@ -4,7 +4,6 @@ import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
 import { playSuccessSound, playErrorSound } from '@/utils/sounds';
-import { isValid, format, startOfDay, parseISO } from 'date-fns';
 
 export const addTask = async (
   task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>,
@@ -17,112 +16,106 @@ export const addTask = async (
   try {
     if (!user) {
       console.error('No user found when creating task');
-      playErrorSound();
-      toast.error('Please log in to create tasks');
-      return;
-    }
-
-    // Validate the deadline date
-    if (!task.deadline) {
-      console.error('Missing deadline date');
-      playErrorSound();
-      toast.error('Please specify a deadline date');
-      return;
-    }
-
-    let deadlineDate: Date;
-    
-    // Handle different deadline formats
-    if (task.deadline instanceof Date) {
-      deadlineDate = task.deadline;
-    } else if (typeof task.deadline === 'string') {
-      deadlineDate = new Date(task.deadline);
-    } else {
-      console.error('Invalid deadline type:', typeof task.deadline);
-      playErrorSound();
-      toast.error('Invalid deadline format');
-      return;
-    }
-    
-    if (!isValid(deadlineDate)) {
-      console.error('Invalid deadline date:', task.deadline);
-      playErrorSound();
-      toast.error('Invalid deadline date');
       return;
     }
 
     const now = new Date();
     const taskId = uuidv4();
-    
-    // Format deadline as ISO string for database storage
-    const formattedDeadline = deadlineDate.toISOString();
 
     console.log('Creating new task with data:', {
       id: taskId,
       title: task.title,
       description: task.description,
-      deadline: formattedDeadline,
-      deadlineReadable: format(deadlineDate, 'yyyy-MM-dd HH:mm:ss'),
+      deadline: task.deadline,
       priority: task.priority,
       projectId: task.projectId,
-      assignedToId: task.assignedToId,
-      assignedToName: task.assignedToName
+      assignedToId: task.assignedToId
     });
 
-    // Create task data for insertion
-    const taskData = {
-      id: taskId,
-      project_id: task.projectId || null,
-      title: task.title,
-      description: task.description || '',
-      deadline: formattedDeadline,
-      priority: task.priority,
-      status: task.status,
-      created_at: now.toISOString(),
-      updated_at: now.toISOString(),
-      assigned_to_id: task.assignedToId || null,
-      cost: task.cost || 0,
-    };
+    // First try creating the task in the project_tasks table (preferred)
+    let success = false;
+    
+    try {
+      const { data: projectTaskData, error: projectTaskError } = await supabase
+        .from('project_tasks')
+        .insert([
+          {
+            id: taskId,
+            project_id: task.projectId || null,
+            title: task.title,
+            description: task.description || '',
+            deadline: task.deadline.toISOString(),
+            priority: task.priority,
+            status: task.status,
+            created_at: now.toISOString(),
+            updated_at: now.toISOString(),
+            assigned_to_id: task.assignedToId || null,
+            cost: task.cost || 0,
+          },
+        ])
+        .select('*');
 
-    // Try creating the task in the database
-    const { data, error } = await supabase
-      .from('tasks')
-      .insert([taskData])
-      .select('*');
-
-    if (error) {
-      console.error('Error adding task:', error);
-      playErrorSound();
-      toast.error('Failed to create task');
-      return;
+      if (!projectTaskError) {
+        console.log('Task created successfully in project_tasks:', projectTaskData);
+        success = true;
+      } else {
+        console.error('Error adding to project_tasks:', projectTaskError);
+      }
+    } catch (err) {
+      console.error('Exception when adding to project_tasks:', err);
     }
 
-    // Create new task object for state updates with consistent date formatting
+    // Fall back to legacy tasks table if project_tasks failed
+    if (!success) {
+      console.log('Falling back to legacy tasks table');
+      const { data, error } = await supabase
+        .from('tasks')
+        .insert([
+          {
+            id: taskId,
+            user_id: user.id,
+            project_id: task.projectId || null,
+            title: task.title,
+            description: task.description || '',
+            deadline: task.deadline.toISOString(),
+            priority: task.priority,
+            status: task.status,
+            created_at: now.toISOString(),
+            updated_at: now.toISOString(),
+            assigned_to_id: task.assignedToId || null,
+            cost: task.cost || 0,
+          },
+        ])
+        .select('*');
+
+      if (error) {
+        console.error('Error adding task to legacy table:', error);
+        toast.error('Failed to create task');
+        playErrorSound();
+        return;
+      }
+
+      console.log('Task created successfully in legacy table:', data);
+    }
+
+    // Create new task object for state updates
     const newTask: Task = {
       id: taskId,
       userId: user.id,
       projectId: task.projectId,
       title: task.title,
       description: task.description || '',
-      deadline: deadlineDate, // Use the same Date object we validated earlier
+      deadline: new Date(task.deadline),
       priority: task.priority,
       status: task.status,
       createdAt: now,
       updatedAt: now,
       assignedToId: task.assignedToId,
-      assignedToName: task.assignedToName, 
+      assignedToName: task.assignedToName,
       tags: [],
       comments: [],
       cost: task.cost || 0,
     };
-
-    console.log('Task created successfully, updating state with:', {
-      id: newTask.id,
-      title: newTask.title,
-      deadline: format(deadlineDate, 'yyyy-MM-dd HH:mm:ss'),
-      assignedToId: newTask.assignedToId,
-      assignedToName: newTask.assignedToName
-    });
 
     // Update local state
     setTasks(prevTasks => [...prevTasks, newTask]);

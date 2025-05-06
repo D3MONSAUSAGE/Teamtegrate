@@ -1,249 +1,297 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Button } from "@/components/ui/button";
 import { useTask } from '@/contexts/task';
-import { Task } from '@/types';
+import { useAuth } from '@/contexts/AuthContext';
+import { Task, Project } from '@/types';
+import { Plus, RefreshCw, AlertTriangle } from 'lucide-react';
+import CreateTaskDialog from '@/components/CreateTaskDialog';
+import { format } from 'date-fns';
 import TasksSummary from '@/components/dashboard/TasksSummary';
 import DailyTasksSection from '@/components/dashboard/DailyTasksSection';
 import UpcomingTasksSection from '@/components/dashboard/UpcomingTasksSection';
+import RecentProjects from '@/components/dashboard/RecentProjects';
+import TeamManagement from '@/components/dashboard/TeamManagement';
+import { useIsMobile } from '@/hooks/use-mobile';
+import AnalyticsSection from '@/components/dashboard/AnalyticsSection';
 import TimeTracking from '@/components/dashboard/TimeTracking';
-import { Button } from "@/components/ui/button";
-import { PlusCircle, RefreshCw } from 'lucide-react';
-import { format, addDays, startOfDay, endOfDay, isSameDay } from 'date-fns';
-import { getTodaysTasks } from '@/contexts/task/taskFilters';
 import { toast } from '@/components/ui/sonner';
-import { useCreateTaskDialog } from '@/hooks/useDialog';
-import { useTimeTracking } from '@/hooks/useTimeTracking';
-import TimeTrackingControls from '@/components/dashboard/TimeTrackingControls';
-import CreateTaskDialog from '@/components/CreateTaskDialog';
 
 const DashboardPage = () => {
-  const { tasks, projects, dailyScore, refreshTasks, refreshProjects } = useTask();
-  const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
+  const { tasks, projects, dailyScore, refreshProjects, refreshTasks, isLoading } = useTask();
+  const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [todaysTasks, setTodaysTasks] = useState<Task[]>([]);
-  const [upcomingTasks, setUpcomingTasks] = useState<Task[]>([]);
-  const [dataLoadStarted, setDataLoadStarted] = useState(false);
-  const { isOpen, setIsOpen, currentTask, openCreateTaskDialog } = useCreateTaskDialog();
-  const { currentEntry, clockIn, clockOut } = useTimeTracking();
-  const [notes, setNotes] = useState('');
-  const [elapsedTime, setElapsedTime] = useState('');
+  const [hasError, setHasError] = useState(false);
+  const isMobile = useIsMobile();
   
-  // Track elapsed time when clocked in
+  console.log('Dashboard render - tasks count:', tasks.length, 'projects count:', projects.length);
+  
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  
+  const todaysTasks = tasks.filter((task) => {
+    const taskDate = new Date(task.deadline);
+    taskDate.setHours(0, 0, 0, 0);
+    return taskDate.getTime() === today.getTime();
+  });
+  
+  const nextWeek = new Date(today);
+  nextWeek.setDate(nextWeek.getDate() + 7);
+  
+  const upcomingTasks = tasks.filter((task) => {
+    const taskDate = new Date(task.deadline);
+    taskDate.setHours(0, 0, 0, 0);
+    return taskDate > today && taskDate <= nextWeek;
+  }).sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime());
+  
+  const recentProjects = projects.slice(0, 3);
+  
   useEffect(() => {
-    let interval: NodeJS.Timeout | undefined;
-    
-    if (currentEntry.isClocked && currentEntry.clock_in) {
-      interval = setInterval(() => {
-        const startTime = new Date(currentEntry.clock_in!).getTime();
-        const elapsed = Date.now() - startTime;
-        const hours = Math.floor(elapsed / (1000 * 60 * 60));
-        const minutes = Math.floor((elapsed % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((elapsed % (1000 * 60)) / 1000);
+    // Initial refresh when dashboard loads
+    const refreshAllData = async () => {
+      try {
+        console.log('Dashboard - Initial data refresh starting...');
+        setIsRefreshing(true);
+        setHasError(false);
         
-        setElapsedTime(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
-      }, 1000);
-    } else {
-      setElapsedTime('');
-    }
-    
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [currentEntry]);
-  
-  // Calculate today's and upcoming tasks whenever tasks change
-  useEffect(() => {
-    if (!tasks || tasks.length === 0) {
-      console.log('No tasks available for dashboard calculations');
-      setTodaysTasks([]);
-      setUpcomingTasks([]);
-      return;
-    }
-    
-    try {
-      console.log(`Calculating dashboard tasks from ${tasks.length} total tasks`);
-      
-      // Get today's tasks using the getTodaysTasks function
-      const today = getTodaysTasks(tasks);
-      console.log(`Dashboard: getTodaysTasks returned ${today.length} tasks`);
-      
-      // Calculate upcoming tasks (next 7 days, excluding today)
-      const now = new Date();
-      const today_date = now;
-      const nextWeek = addDays(now, 7);
-      
-      // For debugging
-      console.log(`Upcoming date range: from tomorrow to ${nextWeek.toISOString()}`);
-      
-      const upcoming = tasks.filter(task => {
-        if (!task.deadline) return false;
+        // Refresh tasks then projects
+        try {
+          await refreshTasks();
+          console.log('Tasks refreshed successfully');
+        } catch (error) {
+          console.error('Error refreshing tasks:', error);
+          setHasError(true);
+        }
         
         try {
-          let taskDate: Date;
-          
-          if (task.deadline instanceof Date) {
-            taskDate = task.deadline;
-          } else if (typeof task.deadline === 'string') {
-            taskDate = new Date(task.deadline);
-          } else {
-            return false;
-          }
-          
-          // Skip invalid dates
-          if (isNaN(taskDate.getTime())) {
-            console.log(`Skipping task with invalid date: ${task.title}`);
-            return false;
-          }
-          
-          // Include tasks after today but within the next 7 days
-          // Explicitly exclude today's tasks (which are already in the today list)
-          const isUpcoming = !isSameDay(taskDate, today_date) && taskDate <= nextWeek;
-          return isUpcoming;
+          await refreshProjects();
+          console.log('Projects refreshed successfully');
         } catch (error) {
-          console.error(`Error processing upcoming task "${task.title}":`, error);
-          return false;
+          console.error('Error refreshing projects:', error);
+          setHasError(true);
         }
-      });
-      
-      console.log(`Dashboard found ${upcoming.length} upcoming tasks`);
-      
-      // Update state with today's and upcoming tasks
-      setTodaysTasks(today);
-      setUpcomingTasks(upcoming);
-    } catch (error) {
-      console.error("Error calculating tasks for dashboard:", error);
-      // Provide defaults in case of error
-      setTodaysTasks([]);
-      setUpcomingTasks([]);
-    }
-  }, [tasks]);
-  
-  // Initial data loading - optimized to only load once
-  useEffect(() => {
-    const loadData = async () => {
-      // Prevent multiple load attempts
-      if (dataLoadStarted) return;
-      setDataLoadStarted(true);
-      
-      setIsLoading(true);
-      try {
-        console.log("Dashboard: Starting initial data load");
-        // Load data sequentially to avoid race conditions
-        await refreshTasks();
-        await refreshProjects();
-        console.log("Dashboard: Initial data loaded successfully");
+        
+        console.log('Dashboard - Initial data refresh complete');
+        
+        if (tasks.length === 0 && projects.length === 0) {
+          console.warn('No data loaded - both tasks and projects are empty');
+        }
       } catch (error) {
-        console.error('Error loading dashboard data:', error);
-        toast.error("Failed to load dashboard data");
+        console.error("Error refreshing dashboard data:", error);
+        setHasError(true);
       } finally {
-        setIsLoading(false);
+        setIsRefreshing(false);
       }
     };
     
-    loadData();
-  }, [refreshTasks, refreshProjects, dataLoadStarted]);
+    refreshAllData();
+  }, []);
   
-  // Handle manual refresh with debounce to prevent multiple simultaneous calls
-  const handleRefresh = useCallback(async () => {
-    // Prevent multiple refreshes at once
+  const handleRefreshData = async () => {
     if (isRefreshing) return;
     
     setIsRefreshing(true);
+    setHasError(false);
     try {
-      console.log("Dashboard: Manual refresh started");
-      // Refresh data sequentially to avoid race conditions
-      await refreshTasks();
-      await refreshProjects();
-      toast.success("Dashboard refreshed");
+      console.log('Manual refresh starting...');
+      
+      // Refresh tasks then projects
+      try {
+        await refreshTasks();
+        console.log('Tasks refreshed successfully');
+      } catch (error) {
+        console.error('Error refreshing tasks:', error);
+        setHasError(true);
+      }
+      
+      try {
+        await refreshProjects();
+        console.log('Projects refreshed successfully');
+      } catch (error) {
+        console.error('Error refreshing projects:', error);
+        setHasError(true);
+      }
+      
+      console.log('Manual refresh complete - tasks:', tasks.length, 'projects:', projects.length);
+      
+      if (hasError) {
+        toast.error("Some data couldn't be refreshed due to database errors");
+      } else {
+        toast.success("Dashboard data refreshed");
+      }
     } catch (error) {
-      console.error('Error refreshing dashboard data:', error);
-      toast.error("Failed to refresh dashboard");
+      console.error("Error refreshing dashboard data:", error);
+      setHasError(true);
+      toast.error("Failed to refresh dashboard data");
     } finally {
       setIsRefreshing(false);
     }
-  }, [refreshTasks, refreshProjects, isRefreshing]);
-  
-  // Handle time tracking
-  const handleBreak = useCallback((breakType: string) => {
-    clockOut(`${breakType} break started`);
-  }, [clockOut]);
-  
-  // Create task handler
-  const handleCreateTask = useCallback(() => {
-    openCreateTaskDialog();
-  }, [openCreateTaskDialog]);
-  
-  // Edit task handler
-  const handleEditTask = useCallback((task: Task) => {
-    openCreateTaskDialog(task);
-  }, [openCreateTaskDialog]);
+  };
+
+  const handleForcefulRefresh = async () => {
+    if (isRefreshing) return;
+    
+    setIsRefreshing(true);
+    setHasError(false);
+    try {
+      console.log('Manual forceful refresh starting...');
+      
+      // Refresh tasks then projects
+      try {
+        await refreshTasks();
+        console.log('Tasks refreshed successfully, count:', tasks.length);
+      } catch (error) {
+        console.error('Error refreshing tasks:', error);
+        setHasError(true);
+      }
+      
+      try {
+        await refreshProjects();
+        console.log('Projects refreshed successfully, count:', projects.length);
+      } catch (error) {
+        console.error('Error refreshing projects:', error);
+        setHasError(true);
+      }
+      
+      if (hasError) {
+        toast.error("Some data couldn't be refreshed due to database errors");
+      } else {
+        toast.success("Dashboard data refreshed");
+      }
+    } catch (error) {
+      console.error("Error refreshing dashboard data:", error);
+      setHasError(true);
+      toast.error("Failed to refresh dashboard data");
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task);
+    setIsCreateTaskOpen(true);
+  };
+
+  // Modified handleCreateTask to refresh after task creation
+  const handleCreateTask = (project?: Project) => {
+    setEditingTask(undefined);
+    setSelectedProject(project || null);
+    setIsCreateTaskOpen(true);
+  };
+
+  // New function to refresh tasks after creation/editing
+  const handleTaskCreated = async () => {
+    try {
+      console.log("Task created/updated, refreshing data...");
+      setIsRefreshing(true);
+      await refreshTasks();
+      await refreshProjects();
+      toast.success("Tasks refreshed");
+    } catch (error) {
+      console.error("Error refreshing after task update:", error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  const handleViewTasks = (project: Project) => {
+    console.log("View tasks for project:", project.title);
+  };
   
   return (
-    <div className="p-4 md:p-6 space-y-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-xl md:text-2xl font-bold">Dashboard</h1>
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`} />
-            Refresh
-          </Button>
-          <Button 
-            onClick={handleCreateTask} 
-            size="sm"
-          >
-            <PlusCircle className="h-4 w-4 mr-2" />
-            New Task
-          </Button>
+    <div className="p-2 md:p-6">
+      <div className="flex flex-col gap-4 md:gap-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h1 className="text-xl md:text-2xl font-bold">Welcome, {user?.name}!</h1>
+            <p className="text-sm md:text-base text-gray-600">
+              {format(new Date(), "EEEE, MMMM d")} · Here's your overview
+            </p>
+          </div>
+          <div className="flex gap-2 self-start sm:self-auto">
+            <Button 
+              variant="outline" 
+              size={isMobile ? "sm" : "default"}
+              onClick={handleForcefulRefresh}
+              disabled={isRefreshing || isLoading}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`} /> 
+              Refresh
+            </Button>
+            <Button 
+              onClick={() => handleCreateTask()} 
+              size={isMobile ? "sm" : "default"}
+            >
+              <Plus className="h-4 w-4 mr-2" /> New Task
+            </Button>
+          </div>
         </div>
-      </div>
-      
-      <TasksSummary 
-        dailyScore={dailyScore}
-        todaysTasks={todaysTasks}
-        upcomingTasks={upcomingTasks}
-        isLoading={isLoading}
-        onRefresh={handleRefresh}
-      />
-      
-      <div className="mb-6">
-        <div className="mb-4">
-          <h2 className="text-lg font-semibold mb-2">Time Tracking</h2>
-          <TimeTrackingControls 
-            notes={notes}
-            setNotes={setNotes}
-            isClocked={currentEntry.isClocked}
-            clockIn={clockIn}
-            clockOut={clockOut}
-            handleBreak={handleBreak}
-            elapsedTime={elapsedTime}
-          />
-        </div>
+        
+        {/* Database status alert */}
+        {hasError && (
+          <div className="p-4 mb-4 rounded border-red-300 border bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300 flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5" />
+            <div>
+              <p className="font-semibold">Database connection issues detected</p>
+              <p className="text-sm">There may be RLS policy recursion errors in your Supabase project.</p>
+            </div>
+          </div>
+        )}
+        
+        <TasksSummary 
+          dailyScore={dailyScore}
+          todaysTasks={todaysTasks}
+          upcomingTasks={upcomingTasks}
+          isLoading={isLoading}
+          onRefresh={handleForcefulRefresh}
+        />
+
         <TimeTracking />
+
+        <AnalyticsSection 
+          tasks={tasks} 
+          projects={projects}
+        />
+        
+        <DailyTasksSection 
+          tasks={todaysTasks}
+          onCreateTask={() => handleCreateTask()}
+          onEditTask={handleEditTask}
+          isLoading={isLoading}
+        />
+        
+        <UpcomingTasksSection 
+          tasks={upcomingTasks}
+          onCreateTask={() => handleCreateTask()}
+          onEditTask={handleEditTask}
+          isLoading={isLoading}
+        />
+        
+        {user?.role === 'manager' && (
+          <>
+            <RecentProjects 
+              projects={recentProjects}
+              onViewTasks={handleViewTasks}
+              onCreateTask={handleCreateTask}
+              onRefresh={refreshProjects}
+              isLoading={isLoading}
+            />
+            
+            <TeamManagement />
+          </>
+        )}
       </div>
       
-      <DailyTasksSection
-        tasks={todaysTasks}
-        onCreateTask={handleCreateTask}
-        onEditTask={handleEditTask}
-        isLoading={isLoading}
-      />
-      
-      <UpcomingTasksSection
-        tasks={upcomingTasks}
-        onCreateTask={handleCreateTask}
-        onEditTask={handleEditTask}
-        isLoading={isLoading}
-      />
-      
-      {/* Create Task Dialog */}
-      <CreateTaskDialog
-        open={isOpen}
-        onOpenChange={setIsOpen}
-        editingTask={currentTask}
+      <CreateTaskDialog 
+        open={isCreateTaskOpen} 
+        onOpenChange={setIsCreateTaskOpen}
+        editingTask={editingTask}
+        currentProjectId={selectedProject?.id}
+        onTaskCreated={handleTaskCreated}
       />
     </div>
   );

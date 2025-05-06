@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTask } from '@/contexts/task';
 import { Task, Project } from '@/types';
 import { toast } from '@/components/ui/sonner';
@@ -11,8 +12,8 @@ export const useProjectTasksView = (projectId: string | null) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
-  const refreshInProgress = useRef(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const [initialLoadAttempted, setInitialLoadAttempted] = useState(false);
   
   // Memoize project data to prevent unnecessary re-renders
   const project = useMemo(() => {
@@ -34,58 +35,62 @@ export const useProjectTasksView = (projectId: string | null) => {
 
   // Reset states when project ID changes
   useEffect(() => {
-    setInitialLoadComplete(false);
+    setRetryCount(0);
+    setInitialLoadAttempted(false);
     setIsLoading(true);
     setLoadError(null);
-    refreshInProgress.current = false;
   }, [projectId]);
 
   // Fetch fresh data when the component mounts or projectId changes
   useEffect(() => {
-    // Skip if we've already loaded or if projectId is null
-    if (initialLoadComplete || !projectId) {
+    // Skip if we've already tried loading or if projectId is null
+    if (initialLoadAttempted || !projectId) {
       setIsLoading(false);
       return;
     }
 
     const loadData = async () => {
-      // Prevent duplicate fetch operations
-      if (refreshInProgress.current) return;
-      refreshInProgress.current = true;
-      
       setIsLoading(true);
       setLoadError(null);
       
       try {
         console.log(`Loading projects data for project ID: ${projectId}`);
-        await refreshTasks();
         await refreshProjects();
+        await refreshTasks();
         console.log(`Successfully loaded projects and tasks data`);
-        setInitialLoadComplete(true);
+        setInitialLoadAttempted(true);
       } catch (error) {
         console.error('Error refreshing project data:', error);
         setLoadError('Failed to load project data. Please try refreshing.');
+        
+        // Auto-retry logic (maximum 3 attempts with exponential backoff)
+        if (retryCount < 3) {
+          const delayMs = 1000 * Math.pow(2, retryCount);
+          console.log(`Auto-retrying (attempt ${retryCount + 1}) after ${delayMs}ms...`);
+          setRetryCount(prev => prev + 1);
+          setTimeout(() => loadData(), delayMs);
+        } else {
+          setInitialLoadAttempted(true);
+        }
       } finally {
         setIsLoading(false);
-        refreshInProgress.current = false;
       }
     };
     
     loadData();
-  }, [projectId, refreshProjects, refreshTasks, initialLoadComplete]);
+  }, [projectId, refreshProjects, refreshTasks, retryCount, initialLoadAttempted]);
 
   // Enhanced refresh function after task update with debounce
   const refreshAfterTaskUpdate = useCallback(async () => {
-    // Prevent duplicate fetches
-    if (refreshInProgress.current) return;
-    refreshInProgress.current = true;
-    
     console.log("Refreshing tasks after task update");
     
     // Show the refreshing indicator
     setIsRefreshing(true);
     
     try {
+      // Add small delay to ensure database has time to update
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       // First refresh tasks, then projects to ensure we have the latest data
       await refreshTasks();
       await refreshProjects();
@@ -96,7 +101,6 @@ export const useProjectTasksView = (projectId: string | null) => {
       toast.error("Failed to refresh latest task data");
     } finally {
       setIsRefreshing(false);
-      refreshInProgress.current = false;
     }
   }, [refreshTasks, refreshProjects]);
 
@@ -119,8 +123,7 @@ export const useProjectTasksView = (projectId: string | null) => {
   }, []);
   
   const handleManualRefresh = useCallback(async () => {
-    if (!projectId || refreshInProgress.current) return;
-    refreshInProgress.current = true;
+    if (!projectId) return;
     
     setIsRefreshing(true);
     setLoadError(null);
@@ -135,7 +138,6 @@ export const useProjectTasksView = (projectId: string | null) => {
       toast.error("Failed to refresh project data");
     } finally {
       setIsRefreshing(false);
-      refreshInProgress.current = false;
     }
   }, [projectId, refreshProjects, refreshTasks]);
 

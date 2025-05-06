@@ -60,27 +60,15 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
     console.log('Form submission data:', data);
     
     try {
-      // Ensure we have a valid deadline with time
-      let deadlineDate = null;
-      
-      if (typeof data.deadline === 'string') {
-        deadlineDate = new Date(data.deadline);
-      } else {
-        deadlineDate = data.deadline;
-      }
+      // Ensure we have a valid deadline
+      const deadlineDate = typeof data.deadline === 'string' 
+        ? new Date(data.deadline)
+        : data.deadline;
       
       if (isNaN(deadlineDate.getTime())) {
         console.error('Invalid deadline date');
         return;
       }
-      
-      // Combine the date and time for the deadline
-      if (timeInput) {
-        const [hours, minutes] = timeInput.split(':').map(Number);
-        deadlineDate.setHours(hours || 0, minutes || 0, 0, 0);
-      }
-      
-      console.log('Final deadline with time:', deadlineDate);
 
       if (isEditMode && editingTask) {
         await updateTask(editingTask.id, {
@@ -94,10 +82,6 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
         const projectId = data.projectId === "none" ? undefined : data.projectId;
         
         console.log('Adding task with projectId:', projectId);
-        console.log('Adding task with assignment:', {
-          assignedToId: selectedMember === "unassigned" ? undefined : selectedMember,
-          assignedToName: data.assignedToName
-        });
         
         await addTask({
           title: data.title,
@@ -118,7 +102,7 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
         console.log("Calling onTaskCreated callback");
         setTimeout(() => {
           onTaskCreated();
-        }, 300); // Slight increase in delay to allow database to update
+        }, 200); // Delay to allow database to update
       }
       
       onOpenChange(false);

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -38,24 +38,11 @@ const TaskAssigneeSelect: React.FC<TaskAssigneeSelectProps> = ({
   // Get selected user for display in the trigger
   const selectedUser = users.find(user => user.id === selectedMember);
   
-  // Log for debugging purposes
-  useEffect(() => {
-    console.log('TaskAssigneeSelect rendered with:', {
-      selectedMember,
-      selectedUser: selectedUser ? {
-        id: selectedUser.id,
-        name: selectedUser.name,
-        email: selectedUser.email
-      } : 'None',
-      totalUsers: users.length
-    });
-  }, [selectedMember, selectedUser, users]);
-
   return (
     <div className="space-y-2">
       <Label htmlFor="assignedTo">Assigned To</Label>
       <Select
-        value={selectedMember || "unassigned"}
+        value={selectedMember}
         onValueChange={onAssign}
       >
         <SelectTrigger id="assignedTo" className="w-full flex items-center gap-2">
