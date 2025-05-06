@@ -118,12 +118,12 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
                   projects={projects}
                   editingTask={editingTask}
                   currentProjectId={currentProjectId}
-                  selectedMember={selectedMember}
                   setSelectedMember={setSelectedMember}
                   date={deadlineDate}
                   timeInput={timeInput}
                   onDateChange={handleDateChange}
                   onTimeChange={handleTimeChange}
+                  // Remove selectedMember prop here
                 />
               </TabsContent>
               

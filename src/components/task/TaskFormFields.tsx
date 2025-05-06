@@ -14,14 +14,11 @@ import { TaskPriority } from '@/types';
 import { UseFormRegister, FieldErrors } from 'react-hook-form';
 import { format } from 'date-fns';
 import TaskDeadlinePicker from './form/TaskDeadlinePicker';
-import TaskAssigneeSelect from './form/TaskAssigneeSelect';
-import { useUsers } from '@/hooks/useUsers';
 
 interface TaskFormFieldsProps {
   register: UseFormRegister<any>;
   errors: FieldErrors;
   setValue: (name: string, value: any) => void;
-  selectedMember: string | undefined;
   setSelectedMember: (value: string | undefined) => void;
   editingTask?: any;
   currentProjectId?: string;
@@ -32,7 +29,6 @@ const TaskFormFields: React.FC<TaskFormFieldsProps> = ({
   register,
   errors,
   setValue,
-  selectedMember,
   setSelectedMember,
   projects,
   editingTask,
@@ -45,8 +41,6 @@ const TaskFormFields: React.FC<TaskFormFieldsProps> = ({
   const [timeInput, setTimeInput] = useState<string>(
     editingTask ? format(new Date(editingTask.deadline), 'HH:mm') : '12:00'
   );
-
-  const { users, isLoading: loadingUsers } = useUsers();
 
   const handleDateChange = (selectedDate: Date | undefined) => {
     if (!selectedDate) return;
@@ -67,19 +61,6 @@ const TaskFormFields: React.FC<TaskFormFieldsProps> = ({
       const newDate = new Date(date);
       newDate.setHours(hours || 0, minutes || 0, 0, 0);
       setValue('deadline', newDate.toISOString());
-    }
-  };
-
-  const handleUserAssignment = (userId: string) => {
-    const selectedUser = users.find(user => user.id === userId);
-    if (selectedUser) {
-      setSelectedMember(userId);
-      setValue('assignedToId', userId);
-      setValue('assignedToName', selectedUser.name);
-    } else {
-      setSelectedMember(undefined);
-      setValue('assignedToId', undefined);
-      setValue('assignedToName', undefined);
     }
   };
 
@@ -125,13 +106,6 @@ const TaskFormFields: React.FC<TaskFormFieldsProps> = ({
           </SelectContent>
         </Select>
       </div>
-
-      <TaskAssigneeSelect
-        selectedMember={selectedMember}
-        onAssign={handleUserAssignment}
-        users={users}
-        isLoading={loadingUsers}
-      />
 
       <div className="space-y-2">
         <Label htmlFor="priority">Priority <span className="text-red-500">*</span></Label>
