@@ -80,8 +80,56 @@ export const addTask = async (
         return;
       }
       
-      // Use the data from project_tasks
-      data = projectTasksData;
+      // Use a new variable instead of reassigning the constant
+      let taskData = projectTasksData;
+      
+      // Construct a properly formatted Task object with ALL required properties
+      const newTask: Task = {
+        id: taskData.id,
+        userId: userId, // Use normalized user ID
+        projectId: taskData.project_id || undefined,
+        title: taskData.title || '',
+        description: taskData.description || '',
+        deadline: new Date(taskData.deadline || now),
+        priority: (taskData.priority as Task['priority']) || 'Medium',
+        status: (taskData.status as Task['status']) || 'To Do',
+        createdAt: new Date(taskData.created_at || now),
+        updatedAt: new Date(taskData.updated_at || now),
+        assignedToId: taskData.assigned_to_id || undefined,
+        assignedToName: task.assignedToName,
+        tags: [],
+        comments: [],
+        cost: taskData.cost || 0,
+      };
+
+      console.log('Task created successfully, updating state with new task:', newTask);
+      console.log('Task deadline:', format(newTask.deadline, 'yyyy-MM-dd'));
+      
+      // Update the tasks state with the new task
+      setTasks(prevTasks => {
+        const updatedTasks = [...prevTasks, newTask];
+        console.log(`Tasks updated: ${updatedTasks.length} (previous: ${prevTasks.length})`);
+        return updatedTasks;
+      });
+      
+      // Update the project's tasks if needed
+      if (newTask.projectId) {
+        setProjects(prevProjects => 
+          prevProjects.map(project => {
+            if (project.id === newTask.projectId) {
+              return {
+                ...project,
+                tasks: [...(project.tasks || []), newTask]
+              };
+            }
+            return project;
+          })
+        );
+      }
+      
+      playSuccessSound();
+      toast.success('Task created successfully!');
+      return;
     }
 
     if (data) {

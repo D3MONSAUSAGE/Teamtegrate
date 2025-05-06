@@ -1,4 +1,3 @@
-
 import { Task } from '@/types';
 import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,7 +6,7 @@ import { fetchAllTaskComments } from './task/fetchAllTaskComments';
 import { resolveUserNames } from './task/resolveUserNames';
 import { logTaskFetchResults } from './task/logTaskFetchResults';
 import { executeRpc } from '@/integrations/supabase/rpc';
-import { isValid } from 'date-fns';
+import { isValid, isToday } from 'date-fns';
 
 export const fetchTasks = async (
   user: { id: string },
