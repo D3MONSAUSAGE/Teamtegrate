@@ -59,14 +59,20 @@ export const useTaskDetailHelpers = (task: Task) => {
     }
   };
 
-  // Handle assigned to name
+  // Improved assigned to name handling - more consistent with useTaskCard
   const getAssignedToName = () => {
+    if (!task.assignedToId) {
+      return "Unassigned";
+    }
+    
     if (!task.assignedToName || task.assignedToName.trim() === "") {
-      return "Unassigned";
+      return "Assigned";
     }
-    if (task.assignedToId && (!task.assignedToName || task.assignedToName === task.assignedToId)) {
-      return "Unassigned";
+    
+    if (task.assignedToName === task.assignedToId) {
+      return "Assigned";
     }
+    
     return task.assignedToName;
   };
 

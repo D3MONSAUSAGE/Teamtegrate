@@ -12,7 +12,6 @@ interface TaskCardMetadataProps {
 
 const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({
   deadline,
-  assignedToName,
   getAssignedToName
 }) => {
   // Use the improved getAssignedToName function

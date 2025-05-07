@@ -25,38 +25,30 @@ export const assignTaskToUser = async (
 
     const now = new Date();
     
-    // Find user's name if not provided or get updated name
+    // Always fetch user name if possible for consistency
     let actualUserName = userName;
-    if ((!actualUserName || actualUserName === userId) && userId) {
-      actualUserName = await fetchUserInfo(userId) || userName;
+    if (userId) {
+      const fetchedName = await fetchUserInfo(userId);
+      if (fetchedName) {
+        actualUserName = fetchedName;
+        console.log(`Successfully resolved user ${userId} to name: ${actualUserName}`);
+      } else {
+        console.log(`Couldn't resolve name for user ${userId}, using provided name: ${actualUserName}`);
+      }
     }
     
     // Log assignment for debugging
     console.log(`Assigning task ${taskId} to user ${userId} with name ${actualUserName}`);
 
-    // Try first with both fields
-    let result = await supabase
+    // Only attempt to update the assigned_to_id in the database, not the name
+    // This prevents SQL errors if the assigned_to_name column doesn't exist
+    const result = await supabase
       .from('tasks')
       .update({ 
         assigned_to_id: userId,
-        assigned_to_name: actualUserName,
         updated_at: now.toISOString() 
       })
       .eq('id', taskId);
-
-    // If error occurs and it's related to assigned_to_name field
-    if (result.error && result.error.message.includes('assigned_to_name')) {
-      console.log('Task assignment error with assigned_to_name field, retrying with only assigned_to_id');
-      
-      // Try again with just the ID field
-      result = await supabase
-        .from('tasks')
-        .update({ 
-          assigned_to_id: userId,
-          updated_at: now.toISOString() 
-        })
-        .eq('id', taskId);
-    }
 
     if (result.error) {
       console.error('Error assigning task to user:', result.error);
@@ -78,7 +70,7 @@ export const assignTaskToUser = async (
       await createTaskAssignmentNotification(userId, task.title, isSelfAssigned);
     }
     
-    // Update the state in both tasks array and projects array
+    // Update the state in both tasks array and projects array with both ID and name
     updateTaskStates(
       taskId, 
       userId, 

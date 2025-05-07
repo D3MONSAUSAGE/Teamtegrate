@@ -34,24 +34,23 @@ export const useTaskCard = (task: Task) => {
   };
 
   const getAssignedToName = () => {
-    // Fixed: Better detection of valid assignment
-    // First check if assignedToName exists and is not just whitespace
-    if (!task.assignedToName || task.assignedToName.trim() === '') {
+    // If we have assignedToId but no name, try to show something sensible
+    if (task.assignedToId && (!task.assignedToName || task.assignedToName.trim() === '')) {
+      // If the ID is the same as the name, it means we didn't resolve the name properly
+      // In this case, return 'Unassigned'
+      if (task.assignedToName === task.assignedToId) {
+        return 'Unassigned';
+      }
+      return 'Assigned';
+    }
+
+    // If no assignedToId, always return 'Unassigned'
+    if (!task.assignedToId) {
       return 'Unassigned';
     }
     
-    // Check if assignedToName looks like a UUID (might be an ID instead of a name)
-    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (uuidPattern.test(task.assignedToName)) {
-      return 'Unassigned';
-    }
-    
-    // Check for very long strings that might be internal IDs
-    if (task.assignedToName.length > 30 && task.assignedToName.includes('-')) {
-      return 'Unassigned';
-    }
-    
-    return task.assignedToName;
+    // At this point, we have both ID and name, so return the name
+    return task.assignedToName || 'Unassigned';
   };
 
   return {

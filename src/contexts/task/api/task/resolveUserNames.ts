@@ -11,10 +11,19 @@ export const resolveUserNames = async (userIds: string[]): Promise<Map<string, s
     
     console.log(`Resolving names for ${userIds.length} users`);
     
+    // Filter out any non-string or empty IDs
+    const validUserIds = userIds.filter(id => 
+      typeof id === 'string' && id.trim() !== ''
+    );
+    
+    if (validUserIds.length === 0) {
+      return userMap;
+    }
+    
     const { data: userData, error } = await supabase
       .from('users')
       .select('id, name, email')
-      .in('id', userIds);
+      .in('id', validUserIds);
     
     if (error) {
       console.error('Error fetching user data:', error);
@@ -26,10 +35,12 @@ export const resolveUserNames = async (userIds: string[]): Promise<Map<string, s
       return userMap;
     }
     
-    console.log(`Found ${userData.length} users of ${userIds.length} requested`);
+    console.log(`Found ${userData.length} users of ${validUserIds.length} requested`);
     
     userData.forEach(user => {
-      userMap.set(user.id, user.name || user.email || 'Unknown User');
+      const displayName = user.name || user.email || 'Unknown User';
+      userMap.set(user.id, displayName);
+      console.log(`Mapped user ${user.id} to name: ${displayName}`);
     });
     
   } catch (err) {
