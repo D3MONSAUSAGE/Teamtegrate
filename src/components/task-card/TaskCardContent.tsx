@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import TaskCardMetadata from './TaskCardMetadata';
 import TaskCardStatusChip from './TaskCardStatusChip';
 import { MessageCircle } from 'lucide-react';
-import { useTaskCard } from './useTaskCard';
+import { useTaskCard } from './useTaskCard'; // Use proper ES module import
 
 interface TaskCardContentProps {
   task: Task;
@@ -20,7 +20,7 @@ const TaskCardContent: React.FC<TaskCardContentProps> = ({
   commentCount,
   onShowComments
 }) => {
-  // Use the imported useTaskCard hook instead of requiring it
+  // Use the useTaskCard hook to get the getAssignedToName function
   const { getAssignedToName } = useTaskCard(task);
   
   return (
@@ -65,8 +65,9 @@ const TaskCardContent: React.FC<TaskCardContentProps> = ({
       </div>
       
       <TaskCardMetadata 
-        deadline={task.deadline} 
+        deadline={task.deadline}
         assignedToName={task.assignedToName} 
+        assignedToId={task.assignedToId}
         getAssignedToName={getAssignedToName}
       />
     </div>
