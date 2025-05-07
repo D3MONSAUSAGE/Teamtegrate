@@ -32,10 +32,12 @@ export const addTask = async (
       created_at: now.toISOString(),
       updated_at: now.toISOString(),
       assigned_to_id: task.assignedToId || null,
-      assigned_to_name: task.assignedToName || null, // Make sure we're sending this to the database
+      assigned_to_name: task.assignedToName || null, // This needs to be included in the database call
       cost: task.cost || 0
     };
 
+    // Check if the assigned_to_name field exists in the database schema
+    // If not, we need to modify our insert to exclude it
     const { data, error } = await supabase
       .from('tasks')
       .insert(taskToInsert)
@@ -44,9 +46,29 @@ export const addTask = async (
 
     if (error) {
       console.error('Error adding task:', error);
-      playErrorSound();
-      toast.error('Failed to create task');
-      return;
+      
+      // If the error is due to the assigned_to_name field, try again without it
+      if (error.message.includes('assigned_to_name')) {
+        const { assigned_to_name, ...taskWithoutName } = taskToInsert;
+        const retryResult = await supabase
+          .from('tasks')
+          .insert(taskWithoutName)
+          .select('*')
+          .single();
+          
+        if (retryResult.error) {
+          playErrorSound();
+          toast.error('Failed to create task');
+          console.error('Error on retry:', retryResult.error);
+          return;
+        }
+        
+        data = retryResult.data;
+      } else {
+        playErrorSound();
+        toast.error('Failed to create task');
+        return;
+      }
     }
 
     if (data) {
