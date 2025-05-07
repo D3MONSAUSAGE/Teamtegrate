@@ -39,8 +39,11 @@ export const addTask = async (
       cost: task.cost || 0
     };
 
+    // Declare a variable to hold our result that we can modify
+    let result;
+
     // First attempt with assigned_to_name included
-    let result = await supabase
+    result = await supabase
       .from('tasks')
       .insert(taskToInsert)
       .select('*')
@@ -80,9 +83,8 @@ export const addTask = async (
       
       // Store the original assignedToName for debugging
       const originalAssignedToName = task.assignedToName;
-      const dbAssignedToName = taskData.assigned_to_name;
       
-      console.log(`Task created - Original name: ${originalAssignedToName || 'none'}, DB name: ${dbAssignedToName || 'none'}`);
+      console.log(`Task created - Original name: ${originalAssignedToName || 'none'}`);
       
       const newTask: Task = {
         id: taskData.id,
