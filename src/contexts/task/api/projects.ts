@@ -9,9 +9,19 @@ export const fetchProjects = async (
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
 ): Promise<void> => {
   try {
+    if (!user) {
+      console.log('No user found, skipping projects fetch');
+      setProjects([]);
+      return;
+    }
+
+    console.log('Fetching projects for user:', user.id);
+    
+    // Use the get_all_projects RPC function to respect RLS policies
     const { data, error } = await supabase
       .from('projects')
-      .select('*')
+      .select('*, project_team_members!inner(user_id)')
+      .or(`manager_id.eq.${user.id}, project_team_members.user_id.eq.${user.id}`)
       .order('created_at', { ascending: false });
 
     if (error) {

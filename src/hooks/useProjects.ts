@@ -27,10 +27,12 @@ export const useProjects = () => {
       
       console.log('Fetching projects for user:', user.id);
       
-      // Fetch all projects
+      // Use the filter to only get projects where the user is a team member or manager
       const { data, error } = await supabase
         .from('projects')
-        .select('*');
+        .select('*, project_team_members!inner(user_id)')
+        .or(`manager_id.eq.${user.id}, project_team_members.user_id.eq.${user.id}`)
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching projects:', error);
