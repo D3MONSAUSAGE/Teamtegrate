@@ -1,6 +1,6 @@
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { Task, Project, TaskStatus, TaskPriority, DailyScore } from '@/types';
+import { Task, Project, TaskStatus, TaskPriority, DailyScore, TeamMemberPerformance } from '@/types';
 import { useAuth } from '../AuthContext';
 import { fetchUserTasks, fetchUserProjects } from './taskApi';
 import { calculateDailyScore } from './taskMetrics';
@@ -33,6 +33,7 @@ import {
   getTasksByDate, 
   getOverdueTasks 
 } from './taskFilters';
+import { fetchTeamPerformance, fetchTeamMemberPerformance } from './api';
 
 interface TaskContextType {
   tasks: Task[];
@@ -61,6 +62,8 @@ interface TaskContextType {
   getTasksByPriority: (priority: TaskPriority) => Task[];
   getTasksByDate: (date: Date) => Task[];
   getOverdueTasks: () => Task[];
+  fetchTeamPerformance: () => Promise<TeamMemberPerformance[]>;
+  fetchTeamMemberPerformance: (userId: string) => Promise<TeamMemberPerformance | null>;
 }
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
@@ -175,6 +178,8 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     getTasksByPriority: (priority: TaskPriority) => getTasksByPriority(priority, tasks),
     getTasksByDate: (date: Date) => getTasksByDate(date, tasks),
     getOverdueTasks: () => getOverdueTasks(tasks),
+    fetchTeamPerformance,
+    fetchTeamMemberPerformance
   };
 
   return <TaskContext.Provider value={value}>{children}</TaskContext.Provider>;

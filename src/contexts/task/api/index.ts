@@ -7,3 +7,4 @@ export * from './taskDelete';
 export * from './taskAssignment';
 export * from './projects';
 export * from './comments';
+export * from './teamPerformance';
