@@ -3,6 +3,11 @@ import { supabase } from '@/integrations/supabase/client';
 // Create a simple in-memory cache to avoid redundant database queries
 const userNameCache = new Map<string, string>();
 
+/**
+ * Resolves multiple user IDs to user names using an efficient batch query
+ * @param userIds Array of user IDs to resolve to names
+ * @returns Map of user ID to display name
+ */
 export const resolveUserNames = async (userIds: string[]): Promise<Map<string, string>> => {
   const userMap = new Map<string, string>();
   
@@ -25,7 +30,7 @@ export const resolveUserNames = async (userIds: string[]): Promise<Map<string, s
     // Check cache first for each user ID to avoid redundant database queries
     const uncachedUserIds = validUserIds.filter(id => !userNameCache.has(id));
     
-    // If we have uncached user IDs, fetch them from the database
+    // If we have uncachedUser IDs, fetch them from the database
     if (uncachedUserIds.length > 0) {
       console.log(`Fetching ${uncachedUserIds.length} uncached user names from database`);
       
@@ -41,6 +46,7 @@ export const resolveUserNames = async (userIds: string[]): Promise<Map<string, s
         
         // Add fetched users to cache
         userData.forEach(user => {
+          // Ensure we have a valid display name - try name first, then email, then fallback
           const displayName = user.name || user.email || 'Unknown User';
           userNameCache.set(user.id, displayName);
         });
@@ -58,7 +64,7 @@ export const resolveUserNames = async (userIds: string[]): Promise<Map<string, s
         userMap.set(userId, cachedName);
       } else {
         // If we couldn't find the user, use a fallback name
-        userMap.set(userId, 'User');
+        userMap.set(userId, 'Unknown User');
       }
     });
     
@@ -69,21 +75,30 @@ export const resolveUserNames = async (userIds: string[]): Promise<Map<string, s
   return userMap;
 };
 
-// Utility function to get a single user's name - useful for components
+/**
+ * Utility function to get a single user's name - useful for components
+ * @param userId User ID to resolve
+ * @returns Promise resolving to the user's display name
+ */
 export const resolveUserName = async (userId: string): Promise<string> => {
   if (!userId) return 'Unassigned';
   
+  // Convert to string if it's not already
+  const userIdString = String(userId).trim();
+  if (!userIdString) return 'Unassigned';
+  
   // If cached, return immediately
-  if (userNameCache.has(userId)) {
-    return userNameCache.get(userId) || 'Unknown User';
+  if (userNameCache.has(userIdString)) {
+    return userNameCache.get(userIdString) || 'Unknown User';
   }
   
   // Otherwise fetch from database
   try {
+    console.log(`Fetching user info for ID: ${userIdString}`);
     const { data, error } = await supabase
       .from('users')
       .select('name, email')
-      .eq('id', userId)
+      .eq('id', userIdString)
       .maybeSingle();
       
     if (error) {
@@ -93,12 +108,30 @@ export const resolveUserName = async (userId: string): Promise<string> => {
     
     if (data) {
       const name = data.name || data.email || 'Unknown User';
-      userNameCache.set(userId, name);
+      userNameCache.set(userIdString, name);
+      console.log(`Resolved user ${userIdString} to name: ${name}`);
       return name;
+    } else {
+      console.log(`No user found with ID: ${userIdString}`);
     }
   } catch (error) {
     console.error('Exception fetching user name:', error);
   }
   
   return 'Unknown User';
+};
+
+// Function to pre-load user names into cache
+export const preloadUserNames = async (userIds: string[]): Promise<void> => {
+  const uniqueIds = [...new Set(userIds.filter(id => id && typeof id === 'string'))];
+  if (uniqueIds.length === 0) return;
+  
+  console.log(`Preloading ${uniqueIds.length} user names into cache`);
+  await resolveUserNames(uniqueIds);
+};
+
+// Function to clear the cache if needed
+export const clearUserNameCache = (): void => {
+  userNameCache.clear();
+  console.log('User name cache cleared');
 };

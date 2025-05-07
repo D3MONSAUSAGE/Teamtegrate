@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import TaskCardMetadata from './TaskCardMetadata';
 import TaskCardStatusChip from './TaskCardStatusChip';
 import { MessageCircle } from 'lucide-react';
-import { useTaskCard } from './useTaskCard'; // Use proper ES module import
+import { useTaskCard } from './useTaskCard';
 
 interface TaskCardContentProps {
   task: Task;

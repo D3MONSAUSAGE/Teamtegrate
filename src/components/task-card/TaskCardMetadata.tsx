@@ -33,8 +33,8 @@ const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({
         return;
       }
       
-      // If we already have a proper name, use it
-      if (assignedToName && assignedToName !== assignedToId) {
+      // If we already have a proper name that's not an ID, use it
+      if (assignedToName && assignedToName !== assignedToId && assignedToName !== 'Unassigned' && assignedToName !== 'Assigned') {
         setDisplayName(assignedToName);
         return;
       }

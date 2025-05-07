@@ -4,7 +4,7 @@ import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchTaskData } from './task/fetchTaskData';
 import { fetchAllTaskComments } from './task/fetchAllTaskComments';
-import { resolveUserNames } from './task/resolveUserNames';
+import { resolveUserNames, preloadUserNames } from './task/resolveUserNames';
 import { logTaskFetchResults } from './task/logTaskFetchResults';
 import { executeRpc } from '@/integrations/supabase/rpc';
 
@@ -21,7 +21,7 @@ export const fetchTasks = async (
     
     if (rpcData !== null && Array.isArray(rpcData) && rpcData.length > 0) {
       console.log(`RPC returned task data successfully: ${rpcData.length} tasks found`);
-      processAndSetTasks(rpcData, user, setTasks);
+      await processAndSetTasks(rpcData, user, setTasks);
       return;
     }
     
@@ -37,7 +37,7 @@ export const fetchTasks = async (
       toast.error('Failed to load tasks from project_tasks table');
     } else if (directData && Array.isArray(directData) && directData.length > 0) {
       console.log(`Retrieved ${directData.length} tasks from direct project_tasks query`);
-      processAndSetTasks(directData, user, setTasks);
+      await processAndSetTasks(directData, user, setTasks);
       return;
     } else {
       console.log('No tasks found in project_tasks table, trying legacy tasks table...');
@@ -57,7 +57,7 @@ export const fetchTasks = async (
     
     if (legacyData && Array.isArray(legacyData) && legacyData.length > 0) {
       console.log(`Retrieved ${legacyData.length} tasks from legacy table`);
-      processAndSetTasks(legacyData, user, setTasks);
+      await processAndSetTasks(legacyData, user, setTasks);
       return;
     }
     
@@ -82,7 +82,7 @@ const processAndSetTasks = async (
     return;
   }
   
-  console.log(`Processing ${taskData.length} tasks from database:`, taskData);
+  console.log(`Processing ${taskData.length} tasks from database`);
   
   // Fetch comments for all tasks
   const commentData = await fetchAllTaskComments();
@@ -96,11 +96,15 @@ const processAndSetTasks = async (
   const uniqueUserIds = [...new Set(assignedUserIds.filter(Boolean))];
   console.log(`Found ${uniqueUserIds.length} unique assigned users`);
   
+  // Preload user names into cache
+  await preloadUserNames(uniqueUserIds as string[]);
+  
   // Build user name mapping
   const userMap = await resolveUserNames(uniqueUserIds as string[]);
   
   // Process task data with comments and user information
   let tasks: Task[] = taskData.map((task: any) => {
+    // Process task comments
     const taskComments = commentData && Array.isArray(commentData)
       ? commentData
           .filter(comment => comment.task_id === task.id)
@@ -114,7 +118,15 @@ const processAndSetTasks = async (
       : [];
 
     // Get the assigned user name from our map
-    const assignedUserName = task.assigned_to_id ? userMap.get(task.assigned_to_id) : undefined;
+    let assignedUserName: string | undefined = undefined;
+    if (task.assigned_to_id) {
+      assignedUserName = userMap.get(task.assigned_to_id);
+      
+      // Additional check for empty or ID-like assignedToName
+      if (!assignedUserName || assignedUserName === 'Unknown User') {
+        console.log(`Could not resolve name for user ${task.assigned_to_id} on task ${task.id}, falling back to ID`);
+      }
+    }
 
     const parseDate = (dateStr: string | null): Date => {
       if (!dateStr) return new Date();

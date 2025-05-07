@@ -34,23 +34,24 @@ export const useTaskCard = (task: Task) => {
   };
 
   const getAssignedToName = () => {
-    // If we have assignedToId but no name, try to show something sensible
-    if (task.assignedToId && (!task.assignedToName || task.assignedToName.trim() === '')) {
-      // If the ID is the same as the name, it means we didn't resolve the name properly
-      // In this case, return 'Unassigned'
-      if (task.assignedToName === task.assignedToId) {
-        return 'Unassigned';
-      }
+    // If we have assignedToName and it's a proper name, use it
+    if (task.assignedToName && 
+        task.assignedToName !== 'Unassigned' && 
+        task.assignedToName !== 'Assigned' &&
+        task.assignedToName !== 'Unknown User' &&
+        task.assignedToName !== task.assignedToId) {
+      return task.assignedToName;
+    }
+
+    // If we have assignedToId but no proper name
+    if (task.assignedToId) {
+      // If the ID is the same as the name, or we have a generic name,
+      // return 'Assigned' to indicate it's assigned but we don't know to whom
       return 'Assigned';
     }
 
     // If no assignedToId, always return 'Unassigned'
-    if (!task.assignedToId) {
-      return 'Unassigned';
-    }
-    
-    // At this point, we have both ID and name, so return the name
-    return task.assignedToName || 'Unassigned';
+    return 'Unassigned';
   };
 
   return {
