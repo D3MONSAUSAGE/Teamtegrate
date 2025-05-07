@@ -61,17 +61,6 @@ const TaskCard: React.FC<TaskCardProps> = ({
           aria-label={`Open details for ${task.title}`}
           role="button"
         >
-          {/* Overdue Label - Moved to the top of card with proper spacing */}
-          {isTaskOverdue() && (
-            <motion.div 
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="absolute top-0 left-0 w-full bg-red-500/90 text-white text-xs text-center py-1 font-semibold tracking-wide z-20"
-            >
-              Overdue
-            </motion.div>
-          )}
-          
           {/* Actions button (three dots) */}
           <div className="absolute top-2 right-2 z-10">
             <TaskCardActions
@@ -84,15 +73,26 @@ const TaskCard: React.FC<TaskCardProps> = ({
             />
           </div>
 
-          {/* Main Content - Add padding-top when overdue to avoid overlap */}
-          <div className={cn(isTaskOverdue() ? "pt-6" : "")}>
-            <TaskCardContent
-              task={task}
-              handleStatusChange={handleStatusChange}
-              commentCount={commentCount}
-              onShowComments={() => setShowDrawer(true)}
-            />
-          </div>
+          {/* Main Content */}
+          <TaskCardContent
+            task={task}
+            handleStatusChange={handleStatusChange}
+            commentCount={commentCount}
+            onShowComments={() => setShowDrawer(true)}
+          />
+          
+          {/* Overdue Label */}
+          {isTaskOverdue() && (
+            <motion.div 
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="absolute top-2 left-1/2 -translate-x-1/2 z-20"
+            >
+              <span className="inline-block bg-red-500/90 text-white text-xs px-3 py-1 rounded-full shadow font-semibold tracking-wide">
+                Overdue
+              </span>
+            </motion.div>
+          )}
         </Card>
       </motion.div>
       <TaskDetailDrawer

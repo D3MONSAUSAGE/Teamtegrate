@@ -15,7 +15,7 @@ export const fetchUserInfo = async (userId: string): Promise<string | undefined>
       .from('users')
       .select('name, email')
       .eq('id', userId)
-      .maybeSingle();
+      .single();
       
     if (error) {
       console.error('Error fetching user info:', error);
@@ -24,11 +24,7 @@ export const fetchUserInfo = async (userId: string): Promise<string | undefined>
     
     if (userData) {
       // Return the user's name if available, otherwise return their email
-      const displayName = userData.name || userData.email;
-      console.log(`Found user info for ${userId}: ${displayName}`);
-      return displayName;
-    } else {
-      console.log(`No user found with ID: ${userId}`);
+      return userData.name || userData.email;
     }
   } catch (error) {
     console.error('Exception in fetchUserInfo:', error);

@@ -1,7 +1,6 @@
+import { Task, Project, Comment } from '@/types';
+import { toast } from '@/components/ui/sonner';
 
-import { Task, Project } from '@/types';
-
-// Add a comment to a task
 export const addCommentToTask = (
   taskId: string,
   comment: { userId: string; userName: string; text: string },
@@ -10,51 +9,53 @@ export const addCommentToTask = (
   projects: Project[],
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
 ) => {
-  const newTasks = tasks.map(task => {
+  const newComment: Comment = {
+    ...comment,
+    id: Math.random().toString(36).substring(2, 11),
+    createdAt: new Date(),
+  };
+
+  const updatedTasks = tasks.map((task) => {
     if (task.id === taskId) {
-      const newComments = [...(task.comments || []), {
-        id: `comment-${Date.now()}`,
-        userId: comment.userId,
-        userName: comment.userName,
-        text: comment.text,
-        createdAt: new Date()
-      }];
-      
-      return { ...task, comments: newComments };
+      const comments = task.comments || [];
+      return { 
+        ...task, 
+        comments: [...comments, newComment],
+        updatedAt: new Date() 
+      };
     }
     return task;
   });
+
+  setTasks(updatedTasks);
   
-  setTasks(newTasks);
-  
-  // Update tasks in projects if needed
-  const newProjects = projects.map(project => {
-    if (project.tasks && project.tasks.some(task => task.id === taskId)) {
-      return {
-        ...project,
-        tasks: project.tasks.map(task => {
+  const taskToUpdate = tasks.find(task => task.id === taskId);
+  if (taskToUpdate?.projectId) {
+    const updatedProjects = projects.map((project) => {
+      if (project.id === taskToUpdate.projectId) {
+        const projectTasks = project.tasks.map((task) => {
           if (task.id === taskId) {
-            const newComments = [...(task.comments || []), {
-              id: `comment-${Date.now()}`,
-              userId: comment.userId,
-              userName: comment.userName,
-              text: comment.text,
-              createdAt: new Date()
-            }];
-            
-            return { ...task, comments: newComments };
+            const comments = task.comments || [];
+            return { 
+              ...task, 
+              comments: [...comments, newComment],
+              updatedAt: new Date() 
+            };
           }
           return task;
-        })
-      };
-    }
-    return project;
-  });
+        });
+        
+        return { ...project, tasks: projectTasks };
+      }
+      return project;
+    });
+    
+    setProjects(updatedProjects);
+  }
   
-  setProjects(newProjects);
+  toast.success('Comment added successfully!');
 };
 
-// Add a tag to a task
 export const addTagToTask = (
   taskId: string,
   tag: string,
@@ -63,41 +64,51 @@ export const addTagToTask = (
   projects: Project[],
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
 ) => {
-  const newTasks = tasks.map(task => {
+  const updatedTasks = tasks.map((task) => {
     if (task.id === taskId) {
-      const currentTags = task.tags || [];
-      if (currentTags.includes(tag)) return task;
-      
-      return { ...task, tags: [...currentTags, tag] };
+      const tags = task.tags || [];
+      if (!tags.includes(tag)) {
+        return { 
+          ...task, 
+          tags: [...tags, tag],
+          updatedAt: new Date() 
+        };
+      }
     }
     return task;
   });
+
+  setTasks(updatedTasks);
   
-  setTasks(newTasks);
-  
-  // Update tasks in projects if needed
-  const newProjects = projects.map(project => {
-    if (project.tasks && project.tasks.some(task => task.id === taskId)) {
-      return {
-        ...project,
-        tasks: project.tasks.map(task => {
+  const taskToUpdate = tasks.find(task => task.id === taskId);
+  if (taskToUpdate?.projectId) {
+    const updatedProjects = projects.map((project) => {
+      if (project.id === taskToUpdate.projectId) {
+        const projectTasks = project.tasks.map((task) => {
           if (task.id === taskId) {
-            const currentTags = task.tags || [];
-            if (currentTags.includes(tag)) return task;
-            
-            return { ...task, tags: [...currentTags, tag] };
+            const tags = task.tags || [];
+            if (!tags.includes(tag)) {
+              return { 
+                ...task, 
+                tags: [...tags, tag],
+                updatedAt: new Date() 
+              };
+            }
           }
           return task;
-        })
-      };
-    }
-    return project;
-  });
+        });
+        
+        return { ...project, tasks: projectTasks };
+      }
+      return project;
+    });
+    
+    setProjects(updatedProjects);
+  }
   
-  setProjects(newProjects);
+  toast.success('Tag added to task successfully!');
 };
 
-// Remove a tag from a task
 export const removeTagFromTask = (
   taskId: string,
   tag: string,
@@ -106,67 +117,86 @@ export const removeTagFromTask = (
   projects: Project[],
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
 ) => {
-  const newTasks = tasks.map(task => {
+  const updatedTasks = tasks.map((task) => {
     if (task.id === taskId && task.tags) {
-      return { ...task, tags: task.tags.filter(t => t !== tag) };
+      return { 
+        ...task, 
+        tags: task.tags.filter(t => t !== tag),
+        updatedAt: new Date() 
+      };
     }
     return task;
   });
+
+  setTasks(updatedTasks);
   
-  setTasks(newTasks);
-  
-  // Update tasks in projects if needed
-  const newProjects = projects.map(project => {
-    if (project.tasks && project.tasks.some(task => task.id === taskId)) {
-      return {
-        ...project,
-        tasks: project.tasks.map(task => {
+  const taskToUpdate = tasks.find(task => task.id === taskId);
+  if (taskToUpdate?.projectId) {
+    const updatedProjects = projects.map((project) => {
+      if (project.id === taskToUpdate.projectId) {
+        const projectTasks = project.tasks.map((task) => {
           if (task.id === taskId && task.tags) {
-            return { ...task, tags: task.tags.filter(t => t !== tag) };
+            return { 
+              ...task, 
+              tags: task.tags.filter(t => t !== tag),
+              updatedAt: new Date() 
+            };
           }
           return task;
-        })
-      };
-    }
-    return project;
-  });
+        });
+        
+        return { ...project, tasks: projectTasks };
+      }
+      return project;
+    });
+    
+    setProjects(updatedProjects);
+  }
   
-  setProjects(newProjects);
+  toast.success('Tag removed from task successfully!');
 };
 
-// Add a tag to a project
 export const addTagToProject = (
   projectId: string,
   tag: string,
   projects: Project[],
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
 ) => {
-  const newProjects = projects.map(project => {
+  const updatedProjects = projects.map((project) => {
     if (project.id === projectId) {
-      const currentTags = project.tags || [];
-      if (currentTags.includes(tag)) return project;
-      
-      return { ...project, tags: [...currentTags, tag] };
+      const tags = project.tags || [];
+      if (!tags.includes(tag)) {
+        return { 
+          ...project, 
+          tags: [...tags, tag],
+          updatedAt: new Date() 
+        };
+      }
     }
     return project;
   });
-  
-  setProjects(newProjects);
+
+  setProjects(updatedProjects);
+  toast.success('Tag added to project successfully!');
 };
 
-// Remove a tag from a project
 export const removeTagFromProject = (
   projectId: string,
   tag: string,
   projects: Project[],
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
 ) => {
-  const newProjects = projects.map(project => {
+  const updatedProjects = projects.map((project) => {
     if (project.id === projectId && project.tags) {
-      return { ...project, tags: project.tags.filter(t => t !== tag) };
+      return { 
+        ...project, 
+        tags: project.tags.filter(t => t !== tag),
+        updatedAt: new Date() 
+      };
     }
     return project;
   });
-  
-  setProjects(newProjects);
+
+  setProjects(updatedProjects);
+  toast.success('Tag removed from project successfully!');
 };

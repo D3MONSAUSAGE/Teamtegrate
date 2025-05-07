@@ -1,69 +1,23 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Clock, User } from 'lucide-react';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
-import { resolveUserName } from '@/contexts/task/api/task/resolveUserNames';
 
 interface TaskCardMetadataProps {
   deadline: Date;
   assignedToName?: string;
-  assignedToId?: string;
-  getAssignedToName?: () => string;
 }
 
 const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({
   deadline,
-  assignedToId,
   assignedToName,
-  getAssignedToName
 }) => {
-  const [displayName, setDisplayName] = useState<string>(
-    assignedToName || getAssignedToName?.() || 'Unassigned'
-  );
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  // Format the display name - if empty or undefined, show "Unassigned"
+  const displayName = assignedToName && assignedToName.trim() !== '' 
+    ? assignedToName 
+    : 'Unassigned';
 
-  // Fetch user name from database if we only have an ID
-  useEffect(() => {
-    let isMounted = true;
-    
-    const fetchUserName = async () => {
-      if (!assignedToId) {
-        setDisplayName('Unassigned');
-        return;
-      }
-      
-      // If we already have a proper name that's not an ID, use it
-      if (assignedToName && assignedToName !== assignedToId && assignedToName !== 'Unassigned' && assignedToName !== 'Assigned') {
-        setDisplayName(assignedToName);
-        return;
-      }
-      
-      setIsLoading(true);
-      try {
-        const name = await resolveUserName(assignedToId);
-        if (isMounted) {
-          setDisplayName(name);
-        }
-      } catch (error) {
-        console.error('Error fetching assignee name:', error);
-        if (isMounted) {
-          setDisplayName(getAssignedToName?.() || 'Assigned');
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    };
-    
-    fetchUserName();
-    
-    return () => {
-      isMounted = false;
-    };
-  }, [assignedToId, assignedToName, getAssignedToName]);
-  
   // Check if deadline is today
   const isToday = new Date().toDateString() === new Date(deadline).toDateString();
   
@@ -97,9 +51,9 @@ const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({
       >
         <User className="h-3 w-3 flex-shrink-0" />
         <span 
-          className={`truncate max-w-[100px] ${displayName === 'Unassigned' ? "italic text-gray-400" : ""}`}
+          className={`truncate max-w-[100px] ${assignedToName ? "" : "italic text-gray-400"}`}
         >
-          {isLoading ? 'Loading...' : displayName}
+          {displayName}
         </span>
       </motion.div>
     </div>

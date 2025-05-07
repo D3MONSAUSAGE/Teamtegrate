@@ -1,15 +1,16 @@
 
-import React from 'react';
+import React from "react";
+import TaskCardHeader from "./TaskCardHeader";
+import TaskCardDescription from "./TaskCardDescription";
+import TaskCardMetadata from "./TaskCardMetadata";
+import TaskCardFooter from "./TaskCardFooter";
 import { Task, TaskStatus } from "@/types";
-import { Badge } from "@/components/ui/badge";
-import TaskCardMetadata from './TaskCardMetadata';
-import TaskCardStatusChip from './TaskCardStatusChip';
-import { MessageCircle } from 'lucide-react';
-import { useTaskCard } from './useTaskCard';
+import { CardContent } from "@/components/ui/card";
+import { motion } from "framer-motion";
 
 interface TaskCardContentProps {
   task: Task;
-  handleStatusChange: (status: TaskStatus) => void;
+  handleStatusChange: (newStatus: TaskStatus) => void;
   commentCount: number;
   onShowComments: () => void;
 }
@@ -18,59 +19,31 @@ const TaskCardContent: React.FC<TaskCardContentProps> = ({
   task,
   handleStatusChange,
   commentCount,
-  onShowComments
+  onShowComments,
 }) => {
-  // Use the useTaskCard hook to get the getAssignedToName function
-  const { getAssignedToName } = useTaskCard(task);
-  
   return (
-    <div className="p-4 space-y-3">
-      <div className="space-y-1">
-        <div className="flex justify-between items-start gap-2">
-          <h3 className="font-semibold line-clamp-2 leading-tight">{task.title}</h3>
-        </div>
-        
-        {task.description && (
-          <p className="text-xs text-muted-foreground line-clamp-2">
-            {task.description}
-          </p>
-        )}
-      </div>
-      
-      <div className="flex flex-wrap gap-2 items-center">
-        <TaskCardStatusChip 
-          status={task.status} 
-          onStatusChange={handleStatusChange} 
+    <motion.div 
+      className="pt-6 px-4 md:px-6 pb-2 flex flex-col gap-1"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay: 0.1 }}
+    >
+      <TaskCardHeader title={task.title} priority={task.priority} />
+      <CardContent className="space-y-2 p-0">
+        <TaskCardDescription description={task.description} />
+        <TaskCardMetadata
+          deadline={task.deadline}
+          assignedToName={task.assignedToName}
         />
-        
-        {task.priority && (
-          <Badge variant="outline" className="text-[10px] rounded-sm h-5 px-1.5 bg-background/80">
-            {task.priority}
-          </Badge>
-        )}
-        
-        {commentCount > 0 && (
-          <Badge 
-            variant="outline" 
-            className="text-[10px] rounded-sm h-5 px-1.5 bg-background/80 cursor-pointer"
-            onClick={(e) => {
-              e.stopPropagation();
-              onShowComments();
-            }}
-          >
-            <MessageCircle className="h-3 w-3 mr-1" />
-            {commentCount}
-          </Badge>
-        )}
-      </div>
-      
-      <TaskCardMetadata 
-        deadline={task.deadline}
-        assignedToName={task.assignedToName} 
-        assignedToId={task.assignedToId}
-        getAssignedToName={getAssignedToName}
-      />
-    </div>
+        <TaskCardFooter
+          status={task.status}
+          isOverdue={new Date(task.deadline) < new Date()}
+          commentCount={commentCount}
+          onShowComments={onShowComments}
+          onStatusChange={handleStatusChange}
+        />
+      </CardContent>
+    </motion.div>
   );
 };
 

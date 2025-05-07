@@ -78,7 +78,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className={`${isMobile ? 'w-[95%] p-4' : 'sm:max-w-[550px]'} max-h-[90vh] overflow-y-auto`}>
         <DialogHeader>
           <DialogTitle className="text-xl">{isEditMode ? 'Edit Task' : 'Create New Task'}</DialogTitle>
           <DialogDescription className="text-muted-foreground">
@@ -88,9 +88,9 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
         
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <Tabs defaultValue="details" className="w-full">
-            <TabsList className="mb-4 w-full">
-              <TabsTrigger value="details" className="flex-1">Task Details</TabsTrigger>
-              <TabsTrigger value="assignment" className="flex-1">Assignment</TabsTrigger>
+            <TabsList className="mb-4">
+              <TabsTrigger value="details">Task Details</TabsTrigger>
+              <TabsTrigger value="assignment">Assignment</TabsTrigger>
             </TabsList>
             
             <TabsContent value="details" className="space-y-4">

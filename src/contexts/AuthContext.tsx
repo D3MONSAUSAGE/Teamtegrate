@@ -95,6 +95,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signup = async (email: string, password: string, name: string, role: UserRole) => {
     setLoading(true);
     try {
+      // Modified approach: Use only the basic signUp functionality
+      // This avoids triggering database functions that might expect tables that don't exist
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -103,6 +105,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             name,
             role,
           },
+          // Add redirect URL to ensure proper flow
           emailRedirectTo: window.location.origin + '/dashboard',
         }
       });
@@ -121,6 +124,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     try {
+      // First check if we have a valid session
       if (!session) {
         console.log('No active session found, clearing local state only');
         setUser(null);
@@ -130,12 +134,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       
+      // Clear user state even if there was an error with Supabase
       setUser(null);
       setSession(null);
       
     } catch (error: any) {
       console.error('Error logging out:', error);
       toast.error('Error logging out. Your local session has been cleared.');
+      // Still clear the user state to ensure UI shows logged out
       setUser(null);
       setSession(null);
       throw error;
@@ -144,6 +150,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   
   const updateUserProfile = async (data: { name?: string }) => {
     try {
+      // Get current session first to ensure we have valid auth
       const { data: { session: currentSession } } = await supabase.auth.getSession();
       
       if (!currentSession) {
@@ -156,6 +163,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) throw error;
       
+      // Update the local user state
       if (user) {
         setUser({
           ...user,
@@ -173,7 +181,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const value = {
     user,
     loading,
-    isLoading: loading,
+    isLoading: loading, // Added isLoading as an alias for loading
     login,
     signup,
     logout,

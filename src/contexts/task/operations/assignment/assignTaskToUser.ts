@@ -25,24 +25,14 @@ export const assignTaskToUser = async (
 
     const now = new Date();
     
-    // Always fetch user name if possible for consistency
+    // Find user's name if not provided or get updated name
     let actualUserName = userName;
-    if (userId) {
-      const fetchedName = await fetchUserInfo(userId);
-      if (fetchedName) {
-        actualUserName = fetchedName;
-        console.log(`Successfully resolved user ${userId} to name: ${actualUserName}`);
-      } else {
-        console.log(`Couldn't resolve name for user ${userId}, using provided name: ${actualUserName}`);
-      }
+    if ((!actualUserName || actualUserName === userId) && userId) {
+      actualUserName = await fetchUserInfo(userId) || userName;
     }
-    
-    // Log assignment for debugging
-    console.log(`Assigning task ${taskId} to user ${userId} with name ${actualUserName}`);
 
-    // Only attempt to update the assigned_to_id in the database, not the name
-    // This prevents SQL errors if the assigned_to_name column doesn't exist
-    const result = await supabase
+    // Only send assigned_to_id to the database
+    const { error } = await supabase
       .from('tasks')
       .update({ 
         assigned_to_id: userId,
@@ -50,8 +40,8 @@ export const assignTaskToUser = async (
       })
       .eq('id', taskId);
 
-    if (result.error) {
-      console.error('Error assigning task to user:', result.error);
+    if (error) {
+      console.error('Error assigning task to user:', error);
       playErrorSound();
       toast.error('Failed to assign task to user');
       return;
@@ -70,7 +60,7 @@ export const assignTaskToUser = async (
       await createTaskAssignmentNotification(userId, task.title, isSelfAssigned);
     }
     
-    // Update the state in both tasks array and projects array with both ID and name
+    // Update the state in both tasks array and projects array
     updateTaskStates(
       taskId, 
       userId, 

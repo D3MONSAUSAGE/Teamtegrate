@@ -55,7 +55,7 @@ export const TaskDetailsSection: React.FC<TaskDetailsSectionProps> = ({
         />
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="priority">Priority</Label>
           <Select 
@@ -103,19 +103,6 @@ export const TaskDetailsSection: React.FC<TaskDetailsSectionProps> = ({
             ))}
           </SelectContent>
         </Select>
-      </div>
-      
-      <div className="space-y-2">
-        <Label htmlFor="cost">Cost</Label>
-        <Input
-          id="cost"
-          type="number"
-          step="0.01"
-          min="0"
-          placeholder="Enter cost (optional)"
-          {...register("cost")}
-          className="w-full"
-        />
       </div>
     </div>
   );
