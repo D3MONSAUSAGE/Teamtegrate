@@ -20,6 +20,9 @@ export const addTask = async (
     const now = new Date();
     const taskId = uuidv4();
 
+    // Log the assignedToName for debugging
+    console.log(`Creating task with assignedToName: ${task.assignedToName || 'none'}`);
+
     const taskToInsert = {
       id: taskId,
       user_id: user.id,
@@ -74,6 +77,13 @@ export const addTask = async (
     // At this point, result.data should be available if no errors occurred
     if (result.data) {
       const taskData = result.data;
+      
+      // Store the original assignedToName for debugging
+      const originalAssignedToName = task.assignedToName;
+      const dbAssignedToName = taskData.assigned_to_name;
+      
+      console.log(`Task created - Original name: ${originalAssignedToName || 'none'}, DB name: ${dbAssignedToName || 'none'}`);
+      
       const newTask: Task = {
         id: taskData.id,
         userId: taskData.user_id || user.id,

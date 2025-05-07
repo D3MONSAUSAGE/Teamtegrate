@@ -15,6 +15,13 @@ export const updateTaskStates = (
 ): void => {
   const now = new Date();
   
+  // Log for debugging
+  console.log(`Updating task states for task ${taskId}`, {
+    userId,
+    userName,
+    projectId
+  });
+  
   // Update the task in the tasks array
   setTasks(prevTasks => prevTasks.map(task => {
     if (task.id === taskId) {

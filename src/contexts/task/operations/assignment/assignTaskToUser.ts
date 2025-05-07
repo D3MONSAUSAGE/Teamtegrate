@@ -30,9 +30,12 @@ export const assignTaskToUser = async (
     if ((!actualUserName || actualUserName === userId) && userId) {
       actualUserName = await fetchUserInfo(userId) || userName;
     }
+    
+    // Log assignment for debugging
+    console.log(`Assigning task ${taskId} to user ${userId} with name ${actualUserName}`);
 
-    // Send both assigned_to_id AND assigned_to_name to the database
-    const { error } = await supabase
+    // Try first with both fields
+    let result = await supabase
       .from('tasks')
       .update({ 
         assigned_to_id: userId,
@@ -41,8 +44,22 @@ export const assignTaskToUser = async (
       })
       .eq('id', taskId);
 
-    if (error) {
-      console.error('Error assigning task to user:', error);
+    // If error occurs and it's related to assigned_to_name field
+    if (result.error && result.error.message.includes('assigned_to_name')) {
+      console.log('Task assignment error with assigned_to_name field, retrying with only assigned_to_id');
+      
+      // Try again with just the ID field
+      result = await supabase
+        .from('tasks')
+        .update({ 
+          assigned_to_id: userId,
+          updated_at: now.toISOString() 
+        })
+        .eq('id', taskId);
+    }
+
+    if (result.error) {
+      console.error('Error assigning task to user:', result.error);
       playErrorSound();
       toast.error('Failed to assign task to user');
       return;

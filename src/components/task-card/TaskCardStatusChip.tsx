@@ -45,7 +45,7 @@ const TaskCardStatusChip: React.FC<TaskCardStatusChipProps> = ({
           <ChevronDownIcon className="h-3 w-3" />
         </Badge>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-32">
+      <DropdownMenuContent align="start" className="w-32 bg-white dark:bg-gray-800 z-50">
         {['To Do', 'In Progress', 'Pending', 'Completed'].map((statusOption) => (
           <DropdownMenuItem
             key={statusOption}

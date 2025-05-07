@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { format } from 'date-fns';
 import { Task, TaskStatus } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import TaskCardMetadata from './TaskCardMetadata';
@@ -20,10 +19,8 @@ const TaskCardContent: React.FC<TaskCardContentProps> = ({
   commentCount,
   onShowComments
 }) => {
-  // Determine if task has valid assignment
-  const hasValidAssignment = task.assignedToName && 
-                           task.assignedToName.trim() !== '' && 
-                           (!task.assignedToId || task.assignedToName !== task.assignedToId);
+  // Import useTaskCard to get the getAssignedToName function
+  const { getAssignedToName } = require('./useTaskCard').useTaskCard(task);
   
   return (
     <div className="p-4 space-y-3">
@@ -69,6 +66,7 @@ const TaskCardContent: React.FC<TaskCardContentProps> = ({
       <TaskCardMetadata 
         deadline={task.deadline} 
         assignedToName={task.assignedToName} 
+        getAssignedToName={getAssignedToName}
       />
     </div>
   );
