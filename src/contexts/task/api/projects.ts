@@ -1,4 +1,3 @@
-
 import { Project, User, ProjectStatus } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
@@ -17,12 +16,11 @@ export const fetchProjects = async (
 
     console.log('Fetching projects for user:', user.id);
     
-    // Use LEFT JOIN instead of INNER JOIN to include projects where user is manager
-    // but not explicitly listed as a team member
+    // Fix the query to correctly handle the OR condition
     const { data, error } = await supabase
       .from('projects')
       .select('*')
-      .or(`manager_id.eq.${user.id},id.in.(select project_id from project_team_members where user_id=${user.id})`)
+      .or(`manager_id.eq.${user.id},team_members.cs.{${user.id}}`)
       .order('created_at', { ascending: false });
 
     if (error) {

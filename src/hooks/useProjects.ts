@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { Project, ProjectStatus, Task } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -27,11 +26,11 @@ export const useProjects = () => {
       
       console.log('Fetching projects for user:', user.id);
       
-      // Use the same query approach as in the API file - no INNER JOIN, using OR with subquery
+      // Fix the query to correctly handle the OR condition
       const { data, error } = await supabase
         .from('projects')
         .select('*')
-        .or(`manager_id.eq.${user.id},id.in.(select project_id from project_team_members where user_id=${user.id})`)
+        .or(`manager_id.eq.${user.id},team_members.cs.{${user.id}}`)
         .order('created_at', { ascending: false });
 
       if (error) {
