@@ -15,9 +15,16 @@ export const fetchTasks = async (
   try {
     // Fetch tasks from supabase with more detailed logging
     console.log('Fetching tasks for user:', user.id);
+    
+    // Modified query to include tasks where:
+    // 1. User created the task (user_id)
+    // 2. User is assigned to the task (assigned_to_id)
+    // 3. User is a manager of the project the task belongs to
+    // 4. User is a team member of the project the task belongs to
     const { data: taskData, error } = await supabase
       .from('tasks')
-      .select('*');
+      .select('*')
+      .or(`user_id.eq.${user.id},assigned_to_id.eq.${user.id},project_id.in.(select id from projects where manager_id=${user.id} or team_members.cs.{${user.id}})`);
 
     if (error) {
       console.error('Error fetching tasks:', error);

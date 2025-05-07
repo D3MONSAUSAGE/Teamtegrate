@@ -14,11 +14,11 @@ export const fetchUserTasks = async (
   }
 
   try {
-    // Fetch tasks from supabase
+    // Fetch tasks from supabase with the updated filtering
     const { data: taskData, error } = await supabase
       .from('tasks')
       .select('*')
-      .eq('user_id', user.id);
+      .or(`user_id.eq.${user.id},assigned_to_id.eq.${user.id},project_id.in.(select id from projects where manager_id=${user.id} or team_members.cs.{${user.id}})`);
 
     if (error) {
       console.error('Error fetching tasks:', error);
