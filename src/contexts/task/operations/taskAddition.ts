@@ -32,62 +32,65 @@ export const addTask = async (
       created_at: now.toISOString(),
       updated_at: now.toISOString(),
       assigned_to_id: task.assignedToId || null,
-      assigned_to_name: task.assignedToName || null, // This needs to be included in the database call
+      assigned_to_name: task.assignedToName || null,
       cost: task.cost || 0
     };
 
-    // Check if the assigned_to_name field exists in the database schema
-    // If not, we need to modify our insert to exclude it
-    const { data, error } = await supabase
+    // First attempt with assigned_to_name included
+    let result = await supabase
       .from('tasks')
       .insert(taskToInsert)
       .select('*')
       .single();
 
-    if (error) {
-      console.error('Error adding task:', error);
+    // If error occurs and it's related to assigned_to_name field
+    if (result.error && result.error.message.includes('assigned_to_name')) {
+      console.log('Detected assigned_to_name field error, retrying without it');
       
-      // If the error is due to the assigned_to_name field, try again without it
-      if (error.message.includes('assigned_to_name')) {
-        const { assigned_to_name, ...taskWithoutName } = taskToInsert;
-        const retryResult = await supabase
-          .from('tasks')
-          .insert(taskWithoutName)
-          .select('*')
-          .single();
-          
-        if (retryResult.error) {
-          playErrorSound();
-          toast.error('Failed to create task');
-          console.error('Error on retry:', retryResult.error);
-          return;
-        }
+      // Create a new object without the assigned_to_name field
+      const { assigned_to_name, ...taskWithoutName } = taskToInsert;
+      
+      // Second attempt without the assigned_to_name field
+      result = await supabase
+        .from('tasks')
+        .insert(taskWithoutName)
+        .select('*')
+        .single();
         
-        data = retryResult.data;
-      } else {
+      if (result.error) {
+        console.error('Error on retry:', result.error);
         playErrorSound();
         toast.error('Failed to create task');
         return;
       }
+    } else if (result.error) {
+      // Handle other types of errors
+      console.error('Error adding task:', result.error);
+      playErrorSound();
+      toast.error('Failed to create task');
+      return;
     }
 
-    if (data) {
+    // At this point, result.data should be available if no errors occurred
+    if (result.data) {
+      const taskData = result.data;
       const newTask: Task = {
-        id: data.id,
-        userId: data.user_id || user.id,
-        projectId: data.project_id || undefined,
-        title: data.title || '',
-        description: data.description || '',
-        deadline: new Date(data.deadline || now),
-        priority: (data.priority as Task['priority']) || 'Medium',
-        status: (data.status as Task['status']) || 'To Do',
-        createdAt: new Date(data.created_at || now),
-        updatedAt: new Date(data.updated_at || now),
-        assignedToId: data.assigned_to_id || undefined,
-        assignedToName: data.assigned_to_name || task.assignedToName,
+        id: taskData.id,
+        userId: taskData.user_id || user.id,
+        projectId: taskData.project_id || undefined,
+        title: taskData.title || '',
+        description: taskData.description || '',
+        deadline: new Date(taskData.deadline || now),
+        priority: (taskData.priority as Task['priority']) || 'Medium',
+        status: (taskData.status as Task['status']) || 'To Do',
+        createdAt: new Date(taskData.created_at || now),
+        updatedAt: new Date(taskData.updated_at || now),
+        assignedToId: taskData.assigned_to_id || undefined,
+        // Use original task's assignedToName since it may not be in the database
+        assignedToName: task.assignedToName,
         tags: [],
         comments: [],
-        cost: data.cost || 0,
+        cost: taskData.cost || 0,
       };
 
       setTasks(prevTasks => [...prevTasks, newTask]);
