@@ -27,11 +27,11 @@ export const useProjects = () => {
       
       console.log('Fetching projects for user:', user.id);
       
-      // Use the filter to only get projects where the user is a team member or manager
+      // Use the same query approach as in the API file - no INNER JOIN, using OR with subquery
       const { data, error } = await supabase
         .from('projects')
-        .select('*, project_team_members!inner(user_id)')
-        .or(`manager_id.eq.${user.id}, project_team_members.user_id.eq.${user.id}`)
+        .select('*')
+        .or(`manager_id.eq.${user.id},id.in.(select project_id from project_team_members where user_id=${user.id})`)
         .order('created_at', { ascending: false });
 
       if (error) {

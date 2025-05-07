@@ -17,11 +17,12 @@ export const fetchProjects = async (
 
     console.log('Fetching projects for user:', user.id);
     
-    // Use the get_all_projects RPC function to respect RLS policies
+    // Use LEFT JOIN instead of INNER JOIN to include projects where user is manager
+    // but not explicitly listed as a team member
     const { data, error } = await supabase
       .from('projects')
-      .select('*, project_team_members!inner(user_id)')
-      .or(`manager_id.eq.${user.id}, project_team_members.user_id.eq.${user.id}`)
+      .select('*')
+      .or(`manager_id.eq.${user.id},id.in.(select project_id from project_team_members where user_id=${user.id})`)
       .order('created_at', { ascending: false });
 
     if (error) {
