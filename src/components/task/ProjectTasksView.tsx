@@ -32,7 +32,7 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
     handleCreateTask,
     handleManualRefresh,
     onSortByChange
-  } = useProjectTasksView(projectId);
+  } = useProjectTasksView(projectId || null);
 
   // Log component rendering for debugging
   useEffect(() => {
@@ -41,9 +41,13 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
       isLoading,
       hasError: !!loadError,
       hasProject: !!project,
-      editingTask
+      editingTask,
+      todoTasksCount: todoTasks.length,
+      inProgressTasksCount: inProgressTasks.length,
+      pendingTasksCount: pendingTasks.length,
+      completedTasksCount: completedTasks.length
     });
-  }, [projectId, isLoading, loadError, project, editingTask]);
+  }, [projectId, isLoading, loadError, project, editingTask, todoTasks, inProgressTasks, pendingTasks, completedTasks]);
 
   if (isLoading) {
     return <ProjectTasksLoading />;
