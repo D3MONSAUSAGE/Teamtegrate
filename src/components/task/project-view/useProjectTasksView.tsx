@@ -1,13 +1,13 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTask } from '@/contexts/task';
-import { Task, Project } from '@/types';
+import { Task, Project, TaskStatus } from '@/types';
 import { toast } from '@/components/ui/sonner';
 import { useProjectTasks } from './useProjectTasks';
 import { supabase } from '@/integrations/supabase/client';
 
 export const useProjectTasksView = (projectId: string | null) => {
-  const { tasks, projects, refreshProjects } = useTask();
+  const { tasks, projects, refreshProjects, updateTaskStatus } = useTask();
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
@@ -172,6 +172,43 @@ export const useProjectTasksView = (projectId: string | null) => {
     loadData();
   }, [projectId, refreshProjects, retryCount, initialLoadAttempted]);
 
+  // Handle task status change
+  const handleTaskStatusChange = useCallback(async (taskId: string, newStatus: TaskStatus) => {
+    if (!projectId) return;
+    
+    try {
+      console.log(`Updating task ${taskId} status to ${newStatus}`);
+      
+      // Find the task to update in our local state
+      const taskToUpdate = projectTasks.find(task => task.id === taskId);
+      if (!taskToUpdate) {
+        console.error(`Task ${taskId} not found in project tasks`);
+        return;
+      }
+      
+      // Call the updateTaskStatus function from context
+      await updateTaskStatus(taskId, newStatus);
+      
+      // Update local task state to reflect the change immediately
+      setProjectTasks(prevTasks => 
+        prevTasks.map(task => 
+          task.id === taskId 
+            ? { 
+                ...task, 
+                status: newStatus, 
+                completedAt: newStatus === 'Completed' ? new Date() : undefined 
+              } 
+            : task
+        )
+      );
+      
+      console.log(`Task ${taskId} status updated successfully to ${newStatus}`);
+    } catch (error) {
+      console.error('Error updating task status:', error);
+      toast.error('Failed to update task status');
+    }
+  }, [projectId, projectTasks, updateTaskStatus]);
+
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
   }, [setSearchQuery]);
@@ -287,6 +324,7 @@ export const useProjectTasksView = (projectId: string | null) => {
     handleEditTask,
     handleCreateTask,
     handleManualRefresh,
+    handleTaskStatusChange,
     onSortByChange: handleSortByChange
   };
 };

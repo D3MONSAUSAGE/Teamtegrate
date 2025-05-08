@@ -31,6 +31,7 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
     handleEditTask,
     handleCreateTask,
     handleManualRefresh,
+    handleTaskStatusChange,
     onSortByChange
   } = useProjectTasksView(projectId || null);
 
@@ -80,6 +81,7 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
         isRefreshing={isRefreshing}
         onEditTask={handleEditTask}
         onCreateTask={handleCreateTask}
+        onTaskStatusChange={handleTaskStatusChange}
       />
       
       <CreateTaskDialogWithAI

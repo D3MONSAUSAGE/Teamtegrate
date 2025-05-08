@@ -1,14 +1,10 @@
 
-import React from 'react';
-import { Task } from '@/types';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
-import TaskList from './TaskList';
-import { useIsMobile } from '@/hooks/use-mobile';
+import React from "react";
+import { Task, TaskStatus } from "@/types";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PlusCircle } from "lucide-react";
+import { Button } from "../ui/button";
+import TaskList from "./TaskList";
 
 interface TaskTabsProps {
   todoTasks: Task[];
@@ -17,55 +13,68 @@ interface TaskTabsProps {
   completedTasks: Task[];
   onEdit: (task: Task) => void;
   onNewTask: () => void;
+  onStatusChange?: (taskId: string, status: TaskStatus) => void;
 }
 
-const TaskTabs = ({ 
-  todoTasks, 
-  inProgressTasks, 
-  pendingTasks, 
+const TaskTabs: React.FC<TaskTabsProps> = ({
+  todoTasks,
+  inProgressTasks,
+  pendingTasks,
   completedTasks,
   onEdit,
-  onNewTask
-}: TaskTabsProps) => {
-  const isMobile = useIsMobile();
-
+  onNewTask,
+  onStatusChange,
+}) => {
   return (
     <Tabs defaultValue="todo" className="w-full">
-      <div className="overflow-x-auto pb-2 no-scrollbar">
-        <TabsList className="mb-4 w-full flex-nowrap justify-start px-0 h-auto">
-          <TabsTrigger 
-            value="todo" 
-            className={`${isMobile ? 'text-xs py-1.5 px-2' : ''} whitespace-nowrap`}
-          >
-            To Do ({todoTasks.length})
+      <div className="flex justify-between items-center mb-4">
+        <TabsList className="grid grid-cols-4">
+          <TabsTrigger value="todo" className="relative">
+            To Do
+            {todoTasks.length > 0 && (
+              <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+                {todoTasks.length}
+              </span>
+            )}
           </TabsTrigger>
-          <TabsTrigger 
-            value="inprogress" 
-            className={`${isMobile ? 'text-xs py-1.5 px-2' : ''} whitespace-nowrap`}
-          >
-            In Progress ({inProgressTasks.length})
+          <TabsTrigger value="inprogress" className="relative">
+            In Progress
+            {inProgressTasks.length > 0 && (
+              <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+                {inProgressTasks.length}
+              </span>
+            )}
           </TabsTrigger>
-          <TabsTrigger 
-            value="pending" 
-            className={`${isMobile ? 'text-xs py-1.5 px-2' : ''} whitespace-nowrap`}
-          >
-            Pending ({pendingTasks.length})
+          <TabsTrigger value="pending" className="relative">
+            Pending
+            {pendingTasks.length > 0 && (
+              <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+                {pendingTasks.length}
+              </span>
+            )}
           </TabsTrigger>
-          <TabsTrigger 
-            value="completed" 
-            className={`${isMobile ? 'text-xs py-1.5 px-2' : ''} whitespace-nowrap`}
-          >
-            Completed ({completedTasks.length})
+          <TabsTrigger value="completed" className="relative">
+            Completed
+            {completedTasks.length > 0 && (
+              <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+                {completedTasks.length}
+              </span>
+            )}
           </TabsTrigger>
         </TabsList>
+
+        <Button onClick={onNewTask} size="sm" variant="outline" className="gap-1">
+          <PlusCircle className="h-4 w-4" /> New Task
+        </Button>
       </div>
-      
+
       <TabsContent value="todo">
         <TaskList 
           tasks={todoTasks} 
           onEdit={onEdit} 
-          onNewTask={onNewTask}
-          emptyMessage="No to-do tasks"
+          onNewTask={onNewTask} 
+          onStatusChange={onStatusChange}
+          emptyMessage="No to-do tasks" 
         />
       </TabsContent>
       
@@ -74,7 +83,8 @@ const TaskTabs = ({
           tasks={inProgressTasks} 
           onEdit={onEdit} 
           onNewTask={onNewTask}
-          emptyMessage="No in-progress tasks"
+          onStatusChange={onStatusChange} 
+          emptyMessage="No tasks in progress" 
         />
       </TabsContent>
       
@@ -83,7 +93,8 @@ const TaskTabs = ({
           tasks={pendingTasks} 
           onEdit={onEdit} 
           onNewTask={onNewTask}
-          emptyMessage="No pending tasks"
+          onStatusChange={onStatusChange} 
+          emptyMessage="No pending tasks" 
         />
       </TabsContent>
       
@@ -92,7 +103,8 @@ const TaskTabs = ({
           tasks={completedTasks} 
           onEdit={onEdit} 
           onNewTask={onNewTask}
-          emptyMessage="No completed tasks"
+          onStatusChange={onStatusChange} 
+          emptyMessage="No completed tasks" 
         />
       </TabsContent>
     </Tabs>

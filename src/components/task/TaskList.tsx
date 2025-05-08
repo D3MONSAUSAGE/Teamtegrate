@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Task } from '@/types';
+import { Task, TaskStatus } from '@/types';
 import TaskCard from '@/components/task-card';
 import { Button } from "@/components/ui/button";
 import { Plus } from 'lucide-react';
@@ -10,10 +10,11 @@ interface TaskListProps {
   tasks: Task[];
   onEdit: (task: Task) => void;
   onNewTask: () => void;
+  onStatusChange?: (taskId: string, status: TaskStatus) => void;
   emptyMessage?: string;
 }
 
-const TaskList = ({ tasks, onEdit, onNewTask, emptyMessage = "No tasks" }: TaskListProps) => {
+const TaskList = ({ tasks, onEdit, onNewTask, onStatusChange, emptyMessage = "No tasks" }: TaskListProps) => {
   // State to track which task is selected for details
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [showDetails, setShowDetails] = useState(false);
@@ -21,6 +22,12 @@ const TaskList = ({ tasks, onEdit, onNewTask, emptyMessage = "No tasks" }: TaskL
   const handleOpenDetails = (task: Task) => {
     setSelectedTask(task);
     setShowDetails(true);
+  };
+
+  const handleStatusChange = (taskId: string, status: TaskStatus) => {
+    if (onStatusChange) {
+      onStatusChange(taskId, status);
+    }
   };
 
   if (tasks.length === 0) {
@@ -48,6 +55,7 @@ const TaskList = ({ tasks, onEdit, onNewTask, emptyMessage = "No tasks" }: TaskL
             task={task} 
             onEdit={onEdit} 
             onClick={() => handleOpenDetails(task)}
+            onStatusChange={handleStatusChange}
           />
         ))}
       </div>
