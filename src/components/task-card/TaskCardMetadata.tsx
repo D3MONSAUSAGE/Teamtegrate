@@ -7,11 +7,13 @@ import { motion } from 'framer-motion';
 interface TaskCardMetadataProps {
   deadline: Date;
   assignedToName?: string;
+  isOverdue: boolean;
 }
 
 const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({
   deadline,
   assignedToName,
+  isOverdue,
 }) => {
   // Format the display name - if empty or undefined, show "Unassigned"
   const displayName = assignedToName && assignedToName.trim() !== '' 
@@ -27,7 +29,8 @@ const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({
   const isTomorrow = tomorrow.toDateString() === new Date(deadline).toDateString();
   
   // Set deadline class based on urgency
-  const deadlineClass = isToday ? "text-orange-500 font-medium" : 
+  const deadlineClass = isOverdue ? "text-red-500 font-medium" :
+                       isToday ? "text-orange-500 font-medium" : 
                        isTomorrow ? "text-amber-500" : 
                        "text-gray-500";
 
