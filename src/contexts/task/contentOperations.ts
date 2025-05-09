@@ -1,5 +1,5 @@
-import { Task, Project, Comment } from '@/types';
-import { toast } from '@/components/ui/sonner';
+// Import your types and dependencies as needed
+import { Task, Project } from '@/types';
 
 export const addCommentToTask = (
   taskId: string,
@@ -8,52 +8,19 @@ export const addCommentToTask = (
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>,
   projects: Project[],
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
-) => {
-  const newComment: Comment = {
-    ...comment,
-    id: Math.random().toString(36).substring(2, 11),
-    createdAt: new Date(),
-  };
-
-  const updatedTasks = tasks.map((task) => {
+): void => {
+  const updatedTasks = tasks.map(task => {
     if (task.id === taskId) {
-      const comments = task.comments || [];
-      return { 
-        ...task, 
-        comments: [...comments, newComment],
-        updatedAt: new Date() 
+      const newComment = {
+        id: Date.now().toString(), // Generate a unique ID for the comment
+        ...comment,
+        createdAt: new Date().toISOString(),
       };
+      return { ...task, comments: [...(task.comments || []), newComment] };
     }
     return task;
   });
-
   setTasks(updatedTasks);
-  
-  const taskToUpdate = tasks.find(task => task.id === taskId);
-  if (taskToUpdate?.projectId) {
-    const updatedProjects = projects.map((project) => {
-      if (project.id === taskToUpdate.projectId) {
-        const projectTasks = project.tasks.map((task) => {
-          if (task.id === taskId) {
-            const comments = task.comments || [];
-            return { 
-              ...task, 
-              comments: [...comments, newComment],
-              updatedAt: new Date() 
-            };
-          }
-          return task;
-        });
-        
-        return { ...project, tasks: projectTasks };
-      }
-      return project;
-    });
-    
-    setProjects(updatedProjects);
-  }
-  
-  toast.success('Comment added successfully!');
 };
 
 export const addTagToTask = (
@@ -63,50 +30,19 @@ export const addTagToTask = (
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>,
   projects: Project[],
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
-) => {
-  const updatedTasks = tasks.map((task) => {
+): void => {
+  const updatedTasks = tasks.map(task => {
     if (task.id === taskId) {
-      const tags = task.tags || [];
-      if (!tags.includes(tag)) {
-        return { 
-          ...task, 
-          tags: [...tags, tag],
-          updatedAt: new Date() 
-        };
+      if (!task.tags) {
+        task.tags = [];
+      }
+      if (!task.tags.includes(tag)) {
+        return { ...task, tags: [...task.tags, tag] };
       }
     }
     return task;
   });
-
   setTasks(updatedTasks);
-  
-  const taskToUpdate = tasks.find(task => task.id === taskId);
-  if (taskToUpdate?.projectId) {
-    const updatedProjects = projects.map((project) => {
-      if (project.id === taskToUpdate.projectId) {
-        const projectTasks = project.tasks.map((task) => {
-          if (task.id === taskId) {
-            const tags = task.tags || [];
-            if (!tags.includes(tag)) {
-              return { 
-                ...task, 
-                tags: [...tags, tag],
-                updatedAt: new Date() 
-              };
-            }
-          }
-          return task;
-        });
-        
-        return { ...project, tasks: projectTasks };
-      }
-      return project;
-    });
-    
-    setProjects(updatedProjects);
-  }
-  
-  toast.success('Tag added to task successfully!');
 };
 
 export const removeTagFromTask = (
@@ -116,87 +52,14 @@ export const removeTagFromTask = (
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>,
   projects: Project[],
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
-) => {
-  const updatedTasks = tasks.map((task) => {
-    if (task.id === taskId && task.tags) {
-      return { 
-        ...task, 
-        tags: task.tags.filter(t => t !== tag),
-        updatedAt: new Date() 
-      };
+): void => {
+  const updatedTasks = tasks.map(task => {
+    if (task.id === taskId) {
+      return { ...task, tags: task.tags ? task.tags.filter(t => t !== tag) : [] };
     }
     return task;
   });
-
   setTasks(updatedTasks);
-  
-  const taskToUpdate = tasks.find(task => task.id === taskId);
-  if (taskToUpdate?.projectId) {
-    const updatedProjects = projects.map((project) => {
-      if (project.id === taskToUpdate.projectId) {
-        const projectTasks = project.tasks.map((task) => {
-          if (task.id === taskId && task.tags) {
-            return { 
-              ...task, 
-              tags: task.tags.filter(t => t !== tag),
-              updatedAt: new Date() 
-            };
-          }
-          return task;
-        });
-        
-        return { ...project, tasks: projectTasks };
-      }
-      return project;
-    });
-    
-    setProjects(updatedProjects);
-  }
-  
-  toast.success('Tag removed from task successfully!');
 };
 
-export const addTagToProject = (
-  projectId: string,
-  tag: string,
-  projects: Project[],
-  setProjects: React.Dispatch<React.SetStateAction<Project[]>>
-) => {
-  const updatedProjects = projects.map((project) => {
-    if (project.id === projectId) {
-      const tags = project.tags || [];
-      if (!tags.includes(tag)) {
-        return { 
-          ...project, 
-          tags: [...tags, tag],
-          updatedAt: new Date() 
-        };
-      }
-    }
-    return project;
-  });
-
-  setProjects(updatedProjects);
-  toast.success('Tag added to project successfully!');
-};
-
-export const removeTagFromProject = (
-  projectId: string,
-  tag: string,
-  projects: Project[],
-  setProjects: React.Dispatch<React.SetStateAction<Project[]>>
-) => {
-  const updatedProjects = projects.map((project) => {
-    if (project.id === projectId && project.tags) {
-      return { 
-        ...project, 
-        tags: project.tags.filter(t => t !== tag),
-        updatedAt: new Date() 
-      };
-    }
-    return project;
-  });
-
-  setProjects(updatedProjects);
-  toast.success('Tag removed from project successfully!');
-};
+// Removed addTagToProject and removeTagFromProject functions as they are no longer needed
