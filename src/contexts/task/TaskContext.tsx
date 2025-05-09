@@ -19,11 +19,9 @@ import {
   removeTeamMemberFromProject
 } from './operations';
 import { 
-  addCommentToTask, 
+  addCommentToTask,
   addTagToTask, 
-  removeTagFromTask, 
-  addTagToProject, 
-  removeTagFromProject 
+  removeTagFromTask 
 } from './contentOperations';
 import { 
   getTasksWithTag, 
@@ -52,8 +50,6 @@ interface TaskContextType {
   addCommentToTask: (taskId: string, comment: { userId: string; userName: string; text: string }) => void;
   addTagToTask: (taskId: string, tag: string) => void;
   removeTagFromTask: (taskId: string, tag: string) => void;
-  addTagToProject: (projectId: string, tag: string) => void;
-  removeTagFromProject: (projectId: string, tag: string) => void;
   addTeamMemberToProject: (projectId: string, userId: string) => void;
   removeTeamMemberFromProject: (projectId: string, userId: string) => void;
   getTasksWithTag: (tag: string) => Task[];
@@ -164,10 +160,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       addTagToTask(taskId, tag, tasks, setTasks, projects, setProjects),
     removeTagFromTask: (taskId: string, tag: string) =>
       removeTagFromTask(taskId, tag, tasks, setTasks, projects, setProjects),
-    addTagToProject: (projectId: string, tag: string) =>
-      addTagToProject(projectId, tag, projects, setProjects),
-    removeTagFromProject: (projectId: string, tag: string) =>
-      removeTagFromProject(projectId, tag, projects, setProjects),
     addTeamMemberToProject: (projectId: string, userId: string) =>
       addTeamMemberToProject(projectId, userId, projects, setProjects),
     removeTeamMemberFromProject: (projectId: string, userId: string) =>
