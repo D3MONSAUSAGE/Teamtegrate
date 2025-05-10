@@ -1,5 +1,6 @@
+
 // Import your types and dependencies as needed
-import { Task, Project } from '@/types';
+import { Task, Project, TaskComment } from '@/types';
 
 export const addCommentToTask = (
   taskId: string,
@@ -11,10 +12,12 @@ export const addCommentToTask = (
 ): void => {
   const updatedTasks = tasks.map(task => {
     if (task.id === taskId) {
-      const newComment = {
+      const newComment: TaskComment = {
         id: Date.now().toString(), // Generate a unique ID for the comment
-        ...comment,
-        createdAt: new Date().toISOString(),
+        userId: comment.userId,
+        userName: comment.userName,
+        text: comment.text,
+        createdAt: new Date(), // Using Date object instead of string
       };
       return { ...task, comments: [...(task.comments || []), newComment] };
     }
@@ -61,5 +64,3 @@ export const removeTagFromTask = (
   });
   setTasks(updatedTasks);
 };
-
-// Removed addTagToProject and removeTagFromProject functions as they are no longer needed
