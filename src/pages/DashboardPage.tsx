@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Task, Project } from '@/types';
 import { Plus } from 'lucide-react';
 import CreateTaskDialog from '@/components/CreateTaskDialog';
-import { format, isSameDay } from 'date-fns';
+import { format, isSameDay, startOfDay, addDays } from 'date-fns';
 import TasksSummary from '@/components/dashboard/TasksSummary';
 import DailyTasksSection from '@/components/dashboard/DailyTasksSection';
 import UpcomingTasksSection from '@/components/dashboard/UpcomingTasksSection';
@@ -24,27 +24,44 @@ const DashboardPage = () => {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const isMobile = useIsMobile();
   
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
+  // Get today's date at midnight for consistent comparison
+  const today = startOfDay(new Date());
   
-  // Filter tasks due today using isSameDay
+  // Debug logs to track task filtering
+  console.log('Total tasks available:', tasks.length);
+  
+  // Filter tasks due today using isSameDay for more reliable comparison
   const todaysTasks = tasks.filter((task) => {
     if (!task.deadline) return false;
-    return isSameDay(new Date(task.deadline), today);
+    
+    const taskDeadline = startOfDay(new Date(task.deadline));
+    const result = isSameDay(taskDeadline, today);
+    
+    if (result) {
+      console.log('Found task for today:', task.title, 'Status:', task.status);
+    }
+    
+    return result;
   });
   
-  const nextWeek = new Date(today);
-  nextWeek.setDate(nextWeek.getDate() + 7);
+  console.log('Today\'s tasks count:', todaysTasks.length);
+  console.log('Today\'s tasks completed:', todaysTasks.filter(t => t.status === 'Completed').length);
   
-  // Filter upcoming tasks
+  // Get tomorrow's date
+  const tomorrow = addDays(today, 1);
+  
+  // Calculate date one week from today
+  const nextWeek = addDays(today, 7);
+  
+  // Filter upcoming tasks - more than today but within a week
   const upcomingTasks = tasks.filter((task) => {
     if (!task.deadline) return false;
-    const taskDate = new Date(task.deadline);
+    
+    const taskDate = startOfDay(new Date(task.deadline));
     return taskDate > today && taskDate <= nextWeek;
   }).sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime());
   
+  // Get first 3 projects for display
   const recentProjects = projects.slice(0, 3);
   
   const handleEditTask = (task: Task) => {

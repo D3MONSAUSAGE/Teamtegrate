@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Task } from '@/types';
@@ -10,6 +10,9 @@ import { useTaskForm } from '@/hooks/useTaskForm';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TaskDetailsSection } from '@/components/task/form/TaskDetailsSection';
 import { TaskAssignmentSection } from '@/components/task/form/TaskAssignmentSection';
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { format } from 'date-fns';
 
 interface CreateTaskDialogProps {
   open: boolean;
@@ -29,6 +32,9 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
   const isEditMode = !!editingTask;
   const isMobile = useIsMobile();
   
+  // Add time state
+  const [timeInput, setTimeInput] = useState('12:00');
+  
   const {
     register,
     handleSubmit,
@@ -36,14 +42,33 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
     reset,
     setValue,
     selectedMember,
-    setSelectedMember
+    setSelectedMember,
+    watch
   } = useTaskForm(editingTask, currentProjectId);
 
+  // Set initial time if editing a task with a deadline
+  useEffect(() => {
+    if (editingTask?.deadline) {
+      const date = new Date(editingTask.deadline);
+      setTimeInput(format(date, 'HH:mm'));
+    }
+  }, [editingTask]);
+
   const onSubmit = (data: any) => {
-    // Handle the case where deadline might come as string or Date
-    const deadlineDate = typeof data.deadline === 'string' 
-      ? new Date(data.deadline)
-      : data.deadline;
+    // Parse the date and set the time
+    let deadlineDate: Date | undefined;
+    
+    if (data.deadline) {
+      // Create a deadline with the time component
+      deadlineDate = new Date(data.deadline);
+      
+      if (timeInput) {
+        const [hours, minutes] = timeInput.split(':').map(Number);
+        deadlineDate.setHours(hours, minutes);
+      }
+      
+      console.log('Setting deadline with time:', deadlineDate);
+    }
 
     if (isEditMode && editingTask) {
       updateTask(editingTask.id, {
@@ -62,18 +87,45 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
         userId: user?.id || '',
         projectId: data.projectId === "none" ? undefined : data.projectId,
         assignedToId: selectedMember === "unassigned" ? undefined : selectedMember,
-        assignedToName: data.assignedToName
+        assignedToName: data.assignedToName,
+        cost: data.cost || 0
       });
     }
     onOpenChange(false);
     reset();
     setSelectedMember(undefined);
+    setTimeInput('12:00');
   };
 
   const handleCancel = () => {
     onOpenChange(false);
     reset();
     setSelectedMember(undefined);
+    setTimeInput('12:00');
+  };
+
+  // Custom deadline component that includes time
+  const DeadlineWithTime = () => {
+    const deadlineValue = watch('deadline');
+    
+    return (
+      <div className="space-y-1">
+        <Label htmlFor="deadline">Deadline</Label>
+        <div className="grid grid-cols-2 gap-2">
+          <Input
+            id="deadline"
+            type="date"
+            {...register("deadline")}
+          />
+          <Input
+            id="deadlineTime"
+            type="time"
+            value={timeInput}
+            onChange={(e) => setTimeInput(e.target.value)}
+          />
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -94,14 +146,75 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
             </TabsList>
             
             <TabsContent value="details" className="space-y-4">
-              <TaskDetailsSection 
-                register={register}
-                errors={errors}
-                projects={projects}
-                editingTask={editingTask}
-                currentProjectId={currentProjectId}
-                setValue={setValue}
-              />
+              <div className="space-y-2">
+                <Label htmlFor="title">Title</Label>
+                <Input
+                  id="title"
+                  placeholder="Task title"
+                  {...register("title", { required: "Title is required" })}
+                  className="w-full"
+                />
+                {errors.title && (
+                  <p className="text-red-500 text-xs mt-1">{errors.title.message as string}</p>
+                )}
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <textarea
+                  id="description"
+                  className="w-full min-h-[100px] rounded-md border border-input p-2"
+                  placeholder="Task description"
+                  {...register("description")}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <Label htmlFor="priority">Priority</Label>
+                  <select 
+                    id="priority" 
+                    className="w-full h-9 rounded-md border border-input px-3"
+                    defaultValue={editingTask?.priority || "Medium"}
+                    {...register("priority")}
+                  >
+                    <option value="Low">Low</option>
+                    <option value="Medium">Medium</option>
+                    <option value="High">High</option>
+                  </select>
+                </div>
+
+                <DeadlineWithTime />
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="projectId">Project</Label>
+                <select 
+                  id="projectId"
+                  className="w-full h-9 rounded-md border border-input px-3"
+                  defaultValue={currentProjectId || editingTask?.projectId || "none"}
+                  disabled={!!currentProjectId}
+                  {...register("projectId")}
+                >
+                  <option value="none">No Project</option>
+                  {projects.map((project) => (
+                    <option key={project.id} value={project.id}>
+                      {project.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              <div className="space-y-1">
+                <Label htmlFor="cost">Cost</Label>
+                <Input
+                  id="cost"
+                  type="number"
+                  step="0.01"
+                  placeholder="Enter cost (optional)"
+                  {...register('cost')}
+                />
+              </div>
             </TabsContent>
             
             <TabsContent value="assignment">
