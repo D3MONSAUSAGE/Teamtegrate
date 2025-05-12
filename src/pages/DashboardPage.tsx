@@ -1,12 +1,12 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { useTask } from '@/contexts/task';
 import { useAuth } from '@/contexts/AuthContext';
 import { Task, Project } from '@/types';
 import { Plus } from 'lucide-react';
 import CreateTaskDialog from '@/components/CreateTaskDialog';
-import { format } from 'date-fns';
+import { format, isSameDay } from 'date-fns';
 import TasksSummary from '@/components/dashboard/TasksSummary';
 import DailyTasksSection from '@/components/dashboard/DailyTasksSection';
 import UpcomingTasksSection from '@/components/dashboard/UpcomingTasksSection';
@@ -29,18 +29,19 @@ const DashboardPage = () => {
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
   
+  // Filter tasks due today using isSameDay
   const todaysTasks = tasks.filter((task) => {
-    const taskDate = new Date(task.deadline);
-    taskDate.setHours(0, 0, 0, 0);
-    return taskDate.getTime() === today.getTime();
+    if (!task.deadline) return false;
+    return isSameDay(new Date(task.deadline), today);
   });
   
   const nextWeek = new Date(today);
   nextWeek.setDate(nextWeek.getDate() + 7);
   
+  // Filter upcoming tasks
   const upcomingTasks = tasks.filter((task) => {
+    if (!task.deadline) return false;
     const taskDate = new Date(task.deadline);
-    taskDate.setHours(0, 0, 0, 0);
     return taskDate > today && taskDate <= nextWeek;
   }).sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime());
   

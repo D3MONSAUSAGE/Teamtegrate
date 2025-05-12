@@ -30,7 +30,7 @@ export const addTask = async (
           project_id: newTask.projectId,
           title: newTask.title,
           description: newTask.description,
-          deadline: newTask.deadline.toISOString(),
+          deadline: newTask.deadline ? newTask.deadline.toISOString() : null,
           priority: newTask.priority,
           status: newTask.status,
           created_at: newTask.createdAt.toISOString(),
@@ -48,7 +48,8 @@ export const addTask = async (
       return;
     }
 
-    setTasks([...tasks, newTask]);
+    // Ensure we're adding a new task object, not modifying an existing array
+    setTasks(currentTasks => [...currentTasks, newTask]);
 
     if (newTask.projectId) {
       setProjects((prevProjects) =>
@@ -60,6 +61,7 @@ export const addTask = async (
       );
     }
 
+    console.log('Task added successfully:', newTask);
     toast.success('Task added successfully!');
   } catch (error) {
     console.error('Error adding task:', error);

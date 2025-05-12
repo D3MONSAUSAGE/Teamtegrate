@@ -124,10 +124,12 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loadData();
   }, [user]);
 
+  // Update this effect to recalculate dailyScore whenever tasks changes
   useEffect(() => {
     if (user) {
       const score = calculateDailyScore(tasks);
       setDailyScore(score);
+      console.log('Daily score updated:', score);
     }
   }, [tasks, user]);
 

@@ -16,9 +16,11 @@ export const calculateDailyScore = (tasks: Task[]): DailyScore => {
   today.setHours(0, 0, 0, 0);
   
   const todaysTasks = tasks.filter((task) => {
+    if (!task.deadline) return false;
+    
     const taskDate = new Date(task.deadline);
     taskDate.setHours(0, 0, 0, 0);
-    return taskDate.getTime() === today.getTime();
+    return isSameDay(taskDate, today);
   });
 
   const completed = todaysTasks.filter((task) => task.status === 'Completed').length;
@@ -43,9 +45,11 @@ export const getTasksCompletionByDate = (tasks: Task[], days: number = 7): Array
     const date = sub(today, { days: i });
     
     const dayTasks = tasks.filter(task => {
+      if (!task.deadline) return false;
+      
       const taskDate = new Date(task.deadline);
       taskDate.setHours(0, 0, 0, 0);
-      return taskDate.getTime() === date.getTime();
+      return isSameDay(taskDate, date);
     });
     
     const completed = dayTasks.filter(task => task.status === 'Completed').length;
