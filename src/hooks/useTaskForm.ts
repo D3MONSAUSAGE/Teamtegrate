@@ -13,7 +13,7 @@ export const useTaskForm = (editingTask?: Task, currentProjectId?: string) => {
     ? new Date(editingTask.deadline).toISOString()
     : '';
 
-  const { register, handleSubmit, formState: { errors }, reset, setValue } = useForm({
+  const { register, handleSubmit, formState: { errors }, reset, setValue, watch } = useForm({
     defaultValues: {
       title: editingTask?.title || '',
       description: editingTask?.description || '',
@@ -33,6 +33,7 @@ export const useTaskForm = (editingTask?: Task, currentProjectId?: string) => {
     reset,
     setValue,
     selectedMember,
-    setSelectedMember
+    setSelectedMember,
+    watch // Make sure to include the watch function in the return object
   };
 };

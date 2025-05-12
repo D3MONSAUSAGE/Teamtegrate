@@ -43,7 +43,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
     setValue,
     selectedMember,
     setSelectedMember,
-    watch
+    watch // Correctly destructure the watch function
   } = useTaskForm(editingTask, currentProjectId);
 
   // Set initial time if editing a task with a deadline
