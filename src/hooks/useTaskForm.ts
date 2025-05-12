@@ -34,6 +34,6 @@ export const useTaskForm = (editingTask?: Task, currentProjectId?: string) => {
     setValue,
     selectedMember,
     setSelectedMember,
-    watch // Make sure to include the watch function in the return object
+    watch // Ensure watch is properly returned as a function
   };
 };

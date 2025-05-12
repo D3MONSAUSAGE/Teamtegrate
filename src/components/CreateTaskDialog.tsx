@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -35,6 +34,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
   // Add time state
   const [timeInput, setTimeInput] = useState('12:00');
   
+  // Make sure to destructure properly and provide default value
   const {
     register,
     handleSubmit,
@@ -43,7 +43,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
     setValue,
     selectedMember,
     setSelectedMember,
-    watch // Correctly destructure the watch function
+    watch = () => '' // Provide a default function in case watch is undefined
   } = useTaskForm(editingTask, currentProjectId);
 
   // Set initial time if editing a task with a deadline
@@ -106,7 +106,8 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
 
   // Custom deadline component that includes time
   const DeadlineWithTime = () => {
-    const deadlineValue = watch('deadline');
+    // Use a string instead of directly using watch to avoid function call issues
+    const deadlineValue = typeof watch === 'function' ? watch('deadline') : '';
     
     return (
       <div className="space-y-1">
