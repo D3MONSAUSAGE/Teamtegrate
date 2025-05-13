@@ -1,16 +1,18 @@
 
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Loader2, Plus, Users as UsersIcon } from 'lucide-react';
+import { Loader2, Plus, Users as UsersIcon, PieChart } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AddTeamMemberDialog from '@/components/AddTeamMemberDialog';
 import TeamStatsCards from '@/components/team/TeamStatsCards';
 import TeamMemberCard from '@/components/team/TeamMemberCard';
 import NoTeamMembers from '@/components/team/NoTeamMembers';
+import TeamReports from '@/components/reports/TeamReports';
 import useTeamMembers from '@/hooks/useTeamMembers';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -79,72 +81,90 @@ const TeamPage = () => {
         projectsCount={projectsCount}
       />
       
-      <h2 className="text-xl font-semibold mb-4">My Team Members</h2>
-      
-      {isTeamMembersLoading ? (
-        <div className="flex items-center justify-center py-8">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <span className="ml-2 text-gray-500">Loading team members...</span>
-        </div>
-      ) : teamMembersCount === 0 ? (
-        <NoTeamMembers onAddMember={() => setIsAddMemberOpen(true)} />
-      ) : (
-        <div className="grid grid-cols-1 gap-4">
-          {teamMembersPerformance.map((member) => (
-            <TeamMemberCard 
-              key={member.id} 
-              member={member}
-              onRemove={handleRemoveMember}
-              isRemoving={removingMemberId === member.id}
-            />
-          ))}
-        </div>
-      )}
-      
-      <h2 className="text-xl font-semibold mb-4 mt-8">All App Users</h2>
-      <p className="text-sm text-muted-foreground mb-4">
-        These are all users registered in the system. Add them as team members to assign tasks and collaborate.
-      </p>
-      
-      {isUsersLoading ? (
-        <div className="flex items-center justify-center py-8">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <span className="ml-2 text-gray-500">Loading users...</span>
-        </div>
-      ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <UsersIcon className="h-5 w-5 mr-2" /> 
-              Total Users: {allUsers?.length || 0}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {allUsers?.map((appUser) => (
-                <div 
-                  key={appUser.id} 
-                  className="flex flex-col items-center text-center"
-                >
-                  <Avatar className="h-16 w-16 mb-2">
-                    <AvatarImage 
-                      src={appUser.avatar_url || undefined} 
-                      alt={`${appUser.name}'s avatar`} 
-                    />
-                    <AvatarFallback>
-                      {appUser.name.substring(0, 2).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-medium text-sm">{appUser.name}</p>
-                    <p className="text-xs text-muted-foreground">{appUser.role}</p>
-                  </div>
-                </div>
+      <Tabs defaultValue="members" className="mt-8">
+        <TabsList className="mb-6">
+          <TabsTrigger value="members" className="flex items-center gap-1">
+            <UsersIcon className="h-4 w-4" /> Team Members
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="flex items-center gap-1">
+            <PieChart className="h-4 w-4" /> Team Analytics
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="members">
+          <h2 className="text-xl font-semibold mb-4">My Team Members</h2>
+          
+          {isTeamMembersLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <span className="ml-2 text-gray-500">Loading team members...</span>
+            </div>
+          ) : teamMembersCount === 0 ? (
+            <NoTeamMembers onAddMember={() => setIsAddMemberOpen(true)} />
+          ) : (
+            <div className="grid grid-cols-1 gap-4">
+              {teamMembersPerformance.map((member) => (
+                <TeamMemberCard 
+                  key={member.id} 
+                  member={member}
+                  onRemove={handleRemoveMember}
+                  isRemoving={removingMemberId === member.id}
+                />
               ))}
             </div>
-          </CardContent>
-        </Card>
-      )}
+          )}
+          
+          <h2 className="text-xl font-semibold mb-4 mt-8">All App Users</h2>
+          <p className="text-sm text-muted-foreground mb-4">
+            These are all users registered in the system. Add them as team members to assign tasks and collaborate.
+          </p>
+          
+          {isUsersLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <span className="ml-2 text-gray-500">Loading users...</span>
+            </div>
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <UsersIcon className="h-5 w-5 mr-2" /> 
+                  Total Users: {allUsers?.length || 0}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                  {allUsers?.map((appUser) => (
+                    <div 
+                      key={appUser.id} 
+                      className="flex flex-col items-center text-center"
+                    >
+                      <Avatar className="h-16 w-16 mb-2">
+                        <AvatarImage 
+                          src={appUser.avatar_url || undefined} 
+                          alt={`${appUser.name}'s avatar`} 
+                        />
+                        <AvatarFallback>
+                          {appUser.name.substring(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-medium text-sm">{appUser.name}</p>
+                        <p className="text-xs text-muted-foreground">{appUser.role}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+        
+        <TabsContent value="analytics">
+          <h2 className="text-xl font-semibold mb-4">Team Performance Analytics</h2>
+          <TeamReports />
+        </TabsContent>
+      </Tabs>
       
       <AddTeamMemberDialog 
         open={isAddMemberOpen}

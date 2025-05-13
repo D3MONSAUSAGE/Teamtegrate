@@ -1,8 +1,8 @@
-
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { Task, Project, TaskStatus, TaskPriority, DailyScore, TeamMemberPerformance } from '@/types';
+import { Task, Project, TaskStatus, TaskPriority, DailyScore } from '@/types';
 import { useAuth } from '../AuthContext';
-import { fetchUserTasks, fetchUserProjects } from './taskApi';
+import { fetchTasks } from './api/taskFetch';
+import { fetchProjects } from './api/projects';
 import { calculateDailyScore } from './taskMetrics';
 import { toast } from '@/components/ui/sonner';
 import { 
@@ -19,9 +19,11 @@ import {
   removeTeamMemberFromProject
 } from './operations';
 import { 
-  addCommentToTask,
+  addCommentToTask, 
   addTagToTask, 
-  removeTagFromTask 
+  removeTagFromTask, 
+  addTagToProject, 
+  removeTagFromProject 
 } from './contentOperations';
 import { 
   getTasksWithTag, 
@@ -31,13 +33,15 @@ import {
   getTasksByDate, 
   getOverdueTasks 
 } from './taskFilters';
-import { fetchTeamPerformance, fetchTeamMemberPerformance } from './api';
+import { createRpcFunctions } from '@/integrations/supabase/rpc';
 
 interface TaskContextType {
   tasks: Task[];
   projects: Project[];
   dailyScore: DailyScore;
   refreshProjects: () => Promise<void>;
+  refreshTasks: () => Promise<void>;
+  isLoading: boolean;
   addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateTask: (taskId: string, updates: Partial<Task>) => void;
   updateTaskStatus: (taskId: string, status: TaskStatus) => void;
@@ -50,6 +54,8 @@ interface TaskContextType {
   addCommentToTask: (taskId: string, comment: { userId: string; userName: string; text: string }) => void;
   addTagToTask: (taskId: string, tag: string) => void;
   removeTagFromTask: (taskId: string, tag: string) => void;
+  addTagToProject: (projectId: string, tag: string) => void;
+  removeTagFromProject: (projectId: string, tag: string) => void;
   addTeamMemberToProject: (projectId: string, userId: string) => void;
   removeTeamMemberFromProject: (projectId: string, userId: string) => void;
   getTasksWithTag: (tag: string) => Task[];
@@ -58,8 +64,6 @@ interface TaskContextType {
   getTasksByPriority: (priority: TaskPriority) => Task[];
   getTasksByDate: (date: Date) => Task[];
   getOverdueTasks: () => Task[];
-  fetchTeamPerformance: () => Promise<TeamMemberPerformance[]>;
-  fetchTeamMemberPerformance: (userId: string) => Promise<TeamMemberPerformance | null>;
 }
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
@@ -77,6 +81,9 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [tasks, setTasks] = useState<Task[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [maxRetries] = useState(3);
+  const [currentRetry, setCurrentRetry] = useState(0);
+  const [rpcSetupDone, setRpcSetupDone] = useState(false);
   const [dailyScore, setDailyScore] = useState<DailyScore>({
     completedTasks: 0,
     totalTasks: 0,
@@ -84,15 +91,51 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     date: new Date(),
   });
 
+  // Set up RPC functions once when the app loads
+  useEffect(() => {
+    const setupRpc = async () => {
+      try {
+        console.log('Setting up RPC functions...');
+        const result = await createRpcFunctions();
+        setRpcSetupDone(result.success);
+        console.log(`RPC functions setup ${result.success ? 'successful' : 'failed'}`);
+        if (result.success) {
+          console.log(`Available data: ${result.tasksCount} tasks, ${result.projectsCount} projects`);
+        }
+      } catch (err) {
+        console.error('Failed to setup RPC functions:', err);
+        setRpcSetupDone(false);
+      }
+    };
+    
+    setupRpc();
+  }, []);
+
   const refreshProjects = async () => {
     if (!user) return;
     
     try {
       setIsLoading(true);
-      await fetchUserProjects(user, setProjects);
+      await fetchProjects(user, setProjects);
     } catch (error) {
       console.error("Error refreshing projects:", error);
       toast.error("Failed to refresh projects");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const refreshTasks = async () => {
+    if (!user) return;
+    
+    try {
+      setIsLoading(true);
+      await fetchTasks(user, setTasks);
+      // After successful task fetch, log the results
+      console.log(`Tasks refreshed successfully. Total tasks: ${tasks.length}`);
+    } catch (error) {
+      console.error("Error refreshing tasks:", error);
+      toast.error("Failed to refresh tasks");
     } finally {
       setIsLoading(false);
     }
@@ -109,12 +152,62 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       setIsLoading(true);
       try {
-        console.log('Loading tasks and projects for user:', user.id);
-        await Promise.all([
-          fetchUserProjects(user, setProjects),
-          fetchUserTasks(user, setTasks)
-        ]);
-        console.log('Data loaded successfully');
+        console.log("Loading data for user:", user.id);
+        
+        // Wait for RPC setup to complete before loading data
+        if (!rpcSetupDone) {
+          console.log("Waiting for RPC functions to be set up...");
+          // Wait for up to 2 seconds for RPC setup
+          for (let i = 0; i < 5; i++) {
+            if (rpcSetupDone) break;
+            await new Promise(resolve => setTimeout(resolve, 400));
+          }
+          
+          if (!rpcSetupDone) {
+            console.warn("RPC setup didn't complete in time, proceeding anyway");
+          }
+        }
+        
+        // Try to fetch tasks and projects with exponential backoff
+        let tasksSuccess = false;
+        let projectsSuccess = false;
+        
+        // Reset retry counter
+        setCurrentRetry(0);
+        
+        while ((!tasksSuccess || !projectsSuccess) && currentRetry < maxRetries) {
+          if (!tasksSuccess) {
+            try {
+              await fetchTasks(user, setTasks);
+              tasksSuccess = true;
+              console.log("Tasks loaded successfully on attempt:", currentRetry + 1);
+            } catch (error) {
+              console.error(`Tasks fetch failed on attempt ${currentRetry + 1}:`, error);
+            }
+          }
+          
+          if (!projectsSuccess) {
+            try {
+              await fetchProjects(user, setProjects);
+              projectsSuccess = true;
+              console.log("Projects loaded successfully on attempt:", currentRetry + 1);
+            } catch (error) {
+              console.error(`Projects fetch failed on attempt ${currentRetry + 1}:`, error);
+            }
+          }
+          
+          if (!tasksSuccess || !projectsSuccess) {
+            setCurrentRetry(prev => prev + 1);
+            const backoffTime = Math.min(1000 * Math.pow(2, currentRetry), 5000);
+            console.log(`Retrying in ${backoffTime}ms (attempt ${currentRetry + 1}/${maxRetries})...`);
+            await new Promise(resolve => setTimeout(resolve, backoffTime));
+          }
+        }
+        
+        if (!tasksSuccess || !projectsSuccess) {
+          console.warn("Failed to load all data after multiple attempts");
+          toast.error("Some data couldn't be loaded. Please try refreshing.");
+        }
       } catch (error) {
         console.error("Error loading data:", error);
         toast.error("Failed to load data");
@@ -124,15 +217,12 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
     
     loadData();
-  }, [user]);
+  }, [user, currentRetry, maxRetries, rpcSetupDone]);
 
-  // Update dailyScore whenever tasks changes
   useEffect(() => {
     if (user) {
-      console.log('Recalculating daily score for', tasks.length, 'tasks');
       const score = calculateDailyScore(tasks);
       setDailyScore(score);
-      console.log('Daily score updated:', score);
     }
   }, [tasks, user]);
 
@@ -140,7 +230,9 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     tasks,
     projects,
     dailyScore,
+    isLoading,
     refreshProjects,
+    refreshTasks,
     addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => 
       addTask(task, user, tasks, setTasks, projects, setProjects),
     updateTask: (taskId: string, updates: Partial<Task>) => 
@@ -165,6 +257,10 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       addTagToTask(taskId, tag, tasks, setTasks, projects, setProjects),
     removeTagFromTask: (taskId: string, tag: string) =>
       removeTagFromTask(taskId, tag, tasks, setTasks, projects, setProjects),
+    addTagToProject: (projectId: string, tag: string) =>
+      addTagToProject(projectId, tag, projects, setProjects),
+    removeTagFromProject: (projectId: string, tag: string) =>
+      removeTagFromProject(projectId, tag, projects, setProjects),
     addTeamMemberToProject: (projectId: string, userId: string) =>
       addTeamMemberToProject(projectId, userId, projects, setProjects),
     removeTeamMemberFromProject: (projectId: string, userId: string) =>
@@ -175,8 +271,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     getTasksByPriority: (priority: TaskPriority) => getTasksByPriority(priority, tasks),
     getTasksByDate: (date: Date) => getTasksByDate(date, tasks),
     getOverdueTasks: () => getOverdueTasks(tasks),
-    fetchTeamPerformance,
-    fetchTeamMemberPerformance
   };
 
   return <TaskContext.Provider value={value}>{children}</TaskContext.Provider>;

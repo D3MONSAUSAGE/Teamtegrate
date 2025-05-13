@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Project, Task, TaskStatus } from '@/types';
+import { Project, Task } from '@/types';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
 import ProjectOverview from './ProjectOverview';
@@ -22,7 +22,6 @@ interface ProjectTasksContentProps {
   isRefreshing: boolean;
   onEditTask: (task: Task) => void;
   onCreateTask: () => void;
-  onTaskStatusChange: (taskId: string, status: TaskStatus) => void;
 }
 
 const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
@@ -40,7 +39,6 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
   isRefreshing,
   onEditTask,
   onCreateTask,
-  onTaskStatusChange,
 }) => {
   return (
     <div className="p-4 md:p-6">
@@ -85,7 +83,6 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
         completedTasks={completedTasks}
         onEdit={onEditTask}
         onNewTask={onCreateTask}
-        onStatusChange={onTaskStatusChange}
       />
     </div>
   );

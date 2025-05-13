@@ -1,137 +1,73 @@
 
 import { Task, DailyScore } from '@/types';
-import { sub, format, isSameDay, startOfDay } from 'date-fns';
 
 export const calculateDailyScore = (tasks: Task[]): DailyScore => {
-  if (!tasks.length) {
-    return {
-      completedTasks: 0,
-      totalTasks: 0,
-      percentage: 0,
-      date: new Date(),
-    };
-  }
-
+  // Get today's date with time set to midnight
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
-  // More detailed logging to debug task filtering
-  console.log('Total tasks count:', tasks.length);
+  // Get tomorrow's date
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
   
-  const todaysTasks = tasks.filter((task) => {
-    if (!task.deadline) {
-      console.log('Task without deadline:', task.title);
-      return false;
-    }
-    
-    const taskDeadline = new Date(task.deadline);
-    const isSameAsToday = isSameDay(taskDeadline, today);
-    
-    if (isSameAsToday) {
-      console.log('Task due today:', task.title, task.status);
-    }
-    
-    return isSameAsToday;
+  // Filter tasks due today
+  const todaysTasks = tasks.filter(task => {
+    const taskDate = new Date(task.deadline);
+    taskDate.setHours(0, 0, 0, 0);
+    return taskDate.getTime() === today.getTime();
   });
   
-  console.log('Tasks due today count:', todaysTasks.length);
-
-  const completed = todaysTasks.filter((task) => task.status === 'Completed').length;
-  console.log('Completed tasks today:', completed);
+  // Count completed tasks
+  const completedTasks = todaysTasks.filter(task => task.status === 'Completed').length;
+  const totalTasks = todaysTasks.length;
   
-  const total = todaysTasks.length;
-  const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
-
+  // Calculate percentage
+  const percentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+  
   return {
-    completedTasks: completed,
-    totalTasks: total,
+    completedTasks,
+    totalTasks,
     percentage,
-    date: today,
+    date: today
   };
 };
 
-export const getTasksCompletionByDate = (tasks: Task[], days: number = 7): Array<{ date: Date; completed: number; total: number }> => {
+/**
+ * Gets task completion data for a specific number of days
+ * @param tasks Array of tasks
+ * @param days Number of past days to include
+ * @returns Array of daily completion data
+ */
+export const getTasksCompletionByDate = (tasks: Task[], days: number = 14) => {
+  const result = [];
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
-  const result = [];
-  
+  // Generate data for each day in the range
   for (let i = days - 1; i >= 0; i--) {
-    const date = sub(today, { days: i });
+    const date = new Date(today);
+    date.setDate(date.getDate() - i);
     
-    const dayTasks = tasks.filter(task => {
-      if (!task.deadline) return false;
-      
+    // Set the date to midnight for accurate comparison
+    date.setHours(0, 0, 0, 0);
+    
+    // Filter tasks for the specific date
+    const dateTasks = tasks.filter(task => {
       const taskDate = new Date(task.deadline);
       taskDate.setHours(0, 0, 0, 0);
-      return isSameDay(taskDate, date);
+      return taskDate.getTime() === date.getTime();
     });
     
-    const completed = dayTasks.filter(task => task.status === 'Completed').length;
+    // Count completed tasks
+    const completed = dateTasks.filter(task => task.status === 'Completed').length;
+    const total = dateTasks.length;
     
     result.push({
-      date: new Date(date),
+      date,
       completed,
-      total: dayTasks.length
+      total
     });
   }
-  
-  return result;
-};
-
-export const getTasksCompletionByTeamMember = (tasks: Task[]): Array<{ name: string; completed: number; total: number }> => {
-  const assignees: Record<string, { name: string; completed: number; total: number }> = {};
-  
-  tasks.forEach(task => {
-    if (task.assignedToId && task.assignedToName) {
-      if (!assignees[task.assignedToId]) {
-        assignees[task.assignedToId] = {
-          name: task.assignedToName,
-          completed: 0,
-          total: 0
-        };
-      }
-      
-      assignees[task.assignedToId].total++;
-      
-      if (task.status === 'Completed') {
-        assignees[task.assignedToId].completed++;
-      }
-    }
-  });
-  
-  return Object.values(assignees);
-};
-
-export const getProjectProgress = (tasks: Task[]): Array<{ projectId: string; status: string; count: number }> => {
-  const projectTasks: Record<string, Record<string, number>> = {};
-  
-  tasks.forEach(task => {
-    if (task.projectId) {
-      if (!projectTasks[task.projectId]) {
-        projectTasks[task.projectId] = {
-          'To Do': 0,
-          'In Progress': 0,
-          'Pending': 0,
-          'Completed': 0
-        };
-      }
-      
-      projectTasks[task.projectId][task.status]++;
-    }
-  });
-  
-  const result: Array<{ projectId: string; status: string; count: number }> = [];
-  
-  Object.entries(projectTasks).forEach(([projectId, statuses]) => {
-    Object.entries(statuses).forEach(([status, count]) => {
-      result.push({
-        projectId,
-        status,
-        count
-      });
-    });
-  });
   
   return result;
 };

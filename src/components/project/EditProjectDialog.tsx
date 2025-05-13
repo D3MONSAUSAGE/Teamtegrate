@@ -10,6 +10,7 @@ import { ProjectDetailsSection } from './ProjectDetailsSection';
 import { toast } from '@/components/ui/sonner';
 import { format } from 'date-fns';
 import { useTask } from '@/contexts/task';
+import { TagsSection } from './TagsSection';
 
 // Define the validation schema
 const projectFormSchema = z.object({
@@ -18,7 +19,8 @@ const projectFormSchema = z.object({
   startDate: z.string().min(1, { message: "Start date is required" }),
   endDate: z.string().min(1, { message: "End date is required" }),
   budget: z.number().optional(),
-  teamMembers: z.array(z.object({ memberId: z.string() })).optional().default([])
+  teamMembers: z.array(z.object({ memberId: z.string() })).optional().default([]),
+  tags: z.array(z.string()).optional().default([])
 });
 
 export type FormValues = z.infer<typeof projectFormSchema>;
@@ -38,7 +40,7 @@ const EditProjectDialog: React.FC<EditProjectDialogProps> = ({
 }) => {
   const { updateProject } = useTask();
   
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<FormValues>({
+  const { register, handleSubmit, reset, watch, setValue, formState: { errors, isSubmitting } } = useForm<FormValues>({
     resolver: zodResolver(projectFormSchema),
     defaultValues: {
       title: project?.title || '',
@@ -46,7 +48,8 @@ const EditProjectDialog: React.FC<EditProjectDialogProps> = ({
       startDate: project?.startDate ? format(new Date(project.startDate), 'yyyy-MM-dd') : '',
       endDate: project?.endDate ? format(new Date(project.endDate), 'yyyy-MM-dd') : '',
       budget: project?.budget,
-      teamMembers: []
+      teamMembers: [],
+      tags: project?.tags || []
     }
   });
   
@@ -59,7 +62,8 @@ const EditProjectDialog: React.FC<EditProjectDialogProps> = ({
         startDate: project.startDate ? format(new Date(project.startDate), 'yyyy-MM-dd') : '',
         endDate: project.endDate ? format(new Date(project.endDate), 'yyyy-MM-dd') : '',
         budget: project.budget,
-        teamMembers: []
+        teamMembers: [],
+        tags: project.tags || []
       });
     }
   }, [project, open, reset]);
@@ -71,7 +75,8 @@ const EditProjectDialog: React.FC<EditProjectDialogProps> = ({
         description: data.description,
         startDate: new Date(data.startDate),
         endDate: new Date(data.endDate),
-        budget: data.budget
+        budget: data.budget,
+        tags: data.tags
       });
       
       toast.success("Project updated successfully");
@@ -96,6 +101,11 @@ const EditProjectDialog: React.FC<EditProjectDialogProps> = ({
           <ProjectDetailsSection 
             register={register}
             errors={errors}
+          />
+          
+          <TagsSection
+            watch={watch}
+            setValue={setValue}
           />
           
           <div className="flex justify-end gap-2">

@@ -1,13 +1,12 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTask } from '@/contexts/task';
-import { Task, Project, TaskStatus } from '@/types';
+import { Task, Project } from '@/types';
 import { toast } from '@/components/ui/sonner';
 import { useProjectTasks } from './useProjectTasks';
-import { supabase } from '@/integrations/supabase/client';
 
 export const useProjectTasksView = (projectId: string | null) => {
-  const { tasks, projects, refreshProjects, updateTaskStatus } = useTask();
+  const { tasks, projects, refreshProjects } = useTask();
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
@@ -15,14 +14,13 @@ export const useProjectTasksView = (projectId: string | null) => {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const [initialLoadAttempted, setInitialLoadAttempted] = useState(false);
-  const [projectTasks, setProjectTasks] = useState<Task[]>([]);
   
   // Memoize project data to prevent unnecessary re-renders
   const project = useMemo(() => {
     return projects.find(p => p.id === projectId);
   }, [projects, projectId]);
   
-  // Use custom hook for task filtering and sorting - use projectTasks instead of all tasks
+  // Use custom hook for task filtering and sorting
   const {
     searchQuery, 
     setSearchQuery,
@@ -33,7 +31,7 @@ export const useProjectTasksView = (projectId: string | null) => {
     pendingTasks,
     completedTasks,
     progress,
-  } = useProjectTasks(projectTasks, projectId);
+  } = useProjectTasks(tasks, projectId);
 
   // Reset states when project ID changes
   useEffect(() => {
@@ -41,111 +39,18 @@ export const useProjectTasksView = (projectId: string | null) => {
     setInitialLoadAttempted(false);
     setIsLoading(true);
     setLoadError(null);
-    setProjectTasks([]);
   }, [projectId]);
 
-  // Fetch all tasks for this specific project
+  // Fetch fresh data when the component mounts or projectId changes
   useEffect(() => {
-    if (!projectId) {
+    // Skip if we've already tried loading or if projectId is null
+    if (initialLoadAttempted || !projectId) {
       setIsLoading(false);
       return;
     }
 
-    const fetchProjectTasks = async () => {
-      setIsLoading(true);
-      
-      try {
-        console.log(`Fetching tasks specifically for project ${projectId}`);
-        
-        // Fetch all tasks belonging to this project regardless of creator or assignee
-        const { data: taskData, error } = await supabase
-          .from('tasks')
-          .select('*')
-          .eq('project_id', projectId);
-          
-        if (error) {
-          console.error('Error fetching project tasks:', error);
-          setLoadError('Failed to load project tasks');
-          return;
-        }
-        
-        console.log(`Found ${taskData?.length || 0} tasks for project ${projectId}`);
-        
-        // Process the tasks similar to fetchTasks
-        const parseDate = (dateStr: string | null): Date => {
-          if (!dateStr) return new Date();
-          return new Date(dateStr);
-        };
-        
-        // Get all user IDs that are assigned to tasks to fetch their names
-        const assignedUserIds = taskData
-          .filter(task => task.assigned_to_id)
-          .map(task => task.assigned_to_id);
-          
-        // Remove duplicates
-        const uniqueUserIds = [...new Set(assignedUserIds)];
-        
-        // Fetch user names for assigned users
-        let userMap = new Map();
-        if (uniqueUserIds.length > 0) {
-          const { data: userData, error: userError } = await supabase
-            .from('users')
-            .select('id, name, email')
-            .in('id', uniqueUserIds);
-
-          if (userError) {
-            console.error('Error fetching user data for task assignments:', userError);
-          } else if (userData) {
-            userData.forEach(user => {
-              userMap.set(user.id, user.name || user.email);
-            });
-          }
-        }
-        
-        // Map tasks with their assigned user names
-        const formattedTasks: Task[] = taskData.map((task) => {
-          const assignedUserName = task.assigned_to_id ? userMap.get(task.assigned_to_id) : undefined;
-
-          return {
-            id: task.id,
-            userId: task.user_id || '',
-            projectId: task.project_id,
-            title: task.title || '',
-            description: task.description || '',
-            deadline: parseDate(task.deadline),
-            priority: (task.priority as Task['priority']) || 'Medium',
-            status: (task.status || 'To Do') as Task['status'],
-            createdAt: parseDate(task.created_at),
-            updatedAt: parseDate(task.updated_at),
-            completedAt: task.completed_at ? parseDate(task.completed_at) : undefined,
-            assignedToId: task.assigned_to_id,
-            assignedToName: assignedUserName,
-            comments: [],
-            cost: task.cost || 0
-          };
-        });
-        
-        setProjectTasks(formattedTasks);
-      } catch (error) {
-        console.error('Error fetching project tasks:', error);
-        setLoadError('Failed to load project tasks');
-      } finally {
-        setIsLoading(false);
-        setInitialLoadAttempted(true);
-      }
-    };
-    
-    fetchProjectTasks();
-  }, [projectId]);
-
-  // Fetch fresh project data when the component mounts or projectId changes
-  useEffect(() => {
-    // Skip if we've already tried loading or if projectId is null
-    if (initialLoadAttempted || !projectId) {
-      return;
-    }
-
     const loadData = async () => {
+      setIsLoading(true);
       setLoadError(null);
       
       try {
@@ -166,48 +71,13 @@ export const useProjectTasksView = (projectId: string | null) => {
         } else {
           setInitialLoadAttempted(true);
         }
+      } finally {
+        setIsLoading(false);
       }
     };
     
     loadData();
   }, [projectId, refreshProjects, retryCount, initialLoadAttempted]);
-
-  // Handle task status change
-  const handleTaskStatusChange = useCallback(async (taskId: string, newStatus: TaskStatus) => {
-    if (!projectId) return;
-    
-    try {
-      console.log(`Updating task ${taskId} status to ${newStatus}`);
-      
-      // Find the task to update in our local state
-      const taskToUpdate = projectTasks.find(task => task.id === taskId);
-      if (!taskToUpdate) {
-        console.error(`Task ${taskId} not found in project tasks`);
-        return;
-      }
-      
-      // Call the updateTaskStatus function from context
-      await updateTaskStatus(taskId, newStatus);
-      
-      // Update local task state to reflect the change immediately
-      setProjectTasks(prevTasks => 
-        prevTasks.map(task => 
-          task.id === taskId 
-            ? { 
-                ...task, 
-                status: newStatus, 
-                completedAt: newStatus === 'Completed' ? new Date() : undefined 
-              } 
-            : task
-        )
-      );
-      
-      console.log(`Task ${taskId} status updated successfully to ${newStatus}`);
-    } catch (error) {
-      console.error('Error updating task status:', error);
-      toast.error('Failed to update task status');
-    }
-  }, [projectId, projectTasks, updateTaskStatus]);
 
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
@@ -235,66 +105,6 @@ export const useProjectTasksView = (projectId: string | null) => {
     
     try {
       await refreshProjects();
-      
-      // Refetch project tasks
-      const { data: taskData, error } = await supabase
-        .from('tasks')
-        .select('*')
-        .eq('project_id', projectId);
-        
-      if (error) {
-        throw new Error('Failed to refresh project tasks');
-      }
-      
-      // Update the project tasks state (similar code as in the task fetching effect)
-      const parseDate = (dateStr: string | null): Date => {
-        if (!dateStr) return new Date();
-        return new Date(dateStr);
-      };
-      
-      const assignedUserIds = taskData
-        .filter(task => task.assigned_to_id)
-        .map(task => task.assigned_to_id);
-        
-      const uniqueUserIds = [...new Set(assignedUserIds)];
-      
-      let userMap = new Map();
-      if (uniqueUserIds.length > 0) {
-        const { data: userData, error: userError } = await supabase
-          .from('users')
-          .select('id, name, email')
-          .in('id', uniqueUserIds);
-
-        if (!userError && userData) {
-          userData.forEach(user => {
-            userMap.set(user.id, user.name || user.email);
-          });
-        }
-      }
-      
-      const formattedTasks: Task[] = taskData.map((task) => {
-        const assignedUserName = task.assigned_to_id ? userMap.get(task.assigned_to_id) : undefined;
-
-        return {
-          id: task.id,
-          userId: task.user_id || '',
-          projectId: task.project_id,
-          title: task.title || '',
-          description: task.description || '',
-          deadline: parseDate(task.deadline),
-          priority: (task.priority as Task['priority']) || 'Medium',
-          status: (task.status || 'To Do') as Task['status'],
-          createdAt: parseDate(task.created_at),
-          updatedAt: parseDate(task.updated_at),
-          completedAt: task.completed_at ? parseDate(task.completed_at) : undefined,
-          assignedToId: task.assigned_to_id,
-          assignedToName: assignedUserName,
-          comments: [],
-          cost: task.cost || 0
-        };
-      });
-      
-      setProjectTasks(formattedTasks);
       toast.success("Project data refreshed successfully");
     } catch (error) {
       console.error('Error refreshing project data:', error);
@@ -324,7 +134,6 @@ export const useProjectTasksView = (projectId: string | null) => {
     handleEditTask,
     handleCreateTask,
     handleManualRefresh,
-    handleTaskStatusChange,
     onSortByChange: handleSortByChange
   };
 };

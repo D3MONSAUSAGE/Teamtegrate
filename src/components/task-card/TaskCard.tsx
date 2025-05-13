@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Card } from "@/components/ui/card";
-import { Task, TaskStatus } from "@/types";
+import { Task } from "@/types";
 import { cn } from "@/lib/utils";
 import TaskDetailDrawer from "../task/TaskDetailDrawer";
 import TaskCardActions from "./TaskCardActions";
@@ -13,7 +13,6 @@ interface TaskCardProps {
   task: Task;
   onEdit?: (task: Task) => void;
   onAssign?: (task: Task) => void;
-  onStatusChange?: (taskId: string, status: TaskStatus) => void;
   onClick?: () => void;
 }
 
@@ -21,7 +20,6 @@ const TaskCard: React.FC<TaskCardProps> = ({
   task,
   onEdit,
   onAssign,
-  onStatusChange,
   onClick,
 }) => {
   const {
@@ -29,7 +27,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
     setShowDrawer,
     getPriorityBackground,
     isTaskOverdue,
-    handleStatusChange: internalHandleStatusChange,
+    handleStatusChange,
     handleDeleteTask,
     commentCount,
   } = useTaskCard(task);
@@ -39,15 +37,6 @@ const TaskCard: React.FC<TaskCardProps> = ({
       onClick();
     } else {
       setShowDrawer(true);
-    }
-  };
-
-  // Use the external status change handler if provided, otherwise use the internal one
-  const handleStatusChange = (status: TaskStatus) => {
-    if (onStatusChange) {
-      onStatusChange(task.id, status);
-    } else {
-      internalHandleStatusChange(status);
     }
   };
 

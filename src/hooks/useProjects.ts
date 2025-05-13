@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { Project, ProjectStatus, Task } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,12 +27,10 @@ export const useProjects = () => {
       
       console.log('Fetching projects for user:', user.id);
       
-      // Fix the query to correctly handle the OR condition
+      // Fetch all projects
       const { data, error } = await supabase
         .from('projects')
-        .select('*')
-        .or(`manager_id.eq.${user.id},team_members.cs.{${user.id}}`)
-        .order('created_at', { ascending: false });
+        .select('*');
 
       if (error) {
         console.error('Error fetching projects:', error);
@@ -59,18 +58,12 @@ export const useProjects = () => {
         if (totalTasks > 0) {
           const allTasksCompleted = completedTasks === totalTasks;
           
-          if (allTasksCompleted) {
+          if (allTasksCompleted && completedTasks > 0) {
             status = 'Completed';
             isCompleted = true;
-          } else {
-            // If not all tasks are completed, project cannot be marked as completed
-            if (status === 'Completed' || isCompleted) {
-              status = 'In Progress';
-              isCompleted = false;
-              
-              // Log the status correction
-              console.log(`Project ${project.id} status corrected: not all tasks complete but was marked as Completed`);
-            }
+          } else if (completedTasks > 0) {
+            status = 'In Progress';
+            isCompleted = false;
           }
         }
         
@@ -91,7 +84,7 @@ export const useProjects = () => {
           budgetSpent: project.budget_spent || 0,
           is_completed: isCompleted,
           status: status as ProjectStatus,
-          tasks_count: totalTasks,
+          tasks_count: totalTasks || 0,
           tags: project.tags || []
         };
       });

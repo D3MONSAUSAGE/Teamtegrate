@@ -2,158 +2,236 @@
 import { Task } from '@/types';
 import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
-
-const parseDate = (dateStr: string | null): Date => {
-  if (!dateStr) return new Date();
-  return new Date(dateStr);
-};
+import { fetchTaskData } from './task/fetchTaskData';
+import { fetchAllTaskComments } from './task/fetchAllTaskComments';
+import { resolveUserNames } from './task/resolveUserNames';
+import { logTaskFetchResults } from './task/logTaskFetchResults';
+import { executeRpc } from '@/integrations/supabase/rpc';
+import { isValid, isToday } from 'date-fns';
 
 export const fetchTasks = async (
   user: { id: string },
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>
 ): Promise<void> => {
   try {
-    // Fetch tasks from supabase with more detailed logging
-    console.log('Fetching tasks for user:', user.id);
+    // Ensure user.id is a string
+    const userId = typeof user.id === 'string' ? user.id : String(user.id);
+    console.log('Fetching tasks for user:', userId);
     
-    // Modified query to include tasks where:
-    // 1. User created the task (user_id)
-    // 2. User is assigned to the task (assigned_to_id)
-    // 3. User is a manager of the project the task belongs to
-    // 4. User is a team member of the project the task belongs to
-    const { data: taskData, error } = await supabase
-      .from('tasks')
-      .select('*')
-      .or(`user_id.eq.${user.id},assigned_to_id.eq.${user.id},project_id.in.(select id from projects where manager_id=${user.id} or team_members.cs.{${user.id}})`);
-
-    if (error) {
-      console.error('Error fetching tasks:', error);
-      toast.error('Failed to load tasks');
+    // First attempt: Using RPC to bypass RLS policies
+    console.log('Attempting to fetch tasks via RPC function...');
+    const rpcData = await executeRpc('get_all_tasks');
+    
+    if (rpcData !== null && Array.isArray(rpcData) && rpcData.length > 0) {
+      console.log(`RPC returned task data successfully: ${rpcData.length} tasks found`);
+      await processAndSetTasks(rpcData, user, setTasks);
       return;
     }
-
-    console.log(`Fetched ${taskData.length} tasks from database`);
     
-    // Log project IDs to help debug task assignments
-    const projectIds = [...new Set(taskData.map(task => task.project_id))].filter(Boolean);
-    console.log(`Tasks belong to ${projectIds.length} projects:`, projectIds);
-
-    // Fetch comments for all tasks
-    const { data: commentData, error: commentError } = await supabase
-      .from('comments')
+    console.log('RPC fetch returned no data or failed, trying direct query...');
+    
+    // Second attempt: Direct query to project_tasks table
+    const { data: directData, error: directError } = await supabase
+      .from('project_tasks')
       .select('*');
-
-    if (commentError) {
-      console.error('Error fetching comments:', commentError);
+    
+    if (directError) {
+      console.error('Direct project_tasks query failed:', directError);
+      toast.error('Failed to load tasks from project_tasks table');
+    } else if (directData && Array.isArray(directData) && directData.length > 0) {
+      console.log(`Retrieved ${directData.length} tasks from direct project_tasks query`);
+      // Log sample task ID and type to debug
+      if (directData.length > 0) {
+        console.log('Sample task ID from project_tasks:', directData[0].id, 'Type:', typeof directData[0].id);
+      }
+      await processAndSetTasks(directData, user, setTasks);
+      return;
     } else {
-      console.log(`Fetched ${commentData?.length || 0} comments from database`);
+      console.log('No tasks found in project_tasks table, trying legacy tasks table...');
     }
+    
+    // Third attempt: Try legacy tasks table as last resort
+    const { data: legacyData, error: legacyError } = await supabase
+      .from('tasks')
+      .select('*');
+      
+    if (legacyError) {
+      console.error('Legacy tasks fetch failed:', legacyError);
+      toast.error('Failed to load tasks. Please check database permissions.');
+      setTasks([]);
+      return;
+    }
+    
+    if (legacyData && Array.isArray(legacyData) && legacyData.length > 0) {
+      console.log(`Retrieved ${legacyData.length} tasks from legacy table`);
+      // Log sample task ID and type to debug
+      if (legacyData.length > 0) {
+        console.log('Sample task ID from legacy tasks:', legacyData[0].id, 'Type:', typeof legacyData[0].id);
+      }
+      await processAndSetTasks(legacyData, user, setTasks);
+      return;
+    }
+    
+    console.log('No tasks found in any table');
+    setTasks([]);
+  } catch (error) {
+    console.error('Error in fetchTasks:', error);
+    toast.error('Failed to load tasks');
+    setTasks([]);
+  }
+};
 
-    // Get all user IDs that are assigned to tasks to fetch their names
+// Helper function to process tasks data and set state
+const processAndSetTasks = async (
+  taskData: any[],
+  user: { id: string },
+  setTasks: React.Dispatch<React.SetStateAction<Task[]>>
+) => {
+  if (!taskData || !Array.isArray(taskData) || taskData.length === 0) {
+    console.log('No tasks found in database');
+    setTasks([]);
+    return;
+  }
+  
+  try {
+    console.log(`Processing ${taskData.length} tasks from database`);
+    
+    // Check for ID inconsistencies
+    const idTypes = new Set(taskData.map(task => typeof task.id));
+    if (idTypes.size > 1) {
+      console.warn('WARNING: Inconsistent ID types detected in tasks:', [...idTypes]);
+    }
+    
+    // Ensure all IDs are strings
+    taskData = taskData.map(task => ({
+      ...task,
+      id: String(task.id)
+    }));
+    
+    // Fetch comments for all tasks
+    const commentData = await fetchAllTaskComments();
+    
+    // Get all user IDs that are assigned to tasks
     const assignedUserIds = taskData
       .filter(task => task.assigned_to_id)
       .map(task => task.assigned_to_id);
-
-    // Remove duplicates
-    const uniqueUserIds = [...new Set(assignedUserIds)];
-    console.log(`Found ${uniqueUserIds.length} unique assigned users`);
     
-    // Fetch user names for assigned users
-    let userMap = new Map();
-    if (uniqueUserIds.length > 0) {
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('id, name, email')
-        .in('id', uniqueUserIds);
-
-      if (userError) {
-        console.error('Error fetching user data for task assignments:', userError);
-      } else if (userData) {
-        userData.forEach(user => {
-          userMap.set(user.id, user.name || user.email);
-        });
-        console.log(`Loaded ${userData.length} user details`);
-      }
-    }
-
-    // Map tasks with their comments and resolve assigned user names
-    const tasks: Task[] = taskData.map((task) => {
-      const taskComments = commentData
+    // Remove duplicates and filter out any non-UUID values
+    const uniqueUserIds = [...new Set(assignedUserIds.filter(id => {
+      // Check if id is a valid UUID-like string
+      return id && typeof id === 'string' && 
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    }))];
+    
+    console.log(`Found ${uniqueUserIds.length} unique assigned users with valid UUIDs`);
+    
+    // Build user name mapping
+    const userMap = await resolveUserNames(uniqueUserIds as string[]);
+    
+    // Process task data with comments and user information
+    let tasks: Task[] = taskData.map((task: any) => {
+      // Normalize user_id to ensure it's valid
+      const normalizedUserId = typeof user.id === 'string' ? user.id : String(user.id);
+      
+      // Normalize task ID to ensure it's always a string
+      const normalizedTaskId = String(task.id);
+      
+      // Improved date parsing function with better error handling and validation
+      const parseDate = (dateStr: string | null): Date => {
+        if (!dateStr) return new Date();
+        
+        try {
+          const date = new Date(dateStr);
+          
+          // Check if date is valid
+          if (!isValid(date)) {
+            console.warn(`Invalid date string: "${dateStr}", using current date instead`);
+            return new Date();
+          }
+          
+          return date;
+        } catch (e) {
+          console.warn(`Error parsing date: "${dateStr}", using current date instead:`, e);
+          return new Date();
+        }
+      };
+      
+      // Parse the deadline with validation
+      const deadline = task.deadline ? parseDate(task.deadline) : new Date();
+      
+      // Get task comments
+      const taskComments = commentData && Array.isArray(commentData)
         ? commentData
-            .filter(comment => comment.task_id === task.id)
+            .filter(comment => String(comment.task_id) === normalizedTaskId)
             .map(comment => ({
               id: comment.id,
               userId: comment.user_id,
               userName: comment.user_id,
               text: comment.content,
-              createdAt: parseDate(comment.created_at)
+              createdAt: new Date(comment.created_at || new Date())
             }))
         : [];
-
+  
       // Get the assigned user name from our map
-      const assignedUserName = task.assigned_to_id ? userMap.get(task.assigned_to_id) : undefined;
-
+      let assignedToId = task.assigned_to_id;
+      if (assignedToId && typeof assignedToId !== 'string') {
+        // Convert UUID object to string if needed
+        assignedToId = String(assignedToId);
+      }
+      
+      const assignedUserName = assignedToId ? userMap.get(assignedToId) : undefined;
+  
       return {
-        id: task.id,
-        userId: task.user_id || user.id, // Default to current user if not set
+        id: normalizedTaskId,
+        userId: normalizedUserId, // Use normalized user ID
         projectId: task.project_id,
         title: task.title || '',
         description: task.description || '',
-        deadline: parseDate(task.deadline),
+        deadline: deadline,
         priority: (task.priority as Task['priority']) || 'Medium',
         status: (task.status || 'To Do') as Task['status'],
         createdAt: parseDate(task.created_at),
         updatedAt: parseDate(task.updated_at),
         completedAt: task.completed_at ? parseDate(task.completed_at) : undefined,
-        assignedToId: task.assigned_to_id,
+        assignedToId: assignedToId,
         assignedToName: assignedUserName,
         comments: taskComments,
-        cost: task.cost || 0
+        cost: task.cost || 0,
+        tags: task.tags || []
       };
     });
-
+  
     // Resolve user names for comments
-    if (commentData && commentData.length > 0) {
-      const userIds = [...new Set(commentData.map(comment => comment.user_id))];
+    if (commentData && Array.isArray(commentData) && commentData.length > 0) {
+      // Extract user IDs from comments
+      const commentUserIds = commentData
+        .filter(comment => comment.user_id && typeof comment.user_id === 'string')
+        .map(comment => comment.user_id);
       
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('id, name, email')
-        .in('id', userIds);
-      
-      if (userError) {
-        console.error('Error fetching user data for comments:', userError);
-      } else if (userData) {
-        const userMap = new Map();
-        userData.forEach(user => {
-          userMap.set(user.id, user.name || user.email);
-        });
+      if (commentUserIds.length > 0) {
+        const uniqueCommentUserIds = [...new Set(commentUserIds)];
+        const commentUserMap = await resolveUserNames(uniqueCommentUserIds);
         
-        tasks.forEach(task => {
-          if (task.comments) {
-            task.comments = task.comments.map(comment => ({
-              ...comment,
-              userName: userMap.get(comment.userId) || comment.userName
-            }));
-          }
-        });
-        console.log(`Updated comment user names for ${userData.length} users`);
+        tasks = tasks.map(task => ({
+          ...task,
+          comments: task.comments?.map(comment => ({
+            ...comment,
+            userName: comment.userId && commentUserMap.get(comment.userId) || comment.userName
+          }))
+        }));
       }
     }
-
-    // Add additional logging for task count by project
-    const tasksByProject = tasks.reduce((acc, task) => {
-      const projectId = task.projectId || 'unassigned';
-      acc[projectId] = (acc[projectId] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
     
-    console.log(`Final task count being set: ${tasks.length}`);
-    console.log('Tasks by project:', tasksByProject);
-
+    // Log task distribution
+    const todayTasks = tasks.filter(task => isToday(new Date(task.deadline)));
+    console.log(`Found ${todayTasks.length} tasks scheduled for today. Task titles:`, 
+      todayTasks.map(t => t.title));
+      
+    logTaskFetchResults(tasks);
+    console.log('Setting tasks, final count:', tasks.length);
     setTasks(tasks);
   } catch (error) {
-    console.error('Error in fetchTasks:', error);
-    toast.error('Failed to load tasks');
+    console.error('Error processing task data:', error);
+    setTasks([]);
   }
 };

@@ -1,7 +1,8 @@
 
 import React, { useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid, Legend } from 'recharts';
-import { Project, TaskStatus } from '@/types';
+import { Project } from '@/types';
+import { Card, CardContent } from '@/components/ui/card';
 
 interface ProjectProgressChartProps {
   projects: Project[];
@@ -30,11 +31,22 @@ const ProjectProgressChart: React.FC<ProjectProgressChartProps> = ({ projects })
       .sort((a, b) => b.tasks.length - a.tasks.length)
       .slice(0, 5)
       .map(project => {
-        const tasksByStatus = project.tasks.reduce((acc, task) => {
+        // Initialize all statuses to 0
+        const tasksByStatus = {
+          todo: 0,
+          inprogress: 0,
+          pending: 0,
+          completed: 0
+        };
+        
+        // Count tasks by status
+        project.tasks.forEach(task => {
           const status = task.status.toLowerCase().replace(/\s+/g, '');
-          acc[status as keyof typeof acc] = (acc[status as keyof typeof acc] || 0) + 1;
-          return acc;
-        }, { todo: 0, inprogress: 0, pending: 0, completed: 0 });
+          if (status === 'todo') tasksByStatus.todo++;
+          else if (status === 'inprogress') tasksByStatus.inprogress++;
+          else if (status === 'pending') tasksByStatus.pending++;
+          else if (status === 'completed') tasksByStatus.completed++;
+        });
         
         return {
           name: project.title.length > 12 ? project.title.substring(0, 12) + '...' : project.title,
@@ -48,8 +60,11 @@ const ProjectProgressChart: React.FC<ProjectProgressChartProps> = ({ projects })
   
   if (chartData.length === 0) {
     return (
-      <div className="h-[200px] w-full flex items-center justify-center text-gray-500">
-        <p>No project data available</p>
+      <div className="h-[200px] w-full flex flex-col items-center justify-center text-gray-500 bg-muted/30 rounded-lg">
+        <p className="text-center">No project data available</p>
+        <p className="text-xs text-center text-muted-foreground mt-1">
+          Create projects with tasks to see progress data
+        </p>
       </div>
     );
   }
@@ -65,7 +80,7 @@ const ProjectProgressChart: React.FC<ProjectProgressChartProps> = ({ projects })
           <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
           <XAxis type="number" />
           <YAxis type="category" dataKey="name" width={80} tick={{ fontSize: 12 }} />
-          <Tooltip />
+          <Tooltip formatter={(value) => [value, 'Tasks']} />
           <Legend />
           <Bar dataKey="todo" stackId="stack" fill={PROJECT_COLORS.todo} name="To Do" />
           <Bar dataKey="inProgress" stackId="stack" fill={PROJECT_COLORS.inProgress} name="In Progress" />

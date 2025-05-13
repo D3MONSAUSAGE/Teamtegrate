@@ -9,6 +9,7 @@ interface TaskDetailMetaProps {
   status: string;
   priority: string;
   assignedTo: string;
+  assignedToId?: string;
   isOverdue: () => boolean;
   getPriorityColor: (priority: string) => string;
   formatDate: (date: Date | string) => string;
@@ -20,6 +21,7 @@ const TaskDetailMeta: React.FC<TaskDetailMetaProps> = ({
   status,
   priority,
   assignedTo,
+  assignedToId,
   isOverdue,
   getPriorityColor,
   formatDate,
@@ -47,7 +49,9 @@ const TaskDetailMeta: React.FC<TaskDetailMetaProps> = ({
       <div className="col-span-2 text-sm flex items-center mt-2">
         <User className="h-4 w-4 mr-1 text-muted-foreground" />
         <span className="text-muted-foreground pr-1">Assigned to:</span>
-        <span className="font-medium">{assignedTo}</span>
+        <span className={`font-medium ${!assignedToId ? 'italic text-gray-400' : ''}`}>
+          {assignedTo}
+        </span>
       </div>
     </div>
     <Separator className="my-4" />

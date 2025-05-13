@@ -31,9 +31,8 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
     handleEditTask,
     handleCreateTask,
     handleManualRefresh,
-    handleTaskStatusChange,
     onSortByChange
-  } = useProjectTasksView(projectId || null);
+  } = useProjectTasksView(projectId);
 
   // Log component rendering for debugging
   useEffect(() => {
@@ -42,13 +41,9 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
       isLoading,
       hasError: !!loadError,
       hasProject: !!project,
-      editingTask,
-      todoTasksCount: todoTasks.length,
-      inProgressTasksCount: inProgressTasks.length,
-      pendingTasksCount: pendingTasks.length,
-      completedTasksCount: completedTasks.length
+      editingTask
     });
-  }, [projectId, isLoading, loadError, project, editingTask, todoTasks, inProgressTasks, pendingTasks, completedTasks]);
+  }, [projectId, isLoading, loadError, project, editingTask]);
 
   if (isLoading) {
     return <ProjectTasksLoading />;
@@ -81,7 +76,6 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
         isRefreshing={isRefreshing}
         onEditTask={handleEditTask}
         onCreateTask={handleCreateTask}
-        onTaskStatusChange={handleTaskStatusChange}
       />
       
       <CreateTaskDialogWithAI

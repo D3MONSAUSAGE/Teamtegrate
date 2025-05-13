@@ -11,6 +11,7 @@ import { useUsers } from '@/hooks/useUsers';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TeamMembersSection } from "@/components/project/TeamMembersSection";
 import { ProjectDetailsSection } from '@/components/project/ProjectDetailsSection';
+import { TagsSection } from '@/components/project/TagsSection';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { FormValues } from '@/components/project/EditProjectDialog';
@@ -22,7 +23,8 @@ const projectFormSchema = z.object({
   startDate: z.string().min(1, { message: "Start date is required" }),
   endDate: z.string().min(1, { message: "End date is required" }),
   budget: z.number().optional(),
-  teamMembers: z.array(z.object({ memberId: z.string() })).optional().default([])
+  teamMembers: z.array(z.object({ memberId: z.string() })).optional().default([]),
+  tags: z.array(z.string()).optional().default([])
 });
 
 interface CreateProjectDialogProps {
@@ -48,7 +50,8 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
       startDate: format(new Date(), 'yyyy-MM-dd'),
       endDate: format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'),
       budget: undefined,
-      teamMembers: []
+      teamMembers: [],
+      tags: [],
     }
   });
   
@@ -79,6 +82,7 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
         teamMembers: teamMemberIds,
         status: 'To Do',
         tasks_count: 0,
+        tags: data.tags || [],
         is_completed: false
       });
       
@@ -108,6 +112,7 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
             <TabsList className="mb-4">
               <TabsTrigger value="details">Project Details</TabsTrigger>
               <TabsTrigger value="team">Team Members</TabsTrigger>
+              <TabsTrigger value="tags">Tags</TabsTrigger>
             </TabsList>
             
             <TabsContent value="details" className="space-y-4">
@@ -127,6 +132,13 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
                   append: appendTeamMember,
                   remove: removeTeamMember
                 }}
+              />
+            </TabsContent>
+
+            <TabsContent value="tags">
+              <TagsSection 
+                watch={watch}
+                setValue={setValue}
               />
             </TabsContent>
           </Tabs>

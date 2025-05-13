@@ -1,16 +1,10 @@
-
 import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Pencil, Trash2 } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
-
-export type BudgetCategory = {
-  name: string;
-  percentage: number;
-  amount: number;
-};
+import { BudgetCategory } from "./types";
 
 type Props = {
   totalBudget: number;
