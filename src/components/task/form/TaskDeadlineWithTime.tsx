@@ -1,41 +1,36 @@
 
 import React from 'react';
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+import TaskDeadlinePicker from './TaskDeadlinePicker';
 
 interface TaskDeadlineWithTimeProps {
   register: any;
   timeInput: string;
   onTimeChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   watch: any;
+  setValue: (name: string, value: any) => void;
 }
 
 const TaskDeadlineWithTime: React.FC<TaskDeadlineWithTimeProps> = ({
   register,
   timeInput,
   onTimeChange,
-  watch
+  watch,
+  setValue
 }) => {
-  // Safely use watch if it's a function
-  const watchDeadline = typeof watch === 'function' ? watch('deadline') : '';
+  const deadlineValue = watch('deadline');
+  const date = deadlineValue ? new Date(deadlineValue) : undefined;
+  
+  const handleDateChange = (newDate: Date | undefined) => {
+    setValue('deadline', newDate ? newDate.toISOString().split('T')[0] : '');
+  };
   
   return (
-    <div className="space-y-1">
-      <Label htmlFor="deadline">Deadline</Label>
-      <div className="grid grid-cols-2 gap-2">
-        <Input
-          id="deadline"
-          type="date"
-          {...register("deadline")}
-        />
-        <Input
-          id="deadlineTime"
-          type="time"
-          value={timeInput}
-          onChange={onTimeChange}
-        />
-      </div>
-    </div>
+    <TaskDeadlinePicker
+      date={date}
+      timeInput={timeInput}
+      onDateChange={handleDateChange}
+      onTimeChange={onTimeChange}
+    />
   );
 };
 

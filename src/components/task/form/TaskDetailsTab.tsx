@@ -71,6 +71,7 @@ const TaskDetailsTab: React.FC<TaskDetailsTabProps> = ({
           timeInput={timeInput}
           onTimeChange={handleTimeChange}
           watch={watch}
+          setValue={setValue}
         />
       </div>
 
