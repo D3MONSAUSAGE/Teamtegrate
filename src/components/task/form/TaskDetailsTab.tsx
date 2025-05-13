@@ -3,6 +3,8 @@ import React from 'react';
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import TaskDeadlineWithTime from '@/components/task/form/TaskDeadlineWithTime';
+import TaskPriorityField from '@/components/task/form/TaskPriorityField';
+import TaskProjectField from '@/components/task/form/TaskProjectField';
 import { Task } from '@/types';
 import { Project } from '@/types';
 
@@ -15,6 +17,7 @@ interface TaskDetailsTabProps {
   timeInput: string;
   setTimeInput: (time: string) => void;
   watch: any;
+  setValue: (name: string, value: any) => void;
 }
 
 const TaskDetailsTab: React.FC<TaskDetailsTabProps> = ({
@@ -25,7 +28,8 @@ const TaskDetailsTab: React.FC<TaskDetailsTabProps> = ({
   editingTask,
   timeInput,
   setTimeInput,
-  watch
+  watch,
+  setValue
 }) => {
   const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTimeInput(e.target.value);
@@ -57,19 +61,10 @@ const TaskDetailsTab: React.FC<TaskDetailsTabProps> = ({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-1">
-          <Label htmlFor="priority">Priority</Label>
-          <select 
-            id="priority" 
-            className="w-full h-9 rounded-md border border-input px-3"
-            defaultValue={editingTask?.priority || "Medium"}
-            {...register("priority")}
-          >
-            <option value="Low">Low</option>
-            <option value="Medium">Medium</option>
-            <option value="High">High</option>
-          </select>
-        </div>
+        <TaskPriorityField 
+          defaultValue={editingTask?.priority || "Medium"}
+          setValue={setValue}
+        />
 
         <TaskDeadlineWithTime 
           register={register}
@@ -79,23 +74,12 @@ const TaskDetailsTab: React.FC<TaskDetailsTabProps> = ({
         />
       </div>
 
-      <div className="space-y-1">
-        <Label htmlFor="projectId">Project</Label>
-        <select 
-          id="projectId"
-          className="w-full h-9 rounded-md border border-input px-3"
-          defaultValue={currentProjectId || editingTask?.projectId || "none"}
-          disabled={!!currentProjectId}
-          {...register("projectId")}
-        >
-          <option value="none">No Project</option>
-          {projects.map((project) => (
-            <option key={project.id} value={project.id}>
-              {project.title}
-            </option>
-          ))}
-        </select>
-      </div>
+      <TaskProjectField 
+        projects={projects}
+        currentProjectId={currentProjectId}
+        editingTask={editingTask}
+        setValue={setValue}
+      />
       
       <div className="space-y-1">
         <Label htmlFor="cost">Cost</Label>

@@ -104,6 +104,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
                 timeInput={timeInput}
                 setTimeInput={setTimeInput}
                 watch={watch}
+                setValue={setValue}
               />
             </TabsContent>
             
