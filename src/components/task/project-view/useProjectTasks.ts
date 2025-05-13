@@ -11,12 +11,13 @@ export const useProjectTasks = (allTasks: Task[], projectId: string | null) => {
     setSearchQuery('');
   }, [projectId]);
 
-  // Filter tasks that belong to the selected project - memoized to prevent recalculations
+  // Filter tasks that belong to the selected project - now we work with projectTasks directly
   const projectTasks = useMemo(() => {
     if (!projectId || !allTasks || allTasks.length === 0) return [];
     
     console.log(`Filtering tasks for project ${projectId}. Total tasks: ${allTasks.length}`);
-    return allTasks.filter(task => task.projectId === projectId);
+    // The allTasks parameter should already contain only tasks for this project
+    return allTasks; 
   }, [allTasks, projectId]);
 
   // Filter tasks by search query

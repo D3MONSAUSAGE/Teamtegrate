@@ -1,17 +1,27 @@
 
 import { useState, useEffect } from 'react';
 import { useTask } from '@/contexts/task';
+import { Task } from '@/types';
 import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { TeamMember, TeamMemberPerformance } from '@/types/team';
-import { PerformanceChartData } from '@/types/performance';
-import { 
-  calculateTeamMembersPerformance,
-  generateMemberPerformanceChartData,
-  calculateTeamSummaryStats,
-  getWeeklyTeamPerformance
-} from '@/utils/teamPerformanceUtils';
+
+interface TeamMember {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  managerId: string;
+}
+
+interface TeamMemberPerformance extends TeamMember {
+  assignedTasks: Task[];
+  completedTasks: number;
+  totalTasks: number;
+  completionRate: number;
+  dueTodayTasks: number;
+  projects: number;
+}
 
 const useTeamMembers = () => {
   const { tasks, projects } = useTask();
@@ -115,37 +125,68 @@ const useTeamMembers = () => {
     }
   };
   
-  // Calculate team members performance using the utility function
-  const teamMembersPerformance: TeamMemberPerformance[] = calculateTeamMembersPerformance(teamMembers, tasks);
+  // Calculate completion rates and assigned tasks for each member
+  const teamMembersPerformance: TeamMemberPerformance[] = teamMembers.map((member) => {
+    const assignedTasks = tasks.filter(task => task.assignedToId === member.id);
+    
+    const completedTasks = assignedTasks.filter(task => task.status === 'Completed');
+    
+    const completionRate = assignedTasks.length > 0
+      ? Math.round((completedTasks.length / assignedTasks.length) * 100)
+      : 0;
+    
+    // Tasks due today
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const dueTodayTasks = assignedTasks.filter((task) => {
+      const taskDate = new Date(task.deadline);
+      taskDate.setHours(0, 0, 0, 0);
+      return taskDate.getTime() === today.getTime();
+    });
+    
+    // Get projects this member is involved in
+    const memberProjects = projects.filter(project => 
+      project.tasks.some(task => task.assignedToId === member.id)
+    );
+    
+    return {
+      ...member,
+      assignedTasks,
+      completedTasks: completedTasks.length,
+      totalTasks: assignedTasks.length,
+      completionRate,
+      dueTodayTasks: dueTodayTasks.length,
+      projects: memberProjects.length,
+    };
+  });
   
-  // Calculate weekly team performance
-  const weeklyTeamPerformance: TeamMemberPerformance[] = getWeeklyTeamPerformance(teamMembers, tasks);
+  // Generate data specifically for the performance bar chart
+  const memberPerformanceChartData = teamMembersPerformance.map(member => ({
+    name: member.name,
+    assignedTasks: member.totalTasks,
+    completedTasks: member.completedTasks,
+    completionRate: member.completionRate
+  }));
   
-  // Generate chart data using the utility function for overall performance
-  const memberPerformanceChartData: PerformanceChartData[] = generateMemberPerformanceChartData(teamMembersPerformance);
+  // Calculate summary statistics
+  const totalTasksAssigned = teamMembersPerformance.reduce(
+    (sum, member) => sum + member.totalTasks, 0
+  );
   
-  // Generate chart data for weekly performance
-  const weeklyPerformanceChartData: PerformanceChartData[] = generateMemberPerformanceChartData(weeklyTeamPerformance);
-  
-  // Calculate summary statistics using the utility function
-  const { totalTasksAssigned, totalTasksCompleted, totalCompletionRate } = calculateTeamSummaryStats(teamMembersPerformance);
-  
-  // Calculate weekly summary statistics
-  const weeklyStats = calculateTeamSummaryStats(weeklyTeamPerformance);
+  const totalTasksCompleted = teamMembersPerformance.reduce(
+    (sum, member) => sum + member.completedTasks, 0
+  );
   
   return {
     teamMembers,
     teamMembersPerformance,
-    weeklyTeamPerformance,
     memberPerformanceChartData,
-    weeklyPerformanceChartData,
     isLoading,
     removeTeamMember,
     refreshTeamMembers,
     totalTasksAssigned,
     totalTasksCompleted,
-    totalCompletionRate,
-    weeklyStats,
     teamMembersCount: teamMembers.length,
     projectsCount: projects.length,
   };

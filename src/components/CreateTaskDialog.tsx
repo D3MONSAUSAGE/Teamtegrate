@@ -6,10 +6,10 @@ import { Task } from '@/types';
 import { useTask } from '@/contexts/task';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useTaskForm } from '@/hooks/useTaskForm';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TaskDetailsSection } from '@/components/task/form/TaskDetailsSection';
 import { TaskAssignmentSection } from '@/components/task/form/TaskAssignmentSection';
+import { useTaskFormWithTime } from '@/hooks/useTaskFormWithTime';
+import TaskDetailsTab from '@/components/task/form/TaskDetailsTab';
 
 interface CreateTaskDialogProps {
   open: boolean;
@@ -25,7 +25,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
   currentProjectId 
 }) => {
   const { user } = useAuth();
-  const { addTask, updateTask, projects } = useTask();
+  const { projects } = useTask();
   const isEditMode = !!editingTask;
   const isMobile = useIsMobile();
   
@@ -36,44 +36,20 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
     reset,
     setValue,
     selectedMember,
-    setSelectedMember
-  } = useTaskForm(editingTask, currentProjectId);
+    setSelectedMember,
+    watch,
+    timeInput,
+    setTimeInput,
+    handleFormSubmit
+  } = useTaskFormWithTime(editingTask, currentProjectId);
 
   const onSubmit = (data: any) => {
-    // Handle the case where deadline might come as string or Date
-    const deadlineDate = typeof data.deadline === 'string' 
-      ? new Date(data.deadline)
-      : data.deadline;
-
-    if (isEditMode && editingTask) {
-      updateTask(editingTask.id, {
-        ...data,
-        deadline: deadlineDate,
-        assignedToId: selectedMember === "unassigned" ? undefined : selectedMember,
-        assignedToName: data.assignedToName
-      });
-    } else {
-      addTask({
-        title: data.title,
-        description: data.description,
-        priority: data.priority,
-        deadline: deadlineDate,
-        status: 'To Do',
-        userId: user?.id || '',
-        projectId: data.projectId === "none" ? undefined : data.projectId,
-        assignedToId: selectedMember === "unassigned" ? undefined : selectedMember,
-        assignedToName: data.assignedToName
-      });
-    }
-    onOpenChange(false);
-    reset();
-    setSelectedMember(undefined);
+    handleFormSubmit(data, () => onOpenChange(false));
   };
 
   const handleCancel = () => {
     onOpenChange(false);
     reset();
-    setSelectedMember(undefined);
   };
 
   return (
@@ -94,12 +70,15 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
             </TabsList>
             
             <TabsContent value="details" className="space-y-4">
-              <TaskDetailsSection 
-                register={register}
-                errors={errors}
+              <TaskDetailsTab 
+                register={register} 
+                errors={errors} 
                 projects={projects}
-                editingTask={editingTask}
                 currentProjectId={currentProjectId}
+                editingTask={editingTask}
+                timeInput={timeInput}
+                setTimeInput={setTimeInput}
+                watch={watch}
                 setValue={setValue}
               />
             </TabsContent>

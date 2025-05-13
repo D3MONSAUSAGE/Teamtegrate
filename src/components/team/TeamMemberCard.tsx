@@ -4,9 +4,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Loader2, Trash2, Calendar } from 'lucide-react';
+import { Loader2, Trash2 } from 'lucide-react';
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface TeamMemberCardProps {
   member: {
@@ -18,7 +17,6 @@ interface TeamMemberCardProps {
     totalTasks: number;
     dueTodayTasks: number;
     projects: number;
-    projectIds?: string[]; // Added to display project details
   };
   onRemove: (memberId: string) => void;
   isRemoving?: boolean;
@@ -77,31 +75,15 @@ const TeamMemberCard: React.FC<TeamMemberCardProps> = ({
           </div>
           
           <div className="grid grid-cols-2 gap-2">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="bg-blue-50 dark:bg-blue-900/20 p-2 rounded-md text-blue-800 dark:text-blue-200">
-                  <div className="text-xs flex items-center gap-1 text-gray-500 dark:text-gray-400">
-                    <Calendar className="h-3 w-3" /> Due Today
-                  </div>
-                  <div className="font-semibold">{member.dueTodayTasks}</div>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Tasks due today for this team member</p>
-              </TooltipContent>
-            </Tooltip>
+            <div className="bg-blue-50 dark:bg-blue-900/20 p-2 rounded-md text-blue-800 dark:text-blue-200">
+              <div className="text-xs text-gray-500 dark:text-gray-400">Due Today</div>
+              <div className="font-semibold">{member.dueTodayTasks}</div>
+            </div>
             
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="bg-purple-50 dark:bg-purple-900/20 p-2 rounded-md text-purple-800 dark:text-purple-200">
-                  <div className="text-xs text-gray-500 dark:text-gray-400">Projects</div>
-                  <div className="font-semibold">{member.projects}</div>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Number of projects this team member is assigned to</p>
-              </TooltipContent>
-            </Tooltip>
+            <div className="bg-purple-50 dark:bg-purple-900/20 p-2 rounded-md text-purple-800 dark:text-purple-200">
+              <div className="text-xs text-gray-500 dark:text-gray-400">Projects</div>
+              <div className="font-semibold">{member.projects}</div>
+            </div>
           </div>
         </div>
       </CardContent>

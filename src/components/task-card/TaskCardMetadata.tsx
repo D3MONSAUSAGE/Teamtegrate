@@ -7,19 +7,16 @@ import { motion } from 'framer-motion';
 interface TaskCardMetadataProps {
   deadline: Date;
   assignedToName?: string;
-  assignedToId?: string;
+  isOverdue: boolean;
 }
 
 const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({
   deadline,
   assignedToName,
-  assignedToId,
+  isOverdue,
 }) => {
-  // Only consider a task unassigned if there's no assignedToId
-  const isUnassigned = !assignedToId;
-  
   // Format the display name - if empty or undefined, show "Unassigned"
-  const displayName = !isUnassigned && assignedToName && assignedToName.trim() !== '' 
+  const displayName = assignedToName && assignedToName.trim() !== '' 
     ? assignedToName 
     : 'Unassigned';
 
@@ -32,17 +29,10 @@ const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({
   const isTomorrow = tomorrow.toDateString() === new Date(deadline).toDateString();
   
   // Set deadline class based on urgency
-  const deadlineClass = isToday ? "text-orange-500 font-medium" : 
+  const deadlineClass = isOverdue ? "text-red-500 font-medium" :
+                       isToday ? "text-orange-500 font-medium" : 
                        isTomorrow ? "text-amber-500" : 
                        "text-gray-500";
-
-  // Debug logging for assignment issues
-  console.log('Task assignment details:', {
-    assignedToId,
-    assignedToName,
-    isUnassigned,
-    displayName
-  });
 
   return (
     <div className="flex items-center justify-between pt-1 md:pt-2">
@@ -64,8 +54,7 @@ const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({
       >
         <User className="h-3 w-3 flex-shrink-0" />
         <span 
-          className={`truncate max-w-[100px] ${isUnassigned ? "italic text-gray-400" : ""}`}
-          title={displayName}
+          className={`truncate max-w-[100px] ${assignedToName ? "" : "italic text-gray-400"}`}
         >
           {displayName}
         </span>

@@ -11,14 +11,11 @@ const TeamManagement: React.FC = () => {
   const { isMobile } = useBreakpoint();
   
   useEffect(() => {
-    // Check for team members in local storage as a fallback
     const storedMembers = localStorage.getItem('teamMembers');
     if (storedMembers) {
       const members = JSON.parse(storedMembers);
       setTeamMembersCount(members.length);
     }
-    
-    // This could be enhanced to fetch from Supabase directly
   }, []);
 
   return (

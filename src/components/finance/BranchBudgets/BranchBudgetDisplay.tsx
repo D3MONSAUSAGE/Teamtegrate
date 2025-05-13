@@ -1,10 +1,33 @@
+
 import React from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Pencil, Trash2 } from "lucide-react";
 import { format } from "date-fns";
-import { Branch, BranchBudget } from "./types";
+
+type Branch = {
+  id: string;
+  name: string;
+  location?: string | null;
+  created_at: string;
+};
+
+type BudgetCategory = {
+  name: string;
+  percentage: number;
+  amount: number;
+};
+type BranchBudget = {
+  id: string;
+  branch_id: string;
+  period: string;
+  total_budget: number;
+  notes?: string | null;
+  categories?: BudgetCategory[];
+  created_at: string;
+  updated_at: string;
+};
 
 type Props = {
   branch: Branch;

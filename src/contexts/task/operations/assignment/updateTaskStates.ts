@@ -15,31 +15,16 @@ export const updateTaskStates = (
 ): void => {
   const now = new Date();
   
-  // Ensure taskId is normalized as a string
-  const normalizedTaskId = String(taskId);
-  
-  console.log('Updating task states with:', {
-    taskId: normalizedTaskId,
-    userId,
-    userName,
-    projectId
-  });
-  
   // Update the task in the tasks array
   setTasks(prevTasks => prevTasks.map(task => {
-    if (String(task.id) === normalizedTaskId) {
-      console.log('Updating task assignment in tasks array:', {
-        taskId: normalizedTaskId,
-        before: {
-          assignedToId: task.assignedToId,
-          assignedToName: task.assignedToName
-        },
-        after: {
-          assignedToId: userId,
-          assignedToName: userName
-        }
+    if (task.id === taskId) {
+      console.log('Updating task in tasks array', { 
+        taskId, 
+        userId, 
+        userName,
+        before: task.assignedToName || 'none',
+        after: userName || 'none'
       });
-      
       return { 
         ...task, 
         assignedToId: userId, 
@@ -54,24 +39,19 @@ export const updateTaskStates = (
   if (projectId) {
     setProjects(prevProjects => {
       return prevProjects.map(project => {
-        if (project.id === projectId && Array.isArray(project.tasks)) {
+        if (project.id === projectId) {
           return {
             ...project,
             tasks: project.tasks.map(projectTask => {
-              if (String(projectTask.id) === normalizedTaskId) {
-                console.log('Updating task assignment in project:', {
+              if (projectTask.id === taskId) {
+                console.log('Updating task in project', {
                   projectId,
-                  taskId: normalizedTaskId,
-                  before: {
-                    assignedToId: projectTask.assignedToId,
-                    assignedToName: projectTask.assignedToName
-                  },
-                  after: {
-                    assignedToId: userId,
-                    assignedToName: userName
-                  }
+                  taskId,
+                  userId,
+                  userName,
+                  before: projectTask.assignedToName || 'none',
+                  after: userName || 'none'
                 });
-                
                 return { 
                   ...projectTask, 
                   assignedToId: userId, 
