@@ -3,8 +3,12 @@ import { useState, useEffect } from 'react';
 import { useTaskForm } from './useTaskForm';
 import { Task } from '@/types';
 import { format } from 'date-fns';
+import { useTask } from '@/contexts/task';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const useTaskFormWithTime = (editingTask?: Task, currentProjectId?: string) => {
+  const { user } = useAuth();
+  const { addTask, updateTask } = useTask();
   const {
     register,
     handleSubmit,
@@ -47,6 +51,36 @@ export const useTaskFormWithTime = (editingTask?: Task, currentProjectId?: strin
     return deadlineDate;
   };
 
+  const handleFormSubmit = (data: any, onClose: () => void) => {
+    // Get deadline with time component
+    const deadlineDate = prepareDateWithTime(data.deadline);
+    const isEditMode = !!editingTask;
+
+    if (isEditMode && editingTask) {
+      updateTask(editingTask.id, {
+        ...data,
+        deadline: deadlineDate,
+        assignedToId: selectedMember === "unassigned" ? undefined : selectedMember,
+        assignedToName: data.assignedToName
+      });
+    } else {
+      addTask({
+        title: data.title,
+        description: data.description,
+        priority: data.priority,
+        deadline: deadlineDate,
+        status: 'To Do',
+        userId: user?.id || '',
+        projectId: data.projectId === "none" ? undefined : data.projectId,
+        assignedToId: selectedMember === "unassigned" ? undefined : selectedMember,
+        assignedToName: data.assignedToName,
+        cost: data.cost || 0
+      });
+    }
+    onClose();
+    resetForm();
+  };
+
   return {
     register,
     handleSubmit,
@@ -58,6 +92,7 @@ export const useTaskFormWithTime = (editingTask?: Task, currentProjectId?: strin
     watch,
     timeInput,
     setTimeInput,
-    prepareDateWithTime
+    prepareDateWithTime,
+    handleFormSubmit
   };
 };

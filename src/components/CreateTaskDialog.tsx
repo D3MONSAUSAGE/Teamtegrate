@@ -25,7 +25,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
   currentProjectId 
 }) => {
   const { user } = useAuth();
-  const { addTask, updateTask, projects } = useTask();
+  const { projects } = useTask();
   const isEditMode = !!editingTask;
   const isMobile = useIsMobile();
   
@@ -40,36 +40,11 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
     watch,
     timeInput,
     setTimeInput,
-    prepareDateWithTime
+    handleFormSubmit
   } = useTaskFormWithTime(editingTask, currentProjectId);
 
   const onSubmit = (data: any) => {
-    // Get deadline with time component
-    const deadlineDate = prepareDateWithTime(data.deadline);
-
-    if (isEditMode && editingTask) {
-      updateTask(editingTask.id, {
-        ...data,
-        deadline: deadlineDate,
-        assignedToId: selectedMember === "unassigned" ? undefined : selectedMember,
-        assignedToName: data.assignedToName
-      });
-    } else {
-      addTask({
-        title: data.title,
-        description: data.description,
-        priority: data.priority,
-        deadline: deadlineDate,
-        status: 'To Do',
-        userId: user?.id || '',
-        projectId: data.projectId === "none" ? undefined : data.projectId,
-        assignedToId: selectedMember === "unassigned" ? undefined : selectedMember,
-        assignedToName: data.assignedToName,
-        cost: data.cost || 0
-      });
-    }
-    onOpenChange(false);
-    reset();
+    handleFormSubmit(data, () => onOpenChange(false));
   };
 
   const handleCancel = () => {
