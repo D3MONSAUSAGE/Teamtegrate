@@ -13,10 +13,6 @@ export const addTask = async (
   setProjects: React.Dispatch<React.SetStateAction<any[]>>
 ): Promise<void> => {
   try {
-    // Log the task being created for debugging
-    console.log('Creating task:', task);
-    console.log('Task has project ID?', task.projectId ? 'Yes: ' + task.projectId : 'No');
-
     const newTask = {
       ...task,
       id: uuidv4(),
@@ -31,16 +27,16 @@ export const addTask = async (
         {
           id: newTask.id,
           user_id: newTask.userId,
-          project_id: newTask.projectId || null,
+          project_id: newTask.projectId,
           title: newTask.title,
           description: newTask.description,
-          deadline: newTask.deadline ? newTask.deadline.toISOString() : null,
+          deadline: newTask.deadline.toISOString(),
           priority: newTask.priority,
           status: newTask.status,
           created_at: newTask.createdAt.toISOString(),
           updated_at: newTask.updatedAt.toISOString(),
-          assigned_to_id: newTask.assignedToId || null,
-          assigned_to_name: newTask.assignedToName || null,
+          assigned_to_id: newTask.assignedToId,
+          assigned_to_name: newTask.assignedToName,
           cost: newTask.cost || 0,
         },
       ])
@@ -52,26 +48,18 @@ export const addTask = async (
       return;
     }
 
-    console.log('Task created in DB, updating state...');
-    // Update tasks array with the new task
-    setTasks(currentTasks => [...currentTasks, newTask]);
-    console.log('Tasks array updated, now contains', tasks.length + 1, 'tasks');
+    setTasks([...tasks, newTask]);
 
-    // Only update projects if the task has a project ID
     if (newTask.projectId) {
-      console.log('Updating project with ID:', newTask.projectId);
       setProjects((prevProjects) =>
         prevProjects.map((project) =>
           project.id === newTask.projectId
-            ? { ...project, tasks: [...(project.tasks || []), newTask] }
+            ? { ...project, tasks: [...project.tasks, newTask] }
             : project
         )
       );
-    } else {
-      console.log('Task has no project, skipping project update');
     }
 
-    console.log('Task added successfully:', newTask);
     toast.success('Task added successfully!');
   } catch (error) {
     console.error('Error adding task:', error);

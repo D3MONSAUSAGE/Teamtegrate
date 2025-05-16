@@ -1,6 +1,6 @@
 
 import { Task, DailyScore } from '@/types';
-import { sub, format, isSameDay, startOfDay } from 'date-fns';
+import { sub, format, isSameDay } from 'date-fns';
 
 export const calculateDailyScore = (tasks: Task[]): DailyScore => {
   if (!tasks.length) {
@@ -15,30 +15,13 @@ export const calculateDailyScore = (tasks: Task[]): DailyScore => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
-  // More detailed logging to debug task filtering
-  console.log('Total tasks count:', tasks.length);
-  
   const todaysTasks = tasks.filter((task) => {
-    if (!task.deadline) {
-      console.log('Task without deadline:', task.title);
-      return false;
-    }
-    
-    const taskDeadline = new Date(task.deadline);
-    const isSameAsToday = isSameDay(taskDeadline, today);
-    
-    if (isSameAsToday) {
-      console.log('Task due today:', task.title, task.status);
-    }
-    
-    return isSameAsToday;
+    const taskDate = new Date(task.deadline);
+    taskDate.setHours(0, 0, 0, 0);
+    return taskDate.getTime() === today.getTime();
   });
-  
-  console.log('Tasks due today count:', todaysTasks.length);
 
   const completed = todaysTasks.filter((task) => task.status === 'Completed').length;
-  console.log('Completed tasks today:', completed);
-  
   const total = todaysTasks.length;
   const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
 
@@ -60,11 +43,9 @@ export const getTasksCompletionByDate = (tasks: Task[], days: number = 7): Array
     const date = sub(today, { days: i });
     
     const dayTasks = tasks.filter(task => {
-      if (!task.deadline) return false;
-      
       const taskDate = new Date(task.deadline);
       taskDate.setHours(0, 0, 0, 0);
-      return isSameDay(taskDate, date);
+      return taskDate.getTime() === date.getTime();
     });
     
     const completed = dayTasks.filter(task => task.status === 'Completed').length;

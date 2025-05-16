@@ -109,12 +109,10 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       setIsLoading(true);
       try {
-        console.log('Loading tasks and projects for user:', user.id);
         await Promise.all([
           fetchUserProjects(user, setProjects),
           fetchUserTasks(user, setTasks)
         ]);
-        console.log('Data loaded successfully');
       } catch (error) {
         console.error("Error loading data:", error);
         toast.error("Failed to load data");
@@ -126,13 +124,10 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loadData();
   }, [user]);
 
-  // Update dailyScore whenever tasks changes
   useEffect(() => {
     if (user) {
-      console.log('Recalculating daily score for', tasks.length, 'tasks');
       const score = calculateDailyScore(tasks);
       setDailyScore(score);
-      console.log('Daily score updated:', score);
     }
   }, [tasks, user]);
 

@@ -30,7 +30,7 @@ const TaskDeadlinePicker: React.FC<TaskDeadlinePickerProps> = ({
 }) => {
   return (
     <div className="space-y-2">
-      <Label>Deadline</Label>
+      <Label>Deadline <span className="text-red-500">*</span></Label>
       <div className="flex flex-col sm:flex-row gap-2">
         <Popover>
           <PopoverTrigger asChild>
