@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, SlidersHorizontal, Tag } from "lucide-react";
+import { Plus, Search, SlidersHorizontal, Tag, RefreshCw } from "lucide-react";
 import { useProjects } from '@/hooks/useProjects';
 import ProjectCard from '@/components/project-card';
 import CreateProjectDialog from '@/components/CreateProjectDialog';
@@ -22,7 +22,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 
 const ProjectsPage = () => {
-  const { projects, isLoading, refreshProjects } = useProjects();
+  const { projects, isLoading, refreshProjects, error } = useProjects();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showCreateTaskDialog, setShowCreateTaskDialog] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>(undefined);
@@ -30,12 +30,13 @@ const ProjectsPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'All'>('All');
   const [tagFilter, setTagFilter] = useState<string | 'All'>('All');
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const navigate = useNavigate();
 
   // Modified effect to prevent infinite refreshing
   useEffect(() => {
     // Only try refreshing once if no projects and not loading
-    if (projects.length === 0 && !isLoading && !hasAttemptedRefresh) {
+    if (!isLoading && !hasAttemptedRefresh) {
       const handleRefresh = async () => {
         try {
           setHasAttemptedRefresh(true); // Mark that we've tried refreshing
@@ -48,7 +49,7 @@ const ProjectsPage = () => {
       
       handleRefresh();
     }
-  }, [projects.length, isLoading, hasAttemptedRefresh, refreshProjects]);
+  }, [isLoading, hasAttemptedRefresh, refreshProjects]);
 
   const handleViewTasks = (projectId: string) => {
     navigate(`/dashboard/projects/${projectId}/tasks`);
@@ -67,6 +68,20 @@ const ProjectsPage = () => {
     refreshProjects();
     toast.success("Project created successfully!");
   };
+  
+  const handleManualRefresh = async () => {
+    try {
+      setIsRefreshing(true);
+      setHasAttemptedRefresh(false); // Reset refresh state
+      await refreshProjects();
+      toast.success("Projects refreshed successfully");
+    } catch (error) {
+      console.error("Error refreshing projects:", error);
+      toast.error("Failed to refresh projects");
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   // Extract all unique tags from projects
   const allTags = React.useMemo(() => {
@@ -81,8 +96,9 @@ const ProjectsPage = () => {
 
   // Filter projects based on search query, status, and tags
   const filteredProjects = projects.filter(project => {
-    const matchesSearch = project.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          project.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = !searchQuery || 
+                         project.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                         project.description?.toLowerCase().includes(searchQuery.toLowerCase());
     
     const matchesStatus = statusFilter === 'All' || project.status === statusFilter;
     
@@ -91,6 +107,38 @@ const ProjectsPage = () => {
     
     return matchesSearch && matchesStatus && matchesTag;
   });
+
+  // Log all projects for debugging
+  useEffect(() => {
+    if (projects.length > 0) {
+      console.log(`Total projects loaded: ${projects.length}`);
+      projects.forEach(p => console.log(`Project: ${p.id}, "${p.title}", Manager: ${p.managerId}`));
+    }
+  }, [projects]);
+
+  // Show error state if there's an error
+  if (error) {
+    return (
+      <div className="container mx-auto p-4">
+        <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <span className="text-red-400">⚠️</span>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-red-700">
+                Error loading projects: {error.message}
+              </p>
+            </div>
+          </div>
+        </div>
+        <Button onClick={handleManualRefresh} disabled={isRefreshing}>
+          <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+          {isRefreshing ? 'Refreshing...' : 'Retry'}
+        </Button>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -104,9 +152,19 @@ const ProjectsPage = () => {
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Projects</h1>
-        <Button onClick={() => setShowCreateDialog(true)}>
-          <Plus className="w-4 h-4 mr-2" /> New Project
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline"
+            onClick={handleManualRefresh} 
+            disabled={isRefreshing}
+          >
+            <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+            {isRefreshing ? 'Refreshing...' : 'Refresh'}
+          </Button>
+          <Button onClick={() => setShowCreateDialog(true)}>
+            <Plus className="w-4 h-4 mr-2" /> New Project
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-col md:flex-row gap-4 mb-6">
@@ -166,6 +224,12 @@ const ProjectsPage = () => {
         )}
       </div>
 
+      {/* Debug info */}
+      <div className="mb-4 text-sm text-gray-500">
+        Found {filteredProjects.length} project{filteredProjects.length !== 1 ? 's' : ''} 
+        {filteredProjects.length !== projects.length ? ` (filtered from ${projects.length} total)` : ''}
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredProjects.map(project => (
           <ProjectCard 
@@ -188,7 +252,14 @@ const ProjectsPage = () => {
         
         {projects.length > 0 && filteredProjects.length === 0 && (
           <div className="col-span-1 md:col-span-2 lg:col-span-3 p-8 text-center border rounded-lg bg-white dark:bg-card">
-            <p className="text-gray-500">No matching projects found</p>
+            <p className="text-gray-500 mb-4">No matching projects found</p>
+            <Button onClick={() => {
+              setSearchQuery('');
+              setStatusFilter('All');
+              setTagFilter('All');
+            }}>
+              Clear Filters
+            </Button>
           </div>
         )}
       </div>

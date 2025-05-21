@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { Project, ProjectStatus, Task } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,96 +27,55 @@ export const useProjects = () => {
       
       console.log('Fetching projects for user:', user.id);
       
-      // Fix the query to correctly handle the OR condition
-      const { data, error } = await supabase
-        .from('projects')
-        .select('*')
-        .or(`manager_id.eq.${user.id},team_members.cs.{${user.id}}`)
-        .order('created_at', { ascending: false });
+      // First try to fetch using OR condition, if that fails fall back to individual queries
+      try {
+        // Attempt to fetch with OR condition
+        const { data, error } = await supabase
+          .from('projects')
+          .select('*')
+          .or(`manager_id.eq.${user.id},team_members.cs.{${user.id}}`)
+          .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching projects:', error);
-        setError(new Error(error.message));
-        setProjects([]);
-        return;
-      }
-
-      console.log('Projects fetched:', data);
-
-      const formattedProjects: Project[] = data.map(project => {
-        // Get project tasks to calculate accurate status
-        const projectTasks = tasks.filter(task => task.projectId === project.id);
-        const totalTasks = projectTasks.length;
-        const completedTasks = projectTasks.filter(task => task.status === 'Completed').length;
-        
-        // Calculate progress based on completed tasks
-        const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-        
-        // Determine status based on task completion
-        let status = project.status || 'To Do';
-        let isCompleted = project.is_completed || false;
-        
-        // Fix any status inconsistencies
-        if (totalTasks > 0) {
-          const allTasksCompleted = completedTasks === totalTasks;
-          
-          if (allTasksCompleted) {
-            status = 'Completed';
-            isCompleted = true;
-          } else {
-            // If not all tasks are completed, project cannot be marked as completed
-            if (status === 'Completed' || isCompleted) {
-              status = 'In Progress';
-              isCompleted = false;
-              
-              // Log the status correction
-              console.log(`Project ${project.id} status corrected: not all tasks complete but was marked as Completed`);
-            }
-          }
+        if (error) {
+          throw error;
         }
         
-        console.log(`Project ${project.id}: status=${status}, is_completed=${isCompleted}, tasks=${totalTasks}, completed=${completedTasks}, progress=${progress}%`);
+        console.log(`Successfully fetched ${data.length} projects using OR condition`);
+        processProjectData(data);
+      } catch (error) {
+        console.error('Error with OR condition fetch, falling back to separate queries:', error);
         
-        return {
-          id: project.id,
-          title: project.title || '',
-          description: project.description || '',
-          startDate: project.start_date ? new Date(project.start_date) : new Date(),
-          endDate: project.end_date ? new Date(project.end_date) : new Date(),
-          managerId: project.manager_id || '',
-          createdAt: project.created_at ? new Date(project.created_at) : new Date(),
-          updatedAt: project.updated_at ? new Date(project.updated_at) : new Date(),
-          tasks: projectTasks,
-          teamMembers: project.team_members || [],
-          budget: project.budget || 0,
-          budgetSpent: project.budget_spent || 0,
-          is_completed: isCompleted,
-          status: status as ProjectStatus,
-          tasks_count: totalTasks,
-          tags: project.tags || []
-        };
-      });
-
-      console.log('Formatted projects with task data:', formattedProjects);
-      
-      // Check for any projects with status inconsistencies that need to be fixed in database
-      for (const project of formattedProjects) {
-        const dbProject = data.find(p => p.id === project.id);
-        
-        if (dbProject && (dbProject.status !== project.status || dbProject.is_completed !== project.is_completed)) {
-          console.log(`Fixing project ${project.id} status in database: ${dbProject.status}→${project.status}, ${dbProject.is_completed}→${project.is_completed}`);
+        // Fallback: Fetch projects where user is manager
+        const { data: managerProjects, error: managerError } = await supabase
+          .from('projects')
+          .select('*')
+          .eq('manager_id', user.id)
+          .order('created_at', { ascending: false });
           
-          await supabase
-            .from('projects')
-            .update({
-              status: project.status,
-              is_completed: project.is_completed
-            })
-            .eq('id', project.id);
+        if (managerError) {
+          console.error('Error fetching manager projects:', managerError);
         }
+        
+        // Fetch projects where user is team member
+        const { data: teamProjects, error: teamError } = await supabase
+          .from('projects')
+          .select('*')
+          .contains('team_members', [user.id])
+          .order('created_at', { ascending: false });
+          
+        if (teamError) {
+          console.error('Error fetching team projects:', teamError);
+        }
+        
+        // Combine results and remove duplicates
+        const combinedProjects = [...(managerProjects || []), ...(teamProjects || [])];
+        const uniqueProjects = Array.from(
+          new Map(combinedProjects.map(project => [project.id, project])).values()
+        );
+        
+        console.log(`Fetched ${uniqueProjects.length} projects using separate queries`);
+        processProjectData(uniqueProjects);
       }
-      
-      setProjects(formattedProjects);
     } catch (error) {
       console.error('Error fetching projects:', error);
       setError(error instanceof Error ? error : new Error('Unknown error'));
@@ -124,6 +84,94 @@ export const useProjects = () => {
       setIsLoading(false);
     }
   }, [user, tasks]);
+
+  // Helper function to process project data
+  const processProjectData = (data: any[]) => {
+    if (!data || data.length === 0) {
+      console.log('No projects found in database');
+      setProjects([]);
+      return;
+    }
+    
+    console.log('Raw projects data:', data);
+    
+    const formattedProjects: Project[] = data.map(project => {
+      // Get project tasks to calculate accurate status
+      const projectTasks = tasks.filter(task => task.projectId === project.id);
+      const totalTasks = projectTasks.length;
+      const completedTasks = projectTasks.filter(task => task.status === 'Completed').length;
+      
+      // Calculate progress based on completed tasks
+      const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+      
+      // Determine status based on task completion
+      let status = project.status || 'To Do';
+      let isCompleted = project.is_completed || false;
+      
+      // Fix any status inconsistencies
+      if (totalTasks > 0) {
+        const allTasksCompleted = completedTasks === totalTasks;
+        
+        if (allTasksCompleted) {
+          status = 'Completed';
+          isCompleted = true;
+        } else {
+          // If not all tasks are completed, project cannot be marked as completed
+          if (status === 'Completed' || isCompleted) {
+            status = 'In Progress';
+            isCompleted = false;
+            
+            // Log the status correction
+            console.log(`Project ${project.id} status corrected: not all tasks complete but was marked as Completed`);
+          }
+        }
+      }
+      
+      console.log(`Project ${project.id}: title=${project.title}, status=${status}, is_completed=${isCompleted}, tasks=${totalTasks}, completed=${completedTasks}, progress=${progress}%`);
+      
+      return {
+        id: project.id,
+        title: project.title || '',
+        description: project.description || '',
+        startDate: project.start_date ? new Date(project.start_date) : new Date(),
+        endDate: project.end_date ? new Date(project.end_date) : new Date(),
+        managerId: project.manager_id || '',
+        createdAt: project.created_at ? new Date(project.created_at) : new Date(),
+        updatedAt: project.updated_at ? new Date(project.updated_at) : new Date(),
+        tasks: projectTasks,
+        teamMembers: project.team_members || [],
+        budget: project.budget || 0,
+        budgetSpent: project.budget_spent || 0,
+        is_completed: isCompleted,
+        status: status as ProjectStatus,
+        tasks_count: totalTasks,
+        tags: project.tags || []
+      };
+    });
+
+    console.log('Formatted projects with task data:', formattedProjects);
+    
+    // Check for any projects with status inconsistencies that need to be fixed in database
+    for (const project of formattedProjects) {
+      const dbProject = data.find(p => p.id === project.id);
+      
+      if (dbProject && (dbProject.status !== project.status || dbProject.is_completed !== project.is_completed)) {
+        console.log(`Fixing project ${project.id} status in database: ${dbProject.status}→${project.status}, ${dbProject.is_completed}→${project.is_completed}`);
+        
+        (async () => {
+          await supabase
+            .from('projects')
+            .update({
+              status: project.status,
+              is_completed: project.is_completed
+            })
+            .eq('id', project.id);
+        })();
+      }
+    }
+    
+    setProjects(formattedProjects);
+  };
 
   useEffect(() => {
     if (user) {
