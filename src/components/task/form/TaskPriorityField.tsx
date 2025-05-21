@@ -17,6 +17,14 @@ export const TaskPriorityField: React.FC<TaskPriorityFieldProps> = ({
   defaultValue = "Medium",
   setValue
 }) => {
+  // Register the priority field with react-hook-form
+  const { ref, ...rest } = register("priority", { required: "Priority is required" });
+  
+  // Handle radio option changes
+  const handlePriorityChange = (value: string) => {
+    setValue("priority", value as TaskPriority, { shouldValidate: true });
+  };
+
   React.useEffect(() => {
     if (defaultValue) {
       setValue("priority", defaultValue);
@@ -29,7 +37,8 @@ export const TaskPriorityField: React.FC<TaskPriorityFieldProps> = ({
       <RadioGroup 
         defaultValue={defaultValue} 
         className="flex space-x-4"
-        {...register("priority", { required: "Priority is required" })}
+        onValueChange={handlePriorityChange}
+        {...rest}
       >
         <div className="flex items-center space-x-2">
           <RadioGroupItem value="Low" id="low" />
