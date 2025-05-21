@@ -32,7 +32,8 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
     handleCreateTask,
     handleManualRefresh,
     handleTaskStatusChange,
-    onSortByChange
+    onSortByChange,
+    handleTaskDialogComplete
   } = useProjectTasksView(projectId || null);
 
   // Log component rendering for debugging
@@ -89,6 +90,7 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
         onOpenChange={setIsCreateTaskOpen}
         editingTask={editingTask}
         currentProjectId={projectId ?? undefined}
+        onTaskComplete={handleTaskDialogComplete}
       />
     </>
   );

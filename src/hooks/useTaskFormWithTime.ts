@@ -64,7 +64,7 @@ export const useTaskFormWithTime = (
   });
 
   // Submit handler
-  const handleFormSubmit = (data: TaskFormValues) => {
+  const handleFormSubmit = async (data: TaskFormValues) => {
     if (!user) return;
     
     // Combine date and time into a single Date object
@@ -93,22 +93,26 @@ export const useTaskFormWithTime = (
       assignedToId: selectedMember === "unassigned" ? undefined : selectedMember,
     };
 
-    // Create or edit task
-    if (editingTask) {
-      updateTask(editingTask.id, formData);
-    } else {
-      addTask({
-        ...formData,
-        status: 'To Do',
-        userId: user.id,
-        projectId: data.projectId === "none" ? undefined : data.projectId,
-      });
-    }
+    try {
+      // Create or edit task
+      if (editingTask) {
+        await updateTask(editingTask.id, formData);
+      } else {
+        await addTask({
+          ...formData,
+          status: 'To Do',
+          userId: user.id,
+          projectId: data.projectId === "none" ? undefined : data.projectId,
+        });
+      }
 
-    // Reset form and call completion callback
-    reset();
-    setSelectedMember(undefined);
-    if (onTaskComplete) onTaskComplete();
+      // Reset form and call completion callback
+      reset();
+      setSelectedMember(undefined);
+      if (onTaskComplete) onTaskComplete();
+    } catch (error) {
+      console.error("Error saving task:", error);
+    }
   };
 
   // Handle date change

@@ -14,13 +14,15 @@ interface CreateTaskDialogProps {
   onOpenChange: (open: boolean) => void;
   editingTask?: Task;
   currentProjectId?: string;
+  onTaskComplete?: () => void;
 }
 
 const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({ 
   open, 
   onOpenChange, 
   editingTask,
-  currentProjectId 
+  currentProjectId,
+  onTaskComplete
 }) => {
   const isEditMode = !!editingTask;
   const isMobile = useIsMobile();
@@ -36,7 +38,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
     handleTimeChange,
     handleFormSubmit,
     setValue
-  } = useTaskFormWithTime(editingTask, currentProjectId, () => onOpenChange(false));
+  } = useTaskFormWithTime(editingTask, currentProjectId, onTaskComplete);
 
   const handleCancel = () => {
     onOpenChange(false);
