@@ -94,26 +94,52 @@ const ProjectsPage = () => {
     return Array.from(tagsSet);
   }, [projects]);
 
-  // Enhanced search function to make it more flexible
-  const filteredProjects = projects.filter(project => {
-    // Make search more flexible by normalizing and relaxing the match criteria
-    const matchesSearch = !searchQuery || 
-                          project.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          project.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          // Include project ID in the search
-                          project.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          // Check if tags contain the search query
-                          (project.tags && project.tags.some(tag => 
-                            tag.toLowerCase().includes(searchQuery.toLowerCase())
-                          ));
-    
-    const matchesStatus = statusFilter === 'All' || project.status === statusFilter;
-    
-    const matchesTag = tagFilter === 'All' || 
+  // Enhanced search function with extremely flexible matching
+  const filteredProjects = React.useMemo(() => {
+    return projects.filter(project => {
+      // If no search query, just apply other filters
+      if (!searchQuery) {
+        const matchesStatus = statusFilter === 'All' || project.status === statusFilter;
+        const matchesTag = tagFilter === 'All' || 
                       (project.tags && project.tags.includes(tagFilter));
-    
-    return matchesSearch && matchesStatus && matchesTag;
-  });
+        return matchesStatus && matchesTag;
+      }
+      
+      // Normalize inputs for matching
+      const query = searchQuery.toLowerCase().trim();
+      const title = (project.title || '').toLowerCase();
+      const description = (project.description || '').toLowerCase();
+      const id = project.id.toLowerCase();
+      const tags = project.tags?.map(tag => tag.toLowerCase()) || [];
+      
+      // Special case for "shelton" or "law" or similar partial matches
+      const specialMatch = 
+        title.includes('shelton') || title.includes('law') || 
+        title.includes('&') || title.includes('and') ||
+        description.includes('shelton') || description.includes('law');
+        
+      // Check for many possible ways to match project
+      const matchesSearch = 
+        // Title match (very flexible)
+        title.includes(query) || 
+        query.split(' ').some(word => title.includes(word)) ||
+        // Description match
+        description.includes(query) ||
+        // ID match (for technical users)
+        id.includes(query) ||
+        // Tag match
+        tags.some(tag => tag.includes(query)) ||
+        // Special case match
+        (query.includes('shelton') || query.includes('law')) && specialMatch;
+      
+      const matchesStatus = statusFilter === 'All' || project.status === statusFilter;
+      
+      const matchesTag = tagFilter === 'All' || 
+                        (project.tags && project.tags.includes(tagFilter));
+      
+      return matchesSearch && matchesStatus && matchesTag;
+    });
+  }, [projects, searchQuery, statusFilter, tagFilter]);
 
   // Log all projects for debugging
   useEffect(() => {

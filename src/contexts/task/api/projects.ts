@@ -18,24 +18,38 @@ export const fetchProjects = async (
 
     console.log('Fetching projects for user:', user.id);
     
-    // First attempt with OR condition
+    // Try to fetch all projects first to ensure we catch everything
     try {
-      const { data, error } = await supabase
+      const { data: allProjects, error: allProjectsError } = await supabase
         .from('projects')
         .select('*')
-        .or(`manager_id.eq.${user.id},team_members.cs.{${user.id}}`)
         .order('created_at', { ascending: false });
 
-      if (error) {
-        throw error;
+      if (allProjectsError) {
+        throw allProjectsError;
       }
       
-      console.log(`Successfully fetched ${data?.length || 0} projects with OR condition`);
-      processProjectData(data, user, setProjects);
-    } catch (error) {
-      console.error('Error fetching projects with OR condition:', error);
+      console.log(`Successfully fetched ${allProjects?.length || 0} total projects`);
       
-      // Fall back to separate queries
+      // Filter client-side for projects relevant to this user
+      const userProjects = allProjects.filter(project => {
+        const isManager = project.manager_id === user.id;
+        const isTeamMember = Array.isArray(project.team_members) && 
+                            project.team_members.includes(user.id);
+        
+        if (isManager || isTeamMember) {
+          console.log(`Including project ${project.id}: "${project.title}" - User is ${isManager ? 'manager' : 'team member'}`);
+          return true;
+        }
+        return false;
+      });
+      
+      console.log(`After filtering, found ${userProjects.length} projects for user ${user.id}`);
+      processProjectData(userProjects, user, setProjects);
+    } catch (error) {
+      console.error('Error fetching all projects:', error);
+      
+      // Fall back to traditional approach
       try {
         // Get projects where user is manager
         const { data: managerProjects, error: managerError } = await supabase

@@ -27,78 +27,30 @@ export const useProjects = () => {
       
       console.log('Fetching projects for user:', user.id);
       
-      // First try to fetch using combined query approach for better reliability
-      let projectData: any[] = [];
-      let fetchError = null;
-      
-      try {
-        // Attempt to fetch projects where user is manager
-        const { data: managerProjects, error: managerError } = await supabase
-          .from('projects')
-          .select('*')
-          .eq('manager_id', user.id)
-          .order('created_at', { ascending: false });
-          
-        if (managerError) {
-          console.error('Error fetching manager projects:', managerError);
-          fetchError = managerError;
-        } else {
-          console.log(`Found ${managerProjects?.length || 0} projects where user is manager`);
-          projectData = [...(managerProjects || [])];
-        }
+      // Fetch directly from DB table to ensure we get all projects
+      const { data: allProjects, error: projectsError } = await supabase
+        .from('projects')
+        .select('*')
+        .order('created_at', { ascending: false });
         
-        // Fetch projects where user is team member
-        const { data: teamProjects, error: teamError } = await supabase
-          .from('projects')
-          .select('*')
-          .contains('team_members', [user.id])
-          .order('created_at', { ascending: false });
-          
-        if (teamError) {
-          console.error('Error fetching team projects:', teamError);
-          if (!fetchError) fetchError = teamError;
-        } else {
-          console.log(`Found ${teamProjects?.length || 0} projects where user is team member`);
-          projectData = [...projectData, ...(teamProjects || [])];
-        }
-        
-        // Combine results and remove duplicates
-        if (projectData.length > 0) {
-          const uniqueProjects = Array.from(
-            new Map(projectData.map(project => [project.id, project])).values()
-          );
-          
-          console.log(`Successfully fetched ${uniqueProjects.length} projects using separate queries`);
-          processProjectData(uniqueProjects);
-        } else if (fetchError) {
-          throw fetchError;
-        } else {
-          console.log('No projects found for this user');
-          setProjects([]);
-        }
-      } catch (error) {
-        console.error('Error with separate queries, falling back to OR condition:', error);
-        
-        // Fall back to OR condition query as a backup approach
-        try {
-          const { data, error } = await supabase
-            .from('projects')
-            .select('*')
-            .or(`manager_id.eq.${user.id},team_members.cs.{${user.id}}`)
-            .order('created_at', { ascending: false });
-
-          if (error) {
-            throw error;
-          }
-          
-          console.log(`Successfully fetched ${data.length} projects using OR condition`);
-          processProjectData(data);
-        } catch (fallbackError) {
-          console.error('All fetch methods failed:', fallbackError);
-          setError(fallbackError instanceof Error ? fallbackError : new Error('Failed to fetch projects'));
-          setProjects([]);
-        }
+      if (projectsError) {
+        console.error('Error fetching all projects:', projectsError);
+        throw projectsError;
       }
+      
+      console.log(`Successfully fetched ${allProjects?.length || 0} projects from database`);
+      console.log('Raw projects from database:', allProjects);
+      
+      // Filter projects where user is manager or team member client-side for reliability
+      const userProjects = allProjects.filter(project => {
+        const isManager = project.manager_id === user.id;
+        const isTeamMember = Array.isArray(project.team_members) && 
+          project.team_members.includes(user.id);
+        return isManager || isTeamMember;
+      });
+      
+      console.log(`After filtering, found ${userProjects.length} projects for user ${user.id}`);
+      processProjectData(userProjects);
     } catch (error) {
       console.error('Error fetching projects:', error);
       setError(error instanceof Error ? error : new Error('Unknown error'));
