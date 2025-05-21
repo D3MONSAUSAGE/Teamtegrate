@@ -1,15 +1,14 @@
 
 import React from 'react';
 import { Project, Task } from '@/types';
-import TaskTitleField from './form/TaskTitleField';
-import TaskDescriptionField from './form/TaskDescriptionField';
-import { TaskProjectField } from './form/TaskProjectField';
-import TaskAssigneeSelect from './form/TaskAssigneeSelect';
-import TaskDeadlinePicker from './form/TaskDeadlinePicker';
-import { TaskPriorityField } from './form/TaskPriorityField';
-import { useUsers } from '@/hooks/useUsers';
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import TaskDeadlinePicker from './form/TaskDeadlinePicker';
+import TaskAssigneeSelect from './form/TaskAssigneeSelect';
+import { useUsers } from '@/hooks/useUsers';
+import { TaskPriorityField } from './form/TaskPriorityField';
+import { TaskProjectField } from './form/TaskProjectField';
 
 interface TaskFormFieldsProps {
   register: any;
@@ -63,13 +62,6 @@ const TaskFormFieldsWithAI: React.FC<TaskFormFieldsProps> = ({
     }
   };
 
-  // Log when component renders with editing task
-  React.useEffect(() => {
-    if (editingTask) {
-      console.log('TaskFormFieldsWithAI rendering with editingTask:', editingTask);
-    }
-  }, [editingTask]);
-
   // Create a handler function to properly handle time changes
   const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement> | string) => {
     // If e is a string, it's already the time value
@@ -78,20 +70,37 @@ const TaskFormFieldsWithAI: React.FC<TaskFormFieldsProps> = ({
     onTimeChange(timeValue);
   };
 
+  React.useEffect(() => {
+    if (editingTask) {
+      console.log('TaskFormFieldsWithAI rendering with editingTask:', editingTask);
+    }
+  }, [editingTask]);
+
   return (
     <>
-      <TaskTitleField 
-        register={register}
-        errors={errors}
-        setValue={setValue}
-      />
+      <div className="space-y-2">
+        <Label htmlFor="title">Title <span className="text-red-500">*</span></Label>
+        <Input
+          id="title"
+          placeholder="Enter task title"
+          {...register('title', { required: "Title is required" })}
+        />
+        {errors.title && (
+          <p className="text-sm font-medium text-destructive">{errors.title.message}</p>
+        )}
+      </div>
 
-      <TaskDescriptionField 
-        register={register}
-        setValue={setValue}
-      />
+      <div className="space-y-2">
+        <Label htmlFor="description">Description</Label>
+        <Textarea
+          id="description"
+          placeholder="Enter task description"
+          className="resize-none h-24"
+          {...register('description')}
+        />
+      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <TaskPriorityField 
           register={register}
           errors={errors}
@@ -108,7 +117,7 @@ const TaskFormFieldsWithAI: React.FC<TaskFormFieldsProps> = ({
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <TaskProjectField 
           register={register}
           errors={errors}

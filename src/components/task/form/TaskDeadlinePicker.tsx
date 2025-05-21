@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { format } from 'date-fns';
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,11 @@ const TaskDeadlinePicker: React.FC<TaskDeadlinePickerProps> = ({
   
   const formattedDate = date ? format(date, "PPP") : "Select date";
 
+  // Create a handler function that properly manages the time input
+  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onTimeChange(e);
+  };
+
   return (
     <div className="space-y-2">
       <Label>Deadline <span className="text-red-500">*</span></Label>
@@ -42,7 +47,7 @@ const TaskDeadlinePicker: React.FC<TaskDeadlinePickerProps> = ({
             <Button 
               variant="outline" 
               className={cn(
-                "w-full sm:w-[240px] justify-start text-left font-normal",
+                "w-full justify-start text-left font-normal",
                 !date && "text-muted-foreground"
               )}
             >
@@ -65,13 +70,13 @@ const TaskDeadlinePicker: React.FC<TaskDeadlinePickerProps> = ({
           </PopoverContent>
         </Popover>
         
-        <div className="flex items-center">
+        <div className="flex items-center w-full sm:w-auto">
           <Clock className="mr-2 h-4 w-4" />
           <Input
             type="time"
             value={timeInput}
-            onChange={onTimeChange}
-            className="w-[120px]"
+            onChange={handleTimeChange}
+            className="w-full sm:w-[120px]"
           />
         </div>
       </div>

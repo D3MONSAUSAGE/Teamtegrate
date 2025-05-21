@@ -80,8 +80,9 @@ export const useTaskFormWithAI = (editingTask?: Task, currentProjectId?: string)
     }
   };
 
-  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newTimeInput = e.target.value;
+  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement> | string) => {
+    // Handle both string input and event object
+    const newTimeInput = typeof e === 'string' ? e : e.target.value;
     setTimeInput(newTimeInput);
     
     if (deadlineDate && newTimeInput) {
