@@ -41,7 +41,7 @@ const TaskDeadlinePicker: React.FC<TaskDeadlinePickerProps> = ({
   return (
     <div className="space-y-2">
       <Label>Deadline <span className="text-red-500">*</span></Label>
-      <div className="flex flex-col sm:flex-row gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
           <PopoverTrigger asChild>
             <Button 
@@ -70,13 +70,13 @@ const TaskDeadlinePicker: React.FC<TaskDeadlinePickerProps> = ({
           </PopoverContent>
         </Popover>
         
-        <div className="flex items-center w-full sm:w-auto">
+        <div className="flex items-center">
           <Clock className="mr-2 h-4 w-4" />
           <Input
             type="time"
             value={timeInput}
             onChange={handleTimeChange}
-            className="w-full sm:w-[120px]"
+            className="w-full"
           />
         </div>
       </div>

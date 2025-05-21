@@ -46,7 +46,9 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={`${isMobile ? 'w-[95%] p-4' : 'sm:max-w-[550px]'} max-h-[90vh] overflow-y-auto`}>
+      <DialogContent 
+        className={`${isMobile ? 'w-[95%] p-4' : 'sm:max-w-[600px]'} max-h-[90vh] overflow-y-auto`}
+      >
         <DialogHeader>
           <DialogTitle className="text-xl">{isEditMode ? 'Edit Task' : 'Create New Task'}</DialogTitle>
           <DialogDescription className="text-muted-foreground">

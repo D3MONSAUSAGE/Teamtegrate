@@ -106,57 +106,61 @@ const TaskFormFields: React.FC<TaskFormFieldsProps> = ({
         />
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="projectId">Project</Label>
-        <Select
-          defaultValue={editingTask?.projectId || currentProjectId || ''}
-          onValueChange={(value) => setValue('projectId', value)}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select project (optional)" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="none">No Project</SelectItem>
-            {projects.map(project => (
-              <SelectItem key={project.id} value={project.id}>
-                {project.title}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="priority">Priority <span className="text-red-500">*</span></Label>
+          <Select
+            defaultValue={editingTask?.priority || 'Medium'}
+            onValueChange={(value) => setValue('priority', value as TaskPriority)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select priority" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Low">Low</SelectItem>
+              <SelectItem value="Medium">Medium</SelectItem>
+              <SelectItem value="High">High</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <TaskDeadlinePicker
+          date={date}
+          timeInput={timeInput}
+          onDateChange={handleDateChange}
+          onTimeChange={handleTimeChange}
+          error={errors.deadline?.message as string}
+        />
       </div>
 
-      <TaskAssigneeSelect
-        selectedMember={selectedMember}
-        onAssign={handleUserAssignment}
-        users={users}
-        isLoading={loadingUsers}
-      />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="projectId">Project</Label>
+          <Select
+            defaultValue={editingTask?.projectId || currentProjectId || ''}
+            onValueChange={(value) => setValue('projectId', value)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select project (optional)" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">No Project</SelectItem>
+              {projects.map(project => (
+                <SelectItem key={project.id} value={project.id}>
+                  {project.title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="priority">Priority <span className="text-red-500">*</span></Label>
-        <Select
-          defaultValue={editingTask?.priority || 'Medium'}
-          onValueChange={(value) => setValue('priority', value as TaskPriority)}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select priority" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Low">Low</SelectItem>
-            <SelectItem value="Medium">Medium</SelectItem>
-            <SelectItem value="High">High</SelectItem>
-          </SelectContent>
-        </Select>
+        <TaskAssigneeSelect
+          selectedMember={selectedMember}
+          onAssign={handleUserAssignment}
+          users={users}
+          isLoading={loadingUsers}
+        />
       </div>
-
-      <TaskDeadlinePicker
-        date={date}
-        timeInput={timeInput}
-        onDateChange={handleDateChange}
-        onTimeChange={handleTimeChange}
-        error={errors.deadline?.message as string}
-      />
 
       <div className="space-y-2">
         <Label htmlFor="cost">Cost</Label>
