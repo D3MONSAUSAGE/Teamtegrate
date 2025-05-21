@@ -22,6 +22,9 @@ export const addProject = async (
     
     console.log('Creating project with user ID:', user.id, 'project:', project);
     
+    // Prepare budget value - handle undefined or null case
+    const budget = project.budget ?? 0; // Use nullish coalescing to default to 0 if undefined or null
+    
     // Prepare project data for insertion with fallback values
     const projectToInsert = {
       id: projectId,
@@ -32,7 +35,7 @@ export const addProject = async (
       manager_id: user.id, // Set current user as manager
       created_at: nowISO,
       updated_at: nowISO,
-      budget: project.budget || 0,
+      budget: budget, // Using the prepared value
       is_completed: project.is_completed || false,
       budget_spent: 0,
       team_members: project.teamMembers || [],
@@ -65,7 +68,7 @@ export const addProject = async (
       updatedAt: now,
       tasks: [],
       teamMembers: project.teamMembers || [],
-      budget: project.budget || 0,
+      budget: budget, // Using the prepared value
       budgetSpent: 0,
       is_completed: project.is_completed || false,
       status: (project.status || 'To Do') as ProjectStatus,

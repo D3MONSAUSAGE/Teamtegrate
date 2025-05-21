@@ -11,13 +11,13 @@ import { toast } from '@/components/ui/sonner';
 import { format } from 'date-fns';
 import { useTask } from '@/contexts/task';
 
-// Define the validation schema
+// Define the validation schema - making budget properly optional
 const projectFormSchema = z.object({
   title: z.string().min(1, { message: "Title is required" }),
   description: z.string().optional(),
   startDate: z.string().min(1, { message: "Start date is required" }),
   endDate: z.string().min(1, { message: "End date is required" }),
-  budget: z.number().optional(),
+  budget: z.number().optional().nullable(), // Modified to be properly optional and nullable
   teamMembers: z.array(z.object({ memberId: z.string() })).optional().default([])
 });
 
@@ -71,7 +71,7 @@ const EditProjectDialog: React.FC<EditProjectDialogProps> = ({
         description: data.description,
         startDate: new Date(data.startDate),
         endDate: new Date(data.endDate),
-        budget: data.budget
+        budget: data.budget // This can now be undefined or null
       });
       
       toast.success("Project updated successfully");

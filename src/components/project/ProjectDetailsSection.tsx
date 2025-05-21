@@ -65,13 +65,16 @@ export const ProjectDetailsSection: React.FC<ProjectDetailsSectionProps> = ({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="budget">Budget</Label>
+        <Label htmlFor="budget">Budget (Optional)</Label>
         <Input
           id="budget"
           type="number"
           step="0.01"
           min="0"
-          {...register('budget', { valueAsNumber: true })}
+          {...register('budget', { 
+            setValueAs: value => value === "" ? undefined : Number(value),
+            valueAsNumber: true 
+          })}
           placeholder="Enter project budget (optional)"
         />
       </div>

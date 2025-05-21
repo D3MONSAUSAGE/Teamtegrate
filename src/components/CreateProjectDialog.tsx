@@ -15,13 +15,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { FormValues } from '@/components/project/EditProjectDialog';
 
-// Define the validation schema
+// Define the validation schema - making budget properly optional
 const projectFormSchema = z.object({
   title: z.string().min(1, { message: "Title is required" }),
   description: z.string().optional(),
   startDate: z.string().min(1, { message: "Start date is required" }),
   endDate: z.string().min(1, { message: "End date is required" }),
-  budget: z.number().optional(),
+  budget: z.number().optional().nullable(), // Modified to be properly optional and nullable
   teamMembers: z.array(z.object({ memberId: z.string() })).optional().default([])
 });
 
@@ -47,7 +47,7 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
       description: '',
       startDate: format(new Date(), 'yyyy-MM-dd'),
       endDate: format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'),
-      budget: undefined,
+      budget: undefined, // Set default to undefined instead of a number
       teamMembers: []
     }
   });
@@ -75,7 +75,7 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
         startDate: new Date(data.startDate),
         endDate: new Date(data.endDate),
         managerId: user.id,
-        budget: data.budget,
+        budget: data.budget, // This can now be undefined
         teamMembers: teamMemberIds,
         status: 'To Do',
         tasks_count: 0,

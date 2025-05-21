@@ -25,6 +25,9 @@ export const useProjectOperations = () => {
       const now = new Date();
       const nowISO = now.toISOString();
 
+      // Prepare budget value - handle undefined or null case
+      const budget = project.budget ?? 0; // Use nullish coalescing to default to 0 if undefined or null
+
       console.log('Creating project with data:', {
         id: projectId,
         title: project.title,
@@ -32,7 +35,7 @@ export const useProjectOperations = () => {
         start_date: project.startDate.toISOString(),
         end_date: project.endDate.toISOString(),
         manager_id: user.id,
-        budget: project.budget || 0,
+        budget: budget,
         is_completed: false,
         created_at: nowISO,
         updated_at: nowISO,
@@ -50,7 +53,7 @@ export const useProjectOperations = () => {
           start_date: project.startDate.toISOString(),
           end_date: project.endDate.toISOString(),
           manager_id: user.id,
-          budget: project.budget || 0,
+          budget: budget, // Using the prepared value
           is_completed: false,
           created_at: nowISO,
           updated_at: nowISO,
@@ -74,7 +77,7 @@ export const useProjectOperations = () => {
         startDate: project.startDate,
         endDate: project.endDate,
         managerId: user.id,
-        budget: project.budget || 0,
+        budget: budget, // Using the prepared value
         createdAt: now,
         updatedAt: now,
         tasks: [],
