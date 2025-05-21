@@ -1,41 +1,44 @@
 
 import React from 'react';
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { TaskPriority } from '@/types';
 
 interface TaskPriorityFieldProps {
-  defaultValue?: string;
-  setValue: (name: string, value: any) => void;
+  register: any;
+  errors: any;
 }
 
-const TaskPriorityField: React.FC<TaskPriorityFieldProps> = ({
-  defaultValue = "Medium",
-  setValue
+export const TaskPriorityField: React.FC<TaskPriorityFieldProps> = ({
+  register,
+  errors,
 }) => {
   return (
-    <div className="space-y-1">
-      <Label htmlFor="priority">Priority</Label>
-      <Select 
-        defaultValue={defaultValue} 
-        onValueChange={(value) => setValue('priority', value)}
+    <div>
+      <Label className="mb-2 block">Priority <span className="text-red-500">*</span></Label>
+      <RadioGroup 
+        defaultValue="Medium" 
+        className="flex space-x-4"
+        {...register("priority", { required: "Priority is required" })}
       >
-        <SelectTrigger>
-          <SelectValue placeholder="Select priority" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="Low">Low</SelectItem>
-          <SelectItem value="Medium">Medium</SelectItem>
-          <SelectItem value="High">High</SelectItem>
-        </SelectContent>
-      </Select>
+        <div className="flex items-center space-x-2">
+          <RadioGroupItem value="Low" id="low" />
+          <Label htmlFor="low" className="font-normal">Low</Label>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <RadioGroupItem value="Medium" id="medium" />
+          <Label htmlFor="medium" className="font-normal">Medium</Label>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <RadioGroupItem value="High" id="high" />
+          <Label htmlFor="high" className="font-normal">High</Label>
+        </div>
+      </RadioGroup>
+      {errors.priority && (
+        <span className="text-xs text-red-500">{errors.priority.message}</span>
+      )}
     </div>
   );
 };
-
-export default TaskPriorityField;

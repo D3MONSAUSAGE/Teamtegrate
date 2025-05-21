@@ -1,49 +1,52 @@
 
 import React from 'react';
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Project } from '@/types';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useTask } from '@/contexts/task';
+import { Task } from '@/types';
 
 interface TaskProjectFieldProps {
-  projects: Project[];
+  register: any;
+  errors: any;
+  editingTask?: Task;
   currentProjectId?: string;
-  editingTask?: any;
-  setValue: (name: string, value: any) => void;
 }
 
-const TaskProjectField: React.FC<TaskProjectFieldProps> = ({
-  projects,
-  currentProjectId,
+export const TaskProjectField: React.FC<TaskProjectFieldProps> = ({
+  register,
+  errors,
   editingTask,
-  setValue
+  currentProjectId
 }) => {
+  const { projects } = useTask();
+  
   return (
-    <div className="space-y-1">
-      <Label htmlFor="project">Project</Label>
+    <div>
+      <Label htmlFor="projectId">Project</Label>
       <Select 
-        defaultValue={currentProjectId || editingTask?.projectId || "none"} 
-        onValueChange={(value) => setValue('projectId', value)}
+        defaultValue={editingTask?.projectId || currentProjectId || "none"}
+        onValueChange={(value) => {
+          register("projectId").onChange({ target: { name: "projectId", value } });
+        }}
       >
         <SelectTrigger>
-          <SelectValue placeholder="Select project" />
+          <SelectValue placeholder="Select a project" />
         </SelectTrigger>
-        <SelectContent position="popper" className="w-[200px]">
-          <SelectItem value="none">No Project</SelectItem>
-          {projects.map((project) => (
-            <SelectItem key={project.id} value={project.id}>
-              {project.title}
-            </SelectItem>
-          ))}
+        <SelectContent>
+          <SelectGroup>
+            <SelectItem value="none">Unassigned</SelectItem>
+            {projects.map((project) => (
+              <SelectItem key={project.id} value={project.id}>
+                {project.title}
+              </SelectItem>
+            ))}
+          </SelectGroup>
         </SelectContent>
       </Select>
+      <input
+        type="hidden"
+        {...register("projectId")}
+      />
     </div>
   );
 };
-
-export default TaskProjectField;

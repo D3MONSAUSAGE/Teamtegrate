@@ -13,30 +13,39 @@ export const addTask = async (
   setProjects: React.Dispatch<React.SetStateAction<any[]>>
 ): Promise<void> => {
   try {
+    const now = new Date();
+    const taskId = uuidv4();
+
     const newTask = {
       ...task,
-      id: uuidv4(),
+      id: taskId,
       userId: user.id,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      createdAt: now,
+      updatedAt: now,
     };
 
+    // Convert any Date objects to ISO strings for Supabase
+    const deadlineIso = newTask.deadline instanceof Date 
+      ? newTask.deadline.toISOString() 
+      : new Date(newTask.deadline).toISOString();
+
+    // Prepare payload for Supabase with correct column names
     const { data, error } = await supabase
       .from('tasks')
       .insert([
         {
           id: newTask.id,
           user_id: newTask.userId,
-          project_id: newTask.projectId,
+          project_id: newTask.projectId || null,
           title: newTask.title,
           description: newTask.description,
-          deadline: newTask.deadline.toISOString(),
+          deadline: deadlineIso,
           priority: newTask.priority,
           status: newTask.status,
-          created_at: newTask.createdAt.toISOString(),
-          updated_at: newTask.updatedAt.toISOString(),
-          assigned_to_id: newTask.assignedToId,
-          assigned_to_name: newTask.assignedToName,
+          created_at: now.toISOString(),
+          updated_at: now.toISOString(),
+          assigned_to_id: newTask.assignedToId || null,
+          assigned_to_name: newTask.assignedToName || null,
           cost: newTask.cost || 0,
         },
       ])
@@ -48,8 +57,10 @@ export const addTask = async (
       return;
     }
 
+    // Update local state
     setTasks([...tasks, newTask]);
 
+    // If task belongs to a project, update that project's tasks
     if (newTask.projectId) {
       setProjects((prevProjects) =>
         prevProjects.map((project) =>

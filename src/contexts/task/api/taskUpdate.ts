@@ -13,21 +13,30 @@ export const updateTask = async (
   setProjects: React.Dispatch<React.SetStateAction<any[]>>
 ): Promise<void> => {
   try {
+    // Find the existing task to merge with updates
+    const existingTask = tasks.find((task) => task.id === taskId);
+    if (!existingTask) {
+      console.error('Task not found:', taskId);
+      toast.error('Failed to update task: Task not found');
+      return;
+    }
+
+    const now = new Date();
     const updatedTask = {
-      ...tasks.find((task) => task.id === taskId),
+      ...existingTask,
       ...updates,
-      updatedAt: new Date(),
+      updatedAt: now,
     };
 
-    // Prepare the supabase update payload
-    const updatePayload: any = {
+    // Prepare the supabase update payload with snake_case column names
+    const updatePayload: Record<string, any> = {
       title: updatedTask.title,
       description: updatedTask.description,
       priority: updatedTask.priority,
       status: updatedTask.status,
-      updated_at: updatedTask.updatedAt.toISOString(),
-      assigned_to_id: updatedTask.assignedToId,
-      assigned_to_name: updatedTask.assignedToName,
+      updated_at: now.toISOString(),
+      assigned_to_id: updatedTask.assignedToId || null,
+      assigned_to_name: updatedTask.assignedToName || null,
       cost: updatedTask.cost || 0,
     };
     
@@ -42,11 +51,11 @@ export const updateTask = async (
       }
     }
 
-    const { data, error } = await supabase
+    // Send update to Supabase
+    const { error } = await supabase
       .from('tasks')
       .update(updatePayload)
-      .eq('id', taskId)
-      .select();
+      .eq('id', taskId);
 
     if (error) {
       console.error('Error updating task:', error);
@@ -56,7 +65,7 @@ export const updateTask = async (
 
     // Update local state
     setTasks(
-      tasks.map((task) => (task.id === taskId ? { ...task, ...updates } : task))
+      tasks.map((task) => (task.id === taskId ? updatedTask : task))
     );
 
     // Update project state if task belongs to a project
@@ -67,7 +76,7 @@ export const updateTask = async (
             ? {
                 ...project,
                 tasks: project.tasks.map((task) =>
-                  task.id === taskId ? { ...task, ...updates } : task
+                  task.id === taskId ? updatedTask : task
                 ),
               }
             : project

@@ -13,14 +13,9 @@ export const fetchTasks = async (
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>
 ): Promise<void> => {
   try {
-    // Fetch tasks from supabase with more detailed logging
     console.log('Fetching tasks for user:', user.id);
     
-    // Modified query to include tasks where:
-    // 1. User created the task (user_id)
-    // 2. User is assigned to the task (assigned_to_id)
-    // 3. User is a manager of the project the task belongs to
-    // 4. User is a team member of the project the task belongs to
+    // Fetch tasks from database
     const { data: taskData, error } = await supabase
       .from('tasks')
       .select('*')
@@ -34,10 +29,6 @@ export const fetchTasks = async (
 
     console.log(`Fetched ${taskData.length} tasks from database`);
     
-    // Log project IDs to help debug task assignments
-    const projectIds = [...new Set(taskData.map(task => task.project_id))].filter(Boolean);
-    console.log(`Tasks belong to ${projectIds.length} projects:`, projectIds);
-
     // Fetch comments for all tasks
     const { data: commentData, error: commentError } = await supabase
       .from('comments')
@@ -49,7 +40,7 @@ export const fetchTasks = async (
       console.log(`Fetched ${commentData?.length || 0} comments from database`);
     }
 
-    // Get all user IDs that are assigned to tasks to fetch their names
+    // Get all unique user IDs that are assigned to tasks
     const assignedUserIds = taskData
       .filter(task => task.assigned_to_id)
       .map(task => task.assigned_to_id);
@@ -58,7 +49,7 @@ export const fetchTasks = async (
     const uniqueUserIds = [...new Set(assignedUserIds)];
     console.log(`Found ${uniqueUserIds.length} unique assigned users`);
     
-    // Fetch user names for assigned users
+    // Fetch user details for assigned users
     let userMap = new Map();
     if (uniqueUserIds.length > 0) {
       const { data: userData, error: userError } = await supabase
@@ -78,13 +69,14 @@ export const fetchTasks = async (
 
     // Map tasks with their comments and resolve assigned user names
     const tasks: Task[] = taskData.map((task) => {
+      // Process task comments if any
       const taskComments = commentData
         ? commentData
             .filter(comment => comment.task_id === task.id)
             .map(comment => ({
               id: comment.id,
               userId: comment.user_id,
-              userName: comment.user_id,
+              userName: comment.user_id, // Will update this later
               text: comment.content,
               createdAt: parseDate(comment.created_at)
             }))
@@ -93,10 +85,11 @@ export const fetchTasks = async (
       // Get the assigned user name from our map
       const assignedUserName = task.assigned_to_id ? userMap.get(task.assigned_to_id) : undefined;
 
+      // Map DB fields to our Task interface
       return {
         id: task.id,
-        userId: task.user_id || user.id, // Default to current user if not set
-        projectId: task.project_id,
+        userId: task.user_id || user.id,
+        projectId: task.project_id || undefined,
         title: task.title || '',
         description: task.description || '',
         deadline: parseDate(task.deadline),
@@ -114,12 +107,12 @@ export const fetchTasks = async (
 
     // Resolve user names for comments
     if (commentData && commentData.length > 0) {
-      const userIds = [...new Set(commentData.map(comment => comment.user_id))];
+      const commentUserIds = [...new Set(commentData.map(comment => comment.user_id))];
       
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('id, name, email')
-        .in('id', userIds);
+        .in('id', commentUserIds);
       
       if (userError) {
         console.error('Error fetching user data for comments:', userError);
@@ -137,20 +130,10 @@ export const fetchTasks = async (
             }));
           }
         });
-        console.log(`Updated comment user names for ${userData.length} users`);
       }
     }
 
-    // Add additional logging for task count by project
-    const tasksByProject = tasks.reduce((acc, task) => {
-      const projectId = task.projectId || 'unassigned';
-      acc[projectId] = (acc[projectId] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-    
     console.log(`Final task count being set: ${tasks.length}`);
-    console.log('Tasks by project:', tasksByProject);
-
     setTasks(tasks);
   } catch (error) {
     console.error('Error in fetchTasks:', error);

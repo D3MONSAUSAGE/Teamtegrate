@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -28,11 +28,16 @@ const TaskDeadlinePicker: React.FC<TaskDeadlinePickerProps> = ({
   onTimeChange,
   error
 }) => {
+  // Add state for PopOver visibility (optional for controlled behavior)
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  
+  const formattedDate = date ? format(date, "PPP") : "Select date";
+
   return (
     <div className="space-y-2">
       <Label>Deadline <span className="text-red-500">*</span></Label>
       <div className="flex flex-col sm:flex-row gap-2">
-        <Popover>
+        <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
           <PopoverTrigger asChild>
             <Button 
               variant="outline" 
@@ -42,14 +47,18 @@ const TaskDeadlinePicker: React.FC<TaskDeadlinePickerProps> = ({
               )}
             >
               <CalendarIcon className="mr-2 h-4 w-4" />
-              {date ? format(date, "PPP") : <span>Select date</span>}
+              {formattedDate}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="start">
             <Calendar
               mode="single"
               selected={date}
-              onSelect={onDateChange}
+              onSelect={(selectedDate) => {
+                onDateChange(selectedDate);
+                // Optional: close calendar after selection
+                setIsCalendarOpen(false);
+              }}
               initialFocus
               className={cn("p-3 pointer-events-auto")}
             />
