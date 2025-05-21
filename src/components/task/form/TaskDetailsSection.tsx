@@ -7,6 +7,7 @@ import { Task } from '@/types';
 import { TaskPriorityField } from '@/components/task/form/TaskPriorityField';
 import { TaskProjectField } from '@/components/task/form/TaskProjectField';
 import TaskDeadlinePicker from '@/components/task/form/TaskDeadlinePicker';
+import { useTask } from '@/contexts/task';
 
 interface TaskDetailsSectionProps {
   register: any;
@@ -31,6 +32,8 @@ export const TaskDetailsSection: React.FC<TaskDetailsSectionProps> = ({
   onDateChange,
   onTimeChange,
 }) => {
+  const { projects } = useTask();
+  
   return (
     <>
       <div>
@@ -59,6 +62,8 @@ export const TaskDetailsSection: React.FC<TaskDetailsSectionProps> = ({
       <TaskPriorityField 
         register={register} 
         errors={errors}
+        setValue={setValue}
+        defaultValue={editingTask?.priority}
       />
       
       <TaskDeadlinePicker
@@ -74,6 +79,8 @@ export const TaskDetailsSection: React.FC<TaskDetailsSectionProps> = ({
         errors={errors}
         editingTask={editingTask}
         currentProjectId={currentProjectId}
+        projects={projects}
+        setValue={setValue}
       />
 
       <div>

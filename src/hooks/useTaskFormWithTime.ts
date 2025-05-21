@@ -82,10 +82,14 @@ export const useTaskFormWithTime = (
       deadline = new Date();  // Default to current date/time if not set
     }
     
+    // Convert cost string to number or undefined
+    const cost = data.cost ? Number(data.cost) : undefined;
+    
     // Prepare form data
     const formData = {
       ...data,
       deadline,
+      cost,
       assignedToId: selectedMember === "unassigned" ? undefined : selectedMember,
     };
 
