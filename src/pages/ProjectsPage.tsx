@@ -94,11 +94,18 @@ const ProjectsPage = () => {
     return Array.from(tagsSet);
   }, [projects]);
 
-  // Filter projects based on search query, status, and tags
+  // Enhanced search function to make it more flexible
   const filteredProjects = projects.filter(project => {
+    // Make search more flexible by normalizing and relaxing the match criteria
     const matchesSearch = !searchQuery || 
-                         project.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                         project.description?.toLowerCase().includes(searchQuery.toLowerCase());
+                          project.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          project.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          // Include project ID in the search
+                          project.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          // Check if tags contain the search query
+                          (project.tags && project.tags.some(tag => 
+                            tag.toLowerCase().includes(searchQuery.toLowerCase())
+                          ));
     
     const matchesStatus = statusFilter === 'All' || project.status === statusFilter;
     
@@ -171,7 +178,7 @@ const ProjectsPage = () => {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
-            placeholder="Search projects..."
+            placeholder="Search projects by name, description, ID or tags..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9"
@@ -224,10 +231,11 @@ const ProjectsPage = () => {
         )}
       </div>
 
-      {/* Debug info */}
+      {/* Project count and search info */}
       <div className="mb-4 text-sm text-gray-500">
         Found {filteredProjects.length} project{filteredProjects.length !== 1 ? 's' : ''} 
         {filteredProjects.length !== projects.length ? ` (filtered from ${projects.length} total)` : ''}
+        {searchQuery && ` matching "${searchQuery}"`}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

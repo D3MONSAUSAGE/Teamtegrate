@@ -27,25 +27,12 @@ export const useProjects = () => {
       
       console.log('Fetching projects for user:', user.id);
       
-      // First try to fetch using OR condition, if that fails fall back to individual queries
+      // First try to fetch using combined query approach for better reliability
+      let projectData: any[] = [];
+      let fetchError = null;
+      
       try {
-        // Attempt to fetch with OR condition
-        const { data, error } = await supabase
-          .from('projects')
-          .select('*')
-          .or(`manager_id.eq.${user.id},team_members.cs.{${user.id}}`)
-          .order('created_at', { ascending: false });
-
-        if (error) {
-          throw error;
-        }
-        
-        console.log(`Successfully fetched ${data.length} projects using OR condition`);
-        processProjectData(data);
-      } catch (error) {
-        console.error('Error with OR condition fetch, falling back to separate queries:', error);
-        
-        // Fallback: Fetch projects where user is manager
+        // Attempt to fetch projects where user is manager
         const { data: managerProjects, error: managerError } = await supabase
           .from('projects')
           .select('*')
@@ -54,6 +41,10 @@ export const useProjects = () => {
           
         if (managerError) {
           console.error('Error fetching manager projects:', managerError);
+          fetchError = managerError;
+        } else {
+          console.log(`Found ${managerProjects?.length || 0} projects where user is manager`);
+          projectData = [...(managerProjects || [])];
         }
         
         // Fetch projects where user is team member
@@ -65,16 +56,48 @@ export const useProjects = () => {
           
         if (teamError) {
           console.error('Error fetching team projects:', teamError);
+          if (!fetchError) fetchError = teamError;
+        } else {
+          console.log(`Found ${teamProjects?.length || 0} projects where user is team member`);
+          projectData = [...projectData, ...(teamProjects || [])];
         }
         
         // Combine results and remove duplicates
-        const combinedProjects = [...(managerProjects || []), ...(teamProjects || [])];
-        const uniqueProjects = Array.from(
-          new Map(combinedProjects.map(project => [project.id, project])).values()
-        );
+        if (projectData.length > 0) {
+          const uniqueProjects = Array.from(
+            new Map(projectData.map(project => [project.id, project])).values()
+          );
+          
+          console.log(`Successfully fetched ${uniqueProjects.length} projects using separate queries`);
+          processProjectData(uniqueProjects);
+        } else if (fetchError) {
+          throw fetchError;
+        } else {
+          console.log('No projects found for this user');
+          setProjects([]);
+        }
+      } catch (error) {
+        console.error('Error with separate queries, falling back to OR condition:', error);
         
-        console.log(`Fetched ${uniqueProjects.length} projects using separate queries`);
-        processProjectData(uniqueProjects);
+        // Fall back to OR condition query as a backup approach
+        try {
+          const { data, error } = await supabase
+            .from('projects')
+            .select('*')
+            .or(`manager_id.eq.${user.id},team_members.cs.{${user.id}}`)
+            .order('created_at', { ascending: false });
+
+          if (error) {
+            throw error;
+          }
+          
+          console.log(`Successfully fetched ${data.length} projects using OR condition`);
+          processProjectData(data);
+        } catch (fallbackError) {
+          console.error('All fetch methods failed:', fallbackError);
+          setError(fallbackError instanceof Error ? fallbackError : new Error('Failed to fetch projects'));
+          setProjects([]);
+        }
       }
     } catch (error) {
       console.error('Error fetching projects:', error);
@@ -115,15 +138,13 @@ export const useProjects = () => {
         if (allTasksCompleted) {
           status = 'Completed';
           isCompleted = true;
-        } else {
+        } else if (status === 'Completed' || isCompleted) {
           // If not all tasks are completed, project cannot be marked as completed
-          if (status === 'Completed' || isCompleted) {
-            status = 'In Progress';
-            isCompleted = false;
-            
-            // Log the status correction
-            console.log(`Project ${project.id} status corrected: not all tasks complete but was marked as Completed`);
-          }
+          status = 'In Progress';
+          isCompleted = false;
+          
+          // Log the status correction
+          console.log(`Project ${project.id} status corrected: not all tasks complete but was marked as Completed`);
         }
       }
       
