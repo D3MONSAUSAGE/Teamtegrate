@@ -2,31 +2,32 @@
 import React from 'react';
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useTask } from '@/contexts/task';
-import { Task } from '@/types';
+import { Project, Task } from '@/types';
 
 interface TaskProjectFieldProps {
   register: any;
   errors: any;
   editingTask?: Task;
   currentProjectId?: string;
+  projects: Project[];
+  setValue: any;
 }
 
 export const TaskProjectField: React.FC<TaskProjectFieldProps> = ({
   register,
   errors,
   editingTask,
-  currentProjectId
+  currentProjectId,
+  projects,
+  setValue
 }) => {
-  const { projects } = useTask();
-  
   return (
     <div>
       <Label htmlFor="projectId">Project</Label>
       <Select 
         defaultValue={editingTask?.projectId || currentProjectId || "none"}
         onValueChange={(value) => {
-          register("projectId").onChange({ target: { name: "projectId", value } });
+          setValue("projectId", value);
         }}
       >
         <SelectTrigger>
@@ -43,10 +44,6 @@ export const TaskProjectField: React.FC<TaskProjectFieldProps> = ({
           </SelectGroup>
         </SelectContent>
       </Select>
-      <input
-        type="hidden"
-        {...register("projectId")}
-      />
     </div>
   );
 };

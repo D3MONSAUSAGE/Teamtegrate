@@ -7,17 +7,27 @@ import { TaskPriority } from '@/types';
 interface TaskPriorityFieldProps {
   register: any;
   errors: any;
+  defaultValue?: TaskPriority;
+  setValue: any;
 }
 
 export const TaskPriorityField: React.FC<TaskPriorityFieldProps> = ({
   register,
   errors,
+  defaultValue = "Medium",
+  setValue
 }) => {
+  React.useEffect(() => {
+    if (defaultValue) {
+      setValue("priority", defaultValue);
+    }
+  }, [defaultValue, setValue]);
+
   return (
     <div>
       <Label className="mb-2 block">Priority <span className="text-red-500">*</span></Label>
       <RadioGroup 
-        defaultValue="Medium" 
+        defaultValue={defaultValue} 
         className="flex space-x-4"
         {...register("priority", { required: "Priority is required" })}
       >

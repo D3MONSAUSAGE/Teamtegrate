@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { useForm } from "react-hook-form";
-import { Task, TaskPriority, TaskFormValues } from '@/types';
+import { Task, TaskPriority, TaskFormValues } from '@/types/tasks';
 import { useTask } from '@/contexts/task';
 import { useAuth } from '@/contexts/AuthContext';
 

@@ -93,6 +93,8 @@ const TaskFormFieldsWithAI: React.FC<TaskFormFieldsProps> = ({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <TaskPriorityField 
+          register={register}
+          errors={errors}
           defaultValue={editingTask?.priority || "Medium"}
           setValue={setValue}
         />
@@ -108,6 +110,8 @@ const TaskFormFieldsWithAI: React.FC<TaskFormFieldsProps> = ({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <TaskProjectField 
+          register={register}
+          errors={errors}
           projects={projects}
           currentProjectId={currentProjectId}
           editingTask={editingTask}
