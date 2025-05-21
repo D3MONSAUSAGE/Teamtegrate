@@ -17,13 +17,15 @@ interface CreateTaskDialogProps {
   onOpenChange: (open: boolean) => void;
   editingTask?: Task;
   currentProjectId?: string;
+  onTaskComplete?: () => void;
 }
 
 const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({ 
   open, 
   onOpenChange, 
   editingTask,
-  currentProjectId 
+  currentProjectId,
+  onTaskComplete
 }) => {
   const { user } = useAuth();
   const { addTask, updateTask, projects } = useTask();
@@ -84,6 +86,11 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
     onOpenChange(false);
     reset();
     setSelectedMember(undefined);
+    
+    // Call the onTaskComplete callback if provided
+    if (onTaskComplete) {
+      onTaskComplete();
+    }
   };
 
   const handleCancel = () => {
