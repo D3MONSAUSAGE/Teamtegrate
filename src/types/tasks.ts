@@ -1,5 +1,5 @@
 
-import { User } from './user';
+import { User } from '@/types';
 
 export type TaskPriority = 'Low' | 'Medium' | 'High';
 export type TaskStatus = 'To Do' | 'In Progress' | 'Pending' | 'Completed';
