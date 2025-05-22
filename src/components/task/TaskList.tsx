@@ -26,7 +26,10 @@ const TaskList = ({ tasks, onEdit, onNewTask, onStatusChange, emptyMessage = "No
 
   const handleStatusChange = (taskId: string, status: TaskStatus) => {
     if (onStatusChange) {
+      console.log(`TaskList: Changing task ${taskId} status to ${status}`);
       onStatusChange(taskId, status);
+    } else {
+      console.warn("Status change handler not provided to TaskList");
     }
   };
 

@@ -1,11 +1,13 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTask } from '@/contexts/task';
-import { Task } from '@/types';
+import { Task, TaskStatus } from '@/types';
 import TaskCommentsDialog from '@/components/TaskCommentsDialog';
 import TaskHeader from '@/components/task/TaskHeader';
 import TaskTabs from '@/components/task/TaskTabs';
 import CreateTaskDialog from '@/components/CreateTaskDialog';
+import { toast } from '@/components/ui/sonner';
 
 const TasksPage = () => {
   const navigate = useNavigate();
@@ -19,7 +21,7 @@ const TasksPage = () => {
   }, []);
 
   // Render the general tasks view
-  const { tasks } = useTask();
+  const { tasks, updateTaskStatus } = useTask();
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [sortBy, setSortBy] = useState('deadline');
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -28,6 +30,17 @@ const TasksPage = () => {
   const handleEditTask = (task: Task) => {
     setEditingTask(task);
     setIsCreateTaskOpen(true);
+  };
+  
+  const handleStatusChange = (taskId: string, status: TaskStatus) => {
+    try {
+      console.log(`Updating task ${taskId} status to ${status}`);
+      updateTaskStatus(taskId, status);
+      toast.success(`Task status updated to ${status}`);
+    } catch (error) {
+      console.error('Error updating task status:', error);
+      toast.error('Failed to update task status');
+    }
   };
   
   const todoTasks = tasks.filter((task) => task.status === 'To Do');
@@ -86,6 +99,7 @@ const TasksPage = () => {
           setEditingTask(undefined);
           setIsCreateTaskOpen(true);
         }}
+        onStatusChange={handleStatusChange}
       />
       
       <CreateTaskDialog

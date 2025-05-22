@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Task, TaskStatus } from "@/types";
 import { useTask } from "@/contexts/task";
+import { toast } from "@/components/ui/sonner";
 
 export const useTaskCard = (task: Task) => {
   const { updateTaskStatus, deleteTask } = useTask();
@@ -26,11 +27,23 @@ export const useTaskCard = (task: Task) => {
   };
 
   const handleStatusChange = (newStatus: TaskStatus) => {
-    updateTaskStatus(task.id, newStatus);
+    try {
+      console.log(`TaskCard: Changing status to ${newStatus} for task ${task.id}`);
+      updateTaskStatus(task.id, newStatus);
+    } catch (error) {
+      console.error('Error updating task status:', error);
+      toast.error('Failed to update task status');
+    }
   };
 
   const handleDeleteTask = async (taskId: string) => {
-    await deleteTask(taskId);
+    try {
+      await deleteTask(taskId);
+      toast.success('Task deleted successfully');
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      toast.error('Failed to delete task');
+    }
   };
 
   const getAssignedToName = () => {
