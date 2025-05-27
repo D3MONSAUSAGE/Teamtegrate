@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,6 +15,7 @@ import { format } from 'date-fns';
 import TaskDeadlinePicker from './form/TaskDeadlinePicker';
 import TaskAssigneeSelect from './form/TaskAssigneeSelect';
 import { useUsers } from '@/hooks/useUsers';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface TaskFormFieldsProps {
   register: UseFormRegister<any>;
@@ -38,6 +38,7 @@ const TaskFormFields: React.FC<TaskFormFieldsProps> = ({
   editingTask,
   currentProjectId
 }) => {
+  const { user } = useAuth();
   const [date, setDate] = useState<Date | undefined>(
     editingTask ? new Date(editingTask.deadline) : undefined
   );
@@ -47,6 +48,17 @@ const TaskFormFields: React.FC<TaskFormFieldsProps> = ({
   );
 
   const { users, isLoading: loadingUsers } = useUsers();
+
+  // Filter projects to only show those the user has access to
+  const accessibleProjects = projects.filter(project => {
+    if (!user) return false;
+    
+    const isManager = project.managerId === user.id;
+    const isTeamMember = Array.isArray(project.teamMembers) && 
+      project.teamMembers.includes(user.id);
+    
+    return isManager || isTeamMember;
+  });
 
   const handleDateChange = (selectedDate: Date | undefined) => {
     if (!selectedDate) return;
@@ -145,7 +157,7 @@ const TaskFormFields: React.FC<TaskFormFieldsProps> = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="none">No Project</SelectItem>
-              {projects.map(project => (
+              {accessibleProjects.map(project => (
                 <SelectItem key={project.id} value={project.id}>
                   {project.title}
                 </SelectItem>

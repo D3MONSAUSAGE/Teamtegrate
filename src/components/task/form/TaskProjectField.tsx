@@ -3,6 +3,7 @@ import React from 'react';
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Project, Task } from '@/types';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface TaskProjectFieldProps {
   register: any;
@@ -21,6 +22,19 @@ export const TaskProjectField: React.FC<TaskProjectFieldProps> = ({
   projects,
   setValue
 }) => {
+  const { user } = useAuth();
+  
+  // Filter projects to only show those the user has access to
+  const accessibleProjects = projects.filter(project => {
+    if (!user) return false;
+    
+    const isManager = project.managerId === user.id;
+    const isTeamMember = Array.isArray(project.teamMembers) && 
+      project.teamMembers.includes(user.id);
+    
+    return isManager || isTeamMember;
+  });
+
   return (
     <div>
       <Label htmlFor="projectId">Project</Label>
@@ -36,7 +50,7 @@ export const TaskProjectField: React.FC<TaskProjectFieldProps> = ({
         <SelectContent>
           <SelectGroup>
             <SelectItem value="none">Unassigned</SelectItem>
-            {projects.map((project) => (
+            {accessibleProjects.map((project) => (
               <SelectItem key={project.id} value={project.id}>
                 {project.title}
               </SelectItem>
