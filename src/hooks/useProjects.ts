@@ -25,31 +25,42 @@ export const useProjects = () => {
         return;
       }
       
-      console.log('Fetching projects for user:', user.id);
+      console.log('Fetching ALL projects from database for user:', user.id);
       
-      // Fetch directly from DB table to ensure we get all projects
+      // Fetch ALL projects from the database first
       const { data: allProjects, error: projectsError } = await supabase
         .from('projects')
         .select('*')
         .order('created_at', { ascending: false });
         
       if (projectsError) {
-        console.error('Error fetching all projects:', projectsError);
+        console.error('Error fetching projects:', projectsError);
         throw projectsError;
       }
       
-      console.log(`Successfully fetched ${allProjects?.length || 0} projects from database`);
-      console.log('Raw projects from database:', allProjects);
+      console.log(`Successfully fetched ${allProjects?.length || 0} total projects from database`);
+      allProjects?.forEach(project => {
+        console.log(`DB Project: ${project.id}, "${project.title}", Manager: ${project.manager_id}, Team: ${JSON.stringify(project.team_members)}`);
+      });
       
-      // Filter projects where user is manager or team member client-side for reliability
-      const userProjects = allProjects.filter(project => {
+      // Filter projects where user has access
+      const userProjects = allProjects?.filter(project => {
         const isManager = project.manager_id === user.id;
         const isTeamMember = Array.isArray(project.team_members) && 
           project.team_members.includes(user.id);
-        return isManager || isTeamMember;
-      });
+        
+        const hasAccess = isManager || isTeamMember;
+        
+        if (hasAccess) {
+          console.log(`✓ User has access to project "${project.title}" - ${isManager ? 'Manager' : 'Team Member'}`);
+        } else {
+          console.log(`✗ User does NOT have access to project "${project.title}"`);
+        }
+        
+        return hasAccess;
+      }) || [];
       
-      console.log(`After filtering, found ${userProjects.length} projects for user ${user.id}`);
+      console.log(`After filtering, found ${userProjects.length} accessible projects for user ${user.id}`);
       processProjectData(userProjects);
     } catch (error) {
       console.error('Error fetching projects:', error);
@@ -63,12 +74,12 @@ export const useProjects = () => {
   // Helper function to process project data
   const processProjectData = (data: any[]) => {
     if (!data || data.length === 0) {
-      console.log('No projects found in database');
+      console.log('No accessible projects found');
       setProjects([]);
       return;
     }
     
-    console.log('Raw projects data:', data);
+    console.log('Processing project data:', data);
     
     const formattedProjects: Project[] = data.map(project => {
       // Get project tasks to calculate accurate status
@@ -95,12 +106,11 @@ export const useProjects = () => {
           status = 'In Progress';
           isCompleted = false;
           
-          // Log the status correction
           console.log(`Project ${project.id} status corrected: not all tasks complete but was marked as Completed`);
         }
       }
       
-      console.log(`Project ${project.id}: title=${project.title}, status=${status}, is_completed=${isCompleted}, tasks=${totalTasks}, completed=${completedTasks}, progress=${progress}%`);
+      console.log(`✓ Formatted project: ${project.id} - "${project.title}" (${status}, ${progress}% complete)`);
       
       return {
         id: project.id,
@@ -122,26 +132,8 @@ export const useProjects = () => {
       };
     });
 
-    console.log('Formatted projects with task data:', formattedProjects);
-    
-    // Check for any projects with status inconsistencies that need to be fixed in database
-    for (const project of formattedProjects) {
-      const dbProject = data.find(p => p.id === project.id);
-      
-      if (dbProject && (dbProject.status !== project.status || dbProject.is_completed !== project.is_completed)) {
-        console.log(`Fixing project ${project.id} status in database: ${dbProject.status}→${project.status}, ${dbProject.is_completed}→${project.is_completed}`);
-        
-        (async () => {
-          await supabase
-            .from('projects')
-            .update({
-              status: project.status,
-              is_completed: project.is_completed
-            })
-            .eq('id', project.id);
-        })();
-      }
-    }
+    console.log(`Final projects being set: ${formattedProjects.length} projects`);
+    formattedProjects.forEach(p => console.log(`Final: ${p.id} - "${p.title}"`));
     
     setProjects(formattedProjects);
   };

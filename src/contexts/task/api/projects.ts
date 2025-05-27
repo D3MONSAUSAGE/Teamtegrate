@@ -1,4 +1,3 @@
-
 import { Project, User, ProjectStatus } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
@@ -16,84 +15,45 @@ export const fetchProjects = async (
       return;
     }
 
-    console.log('Fetching projects for user:', user.id);
+    console.log('TaskContext: Fetching projects for user:', user.id);
     
-    // Try to fetch all projects first to ensure we catch everything
-    try {
-      const { data: allProjects, error: allProjectsError } = await supabase
-        .from('projects')
-        .select('*')
-        .order('created_at', { ascending: false });
+    // Fetch ALL projects from database
+    const { data: allProjects, error: allProjectsError } = await supabase
+      .from('projects')
+      .select('*')
+      .order('created_at', { ascending: false });
 
-      if (allProjectsError) {
-        throw allProjectsError;
-      }
-      
-      console.log(`Successfully fetched ${allProjects?.length || 0} total projects`);
-      
-      // Filter client-side for projects relevant to this user
-      const userProjects = allProjects.filter(project => {
-        const isManager = project.manager_id === user.id;
-        const isTeamMember = Array.isArray(project.team_members) && 
-                            project.team_members.includes(user.id);
-        
-        if (isManager || isTeamMember) {
-          console.log(`Including project ${project.id}: "${project.title}" - User is ${isManager ? 'manager' : 'team member'}`);
-          return true;
-        }
-        return false;
-      });
-      
-      console.log(`After filtering, found ${userProjects.length} projects for user ${user.id}`);
-      processProjectData(userProjects, user, setProjects);
-    } catch (error) {
-      console.error('Error fetching all projects:', error);
-      
-      // Fall back to traditional approach
-      try {
-        // Get projects where user is manager
-        const { data: managerProjects, error: managerError } = await supabase
-          .from('projects')
-          .select('*')
-          .eq('manager_id', user.id)
-          .order('created_at', { ascending: false });
-
-        if (managerError) {
-          console.error('Error fetching manager projects:', managerError);
-        }
-        
-        // Get projects where user is team member
-        const { data: teamProjects, error: teamError } = await supabase
-          .from('projects')
-          .select('*')
-          .contains('team_members', [user.id])
-          .order('created_at', { ascending: false });
-
-        if (teamError) {
-          console.error('Error fetching team projects:', teamError);
-        }
-        
-        // Combine and deduplicate
-        const allProjects = [
-          ...(managerProjects || []), 
-          ...(teamProjects || [])
-        ];
-        
-        // Deduplicate by project id
-        const uniqueProjects = Array.from(
-          new Map(allProjects.map(project => [project.id, project])).values()
-        );
-        
-        console.log(`Fetched ${uniqueProjects.length} projects using separate queries`);
-        processProjectData(uniqueProjects, user, setProjects);
-      } catch (fallbackError) {
-        console.error('Error in fallback project fetching:', fallbackError);
-        toast.error('Failed to load projects');
-        setProjects([]);
-      }
+    if (allProjectsError) {
+      console.error('Error fetching all projects:', allProjectsError);
+      throw allProjectsError;
     }
+    
+    console.log(`TaskContext: Successfully fetched ${allProjects?.length || 0} total projects`);
+    
+    // Log all projects for debugging
+    allProjects?.forEach(project => {
+      console.log(`TaskContext DB Project: ${project.id}, "${project.title}", Manager: ${project.manager_id}`);
+    });
+    
+    // Filter client-side for projects relevant to this user
+    const userProjects = allProjects?.filter(project => {
+      const isManager = project.manager_id === user.id;
+      const isTeamMember = Array.isArray(project.team_members) && 
+                          project.team_members.includes(user.id);
+      
+      const hasAccess = isManager || isTeamMember;
+      
+      if (hasAccess) {
+        console.log(`TaskContext: ✓ Including project ${project.id}: "${project.title}" - User is ${isManager ? 'manager' : 'team member'}`);
+      }
+      
+      return hasAccess;
+    }) || [];
+    
+    console.log(`TaskContext: After filtering, found ${userProjects.length} projects for user ${user.id}`);
+    processProjectData(userProjects, user, setProjects);
   } catch (error) {
-    console.error('Error in fetchProjects:', error);
+    console.error('TaskContext: Error in fetchProjects:', error);
     toast.error('Failed to load projects');
     setProjects([]);
   }
@@ -106,14 +66,14 @@ const processProjectData = (
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
 ) => {
   if (!data || data.length === 0) {
-    console.log('No projects found in database');
+    console.log('TaskContext: No projects found in database');
     setProjects([]);
     return;
   }
   
   // Log received projects for debugging
   data.forEach(project => {
-    console.log(`Found project: ${project.id}, "${project.title}", Manager: ${project.manager_id}`);
+    console.log(`TaskContext: Processing project: ${project.id}, "${project.title}", Manager: ${project.manager_id}`);
   });
 
   const formattedProjects: Project[] = data.map(project => {
@@ -148,7 +108,7 @@ const processProjectData = (
     };
   });
 
-  console.log('Formatted projects:', formattedProjects);
+  console.log('TaskContext: Final formatted projects:', formattedProjects.map(p => `${p.id} - "${p.title}"`));
   setProjects(formattedProjects);
 };
 
