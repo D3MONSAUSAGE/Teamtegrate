@@ -49,7 +49,8 @@ export const TeamMembersSection: React.FC<TeamMembersSectionProps> = ({
 
   return (
     <div className="space-y-4">
-      <h3 className="font-medium">Team Members</h3>
+      <h3 className="text-lg font-medium">Team Members</h3>
+      <p className="text-sm text-gray-600">Add team members who can view and access this project.</p>
       
       <div className="flex gap-2">
         <Select 
@@ -98,15 +99,20 @@ export const TeamMembersSection: React.FC<TeamMembersSectionProps> = ({
         {teamMemberFields.map((field, index) => {
           const memberData = teamMembers.find(m => m.id === field.memberId);
           return (
-            <div key={field.id} className="flex items-center justify-between p-2 border rounded bg-gray-50 dark:bg-gray-800">
-              <div className="flex items-center gap-2">
-                <Avatar className="h-6 w-6">
+            <div key={field.id} className="flex items-center justify-between p-3 border rounded-lg bg-gray-50 dark:bg-gray-800">
+              <div className="flex items-center gap-3">
+                <Avatar className="h-8 w-8">
                   <AvatarImage src={memberData?.avatar_url} />
                   <AvatarFallback className="bg-primary/10 text-primary text-xs">
                     {(memberData?.name?.[0] || memberData?.email?.[0] || '').toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
-                <span>{memberData?.name || memberData?.email || field.memberId}</span>
+                <div>
+                  <p className="font-medium">{memberData?.name || memberData?.email || field.memberId}</p>
+                  {memberData?.name && memberData?.email && (
+                    <p className="text-sm text-gray-500">{memberData.email}</p>
+                  )}
+                </div>
               </div>
               <Button 
                 type="button" 
@@ -121,10 +127,12 @@ export const TeamMembersSection: React.FC<TeamMembersSectionProps> = ({
         })}
         
         {teamMemberFields.length === 0 && (
-          <p className="text-sm text-gray-500 p-2 text-center">No team members added yet.</p>
+          <div className="p-4 text-center border-2 border-dashed border-gray-300 rounded-lg">
+            <p className="text-sm text-gray-500">No team members added yet.</p>
+            <p className="text-xs text-gray-400 mt-1">Add team members to give them access to this project.</p>
+          </div>
         )}
       </div>
     </div>
   );
 };
-
