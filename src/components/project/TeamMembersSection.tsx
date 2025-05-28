@@ -9,14 +9,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { UseFormWatch, UseFormSetValue } from "react-hook-form";
+import { UseFormWatch, UseFormSetValue, FieldArrayWithId } from "react-hook-form";
 import { Plus, X } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { FormValues } from "./EditProjectDialog";
 
 export interface TeamMembersSectionProps {
   teamMembers: any[];
-  teamMemberFields: { id: string; memberId: string }[];
+  teamMemberFields: FieldArrayWithId<FormValues, "teamMembers", "id">[];
   setValue: UseFormSetValue<FormValues>;
   watch: UseFormWatch<FormValues>;
   fieldArrayProps: {
@@ -97,6 +97,9 @@ export const TeamMembersSection: React.FC<TeamMembersSectionProps> = ({
       
       <div className="space-y-2">
         {teamMemberFields.map((field, index) => {
+          // Add type guard to ensure memberId exists
+          if (!field.memberId) return null;
+          
           const memberData = teamMembers.find(m => m.id === field.memberId);
           return (
             <div key={field.id} className="flex items-center justify-between p-3 border rounded-lg bg-gray-50 dark:bg-gray-800">

@@ -13,7 +13,7 @@ import { format } from 'date-fns';
 import { useTask } from '@/contexts/task';
 import { useUsers } from '@/hooks/useUsers';
 
-// Define the validation schema - making budget properly optional
+// Define the validation schema - making memberId required in team members
 const projectFormSchema = z.object({
   title: z.string().min(1, { message: "Title is required" }),
   description: z.string().optional(),
