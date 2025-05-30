@@ -409,6 +409,51 @@ export type Database = {
         }
         Relationships: []
       }
+      invoices: {
+        Row: {
+          branch: string
+          created_at: string
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string
+          id: string
+          invoice_date: string
+          invoice_number: string
+          updated_at: string
+          uploader_name: string
+          user_id: string
+        }
+        Insert: {
+          branch: string
+          created_at?: string
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string
+          id?: string
+          invoice_date: string
+          invoice_number: string
+          updated_at?: string
+          uploader_name: string
+          user_id: string
+        }
+        Update: {
+          branch?: string
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          file_type?: string
+          id?: string
+          invoice_date?: string
+          invoice_number?: string
+          updated_at?: string
+          uploader_name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       journal_entries: {
         Row: {
           content: string
