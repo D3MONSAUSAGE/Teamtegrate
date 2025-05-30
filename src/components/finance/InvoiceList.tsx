@@ -1,11 +1,11 @@
-
 import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Download, FileText, Calendar, User, Building } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Search, Download, FileText, Calendar, User, Building, Eye } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { format } from 'date-fns';
@@ -45,6 +45,9 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ refreshTrigger }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedBranch, setSelectedBranch] = useState('All Branches');
   const [dateFilter, setDateFilter] = useState('');
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [viewingInvoice, setViewingInvoice] = useState<Invoice | null>(null);
+  const [imageUrl, setImageUrl] = useState<string>('');
 
   const fetchInvoices = async () => {
     try {
@@ -131,6 +134,49 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ refreshTrigger }) => {
     }
   };
 
+  const viewInvoice = async (invoice: Invoice) => {
+    try {
+      // For PDFs, get a signed URL and open in new tab
+      if (invoice.file_type === 'application/pdf') {
+        const { data, error } = await supabase.storage
+          .from('invoices')
+          .createSignedUrl(invoice.file_path, 3600); // 1 hour expiry
+
+        if (error) {
+          console.error('View error:', error);
+          toast.error('Failed to view invoice');
+          return;
+        }
+
+        window.open(data.signedUrl, '_blank');
+        return;
+      }
+
+      // For images, get signed URL and show in modal
+      if (invoice.file_type.startsWith('image/')) {
+        const { data, error } = await supabase.storage
+          .from('invoices')
+          .createSignedUrl(invoice.file_path, 3600); // 1 hour expiry
+
+        if (error) {
+          console.error('View error:', error);
+          toast.error('Failed to view invoice');
+          return;
+        }
+
+        setImageUrl(data.signedUrl);
+        setViewingInvoice(invoice);
+        setViewModalOpen(true);
+        return;
+      }
+
+      toast.error('File type not supported for viewing');
+    } catch (error) {
+      console.error('View error:', error);
+      toast.error('Failed to view invoice');
+    }
+  };
+
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -153,139 +199,177 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ refreshTrigger }) => {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Invoice Management</CardTitle>
-        <CardDescription>
-          Search, filter, and download uploaded invoices
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {/* Search and Filter Controls */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              placeholder="Search by invoice # or uploader..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle>Invoice Management</CardTitle>
+          <CardDescription>
+            Search, filter, view, and download uploaded invoices
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {/* Search and Filter Controls */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Search by invoice # or uploader..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
+            <Select value={selectedBranch} onValueChange={setSelectedBranch}>
+              <SelectTrigger>
+                <Building className="h-4 w-4 mr-2" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {BRANCH_OPTIONS.map((branch) => (
+                  <SelectItem key={branch} value={branch}>
+                    {branch}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <div className="relative">
+              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                type="date"
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
+            <Button
+              variant="outline"
+              onClick={() => {
+                setSearchTerm('');
+                setSelectedBranch('All Branches');
+                setDateFilter('');
+              }}
+            >
+              Clear Filters
+            </Button>
           </div>
 
-          <Select value={selectedBranch} onValueChange={setSelectedBranch}>
-            <SelectTrigger>
-              <Building className="h-4 w-4 mr-2" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {BRANCH_OPTIONS.map((branch) => (
-                <SelectItem key={branch} value={branch}>
-                  {branch}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <div className="relative">
-            <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              type="date"
-              value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-
-          <Button
-            variant="outline"
-            onClick={() => {
-              setSearchTerm('');
-              setSelectedBranch('All Branches');
-              setDateFilter('');
-            }}
-          >
-            Clear Filters
-          </Button>
-        </div>
-
-        {/* Results Summary */}
-        <div className="mb-4">
-          <p className="text-sm text-gray-600">
-            Showing {filteredInvoices.length} of {invoices.length} invoices
-          </p>
-        </div>
-
-        {/* Invoice Table */}
-        {filteredInvoices.length === 0 ? (
-          <div className="text-center py-8">
-            <FileText className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No invoices found</h3>
-            <p className="mt-1 text-sm text-gray-500">
-              {invoices.length === 0 
-                ? "Get started by uploading your first invoice."
-                : "Try adjusting your search or filter criteria."}
+          {/* Results Summary */}
+          <div className="mb-4">
+            <p className="text-sm text-gray-600">
+              Showing {filteredInvoices.length} of {invoices.length} invoices
             </p>
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Invoice Number</TableHead>
-                  <TableHead>Branch</TableHead>
-                  <TableHead>Uploader</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>File Size</TableHead>
-                  <TableHead>Uploaded</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredInvoices.map((invoice) => (
-                  <TableRow key={invoice.id}>
-                    <TableCell className="font-medium">
-                      {invoice.invoice_number}
-                    </TableCell>
-                    <TableCell>
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        {invoice.branch}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center">
-                        <User className="h-4 w-4 mr-1 text-gray-400" />
-                        {invoice.uploader_name}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {format(new Date(invoice.invoice_date), 'MMM dd, yyyy')}
-                    </TableCell>
-                    <TableCell>
-                      {formatFileSize(invoice.file_size)}
-                    </TableCell>
-                    <TableCell>
-                      {format(new Date(invoice.created_at), 'MMM dd, yyyy HH:mm')}
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => downloadInvoice(invoice)}
-                        className="flex items-center"
-                      >
-                        <Download className="h-4 w-4 mr-1" />
-                        Download
-                      </Button>
-                    </TableCell>
+
+          {/* Invoice Table */}
+          {filteredInvoices.length === 0 ? (
+            <div className="text-center py-8">
+              <FileText className="mx-auto h-12 w-12 text-gray-400" />
+              <h3 className="mt-2 text-sm font-medium text-gray-900">No invoices found</h3>
+              <p className="mt-1 text-sm text-gray-500">
+                {invoices.length === 0 
+                  ? "Get started by uploading your first invoice."
+                  : "Try adjusting your search or filter criteria."}
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Invoice Number</TableHead>
+                    <TableHead>Branch</TableHead>
+                    <TableHead>Uploader</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>File Size</TableHead>
+                    <TableHead>Uploaded</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+                </TableHeader>
+                <TableBody>
+                  {filteredInvoices.map((invoice) => (
+                    <TableRow key={invoice.id}>
+                      <TableCell className="font-medium">
+                        {invoice.invoice_number}
+                      </TableCell>
+                      <TableCell>
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          {invoice.branch}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center">
+                          <User className="h-4 w-4 mr-1 text-gray-400" />
+                          {invoice.uploader_name}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {format(new Date(invoice.invoice_date), 'MMM dd, yyyy')}
+                      </TableCell>
+                      <TableCell>
+                        {formatFileSize(invoice.file_size)}
+                      </TableCell>
+                      <TableCell>
+                        {format(new Date(invoice.created_at), 'MMM dd, yyyy HH:mm')}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => viewInvoice(invoice)}
+                            className="flex items-center"
+                          >
+                            <Eye className="h-4 w-4 mr-1" />
+                            View
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => downloadInvoice(invoice)}
+                            className="flex items-center"
+                          >
+                            <Download className="h-4 w-4 mr-1" />
+                            Download
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Image Viewer Modal */}
+      <Dialog open={viewModalOpen} onOpenChange={setViewModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {viewingInvoice?.invoice_number} - {viewingInvoice?.file_name}
+            </DialogTitle>
+          </DialogHeader>
+          {imageUrl && (
+            <div className="flex justify-center">
+              <img 
+                src={imageUrl} 
+                alt={`Invoice ${viewingInvoice?.invoice_number}`}
+                className="max-w-full max-h-[70vh] object-contain"
+                onLoad={() => console.log('Image loaded successfully')}
+                onError={() => {
+                  console.error('Error loading image');
+                  toast.error('Failed to load image');
+                }}
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 
