@@ -5,7 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Search, Download, FileText, Calendar, User, Building, Eye } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Search, Download, FileText, Calendar, User, Building, Eye, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { format } from 'date-fns';
@@ -177,6 +178,41 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ refreshTrigger }) => {
     }
   };
 
+  const deleteInvoice = async (invoice: Invoice) => {
+    try {
+      // Delete file from storage
+      const { error: storageError } = await supabase.storage
+        .from('invoices')
+        .remove([invoice.file_path]);
+
+      if (storageError) {
+        console.error('Storage deletion error:', storageError);
+        toast.error('Failed to delete invoice file from storage');
+        return;
+      }
+
+      // Delete record from database
+      const { error: dbError } = await supabase
+        .from('invoices')
+        .delete()
+        .eq('id', invoice.id);
+
+      if (dbError) {
+        console.error('Database deletion error:', dbError);
+        toast.error('Failed to delete invoice record');
+        return;
+      }
+
+      toast.success('Invoice deleted successfully');
+      
+      // Refresh the invoice list
+      fetchInvoices();
+    } catch (error) {
+      console.error('Delete error:', error);
+      toast.error('Failed to delete invoice');
+    }
+  };
+
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -204,7 +240,7 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ refreshTrigger }) => {
         <CardHeader>
           <CardTitle>Invoice Management</CardTitle>
           <CardDescription>
-            Search, filter, view, and download uploaded invoices
+            Search, filter, view, download, and delete uploaded invoices
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -334,6 +370,37 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ refreshTrigger }) => {
                             <Download className="h-4 w-4 mr-1" />
                             Download
                           </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex items-center text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <Trash2 className="h-4 w-4 mr-1" />
+                                Delete
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Invoice</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete invoice "{invoice.invoice_number}"? 
+                                  This action cannot be undone and will permanently remove the invoice 
+                                  file and all associated data.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => deleteInvoice(invoice)}
+                                  className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+                                >
+                                  Delete Invoice
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </div>
                       </TableCell>
                     </TableRow>
