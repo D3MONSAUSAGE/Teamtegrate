@@ -30,7 +30,7 @@ const CalendarTaskItem: React.FC<CalendarTaskItemProps> = ({
     try {
       const now = new Date();
       const deadline = new Date(task.deadline);
-      return task.status !== 'Done' && deadline < now;
+      return task.status !== 'Completed' && deadline < now;
     } catch (error) {
       console.error("Invalid deadline date for task:", task.id);
       return false;

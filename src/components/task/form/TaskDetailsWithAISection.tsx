@@ -131,7 +131,7 @@ export const TaskDetailsWithAISection: React.FC<TaskDetailsWithAISectionProps> =
       <div className="space-y-2">
         <Label htmlFor="projectId">Project</Label>
         <Select 
-          defaultValue={currentProjectId || editingTask?.project_id || "none"}
+          defaultValue={currentProjectId || editingTask?.projectId || "none"}
           onValueChange={(value) => setValue('projectId', value)}
           disabled={!!currentProjectId}
         >

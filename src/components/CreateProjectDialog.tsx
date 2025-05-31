@@ -47,7 +47,7 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
       description: '',
       startDate: format(new Date(), 'yyyy-MM-dd'),
       endDate: format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'),
-      budget: undefined,
+      budget: undefined, // Set default to undefined instead of a number
       teamMembers: []
     }
   });
@@ -72,11 +72,11 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
       const project = await createProject({
         title: data.title,
         description: data.description,
-        start_date: data.startDate,
-        end_date: data.endDate,
-        manager_id: user.id,
-        budget: data.budget,
-        team_members: teamMemberIds,
+        startDate: new Date(data.startDate),
+        endDate: new Date(data.endDate),
+        managerId: user.id,
+        budget: data.budget, // This can now be undefined
+        teamMembers: teamMemberIds,
         status: 'To Do',
         tasks_count: 0,
         is_completed: false

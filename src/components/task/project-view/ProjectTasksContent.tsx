@@ -1,11 +1,11 @@
 
 import React from 'react';
 import { Project, Task, TaskStatus } from '@/types';
-import { Button } from "@/components/ui/button";
-import { Plus, RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { RefreshCw } from 'lucide-react';
 import ProjectOverview from './ProjectOverview';
 import ProjectTasksFilters from './ProjectTasksFilters';
-import TaskList from '@/components/task/TaskList';
+import TaskTabs from '../TaskTabs';
 
 interface ProjectTasksContentProps {
   project: Project;
@@ -16,9 +16,9 @@ interface ProjectTasksContentProps {
   completedTasks: Task[];
   searchQuery: string;
   sortBy: string;
-  onSearchChange: (query: string) => void;
-  onSortByChange: (sortBy: string) => void;
-  onRefresh: () => void;
+  onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onSortByChange: (value: string) => void;
+  onRefresh: () => Promise<void>;
   isRefreshing: boolean;
   onEditTask: (task: Task) => void;
   onCreateTask: () => void;
@@ -40,89 +40,53 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
   isRefreshing,
   onEditTask,
   onCreateTask,
-  onTaskStatusChange
+  onTaskStatusChange,
 }) => {
-  const allTasks = [...todoTasks, ...inProgressTasks, ...pendingTasks, ...completedTasks];
-
   return (
-    <div className="space-y-6">
-      {/* Project Overview */}
-      <ProjectOverview
-        project={project}
-        progress={progress}
-        todoTasksCount={todoTasks.length}
-        inProgressTasksCount={inProgressTasks.length}
-        pendingTasksCount={pendingTasks.length}
-        completedTasksCount={completedTasks.length}
-        onCreateTask={onCreateTask}
-      />
-
-      {/* Header with Actions */}
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Project Tasks</h2>
-          <p className="text-muted-foreground">
-            {allTasks.length} total tasks
-          </p>
-        </div>
-        
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onRefresh}
-            disabled={isRefreshing}
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
-          <Button onClick={onCreateTask} size="sm">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Task
-          </Button>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <ProjectTasksFilters
-        searchQuery={searchQuery}
-        sortBy={sortBy}
-        onSearchChange={onSearchChange}
-        onSortByChange={onSortByChange}
-      />
-
-      {/* Task Lists */}
-      <div className="space-y-8">
-        <TaskList
-          title="To Do"
-          tasks={todoTasks}
-          onEdit={onEditTask}
-          onStatusChange={onTaskStatusChange}
-          showAddButton={true}
-          onAddTask={onCreateTask}
-        />
-        
-        <TaskList
-          title="In Progress"
-          tasks={inProgressTasks}
-          onEdit={onEditTask}
-          onStatusChange={onTaskStatusChange}
-        />
-        
-        <TaskList
-          title="Pending"
-          tasks={pendingTasks}
-          onEdit={onEditTask}
-          onStatusChange={onTaskStatusChange}
-        />
-        
-        <TaskList
-          title="Completed"
-          tasks={completedTasks}
-          onEdit={onEditTask}
-          onStatusChange={onTaskStatusChange}
+    <div className="p-4 md:p-6">
+      <div className="mb-6">
+        <ProjectOverview
+          project={project}
+          progress={progress}
+          todoTasksLength={todoTasks.length}
+          inProgressTasksLength={inProgressTasks.length}
+          pendingTasksLength={pendingTasks.length}
+          completedTasksLength={completedTasks.length}
+          onCreateTask={onCreateTask}
         />
       </div>
+      
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex-1">
+          <ProjectTasksFilters
+            searchQuery={searchQuery}
+            onSearchChange={onSearchChange}
+            sortBy={sortBy}
+            onSortByChange={onSortByChange}
+          />
+        </div>
+        
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={onRefresh}
+          disabled={isRefreshing}
+          className="ml-2 whitespace-nowrap"
+        >
+          <RefreshCw className={`mr-1 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          {isRefreshing ? "Refreshing..." : "Refresh"}
+        </Button>
+      </div>
+      
+      <TaskTabs
+        todoTasks={todoTasks}
+        inProgressTasks={inProgressTasks}
+        pendingTasks={pendingTasks}
+        completedTasks={completedTasks}
+        onEdit={onEditTask}
+        onNewTask={onCreateTask}
+        onStatusChange={onTaskStatusChange}
+      />
     </div>
   );
 };

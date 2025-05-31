@@ -17,7 +17,7 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'
 
 const TeamPerformanceChart: React.FC<TeamPerformanceChartProps> = ({ tasks }) => {
   const chartData = useMemo(() => {
-    const assignedTasks = tasks.filter(task => task.assigned_to_id);
+    const assignedTasks = tasks.filter(task => task.assignedToId);
     
     // Group by assignee
     const groupedByAssignee = assignedTasks.reduce((acc, task) => {
@@ -30,7 +30,7 @@ const TeamPerformanceChart: React.FC<TeamPerformanceChartProps> = ({ tasks }) =>
       }
       
       acc[assigneeName].total++;
-      if (task.status === 'Done') {
+      if (task.status === 'Completed') {
         acc[assigneeName].completed++;
       }
       

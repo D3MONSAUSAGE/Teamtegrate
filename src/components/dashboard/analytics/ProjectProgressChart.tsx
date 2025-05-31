@@ -34,14 +34,14 @@ const ProjectProgressChart: React.FC<ProjectProgressChartProps> = ({ projects })
           const status = task.status.toLowerCase().replace(/\s+/g, '');
           acc[status as keyof typeof acc] = (acc[status as keyof typeof acc] || 0) + 1;
           return acc;
-        }, { todo: 0, inprogress: 0, pending: 0, done: 0 });
+        }, { todo: 0, inprogress: 0, pending: 0, completed: 0 });
         
         return {
           name: project.title.length > 12 ? project.title.substring(0, 12) + '...' : project.title,
           todo: tasksByStatus.todo,
           inProgress: tasksByStatus.inprogress,
           pending: tasksByStatus.pending,
-          completed: tasksByStatus.done
+          completed: tasksByStatus.completed
         };
       });
   }, [projects]);

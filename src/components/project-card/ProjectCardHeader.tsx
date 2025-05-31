@@ -18,16 +18,16 @@ interface ProjectCardHeaderProps {
 const statusColors = {
   'To Do': 'bg-yellow-500/10 text-yellow-700 border-yellow-500',
   'In Progress': 'bg-blue-500/10 text-blue-700 border-blue-500',
-  'Done': 'bg-green-500/10 text-green-700 border-green-500'
+  'Completed': 'bg-green-500/10 text-green-700 border-green-500'
 };
 
 const ProjectCardHeader: React.FC<ProjectCardHeaderProps> = ({ project, onDeleteClick, onEditClick, isDeleting }) => {
   // Calculate days left or overdue
   const calculateDaysRemaining = () => {
     const today = new Date();
-    const endDate = new Date(project.end_date);
+    const endDate = new Date(project.endDate);
     
-    if (project.status === 'Done') {
+    if (project.status === 'Completed') {
       return null; // No need to show days remaining for completed projects
     }
     
@@ -50,7 +50,7 @@ const ProjectCardHeader: React.FC<ProjectCardHeaderProps> = ({ project, onDelete
           <div className="flex items-center space-x-2">
             <Calendar className="w-4 h-4 text-gray-500" />
             <span className="text-sm text-gray-500">
-              {format(new Date(project.start_date), 'MMM d')} - {format(new Date(project.end_date), 'MMM d, yyyy')}
+              {format(new Date(project.startDate), 'MMM d')} - {format(new Date(project.endDate), 'MMM d, yyyy')}
             </span>
           </div>
         </div>
@@ -100,10 +100,10 @@ const ProjectCardHeader: React.FC<ProjectCardHeaderProps> = ({ project, onDelete
           </Badge>
         )}
         
-        {project.team_members && project.team_members.length > 0 && (
+        {project.teamMembers && project.teamMembers.length > 0 && (
           <Badge variant="outline" className="flex gap-1 items-center text-xs">
             <Users className="h-3 w-3" />
-            {project.team_members.length}
+            {project.teamMembers.length}
           </Badge>
         )}
       </div>

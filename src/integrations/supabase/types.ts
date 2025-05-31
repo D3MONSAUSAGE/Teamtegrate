@@ -420,7 +420,6 @@ export type Database = {
           id: string
           invoice_date: string
           invoice_number: string
-          organization_id: string | null
           updated_at: string
           uploader_name: string
           user_id: string
@@ -435,7 +434,6 @@ export type Database = {
           id?: string
           invoice_date: string
           invoice_number: string
-          organization_id?: string | null
           updated_at?: string
           uploader_name: string
           user_id: string
@@ -450,20 +448,11 @@ export type Database = {
           id?: string
           invoice_date?: string
           invoice_number?: string
-          organization_id?: string | null
           updated_at?: string
           uploader_name?: string
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "invoices_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       journal_entries: {
         Row: {
@@ -522,27 +511,6 @@ export type Database = {
           title?: string
           type?: string
           user_id?: string
-        }
-        Relationships: []
-      }
-      organizations: {
-        Row: {
-          created_at: string
-          created_by: string
-          id: string
-          name: string
-        }
-        Insert: {
-          created_at?: string
-          created_by: string
-          id?: string
-          name: string
-        }
-        Update: {
-          created_at?: string
-          created_by?: string
-          id?: string
-          name?: string
         }
         Relationships: []
       }

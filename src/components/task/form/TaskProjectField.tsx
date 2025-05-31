@@ -28,9 +28,9 @@ export const TaskProjectField: React.FC<TaskProjectFieldProps> = ({
   const accessibleProjects = projects.filter(project => {
     if (!user) return false;
     
-    const isManager = project.manager_id === user.id;
-    const isTeamMember = Array.isArray(project.team_members) && 
-      project.team_members.includes(user.id);
+    const isManager = project.managerId === user.id;
+    const isTeamMember = Array.isArray(project.teamMembers) && 
+      project.teamMembers.includes(user.id);
     
     return isManager || isTeamMember;
   });
@@ -39,7 +39,7 @@ export const TaskProjectField: React.FC<TaskProjectFieldProps> = ({
     <div>
       <Label htmlFor="projectId">Project</Label>
       <Select 
-        defaultValue={editingTask?.project_id || currentProjectId || "none"}
+        defaultValue={editingTask?.projectId || currentProjectId || "none"}
         onValueChange={(value) => {
           setValue("projectId", value);
         }}

@@ -31,7 +31,7 @@ export const updateTaskStatus = async (
     let completedById = undefined;
     let completedByName = undefined;
     
-    if (status === 'Done') {
+    if (status === 'Completed') {
       completedById = user.id;
       completedByName = user.name || task.assignedToName;
     }
@@ -40,7 +40,7 @@ export const updateTaskStatus = async (
       .from('tasks')
       .update({
         status: status,
-        completed_at: status === 'Done' ? now.toISOString() : null,
+        completed_at: status === 'Completed' ? now.toISOString() : null,
         completed_by_id: completedById,
       })
       .eq('id', taskId);
@@ -57,9 +57,9 @@ export const updateTaskStatus = async (
         t.id === taskId ? { 
           ...t, 
           status: status, 
-          completed_at: status === 'Done' ? now : undefined,
-          completedById: status === 'Done' ? user.id : undefined,
-          completedByName: status === 'Done' ? (user.name || t.assignedToName) : undefined
+          completedAt: status === 'Completed' ? now : undefined,
+          completedById: status === 'Completed' ? user.id : undefined,
+          completedByName: status === 'Completed' ? (user.name || t.assignedToName) : undefined
         } : t
       )
     );
@@ -72,9 +72,9 @@ export const updateTaskStatus = async (
           t.id === taskId ? { 
             ...t, 
             status: status, 
-            completed_at: status === 'Done' ? now : undefined,
-            completedById: status === 'Done' ? user.id : undefined,
-            completedByName: status === 'Done' ? (user.name || t.assignedToName) : undefined
+            completedAt: status === 'Completed' ? now : undefined,
+            completedById: status === 'Completed' ? user.id : undefined,
+            completedByName: status === 'Completed' ? (user.name || t.assignedToName) : undefined
           } : t
         ),
       }))
@@ -85,7 +85,7 @@ export const updateTaskStatus = async (
       const today = new Date().toDateString();
       if (prevScore.date.toDateString() === today) {
         const completedTasks =
-          status === 'Done'
+          status === 'Completed'
             ? prevScore.completedTasks + 1
             : prevScore.completedTasks - 1;
         const totalTasks = prevScore.totalTasks;

@@ -7,7 +7,8 @@ export const useTaskDetailUtils = (task: Task) => {
     switch(status) {
       case 'To Do': return 'bg-slate-100 hover:bg-slate-200 text-slate-700';
       case 'In Progress': return 'bg-blue-100 hover:bg-blue-200 text-blue-700';
-      case 'Done': return 'bg-green-100 hover:bg-green-200 text-green-700';
+      case 'Pending': return 'bg-amber-100 hover:bg-amber-200 text-amber-700';
+      case 'Completed': return 'bg-green-100 hover:bg-green-200 text-green-700';
       default: return '';
     }
   };
@@ -25,7 +26,7 @@ export const useTaskDetailUtils = (task: Task) => {
     try {
       const now = new Date();
       const deadline = new Date(task.deadline);
-      return task.status !== 'Done' && deadline < now;
+      return task.status !== 'Completed' && deadline < now;
     } catch (error) {
       console.error("Invalid deadline date for task:", task.id);
       return false;

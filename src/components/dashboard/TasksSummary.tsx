@@ -23,7 +23,7 @@ const TasksSummary: React.FC<TasksSummaryProps> = ({
           <h3 className="font-medium mb-2">Today's Tasks</h3>
           <div className="text-2xl md:text-3xl font-bold">{todaysTasks.length}</div>
           <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400">
-            {todaysTasks.filter(task => task.status === 'Done').length} completed
+            {todaysTasks.filter(task => task.status === 'Completed').length} completed
           </div>
         </div>
         <div className="bg-white dark:bg-card p-3 md:p-4 rounded-lg border">

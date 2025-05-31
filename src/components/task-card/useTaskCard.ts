@@ -23,7 +23,7 @@ export const useTaskCard = (task: Task) => {
 
   const isTaskOverdue = () => {
     const now = new Date();
-    return task.status !== "Done" && task.deadline && task.deadline < now;
+    return task.status !== "Completed" && task.deadline < now;
   };
 
   const handleStatusChange = (newStatus: TaskStatus) => {
@@ -51,7 +51,7 @@ export const useTaskCard = (task: Task) => {
       return 'Unassigned';
     }
     
-    if (task.assigned_to_id && (!task.assignedToName || task.assignedToName === task.assigned_to_id)) {
+    if (task.assignedToId && (!task.assignedToName || task.assignedToName === task.assignedToId)) {
       return 'Unassigned';
     }
     
