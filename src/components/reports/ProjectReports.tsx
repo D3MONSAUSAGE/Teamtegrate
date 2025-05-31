@@ -27,13 +27,13 @@ const ProjectReports: React.FC = () => {
     const dataMap = new Map();
     projects.forEach(project => {
       const totalTasks = project.tasks.length;
-      const completedTasks = project.tasks.filter(task => task.status === 'Completed').length;
+      const completedTasks = project.tasks.filter(task => task.status === 'Done').length;
       const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
       
       // Today's date
       const now = new Date();
       // Check if project is overdue
-      const isOverdue = project.endDate && isAfter(now, new Date(project.endDate));
+      const isOverdue = project.end_date && isAfter(now, new Date(project.end_date));
       
       dataMap.set(project.title, {
         name: project.title,
@@ -56,7 +56,7 @@ const ProjectReports: React.FC = () => {
         'To Do': 0,
         'In Progress': 0,
         'Pending': 0,
-        'Completed': 0
+        'Done': 0
       };
       
       project.tasks.forEach(task => {
@@ -73,21 +73,21 @@ const ProjectReports: React.FC = () => {
   // Project on-time completion rate
   const onTimeCompletionData = React.useMemo(() => {
     const onTime = projects.filter(project => {
-      if (!project.endDate) return false;
+      if (!project.end_date) return false;
       
-      const completedTasks = project.tasks.filter(task => task.status === 'Completed');
+      const completedTasks = project.tasks.filter(task => task.status === 'Done');
       const allTasksCompleted = completedTasks.length === project.tasks.length;
       
-      const endDate = new Date(project.endDate);
+      const endDate = new Date(project.end_date);
       const now = new Date();
       
       return allTasksCompleted && !isAfter(now, endDate);
     }).length;
     
     const overdue = projects.filter(project => {
-      if (!project.endDate) return false;
+      if (!project.end_date) return false;
       
-      const endDate = new Date(project.endDate);
+      const endDate = new Date(project.end_date);
       const now = new Date();
       
       return isAfter(now, endDate);
@@ -108,7 +108,7 @@ const ProjectReports: React.FC = () => {
     'To Do': '#8884d8',
     'In Progress': '#0088FE',
     'Pending': '#FFBB28',
-    'Completed': '#00C49F'
+    'Done': '#00C49F'
   };
   
   return (
@@ -170,7 +170,7 @@ const ProjectReports: React.FC = () => {
                 <Bar dataKey="To Do" name="To Do" fill={STATUS_COLORS['To Do']} />
                 <Bar dataKey="In Progress" name="In Progress" fill={STATUS_COLORS['In Progress']} />
                 <Bar dataKey="Pending" name="Pending" fill={STATUS_COLORS['Pending']} />
-                <Bar dataKey="Completed" name="Completed" fill={STATUS_COLORS['Completed']} />
+                <Bar dataKey="Done" name="Done" fill={STATUS_COLORS['Done']} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>

@@ -1,92 +1,57 @@
 
 import React from 'react';
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { UseFormSetValue } from 'react-hook-form';
+import { TaskFormValues, User } from '@/types';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useUsers } from '@/hooks/useUsers';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User } from '@/types';
-import { Task } from '@/types';
 
 interface TaskAssigneeSelectProps {
-  register: any;
-  errors: any;
-  setValue: any;
-  editingTask?: Task;
-  teamMembers: User[];
+  selectedMember: string;
+  setSelectedMember: React.Dispatch<React.SetStateAction<string>>;
+  setValue: UseFormSetValue<TaskFormValues>;
 }
 
 export const TaskAssigneeSelect: React.FC<TaskAssigneeSelectProps> = ({
-  register,
-  errors,
-  setValue,
-  editingTask,
-  teamMembers
+  selectedMember,
+  setSelectedMember,
+  setValue
 }) => {
+  const { users } = useUsers();
+
   const handleAssigneeChange = (userId: string) => {
-    if (userId === "unassigned") {
-      setValue("assigned_to_id", null);
-      setValue("assignedToName", null);
-    } else {
-      const selectedMember = teamMembers.find(member => member.id === userId);
-      setValue("assigned_to_id", userId);
-      setValue("assignedToName", selectedMember?.name || "");
+    setSelectedMember(userId);
+    const selectedUser = users.find((user: User) => user.id === userId);
+    if (selectedUser) {
+      setValue('assigned_to_id', userId);
+      setValue('assignedToName', selectedUser.name);
     }
   };
 
   return (
-    <div>
-      <Label htmlFor="assignee">Assigned To</Label>
-      <Select 
-        defaultValue={editingTask?.assigned_to_id || "unassigned"}
-        onValueChange={handleAssigneeChange}
-      >
+    <div className="space-y-2">
+      <label className="text-sm font-medium">Assign to team member</label>
+      <Select value={selectedMember} onValueChange={handleAssigneeChange}>
         <SelectTrigger>
-          <SelectValue placeholder="Select assignee">
-            {editingTask?.assigned_to_id ? (
-              <div className="flex items-center gap-2">
-                <Avatar className="w-6 h-6">
-                  <AvatarImage 
-                    src={teamMembers.find(m => m.id === editingTask.assigned_to_id)?.avatar_url || ""} 
-                    alt={editingTask.assignedToName || "User"} 
-                  />
-                  <AvatarFallback>
-                    {(editingTask.assignedToName || "U").charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <span>{editingTask.assignedToName}</span>
-              </div>
-            ) : (
-              "Unassigned"
-            )}
-          </SelectValue>
+          <SelectValue placeholder="Select team member" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="unassigned">
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">
-                <span className="text-xs text-gray-500">?</span>
-              </div>
-              <span>Unassigned</span>
-            </div>
-          </SelectItem>
-          {teamMembers.map((member) => (
-            <SelectItem key={member.id} value={member.id}>
+          {users.map((user: User) => (
+            <SelectItem key={user.id} value={user.id}>
               <div className="flex items-center gap-2">
-                <Avatar className="w-6 h-6">
+                <Avatar className="h-6 w-6">
                   <AvatarImage 
-                    src={member.avatar_url || ""} 
-                    alt={member.name} 
+                    src={user.avatar_url || ''} 
+                    alt={user.name} 
                   />
-                  <AvatarFallback>
-                    {member.name.charAt(0).toUpperCase()}
+                  <AvatarFallback className="text-xs">
+                    {user.name.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
-                <span>{member.name}</span>
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium">{user.name}</span>
+                  <span className="text-xs text-muted-foreground">{user.email}</span>
+                </div>
               </div>
             </SelectItem>
           ))}
@@ -95,3 +60,5 @@ export const TaskAssigneeSelect: React.FC<TaskAssigneeSelectProps> = ({
     </div>
   );
 };
+
+export default TaskAssigneeSelect;

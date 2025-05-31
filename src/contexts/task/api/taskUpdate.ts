@@ -25,7 +25,7 @@ export const updateTask = async (
     const updatedTask = {
       ...existingTask,
       ...updates,
-      updatedAt: now,
+      updated_at: now,
     };
 
     // Prepare the supabase update payload with snake_case column names
@@ -35,8 +35,7 @@ export const updateTask = async (
       priority: updatedTask.priority,
       status: updatedTask.status,
       updated_at: now.toISOString(),
-      assigned_to_id: updatedTask.assignedToId || null,
-      assigned_to_name: updatedTask.assignedToName || null,
+      assigned_to_id: updatedTask.assigned_to_id || null,
       cost: updatedTask.cost || 0,
     };
     
@@ -69,10 +68,10 @@ export const updateTask = async (
     );
 
     // Update project state if task belongs to a project
-    if (updatedTask.projectId) {
+    if (updatedTask.project_id) {
       setProjects((prevProjects) =>
         prevProjects.map((project) =>
-          project.id === updatedTask.projectId
+          project.id === updatedTask.project_id
             ? {
                 ...project,
                 tasks: project.tasks.map((task) =>

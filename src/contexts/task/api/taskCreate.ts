@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
 
 export const addTask = async (
-  task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>,
+  task: Omit<Task, 'id' | 'created_at' | 'updated_at'>,
   user: { id: string },
   tasks: Task[],
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>,
@@ -19,9 +19,9 @@ export const addTask = async (
     const newTask = {
       ...task,
       id: taskId,
-      userId: user.id,
-      createdAt: now,
-      updatedAt: now,
+      user_id: user.id,
+      created_at: now,
+      updated_at: now,
     };
 
     // Convert any Date objects to ISO strings for Supabase
@@ -35,8 +35,8 @@ export const addTask = async (
       .insert([
         {
           id: newTask.id,
-          user_id: newTask.userId,
-          project_id: newTask.projectId || null,
+          user_id: newTask.user_id,
+          project_id: newTask.project_id || null,
           title: newTask.title,
           description: newTask.description,
           deadline: deadlineIso,
@@ -44,8 +44,7 @@ export const addTask = async (
           status: newTask.status,
           created_at: now.toISOString(),
           updated_at: now.toISOString(),
-          assigned_to_id: newTask.assignedToId || null,
-          assigned_to_name: newTask.assignedToName || null,
+          assigned_to_id: newTask.assigned_to_id || null,
           cost: newTask.cost || 0,
         },
       ])
@@ -61,10 +60,10 @@ export const addTask = async (
     setTasks([...tasks, newTask]);
 
     // If task belongs to a project, update that project's tasks
-    if (newTask.projectId) {
+    if (newTask.project_id) {
       setProjects((prevProjects) =>
         prevProjects.map((project) =>
-          project.id === newTask.projectId
+          project.id === newTask.project_id
             ? { ...project, tasks: [...project.tasks, newTask] }
             : project
         )

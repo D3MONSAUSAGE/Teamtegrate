@@ -76,9 +76,9 @@ const TeamPerformanceReport = () => {
               <div className="flex justify-between items-center">
                 <div className="font-medium">{member.name}</div>
                 <div className="text-sm text-muted-foreground">
-                  <span className="font-medium mr-1">{member.completedTasks}</span>
+                  <span className="font-medium mr-1">{member.tasksCompleted}</span>
                   /
-                  <span className="ml-1">{member.totalTasks} tasks</span>
+                  <span className="ml-1">{member.tasksAssigned} tasks</span>
                 </div>
               </div>
               
@@ -92,11 +92,11 @@ const TeamPerformanceReport = () => {
               <div className="flex gap-3 text-xs text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <Check className="h-3 w-3" /> 
-                  {member.completedTasks} completed
+                  {member.tasksCompleted} completed
                 </div>
                 <div className="flex items-center gap-1">
                   <Users className="h-3 w-3" /> 
-                  {member.projects} projects
+                  {member.tasksAssigned} assigned
                 </div>
               </div>
             </div>
