@@ -38,11 +38,11 @@ interface TaskContextType {
   projects: Project[];
   dailyScore: DailyScore;
   refreshProjects: () => Promise<void>;
-  addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  addTask: (task: Omit<Task, 'id' | 'created_at' | 'updated_at'>) => void;
   updateTask: (taskId: string, updates: Partial<Task>) => void;
   updateTaskStatus: (taskId: string, status: TaskStatus) => void;
   deleteTask: (taskId: string) => void;
-  addProject: (project: Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'tasks'>) => Promise<Project | null>;
+  addProject: (project: Omit<Project, 'id' | 'created_at' | 'updated_at' | 'tasks'>) => Promise<Project | null>;
   updateProject: (projectId: string, updates: Partial<Project>) => void;
   deleteProject: (projectId: string) => void;
   assignTaskToProject: (taskId: string, projectId: string) => void;
@@ -136,7 +136,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     projects,
     dailyScore,
     refreshProjects,
-    addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => 
+    addTask: (task: Omit<Task, 'id' | 'created_at' | 'updated_at'>) => 
       addTask(task, user, tasks, setTasks, projects, setProjects),
     updateTask: (taskId: string, updates: Partial<Task>) => 
       updateTask(taskId, updates, user, tasks, setTasks, projects, setProjects),
@@ -144,7 +144,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       updateTaskStatus(taskId, status, user, tasks, setTasks, projects, setProjects, setDailyScore),
     deleteTask: (taskId: string) => 
       deleteTask(taskId, user, setTasks, projects, setProjects),
-    addProject: (project: Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'tasks'>) => 
+    addProject: (project: Omit<Project, 'id' | 'created_at' | 'updated_at' | 'tasks'>) => 
       addProject(project, user, setProjects),
     updateProject: (projectId: string, updates: Partial<Project>) => 
       updateProject(projectId, updates, user, setProjects),

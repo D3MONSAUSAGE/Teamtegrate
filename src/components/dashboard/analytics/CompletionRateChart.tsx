@@ -32,12 +32,12 @@ const CompletionRateChart: React.FC<CompletionRateChartProps> = ({ tasks }) => {
       const displayDate = format(date, isMobile ? 'E' : 'EEE');
       
       const dayTasks = tasks.filter(task => {
-        const taskDate = new Date(task.completedAt || task.deadline);
+        const taskDate = new Date(task.completed_at || task.deadline);
         taskDate.setHours(0, 0, 0, 0);
         return taskDate.getTime() === date.getTime();
       });
       
-      const completed = dayTasks.filter(task => task.status === 'Completed').length;
+      const completed = dayTasks.filter(task => task.status === 'Done').length;
       const all = dayTasks.length;
       const rate = all > 0 ? Math.round((completed / all) * 100) : 0;
       

@@ -43,7 +43,7 @@ export const useProjectTasks = (allTasks: Task[], projectId: string | null) => {
           const priorityValues = { 'High': 0, 'Medium': 1, 'Low': 2 };
           return priorityValues[a.priority] - priorityValues[b.priority];
         case 'created':
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
         case 'upcoming':
           const now = new Date().getTime();
           const deadlineA = new Date(a.deadline).getTime();
@@ -76,7 +76,7 @@ export const useProjectTasks = (allTasks: Task[], projectId: string | null) => {
   );
   
   const completedTasks = useMemo(() => 
-    sortTasks(filteredTasks.filter(task => task.status === 'Completed')),
+    sortTasks(filteredTasks.filter(task => task.status === 'Done')),
     [filteredTasks, sortTasks]
   );
 
@@ -85,7 +85,7 @@ export const useProjectTasks = (allTasks: Task[], projectId: string | null) => {
     const total = projectTasks.length;
     if (total === 0) return 0;
     
-    const completed = projectTasks.filter(task => task.status === 'Completed').length;
+    const completed = projectTasks.filter(task => task.status === 'Done').length;
     return Math.round((completed / total) * 100);
   }, [projectTasks]);
 

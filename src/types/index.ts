@@ -5,6 +5,7 @@ export interface User {
   name: string;
   role: import('./organization').UserRole;
   createdAt: Date;
+  avatar_url?: string;
 }
 
 export interface Project {
@@ -23,13 +24,14 @@ export interface Project {
   created_at?: string;
   updated_at?: string;
   tags?: string[];
+  tasks: Task[];
 }
 
 export interface Task {
   id: string;
   title: string;
   description?: string;
-  status: 'To Do' | 'In Progress' | 'Done';
+  status: 'To Do' | 'In Progress' | 'Done' | 'Pending';
   priority: 'Low' | 'Medium' | 'High';
   deadline?: Date;
   assigned_to_id?: string;
@@ -82,7 +84,7 @@ export interface Invoice {
 
 // Task-related types
 export type TaskPriority = 'Low' | 'Medium' | 'High';
-export type TaskStatus = 'To Do' | 'In Progress' | 'Done';
+export type TaskStatus = 'To Do' | 'In Progress' | 'Done' | 'Pending';
 export type ProjectStatus = 'To Do' | 'In Progress' | 'Done';
 
 export interface TaskComment {
@@ -109,6 +111,16 @@ export interface TaskFormValues {
   cost?: number | string;
   assigned_to_id?: string; 
   assignedToName?: string;
+}
+
+export interface TeamMemberPerformance {
+  id: string;
+  name: string;
+  email: string;
+  tasksCompleted: number;
+  tasksAssigned: number;
+  completionRate: number;
+  averageTaskTime: number;
 }
 
 // Add AppUser alias for compatibility

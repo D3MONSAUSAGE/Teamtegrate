@@ -68,13 +68,13 @@ const DailyPerformanceReport: React.FC = () => {
   // Find today's completed tasks and project tasks
   const today = new Date();
   const completedToday = tasks.filter(
-    t => t.status === "Completed" && isToday(t.updatedAt)
+    t => t.status === "Done" && isToday(t.updated_at)
   );
   const completedProjectTasks = completedToday.filter(
-    t => !!t.projectId
+    t => !!t.project_id
   );
   const completedPersonalTasks = completedToday.filter(
-    t => !t.projectId
+    t => !t.project_id
   );
 
   // CSV export implementation
@@ -93,8 +93,8 @@ const DailyPerformanceReport: React.FC = () => {
       ["Time", "Task", "Type"]
     ];
     completedToday.forEach(task => {
-      const time = task.updatedAt ? format(new Date(task.updatedAt), "p") : "-";
-      const type = task.projectId ? "Project" : "Personal";
+      const time = task.updated_at ? format(new Date(task.updated_at), "p") : "-";
+      const type = task.project_id ? "Project" : "Personal";
       csv.push([time, task.title, type]);
     });
     // Join and export file
@@ -102,82 +102,137 @@ const DailyPerformanceReport: React.FC = () => {
     const blob = new Blob([csvContent], { type: "text/csv" });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `Daily_Performance_Report_${dateStr}.csv`;
-    document.body.appendChild(link);
+    link.download = `daily-performance-${dateStr}.csv`;
     link.click();
-    document.body.removeChild(link);
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold flex gap-2 items-center">
-          <Timer className="w-5 h-5" />
-          Daily Performance Report
-        </h2>
-        <Button variant="secondary" onClick={exportCSV} className="gap-2" size="sm">
-          <Download className="w-4 h-4" />
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">Daily Performance Report</h2>
+        <Button onClick={exportCSV} variant="outline">
+          <Download className="h-4 w-4 mr-2" />
           Export CSV
         </Button>
       </div>
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Timer className="w-5 h-5" />
-            Today's Performance Summary
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4 md:flex-row md:gap-12">
-          <div className="flex flex-col gap-1 min-w-[150px]">
-            <span className="text-muted-foreground text-xs">Total Hours Tracked</span>
-            <span className="text-2xl font-bold text-primary">{loading ? <Skeleton className="w-14 h-6" /> : `${totalHours} h`}</span>
-          </div>
-          <div className="flex flex-col gap-1 min-w-[150px]">
-            <span className="text-muted-foreground text-xs flex gap-1 items-center"><FileCheck2 size={14}/>Completed Tasks</span>
-            <span className="text-xl font-semibold">{completedToday.length}</span>
-          </div>
-          <div className="flex flex-col gap-1 min-w-[150px]">
-            <span className="text-muted-foreground text-xs flex gap-1 items-center"><FolderKanban size={14}/>Project Tasks Done</span>
-            <span className="text-xl font-semibold">{completedProjectTasks.length}</span>
-          </div>
-          <div className="flex flex-col gap-1 min-w-[150px]">
-            <span className="text-muted-foreground text-xs">Personal Tasks Done</span>
-            <span className="text-xl font-semibold">{completedPersonalTasks.length}</span>
-          </div>
-        </CardContent>
-      </Card>
-      {/* List Completed Tasks */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2"><FileCheck2 size={18}/> Completed Tasks Today</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {completedToday.length === 0 ? (
-            <div className="text-muted-foreground">No tasks completed today.</div>
-          ) : (
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Hours Tracked</CardTitle>
+            <Timer className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalHours}</div>
+            <p className="text-xs text-muted-foreground">
+              {todayEntries.length} time entries
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Tasks Completed</CardTitle>
+            <FileCheck2 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{completedToday.length}</div>
+            <p className="text-xs text-muted-foreground">
+              {completedPersonalTasks.length} personal, {completedProjectTasks.length} project
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Project Tasks</CardTitle>
+            <FolderKanban className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{completedProjectTasks.length}</div>
+            <p className="text-xs text-muted-foreground">
+              Project contributions
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Tasks Completed Today */}
+      {completedToday.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Tasks Completed Today</CardTitle>
+          </CardHeader>
+          <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Time</TableHead>
                   <TableHead>Task</TableHead>
-                  <TableHead>Project</TableHead>
+                  <TableHead>Type</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {completedToday.map(task => (
+                {completedToday.map((task) => (
                   <TableRow key={task.id}>
                     <TableCell>
-                      {task.updatedAt ? format(new Date(task.updatedAt), "p") : "-"}
+                      {task.updated_at ? format(new Date(task.updated_at), "h:mm a") : "-"}
                     </TableCell>
-                    <TableCell className="max-w-[200px] whitespace-pre-line">
-                      {task.title}
+                    <TableCell>{task.title}</TableCell>
+                    <TableCell>
+                      {task.project_id ? "Project" : "Personal"}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Time Tracking Details */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Time Tracking Details</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+            </div>
+          ) : todayEntries.length === 0 ? (
+            <p className="text-muted-foreground">No time entries for today</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Clock In</TableHead>
+                  <TableHead>Clock Out</TableHead>
+                  <TableHead>Duration</TableHead>
+                  <TableHead>Notes</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {todayEntries.map((entry) => (
+                  <TableRow key={entry.id}>
+                    <TableCell>
+                      {format(new Date(entry.clock_in), "h:mm a")}
                     </TableCell>
                     <TableCell>
-                      {task.projectId ? 
-                        <span className="px-2 py-1 bg-emerald-50 text-emerald-800 rounded-md text-xs">Project</span>
-                        : <span className="px-2 py-1 bg-neutral-100 text-muted-foreground rounded-md text-xs">Personal</span>
+                      {entry.clock_out ? format(new Date(entry.clock_out), "h:mm a") : "Active"}
+                    </TableCell>
+                    <TableCell>
+                      {entry.duration_minutes
+                        ? `${Math.floor(entry.duration_minutes / 60)}h ${entry.duration_minutes % 60}m`
+                        : entry.clock_out
+                        ? `${Math.floor(differenceInMinutes(new Date(entry.clock_out), new Date(entry.clock_in)) / 60)}h ${differenceInMinutes(new Date(entry.clock_out), new Date(entry.clock_in)) % 60}m`
+                        : "In progress"
                       }
                     </TableCell>
+                    <TableCell>{entry.notes || "-"}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -190,4 +245,3 @@ const DailyPerformanceReport: React.FC = () => {
 };
 
 export default DailyPerformanceReport;
-

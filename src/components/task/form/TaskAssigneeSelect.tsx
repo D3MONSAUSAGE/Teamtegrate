@@ -1,118 +1,97 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Search } from 'lucide-react';
-import { AppUser } from '@/types';
-import { Input } from '@/components/ui/input';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { User } from '@/types';
+import { Task } from '@/types';
 
 interface TaskAssigneeSelectProps {
-  selectedMember: string | undefined;
-  onAssign: (userId: string) => void;
-  users: AppUser[];
-  isLoading: boolean;
+  register: any;
+  errors: any;
+  setValue: any;
+  editingTask?: Task;
+  teamMembers: User[];
 }
 
-const TaskAssigneeSelect: React.FC<TaskAssigneeSelectProps> = ({
-  selectedMember,
-  onAssign,
-  users,
-  isLoading
+export const TaskAssigneeSelect: React.FC<TaskAssigneeSelectProps> = ({
+  register,
+  errors,
+  setValue,
+  editingTask,
+  teamMembers
 }) => {
-  const [searchQuery, setSearchQuery] = useState('');
-  
-  // Filter users based on search query
-  const filteredUsers = users.filter(user => 
-    (user.name?.toLowerCase() || user.email.toLowerCase()).includes(searchQuery.toLowerCase())
-  );
-  
-  // Get selected user for display in the trigger
-  const selectedUser = users.find(user => user.id === selectedMember);
-  
+  const handleAssigneeChange = (userId: string) => {
+    if (userId === "unassigned") {
+      setValue("assigned_to_id", null);
+      setValue("assignedToName", null);
+    } else {
+      const selectedMember = teamMembers.find(member => member.id === userId);
+      setValue("assigned_to_id", userId);
+      setValue("assignedToName", selectedMember?.name || "");
+    }
+  };
+
   return (
-    <div className="space-y-2">
-      <Label htmlFor="assignedTo">Assigned To</Label>
-      <Select
-        value={selectedMember}
-        onValueChange={onAssign}
+    <div>
+      <Label htmlFor="assignee">Assigned To</Label>
+      <Select 
+        defaultValue={editingTask?.assigned_to_id || "unassigned"}
+        onValueChange={handleAssigneeChange}
       >
-        <SelectTrigger id="assignedTo" className="w-full flex items-center gap-2">
-          {selectedMember && selectedUser ? (
-            <div className="flex items-center gap-2 max-w-[90%] truncate">
-              <Avatar className="h-5 w-5">
-                <AvatarImage src={selectedUser?.avatar_url || undefined} />
-                <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                  {(selectedUser?.name?.[0] || selectedUser?.email[0] || '').toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <SelectValue className="truncate" placeholder="Assign to user (optional)" />
-            </div>
-          ) : (
-            <SelectValue placeholder="Assign to user (optional)" />
-          )}
+        <SelectTrigger>
+          <SelectValue placeholder="Select assignee">
+            {editingTask?.assigned_to_id ? (
+              <div className="flex items-center gap-2">
+                <Avatar className="w-6 h-6">
+                  <AvatarImage 
+                    src={teamMembers.find(m => m.id === editingTask.assigned_to_id)?.avatar_url || ""} 
+                    alt={editingTask.assignedToName || "User"} 
+                  />
+                  <AvatarFallback>
+                    {(editingTask.assignedToName || "U").charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <span>{editingTask.assignedToName}</span>
+              </div>
+            ) : (
+              "Unassigned"
+            )}
+          </SelectValue>
         </SelectTrigger>
         <SelectContent>
-          <div className="px-2 py-2">
-            <div className="flex items-center px-1 mb-2 border rounded-md focus-within:ring-1 focus-within:ring-primary">
-              <Search className="h-4 w-4 text-muted-foreground mr-2" />
-              <Input 
-                placeholder="Search users..." 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 p-0 h-8"
-              />
+          <SelectItem value="unassigned">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">
+                <span className="text-xs text-gray-500">?</span>
+              </div>
+              <span>Unassigned</span>
             </div>
-          </div>
-          
-          <SelectGroup>
-            <SelectItem value="unassigned" className="flex items-center">
-              <span className="font-medium">Unassigned</span>
+          </SelectItem>
+          {teamMembers.map((member) => (
+            <SelectItem key={member.id} value={member.id}>
+              <div className="flex items-center gap-2">
+                <Avatar className="w-6 h-6">
+                  <AvatarImage 
+                    src={member.avatar_url || ""} 
+                    alt={member.name} 
+                  />
+                  <AvatarFallback>
+                    {member.name.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <span>{member.name}</span>
+              </div>
             </SelectItem>
-          </SelectGroup>
-          
-          {isLoading ? (
-            <div className="flex items-center justify-center py-3 text-sm text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin mr-2" /> 
-              <span>Loading users...</span>
-            </div>
-          ) : filteredUsers && filteredUsers.length > 0 ? (
-            <SelectGroup>
-              <SelectLabel className="text-xs text-muted-foreground">Team Members</SelectLabel>
-              {filteredUsers.map(user => (
-                <SelectItem key={user.id} value={user.id} className="flex items-center gap-2">
-                  <Avatar className="h-5 w-5">
-                    <AvatarImage src={user.avatar_url || undefined} />
-                    <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                      {(user.name?.[0] || user.email[0] || '').toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span>{user.name || user.email}</span>
-                  {user.role && <span className="text-xs text-muted-foreground ml-1">({user.role})</span>}
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          ) : searchQuery ? (
-            <div className="text-sm text-muted-foreground p-3 text-center">
-              No users match your search
-            </div>
-          ) : (
-            <div className="text-sm text-muted-foreground p-3 text-center">
-              No users found
-            </div>
-          )}
+          ))}
         </SelectContent>
       </Select>
     </div>
   );
 };
-
-export default TaskAssigneeSelect;

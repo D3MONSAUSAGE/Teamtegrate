@@ -1,3 +1,4 @@
+
 import { Project, User, ProjectStatus } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
@@ -82,26 +83,26 @@ const processProjectData = (
     let isCompleted = project.is_completed || false;
     
     // Always enforce consistency between status and is_completed
-    if (status === 'Completed') {
+    if (status === 'Done') {
       isCompleted = true;
     } else if (isCompleted) {
-      status = 'Completed';
+      status = 'Done';
     }
     
     return {
       id: project.id,
       title: project.title || '',
       description: project.description || '',
-      startDate: project.start_date ? new Date(project.start_date) : new Date(),
-      endDate: project.end_date ? new Date(project.end_date) : new Date(),
-      managerId: project.manager_id || user.id,
-      createdAt: project.created_at ? new Date(project.created_at) : new Date(),
-      updatedAt: project.updated_at ? new Date(project.updated_at) : new Date(),
+      start_date: project.start_date || '',
+      end_date: project.end_date || '',
+      manager_id: project.manager_id || user.id,
+      created_at: project.created_at || new Date().toISOString(),
+      updated_at: project.updated_at || new Date().toISOString(),
       tasks: [],
-      teamMembers: project.team_members || [],
+      team_members: project.team_members || [],
       budget: project.budget || 0,
       is_completed: isCompleted,
-      budgetSpent: project.budget_spent || 0,
+      budget_spent: project.budget_spent || 0,
       status: status as ProjectStatus,
       tasks_count: project.tasks_count || 0,
       tags: project.tags || []
@@ -113,7 +114,7 @@ const processProjectData = (
 };
 
 export const addProject = async (
-  project: Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'tasks'>,
+  project: Omit<Project, 'id' | 'created_at' | 'updated_at' | 'tasks'>,
   user: { id: string }
 ): Promise<Project | null> => {
   try {
@@ -127,18 +128,18 @@ export const addProject = async (
     let isCompleted = project.is_completed || false;
     
     // Always enforce consistency
-    if (status === 'Completed') {
+    if (status === 'Done') {
       isCompleted = true;
     } else if (isCompleted) {
-      status = 'Completed';
+      status = 'Done';
     }
     
     console.log('Creating project:', {
       id: projectId,
       title: project.title,
       description: project.description,
-      start_date: project.startDate.toISOString(),
-      end_date: project.endDate.toISOString(),
+      start_date: project.start_date,
+      end_date: project.end_date,
       manager_id: user.id,
       budget: project.budget || 0,
       is_completed: isCompleted,
@@ -153,14 +154,14 @@ export const addProject = async (
         id: projectId,
         title: project.title,
         description: project.description,
-        start_date: project.startDate.toISOString(),
-        end_date: project.endDate.toISOString(),
+        start_date: project.start_date,
+        end_date: project.end_date,
         manager_id: user.id,
         budget: project.budget !== undefined ? project.budget : 0,
         is_completed: isCompleted,
         created_at: nowISO,
         updated_at: nowISO,
-        team_members: project.teamMembers || [],
+        team_members: project.team_members || [],
         status: status,
         tasks_count: 0,
         tags: project.tags || []
@@ -177,16 +178,16 @@ export const addProject = async (
       id: projectId,
       title: project.title,
       description: project.description,
-      startDate: project.startDate,
-      endDate: project.endDate,
-      managerId: user.id,
+      start_date: project.start_date,
+      end_date: project.end_date,
+      manager_id: user.id,
       budget: project.budget !== undefined ? project.budget : 0,
-      createdAt: now,
-      updatedAt: now,
+      created_at: nowISO,
+      updated_at: nowISO,
       tasks: [],
-      teamMembers: project.teamMembers || [],
+      team_members: project.team_members || [],
       is_completed: isCompleted,
-      budgetSpent: 0,
+      budget_spent: 0,
       status: status as ProjectStatus,
       tasks_count: 0,
       tags: project.tags || []

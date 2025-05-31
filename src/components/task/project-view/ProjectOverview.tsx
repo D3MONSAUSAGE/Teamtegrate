@@ -1,111 +1,104 @@
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Calendar, Users, DollarSign, BarChart } from 'lucide-react';
 import { Project } from '@/types';
 import { format } from 'date-fns';
-import { CalendarDays, Users, Calendar, Target, Plus } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Card, CardContent } from '@/components/ui/card';
 
 interface ProjectOverviewProps {
   project: Project;
   progress: number;
-  todoTasksLength: number;
-  inProgressTasksLength: number;
-  pendingTasksLength: number;
-  completedTasksLength: number;
-  onCreateTask: () => void;
 }
 
-const ProjectOverview: React.FC<ProjectOverviewProps> = ({
-  project,
-  progress,
-  todoTasksLength,
-  inProgressTasksLength,
-  pendingTasksLength,
-  completedTasksLength,
-  onCreateTask
-}) => {
-  const totalTasks = todoTasksLength + inProgressTasksLength + pendingTasksLength + completedTasksLength;
-  
+const ProjectOverview: React.FC<ProjectOverviewProps> = ({ project, progress }) => {
   return (
-    <Card className="border shadow-sm">
-      <CardContent className="p-6 space-y-4">
-        <div className="flex flex-col md:flex-row justify-between gap-4">
-          <div className="space-y-2">
-            <h1 className="text-2xl font-bold line-clamp-2">{project.title}</h1>
-            <p className="text-muted-foreground line-clamp-2">{project.description || 'No description provided'}</p>
-            
-            <div className="flex flex-wrap gap-2 mt-2">
-              <Badge variant="outline" className="flex items-center gap-1">
-                <Calendar className="h-3 w-3" />
-                <span>{format(new Date(project.startDate), 'MMM d')} - {format(new Date(project.endDate), 'MMM d, yyyy')}</span>
-              </Badge>
-              
-              {project.teamMembers && project.teamMembers.length > 0 && (
-                <Badge variant="outline" className="flex items-center gap-1">
-                  <Users className="h-3 w-3" />
-                  <span>{project.teamMembers.length} Members</span>
-                </Badge>
-              )}
-              
-              <Badge 
-                variant={project.status === 'Completed' ? 'success' : 
-                         project.status === 'In Progress' ? 'default' : 'secondary'}
-              >
-                {project.status}
-              </Badge>
-              
-              {project.tags && project.tags.length > 0 && project.tags.map((tag, index) => (
-                <Badge key={index} variant="secondary">{tag}</Badge>
-              ))}
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Project Timeline</CardTitle>
+          <Calendar className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">
+            {project.start_date && project.end_date && (
+              `${format(new Date(project.start_date), 'MMM d')} - ${format(new Date(project.end_date), 'MMM d')}`
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {project.team_members && project.team_members.length > 0 ? (
+              `${project.team_members.length} team members`
+            ) : (
+              'No team members assigned'
+            )}
+          </p>
+          <div className="mt-2">
+            <Badge variant={project.status === 'Done' ? 'default' : 'secondary'}>
+              {project.status}
+            </Badge>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Progress</CardTitle>
+          <BarChart className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{progress}%</div>
+          <p className="text-xs text-muted-foreground">
+            {project.tasks_count} total tasks
+          </p>
+          <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
+            <div 
+              className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Budget</CardTitle>
+          <DollarSign className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">
+            ${project.budget_spent?.toLocaleString() || '0'}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            of ${project.budget?.toLocaleString() || '0'} budget
+          </p>
+          {project.budget && project.budget > 0 && (
+            <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className="bg-green-600 h-2 rounded-full transition-all duration-300" 
+                style={{ 
+                  width: `${Math.min((project.budget_spent || 0) / project.budget * 100, 100)}%` 
+                }}
+              />
             </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Team</CardTitle>
+          <Users className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">
+            {project.team_members ? project.team_members.length : 0}
           </div>
-          
-          <div className="flex items-start gap-2">
-            <Button onClick={onCreateTask} className="whitespace-nowrap">
-              <Plus className="mr-1 h-4 w-4" /> New Task
-            </Button>
-          </div>
-        </div>
-        
-        <div className="space-y-1">
-          <div className="flex justify-between">
-            <span className="text-sm">Project Progress</span>
-            <span className="text-sm font-medium">{progress}%</span>
-          </div>
-          <Progress value={progress} className="h-2" />
-        </div>
-        
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-muted/50 p-3 rounded-lg">
-            <div className="flex flex-col">
-              <span className="text-xs text-muted-foreground">To Do</span>
-              <span className="text-xl font-bold mt-1">{todoTasksLength}</span>
-            </div>
-          </div>
-          <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
-            <div className="flex flex-col">
-              <span className="text-xs text-muted-foreground">In Progress</span>
-              <span className="text-xl font-bold mt-1">{inProgressTasksLength}</span>
-            </div>
-          </div>
-          <div className="bg-orange-50 dark:bg-orange-900/20 p-3 rounded-lg">
-            <div className="flex flex-col">
-              <span className="text-xs text-muted-foreground">Pending</span>
-              <span className="text-xl font-bold mt-1">{pendingTasksLength}</span>
-            </div>
-          </div>
-          <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
-            <div className="flex flex-col">
-              <span className="text-xs text-muted-foreground">Completed</span>
-              <span className="text-xl font-bold mt-1">{completedTasksLength}</span>
-            </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+          <p className="text-xs text-muted-foreground">
+            Active members
+          </p>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
