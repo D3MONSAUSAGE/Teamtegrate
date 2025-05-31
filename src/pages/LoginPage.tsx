@@ -14,15 +14,13 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/components/ui/sonner';
-import { UserRole } from '@/types';
 
 const LoginPage = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
-  // Remove the UI to change role, always set to "user"
-  const role: UserRole = 'user';
+  const [organizationName, setOrganizationName] = useState('');
   const { login, signup, isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
   
@@ -45,13 +43,14 @@ const LoginPage = () => {
           toast.error('Please enter your name');
           return;
         }
-        // Use the hardcoded "user" role for all signups
-        await signup(email, password, name, role);
+        if (!organizationName.trim()) {
+          toast.error('Please enter your organization name');
+          return;
+        }
+        await signup(email, password, name, organizationName);
       }
-      // The redirect will be handled by the useEffect above
     } catch (error) {
       console.error('Authentication error:', error);
-      // Toast is already handled in the auth context
     }
   };
   
@@ -61,22 +60,35 @@ const LoginPage = () => {
         <CardHeader>
           <CardTitle className="text-2xl font-bold">Daily Team Sync</CardTitle>
           <CardDescription>
-            {isLogin ? 'Sign in to access your tasks and projects' : 'Create a new account'}
+            {isLogin ? 'Sign in to access your tasks and projects' : 'Create a new account and organization'}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             {!isLogin && (
-              <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
-                <Input
-                  id="name"
-                  placeholder="Your name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                />
-              </div>
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="name">Name</Label>
+                  <Input
+                    id="name"
+                    placeholder="Your name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="organizationName">Organization Name</Label>
+                  <Input
+                    id="organizationName"
+                    placeholder="Your organization name"
+                    value={organizationName}
+                    onChange={(e) => setOrganizationName(e.target.value)}
+                    required
+                  />
+                </div>
+              </>
             )}
             
             <div className="space-y-2">
@@ -102,9 +114,9 @@ const LoginPage = () => {
                 required
               />
             </div>
-            {/* Removed Account Type selection */}
+            
             <Button type="submit" className="w-full" disabled={loading}>
-              {isLogin ? (loading ? 'Logging in...' : 'Login') : (loading ? 'Signing Up...' : 'Sign Up')}
+              {isLogin ? (loading ? 'Logging in...' : 'Login') : (loading ? 'Creating Account...' : 'Create Account & Organization')}
             </Button>
           </form>
         </CardContent>

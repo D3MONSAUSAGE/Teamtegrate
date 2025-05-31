@@ -10,6 +10,7 @@ import { Search, Download, FileText, Calendar, User, Building, Eye, Trash2 } fro
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { format } from 'date-fns';
+import { useAuth } from '@/hooks/useAuth';
 
 const BRANCH_OPTIONS = [
   'All Branches',
@@ -40,6 +41,7 @@ interface InvoiceListProps {
 }
 
 const InvoiceList: React.FC<InvoiceListProps> = ({ refreshTrigger }) => {
+  const { user, organization, userRole, hasPermission } = useAuth();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [filteredInvoices, setFilteredInvoices] = useState<Invoice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -53,9 +55,17 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ refreshTrigger }) => {
   const fetchInvoices = async () => {
     try {
       setIsLoading(true);
+      
+      if (!organization) {
+        setInvoices([]);
+        setFilteredInvoices([]);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('invoices')
         .select('*')
+        .eq('organization_id', organization.id)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -179,6 +189,11 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ refreshTrigger }) => {
   };
 
   const deleteInvoice = async (invoice: Invoice) => {
+    if (!hasPermission('delete', invoice.user_id)) {
+      toast.error('You do not have permission to delete this invoice');
+      return;
+    }
+
     try {
       // Delete file from storage
       const { error: storageError } = await supabase.storage
@@ -241,6 +256,11 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ refreshTrigger }) => {
           <CardTitle>Invoice Management</CardTitle>
           <CardDescription>
             Search, filter, view, download, and delete uploaded invoices
+            {organization && (
+              <span className="block text-sm text-gray-500 mt-1">
+                Organization: {organization.name}
+              </span>
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -352,55 +372,61 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ refreshTrigger }) => {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => viewInvoice(invoice)}
-                            className="flex items-center"
-                          >
-                            <Eye className="h-4 w-4 mr-1" />
-                            View
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => downloadInvoice(invoice)}
-                            className="flex items-center"
-                          >
-                            <Download className="h-4 w-4 mr-1" />
-                            Download
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="flex items-center text-red-600 hover:text-red-700 hover:bg-red-50"
-                              >
-                                <Trash2 className="h-4 w-4 mr-1" />
-                                Delete
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Delete Invoice</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Are you sure you want to delete invoice "{invoice.invoice_number}"? 
-                                  This action cannot be undone and will permanently remove the invoice 
-                                  file and all associated data.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => deleteInvoice(invoice)}
-                                  className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+                          {hasPermission('view') && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => viewInvoice(invoice)}
+                              className="flex items-center"
+                            >
+                              <Eye className="h-4 w-4 mr-1" />
+                              View
+                            </Button>
+                          )}
+                          {hasPermission('download') && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => downloadInvoice(invoice)}
+                              className="flex items-center"
+                            >
+                              <Download className="h-4 w-4 mr-1" />
+                              Download
+                            </Button>
+                          )}
+                          {hasPermission('delete', invoice.user_id) && (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="flex items-center text-red-600 hover:text-red-700 hover:bg-red-50"
                                 >
-                                  Delete Invoice
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
+                                  <Trash2 className="h-4 w-4 mr-1" />
+                                  Delete
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Invoice</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete invoice "{invoice.invoice_number}"? 
+                                    This action cannot be undone and will permanently remove the invoice 
+                                    file and all associated data.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => deleteInvoice(invoice)}
+                                    className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+                                  >
+                                    Delete Invoice
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>

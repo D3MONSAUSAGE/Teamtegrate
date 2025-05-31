@@ -38,7 +38,7 @@ interface InvoiceUploadProps {
 }
 
 const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
-  const { user } = useAuth();
+  const { user, organization, userRole, hasPermission } = useAuth();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -88,18 +88,23 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
       return;
     }
 
-    if (!user) {
+    if (!user || !organization) {
       toast.error('You must be logged in to upload invoices');
+      return;
+    }
+
+    if (!hasPermission('upload')) {
+      toast.error('You do not have permission to upload invoices');
       return;
     }
 
     setIsUploading(true);
 
     try {
-      // Create file path with user ID and timestamp
+      // Create file path with organization and user ID
       const fileExtension = selectedFile.name.split('.').pop();
       const fileName = `${Date.now()}-${data.invoiceNumber}.${fileExtension}`;
-      const filePath = `${user.id}/${fileName}`;
+      const filePath = `org_${organization.id}/${user.id}/${fileName}`;
 
       // Upload file to storage
       const { data: storageData, error: storageError } = await supabase.storage
@@ -119,6 +124,7 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
         .from('invoices')
         .insert({
           user_id: user.id,
+          organization_id: organization.id,
           invoice_number: data.invoiceNumber,
           branch: data.branch,
           uploader_name: data.uploaderName,
@@ -145,6 +151,28 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
       setIsUploading(false);
     }
   };
+
+  // Show message if user doesn't have upload permission
+  if (!hasPermission('upload')) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Upload Invoice</CardTitle>
+          <CardDescription>
+            Upload invoices with metadata for easy tracking and retrieval
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8">
+            <p className="text-gray-600">
+              You do not have permission to upload invoices. 
+              Please contact your administrator if you need access.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>

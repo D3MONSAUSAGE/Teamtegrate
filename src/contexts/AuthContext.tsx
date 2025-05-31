@@ -1,19 +1,23 @@
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { User, UserRole } from '@/types';
+import { Organization, UserMetadata } from '@/types/organization';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { Session } from '@supabase/supabase-js';
 
 interface AuthContextType {
   user: User | null;
+  organization: Organization | null;
+  userRole: UserRole | null;
   loading: boolean;
-  isLoading: boolean; // Added this property to match what's used in Index.tsx
+  isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, name: string, role: UserRole) => Promise<void>;
+  signup: (email: string, password: string, name: string, organizationName: string) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
   updateUserProfile: (data: { name?: string }) => Promise<void>;
+  hasPermission: (action: 'view' | 'upload' | 'download' | 'delete', resourceOwnerId?: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -28,6 +32,8 @@ export const useAuth = () => {
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [organization, setOrganization] = useState<Organization | null>(null);
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -35,35 +41,67 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         setSession(session);
         if (session?.user) {
+          const metadata = session.user.user_metadata as UserMetadata;
           const userData: User = {
             id: session.user.id,
             email: session.user.email || '',
-            name: session.user.user_metadata.name || session.user.email?.split('@')[0] || '',
-            role: session.user.user_metadata.role as UserRole || 'user',
+            name: metadata?.name || session.user.email?.split('@')[0] || '',
+            role: metadata?.role as UserRole || 'team_member',
             createdAt: new Date(session.user.created_at),
           };
           setUser(userData);
+          setUserRole(metadata?.role as UserRole || 'team_member');
+          
+          // Fetch organization data if organization_id exists
+          if (metadata?.organization_id) {
+            const { data: orgData } = await supabase
+              .from('organizations')
+              .select('*')
+              .eq('id', metadata.organization_id)
+              .single();
+            
+            if (orgData) {
+              setOrganization(orgData);
+            }
+          }
         } else {
           setUser(null);
+          setOrganization(null);
+          setUserRole(null);
         }
       }
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       if (session?.user) {
+        const metadata = session.user.user_metadata as UserMetadata;
         const userData: User = {
           id: session.user.id,
           email: session.user.email || '',
-          name: session.user.user_metadata.name || session.user.email?.split('@')[0] || '',
-          role: session.user.user_metadata.role as UserRole || 'user',
+          name: metadata?.name || session.user.email?.split('@')[0] || '',
+          role: metadata?.role as UserRole || 'team_member',
           createdAt: new Date(session.user.created_at),
         };
         setUser(userData);
+        setUserRole(metadata?.role as UserRole || 'team_member');
+        
+        // Fetch organization data if organization_id exists
+        if (metadata?.organization_id) {
+          const { data: orgData } = await supabase
+            .from('organizations')
+            .select('*')
+            .eq('id', metadata.organization_id)
+            .single();
+          
+          if (orgData) {
+            setOrganization(orgData);
+          }
+        }
       }
       setLoading(false);
     });
@@ -92,25 +130,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signup = async (email: string, password: string, name: string, role: UserRole) => {
+  const signup = async (email: string, password: string, name: string, organizationName: string) => {
     setLoading(true);
     try {
-      // Modified approach: Use only the basic signUp functionality
-      // This avoids triggering database functions that might expect tables that don't exist
-      const { error } = await supabase.auth.signUp({
+      // First create the organization
+      const { data: orgData, error: orgError } = await supabase
+        .from('organizations')
+        .insert({
+          name: organizationName,
+          created_by: null, // Will be updated after user creation
+        })
+        .select()
+        .single();
+
+      if (orgError) throw orgError;
+
+      // Sign up the user with organization metadata
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
             name,
-            role,
+            organization_id: orgData.id,
+            role: 'admin',
           },
-          // Add redirect URL to ensure proper flow
           emailRedirectTo: window.location.origin + '/dashboard',
         }
       });
 
-      if (error) throw error;
+      if (authError) throw authError;
+
+      // Update organization with the created_by field
+      if (authData.user) {
+        await supabase
+          .from('organizations')
+          .update({ created_by: authData.user.id })
+          .eq('id', orgData.id);
+      }
       
       toast.success('Account created successfully! Please check your email for verification.');
     } catch (error: any) {
@@ -124,33 +181,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     try {
-      // First check if we have a valid session
       if (!session) {
         console.log('No active session found, clearing local state only');
         setUser(null);
+        setOrganization(null);
+        setUserRole(null);
         return;
       }
       
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       
-      // Clear user state even if there was an error with Supabase
       setUser(null);
       setSession(null);
+      setOrganization(null);
+      setUserRole(null);
       
     } catch (error: any) {
       console.error('Error logging out:', error);
       toast.error('Error logging out. Your local session has been cleared.');
-      // Still clear the user state to ensure UI shows logged out
       setUser(null);
       setSession(null);
+      setOrganization(null);
+      setUserRole(null);
       throw error;
     }
   };
   
   const updateUserProfile = async (data: { name?: string }) => {
     try {
-      // Get current session first to ensure we have valid auth
       const { data: { session: currentSession } } = await supabase.auth.getSession();
       
       if (!currentSession) {
@@ -163,7 +222,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) throw error;
       
-      // Update the local user state
       if (user) {
         setUser({
           ...user,
@@ -178,15 +236,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const hasPermission = (action: 'view' | 'upload' | 'download' | 'delete', resourceOwnerId?: string): boolean => {
+    if (!userRole) return false;
+
+    switch (action) {
+      case 'view':
+      case 'download':
+        return true; // All roles can view and download within their organization
+
+      case 'upload':
+        return userRole === 'admin' || userRole === 'manager';
+
+      case 'delete':
+        if (userRole === 'admin') return true;
+        if (userRole === 'manager' && resourceOwnerId && user?.id === resourceOwnerId) return true;
+        return false;
+
+      default:
+        return false;
+    }
+  };
+
   const value = {
     user,
+    organization,
+    userRole,
     loading,
-    isLoading: loading, // Added isLoading as an alias for loading
+    isLoading: loading,
     login,
     signup,
     logout,
     updateUserProfile,
     isAuthenticated: !!user,
+    hasPermission,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
