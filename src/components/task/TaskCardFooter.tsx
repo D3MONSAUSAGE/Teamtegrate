@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { MessageCircle } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
@@ -31,8 +30,7 @@ const TaskCardFooter: React.FC<TaskCardFooterProps> = ({
     switch(status) {
       case 'To Do': return 'bg-slate-500 dark:bg-slate-600';
       case 'In Progress': return 'bg-blue-500 dark:bg-blue-600';
-      case 'Pending': return 'bg-yellow-500 dark:bg-yellow-600';
-      case 'Completed': return 'bg-green-500 dark:bg-green-600';
+      case 'Done': return 'bg-green-500 dark:bg-green-600';
       default: return 'bg-slate-500 dark:bg-slate-600';
     }
   };
@@ -59,8 +57,7 @@ const TaskCardFooter: React.FC<TaskCardFooterProps> = ({
         <SelectContent>
           <SelectItem value="To Do">To Do</SelectItem>
           <SelectItem value="In Progress">In Progress</SelectItem>
-          <SelectItem value="Pending">Pending</SelectItem>
-          <SelectItem value="Completed">Completed</SelectItem>
+          <SelectItem value="Done">Done</SelectItem>
         </SelectContent>
       </Select>
 

@@ -80,7 +80,7 @@ export interface Invoice {
   created_at: string;
 }
 
-// Export types from tasks.ts
+// Task-related types
 export type TaskPriority = 'Low' | 'Medium' | 'High';
 export type TaskStatus = 'To Do' | 'In Progress' | 'Done';
 export type ProjectStatus = 'To Do' | 'In Progress' | 'Done';
@@ -110,3 +110,6 @@ export interface TaskFormValues {
   assigned_to_id?: string; 
   assignedToName?: string;
 }
+
+// Add AppUser alias for compatibility
+export type AppUser = User;
