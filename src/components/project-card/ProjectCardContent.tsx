@@ -20,7 +20,7 @@ const ProjectCardContent: React.FC<ProjectCardContentProps> = ({ project, onView
   // Get status style for the badge
   const getStatusStyle = (status: string) => {
     switch(status) {
-      case 'Completed':
+      case 'Done':
         return "bg-green-500/20 text-green-700 dark:text-green-500 hover:bg-green-500/30";
       case 'In Progress':
         return "bg-blue-500/20 text-blue-700 dark:text-blue-500 hover:bg-blue-500/30";
@@ -49,21 +49,21 @@ const ProjectCardContent: React.FC<ProjectCardContentProps> = ({ project, onView
       {project.budget > 0 && (
         <ProjectBudgetInfo 
           budget={project.budget} 
-          budgetSpent={project.budgetSpent || 0} 
+          budgetSpent={project.budget_spent || 0} 
         />
       )}
 
       <div className="mt-2 mb-4 text-xs text-gray-500">
-        {project.teamMembers && project.teamMembers.length > 0 && (
+        {project.team_members && project.team_members.length > 0 && (
           <div className="flex items-center gap-1 mb-1">
             <Users className="h-3 w-3" /> 
-            <span>{project.teamMembers.length} team member{project.teamMembers.length !== 1 ? 's' : ''}</span>
+            <span>{project.team_members.length} team member{project.team_members.length !== 1 ? 's' : ''}</span>
           </div>
         )}
         
         <div className="flex items-center gap-1">
           <Calendar className="h-3 w-3" /> 
-          <span>Deadline: {format(new Date(project.endDate), 'MMM d, yyyy')}</span>
+          <span>Deadline: {format(new Date(project.end_date), 'MMM d, yyyy')}</span>
         </div>
       </div>
       

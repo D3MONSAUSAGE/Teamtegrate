@@ -46,10 +46,10 @@ const EditProjectDialog: React.FC<EditProjectDialogProps> = ({
     defaultValues: {
       title: project?.title || '',
       description: project?.description || '',
-      startDate: project?.startDate ? format(new Date(project.startDate), 'yyyy-MM-dd') : '',
-      endDate: project?.endDate ? format(new Date(project.endDate), 'yyyy-MM-dd') : '',
+      startDate: project?.start_date ? format(new Date(project.start_date), 'yyyy-MM-dd') : '',
+      endDate: project?.end_date ? format(new Date(project.end_date), 'yyyy-MM-dd') : '',
       budget: project?.budget,
-      teamMembers: project?.teamMembers?.map(memberId => ({ memberId })) || []
+      teamMembers: project?.team_members?.map(memberId => ({ memberId })) || []
     }
   });
 
@@ -64,10 +64,10 @@ const EditProjectDialog: React.FC<EditProjectDialogProps> = ({
       reset({
         title: project.title || '',
         description: project.description || '',
-        startDate: project.startDate ? format(new Date(project.startDate), 'yyyy-MM-dd') : '',
-        endDate: project.endDate ? format(new Date(project.endDate), 'yyyy-MM-dd') : '',
+        startDate: project.start_date ? format(new Date(project.start_date), 'yyyy-MM-dd') : '',
+        endDate: project.end_date ? format(new Date(project.end_date), 'yyyy-MM-dd') : '',
         budget: project.budget,
-        teamMembers: project.teamMembers?.map(memberId => ({ memberId })) || []
+        teamMembers: project.team_members?.map(memberId => ({ memberId })) || []
       });
     }
   }, [project, open, reset]);
@@ -80,10 +80,10 @@ const EditProjectDialog: React.FC<EditProjectDialogProps> = ({
       await updateProject(project.id, {
         title: data.title,
         description: data.description,
-        startDate: new Date(data.startDate),
-        endDate: new Date(data.endDate),
+        start_date: data.startDate,
+        end_date: data.endDate,
         budget: data.budget,
-        teamMembers: teamMemberIds
+        team_members: teamMemberIds
       });
       
       toast.success("Project updated successfully");
