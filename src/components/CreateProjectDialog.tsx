@@ -72,8 +72,8 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
       const project = await createProject({
         title: data.title,
         description: data.description,
-        startDate: new Date(data.startDate),
-        endDate: new Date(data.endDate),
+        start_date: data.startDate, // Use snake_case
+        end_date: data.endDate, // Use snake_case
         managerId: user.id,
         budget: data.budget, // This can now be undefined
         teamMembers: teamMemberIds,

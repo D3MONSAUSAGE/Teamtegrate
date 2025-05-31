@@ -1,7 +1,7 @@
 
 import React, { useEffect } from 'react';
 import { Progress } from "@/components/ui/progress";
-import { Project, ProjectStatus } from '@/types';
+import { Project } from '@/types';
 import { useTask } from '@/contexts/task';
 
 interface ProjectProgressBarProps {
@@ -14,12 +14,12 @@ const ProjectProgressBar: React.FC<ProjectProgressBarProps> = ({ project }) => {
   // Calculate progress based on task completion
   const calculateProgress = () => {
     // Get all tasks that belong to this project
-    const projectTasks = tasks.filter(task => task.projectId === project.id);
+    const projectTasks = tasks.filter(task => task.project_id === project.id);
     const totalTasks = projectTasks.length;
     
     if (totalTasks === 0) return 0;
     
-    const completedTasks = projectTasks.filter(task => task.status === 'Completed').length;
+    const completedTasks = projectTasks.filter(task => task.status === 'Done').length;
     return Math.round((completedTasks / totalTasks) * 100);
   };
 
@@ -27,28 +27,28 @@ const ProjectProgressBar: React.FC<ProjectProgressBarProps> = ({ project }) => {
   
   // Auto-update project status when progress changes
   useEffect(() => {
-    const projectTasks = tasks.filter(task => task.projectId === project.id);
+    const projectTasks = tasks.filter(task => task.project_id === project.id);
     const totalTasks = projectTasks.length;
     
     if (totalTasks === 0) return;
     
-    const completedTasks = projectTasks.filter(task => task.status === 'Completed').length;
+    const completedTasks = projectTasks.filter(task => task.status === 'Done').length;
     const allTasksCompleted = completedTasks === totalTasks;
     
     console.log(`Project ${project.id} progress check: ${completedTasks}/${totalTasks} tasks completed (${progress}%)`);
     console.log(`Current status: ${project.status}, All completed: ${allTasksCompleted}, Is completed flag: ${project.is_completed}`);
     
     // Make sure project status is consistent with task completion
-    if (allTasksCompleted && project.status !== 'Completed') {
-      console.log(`Auto-updating project ${project.id} to Completed status as all tasks are done`);
+    if (allTasksCompleted && project.status !== 'Done') {
+      console.log(`Auto-updating project ${project.id} to Done status as all tasks are done`);
       updateProject(project.id, { 
-        status: 'Completed' as ProjectStatus,
+        status: 'Done',
         is_completed: true
       });
-    } else if (!allTasksCompleted && project.status === 'Completed') {
+    } else if (!allTasksCompleted && project.status === 'Done') {
       console.log(`Auto-updating project ${project.id} to In Progress status as not all tasks are done`);
       updateProject(project.id, { 
-        status: 'In Progress' as ProjectStatus,
+        status: 'In Progress',
         is_completed: false
       });
     }

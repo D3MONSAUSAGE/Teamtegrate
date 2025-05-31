@@ -127,7 +127,7 @@ const AssignTaskDialog: React.FC<AssignTaskDialogProps> = ({ open, onOpenChange,
                         <p className="text-xs text-gray-500">{member.role}</p>
                       </div>
                     </div>
-                    {task.assignedToId === member.id && (
+                    {task.assigned_to_id === member.id && (
                       <Check className="h-5 w-5 text-green-500" />
                     )}
                   </li>

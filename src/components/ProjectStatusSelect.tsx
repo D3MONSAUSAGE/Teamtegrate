@@ -7,7 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Project, ProjectStatus } from '@/types';
+import { Project } from '@/types';
 import { useTask } from '@/contexts/task';
 import { toast } from '@/components/ui/sonner';
 import { playSuccessSound, playErrorSound } from '@/utils/sounds';
@@ -22,13 +22,13 @@ const ProjectStatusSelect: React.FC<ProjectStatusSelectProps> = ({ project }) =>
   const handleStatusChange = async (newStatus: string) => {
     try {
       // Explicitly set is_completed based on the status
-      const isCompleted = newStatus === 'Completed';
+      const isCompleted = newStatus === 'Done';
       
       console.log(`Updating project ${project.id} status to:`, newStatus);
       console.log(`Setting is_completed to:`, isCompleted);
       
       await updateProject(project.id, { 
-        status: newStatus as ProjectStatus,
+        status: newStatus as Project['status'],
         is_completed: isCompleted
       });
       
@@ -44,7 +44,7 @@ const ProjectStatusSelect: React.FC<ProjectStatusSelectProps> = ({ project }) =>
   // Create a style object based on the current status
   const getStatusStyle = (status: string) => {
     switch(status) {
-      case 'Completed':
+      case 'Done':
         return "bg-green-500/10 text-green-700 border-green-500";
       case 'In Progress':
         return "bg-blue-500/10 text-blue-700 border-blue-500";
@@ -65,7 +65,7 @@ const ProjectStatusSelect: React.FC<ProjectStatusSelectProps> = ({ project }) =>
       <SelectContent>
         <SelectItem value="To Do">To Do</SelectItem>
         <SelectItem value="In Progress">In Progress</SelectItem>
-        <SelectItem value="Completed">Completed</SelectItem>
+        <SelectItem value="Done">Done</SelectItem>
       </SelectContent>
     </Select>
   );

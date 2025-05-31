@@ -67,7 +67,7 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
       updateTask(editingTask.id, {
         ...data,
         deadline: deadlineDate,
-        assignedToId: selectedMember === "unassigned" ? undefined : selectedMember,
+        assigned_to_id: selectedMember === "unassigned" ? undefined : selectedMember,
         assignedToName: data.assignedToName
       });
     } else {
@@ -77,9 +77,9 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
         priority: data.priority,
         deadline: deadlineDate,
         status: 'To Do',
-        userId: user?.id || '',
-        projectId: data.projectId === "none" ? undefined : data.projectId,
-        assignedToId: selectedMember === "unassigned" ? undefined : selectedMember,
+        user_id: user?.id || '', // Use snake_case
+        project_id: data.project_id === "none" ? undefined : data.project_id, // Use snake_case
+        assigned_to_id: selectedMember === "unassigned" ? undefined : selectedMember,
         assignedToName: data.assignedToName
       });
     }

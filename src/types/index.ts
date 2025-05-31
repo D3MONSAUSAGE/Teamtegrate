@@ -39,6 +39,8 @@ export interface Task {
   created_at?: Date;
   updated_at?: Date;
   completed_at?: string;
+  assignedToName?: string;
+  comments?: TaskComment[];
 }
 
 export interface TeamMember {
@@ -76,4 +78,35 @@ export interface Invoice {
   file_path: string;
   organization_id: string;
   created_at: string;
+}
+
+// Export types from tasks.ts
+export type TaskPriority = 'Low' | 'Medium' | 'High';
+export type TaskStatus = 'To Do' | 'In Progress' | 'Done';
+export type ProjectStatus = 'To Do' | 'In Progress' | 'Done';
+
+export interface TaskComment {
+  id: string;
+  userId: string;
+  userName: string;
+  text: string;
+  createdAt: Date;
+}
+
+export type DailyScore = {
+  completedTasks: number;
+  totalTasks: number;
+  percentage: number;
+  date: Date;
+};
+
+export interface TaskFormValues {
+  title: string;
+  description: string;
+  priority: TaskPriority;
+  deadline: string | Date;
+  project_id?: string;
+  cost?: number | string;
+  assigned_to_id?: string; 
+  assignedToName?: string;
 }
