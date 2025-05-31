@@ -1,83 +1,44 @@
-export type UserRole = 'user' | 'manager';
 
 export interface User {
   id: string;
   email: string;
   name: string;
-  role: UserRole;
-  createdAt: Date;
-  avatar_url?: string;
-}
-
-export interface AppUser {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  avatar_url?: string;
-}
-
-export type TaskPriority = 'Low' | 'Medium' | 'High';
-
-export type TaskStatus = 'To Do' | 'In Progress' | 'Pending' | 'Completed';
-
-export interface TaskComment {
-  id: string;
-  userId: string;
-  userName: string;
-  text: string;
+  role: import('./organization').UserRole;
   createdAt: Date;
 }
-
-export type Comment = TaskComment;
-
-export interface Task {
-  id: string;
-  userId: string;
-  projectId?: string;
-  title: string;
-  description: string;
-  deadline: Date;
-  priority: TaskPriority;
-  status: TaskStatus;
-  createdAt: Date;
-  updatedAt: Date;
-  completedAt?: Date;
-  assignedToId?: string;
-  assignedToName?: string;
-  completedById?: string;
-  completedByName?: string;
-  tags?: string[];
-  comments?: TaskComment[];
-  cost?: number;
-}
-
-export type ProjectStatus = 'To Do' | 'In Progress' | 'Completed';
 
 export interface Project {
   id: string;
   title: string;
-  description?: string;
-  startDate: Date;
-  endDate: Date;
-  managerId: string;
-  createdAt: Date;
-  updatedAt: Date;
-  tasks: Task[];
-  teamMembers: string[];
-  budget: number;
-  budgetSpent?: number;
+  description: string;
+  status: 'To Do' | 'In Progress' | 'Done';
+  start_date: string;
+  end_date: string;
+  manager_id: string;
+  budget?: number;
+  budget_spent?: number;
   is_completed: boolean;
-  status: ProjectStatus;
+  team_members: string[];
   tasks_count: number;
+  created_at?: string;
+  updated_at?: string;
   tags?: string[];
 }
 
-export interface DailyScore {
-  completedTasks: number;
-  totalTasks: number;
-  percentage: number;
-  date: Date;
+export interface Task {
+  id: string;
+  title: string;
+  description?: string;
+  status: 'To Do' | 'In Progress' | 'Done';
+  priority: 'Low' | 'Medium' | 'High';
+  deadline?: Date;
+  assigned_to_id?: string;
+  project_id?: string;
+  user_id?: string;
+  cost?: number;
+  created_at?: Date;
+  updated_at?: Date;
+  completed_at?: string;
 }
 
 export interface TeamMember {
@@ -85,14 +46,34 @@ export interface TeamMember {
   name: string;
   email: string;
   role: string;
-  managerId: string;
+  avatar_url?: string;
 }
 
-export interface TeamMemberPerformance {
+export interface Comment {
   id: string;
-  name: string;
-  totalTasks: number;
-  completedTasks: number;
-  completionRate: number;
-  projects: number;
+  content: string;
+  user_id: string;
+  task_id?: string;
+  project_id?: string;
+  created_at: string;
+  updated_at: string;
+  user?: {
+    name: string;
+    email: string;
+  };
+}
+
+export interface Invoice {
+  id: string;
+  user_id: string;
+  invoice_number: string;
+  branch: string;
+  uploader_name: string;
+  invoice_date: string;
+  file_name: string;
+  file_type: string;
+  file_size: number;
+  file_path: string;
+  organization_id: string;
+  created_at: string;
 }

@@ -10,7 +10,7 @@ import { Search, Download, FileText, Calendar, User, Building, Eye, Trash2 } fro
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { format } from 'date-fns';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/contexts/AuthContext';
 
 const BRANCH_OPTIONS = [
   'All Branches',

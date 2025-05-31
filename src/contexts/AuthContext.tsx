@@ -1,7 +1,7 @@
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { User, UserRole } from '@/types';
-import { Organization, UserMetadata } from '@/types/organization';
+import { User } from '@/types';
+import { Organization, UserMetadata, UserRole } from '@/types/organization';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { Session } from '@supabase/supabase-js';
@@ -49,11 +49,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             id: session.user.id,
             email: session.user.email || '',
             name: metadata?.name || session.user.email?.split('@')[0] || '',
-            role: metadata?.role as UserRole || 'team_member',
+            role: (metadata?.role as UserRole) || 'team_member',
             createdAt: new Date(session.user.created_at),
           };
           setUser(userData);
-          setUserRole(metadata?.role as UserRole || 'team_member');
+          setUserRole((metadata?.role as UserRole) || 'team_member');
           
           // Fetch organization data if organization_id exists
           if (metadata?.organization_id) {
@@ -84,11 +84,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           id: session.user.id,
           email: session.user.email || '',
           name: metadata?.name || session.user.email?.split('@')[0] || '',
-          role: metadata?.role as UserRole || 'team_member',
+          role: (metadata?.role as UserRole) || 'team_member',
           createdAt: new Date(session.user.created_at),
         };
         setUser(userData);
-        setUserRole(metadata?.role as UserRole || 'team_member');
+        setUserRole((metadata?.role as UserRole) || 'team_member');
         
         // Fetch organization data if organization_id exists
         if (metadata?.organization_id) {
