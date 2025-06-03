@@ -78,7 +78,7 @@ const TeamPerformanceReport = () => {
                 <div className="text-sm text-muted-foreground">
                   <span className="font-medium mr-1">{member.completedTasks}</span>
                   /
-                  <span className="ml-1">{member.totalTasks} tasks</span>
+                  <span className="ml-1">{member.completedTasks + (member.totalTasks - member.completedTasks)} tasks</span>
                 </div>
               </div>
               
