@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Upload, Loader2, Camera } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/components/ui/sonner';
+import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -39,6 +39,7 @@ interface InvoiceUploadProps {
 
 const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -53,9 +54,12 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
     const file = acceptedFiles[0];
     if (file) {
       setSelectedFile(file);
-      toast.success(`File "${file.name}" selected`);
+      toast({
+        title: "Success",
+        description: `File "${file.name}" selected`,
+      });
     }
-  }, []);
+  }, [toast]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -78,32 +82,49 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
     const file = event.target.files?.[0];
     if (file) {
       setSelectedFile(file);
-      toast.success(`Photo "${file.name}" captured`);
+      toast({
+        title: "Success",
+        description: `Photo "${file.name}" captured`,
+      });
     }
   };
 
   const onSubmit = async (data: InvoiceFormData) => {
     if (!selectedFile) {
-      toast.error('Please select a file to upload');
+      toast({
+        title: "Error",
+        description: 'Please select a file to upload',
+        variant: "destructive",
+      });
       return;
     }
 
     if (!user) {
-      toast.error('You must be logged in to upload invoices');
+      toast({
+        title: "Error",
+        description: 'You must be logged in to upload invoices',
+        variant: "destructive",
+      });
       return;
     }
 
     setIsUploading(true);
 
     try {
+      console.log('Starting invoice upload process...');
+      console.log('User:', user.id);
+      console.log('File:', selectedFile.name, selectedFile.size);
+
       // Create file path with user ID and timestamp
       const fileExtension = selectedFile.name.split('.').pop();
       const fileName = `${Date.now()}-${data.invoiceNumber}.${fileExtension}`;
-      const filePath = `${user.id}/${fileName}`;
+      const filePath = `${user.id}/invoices/${fileName}`;
 
-      // Upload file to storage
+      console.log('Uploading to path:', filePath);
+
+      // First, let's check if the documents bucket exists and create invoices folder
       const { data: storageData, error: storageError } = await supabase.storage
-        .from('invoices')
+        .from('documents')
         .upload(filePath, selectedFile, {
           cacheControl: '3600',
           upsert: false,
@@ -111,8 +132,10 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
 
       if (storageError) {
         console.error('Storage error:', storageError);
-        throw storageError;
+        throw new Error(`Storage error: ${storageError.message}`);
       }
+
+      console.log('File uploaded successfully:', storageData);
 
       // Insert invoice metadata into database
       const { error: dbError } = await supabase
@@ -131,16 +154,26 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
 
       if (dbError) {
         console.error('Database error:', dbError);
-        throw dbError;
+        throw new Error(`Database error: ${dbError.message}`);
       }
 
-      toast.success('Invoice uploaded successfully!');
+      console.log('Invoice metadata saved successfully');
+
+      toast({
+        title: "Success",
+        description: 'Invoice uploaded successfully!',
+      });
+      
       reset();
       setSelectedFile(null);
       onUploadSuccess();
     } catch (error) {
       console.error('Upload error:', error);
-      toast.error('Failed to upload invoice. Please try again.');
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : 'Failed to upload invoice. Please try again.',
+        variant: "destructive",
+      });
     } finally {
       setIsUploading(false);
     }
