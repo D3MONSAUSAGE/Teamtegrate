@@ -423,6 +423,7 @@ export type Database = {
           organization_id: string | null
           updated_at: string
           uploader_name: string
+          user_id: string
         }
         Insert: {
           branch: string
@@ -437,6 +438,7 @@ export type Database = {
           organization_id?: string | null
           updated_at?: string
           uploader_name: string
+          user_id: string
         }
         Update: {
           branch?: string
@@ -451,6 +453,7 @@ export type Database = {
           organization_id?: string | null
           updated_at?: string
           uploader_name?: string
+          user_id?: string
         }
         Relationships: [
           {

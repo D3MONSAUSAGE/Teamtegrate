@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -8,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Search, Download, FileText, Calendar, User, Building, Eye, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/components/ui/sonner';
+import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 
 const BRANCH_OPTIONS = [
@@ -49,6 +50,7 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ refreshTrigger }) => {
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [viewingInvoice, setViewingInvoice] = useState<Invoice | null>(null);
   const [imageUrl, setImageUrl] = useState<string>('');
+  const { toast } = useToast();
 
   const fetchInvoices = async () => {
     try {
@@ -60,7 +62,11 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ refreshTrigger }) => {
 
       if (error) {
         console.error('Error fetching invoices:', error);
-        toast.error('Failed to load invoices');
+        toast({
+          title: "Error",
+          description: 'Failed to load invoices',
+          variant: "destructive",
+        });
         return;
       }
 
@@ -68,7 +74,11 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ refreshTrigger }) => {
       setFilteredInvoices(data || []);
     } catch (error) {
       console.error('Error fetching invoices:', error);
-      toast.error('Failed to load invoices');
+      toast({
+        title: "Error",
+        description: 'Failed to load invoices',
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -109,12 +119,16 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ refreshTrigger }) => {
   const downloadInvoice = async (invoice: Invoice) => {
     try {
       const { data, error } = await supabase.storage
-        .from('invoices')
+        .from('documents')
         .download(invoice.file_path);
 
       if (error) {
         console.error('Download error:', error);
-        toast.error('Failed to download invoice');
+        toast({
+          title: "Error",
+          description: 'Failed to download invoice',
+          variant: "destructive",
+        });
         return;
       }
 
@@ -128,10 +142,17 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ refreshTrigger }) => {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
-      toast.success('Invoice downloaded successfully');
+      toast({
+        title: "Success",
+        description: 'Invoice downloaded successfully',
+      });
     } catch (error) {
       console.error('Download error:', error);
-      toast.error('Failed to download invoice');
+      toast({
+        title: "Error",
+        description: 'Failed to download invoice',
+        variant: "destructive",
+      });
     }
   };
 
@@ -140,12 +161,16 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ refreshTrigger }) => {
       // For PDFs, get a signed URL and open in new tab
       if (invoice.file_type === 'application/pdf') {
         const { data, error } = await supabase.storage
-          .from('invoices')
+          .from('documents')
           .createSignedUrl(invoice.file_path, 3600); // 1 hour expiry
 
         if (error) {
           console.error('View error:', error);
-          toast.error('Failed to view invoice');
+          toast({
+            title: "Error",
+            description: 'Failed to view invoice',
+            variant: "destructive",
+          });
           return;
         }
 
@@ -156,12 +181,16 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ refreshTrigger }) => {
       // For images, get signed URL and show in modal
       if (invoice.file_type.startsWith('image/')) {
         const { data, error } = await supabase.storage
-          .from('invoices')
+          .from('documents')
           .createSignedUrl(invoice.file_path, 3600); // 1 hour expiry
 
         if (error) {
           console.error('View error:', error);
-          toast.error('Failed to view invoice');
+          toast({
+            title: "Error",
+            description: 'Failed to view invoice',
+            variant: "destructive",
+          });
           return;
         }
 
@@ -171,10 +200,18 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ refreshTrigger }) => {
         return;
       }
 
-      toast.error('File type not supported for viewing');
+      toast({
+        title: "Error",
+        description: 'File type not supported for viewing',
+        variant: "destructive",
+      });
     } catch (error) {
       console.error('View error:', error);
-      toast.error('Failed to view invoice');
+      toast({
+        title: "Error",
+        description: 'Failed to view invoice',
+        variant: "destructive",
+      });
     }
   };
 
@@ -182,12 +219,16 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ refreshTrigger }) => {
     try {
       // Delete file from storage
       const { error: storageError } = await supabase.storage
-        .from('invoices')
+        .from('documents')
         .remove([invoice.file_path]);
 
       if (storageError) {
         console.error('Storage deletion error:', storageError);
-        toast.error('Failed to delete invoice file from storage');
+        toast({
+          title: "Error",
+          description: 'Failed to delete invoice file from storage',
+          variant: "destructive",
+        });
         return;
       }
 
@@ -199,17 +240,28 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ refreshTrigger }) => {
 
       if (dbError) {
         console.error('Database deletion error:', dbError);
-        toast.error('Failed to delete invoice record');
+        toast({
+          title: "Error",
+          description: 'Failed to delete invoice record',
+          variant: "destructive",
+        });
         return;
       }
 
-      toast.success('Invoice deleted successfully');
+      toast({
+        title: "Success",
+        description: 'Invoice deleted successfully',
+      });
       
       // Refresh the invoice list
       fetchInvoices();
     } catch (error) {
       console.error('Delete error:', error);
-      toast.error('Failed to delete invoice');
+      toast({
+        title: "Error",
+        description: 'Failed to delete invoice',
+        variant: "destructive",
+      });
     }
   };
 
@@ -429,7 +481,11 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ refreshTrigger }) => {
                 onLoad={() => console.log('Image loaded successfully')}
                 onError={() => {
                   console.error('Error loading image');
-                  toast.error('Failed to load image');
+                  toast({
+                    title: "Error",
+                    description: 'Failed to load image',
+                    variant: "destructive",
+                  });
                 }}
               />
             </div>
