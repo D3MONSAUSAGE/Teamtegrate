@@ -6,7 +6,7 @@ import { Task } from '@/types';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TaskDetailsSection } from '@/components/task/form/TaskDetailsSection';
-import { TaskAssignmentSection } from '@/components/task/form/TaskAssignmentSection';
+import TaskAssignmentSection from '@/components/task/form/TaskAssignmentSection';
 import { useTaskFormWithTime } from '@/hooks/useTaskFormWithTime';
 
 interface CreateTaskDialogProps {

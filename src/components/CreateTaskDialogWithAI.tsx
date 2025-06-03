@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Task } from '@/types';
@@ -10,7 +9,7 @@ import { useTaskFormWithAI } from '@/hooks/useTaskFormWithAI';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TaskFormFieldsWithAI from './task/TaskFormFieldsWithAI';
-import { TaskAssignmentSection } from '@/components/task/form/TaskAssignmentSection';
+import TaskAssignmentSection from '@/components/task/form/TaskAssignmentSection';
 
 interface CreateTaskDialogProps {
   open: boolean;

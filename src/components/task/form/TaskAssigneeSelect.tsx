@@ -1,12 +1,12 @@
 
 import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { User } from '@/types';
+import { AppUser } from '@/types';
 
 export interface TaskAssigneeSelectProps {
   selectedMember: string;
   onAssign: (userId: string) => void;
-  users: User[];
+  users: AppUser[];
   isLoading: boolean;
 }
 

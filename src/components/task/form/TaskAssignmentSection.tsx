@@ -2,12 +2,12 @@
 import React from 'react';
 import { Label } from "@/components/ui/label";
 import TaskAssigneeSelect from './TaskAssigneeSelect';
-import { User } from '@/types';
+import { AppUser } from '@/types';
 
 interface TaskAssignmentSectionProps {
   selectedMember: string;
   onAssign: (userId: string) => void;
-  users: User[];
+  users: AppUser[];
   isLoading: boolean;
 }
 
