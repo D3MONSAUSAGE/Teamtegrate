@@ -71,36 +71,43 @@ const TeamPerformanceReport = () => {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {teamPerformance.map((member) => (
-            <div key={member.id} className="space-y-1">
-              <div className="flex justify-between items-center">
-                <div className="font-medium">{member.name}</div>
-                <div className="text-sm text-muted-foreground">
-                  <span className="font-medium mr-1">{member.completedTasks}</span>
-                  /
-                  <span className="ml-1">{member.completedTasks + (member.totalTasks - member.completedTasks)} tasks</span>
+          {teamPerformance.map((member) => {
+            // Calculate total tasks from completion rate and completed tasks
+            const totalTasks = member.completionRate > 0 
+              ? Math.round(member.completedTasks / (member.completionRate / 100))
+              : member.completedTasks;
+            
+            return (
+              <div key={member.id} className="space-y-1">
+                <div className="flex justify-between items-center">
+                  <div className="font-medium">{member.name}</div>
+                  <div className="text-sm text-muted-foreground">
+                    <span className="font-medium mr-1">{member.completedTasks}</span>
+                    /
+                    <span className="ml-1">{totalTasks} tasks</span>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <Progress value={member.completionRate} className="flex-1 h-2" />
+                  <div className="w-10 text-xs font-medium">
+                    {member.completionRate}%
+                  </div>
+                </div>
+                
+                <div className="flex gap-3 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-1">
+                    <Check className="h-3 w-3" /> 
+                    {member.completedTasks} completed
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Users className="h-3 w-3" /> 
+                    {member.projects} projects
+                  </div>
                 </div>
               </div>
-              
-              <div className="flex items-center gap-2">
-                <Progress value={member.completionRate} className="flex-1 h-2" />
-                <div className="w-10 text-xs font-medium">
-                  {member.completionRate}%
-                </div>
-              </div>
-              
-              <div className="flex gap-3 text-xs text-muted-foreground">
-                <div className="flex items-center gap-1">
-                  <Check className="h-3 w-3" /> 
-                  {member.completedTasks} completed
-                </div>
-                <div className="flex items-center gap-1">
-                  <Users className="h-3 w-3" /> 
-                  {member.projects} projects
-                </div>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </CardContent>
     </Card>
