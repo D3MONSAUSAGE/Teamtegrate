@@ -13,11 +13,11 @@ export const addCommentToTask = (
   const updatedTasks = tasks.map(task => {
     if (task.id === taskId) {
       const newComment: TaskComment = {
-        id: Date.now().toString(), // Generate a unique ID for the comment
+        id: Date.now().toString(),
         userId: comment.userId,
         userName: comment.userName,
         text: comment.text,
-        createdAt: new Date(), // Using Date object instead of string
+        createdAt: new Date(),
       };
       return { ...task, comments: [...(task.comments || []), newComment] };
     }
