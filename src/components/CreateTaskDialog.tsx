@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TaskDetailsSection } from '@/components/task/form/TaskDetailsSection';
 import TaskAssignmentSection from '@/components/task/form/TaskAssignmentSection';
 import { useTaskFormWithTime } from '@/hooks/useTaskFormWithTime';
+import { useUsers } from '@/hooks/useUsers';
 
 interface CreateTaskDialogProps {
   open: boolean;
@@ -26,6 +27,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
 }) => {
   const isEditMode = !!editingTask;
   const isMobile = useIsMobile();
+  const { users, isLoading: loadingUsers } = useUsers();
   
   const {
     register,
@@ -42,6 +44,22 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
 
   const handleCancel = () => {
     onOpenChange(false);
+  };
+
+  const handleUserAssignment = (userId: string) => {
+    if (userId === "") {
+      setSelectedMember(undefined);
+      setValue('assignedToId', undefined);
+      setValue('assignedToName', undefined);
+      return;
+    }
+    
+    const selectedUser = users.find(user => user.id === userId);
+    if (selectedUser) {
+      setSelectedMember(userId);
+      setValue('assignedToId', userId);
+      setValue('assignedToName', selectedUser.name || selectedUser.email);
+    }
   };
 
   return (
@@ -79,10 +97,10 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
             
             <TabsContent value="assignment">
               <TaskAssignmentSection 
-                register={register}
-                selectedMember={selectedMember}
-                setSelectedMember={setSelectedMember}
-                setValue={setValue}
+                selectedMember={selectedMember || ""}
+                onAssign={handleUserAssignment}
+                users={users}
+                isLoading={loadingUsers}
               />
             </TabsContent>
           </Tabs>

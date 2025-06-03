@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Task } from '@/types';
@@ -10,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TaskFormFieldsWithAI from './task/TaskFormFieldsWithAI';
 import TaskAssignmentSection from '@/components/task/form/TaskAssignmentSection';
+import { useUsers } from '@/hooks/useUsers';
 
 interface CreateTaskDialogProps {
   open: boolean;
@@ -30,6 +32,7 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
   const { addTask, updateTask, projects } = useTask();
   const isEditMode = !!editingTask;
   const isMobile = useIsMobile();
+  const { users, isLoading: loadingUsers } = useUsers();
   
   // Use our custom hook for form management
   const {
@@ -53,6 +56,27 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
       console.log('Dialog opened with editingTask:', editingTask);
     }
   }, [open, editingTask]);
+
+  const handleUserAssignment = (userId: string) => {
+    console.log('Assigning user:', userId);
+    
+    if (userId === "") {
+      console.log('Setting user to unassigned');
+      setSelectedMember(undefined);
+      setValue('assignedToId', undefined);
+      setValue('assignedToName', undefined);
+      return;
+    }
+    
+    const selectedUser = users.find(user => user.id === userId);
+    console.log('Selected user:', selectedUser);
+    
+    if (selectedUser) {
+      setSelectedMember(userId);
+      setValue('assignedToId', userId);
+      setValue('assignedToName', selectedUser.name || selectedUser.email);
+    }
+  };
 
   const onSubmit = (data: any) => {
     console.log('Form submission data:', data);
@@ -135,10 +159,10 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
               
               <TabsContent value="assignment">
                 <TaskAssignmentSection 
-                  register={register}
-                  selectedMember={selectedMember}
-                  setSelectedMember={setSelectedMember}
-                  setValue={setValue}
+                  selectedMember={selectedMember || ""}
+                  onAssign={handleUserAssignment}
+                  users={users}
+                  isLoading={loadingUsers}
                 />
               </TabsContent>
             </Tabs>
