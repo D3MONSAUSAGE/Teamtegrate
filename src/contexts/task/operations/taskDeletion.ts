@@ -14,40 +14,63 @@ export const deleteTask = async (
   try {
     if (!user) return;
 
-    // Find the task to get its project ID before deleting
-    const taskToDelete = projects.flatMap(p => p.tasks).find(t => t.id === taskId) || 
-                         projects.find(p => p.tasks.some(t => t.id === taskId))?.tasks.find(t => t.id === taskId);
-    const projectId = taskToDelete?.projectId;
+    console.log(`Attempting to delete task: ${taskId}`);
 
-    const { error } = await supabase
+    // First, try to delete from the tasks table
+    const { error: tasksError } = await supabase
       .from('tasks')
       .delete()
       .eq('id', taskId);
 
-    if (error) {
-      console.error('Error deleting task:', error);
+    if (tasksError) {
+      console.error('Error deleting from tasks table:', tasksError);
+    }
+
+    // Also try to delete from project_tasks table in case it exists there
+    const { error: projectTasksError } = await supabase
+      .from('project_tasks')
+      .delete()
+      .eq('id', taskId);
+
+    if (projectTasksError) {
+      console.error('Error deleting from project_tasks table:', projectTasksError);
+    }
+
+    // If both operations failed, show error
+    if (tasksError && projectTasksError) {
+      console.error('Failed to delete task from both tables');
       playErrorSound();
       toast.error('Failed to delete task');
       return;
     }
 
-    // Immediately update state to remove the task
-    setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
+    console.log(`Task ${taskId} deleted successfully from database`);
+
+    // Update local state - remove from tasks array
+    setTasks(prevTasks => {
+      const filteredTasks = prevTasks.filter(task => task.id !== taskId);
+      console.log(`Removed task from local tasks. Before: ${prevTasks.length}, After: ${filteredTasks.length}`);
+      return filteredTasks;
+    });
     
-    // Also remove from project if it belongs to one
-    if (projectId) {
-      setProjects(prevProjects => {
-        return prevProjects.map(project => {
-          if (project.id === projectId) {
-            return {
-              ...project,
-              tasks: project.tasks.filter(task => task.id !== taskId)
-            };
-          }
-          return project;
-        });
+    // Update local state - remove from projects
+    setProjects(prevProjects => {
+      const updatedProjects = prevProjects.map(project => {
+        const originalTaskCount = project.tasks.length;
+        const updatedTasks = project.tasks.filter(task => task.id !== taskId);
+        
+        if (originalTaskCount !== updatedTasks.length) {
+          console.log(`Removed task from project ${project.id}. Tasks: ${originalTaskCount} -> ${updatedTasks.length}`);
+        }
+        
+        return {
+          ...project,
+          tasks: updatedTasks
+        };
       });
-    }
+      
+      return updatedProjects;
+    });
 
     toast.success('Task deleted successfully!');
   } catch (error) {
