@@ -1,0 +1,58 @@
+
+import React from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useToast } from '@/hooks/use-toast';
+
+interface Invoice {
+  id: string;
+  invoice_number: string;
+  file_name: string;
+}
+
+interface ImageViewerModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  invoice: Invoice | null;
+  imageUrl: string;
+}
+
+const ImageViewerModal: React.FC<ImageViewerModalProps> = ({
+  isOpen,
+  onClose,
+  invoice,
+  imageUrl
+}) => {
+  const { toast } = useToast();
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
+        <DialogHeader>
+          <DialogTitle>
+            {invoice?.invoice_number} - {invoice?.file_name}
+          </DialogTitle>
+        </DialogHeader>
+        {imageUrl && (
+          <div className="flex justify-center">
+            <img 
+              src={imageUrl} 
+              alt={`Invoice ${invoice?.invoice_number}`}
+              className="max-w-full max-h-[70vh] object-contain"
+              onLoad={() => console.log('Image loaded successfully')}
+              onError={() => {
+                console.error('Error loading image');
+                toast({
+                  title: "Error",
+                  description: 'Failed to load image',
+                  variant: "destructive",
+                });
+              }}
+            />
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export default ImageViewerModal;
