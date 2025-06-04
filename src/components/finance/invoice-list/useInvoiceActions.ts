@@ -5,9 +5,14 @@ import { useToast } from '@/hooks/use-toast';
 interface Invoice {
   id: string;
   invoice_number: string;
-  file_path: string;
+  branch: string;
+  uploader_name: string;
+  invoice_date: string;
   file_name: string;
   file_type: string;
+  file_size: number;
+  file_path: string;
+  created_at: string;
 }
 
 export const useInvoiceActions = () => {

@@ -7,6 +7,11 @@ interface Invoice {
   branch: string;
   uploader_name: string;
   invoice_date: string;
+  file_name: string;
+  file_type: string;
+  file_size: number;
+  file_path: string;
+  created_at: string;
 }
 
 export const useInvoiceFilters = (invoices: Invoice[]) => {
