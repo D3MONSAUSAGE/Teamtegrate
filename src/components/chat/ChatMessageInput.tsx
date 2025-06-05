@@ -81,12 +81,22 @@ const ChatMessageInput: React.FC<ChatMessageInputProps> = ({
     }, 0);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault(); // Prevent default form submission
+    e.stopPropagation(); // Stop event bubbling
+    
     if (isSending) {
-      e.preventDefault();
       return;
     }
-    onSubmit(e);
+    
+    await onSubmit(e);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit(e as any);
+    }
   };
 
   return (
@@ -139,6 +149,7 @@ const ChatMessageInput: React.FC<ChatMessageInputProps> = ({
             ref={inputRef}
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
+            onKeyDown={handleKeyDown}
             placeholder="Type a message"
             className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-2"
             disabled={isSending}
