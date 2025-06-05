@@ -109,8 +109,8 @@ export const useProjectTasksView = (projectId: string | null) => {
     setIsLoading(false);
   }, [projectId, user, projects]);
 
-  const handleSearchChange = useCallback((query: string) => {
-    setSearchQuery(query);
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
   }, []);
 
   const handleEditTask = useCallback((task: Task) => {
