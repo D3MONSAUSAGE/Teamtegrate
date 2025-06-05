@@ -22,9 +22,6 @@ import FinancePage from "./pages/FinancePage";
 import ChatPage from "./pages/ChatPage";
 import NotebookPage from "./pages/NotebookPage";
 import ProjectTasksPage from "./pages/ProjectTasksPage";
-import CalendarPage from "./pages/CalendarPage";
-import JournalPage from "./pages/JournalPage";
-import TimelinePage from "./pages/TimelinePage";
 
 const queryClient = new QueryClient();
 
@@ -54,9 +51,6 @@ const App = () => (
                 <Route path="documents" element={<DocumentsPage />} />
                 <Route path="finance" element={<FinancePage />} />
                 <Route path="notebook" element={<NotebookPage />} />
-                <Route path="calendar" element={<CalendarPage />} />
-                <Route path="journal" element={<JournalPage />} />
-                <Route path="timeline" element={<TimelinePage />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
