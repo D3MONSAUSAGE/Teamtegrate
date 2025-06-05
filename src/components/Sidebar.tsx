@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   LayoutDashboard,
@@ -10,7 +11,7 @@ import {
   Clock,
   DollarSign,
   FileText,
-  Timeline,
+  CalendarDays,
   Book,
   NotebookPen,
   Settings,
@@ -27,7 +28,11 @@ interface SidebarItem {
   path: string;
 }
 
-export const Sidebar = () => {
+interface SidebarProps {
+  onNavigation?: () => void;
+}
+
+export const Sidebar = ({ onNavigation }: SidebarProps) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const location = useLocation();
 
@@ -46,7 +51,7 @@ export const Sidebar = () => {
     { icon: Clock, label: 'Time Tracking', path: '/time-tracking' },
     { icon: DollarSign, label: 'Finance', path: '/finance' },
     { icon: FileText, label: 'Documents', path: '/documents' },
-    { icon: Timeline, label: 'Timeline', path: '/timeline' },
+    { icon: CalendarDays, label: 'Timeline', path: '/timeline' },
     { icon: Book, label: 'Journal', path: '/journal' },
     { icon: NotebookPen, label: 'Notebook', path: '/notebook' },
     { icon: Settings, label: 'Settings', path: '/settings' },
@@ -80,6 +85,7 @@ export const Sidebar = () => {
                     ? 'bg-gray-200 font-semibold'
                     : 'font-medium'
                 )}
+                onClick={onNavigation}
               >
                 <item.icon className="h-5 w-5 mr-2" />
                 <span className={cn(isCollapsed ? 'hidden' : '')}>{item.label}</span>
@@ -91,3 +97,5 @@ export const Sidebar = () => {
     </div>
   );
 };
+
+export default Sidebar;
