@@ -14,48 +14,102 @@ interface ProfileAvatarProps {
 
 const ProfileAvatar: React.FC<ProfileAvatarProps> = ({ user, setAvatarUrl, avatarUrl }) => {
   const [uploading, setUploading] = useState(false);
+  const [bucketExists, setBucketExists] = useState<boolean | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Check if profiles bucket exists on component mount
+  useEffect(() => {
+    const checkBucket = async () => {
+      try {
+        const { data, error } = await supabase.storage.getBucket('profiles');
+        if (error && error.message.includes('not found')) {
+          console.log('Profiles bucket does not exist');
+          setBucketExists(false);
+        } else if (data) {
+          setBucketExists(true);
+        }
+      } catch (error) {
+        console.error('Error checking bucket:', error);
+        setBucketExists(false);
+      }
+    };
+
+    checkBucket();
+  }, []);
+
   const triggerFileInput = () => {
+    if (!bucketExists) {
+      toast.error("Avatar upload is not configured. Please contact support.");
+      return;
+    }
     fileInputRef.current?.click();
   };
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
       setUploading(true);
-      if (!event.target.files || event.target.files.length === 0) return;
+      
+      if (!event.target.files || event.target.files.length === 0) {
+        return;
+      }
+
+      if (!bucketExists) {
+        toast.error("Avatar upload is not configured. Please contact support.");
+        return;
+      }
+
       const file = event.target.files[0];
+      
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast.error("Please select an image file");
+        return;
+      }
+
+      // Validate file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("Image size must be less than 5MB");
+        return;
+      }
+
       const fileExt = file.name.split('.').pop();
       const filePath = `${user.id}/${Math.random().toString(36).substring(2)}.${fileExt}`;
 
-      const { data: { session }} = await supabase.auth.getSession();
-      if (!session) {
-        toast.error("Authentication session not found. Please log in again.");
+      // Verify we have a valid session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session) {
+        toast.error("Please log in again to upload your avatar");
         return;
       }
 
+      // Upload to storage
       const { error: uploadError } = await supabase.storage
         .from("profiles")
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
       if (uploadError) {
-        toast.error("Error uploading avatar");
-        console.error(uploadError);
+        console.error('Upload error:', uploadError);
+        toast.error("Error uploading avatar: " + uploadError.message);
         return;
       }
 
+      // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from("profiles")
         .getPublicUrl(filePath);
 
+      // Update user profile in database
       const { error: updateError } = await supabase
         .from("users")
         .update({ avatar_url: publicUrl })
         .eq("id", user.id);
 
       if (updateError) {
-        toast.error("Error updating profile");
-        console.error(updateError);
+        console.error('Profile update error:', updateError);
+        toast.error("Error updating profile: " + updateError.message);
         return;
       }
 
@@ -63,9 +117,13 @@ const ProfileAvatar: React.FC<ProfileAvatarProps> = ({ user, setAvatarUrl, avata
       toast.success("Avatar updated successfully!");
     } catch (error) {
       console.error("Error uploading avatar:", error);
-      toast.error("An unexpected error occurred");
+      toast.error("An unexpected error occurred while uploading your avatar");
     } finally {
       setUploading(false);
+      // Clear the input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -85,19 +143,24 @@ const ProfileAvatar: React.FC<ProfileAvatarProps> = ({ user, setAvatarUrl, avata
           accept="image/*"
           className="hidden"
           onChange={handleAvatarUpload}
-          disabled={uploading}
+          disabled={uploading || !bucketExists}
         />
         <Button
           variant="outline"
           size="sm"
           onClick={triggerFileInput}
-          disabled={uploading}
+          disabled={uploading || bucketExists === false}
           className="flex items-center dark:border-gray-700 dark:bg-[#181928]/70"
         >
           {uploading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Uploading...
+            </>
+          ) : bucketExists === false ? (
+            <>
+              <Camera className="mr-2 h-4 w-4" />
+              Upload Not Available
             </>
           ) : (
             <>
@@ -106,6 +169,11 @@ const ProfileAvatar: React.FC<ProfileAvatarProps> = ({ user, setAvatarUrl, avata
             </>
           )}
         </Button>
+        {bucketExists === false && (
+          <p className="text-xs text-muted-foreground mt-1 text-center">
+            Contact admin to enable avatar uploads
+          </p>
+        )}
       </div>
     </div>
   );
