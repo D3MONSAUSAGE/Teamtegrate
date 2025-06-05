@@ -60,7 +60,7 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
   const handleUserAssignment = (userId: string) => {
     console.log('Assigning user:', userId);
     
-    if (userId === "") {
+    if (userId === "unassigned") {
       console.log('Setting user to unassigned');
       setSelectedMember(undefined);
       setValue('assignedToId', undefined);
@@ -159,7 +159,7 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
               
               <TabsContent value="assignment">
                 <TaskAssignmentSection 
-                  selectedMember={selectedMember || ""}
+                  selectedMember={selectedMember || "unassigned"}
                   onAssign={handleUserAssignment}
                   users={users}
                   isLoading={loadingUsers}

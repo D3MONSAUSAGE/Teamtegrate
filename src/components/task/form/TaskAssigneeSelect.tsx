@@ -26,7 +26,7 @@ const TaskAssigneeSelect: React.FC<TaskAssigneeSelectProps> = ({
         <SelectValue placeholder="Select team member" />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="">Unassigned</SelectItem>
+        <SelectItem value="unassigned">Unassigned</SelectItem>
         {users.map((user) => (
           <SelectItem key={user.id} value={user.id}>
             {user.name}

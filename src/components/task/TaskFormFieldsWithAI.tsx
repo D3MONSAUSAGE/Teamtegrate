@@ -128,7 +128,7 @@ const TaskFormFieldsWithAI: React.FC<TaskFormFieldsProps> = ({
         />
         
         <TaskAssigneeSelect 
-          selectedMember={selectedMember}
+          selectedMember={selectedMember || "unassigned"}
           onAssign={handleUserAssignment}
           users={users} 
           isLoading={loadingUsers}
