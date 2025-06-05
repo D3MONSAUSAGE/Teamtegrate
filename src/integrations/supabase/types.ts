@@ -409,6 +409,39 @@ export type Database = {
         }
         Relationships: []
       }
+      events: {
+        Row: {
+          created_at: string
+          description: string | null
+          end_date: string
+          id: string
+          start_date: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          end_date: string
+          id?: string
+          start_date: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          end_date?: string
+          id?: string
+          start_date?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       invoices: {
         Row: {
           branch: string
@@ -499,8 +532,10 @@ export type Database = {
         Row: {
           content: string | null
           created_at: string
+          event_id: string | null
           id: string
           read: boolean
+          task_id: string | null
           title: string
           type: string
           user_id: string
@@ -508,8 +543,10 @@ export type Database = {
         Insert: {
           content?: string | null
           created_at?: string
+          event_id?: string | null
           id?: string
           read?: boolean
+          task_id?: string | null
           title: string
           type?: string
           user_id: string
@@ -517,13 +554,30 @@ export type Database = {
         Update: {
           content?: string | null
           created_at?: string
+          event_id?: string | null
           id?: string
           read?: boolean
+          task_id?: string | null
           title?: string
           type?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "notifications_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       organizations: {
         Row: {
@@ -879,6 +933,10 @@ export type Database = {
           title: string
           updated_at: string | null
         }[]
+      }
+      send_reminders: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       user_is_project_creator: {
         Args: { project_id: string; user_id: string }

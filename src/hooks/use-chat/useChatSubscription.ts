@@ -37,20 +37,22 @@ export function useChatSubscription(
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'INSERT',
           schema: 'public',
           table: 'chat_messages',
           filter: `room_id=eq.${roomId}`,
         },
         (payload) => {
-          if (payload.eventType === "INSERT" && payload.new?.user_id !== userId) {
+          // Only handle messages from other users to prevent duplicates
+          if (payload.new?.user_id !== userId) {
             playChatNotification({ enabled: true, volume: 0.5 });
-          }
-          
-          // Fetch latest messages - we'll use a callback here to fetch
-          // No need to fetch all messages, just append the new one if it's an insert
-          if (payload.eventType === "INSERT") {
-            setMessages(prev => [...prev, payload.new]);
+            
+            // Add the new message without duplicating existing ones
+            setMessages(prev => {
+              const messageExists = prev.some(msg => msg.id === payload.new.id);
+              if (messageExists) return prev;
+              return [...prev, payload.new];
+            });
           }
         }
       )

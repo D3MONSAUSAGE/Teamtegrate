@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card } from '@/components/ui/card';
@@ -76,13 +75,22 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, onRoomDeleted }) => {
     setAutoScrollEnabled(isNearBottom);
   };
 
+  // Improved scroll effect with debouncing
   useEffect(() => {
-    // Only auto-scroll on new messages if auto-scroll is enabled or if it's the initial render
     if (messages.length > 0 && (autoScrollEnabled || !initialScrollDone)) {
-      scrollToBottom();
-      setInitialScrollDone(true);
+      // Use requestAnimationFrame for smoother scrolling
+      requestAnimationFrame(() => {
+        scrollToBottom('smooth');
+        setInitialScrollDone(true);
+      });
     }
-  }, [messages, autoScrollEnabled, initialScrollDone]);
+  }, [messages.length, autoScrollEnabled, initialScrollDone]);
+
+  // Optimized message sending handler
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await sendMessage();
+  };
 
   const handleLeaveChat = async () => {
     if (!user) return;
@@ -244,7 +252,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, onRoomDeleted }) => {
         setNewMessage={setNewMessage}
         fileUploads={fileUploads}
         setFileUploads={setFileUploads}
-        onSubmit={sendMessage}
+        onSubmit={handleSendMessage}
         replyTo={replyTo}
         setReplyTo={setReplyTo}
         isSending={isSending}

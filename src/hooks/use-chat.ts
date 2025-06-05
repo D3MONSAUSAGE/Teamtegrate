@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useChatMessages } from './use-chat/useChatMessages';
 import { useChatSendMessage } from './use-chat/useChatSendMessage';
 import { useChatSubscription } from './use-chat/useChatSubscription';
@@ -39,7 +39,7 @@ export function useChat(roomId: string, userId?: string) {
     }
   }, [newMessage, userId, sendTypingStatus]);
   
-  // Send message
+  // Send message with optimistic updates
   const sendMessage = useCallback(async () => {
     if ((!newMessage && fileUploads.length === 0) || !userId) return;
     
@@ -50,31 +50,61 @@ export function useChat(roomId: string, userId?: string) {
         typingTimeout.current = null;
       }
       
-      // Upload files if any
-      let attachments: { file_path: string; file_name: string; file_size: number; file_type: string }[] = [];
+      // Store current values before clearing state
+      const messageContent = newMessage.trim();
+      const currentReplyTo = replyTo;
+      const currentFileUploads = [...fileUploads];
       
-      if (fileUploads.length > 0) {
-        attachments = await uploadFiles(fileUploads, roomId);
-      }
+      // Optimistically add message to state immediately
+      const optimisticMessage = {
+        id: `temp-${Date.now()}`,
+        room_id: roomId,
+        user_id: userId,
+        content: messageContent || 'Shared attachments',
+        type: 'text' as const,
+        created_at: new Date().toISOString(),
+        parent_id: currentReplyTo?.id || null,
+        sending: true // Flag to indicate this is being sent
+      };
       
-      // Send message
-      await sendMessageToSupabase(newMessage.trim(), replyTo?.id, attachments);
-      
-      // Reset state
+      // Clear form state immediately for better UX
       setNewMessage('');
       setReplyTo(null);
       setFileUploads([]);
       
-      // Scroll to bottom
-      setTimeout(() => {
-        const messagesEnd = document.getElementById('messages-end');
-        messagesEnd?.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
+      // Add optimistic message
+      setMessages(prev => [...prev, optimisticMessage]);
+      
+      // Upload files if any
+      let attachments: { file_path: string; file_name: string; file_size: number; file_type: string }[] = [];
+      
+      if (currentFileUploads.length > 0) {
+        attachments = await uploadFiles(currentFileUploads, roomId);
+      }
+      
+      // Send message to database
+      const sentMessage = await sendMessageToSupabase(messageContent, currentReplyTo?.id, attachments);
+      
+      if (sentMessage) {
+        // Replace optimistic message with real message
+        setMessages(prev => prev.map(msg => 
+          msg.id === optimisticMessage.id ? sentMessage : msg
+        ));
+      } else {
+        // Remove optimistic message if send failed
+        setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
+      }
       
     } catch (error) {
       console.error('Error sending message:', error);
+      // Remove optimistic message on error
+      setMessages(prev => prev.filter(msg => msg.id !== `temp-${Date.now()}`));
+      // Restore form state on error
+      setNewMessage(newMessage);
+      setReplyTo(replyTo);
+      setFileUploads(fileUploads);
     }
-  }, [newMessage, roomId, userId, fileUploads, replyTo, sendMessageToSupabase, uploadFiles, typingTimeout]);
+  }, [newMessage, roomId, userId, fileUploads, replyTo, sendMessageToSupabase, uploadFiles, typingTimeout, setMessages]);
   
   return {
     messages,

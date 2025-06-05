@@ -19,7 +19,7 @@ export function useChatSendMessage(roomId: string, userId: string | undefined) {
     setIsSending(true);
 
     try {
-      // Create message
+      // Create message payload
       const messagePayload = {
         room_id: roomId,
         user_id: userId,
@@ -28,6 +28,7 @@ export function useChatSendMessage(roomId: string, userId: string | undefined) {
         parent_id: parentId || null,
       };
 
+      // Insert message and get the result
       const { error: messageError, data: messageData } = await supabase
         .from('chat_messages')
         .insert(messagePayload)
@@ -53,6 +54,7 @@ export function useChatSendMessage(roomId: string, userId: string | undefined) {
         }
       }
 
+      // Return the message data for optimistic updates
       return messageData;
     } catch (error: any) {
       console.error('Error sending message:', error);
