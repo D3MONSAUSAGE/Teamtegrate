@@ -6,67 +6,81 @@ export { playSound };
 
 // Convenience functions for specific sounds
 export function playSuccessSound(volume: number = 0.5) {
-  playAppSound('success', volume);
+  return playAppSound('success', volume);
 }
 
 export function playErrorSound(volume: number = 0.5) {
-  playAppSound('error', volume);
+  return playAppSound('error', volume);
 }
 
 export function playStatusChangeSound(volume: number = 0.5) {
-  playAppSound('status-change', volume);
+  return playAppSound('status-change', volume);
 }
 
-// Add a function to test audio playback with multiple fallbacks
+// Enhanced test function with better browser compatibility
 export function testSoundPlayback(volume: number = 0.5): Promise<boolean> {
   return new Promise((resolve) => {
-    // Try Web Audio API first (best compatibility)
-    import('./chatSounds').then(({ playWithWebAudioAPI }) => {
-      playWithWebAudioAPI("/sounds/message.wav", volume)
-        .then(() => resolve(true))
+    console.log("Starting sound test with volume:", volume);
+    
+    // Try multiple sound files with different formats for better compatibility
+    const testSounds = [
+      "/sounds/success.mp3",
+      "/sounds/message.mp3", 
+      "/sounds/message.wav"
+    ];
+    
+    let soundIndex = 0;
+    
+    const tryNextSound = () => {
+      if (soundIndex >= testSounds.length) {
+        console.log("All sound tests failed");
+        resolve(false);
+        return;
+      }
+      
+      const soundPath = testSounds[soundIndex];
+      console.log(`Testing sound ${soundIndex + 1}/${testSounds.length}: ${soundPath}`);
+      
+      // Try Web Audio API first
+      playWithWebAudioAPI(soundPath, volume)
+        .then(() => {
+          console.log("Web Audio API test successful");
+          resolve(true);
+        })
         .catch(() => {
-          // If Web Audio API fails, try WAV with Audio element
-          console.log("Testing with Audio element: WAV");
-          const audio = new Audio("/sounds/message.wav");
+          console.log("Web Audio API failed, trying Audio element");
+          // Fallback to Audio element
+          const audio = new Audio(soundPath);
           audio.volume = volume;
           
-          audio.onended = () => resolve(true);
-          audio.onerror = () => {
-            // If WAV fails, try MP3
-            console.log("Testing with Audio element: MP3");
-            const mp3Audio = new Audio("/sounds/message.mp3");
-            mp3Audio.volume = volume;
-            
-            mp3Audio.onended = () => resolve(true);
-            mp3Audio.onerror = () => resolve(false);
-            
-            const mp3Promise = mp3Audio.play();
-            if (mp3Promise) mp3Promise.catch(() => resolve(false));
+          const onSuccess = () => {
+            console.log("Audio element test successful");
+            audio.removeEventListener('ended', onSuccess);
+            audio.removeEventListener('error', onError);
+            resolve(true);
           };
           
-          const wavPromise = audio.play();
-          if (wavPromise) wavPromise.catch(() => {
-            // Try MP3 if WAV fails to play
-            const mp3Audio = new Audio("/sounds/message.mp3");
-            mp3Audio.volume = volume;
-            
-            mp3Audio.onended = () => resolve(true);
-            mp3Audio.onerror = () => resolve(false);
-            
-            const mp3Promise = mp3Audio.play();
-            if (mp3Promise) mp3Promise.catch(() => resolve(false));
-          });
+          const onError = () => {
+            console.log(`Audio element failed for ${soundPath}`);
+            audio.removeEventListener('ended', onSuccess);
+            audio.removeEventListener('error', onError);
+            soundIndex++;
+            tryNextSound();
+          };
+          
+          audio.addEventListener('ended', onSuccess);
+          audio.addEventListener('error', onError);
+          
+          const playPromise = audio.play();
+          if (playPromise) {
+            playPromise.catch(() => {
+              console.log(`Play promise failed for ${soundPath}`);
+              onError();
+            });
+          }
         });
-    }).catch(() => {
-      // If module import fails, try direct Audio element approach
-      const audio = new Audio("/sounds/message.mp3");
-      audio.volume = volume;
-      
-      audio.onended = () => resolve(true);
-      audio.onerror = () => resolve(false);
-      
-      const playPromise = audio.play();
-      if (playPromise) playPromise.catch(() => resolve(false));
-    });
+    };
+    
+    tryNextSound();
   });
 }

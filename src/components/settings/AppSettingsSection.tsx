@@ -14,30 +14,75 @@ const AppSettingsSection = () => {
   const { isDark, toggle } = useDarkMode();
   const { enabled: soundEnabled, volume: soundVolume, setEnabled: setSoundEnabled, setVolume: setSoundVolume } = useSoundSettings();
 
-  // Enhanced test sound function with multiple fallback methods
+  // Enhanced test sound function with user interaction requirement
   const playTestSound = async () => {
     if (!soundEnabled) {
       toast.info("Sound is currently disabled. Enable sound to test.");
       return;
     }
 
-    toast.loading("Testing sound playback...", { id: "sound-test" });
+    // Show loading toast
+    const loadingToastId = toast.loading("Testing sound playback...");
     
     try {
-      // Try to play the test sound with our improved function that uses multiple fallbacks
+      console.log("Starting sound test with volume:", soundVolume);
+      
+      // Test sound playback with multiple fallbacks
       const success = await testSoundPlayback(soundVolume);
       
+      // Dismiss loading toast
+      toast.dismiss(loadingToastId);
+      
       if (success) {
-        toast.success("Sound test successful!", { id: "sound-test" });
-        playSuccessSound(soundVolume);
+        toast.success("Sound test successful! 🔊", {
+          description: "Your browser supports audio playback.",
+          duration: 3000,
+        });
+        
+        // Play a success sound as additional confirmation
+        setTimeout(() => {
+          playSuccessSound(soundVolume);
+        }, 500);
       } else {
-        // If test failed but we didn't get an exception, try alternative sound
-        playErrorSound(soundVolume);
-        toast.error("Primary sound test failed. Using fallback sound.", { id: "sound-test" });
+        toast.error("Sound test failed", {
+          description: "Please check your browser audio settings and try again.",
+          duration: 5000,
+        });
+        
+        // Try playing an error sound as fallback
+        setTimeout(() => {
+          playErrorSound(soundVolume);
+        }, 500);
       }
     } catch (error) {
-      console.error("Error testing sound:", error);
-      toast.error("Sound test failed. Check browser audio permissions.", { id: "sound-test" });
+      console.error("Error during sound test:", error);
+      toast.dismiss(loadingToastId);
+      toast.error("Sound test error", {
+        description: "An error occurred while testing audio. Check browser permissions.",
+        duration: 5000,
+      });
+    }
+  };
+
+  // Handle volume changes with immediate feedback
+  const handleVolumeChange = (value: number[]) => {
+    const newVolume = value[0] / 100;
+    setSoundVolume(newVolume);
+    
+    // Provide immediate audio feedback for volume changes (debounced)
+    if (soundEnabled && newVolume > 0) {
+      // Clear any existing timeout
+      if ((window as any).volumeTestTimeout) {
+        clearTimeout((window as any).volumeTestTimeout);
+      }
+      
+      // Set a new timeout for volume feedback
+      (window as any).volumeTestTimeout = setTimeout(() => {
+        playSuccessSound(newVolume).catch(() => {
+          // Silently fail if sound doesn't work
+          console.log("Volume test sound failed");
+        });
+      }, 200);
     }
   };
 
@@ -79,7 +124,7 @@ const AppSettingsSection = () => {
           <div className="flex items-center justify-between">
             <div>
               <Label htmlFor="sound-toggle" className="block mb-1">App Sounds</Label>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Enable notification sounds</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Enable notification and interaction sounds</p>
             </div>
             <button
               id="sound-toggle"
@@ -107,37 +152,43 @@ const AppSettingsSection = () => {
           </div>
           
           {soundEnabled && (
-            <div className="space-y-2">
+            <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <Label htmlFor="volume-slider">Volume</Label>
                 <div className="flex items-center gap-2">
                   {soundVolume === 0 ? (
-                    <VolumeX className="h-4 w-4" />
+                    <VolumeX className="h-4 w-4 text-muted-foreground" />
                   ) : soundVolume < 0.5 ? (
-                    <Volume1 className="h-4 w-4" />
+                    <Volume1 className="h-4 w-4 text-muted-foreground" />
                   ) : (
-                    <Volume2 className="h-4 w-4" />
+                    <Volume2 className="h-4 w-4 text-muted-foreground" />
                   )}
-                  <span className="text-xs w-8 text-right">{Math.round(soundVolume * 100)}%</span>
+                  <span className="text-sm w-10 text-right text-muted-foreground">
+                    {Math.round(soundVolume * 100)}%
+                  </span>
                 </div>
               </div>
               <div className="flex items-center gap-4">
                 <Slider
                   id="volume-slider"
-                  defaultValue={[soundVolume * 100]}
+                  value={[soundVolume * 100]}
                   max={100}
+                  min={0}
                   step={5}
-                  onValueChange={(value) => setSoundVolume(value[0] / 100)}
+                  onValueChange={handleVolumeChange}
                   className="flex-1"
                 />
                 <button
                   onClick={playTestSound}
-                  className="text-xs text-primary hover:underline"
+                  className="text-sm text-primary hover:text-primary/80 hover:underline font-medium px-2 py-1 rounded transition-colors"
                   type="button"
                 >
-                  Test
+                  Test Sound
                 </button>
               </div>
+              <p className="text-xs text-muted-foreground">
+                Click "Test Sound" to verify audio is working in your browser
+              </p>
             </div>
           )}
         </div>
