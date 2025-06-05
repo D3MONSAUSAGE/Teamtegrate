@@ -42,19 +42,19 @@ export const Sidebar = ({ onNavigation }: SidebarProps) => {
 
   const sidebarItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-    { icon: CheckSquare, label: 'Tasks', path: '/tasks' },
-    { icon: FolderOpen, label: 'Projects', path: '/projects' },
-    { icon: Calendar, label: 'Calendar', path: '/calendar' },
-    { icon: MessageSquare, label: 'Chat', path: '/chat' },
-    { icon: Users, label: 'Team', path: '/team' },
-    { icon: BarChart3, label: 'Reports', path: '/reports' },
-    { icon: Clock, label: 'Time Tracking', path: '/time-tracking' },
-    { icon: DollarSign, label: 'Finance', path: '/finance' },
-    { icon: FileText, label: 'Documents', path: '/documents' },
-    { icon: CalendarDays, label: 'Timeline', path: '/timeline' },
-    { icon: Book, label: 'Journal', path: '/journal' },
-    { icon: NotebookPen, label: 'Notebook', path: '/notebook' },
-    { icon: Settings, label: 'Settings', path: '/settings' },
+    { icon: CheckSquare, label: 'Tasks', path: '/dashboard/tasks' },
+    { icon: FolderOpen, label: 'Projects', path: '/dashboard/projects' },
+    { icon: Calendar, label: 'Calendar', path: '/dashboard/calendar' },
+    { icon: MessageSquare, label: 'Chat', path: '/dashboard/chat' },
+    { icon: Users, label: 'Team', path: '/dashboard/team' },
+    { icon: BarChart3, label: 'Reports', path: '/dashboard/reports' },
+    { icon: Clock, label: 'Time Tracking', path: '/dashboard/time-tracking' },
+    { icon: DollarSign, label: 'Finance', path: '/dashboard/finance' },
+    { icon: FileText, label: 'Documents', path: '/dashboard/documents' },
+    { icon: CalendarDays, label: 'Timeline', path: '/dashboard/timeline' },
+    { icon: Book, label: 'Journal', path: '/dashboard/journal' },
+    { icon: NotebookPen, label: 'Notebook', path: '/dashboard/notebook' },
+    { icon: Settings, label: 'Settings', path: '/dashboard/settings' },
   ];
 
   return (
