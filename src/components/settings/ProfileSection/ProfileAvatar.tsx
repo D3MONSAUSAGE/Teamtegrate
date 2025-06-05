@@ -14,34 +14,9 @@ interface ProfileAvatarProps {
 
 const ProfileAvatar: React.FC<ProfileAvatarProps> = ({ user, setAvatarUrl, avatarUrl }) => {
   const [uploading, setUploading] = useState(false);
-  const [bucketExists, setBucketExists] = useState<boolean | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Check if profiles bucket exists on component mount
-  useEffect(() => {
-    const checkBucket = async () => {
-      try {
-        const { data, error } = await supabase.storage.getBucket('profiles');
-        if (error && error.message.includes('not found')) {
-          console.log('Profiles bucket does not exist');
-          setBucketExists(false);
-        } else if (data) {
-          setBucketExists(true);
-        }
-      } catch (error) {
-        console.error('Error checking bucket:', error);
-        setBucketExists(false);
-      }
-    };
-
-    checkBucket();
-  }, []);
-
   const triggerFileInput = () => {
-    if (!bucketExists) {
-      toast.error("Avatar upload is not configured. Please contact support.");
-      return;
-    }
     fileInputRef.current?.click();
   };
 
@@ -50,11 +25,6 @@ const ProfileAvatar: React.FC<ProfileAvatarProps> = ({ user, setAvatarUrl, avata
       setUploading(true);
       
       if (!event.target.files || event.target.files.length === 0) {
-        return;
-      }
-
-      if (!bucketExists) {
-        toast.error("Avatar upload is not configured. Please contact support.");
         return;
       }
 
@@ -72,15 +42,15 @@ const ProfileAvatar: React.FC<ProfileAvatarProps> = ({ user, setAvatarUrl, avata
         return;
       }
 
-      const fileExt = file.name.split('.').pop();
-      const filePath = `${user.id}/${Math.random().toString(36).substring(2)}.${fileExt}`;
-
       // Verify we have a valid session
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       if (sessionError || !session) {
         toast.error("Please log in again to upload your avatar");
         return;
       }
+
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${user.id}/${Math.random().toString(36).substring(2)}.${fileExt}`;
 
       // Upload to storage
       const { error: uploadError } = await supabase.storage
@@ -143,24 +113,19 @@ const ProfileAvatar: React.FC<ProfileAvatarProps> = ({ user, setAvatarUrl, avata
           accept="image/*"
           className="hidden"
           onChange={handleAvatarUpload}
-          disabled={uploading || !bucketExists}
+          disabled={uploading}
         />
         <Button
           variant="outline"
           size="sm"
           onClick={triggerFileInput}
-          disabled={uploading || bucketExists === false}
+          disabled={uploading}
           className="flex items-center dark:border-gray-700 dark:bg-[#181928]/70"
         >
           {uploading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Uploading...
-            </>
-          ) : bucketExists === false ? (
-            <>
-              <Camera className="mr-2 h-4 w-4" />
-              Upload Not Available
             </>
           ) : (
             <>
@@ -169,11 +134,6 @@ const ProfileAvatar: React.FC<ProfileAvatarProps> = ({ user, setAvatarUrl, avata
             </>
           )}
         </Button>
-        {bucketExists === false && (
-          <p className="text-xs text-muted-foreground mt-1 text-center">
-            Contact admin to enable avatar uploads
-          </p>
-        )}
       </div>
     </div>
   );
