@@ -1,43 +1,93 @@
+import React, { useState } from 'react';
+import {
+  LayoutDashboard,
+  CheckSquare,
+  FolderOpen,
+  Calendar,
+  MessageSquare,
+  Users,
+  BarChart3,
+  Clock,
+  DollarSign,
+  FileText,
+  Timeline,
+  Book,
+  NotebookPen,
+  Settings,
+  ChevronsLeft,
+  ChevronsRight,
+} from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
-import React from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { useDarkMode } from '@/hooks/useDarkMode';
-import SidebarHeader from './sidebar/SidebarHeader';
-import SidebarNav from './sidebar/SidebarNav';
-import SidebarFooter from './sidebar/SidebarFooter';
-
-interface SidebarProps {
-  onNavigation?: () => void;
+interface SidebarItem {
+  icon: React.FC;
+  label: string;
+  path: string;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
-  const { user } = useAuth();
-  const { isDark, toggle } = useDarkMode();
+export const Sidebar = () => {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const location = useLocation();
 
-  if (!user) return null;
+  const toggleSidebar = () => {
+    setIsCollapsed(!isCollapsed);
+  };
+
+  const sidebarItems = [
+    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+    { icon: CheckSquare, label: 'Tasks', path: '/tasks' },
+    { icon: FolderOpen, label: 'Projects', path: '/projects' },
+    { icon: Calendar, label: 'Calendar', path: '/calendar' },
+    { icon: MessageSquare, label: 'Chat', path: '/chat' },
+    { icon: Users, label: 'Team', path: '/team' },
+    { icon: BarChart3, label: 'Reports', path: '/reports' },
+    { icon: Clock, label: 'Time Tracking', path: '/time-tracking' },
+    { icon: DollarSign, label: 'Finance', path: '/finance' },
+    { icon: FileText, label: 'Documents', path: '/documents' },
+    { icon: Timeline, label: 'Timeline', path: '/timeline' },
+    { icon: Book, label: 'Journal', path: '/journal' },
+    { icon: NotebookPen, label: 'Notebook', path: '/notebook' },
+    { icon: Settings, label: 'Settings', path: '/settings' },
+  ];
 
   return (
-    <aside
-      className="flex flex-col h-full w-64 z-30 bg-background text-foreground border-r border-border fixed top-0 left-0 transition-colors duration-300"
-      style={{
-        minHeight: '100vh',
-        height: '100vh',
-        overflow: 'hidden',
-      }}
-      aria-label="Sidebar"
+    <div
+      className={cn(
+        'flex flex-col h-full bg-gray-100 border-r shadow-sm',
+        isCollapsed ? 'w-16' : 'w-60',
+        'transition-all duration-300 ease-in-out'
+      )}
     >
-      {/* Main sidebar content */}
-      <div className="flex flex-col flex-1 min-h-0">
-        <SidebarHeader isDark={isDark} onToggleDarkMode={toggle} />
-        {/* Nav wraps & grows */}
-        <div className="flex-1 min-h-0 overflow-y-auto">
-          <SidebarNav onNavigation={onNavigation} />
-        </div>
+      <div className="flex items-center justify-between p-4">
+        <span className={cn('text-2xl font-semibold', isCollapsed ? 'hidden' : '')}>
+          Taskify
+        </span>
+        <Button onClick={toggleSidebar} variant="ghost" size="sm">
+          {isCollapsed ? <ChevronsRight /> : <ChevronsLeft />}
+        </Button>
       </div>
-      {/* Footer sticks to bottom */}
-      <SidebarFooter user={user} />
-    </aside>
+      <div className="flex-grow p-4">
+        <ul className="space-y-2">
+          {sidebarItems.map((item) => (
+            <li key={item.label}>
+              <Link
+                to={item.path}
+                className={cn(
+                  'flex items-center p-2 rounded-md hover:bg-gray-200',
+                  location.pathname === item.path
+                    ? 'bg-gray-200 font-semibold'
+                    : 'font-medium'
+                )}
+              >
+                <item.icon className="h-5 w-5 mr-2" />
+                <span className={cn(isCollapsed ? 'hidden' : '')}>{item.label}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
   );
 };
-
-export default Sidebar;
