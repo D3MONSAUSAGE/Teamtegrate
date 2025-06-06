@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card } from '@/components/ui/card';
@@ -8,7 +9,6 @@ import { useChat } from '@/hooks/use-chat';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import ChatRoomHeader from './ChatRoomHeader';
-import ChatParticipantsSidebar from './ChatParticipantsSidebar';
 import ChatMessageGroups from './ChatMessageGroups';
 import ChatTypingIndicator from './ChatTypingIndicator';
 import ChatMessageLoader from './ChatMessageLoader';
@@ -48,7 +48,6 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, onRoomDeleted }) => {
 
   const [leaving, setLeaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [showParticipants, setShowParticipants] = useState(false);
   const [autoScrollEnabled, setAutoScrollEnabled] = useState(true);
   const [initialScrollDone, setInitialScrollDone] = useState(false);
   
@@ -163,10 +162,6 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, onRoomDeleted }) => {
   const handleReplyClick = (message: any) => {
     setReplyTo(message);
   };
-  
-  const toggleParticipants = () => {
-    setShowParticipants(!showParticipants);
-  };
 
   const getMessageDate = (timestamp: string) => {
     if (!timestamp) return '';
@@ -193,7 +188,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, onRoomDeleted }) => {
         isMobile={isMobile}
         currentUserId={user?.id}
         onBack={onBack}
-        toggleParticipants={toggleParticipants}
+        toggleParticipants={() => {}} // Remove drawer functionality
         onLeave={handleLeaveChat}
         onDelete={() => setIsDeleting(true)}
         leaving={leaving}
@@ -206,13 +201,6 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, onRoomDeleted }) => {
         handleDeleteRoom={handleDeleteRoom}
         isDeleting={isDeleting}
       />
-
-      {showParticipants && (
-        <ChatParticipantsSidebar
-          roomId={room.id}
-          onClose={toggleParticipants}
-        />
-      )}
 
       <ScrollArea 
         ref={scrollAreaRef}
