@@ -23,6 +23,13 @@ const TaskMultiAssigneeSelect: React.FC<TaskMultiAssigneeSelectProps> = ({
 }) => {
   const [open, setOpen] = React.useState(false);
 
+  console.log('TaskMultiAssigneeSelect render:', { 
+    isLoading, 
+    usersLength: users?.length, 
+    selectedMembersLength: selectedMembers?.length,
+    users: users 
+  });
+
   // Ensure all props are safe to use
   const safeSelectedMembers = Array.isArray(selectedMembers) ? selectedMembers : [];
   const safeUsers = Array.isArray(users) ? users.filter(user => user && user.id && user.name) : [];
@@ -31,6 +38,7 @@ const TaskMultiAssigneeSelect: React.FC<TaskMultiAssigneeSelectProps> = ({
   const selectedUsers = safeUsers.filter(user => safeSelectedMembers.includes(user.id));
 
   const handleSelect = (userId: string) => {
+    console.log('TaskMultiAssigneeSelect - handleSelect called with:', userId);
     if (!userId || typeof userId !== 'string') return;
     
     if (safeSelectedMembers.includes(userId)) {
@@ -41,12 +49,14 @@ const TaskMultiAssigneeSelect: React.FC<TaskMultiAssigneeSelectProps> = ({
   };
 
   const removeUser = (userId: string) => {
+    console.log('TaskMultiAssigneeSelect - removeUser called with:', userId);
     if (!userId || typeof userId !== 'string') return;
     safeOnMembersChange(safeSelectedMembers.filter(id => id !== userId));
   };
 
-  // Don't render the Command component if users is not properly loaded
+  // Show loading state
   if (isLoading) {
+    console.log('TaskMultiAssigneeSelect - Showing loading state');
     return (
       <div className="space-y-2">
         <Button
@@ -60,6 +70,26 @@ const TaskMultiAssigneeSelect: React.FC<TaskMultiAssigneeSelectProps> = ({
       </div>
     );
   }
+
+  // Don't render the Command component if users data is not properly loaded
+  // This is the key fix - we wait until users is definitely loaded and valid
+  if (!users || !Array.isArray(users) || users.length === 0) {
+    console.log('TaskMultiAssigneeSelect - No users data available, showing fallback');
+    return (
+      <div className="space-y-2">
+        <Button
+          variant="outline"
+          className="w-full justify-between"
+          disabled={true}
+        >
+          No team members available
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </div>
+    );
+  }
+
+  console.log('TaskMultiAssigneeSelect - Rendering full component with Command');
 
   return (
     <div className="space-y-2">
@@ -84,26 +114,20 @@ const TaskMultiAssigneeSelect: React.FC<TaskMultiAssigneeSelectProps> = ({
             <CommandInput placeholder="Search team members..." />
             <CommandEmpty>No team members found.</CommandEmpty>
             <CommandGroup>
-              {safeUsers.length > 0 ? (
-                safeUsers.map((user) => (
-                  <CommandItem
-                    key={user.id}
-                    onSelect={() => handleSelect(user.id)}
-                  >
-                    <Check
-                      className={cn(
-                        "mr-2 h-4 w-4",
-                        safeSelectedMembers.includes(user.id) ? "opacity-100" : "opacity-0"
-                      )}
-                    />
-                    {user.name}
-                  </CommandItem>
-                ))
-              ) : (
-                <CommandItem disabled>
-                  No team members available
+              {safeUsers.map((user) => (
+                <CommandItem
+                  key={user.id}
+                  onSelect={() => handleSelect(user.id)}
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      safeSelectedMembers.includes(user.id) ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                  {user.name}
                 </CommandItem>
-              )}
+              ))}
             </CommandGroup>
           </Command>
         </PopoverContent>
