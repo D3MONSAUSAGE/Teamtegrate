@@ -69,6 +69,13 @@ export const useProjectTasksView = (projectId: string | null) => {
 
   // Check if project exists and user has access
   useEffect(() => {
+    console.log('useProjectTasksView effect running', {
+      projectId,
+      user: !!user,
+      projectsLength: projects.length,
+      foundProject: !!project
+    });
+
     if (!projectId) {
       setLoadError("No project ID provided");
       setIsLoading(false);
@@ -83,13 +90,16 @@ export const useProjectTasksView = (projectId: string | null) => {
 
     // Wait for projects to load
     if (projects.length === 0) {
+      console.log('Projects still loading, keeping loading state');
       setIsLoading(true);
+      setLoadError(null);
       return;
     }
 
     const foundProject = projects.find(p => p.id === projectId);
     
     if (!foundProject) {
+      console.log('Project not found in accessible projects', { projectId, availableProjects: projects.map(p => p.id) });
       setLoadError("Project not found or you don't have access to it");
       setIsLoading(false);
       return;
@@ -97,7 +107,18 @@ export const useProjectTasksView = (projectId: string | null) => {
 
     // Check if user has access (is manager or team member)
     const isManager = foundProject.managerId === user.id;
-    const isTeamMember = foundProject.teamMembers?.includes(user.id);
+    const isTeamMember = foundProject.teamMembers?.some(memberId => 
+      String(memberId) === String(user.id)
+    );
+    
+    console.log('Access check results', {
+      isManager,
+      isTeamMember,
+      foundProject: foundProject.title,
+      managerId: foundProject.managerId,
+      userId: user.id,
+      teamMembers: foundProject.teamMembers
+    });
     
     if (!isManager && !isTeamMember) {
       setLoadError("You don't have access to this project");
@@ -105,9 +126,11 @@ export const useProjectTasksView = (projectId: string | null) => {
       return;
     }
 
+    // Clear any previous errors and set loading to false
+    console.log('Project access confirmed, clearing errors');
     setLoadError(null);
     setIsLoading(false);
-  }, [projectId, user, projects]);
+  }, [projectId, user, projects, project]);
 
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
