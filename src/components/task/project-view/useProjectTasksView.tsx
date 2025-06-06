@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTask } from '@/contexts/task';
 import { useAuth } from '@/contexts/AuthContext';
-import { Task, TaskStatus, Project } from '@/types';
+import { Task, TaskStatus, Project, ProjectStatus } from '@/types';
 import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { checkProjectAccess } from '@/hooks/projects/projectAccessFilter';
@@ -113,7 +113,7 @@ export const useProjectTasksView = (projectId: string | null) => {
         return null;
       }
 
-      // Convert to Project format
+      // Convert to Project format with proper type casting
       const formattedProject: Project = {
         id: projectData.id,
         title: projectData.title || '',
@@ -128,7 +128,7 @@ export const useProjectTasksView = (projectId: string | null) => {
         budget: projectData.budget || 0,
         budgetSpent: projectData.budget_spent || 0,
         is_completed: projectData.is_completed || false,
-        status: projectData.status || 'To Do',
+        status: (projectData.status || 'To Do') as ProjectStatus,
         tasks_count: projectTasks.length,
         tags: projectData.tags || []
       };
