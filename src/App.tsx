@@ -1,3 +1,5 @@
+
+import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -22,42 +24,51 @@ import ChatPage from "./pages/ChatPage";
 import NotebookPage from "./pages/NotebookPage";
 import ProjectTasksPage from "./pages/ProjectTasksPage";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TaskProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/auth/login" element={<Navigate to="/login" replace />} />
-              <Route path="/" element={<Index />} />
-              <Route path="/dashboard" element={<AppLayout />}>
-                <Route index element={<DashboardPage />} />
-                <Route path="tasks" element={<TasksPage />} />
-                <Route path="tasks/create" element={<TasksPage />} />
-                <Route path="projects" element={<ProjectsPage />} />
-                <Route path="projects/:projectId/tasks" element={<ProjectTasksPage />} />
-                <Route path="team" element={<TeamPage />} />
-                <Route path="chat" element={<ChatPage />} />
-                <Route path="reports" element={<ReportsPage />} />
-                <Route path="settings" element={<SettingsPage />} />
-                <Route path="time-tracking" element={<TimeTrackingPage />} />
-                <Route path="documents" element={<DocumentsPage />} />
-                <Route path="finance" element={<FinancePage />} />
-                <Route path="notebook" element={<NotebookPage />} />
-              </Route>
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </TaskProvider>
-    </AuthProvider>
-  </QueryClientProvider>
-);
+const App: React.FC = () => {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <TaskProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/auth/login" element={<Navigate to="/login" replace />} />
+                <Route path="/" element={<Index />} />
+                <Route path="/dashboard" element={<AppLayout />}>
+                  <Route index element={<DashboardPage />} />
+                  <Route path="tasks" element={<TasksPage />} />
+                  <Route path="tasks/create" element={<TasksPage />} />
+                  <Route path="projects" element={<ProjectsPage />} />
+                  <Route path="projects/:projectId/tasks" element={<ProjectTasksPage />} />
+                  <Route path="team" element={<TeamPage />} />
+                  <Route path="chat" element={<ChatPage />} />
+                  <Route path="reports" element={<ReportsPage />} />
+                  <Route path="settings" element={<SettingsPage />} />
+                  <Route path="time-tracking" element={<TimeTrackingPage />} />
+                  <Route path="documents" element={<DocumentsPage />} />
+                  <Route path="finance" element={<FinancePage />} />
+                  <Route path="notebook" element={<NotebookPage />} />
+                </Route>
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </TooltipProvider>
+        </TaskProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;

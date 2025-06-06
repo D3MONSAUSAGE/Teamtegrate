@@ -1,191 +1,165 @@
-import React, { useState } from 'react';
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { TaskPriority } from '@/types';
-import { UseFormRegister, FieldErrors } from 'react-hook-form';
-import { format } from 'date-fns';
+
+import React, { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Button } from "@/components/ui/button";
+import { Form } from "@/components/ui/form";
+import { TaskFormValues, Task, AppUser } from '@/types';
+import TaskTitleField from './form/TaskTitleField';
+import TaskDescriptionField from './form/TaskDescriptionField';
+import TaskPriorityField from './form/TaskPriorityField';
 import TaskDeadlinePicker from './form/TaskDeadlinePicker';
-import TaskAssigneeSelect from './form/TaskAssigneeSelect';
-import { useUsers } from '@/hooks/useUsers';
-import { useAuth } from '@/contexts/AuthContext';
+import TaskProjectField from './form/TaskProjectField';
+import TaskAssignmentSection from './form/TaskAssignmentSection';
+import { useTask } from '@/contexts/task';
+
+const taskSchema = z.object({
+  title: z.string().min(1, 'Title is required'),
+  description: z.string().optional(),
+  priority: z.enum(['Low', 'Medium', 'High']),
+  deadline: z.string().min(1, 'Deadline is required'),
+  projectId: z.string().optional(),
+  cost: z.number().optional(),
+  assignedToId: z.string().optional(),
+  assignedToName: z.string().optional(),
+  assignedToIds: z.array(z.string()).optional(),
+  assignedToNames: z.array(z.string()).optional(),
+});
 
 interface TaskFormFieldsProps {
-  register: UseFormRegister<any>;
-  errors: FieldErrors;
-  setValue: (name: string, value: any) => void;
-  selectedMember: string | undefined;
-  setSelectedMember: (value: string | undefined) => void;
-  editingTask?: any;
+  onSubmit: (values: TaskFormValues) => Promise<void>;
+  editingTask?: Task;
+  isLoading: boolean;
+  users: AppUser[];
+  multiSelect: boolean;
+  onMultiSelectChange: (multiSelect: boolean) => void;
   currentProjectId?: string;
-  projects: any[];
 }
 
 const TaskFormFields: React.FC<TaskFormFieldsProps> = ({
-  register,
-  errors,
-  setValue,
-  selectedMember,
-  setSelectedMember,
-  projects,
+  onSubmit,
   editingTask,
+  isLoading,
+  users,
+  multiSelect,
+  onMultiSelectChange,
   currentProjectId
 }) => {
-  const { user } = useAuth();
-  const [date, setDate] = useState<Date | undefined>(
-    editingTask ? new Date(editingTask.deadline) : undefined
-  );
-  
-  const [timeInput, setTimeInput] = useState<string>(
-    editingTask ? format(new Date(editingTask.deadline), 'HH:mm') : '12:00'
-  );
+  const { projects } = useTask();
+  const [selectedMember, setSelectedMember] = useState('');
+  const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
 
-  const { users, isLoading: loadingUsers } = useUsers();
-
-  // Filter projects to only show those the user has access to
-  const accessibleProjects = projects.filter(project => {
-    if (!user) return false;
-    
-    const isManager = project.managerId === user.id;
-    const isTeamMember = Array.isArray(project.teamMembers) && 
-      project.teamMembers.includes(user.id);
-    
-    return isManager || isTeamMember;
+  const form = useForm<TaskFormValues>({
+    resolver: zodResolver(taskSchema),
+    defaultValues: {
+      title: editingTask?.title || '',
+      description: editingTask?.description || '',
+      priority: editingTask?.priority || 'Medium',
+      deadline: editingTask?.deadline ? new Date(editingTask.deadline).toISOString().slice(0, 16) : '',
+      projectId: currentProjectId || editingTask?.projectId || '',
+      cost: editingTask?.cost || 0,
+      assignedToId: editingTask?.assignedToId || '',
+      assignedToName: editingTask?.assignedToName || '',
+      assignedToIds: editingTask?.assignedToIds || [],
+      assignedToNames: editingTask?.assignedToNames || [],
+    },
   });
 
-  const handleDateChange = (selectedDate: Date | undefined) => {
-    if (!selectedDate) return;
+  // Initialize selected members from editing task
+  useEffect(() => {
+    if (editingTask) {
+      if (editingTask.assignedToIds && editingTask.assignedToIds.length > 0) {
+        setSelectedMembers(editingTask.assignedToIds);
+        setSelectedMember('');
+        onMultiSelectChange(true);
+      } else if (editingTask.assignedToId) {
+        setSelectedMember(editingTask.assignedToId);
+        setSelectedMembers([]);
+        onMultiSelectChange(false);
+      }
+    }
+  }, [editingTask, onMultiSelectChange]);
+
+  const handleFormSubmit = async (values: TaskFormValues) => {
+    const submissionValues = { ...values };
     
-    const [hours, minutes] = timeInput.split(':').map(Number);
-    const newDate = new Date(selectedDate);
-    newDate.setHours(hours || 0, minutes || 0, 0, 0);
-    
-    setDate(newDate);
-    setValue('deadline', newDate.toISOString());
+    if (multiSelect) {
+      submissionValues.assignedToIds = selectedMembers;
+      submissionValues.assignedToNames = selectedMembers.map(id => {
+        const user = users.find(u => u.id === id);
+        return user?.name || '';
+      }).filter(Boolean);
+      // Clear single assignment fields when using multi-select
+      submissionValues.assignedToId = undefined;
+      submissionValues.assignedToName = undefined;
+    } else {
+      submissionValues.assignedToId = selectedMember || undefined;
+      submissionValues.assignedToName = selectedMember ? users.find(u => u.id === selectedMember)?.name : undefined;
+      // Clear multi assignment fields when using single select
+      submissionValues.assignedToIds = [];
+      submissionValues.assignedToNames = [];
+    }
+
+    await onSubmit(submissionValues);
   };
-  
-  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setTimeInput(e.target.value);
-    
-    if (date) {
-      const [hours, minutes] = e.target.value.split(':').map(Number);
-      const newDate = new Date(date);
-      newDate.setHours(hours || 0, minutes || 0, 0, 0);
-      setValue('deadline', newDate.toISOString());
+
+  const handleAssign = (userId: string) => {
+    setSelectedMember(userId);
+    form.setValue('assignedToId', userId);
+    const user = users.find(u => u.id === userId);
+    if (user) {
+      form.setValue('assignedToName', user.name);
     }
   };
 
-  const handleUserAssignment = (userId: string) => {
-    const selectedUser = users.find(user => user.id === userId);
-    if (selectedUser) {
-      setSelectedMember(userId);
-      setValue('assignedToId', userId);
-      setValue('assignedToName', selectedUser.name);
-    } else {
-      setSelectedMember(undefined);
-      setValue('assignedToId', undefined);
-      setValue('assignedToName', undefined);
-    }
+  const handleMembersChange = (memberIds: string[]) => {
+    setSelectedMembers(memberIds);
+    form.setValue('assignedToIds', memberIds);
+    const memberNames = memberIds.map(id => {
+      const user = users.find(u => u.id === id);
+      return user?.name || '';
+    }).filter(Boolean);
+    form.setValue('assignedToNames', memberNames);
   };
 
   return (
-    <>
-      <div className="space-y-2">
-        <Label htmlFor="title">Title <span className="text-red-500">*</span></Label>
-        <Input
-          id="title"
-          placeholder="Task title"
-          {...register('title', { required: 'Title is required' })}
-        />
-        {errors.title && (
-          <span className="text-xs text-red-500">{errors.title.message as string}</span>
-        )}
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="description">Description</Label>
-        <Textarea
-          id="description"
-          placeholder="Task description"
-          {...register('description')}
-        />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="priority">Priority <span className="text-red-500">*</span></Label>
-          <Select
-            defaultValue={editingTask?.priority || 'Medium'}
-            onValueChange={(value) => setValue('priority', value as TaskPriority)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select priority" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Low">Low</SelectItem>
-              <SelectItem value="Medium">Medium</SelectItem>
-              <SelectItem value="High">High</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <TaskDeadlinePicker
-          date={date}
-          timeInput={timeInput}
-          onDateChange={handleDateChange}
-          onTimeChange={handleTimeChange}
-          error={errors.deadline?.message as string}
-        />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="projectId">Project</Label>
-          <Select
-            defaultValue={editingTask?.projectId || currentProjectId || ''}
-            onValueChange={(value) => setValue('projectId', value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select project (optional)" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">No Project</SelectItem>
-              {accessibleProjects.map(project => (
-                <SelectItem key={project.id} value={project.id}>
-                  {project.title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <TaskAssigneeSelect
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
+        <TaskTitleField form={form} />
+        <TaskDescriptionField form={form} />
+        <TaskPriorityField form={form} />
+        <TaskDeadlinePicker form={form} />
+        <TaskProjectField form={form} projects={projects} />
+        
+        <TaskAssignmentSection
           selectedMember={selectedMember}
-          onAssign={handleUserAssignment}
+          selectedMembers={selectedMembers}
+          onAssign={handleAssign}
+          onMembersChange={handleMembersChange}
           users={users}
-          isLoading={loadingUsers}
+          isLoading={false}
+          multiSelect={multiSelect}
         />
-      </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="cost">Cost</Label>
-        <Input
-          id="cost"
-          type="number"
-          step="0.01"
-          min="0"
-          placeholder="Task cost (optional)"
-          {...register('cost')}
-        />
-      </div>
-    </>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => onMultiSelectChange(!multiSelect)}
+          >
+            {multiSelect ? 'Switch to Single Assignment' : 'Switch to Multiple Assignment'}
+          </Button>
+        </div>
+
+        <div className="flex justify-end gap-2 pt-4">
+          <Button type="submit" disabled={isLoading}>
+            {isLoading ? 'Saving...' : editingTask ? 'Update Task' : 'Create Task'}
+          </Button>
+        </div>
+      </form>
+    </Form>
   );
 };
 
