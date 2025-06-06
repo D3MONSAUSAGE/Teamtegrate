@@ -42,6 +42,9 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
     setIsLoading(true);
     
     try {
+      // Convert cost to number if it's a string
+      const costValue = typeof values.cost === 'string' ? parseFloat(values.cost) || 0 : (values.cost || 0);
+      
       const taskData = {
         ...values,
         deadline: new Date(values.deadline),
@@ -50,6 +53,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
         status: 'To Do' as const,
         createdAt: new Date(),
         updatedAt: new Date(),
+        cost: costValue,
       };
 
       if (editingTask) {
@@ -82,7 +86,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
           onSubmit={handleSubmit}
           editingTask={editingTask}
           isLoading={isLoading}
-          users={users as AppUser[]}
+          users={users || []}
           multiSelect={multiSelect}
           onMultiSelectChange={setMultiSelect}
           currentProjectId={currentProjectId}

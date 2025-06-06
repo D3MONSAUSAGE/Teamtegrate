@@ -16,14 +16,16 @@ export interface TaskMultiAssigneeSelectProps {
 }
 
 const TaskMultiAssigneeSelect: React.FC<TaskMultiAssigneeSelectProps> = ({
-  selectedMembers,
+  selectedMembers = [],
   onMembersChange,
-  users,
+  users = [],
   isLoading
 }) => {
   const [open, setOpen] = React.useState(false);
 
-  const selectedUsers = users.filter(user => selectedMembers.includes(user.id));
+  // Ensure users is an array to prevent iteration errors
+  const safeUsers = Array.isArray(users) ? users : [];
+  const selectedUsers = safeUsers.filter(user => selectedMembers.includes(user.id));
 
   const handleSelect = (userId: string) => {
     if (selectedMembers.includes(userId)) {
@@ -60,7 +62,7 @@ const TaskMultiAssigneeSelect: React.FC<TaskMultiAssigneeSelectProps> = ({
             <CommandInput placeholder="Search team members..." />
             <CommandEmpty>No team members found.</CommandEmpty>
             <CommandGroup>
-              {users.map((user) => (
+              {safeUsers.map((user) => (
                 <CommandItem
                   key={user.id}
                   onSelect={() => handleSelect(user.id)}

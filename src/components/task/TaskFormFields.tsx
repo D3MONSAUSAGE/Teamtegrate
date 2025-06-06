@@ -42,7 +42,7 @@ const TaskFormFields: React.FC<TaskFormFieldsProps> = ({
   onSubmit,
   editingTask,
   isLoading,
-  users,
+  users = [], // Default to empty array
   multiSelect,
   onMultiSelectChange,
   currentProjectId
@@ -52,6 +52,9 @@ const TaskFormFields: React.FC<TaskFormFieldsProps> = ({
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [timeInput, setTimeInput] = useState('');
+
+  // Ensure users is always an array
+  const safeUsers = Array.isArray(users) ? users : [];
 
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(taskSchema),
@@ -97,7 +100,7 @@ const TaskFormFields: React.FC<TaskFormFieldsProps> = ({
     if (multiSelect) {
       submissionValues.assignedToIds = selectedMembers;
       submissionValues.assignedToNames = selectedMembers.map(id => {
-        const user = users.find(u => u.id === id);
+        const user = safeUsers.find(u => u.id === id);
         return user?.name || '';
       }).filter(Boolean);
       // Clear single assignment fields when using multi-select
@@ -105,7 +108,7 @@ const TaskFormFields: React.FC<TaskFormFieldsProps> = ({
       submissionValues.assignedToName = undefined;
     } else {
       submissionValues.assignedToId = selectedMember || undefined;
-      submissionValues.assignedToName = selectedMember ? users.find(u => u.id === selectedMember)?.name : undefined;
+      submissionValues.assignedToName = selectedMember ? safeUsers.find(u => u.id === selectedMember)?.name : undefined;
       // Clear multi assignment fields when using single select
       submissionValues.assignedToIds = [];
       submissionValues.assignedToNames = [];
@@ -117,7 +120,7 @@ const TaskFormFields: React.FC<TaskFormFieldsProps> = ({
   const handleAssign = (userId: string) => {
     setSelectedMember(userId);
     form.setValue('assignedToId', userId);
-    const user = users.find(u => u.id === userId);
+    const user = safeUsers.find(u => u.id === userId);
     if (user) {
       form.setValue('assignedToName', user.name);
     }
@@ -127,7 +130,7 @@ const TaskFormFields: React.FC<TaskFormFieldsProps> = ({
     setSelectedMembers(memberIds);
     form.setValue('assignedToIds', memberIds);
     const memberNames = memberIds.map(id => {
-      const user = users.find(u => u.id === id);
+      const user = safeUsers.find(u => u.id === id);
       return user?.name || '';
     }).filter(Boolean);
     form.setValue('assignedToNames', memberNames);
@@ -192,7 +195,7 @@ const TaskFormFields: React.FC<TaskFormFieldsProps> = ({
           selectedMembers={selectedMembers}
           onAssign={handleAssign}
           onMembersChange={handleMembersChange}
-          users={users}
+          users={safeUsers}
           isLoading={false}
           multiSelect={multiSelect}
         />
