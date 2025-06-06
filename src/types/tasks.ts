@@ -18,6 +18,8 @@ export interface Task {
   completedAt?: Date;
   assignedToId?: string;
   assignedToName?: string;
+  assignedToIds?: string[];
+  assignedToNames?: string[];
   comments?: TaskComment[];
   cost?: number;
   completedById?: string;
@@ -48,4 +50,6 @@ export interface TaskFormValues {
   cost?: number | string;
   assignedToId?: string; 
   assignedToName?: string;
+  assignedToIds?: string[];
+  assignedToNames?: string[];
 }

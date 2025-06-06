@@ -603,6 +603,8 @@ export type Database = {
       project_tasks: {
         Row: {
           assigned_to_id: string | null
+          assigned_to_ids: string[] | null
+          assigned_to_names: string[] | null
           completed_at: string | null
           cost: number | null
           created_at: string | null
@@ -617,6 +619,8 @@ export type Database = {
         }
         Insert: {
           assigned_to_id?: string | null
+          assigned_to_ids?: string[] | null
+          assigned_to_names?: string[] | null
           completed_at?: string | null
           cost?: number | null
           created_at?: string | null
@@ -631,6 +635,8 @@ export type Database = {
         }
         Update: {
           assigned_to_id?: string | null
+          assigned_to_ids?: string[] | null
+          assigned_to_names?: string[] | null
           completed_at?: string | null
           cost?: number | null
           created_at?: string | null
@@ -746,6 +752,8 @@ export type Database = {
       tasks: {
         Row: {
           assigned_to_id: string | null
+          assigned_to_ids: string[] | null
+          assigned_to_names: string[] | null
           completed_at: string | null
           cost: number | null
           created_at: string | null
@@ -761,6 +769,8 @@ export type Database = {
         }
         Insert: {
           assigned_to_id?: string | null
+          assigned_to_ids?: string[] | null
+          assigned_to_names?: string[] | null
           completed_at?: string | null
           cost?: number | null
           created_at?: string | null
@@ -776,6 +786,8 @@ export type Database = {
         }
         Update: {
           assigned_to_id?: string | null
+          assigned_to_ids?: string[] | null
+          assigned_to_names?: string[] | null
           completed_at?: string | null
           cost?: number | null
           created_at?: string | null
@@ -921,6 +933,8 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: {
           assigned_to_id: string | null
+          assigned_to_ids: string[] | null
+          assigned_to_names: string[] | null
           completed_at: string | null
           cost: number | null
           created_at: string | null

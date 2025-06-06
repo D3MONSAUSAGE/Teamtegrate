@@ -19,7 +19,7 @@ export const fetchTasks = async (
     const { data: taskData, error } = await supabase
       .from('tasks')
       .select('*')
-      .or(`user_id.eq.${user.id},assigned_to_id.eq.${user.id},project_id.in.(select id from projects where manager_id=${user.id} or team_members.cs.{${user.id}})`);
+      .or(`user_id.eq.${user.id},assigned_to_id.eq.${user.id},assigned_to_ids.cs.{${user.id}},project_id.in.(select id from projects where manager_id=${user.id} or team_members.cs.{${user.id}})`);
 
     if (error) {
       console.error('Error fetching tasks:', error);
@@ -40,13 +40,21 @@ export const fetchTasks = async (
       console.log(`Fetched ${commentData?.length || 0} comments from database`);
     }
 
-    // Get all unique user IDs that are assigned to tasks
-    const assignedUserIds = taskData
-      .filter(task => task.assigned_to_id)
-      .map(task => task.assigned_to_id);
+    // Get all unique user IDs that are assigned to tasks (both single and multiple)
+    const assignedUserIds = new Set<string>();
+    
+    taskData.forEach(task => {
+      // Add single assigned user
+      if (task.assigned_to_id) {
+        assignedUserIds.add(task.assigned_to_id);
+      }
+      // Add multiple assigned users
+      if (task.assigned_to_ids && Array.isArray(task.assigned_to_ids)) {
+        task.assigned_to_ids.forEach(id => assignedUserIds.add(id));
+      }
+    });
 
-    // Remove duplicates
-    const uniqueUserIds = [...new Set(assignedUserIds)];
+    const uniqueUserIds = Array.from(assignedUserIds);
     console.log(`Found ${uniqueUserIds.length} unique assigned users`);
     
     // Fetch user details for assigned users
@@ -82,8 +90,13 @@ export const fetchTasks = async (
             }))
         : [];
 
-      // Get the assigned user name from our map
+      // Get the assigned user name from our map (single assignment)
       const assignedUserName = task.assigned_to_id ? userMap.get(task.assigned_to_id) : undefined;
+
+      // Get assigned user names for multiple assignments
+      const assignedUserNames = task.assigned_to_ids && Array.isArray(task.assigned_to_ids)
+        ? task.assigned_to_ids.map(id => userMap.get(id)).filter(Boolean)
+        : [];
 
       // Map DB fields to our Task interface
       return {
@@ -100,6 +113,8 @@ export const fetchTasks = async (
         completedAt: task.completed_at ? parseDate(task.completed_at) : undefined,
         assignedToId: task.assigned_to_id,
         assignedToName: assignedUserName,
+        assignedToIds: task.assigned_to_ids || [],
+        assignedToNames: task.assigned_to_names || assignedUserNames,
         comments: taskComments,
         cost: task.cost || 0
       };

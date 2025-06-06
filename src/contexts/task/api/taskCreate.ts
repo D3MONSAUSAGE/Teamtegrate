@@ -46,6 +46,8 @@ export const addTask = async (
           updated_at: now.toISOString(),
           assigned_to_id: newTask.assignedToId || null,
           assigned_to_name: newTask.assignedToName || null,
+          assigned_to_ids: newTask.assignedToIds || [],
+          assigned_to_names: newTask.assignedToNames || [],
           cost: newTask.cost || 0,
         },
       ])

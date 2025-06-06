@@ -38,6 +38,8 @@ const TaskCardContent: React.FC<TaskCardContentProps> = ({
         deadline={task.deadline} 
         assignedToName={task.assignedToName}
         assignedToId={task.assignedToId}
+        assignedToNames={task.assignedToNames}
+        assignedToIds={task.assignedToIds}
         isOverdue={isOverdue}
       />
       

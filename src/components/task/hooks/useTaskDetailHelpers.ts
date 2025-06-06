@@ -1,73 +1,64 @@
 
 import { Task } from "@/types";
-import { format as formatDateFns } from "date-fns";
+import { format } from "date-fns";
 
 export const useTaskDetailHelpers = (task: Task) => {
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string): string => {
     switch (status) {
-      case "To Do":
-        return "bg-slate-200 text-slate-700";
-      case "In Progress":
-        return "bg-blue-200 text-blue-800";
-      case "Pending":
-        return "bg-amber-200 text-amber-700";
-      case "Completed":
-        return "bg-green-200 text-green-700";
+      case 'To Do':
+        return 'bg-gray-100 text-gray-700';
+      case 'In Progress':
+        return 'bg-blue-100 text-blue-700';
+      case 'Pending':
+        return 'bg-yellow-100 text-yellow-700';
+      case 'Completed':
+        return 'bg-green-100 text-green-700';
       default:
-        return "";
+        return 'bg-gray-100 text-gray-700';
     }
   };
 
-  const getPriorityColor = (priority: string) => {
+  const getPriorityColor = (priority: string): string => {
     switch (priority) {
-      case "Low":
-        return "bg-blue-100 text-blue-800";
-      case "Medium":
-        return "bg-amber-100 text-amber-800";
-      case "High":
-        return "bg-rose-100 text-rose-800";
+      case 'High':
+        return 'text-red-600';
+      case 'Medium':
+        return 'text-yellow-600';
+      case 'Low':
+        return 'text-green-600';
       default:
-        return "";
+        return 'text-gray-600';
     }
   };
 
-  const isOverdue = () => {
-    try {
-      const now = new Date();
-      const deadline = new Date(task.deadline);
-      return task.status !== "Completed" && deadline < now;
-    } catch (error) {
-      return false;
-    }
+  const isOverdue = (): boolean => {
+    return new Date(task.deadline) < new Date() && task.status !== 'Completed';
   };
 
-  const formatDate = (date: Date | string) => {
-    try {
-      const formattedDate = new Date(date);
-      return formatDateFns(formattedDate, "MMM d, yyyy");
-    } catch {
-      return "Invalid date";
-    }
+  const formatDate = (date: Date): string => {
+    return format(date, 'PPP');
   };
 
-  const formatTime = (date: Date | string) => {
-    try {
-      const formattedDate = new Date(date);
-      return formatDateFns(formattedDate, "h:mm a");
-    } catch {
-      return "Invalid time";
-    }
+  const formatTime = (date: Date): string => {
+    return format(date, 'p');
   };
 
-  // Handle assigned to name
-  const getAssignedToName = () => {
-    if (!task.assignedToName || task.assignedToName.trim() === "") {
-      return "Unassigned";
+  const getAssignedToName = (): string => {
+    // Check for multiple assignees first
+    if (task.assignedToNames && task.assignedToNames.length > 0) {
+      if (task.assignedToNames.length === 1) {
+        return task.assignedToNames[0];
+      } else {
+        return `${task.assignedToNames[0]} +${task.assignedToNames.length - 1} others`;
+      }
     }
-    if (task.assignedToId && (!task.assignedToName || task.assignedToName === task.assignedToId)) {
-      return "Unassigned";
+    
+    // Fall back to single assignee
+    if (task.assignedToName) {
+      return task.assignedToName;
     }
-    return task.assignedToName;
+    
+    return "Unassigned";
   };
 
   return {
@@ -76,6 +67,6 @@ export const useTaskDetailHelpers = (task: Task) => {
     isOverdue,
     formatDate,
     formatTime,
-    getAssignedToName
+    getAssignedToName,
   };
 };

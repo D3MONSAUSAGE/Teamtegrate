@@ -28,6 +28,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
   const isEditMode = !!editingTask;
   const isMobile = useIsMobile();
   const { users, isLoading: loadingUsers } = useUsers();
+  const [selectedMembers, setSelectedMembers] = React.useState<string[]>([]);
   
   const {
     register,
@@ -42,8 +43,20 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
     setValue
   } = useTaskFormWithTime(editingTask, currentProjectId, onTaskComplete);
 
+  // Initialize selected members when editing
+  React.useEffect(() => {
+    if (editingTask && editingTask.assignedToIds) {
+      setSelectedMembers(editingTask.assignedToIds);
+    } else if (editingTask && editingTask.assignedToId) {
+      setSelectedMembers([editingTask.assignedToId]);
+    } else {
+      setSelectedMembers([]);
+    }
+  }, [editingTask]);
+
   const handleCancel = () => {
     onOpenChange(false);
+    setSelectedMembers([]);
   };
 
   const handleUserAssignment = (userId: string) => {
@@ -60,6 +73,17 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
       setValue('assignedToId', userId);
       setValue('assignedToName', selectedUser.name || selectedUser.email);
     }
+  };
+
+  const handleMembersChange = (memberIds: string[]) => {
+    setSelectedMembers(memberIds);
+    const selectedUserNames = memberIds
+      .map(id => users.find(user => user.id === id))
+      .filter(Boolean)
+      .map(user => user!.name || user!.email);
+    
+    setValue('assignedToIds', memberIds);
+    setValue('assignedToNames', selectedUserNames);
   };
 
   return (
@@ -95,13 +119,31 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
               />
             </TabsContent>
             
-            <TabsContent value="assignment">
-              <TaskAssignmentSection 
-                selectedMember={selectedMember || "unassigned"}
-                onAssign={handleUserAssignment}
-                users={users}
-                isLoading={loadingUsers}
-              />
+            <TabsContent value="assignment" className="space-y-4">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-medium mb-3">Single Assignment</h3>
+                  <TaskAssignmentSection 
+                    selectedMember={selectedMember || "unassigned"}
+                    onAssign={handleUserAssignment}
+                    users={users}
+                    isLoading={loadingUsers}
+                  />
+                </div>
+                
+                <div>
+                  <h3 className="text-sm font-medium mb-3">Multiple Assignment</h3>
+                  <TaskAssignmentSection 
+                    selectedMembers={selectedMembers}
+                    onMembersChange={handleMembersChange}
+                    users={users}
+                    isLoading={loadingUsers}
+                    multiSelect={true}
+                    selectedMember=""
+                    onAssign={() => {}}
+                  />
+                </div>
+              </div>
             </TabsContent>
           </Tabs>
           

@@ -1,4 +1,3 @@
-
 export type UserRole = 'user' | 'manager';
 
 export interface User {
@@ -46,6 +45,8 @@ export interface Task {
   completedAt?: Date;
   assignedToId?: string;
   assignedToName?: string;
+  assignedToIds?: string[];
+  assignedToNames?: string[];
   completedById?: string;
   completedByName?: string;
   tags?: string[];
