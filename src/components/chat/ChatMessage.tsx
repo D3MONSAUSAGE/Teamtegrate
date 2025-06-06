@@ -6,7 +6,10 @@ import MessageReactions from './MessageReactions';
 import { formatDistanceToNow } from 'date-fns';
 import ChatMessageAttachment from './ChatMessageAttachment';
 import ChatMessageReplySnippet from './ChatMessageReplySnippet';
+import ChatMessageActions from './ChatMessageActions';
 import { useMessageDisplayName } from './hooks/useMessageDisplayName';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface Attachment {
   id: string;
@@ -46,6 +49,29 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     : '';
 
   const displayName = message.type === 'system' ? 'System' : userData?.name || (isCurrentUser ? 'You' : 'Unknown User');
+
+  const handleEditMessage = async (messageId: string, newContent: string) => {
+    try {
+      const { error } = await supabase
+        .from('chat_messages')
+        .update({ 
+          content: newContent,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', messageId);
+
+      if (error) throw error;
+      toast.success('Message updated');
+    } catch (error) {
+      console.error('Error updating message:', error);
+      toast.error('Failed to update message');
+    }
+  };
+
+  const renderMentions = (content: string) => {
+    const mentionRegex = /@([\w\s]+?)(?=\s|$|[^\w\s])/g;
+    return content.replace(mentionRegex, '<span class="bg-primary/20 text-primary px-1 rounded">@$1</span>');
+  };
   
   if (message.type === 'system') {
     return (
@@ -79,23 +105,32 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
               <ChatMessageReplySnippet parentMessage={parentMessage} />
             )}
             
-            <div className={`px-4 py-3 rounded-2xl break-words relative shadow-sm ${
-              isCurrentUser
-                ? 'bg-primary text-primary-foreground rounded-br-md ml-auto'
-                : 'bg-card dark:bg-[#2a2f45] border border-border dark:border-gray-700 rounded-bl-md'
-            }`}>
-              <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
-              
-              <div className="flex items-center justify-end gap-1 mt-2">
-                <span className={`text-[10px] ${
-                  isCurrentUser 
-                    ? 'text-primary-foreground/70' 
-                    : 'text-muted-foreground/70'
-                }`}>
-                  {timestamp || <Clock className="inline w-3 h-3 opacity-70" />}
-                </span>
+            <ChatMessageActions
+              message={message}
+              isCurrentUser={isCurrentUser}
+              onEdit={handleEditMessage}
+            >
+              <div className={`px-4 py-3 rounded-2xl break-words relative shadow-sm ${
+                isCurrentUser
+                  ? 'bg-primary text-primary-foreground rounded-br-md ml-auto'
+                  : 'bg-card dark:bg-[#2a2f45] border border-border dark:border-gray-700 rounded-bl-md'
+              }`}>
+                <p 
+                  className="text-sm leading-relaxed whitespace-pre-wrap"
+                  dangerouslySetInnerHTML={{ __html: renderMentions(message.content) }}
+                />
+                
+                <div className="flex items-center justify-end gap-1 mt-2">
+                  <span className={`text-[10px] ${
+                    isCurrentUser 
+                      ? 'text-primary-foreground/70' 
+                      : 'text-muted-foreground/70'
+                  }`}>
+                    {timestamp || <Clock className="inline w-3 h-3 opacity-70" />}
+                  </span>
+                </div>
               </div>
-            </div>
+            </ChatMessageActions>
             
             {message.attachments?.map(attachment => (
               <ChatMessageAttachment key={attachment.id} attachment={attachment} />

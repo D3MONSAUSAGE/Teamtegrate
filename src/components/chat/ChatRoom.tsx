@@ -52,7 +52,6 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, onRoomDeleted }) => {
   const [autoScrollEnabled, setAutoScrollEnabled] = useState(true);
   const [initialScrollDone, setInitialScrollDone] = useState(false);
   
-  // Check if user is the creator of the room
   const isCreator = user?.id === room.created_by;
 
   const scrollToBottom = (behavior: ScrollBehavior = 'auto') => {
@@ -64,21 +63,17 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, onRoomDeleted }) => {
   const handleScroll = (event: React.UIEvent<HTMLDivElement>) => {
     const { scrollTop } = event.currentTarget;
     
-    // If user scrolls to top, load more messages
     if (scrollTop < 50 && hasMoreMessages) {
       loadMoreMessages();
     }
     
-    // Detect if we're near bottom to enable auto-scroll
     const { scrollHeight, clientHeight } = event.currentTarget;
     const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
     setAutoScrollEnabled(isNearBottom);
   };
 
-  // Improved scroll effect with debouncing
   useEffect(() => {
     if (messages.length > 0 && (autoScrollEnabled || !initialScrollDone)) {
-      // Use requestAnimationFrame for smoother scrolling
       requestAnimationFrame(() => {
         scrollToBottom('smooth');
         setInitialScrollDone(true);
@@ -86,7 +81,6 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, onRoomDeleted }) => {
     }
   }, [messages.length, autoScrollEnabled, initialScrollDone]);
 
-  // Optimized message sending handler
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     await sendMessage();
@@ -125,7 +119,6 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, onRoomDeleted }) => {
     setIsDeleting(true);
     
     try {
-      // First delete all messages in the room
       const { error: messagesError } = await supabase
         .from('chat_messages')
         .delete()
@@ -133,7 +126,6 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, onRoomDeleted }) => {
       
       if (messagesError) throw messagesError;
       
-      // Then delete all participants
       const { error: participantsError } = await supabase
         .from('chat_room_participants')
         .delete()
@@ -141,7 +133,6 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, onRoomDeleted }) => {
       
       if (participantsError) throw participantsError;
       
-      // Finally delete the room itself
       const { error: roomError } = await supabase
         .from('chat_rooms')
         .delete()
@@ -151,7 +142,6 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, onRoomDeleted }) => {
       
       toast.success('Chat room deleted successfully');
       
-      // Notify parent component that room was deleted
       if (onRoomDeleted) onRoomDeleted();
       else if (onBack) onBack();
     } catch (error) {
@@ -256,6 +246,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, onRoomDeleted }) => {
         replyTo={replyTo}
         setReplyTo={setReplyTo}
         isSending={isSending}
+        roomId={room.id}
       />
     </Card>
   );

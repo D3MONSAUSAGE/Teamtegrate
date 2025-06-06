@@ -1,10 +1,10 @@
 
 import React, { useRef } from 'react';
 import { Paperclip, Send, Mic, X } from 'lucide-react';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import EmojiPickerButton from './EmojiPickerButton';
+import MentionInput from './MentionInput';
 
 function ReplyPreview({ message, onCancel }: { message: any, onCancel: () => void }) {
   if (!message) return null;
@@ -39,6 +39,7 @@ interface ChatMessageInputProps {
   replyTo?: any;
   setReplyTo?: (msg: any | null) => void;
   isSending?: boolean;
+  roomId: string;
 }
 
 const ChatMessageInput: React.FC<ChatMessageInputProps> = ({
@@ -49,10 +50,10 @@ const ChatMessageInput: React.FC<ChatMessageInputProps> = ({
   onSubmit,
   replyTo,
   setReplyTo,
-  isSending = false
+  isSending = false,
+  roomId
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
@@ -64,26 +65,12 @@ const ChatMessageInput: React.FC<ChatMessageInputProps> = ({
   };
 
   const insertAtCursor = (text: string) => {
-    if (!inputRef.current) {
-      setNewMessage(newMessage + text);
-      return;
-    }
-    const start = inputRef.current.selectionStart ?? newMessage.length;
-    const end = inputRef.current.selectionEnd ?? newMessage.length;
-    setNewMessage(
-      newMessage.slice(0, start) + text + newMessage.slice(end)
-    );
-    setTimeout(() => {
-      if (inputRef.current) {
-        inputRef.current.selectionStart = inputRef.current.selectionEnd = start + text.length;
-        inputRef.current.focus();
-      }
-    }, 0);
+    setNewMessage(newMessage + text);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault(); // Prevent default form submission
-    e.stopPropagation(); // Stop event bubbling
+    e.preventDefault();
+    e.stopPropagation();
     
     if (isSending) {
       return;
@@ -123,7 +110,7 @@ const ChatMessageInput: React.FC<ChatMessageInputProps> = ({
       </div>
       
       <form onSubmit={handleSubmit} className="flex items-center gap-2">
-        <Input
+        <input
           type="file"
           onChange={handleFileSelect}
           className="hidden"
@@ -145,14 +132,14 @@ const ChatMessageInput: React.FC<ChatMessageInputProps> = ({
             <Paperclip className="h-5 w-5 text-muted-foreground" />
           </Button>
           
-          <Input
-            ref={inputRef}
+          <MentionInput
             value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
+            onChange={setNewMessage}
             onKeyDown={handleKeyDown}
-            placeholder="Type a message"
-            className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-2"
+            placeholder="Type a message or @mention someone"
             disabled={isSending}
+            className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-2"
+            roomId={roomId}
           />
           
           <Button
