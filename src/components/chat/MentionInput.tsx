@@ -49,10 +49,10 @@ const MentionInput: React.FC<MentionInputProps> = ({
         .from('chat_room_participants')
         .select(`
           user_id,
-          profiles!inner(
+          users!inner(
             id,
             email,
-            full_name
+            name
           )
         `)
         .eq('room_id', roomId);
@@ -60,9 +60,9 @@ const MentionInput: React.FC<MentionInputProps> = ({
       if (error) throw error;
 
       const users = data?.map(participant => ({
-        id: participant.profiles.id,
-        email: participant.profiles.email,
-        name: participant.profiles.full_name || participant.profiles.email,
+        id: participant.users.id,
+        email: participant.users.email,
+        name: participant.users.name || participant.users.email,
       })).filter(user => user.id !== currentUser?.id) || [];
 
       setMentionUsers(users);
