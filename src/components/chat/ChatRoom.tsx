@@ -12,7 +12,6 @@ import ChatRoomHeader from './ChatRoomHeader';
 import ChatMessageGroups from './ChatMessageGroups';
 import ChatTypingIndicator from './ChatTypingIndicator';
 import ChatMessageLoader from './ChatMessageLoader';
-import ChatRoomActions from './ChatRoomActions';
 import { FileUpload } from '@/hooks/use-chat/useChatFileUpload';
 
 interface ChatRoomProps {
@@ -190,16 +189,9 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, onRoomDeleted }) => {
         onBack={onBack}
         toggleParticipants={() => {}} // Remove drawer functionality
         onLeave={handleLeaveChat}
-        onDelete={() => setIsDeleting(true)}
+        onDelete={handleDeleteRoom}
         leaving={leaving}
         canDelete={isCreator}
-      />
-
-      <ChatRoomActions
-        roomId={room.id}
-        isCreator={isCreator}
-        handleDeleteRoom={handleDeleteRoom}
-        isDeleting={isDeleting}
       />
 
       <ScrollArea 

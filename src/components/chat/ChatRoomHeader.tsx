@@ -42,13 +42,6 @@ const ChatRoomHeader: React.FC<ChatRoomHeaderProps> = ({
   // Check if current user is the room creator
   const isCreator = currentUserId === room.created_by;
 
-  console.log('ChatRoomHeader Debug:', {
-    currentUserId,
-    roomCreatedBy: room.created_by,
-    isCreator,
-    canDelete
-  });
-
   return (
     <div className="p-2 border-b border-border dark:border-gray-800 flex items-center justify-between bg-card dark:bg-[#1f2133] shadow-sm">
       <div className="flex items-center gap-2 flex-1 min-w-0">
