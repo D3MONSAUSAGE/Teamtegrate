@@ -7,7 +7,8 @@ import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useSoundSettings } from '@/hooks/useSoundSettings';
-import { testSoundPlayback, playChatNotification } from '@/utils/chatSounds';
+import { playChatNotification } from '@/utils/chatSounds';
+import { testSoundPlayback } from '@/utils/sounds';
 import { toast } from 'sonner';
 
 const ChatSoundSettings: React.FC = () => {
