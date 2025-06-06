@@ -58,7 +58,7 @@ const ChatRoomHeader: React.FC<ChatRoomHeaderProps> = ({
         <div className="min-w-0 flex-1">
           <h2 className="font-semibold text-base truncate">{room.name}</h2>
           <div className="text-xs text-muted-foreground">
-            <ChatParticipants roomId={room.id} compact />
+            <ChatParticipants roomId={room.id} compact showAddButton={false} />
           </div>
         </div>
         <Button

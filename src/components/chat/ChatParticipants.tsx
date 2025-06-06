@@ -16,9 +16,14 @@ import AddChatParticipantDialog from './AddChatParticipantDialog';
 interface ChatParticipantsProps {
   roomId: string;
   compact?: boolean;
+  showAddButton?: boolean;
 }
 
-const ChatParticipants: React.FC<ChatParticipantsProps> = ({ roomId, compact = false }) => {
+const ChatParticipants: React.FC<ChatParticipantsProps> = ({ 
+  roomId, 
+  compact = false, 
+  showAddButton = true 
+}) => {
   const { user: currentUser } = useAuth();
   
   const [openAdd, setOpenAdd] = React.useState(false);
@@ -108,9 +113,11 @@ const ChatParticipants: React.FC<ChatParticipantsProps> = ({ roomId, compact = f
       <PopoverContent className="w-80 p-0">
         <div className="p-4 border-b flex items-center justify-between">
           <h4 className="font-medium">Participants ({participants?.length || 0})</h4>
-          <Button variant="outline" size="sm" onClick={() => setOpenAdd(true)}>
-            <UserPlus className="h-4 w-4 mr-1" /> Add
-          </Button>
+          {showAddButton && (
+            <Button variant="outline" size="sm" onClick={() => setOpenAdd(true)}>
+              <UserPlus className="h-4 w-4 mr-1" /> Add
+            </Button>
+          )}
         </div>
         <ScrollArea className="h-[300px] p-4">
           {isLoading ? (
@@ -137,12 +144,14 @@ const ChatParticipants: React.FC<ChatParticipantsProps> = ({ roomId, compact = f
             </div>
           )}
         </ScrollArea>
-        <AddChatParticipantDialog
-          open={openAdd}
-          onOpenChange={setOpenAdd}
-          roomId={roomId}
-          onAdded={() => { /* could trigger refetch if needed */ }}
-        />
+        {showAddButton && (
+          <AddChatParticipantDialog
+            open={openAdd}
+            onOpenChange={setOpenAdd}
+            roomId={roomId}
+            onAdded={() => { /* could trigger refetch if needed */ }}
+          />
+        )}
       </PopoverContent>
     </Popover>
   );
