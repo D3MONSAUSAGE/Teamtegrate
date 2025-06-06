@@ -30,7 +30,7 @@ const ChatRoomActions: React.FC<ChatRoomActionsProps> = ({
 
   return (
     <>
-      <div className="absolute right-3 top-5 z-20 flex gap-2">
+      <div className="flex gap-2 items-center">
         <Button variant="outline" size="sm" onClick={() => setShowAddParticipant(true)}>
           <UserPlus className="h-4 w-4 mr-1" /> Add Member
         </Button>
