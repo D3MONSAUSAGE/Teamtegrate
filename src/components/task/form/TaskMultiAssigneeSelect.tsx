@@ -13,13 +13,15 @@ export interface TaskMultiAssigneeSelectProps {
   onMembersChange: (memberIds: string[]) => void;
   users: AppUser[];
   isLoading: boolean;
+  onError?: () => void;
 }
 
 const TaskMultiAssigneeSelect: React.FC<TaskMultiAssigneeSelectProps> = ({
   selectedMembers = [],
   onMembersChange,
   users = [],
-  isLoading
+  isLoading,
+  onError
 }) => {
   const [open, setOpen] = React.useState(false);
 
@@ -41,17 +43,28 @@ const TaskMultiAssigneeSelect: React.FC<TaskMultiAssigneeSelectProps> = ({
     console.log('TaskMultiAssigneeSelect - handleSelect called with:', userId);
     if (!userId || typeof userId !== 'string') return;
     
-    if (safeSelectedMembers.includes(userId)) {
-      safeOnMembersChange(safeSelectedMembers.filter(id => id !== userId));
-    } else {
-      safeOnMembersChange([...safeSelectedMembers, userId]);
+    try {
+      if (safeSelectedMembers.includes(userId)) {
+        safeOnMembersChange(safeSelectedMembers.filter(id => id !== userId));
+      } else {
+        safeOnMembersChange([...safeSelectedMembers, userId]);
+      }
+    } catch (error) {
+      console.error('Error in handleSelect:', error);
+      onError?.();
     }
   };
 
   const removeUser = (userId: string) => {
     console.log('TaskMultiAssigneeSelect - removeUser called with:', userId);
     if (!userId || typeof userId !== 'string') return;
-    safeOnMembersChange(safeSelectedMembers.filter(id => id !== userId));
+    
+    try {
+      safeOnMembersChange(safeSelectedMembers.filter(id => id !== userId));
+    } catch (error) {
+      console.error('Error in removeUser:', error);
+      onError?.();
+    }
   };
 
   // Show loading state
@@ -71,10 +84,10 @@ const TaskMultiAssigneeSelect: React.FC<TaskMultiAssigneeSelectProps> = ({
     );
   }
 
-  // Don't render the Command component if users data is not properly loaded
+  // Enhanced validation - don't render Command if data is not properly loaded
   // This is the key fix - we wait until users is definitely loaded and valid
-  if (!users || !Array.isArray(users) || users.length === 0) {
-    console.log('TaskMultiAssigneeSelect - No users data available, showing fallback');
+  if (!users || !Array.isArray(users) || users.length === 0 || !users.every(user => user && user.id && user.name)) {
+    console.log('TaskMultiAssigneeSelect - Data not ready, showing fallback');
     return (
       <div className="space-y-2">
         <Button
@@ -91,67 +104,84 @@ const TaskMultiAssigneeSelect: React.FC<TaskMultiAssigneeSelectProps> = ({
 
   console.log('TaskMultiAssigneeSelect - Rendering full component with Command');
 
-  return (
-    <div className="space-y-2">
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            role="combobox"
-            aria-expanded={open}
-            className="w-full justify-between"
-            disabled={isLoading}
-          >
-            {safeSelectedMembers.length === 0 
-              ? "Select team members..." 
-              : `${safeSelectedMembers.length} member(s) selected`
-            }
-            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-full p-0">
-          <Command>
-            <CommandInput placeholder="Search team members..." />
-            <CommandEmpty>No team members found.</CommandEmpty>
-            <CommandGroup>
-              {safeUsers.map((user) => (
-                <CommandItem
-                  key={user.id}
-                  onSelect={() => handleSelect(user.id)}
+  try {
+    return (
+      <div className="space-y-2">
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              role="combobox"
+              aria-expanded={open}
+              className="w-full justify-between"
+              disabled={isLoading}
+            >
+              {safeSelectedMembers.length === 0 
+                ? "Select team members..." 
+                : `${safeSelectedMembers.length} member(s) selected`
+              }
+              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-full p-0">
+            <Command>
+              <CommandInput placeholder="Search team members..." />
+              <CommandEmpty>No team members found.</CommandEmpty>
+              <CommandGroup>
+                {safeUsers.map((user) => (
+                  <CommandItem
+                    key={user.id}
+                    onSelect={() => handleSelect(user.id)}
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        safeSelectedMembers.includes(user.id) ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    {user.name}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </Command>
+          </PopoverContent>
+        </Popover>
+        
+        {selectedUsers.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {selectedUsers.map((user) => (
+              <Badge key={user.id} variant="secondary" className="gap-1">
+                {user.name}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-auto p-0 w-4 h-4"
+                  onClick={() => removeUser(user.id)}
                 >
-                  <Check
-                    className={cn(
-                      "mr-2 h-4 w-4",
-                      safeSelectedMembers.includes(user.id) ? "opacity-100" : "opacity-0"
-                    )}
-                  />
-                  {user.name}
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </Command>
-        </PopoverContent>
-      </Popover>
-      
-      {selectedUsers.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {selectedUsers.map((user) => (
-            <Badge key={user.id} variant="secondary" className="gap-1">
-              {user.name}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-auto p-0 w-4 h-4"
-                onClick={() => removeUser(user.id)}
-              >
-                <X className="h-3 w-3" />
-              </Button>
-            </Badge>
-          ))}
-        </div>
-      )}
-    </div>
-  );
+                  <X className="h-3 w-3" />
+                </Button>
+              </Badge>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  } catch (error) {
+    console.error('Error rendering TaskMultiAssigneeSelect:', error);
+    onError?.();
+    return (
+      <div className="space-y-2">
+        <Button
+          variant="outline"
+          className="w-full justify-between"
+          disabled={true}
+        >
+          Error loading component
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </div>
+    );
+  }
 };
 
 export default TaskMultiAssigneeSelect;

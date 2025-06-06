@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -132,13 +131,17 @@ const TaskFormFields: React.FC<TaskFormFieldsProps> = ({
 
   const handleMembersChange = (memberIds: string[]) => {
     console.log('TaskFormFields - handleMembersChange called with:', memberIds);
-    setSelectedMembers(memberIds);
-    form.setValue('assignedToIds', memberIds);
-    const memberNames = memberIds.map(id => {
-      const user = safeUsers.find(u => u.id === id);
-      return user?.name || '';
-    }).filter(Boolean);
-    form.setValue('assignedToNames', memberNames);
+    try {
+      setSelectedMembers(memberIds);
+      form.setValue('assignedToIds', memberIds);
+      const memberNames = memberIds.map(id => {
+        const user = safeUsers.find(u => u.id === id);
+        return user?.name || '';
+      }).filter(Boolean);
+      form.setValue('assignedToNames', memberNames);
+    } catch (error) {
+      console.error('Error in handleMembersChange:', error);
+    }
   };
 
   const handleDateChange = (date: Date | undefined) => {
