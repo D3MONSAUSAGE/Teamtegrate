@@ -24,6 +24,8 @@ const TaskAssignmentSection: React.FC<TaskAssignmentSectionProps> = ({
   isLoading,
   multiSelect = false
 }) => {
+  console.log('TaskAssignmentSection - multiSelect:', multiSelect, 'isLoading:', isLoading, 'users:', users);
+  
   return (
     <div>
       <Label htmlFor="assignee">Assign To</Label>

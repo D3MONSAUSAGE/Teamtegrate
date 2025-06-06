@@ -33,6 +33,7 @@ interface TaskFormFieldsProps {
   editingTask?: Task;
   isLoading: boolean;
   users: AppUser[];
+  usersLoading?: boolean;
   multiSelect: boolean;
   onMultiSelectChange: (multiSelect: boolean) => void;
   currentProjectId?: string;
@@ -42,7 +43,8 @@ const TaskFormFields: React.FC<TaskFormFieldsProps> = ({
   onSubmit,
   editingTask,
   isLoading,
-  users = [], // Default to empty array
+  users = [],
+  usersLoading = false,
   multiSelect,
   onMultiSelectChange,
   currentProjectId
@@ -52,6 +54,8 @@ const TaskFormFields: React.FC<TaskFormFieldsProps> = ({
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [timeInput, setTimeInput] = useState('');
+
+  console.log('TaskFormFields - users:', users, 'usersLoading:', usersLoading, 'multiSelect:', multiSelect);
 
   // Ensure users is always an array
   const safeUsers = Array.isArray(users) ? users : [];
@@ -127,6 +131,7 @@ const TaskFormFields: React.FC<TaskFormFieldsProps> = ({
   };
 
   const handleMembersChange = (memberIds: string[]) => {
+    console.log('TaskFormFields - handleMembersChange called with:', memberIds);
     setSelectedMembers(memberIds);
     form.setValue('assignedToIds', memberIds);
     const memberNames = memberIds.map(id => {
@@ -196,7 +201,7 @@ const TaskFormFields: React.FC<TaskFormFieldsProps> = ({
           onAssign={handleAssign}
           onMembersChange={handleMembersChange}
           users={safeUsers}
-          isLoading={false}
+          isLoading={usersLoading}
           multiSelect={multiSelect}
         />
 

@@ -29,9 +29,11 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
 }) => {
   const { user } = useAuth();
   const { addTask, updateTask } = useTask();
-  const { users } = useUsers();
+  const { users, isLoading: usersLoading } = useUsers();
   const [isLoading, setIsLoading] = useState(false);
   const [multiSelect, setMultiSelect] = useState(false);
+
+  console.log('CreateTaskDialog - users:', users, 'usersLoading:', usersLoading);
 
   const handleSubmit = async (values: TaskFormValues) => {
     if (!user) {
@@ -73,6 +75,9 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
     }
   };
 
+  // Ensure users is always an array and never undefined
+  const safeUsers = Array.isArray(users) ? users : [];
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
@@ -86,7 +91,8 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
           onSubmit={handleSubmit}
           editingTask={editingTask}
           isLoading={isLoading}
-          users={users || []}
+          users={safeUsers}
+          usersLoading={usersLoading}
           multiSelect={multiSelect}
           onMultiSelectChange={setMultiSelect}
           currentProjectId={currentProjectId}
