@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Plus, Search, Loader2 } from 'lucide-react';
 import ProjectCard from '@/components/project-card';
 import CreateProjectDialog from '@/components/CreateProjectDialog';
-import CreateSheltonLawProjectButton from '@/components/CreateSheltonLawProjectButton';
 import { useNavigate } from 'react-router-dom';
 
 const ProjectsPage = () => {
@@ -45,13 +44,10 @@ const ProjectsPage = () => {
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-2xl font-bold">Projects</h1>
-          <div className="flex gap-2">
-            <CreateSheltonLawProjectButton />
-            <Button onClick={() => setIsCreateDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              New Project
-            </Button>
-          </div>
+          <Button onClick={() => setIsCreateDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            New Project
+          </Button>
         </div>
         
         <div className="relative max-w-md">
@@ -83,13 +79,10 @@ const ProjectsPage = () => {
             {searchQuery ? 'No projects found matching your search.' : 'No projects yet.'}
           </div>
           {!searchQuery && (
-            <div className="flex gap-2 justify-center">
-              <CreateSheltonLawProjectButton />
-              <Button onClick={() => setIsCreateDialogOpen(true)} variant="outline">
-                <Plus className="h-4 w-4 mr-2" />
-                Create Your First Project
-              </Button>
-            </div>
+            <Button onClick={() => setIsCreateDialogOpen(true)} variant="outline">
+              <Plus className="h-4 w-4 mr-2" />
+              Create Your First Project
+            </Button>
           )}
         </div>
       )}
