@@ -12,11 +12,20 @@ export const useDraggableUtils = (options: UseDraggableOptions) => {
     if (options.storageKey) {
       const stored = localStorage.getItem(options.storageKey);
       if (stored) {
-        const position = JSON.parse(stored);
-        if (isChatPage && position.x > window.innerWidth - 200 && position.y > window.innerHeight - 200) {
-          return { x: 20, y: 20 };
+        try {
+          const position = JSON.parse(stored);
+          // Validate the stored position is still within bounds
+          const elementWidth = 80;
+          const elementHeight = 80;
+          if (position.x >= 20 && 
+              position.x <= window.innerWidth - elementWidth && 
+              position.y >= 20 && 
+              position.y <= window.innerHeight - elementHeight) {
+            return position;
+          }
+        } catch (e) {
+          // Invalid JSON, fall through to default
         }
-        return position;
       }
     }
     
@@ -24,7 +33,7 @@ export const useDraggableUtils = (options: UseDraggableOptions) => {
       return { x: 20, y: 20 };
     }
     
-    return options.defaultPosition || { x: window.innerWidth - 80, y: window.innerHeight - 80 };
+    return options.defaultPosition || { x: window.innerWidth - 100, y: window.innerHeight - 100 };
   }, [location.pathname, options.defaultPosition, options.storageKey]);
 
   const constrainPosition = useCallback((pos: Position): Position => {
@@ -54,13 +63,28 @@ export const useDraggableUtils = (options: UseDraggableOptions) => {
     const snapThreshold = 50;
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
+    const elementWidth = 80;
+    const elementHeight = 80;
     
     let finalPosition = { ...currentPos };
     
-    if (finalPosition.x < snapThreshold) finalPosition.x = 20;
-    if (finalPosition.x > viewportWidth - snapThreshold - 80) finalPosition.x = viewportWidth - 100;
-    if (finalPosition.y < snapThreshold) finalPosition.y = 20;
-    if (finalPosition.y > viewportHeight - snapThreshold - 80) finalPosition.y = viewportHeight - 100;
+    // Snap to left edge
+    if (finalPosition.x < snapThreshold) {
+      finalPosition.x = 20;
+    }
+    // Snap to right edge
+    else if (finalPosition.x > viewportWidth - snapThreshold - elementWidth) {
+      finalPosition.x = viewportWidth - elementWidth - 20;
+    }
+    
+    // Snap to top edge
+    if (finalPosition.y < snapThreshold) {
+      finalPosition.y = 20;
+    }
+    // Snap to bottom edge
+    else if (finalPosition.y > viewportHeight - snapThreshold - elementHeight) {
+      finalPosition.y = viewportHeight - elementHeight - 20;
+    }
     
     return finalPosition;
   }, []);

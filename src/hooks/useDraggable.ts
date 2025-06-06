@@ -11,6 +11,7 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
     currentPosition: { x: 0, y: 0 }
   });
   const elementRef = useRef<HTMLDivElement>(null);
+  const isInitialized = useRef(false);
   
   const {
     getInitialPosition,
@@ -19,13 +20,7 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
     snapToEdges
   } = useDraggableUtils(options);
 
-  const [position, setPosition] = useState<Position>(getInitialPosition);
-
-  useEffect(() => {
-    const newPosition = getInitialPosition();
-    setPosition(newPosition);
-    dragState.current.currentPosition = newPosition;
-  }, [getInitialPosition]);
+  const [position, setPosition] = useState<Position>(() => getInitialPosition());
 
   const updateElementPosition = useCallback((pos: Position) => {
     if (elementRef.current) {
@@ -37,7 +32,7 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
     // Snap to edges if close
     const finalPosition = snapToEdges(dragState.current.currentPosition);
     
-    // Update both the visual position and React state
+    // Update all position references
     dragState.current.currentPosition = finalPosition;
     updateElementPosition(finalPosition);
     setPosition(finalPosition);
@@ -101,19 +96,22 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
     };
   }, [handleMove, handleEnd, handleDragEnd, animationFrameRef]);
 
-  // Initialize position with transform
+  // Initialize position only once
   useEffect(() => {
-    if (elementRef.current) {
-      elementRef.current.style.transform = `translate3d(${position.x}px, ${position.y}px, 0)`;
-      dragState.current.currentPosition = position;
+    if (!isInitialized.current && elementRef.current) {
+      const initialPos = getInitialPosition();
+      dragState.current.currentPosition = initialPos;
+      updateElementPosition(initialPos);
+      setPosition(initialPos);
+      isInitialized.current = true;
     }
-  }, [position]);
+  }, [getInitialPosition, updateElementPosition]);
 
   const resetPosition = useCallback(() => {
     const defaultPos = getInitialPosition();
-    setPosition(defaultPos);
     dragState.current.currentPosition = defaultPos;
     updateElementPosition(defaultPos);
+    setPosition(defaultPos);
     savePosition(defaultPos);
   }, [getInitialPosition, updateElementPosition, savePosition]);
 
