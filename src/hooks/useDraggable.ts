@@ -23,16 +23,16 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
   const isDragging = useRef(false);
   const dragOffset = useRef({ x: 0, y: 0 });
   const elementRef = useRef<HTMLDivElement>(null);
+  const animationFrameRef = useRef<number>();
+  const currentPosition = useRef({ x: 0, y: 0 });
   
   const getInitialPosition = useCallback((): Position => {
-    // Smart positioning based on current route
     const isChatPage = location.pathname.includes('/chat');
     
     if (options.storageKey) {
       const stored = localStorage.getItem(options.storageKey);
       if (stored) {
         const position = JSON.parse(stored);
-        // If on chat page and position is in bottom right, move to top left
         if (isChatPage && position.x > window.innerWidth - 200 && position.y > window.innerHeight - 200) {
           return { x: 20, y: 20 };
         }
@@ -40,9 +40,8 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
       }
     }
     
-    // Default positions based on page type
     if (isChatPage) {
-      return { x: 20, y: 20 }; // Top left for chat pages
+      return { x: 20, y: 20 };
     }
     
     return options.defaultPosition || { x: window.innerWidth - 80, y: window.innerHeight - 80 };
@@ -50,18 +49,26 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
 
   const [position, setPosition] = useState<Position>(getInitialPosition);
 
-  // Update position when route changes
   useEffect(() => {
     const newPosition = getInitialPosition();
     setPosition(newPosition);
+    currentPosition.current = newPosition;
   }, [getInitialPosition]);
 
   const constrainPosition = useCallback((pos: Position): Position => {
-    if (!options.boundaries) return pos;
+    const elementWidth = 80;
+    const elementHeight = 80;
+    
+    const bounds = options.boundaries || {
+      top: 20,
+      left: 20,
+      right: window.innerWidth - elementWidth,
+      bottom: window.innerHeight - elementHeight
+    };
     
     return {
-      x: Math.max(options.boundaries.left, Math.min(pos.x, options.boundaries.right)),
-      y: Math.max(options.boundaries.top, Math.min(pos.y, options.boundaries.bottom))
+      x: Math.max(bounds.left, Math.min(pos.x, bounds.right)),
+      y: Math.max(bounds.top, Math.min(pos.y, bounds.bottom))
     };
   }, [options.boundaries]);
 
@@ -70,6 +77,30 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
       localStorage.setItem(options.storageKey, JSON.stringify(pos));
     }
   }, [options.storageKey]);
+
+  const updateElementPosition = useCallback((pos: Position) => {
+    if (elementRef.current) {
+      elementRef.current.style.transform = `translate3d(${pos.x}px, ${pos.y}px, 0)`;
+    }
+  }, []);
+
+  const handleMove = useCallback((clientX: number, clientY: number) => {
+    if (!isDragging.current) return;
+    
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+    
+    animationFrameRef.current = requestAnimationFrame(() => {
+      const newPosition = constrainPosition({
+        x: clientX - dragOffset.current.x,
+        y: clientY - dragOffset.current.y
+      });
+      
+      currentPosition.current = newPosition;
+      updateElementPosition(newPosition);
+    });
+  }, [constrainPosition, updateElementPosition]);
 
   const handleStart = useCallback((clientX: number, clientY: number) => {
     if (!elementRef.current) return;
@@ -81,93 +112,130 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
       y: clientY - rect.top
     };
     
-    // Add visual feedback
-    elementRef.current.style.cursor = 'grabbing';
+    // Add visual feedback and performance hints
+    if (elementRef.current) {
+      elementRef.current.style.cursor = 'grabbing';
+      elementRef.current.style.willChange = 'transform';
+      elementRef.current.style.userSelect = 'none';
+    }
     document.body.style.userSelect = 'none';
+    
+    // Prevent default to avoid conflicts
+    document.addEventListener('selectstart', preventDefault, { passive: false });
   }, []);
 
-  const handleMove = useCallback((clientX: number, clientY: number) => {
-    if (!isDragging.current) return;
-    
-    const newPosition = constrainPosition({
-      x: clientX - dragOffset.current.x,
-      y: clientY - dragOffset.current.y
-    });
-    
-    setPosition(newPosition);
-  }, [constrainPosition]);
+  const preventDefault = (e: Event) => e.preventDefault();
 
   const handleEnd = useCallback(() => {
     if (!isDragging.current) return;
     
     isDragging.current = false;
     
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+    
     if (elementRef.current) {
       elementRef.current.style.cursor = 'grab';
+      elementRef.current.style.willChange = 'auto';
+      elementRef.current.style.userSelect = '';
     }
     document.body.style.userSelect = '';
+    document.removeEventListener('selectstart', preventDefault);
     
     // Snap to edges if close
     const snapThreshold = 50;
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
     
-    setPosition(prev => {
-      let newPos = { ...prev };
-      
-      // Snap to edges
-      if (newPos.x < snapThreshold) newPos.x = 20;
-      if (newPos.x > viewportWidth - snapThreshold - 80) newPos.x = viewportWidth - 100;
-      if (newPos.y < snapThreshold) newPos.y = 20;
-      if (newPos.y > viewportHeight - snapThreshold - 80) newPos.y = viewportHeight - 100;
-      
-      savePosition(newPos);
-      return newPos;
-    });
-  }, [savePosition]);
+    let finalPosition = { ...currentPosition.current };
+    
+    if (finalPosition.x < snapThreshold) finalPosition.x = 20;
+    if (finalPosition.x > viewportWidth - snapThreshold - 80) finalPosition.x = viewportWidth - 100;
+    if (finalPosition.y < snapThreshold) finalPosition.y = 20;
+    if (finalPosition.y > viewportHeight - snapThreshold - 80) finalPosition.y = viewportHeight - 100;
+    
+    // Update both the visual position and React state
+    currentPosition.current = finalPosition;
+    updateElementPosition(finalPosition);
+    setPosition(finalPosition);
+    savePosition(finalPosition);
+  }, [updateElementPosition, savePosition]);
 
   // Mouse events
   const onMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     handleStart(e.clientX, e.clientY);
   }, [handleStart]);
 
   // Touch events
   const onTouchStart = useCallback((e: React.TouchEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     const touch = e.touches[0];
     handleStart(touch.clientX, touch.clientY);
   }, [handleStart]);
 
   // Global event listeners
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => handleMove(e.clientX, e.clientY);
+    const handleMouseMove = (e: MouseEvent) => {
+      e.preventDefault();
+      handleMove(e.clientX, e.clientY);
+    };
+    
     const handleTouchMove = (e: TouchEvent) => {
       e.preventDefault();
       const touch = e.touches[0];
       handleMove(touch.clientX, touch.clientY);
     };
 
+    const handleMouseUp = (e: MouseEvent) => {
+      e.preventDefault();
+      handleEnd();
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      e.preventDefault();
+      handleEnd();
+    };
+
     if (isDragging.current) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleEnd);
+      document.addEventListener('mousemove', handleMouseMove, { passive: false });
+      document.addEventListener('mouseup', handleMouseUp, { passive: false });
       document.addEventListener('touchmove', handleTouchMove, { passive: false });
-      document.addEventListener('touchend', handleEnd);
+      document.addEventListener('touchend', handleTouchEnd, { passive: false });
+      document.addEventListener('touchcancel', handleTouchEnd, { passive: false });
     }
 
     return () => {
       document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleEnd);
+      document.removeEventListener('mouseup', handleMouseUp);
       document.removeEventListener('touchmove', handleTouchMove);
-      document.removeEventListener('touchend', handleEnd);
+      document.removeEventListener('touchend', handleTouchEnd);
+      document.removeEventListener('touchcancel', handleTouchEnd);
+      
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
     };
   }, [handleMove, handleEnd]);
+
+  // Initialize position with transform
+  useEffect(() => {
+    if (elementRef.current) {
+      elementRef.current.style.transform = `translate3d(${position.x}px, ${position.y}px, 0)`;
+      currentPosition.current = position;
+    }
+  }, [position]);
 
   const resetPosition = useCallback(() => {
     const defaultPos = getInitialPosition();
     setPosition(defaultPos);
+    currentPosition.current = defaultPos;
+    updateElementPosition(defaultPos);
     savePosition(defaultPos);
-  }, [getInitialPosition, savePosition]);
+  }, [getInitialPosition, updateElementPosition, savePosition]);
 
   return {
     position,

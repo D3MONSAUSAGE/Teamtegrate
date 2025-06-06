@@ -59,7 +59,6 @@ const ChatbotBubble = () => {
 
   useEffect(() => {
     if (isMobile) {
-      // For mobile devices, detect keyboard visibility by tracking focus on input
       const checkKeyboard = () => {
         setIsKeyboardVisible(document.activeElement?.tagName === 'TEXTAREA');
       };
@@ -74,7 +73,6 @@ const ChatbotBubble = () => {
     }
   }, [isMobile]);
 
-  // Show drag hint on chat pages for first-time users
   useEffect(() => {
     if (isChatPage && !localStorage.getItem('chatbot-drag-hint-shown')) {
       setShowDragHint(true);
@@ -103,28 +101,26 @@ const ChatbotBubble = () => {
     }
   };
 
-  // Check if the last message contains an error about quota
   const hasQuotaError = messages.length > 0 && 
     messages[messages.length - 1].sender === 'assistant' && 
     messages[messages.length - 1].content.includes('quota');
 
-  // Hide when keyboard is visible on mobile and in chat
   const shouldHide = isMobile && isKeyboardVisible && isChatPage;
 
   return (
     <div 
       ref={elementRef}
-      className={`fixed z-50 transition-opacity duration-200 ${shouldHide ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+      className={`fixed z-50 transition-all duration-300 ease-out ${shouldHide ? 'opacity-0 pointer-events-none scale-95' : 'opacity-100 scale-100'}`}
       style={{
-        left: `${position.x}px`,
-        top: `${position.y}px`,
+        left: 0,
+        top: 0,
+        willChange: 'transform',
       }}
     >
       <TooltipProvider>
         <div className="relative">
-          {/* Drag hint */}
           {showDragHint && (
-            <div className="absolute -top-16 left-1/2 transform -translate-x-1/2 bg-black text-white text-xs px-3 py-2 rounded-lg whitespace-nowrap animate-bounce">
+            <div className="absolute -top-16 left-1/2 transform -translate-x-1/2 bg-black text-white text-xs px-3 py-2 rounded-lg whitespace-nowrap animate-bounce z-10">
               Drag me to move!
               <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-full">
                 <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-black"></div>
@@ -132,14 +128,13 @@ const ChatbotBubble = () => {
             </div>
           )}
 
-          {/* Reset position button for chat pages */}
           {isChatPage && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   size="icon"
                   variant="outline"
-                  className="absolute -top-8 -left-8 h-6 w-6 bg-background/80 backdrop-blur-sm border-border/50"
+                  className="absolute -top-8 -left-8 h-6 w-6 bg-background/80 backdrop-blur-sm border-border/50 hover:bg-background transition-colors"
                   onClick={resetPosition}
                 >
                   <RotateCcw className="h-3 w-3" />
@@ -154,7 +149,6 @@ const ChatbotBubble = () => {
           <Drawer open={isOpen} onOpenChange={(open) => {
             setIsOpen(open);
             if (open) {
-              // Small delay to ensure the drawer is visible before scrolling
               setTimeout(scrollToBottom, 100);
             }
           }}>
@@ -162,10 +156,9 @@ const ChatbotBubble = () => {
               <div className="relative">
                 <Button 
                   size="icon" 
-                  className="h-12 w-12 rounded-full shadow-lg hover:shadow-xl transition-all bg-primary text-primary-foreground cursor-grab active:cursor-grabbing"
+                  className="h-12 w-12 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 bg-primary text-primary-foreground hover:scale-105 active:scale-95 cursor-grab active:cursor-grabbing touch-none"
                   onMouseDown={onMouseDown}
                   onTouchStart={onTouchStart}
-                  style={{ cursor: 'grab' }}
                 >
                   {isOpen ? (
                     <X className="h-6 w-6" />
@@ -174,7 +167,6 @@ const ChatbotBubble = () => {
                   )}
                 </Button>
                 
-                {/* Drag indicator */}
                 <div className="absolute -top-1 -right-1 h-4 w-4 bg-muted rounded-full flex items-center justify-center pointer-events-none">
                   <Move className="h-2 w-2 text-muted-foreground" />
                 </div>
@@ -189,7 +181,7 @@ const ChatbotBubble = () => {
                 <div 
                   ref={messageContainerRef}
                   className="flex-1 overflow-y-auto p-4 space-y-4 bg-background"
-                  style={{ maxHeight: "calc(85vh - 60px - 80px)" }} // Subtract header and input heights
+                  style={{ maxHeight: "calc(85vh - 60px - 80px)" }}
                 >
                   {messages.length === 0 ? (
                     <div className="text-muted-foreground text-center mt-8 py-8">
