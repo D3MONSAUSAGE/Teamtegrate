@@ -45,14 +45,12 @@ const ChatRoomActions: React.FC<ChatRoomActionsProps> = ({
         />
       )}
       
-      {isCreator && showDeleteConfirm && (
-        <DeleteChatRoomDialog
-          open={showDeleteConfirm}
-          onOpenChange={setShowDeleteConfirm}
-          onConfirm={handleDeleteRoom}
-          isDeleting={isDeleting}
-        />
-      )}
+      <DeleteChatRoomDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        onConfirm={handleDeleteRoom}
+        isDeleting={isDeleting}
+      />
     </>
   );
 };

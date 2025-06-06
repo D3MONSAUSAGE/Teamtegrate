@@ -68,7 +68,7 @@ const ChatRoomHeader: React.FC<ChatRoomHeaderProps> = ({
             Leave Chat
           </DropdownMenuItem>
           
-          {canDelete && (
+          {canDelete && onDelete && (
             <>
               <DropdownMenuSeparator />
               <DropdownMenuItem 
