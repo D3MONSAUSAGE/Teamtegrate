@@ -119,16 +119,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                   className="text-sm leading-relaxed whitespace-pre-wrap"
                   dangerouslySetInnerHTML={{ __html: renderMentions(message.content) }}
                 />
-                
-                <div className="flex items-center justify-end gap-1 mt-2">
-                  <span className={`text-[10px] ${
-                    isCurrentUser 
-                      ? 'text-primary-foreground/70' 
-                      : 'text-muted-foreground/70'
-                  }`}>
-                    {timestamp || <Clock className="inline w-3 h-3 opacity-70" />}
-                  </span>
-                </div>
               </div>
             </ChatMessageActions>
             
