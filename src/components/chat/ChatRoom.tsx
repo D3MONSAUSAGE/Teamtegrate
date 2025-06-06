@@ -1,11 +1,12 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import ChatMessageInput from './ChatMessageInput';
 import ChatRoomHeader from './ChatRoomHeader';
 import ChatTypingIndicator from './ChatTypingIndicator';
 import ChatMessagesContainer from './ChatMessagesContainer';
 import { useChatRoom } from '@/hooks/use-chat-room';
+import { markUserInteraction } from '@/utils/chatSounds';
 
 interface ChatRoomProps {
   room: {
@@ -44,8 +45,21 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, onRoomDeleted }) => {
     handleReplyClick
   } = useChatRoom(room, onBack, onRoomDeleted);
 
+  // Mark user interaction when they enter the chat room
+  useEffect(() => {
+    markUserInteraction();
+  }, []);
+
+  // Mark user interaction on any click in the chat area
+  const handleChatClick = () => {
+    markUserInteraction();
+  };
+
   return (
-    <Card className="flex flex-col h-full border-border dark:border-gray-800 shadow-none bg-background dark:bg-[#111827] overflow-hidden">
+    <Card 
+      className="flex flex-col h-full border-border dark:border-gray-800 shadow-none bg-background dark:bg-[#111827] overflow-hidden"
+      onClick={handleChatClick}
+    >
       <ChatRoomHeader
         room={room}
         isMobile={isMobile}

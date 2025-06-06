@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft, LogOut, UserPlus, Trash2 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import ChatParticipants from './ChatParticipants';
+import ChatSoundSettings from './ChatSoundSettings';
 import AddChatParticipantDialog from './AddChatParticipantDialog';
 import DeleteChatRoomDialog from './DeleteChatRoomDialog';
 import { toast } from 'sonner';
@@ -67,6 +68,8 @@ const ChatRoomHeader: React.FC<ChatRoomHeaderProps> = ({
       </div>
       
       <div className="flex gap-1 items-center flex-shrink-0">
+        <ChatSoundSettings />
+        
         <Button
           variant="outline"
           size="sm"

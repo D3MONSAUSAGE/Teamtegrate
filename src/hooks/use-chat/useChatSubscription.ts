@@ -2,6 +2,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { playChatNotification } from "@/utils/chatSounds";
+import { useSoundSettings } from "@/hooks/useSoundSettings";
 
 export function useChatSubscription(
   roomId: string,
@@ -10,6 +11,7 @@ export function useChatSubscription(
   setMessages: React.Dispatch<React.SetStateAction<any[]>>
 ) {
   const typingTimeout = useRef<NodeJS.Timeout | null>(null);
+  const soundSettings = useSoundSettings();
 
   useEffect(() => {
     // Initialize subscription when component mounts
@@ -45,7 +47,8 @@ export function useChatSubscription(
         (payload) => {
           // Only handle messages from other users to prevent duplicates
           if (payload.new?.user_id !== userId) {
-            playChatNotification({ enabled: true, volume: 0.5 });
+            console.log('New message received, playing notification with settings:', soundSettings);
+            playChatNotification(soundSettings);
             
             // Add the new message without duplicating existing ones
             setMessages(prev => {
@@ -67,7 +70,7 @@ export function useChatSubscription(
         typingTimeout.current = null;
       }
     };
-  }, [roomId, userId, setTypingUsers, setMessages]);
+  }, [roomId, userId, setTypingUsers, setMessages, soundSettings.enabled, soundSettings.volume]);
 
   const sendTypingStatus = useCallback(() => {
     if (!userId) return;
