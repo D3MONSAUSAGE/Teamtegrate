@@ -28,8 +28,6 @@ const TaskCardContent: React.FC<TaskCardContentProps> = ({
       <TaskCardHeader
         title={task.title}
         priority={task.priority}
-        status={task.status}
-        onStatusChange={handleStatusChange}
       />
       
       <TaskCardDescription description={task.description} />
@@ -45,6 +43,7 @@ const TaskCardContent: React.FC<TaskCardContentProps> = ({
       
       <TaskCardFooter
         status={task.status}
+        isOverdue={isOverdue}
         commentCount={commentCount}
         onStatusChange={handleStatusChange}
         onShowComments={onShowComments}
