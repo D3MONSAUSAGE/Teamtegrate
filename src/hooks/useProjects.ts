@@ -39,17 +39,65 @@ export const useProjects = () => {
       }
       
       console.log(`Successfully fetched ${allProjects?.length || 0} total projects from database`);
+      
+      // Also fetch team member data from project_team_members table for cross-reference
+      const { data: teamMembersData, error: teamError } = await supabase
+        .from('project_team_members')
+        .select('project_id, user_id')
+        .eq('user_id', user.id);
+        
+      if (teamError) {
+        console.warn('Error fetching team member data:', teamError);
+      }
+      
+      const projectsUserIsTeamMemberOf = teamMembersData?.map(tm => tm.project_id) || [];
+      console.log('Projects user is team member of (from project_team_members):', projectsUserIsTeamMemberOf);
+      
       allProjects?.forEach(project => {
-        console.log(`DB Project: ${project.id}, "${project.title}", Manager: ${project.manager_id}, Team: ${JSON.stringify(project.team_members)}`);
+        console.log(`DB Project: ${project.id}, "${project.title}"`);
+        console.log(`  Manager: ${project.manager_id}`);
+        console.log(`  Team Members Array: ${JSON.stringify(project.team_members)}`);
+        console.log(`  User ID: ${user.id} (type: ${typeof user.id})`);
+        
+        // Check if user is manager
+        const isManager = project.manager_id === user.id;
+        console.log(`  Is Manager: ${isManager}`);
+        
+        // Check team membership from both sources
+        let isTeamMemberFromArray = false;
+        if (Array.isArray(project.team_members)) {
+          isTeamMemberFromArray = project.team_members.some(memberId => {
+            const memberIdStr = String(memberId);
+            const userIdStr = String(user.id);
+            console.log(`    Comparing team member ${memberIdStr} with user ${userIdStr}: ${memberIdStr === userIdStr}`);
+            return memberIdStr === userIdStr;
+          });
+        }
+        console.log(`  Is Team Member (from array): ${isTeamMemberFromArray}`);
+        
+        const isTeamMemberFromTable = projectsUserIsTeamMemberOf.includes(project.id);
+        console.log(`  Is Team Member (from table): ${isTeamMemberFromTable}`);
+        
+        const hasAccess = isManager || isTeamMemberFromArray || isTeamMemberFromTable;
+        console.log(`  Final Access Decision: ${hasAccess}`);
       });
       
-      // Filter projects where user has access
+      // Filter projects where user has access - use enhanced logic
       const userProjects = allProjects?.filter(project => {
         const isManager = project.manager_id === user.id;
-        const isTeamMember = Array.isArray(project.team_members) && 
-          project.team_members.includes(user.id);
         
-        const hasAccess = isManager || isTeamMember;
+        // Check team membership from project.team_members array with string comparison
+        let isTeamMemberFromArray = false;
+        if (Array.isArray(project.team_members)) {
+          isTeamMemberFromArray = project.team_members.some(memberId => 
+            String(memberId) === String(user.id)
+          );
+        }
+        
+        // Check team membership from project_team_members table
+        const isTeamMemberFromTable = projectsUserIsTeamMemberOf.includes(project.id);
+        
+        const hasAccess = isManager || isTeamMemberFromArray || isTeamMemberFromTable;
         
         if (hasAccess) {
           console.log(`✓ User has access to project "${project.title}" - ${isManager ? 'Manager' : 'Team Member'}`);
