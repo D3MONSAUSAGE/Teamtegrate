@@ -5,12 +5,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
-import { TaskFormValues, Task, AppUser } from '@/types';
+import { Task, AppUser } from '@/types';
+import { TaskFormValues } from '@/types/tasks';
 import TaskTitleField from './form/TaskTitleField';
 import TaskDescriptionField from './form/TaskDescriptionField';
-import TaskPriorityField from './form/TaskPriorityField';
+import { TaskPriorityField } from './form/TaskPriorityField';
 import TaskDeadlinePicker from './form/TaskDeadlinePicker';
-import TaskProjectField from './form/TaskProjectField';
+import { TaskProjectField } from './form/TaskProjectField';
 import TaskAssignmentSection from './form/TaskAssignmentSection';
 import { useTask } from '@/contexts/task';
 
@@ -49,6 +50,8 @@ const TaskFormFields: React.FC<TaskFormFieldsProps> = ({
   const { projects } = useTask();
   const [selectedMember, setSelectedMember] = useState('');
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [timeInput, setTimeInput] = useState('');
 
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(taskSchema),
@@ -77,6 +80,13 @@ const TaskFormFields: React.FC<TaskFormFieldsProps> = ({
         setSelectedMember(editingTask.assignedToId);
         setSelectedMembers([]);
         onMultiSelectChange(false);
+      }
+
+      // Initialize date and time from deadline
+      if (editingTask.deadline) {
+        const deadline = new Date(editingTask.deadline);
+        setSelectedDate(deadline);
+        setTimeInput(deadline.toTimeString().slice(0, 5));
       }
     }
   }, [editingTask, onMultiSelectChange]);
@@ -123,14 +133,59 @@ const TaskFormFields: React.FC<TaskFormFieldsProps> = ({
     form.setValue('assignedToNames', memberNames);
   };
 
+  const handleDateChange = (date: Date | undefined) => {
+    setSelectedDate(date);
+    updateDeadline(date, timeInput);
+  };
+
+  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const time = e.target.value;
+    setTimeInput(time);
+    updateDeadline(selectedDate, time);
+  };
+
+  const updateDeadline = (date: Date | undefined, time: string) => {
+    if (date && time) {
+      const [hours, minutes] = time.split(':');
+      const deadline = new Date(date);
+      deadline.setHours(parseInt(hours), parseInt(minutes));
+      form.setValue('deadline', deadline.toISOString().slice(0, 16));
+    }
+  };
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
-        <TaskTitleField form={form} />
-        <TaskDescriptionField form={form} />
-        <TaskPriorityField form={form} />
-        <TaskDeadlinePicker form={form} />
-        <TaskProjectField form={form} projects={projects} />
+        <TaskTitleField 
+          register={form.register}
+          errors={form.formState.errors}
+          setValue={form.setValue}
+        />
+        <TaskDescriptionField 
+          register={form.register}
+          setValue={form.setValue}
+        />
+        <TaskPriorityField 
+          register={form.register}
+          errors={form.formState.errors}
+          defaultValue={editingTask?.priority}
+          setValue={form.setValue}
+        />
+        <TaskDeadlinePicker
+          date={selectedDate}
+          timeInput={timeInput}
+          onDateChange={handleDateChange}
+          onTimeChange={handleTimeChange}
+          error={form.formState.errors.deadline?.message}
+        />
+        <TaskProjectField 
+          register={form.register}
+          errors={form.formState.errors}
+          editingTask={editingTask}
+          currentProjectId={currentProjectId}
+          projects={projects}
+          setValue={form.setValue}
+        />
         
         <TaskAssignmentSection
           selectedMember={selectedMember}

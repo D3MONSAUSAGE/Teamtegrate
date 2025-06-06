@@ -8,8 +8,10 @@ import {
 } from "@/components/ui/dialog";
 import { useTask } from '@/contexts/task';
 import { useAuth } from '@/contexts/AuthContext';
-import { Task, TaskFormValues, AppUser } from '@/types';
+import { Task, AppUser } from '@/types';
+import { TaskFormValues } from '@/types/tasks';
 import { toast } from '@/components/ui/sonner';
+import { useUsers } from '@/hooks/useUsers';
 import TaskFormFields from './task/TaskFormFields';
 
 interface CreateTaskDialogProps {
@@ -26,16 +28,10 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
   currentProjectId
 }) => {
   const { user } = useAuth();
-  const { addTask, updateTask, users, fetchUsers } = useTask();
+  const { addTask, updateTask } = useTask();
+  const { users } = useUsers();
   const [isLoading, setIsLoading] = useState(false);
   const [multiSelect, setMultiSelect] = useState(false);
-
-  // Fetch users when dialog opens
-  useEffect(() => {
-    if (open && fetchUsers) {
-      fetchUsers();
-    }
-  }, [open, fetchUsers]);
 
   const handleSubmit = async (values: TaskFormValues) => {
     if (!user) {
