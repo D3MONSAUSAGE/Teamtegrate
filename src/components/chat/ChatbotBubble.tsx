@@ -40,6 +40,7 @@ const ChatbotBubble = () => {
     onMouseDown,
     onTouchStart,
     resetPosition,
+    isDragging
   } = useDraggable({
     defaultPosition: { x: window.innerWidth - 80, y: window.innerHeight - 80 },
     storageKey: 'chatbot-position',
@@ -61,6 +62,15 @@ const ChatbotBubble = () => {
     setMessage("");
   };
 
+  // Prevent drawer from opening when dragging
+  const handleDrawerOpenChange = (open: boolean) => {
+    if (isDragging) return;
+    setIsOpen(open);
+    if (open) {
+      setTimeout(scrollToBottom, 100);
+    }
+  };
+
   return (
     <div 
       ref={elementRef}
@@ -76,19 +86,24 @@ const ChatbotBubble = () => {
           <ChatDragHint show={showDragHint} />
           <ChatResetButton onReset={resetPosition} show={isChatPage} />
 
-          <Drawer open={isOpen} onOpenChange={(open) => {
-            setIsOpen(open);
-            if (open) {
-              setTimeout(scrollToBottom, 100);
-            }
-          }}>
-            <DrawerTrigger asChild>
-              <div className="relative">
+          <Drawer open={isOpen} onOpenChange={handleDrawerOpenChange}>
+            <div className="relative">
+              {/* Dedicated drag handle */}
+              <div 
+                className="absolute -top-2 -left-2 h-6 w-6 bg-muted/80 backdrop-blur-sm rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing border border-border/50 hover:bg-muted transition-colors z-10"
+                onMouseDown={onMouseDown}
+                onTouchStart={onTouchStart}
+                style={{ touchAction: 'none' }}
+              >
+                <Move className="h-3 w-3 text-muted-foreground" />
+              </div>
+
+              {/* Main chat button - only for opening drawer */}
+              <DrawerTrigger asChild>
                 <Button 
                   size="icon" 
-                  className="h-12 w-12 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 bg-primary text-primary-foreground hover:scale-105 active:scale-95 cursor-grab active:cursor-grabbing touch-none"
-                  onMouseDown={onMouseDown}
-                  onTouchStart={onTouchStart}
+                  className="h-12 w-12 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 bg-primary text-primary-foreground hover:scale-105 active:scale-95"
+                  disabled={isDragging}
                 >
                   {isOpen ? (
                     <X className="h-6 w-6" />
@@ -96,12 +111,9 @@ const ChatbotBubble = () => {
                     <MessageCircle className="h-6 w-6" />
                   )}
                 </Button>
-                
-                <div className="absolute -top-1 -right-1 h-4 w-4 bg-muted rounded-full flex items-center justify-center pointer-events-none">
-                  <Move className="h-2 w-2 text-muted-foreground" />
-                </div>
-              </div>
-            </DrawerTrigger>
+              </DrawerTrigger>
+            </div>
+
             <DrawerContent className="max-h-[85vh] flex flex-col">
               <div className="flex flex-col h-full max-h-[85vh]">
                 <DrawerHeader className="p-4 border-b bg-secondary/30">

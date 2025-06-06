@@ -6,7 +6,8 @@ export const useDraggableEvents = (
   dragState: React.MutableRefObject<DragState>,
   elementRef: React.RefObject<HTMLDivElement>,
   constrainPosition: (pos: Position) => Position,
-  updateElementPosition: (pos: Position) => void
+  updateElementPosition: (pos: Position) => void,
+  onDragStart?: () => void
 ) => {
   const animationFrameRef = useRef<number>();
 
@@ -30,8 +31,11 @@ export const useDraggableEvents = (
     });
   }, [constrainPosition, updateElementPosition, dragState]);
 
-  const handleStart = useCallback((clientX: number, clientY: number) => {
+  const handleStart = useCallback((clientX: number, clientY: number, e: Event) => {
     if (!elementRef.current) return;
+    
+    e.preventDefault();
+    e.stopPropagation();
     
     dragState.current.isDragging = true;
     const rect = elementRef.current.getBoundingClientRect();
@@ -39,6 +43,11 @@ export const useDraggableEvents = (
       x: clientX - rect.left,
       y: clientY - rect.top
     };
+    
+    // Call onDragStart callback
+    if (onDragStart) {
+      onDragStart();
+    }
     
     // Add visual feedback and performance hints
     if (elementRef.current) {
@@ -50,7 +59,7 @@ export const useDraggableEvents = (
     
     // Prevent default to avoid conflicts
     document.addEventListener('selectstart', preventDefault, { passive: false });
-  }, [dragState, elementRef]);
+  }, [dragState, elementRef, onDragStart]);
 
   const handleEnd = useCallback((onEndCallback: () => void) => {
     if (!dragState.current.isDragging) return;
@@ -74,17 +83,13 @@ export const useDraggableEvents = (
 
   // Mouse events
   const onMouseDown = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    handleStart(e.clientX, e.clientY);
+    handleStart(e.clientX, e.clientY, e.nativeEvent);
   }, [handleStart]);
 
   // Touch events
   const onTouchStart = useCallback((e: React.TouchEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
     const touch = e.touches[0];
-    handleStart(touch.clientX, touch.clientY);
+    handleStart(touch.clientX, touch.clientY, e.nativeEvent);
   }, [handleStart]);
 
   return {

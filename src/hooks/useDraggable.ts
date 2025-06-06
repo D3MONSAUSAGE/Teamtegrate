@@ -21,6 +21,7 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
   } = useDraggableUtils(options);
 
   const [position, setPosition] = useState<Position>(() => getInitialPosition());
+  const [isDragging, setIsDragging] = useState(false);
 
   const updateElementPosition = useCallback((pos: Position) => {
     if (elementRef.current) {
@@ -37,6 +38,7 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
     updateElementPosition(finalPosition);
     setPosition(finalPosition);
     savePosition(finalPosition);
+    setIsDragging(false);
   }, [snapToEdges, updateElementPosition, savePosition]);
 
   const {
@@ -49,46 +51,51 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
     dragState,
     elementRef,
     constrainPosition,
-    updateElementPosition
+    updateElementPosition,
+    () => setIsDragging(true)
   );
 
   // Global event listeners
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       e.preventDefault();
+      e.stopPropagation();
       handleMove(e.clientX, e.clientY);
     };
     
     const handleTouchMove = (e: TouchEvent) => {
       e.preventDefault();
+      e.stopPropagation();
       const touch = e.touches[0];
       handleMove(touch.clientX, touch.clientY);
     };
 
     const handleMouseUp = (e: MouseEvent) => {
       e.preventDefault();
+      e.stopPropagation();
       handleEnd(handleDragEnd);
     };
 
     const handleTouchEnd = (e: TouchEvent) => {
       e.preventDefault();
+      e.stopPropagation();
       handleEnd(handleDragEnd);
     };
 
     if (dragState.current.isDragging) {
-      document.addEventListener('mousemove', handleMouseMove, { passive: false });
-      document.addEventListener('mouseup', handleMouseUp, { passive: false });
-      document.addEventListener('touchmove', handleTouchMove, { passive: false });
-      document.addEventListener('touchend', handleTouchEnd, { passive: false });
-      document.addEventListener('touchcancel', handleTouchEnd, { passive: false });
+      document.addEventListener('mousemove', handleMouseMove, { passive: false, capture: true });
+      document.addEventListener('mouseup', handleMouseUp, { passive: false, capture: true });
+      document.addEventListener('touchmove', handleTouchMove, { passive: false, capture: true });
+      document.addEventListener('touchend', handleTouchEnd, { passive: false, capture: true });
+      document.addEventListener('touchcancel', handleTouchEnd, { passive: false, capture: true });
     }
 
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-      document.removeEventListener('touchmove', handleTouchMove);
-      document.removeEventListener('touchend', handleTouchEnd);
-      document.removeEventListener('touchcancel', handleTouchEnd);
+      document.removeEventListener('mousemove', handleMouseMove, true);
+      document.removeEventListener('mouseup', handleMouseUp, true);
+      document.removeEventListener('touchmove', handleTouchMove, true);
+      document.removeEventListener('touchend', handleTouchEnd, true);
+      document.removeEventListener('touchcancel', handleTouchEnd, true);
       
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
@@ -121,6 +128,6 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
     onMouseDown,
     onTouchStart,
     resetPosition,
-    isDragging: dragState.current.isDragging
+    isDragging
   };
 };
