@@ -2,8 +2,10 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTask } from '@/contexts/task';
 import { useAuth } from '@/contexts/AuthContext';
-import { Task, TaskStatus } from '@/types';
+import { Task, TaskStatus, Project } from '@/types';
 import { toast } from '@/components/ui/sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { checkProjectAccess } from '@/hooks/projects/projectAccessFilter';
 
 export const useProjectTasksView = (projectId: string | null) => {
   const { user } = useAuth();
@@ -15,12 +17,19 @@ export const useProjectTasksView = (projectId: string | null) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
+  const [fallbackProject, setFallbackProject] = useState<Project | null>(null);
 
-  // Find the project
+  // Find the project - first try from context, then fallback
   const project = useMemo(() => {
     if (!projectId) return null;
-    return projects.find(p => p.id === projectId) || null;
-  }, [projects, projectId]);
+    
+    // First try to find in context projects
+    const contextProject = projects.find(p => p.id === projectId);
+    if (contextProject) return contextProject;
+    
+    // Return fallback project if we fetched one
+    return fallbackProject;
+  }, [projects, projectId, fallbackProject]);
 
   // Get project tasks
   const projectTasks = useMemo(() => {
@@ -67,70 +76,138 @@ export const useProjectTasksView = (projectId: string | null) => {
     return totalTasks > 0 ? Math.round((completed / totalTasks) * 100) : 0;
   }, [projectTasks.length, completedTasks.length]);
 
+  // Fetch project directly from database as fallback
+  const fetchProjectDirectly = useCallback(async (id: string) => {
+    try {
+      console.log('Fetching project directly from database:', id);
+      
+      const { data: projectData, error } = await supabase
+        .from('projects')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching project directly:', error);
+        return null;
+      }
+
+      if (!projectData) {
+        console.log('Project not found in database');
+        return null;
+      }
+
+      console.log('Found project in database:', projectData);
+
+      // Check if user has access using the same logic as the main projects list
+      const accessInfo = checkProjectAccess(projectData, user?.id || '', []);
+      
+      console.log('Direct access check results:', {
+        projectTitle: projectData.title,
+        accessInfo,
+        userId: user?.id
+      });
+
+      if (!accessInfo.hasAccess) {
+        console.log('User does not have access to project');
+        return null;
+      }
+
+      // Convert to Project format
+      const formattedProject: Project = {
+        id: projectData.id,
+        title: projectData.title || '',
+        description: projectData.description || '',
+        startDate: projectData.start_date ? new Date(projectData.start_date) : new Date(),
+        endDate: projectData.end_date ? new Date(projectData.end_date) : new Date(),
+        managerId: projectData.manager_id || '',
+        createdAt: projectData.created_at ? new Date(projectData.created_at) : new Date(),
+        updatedAt: projectData.updated_at ? new Date(projectData.updated_at) : new Date(),
+        tasks: projectTasks,
+        teamMembers: projectData.team_members || [],
+        budget: projectData.budget || 0,
+        budgetSpent: projectData.budget_spent || 0,
+        is_completed: projectData.is_completed || false,
+        status: projectData.status || 'To Do',
+        tasks_count: projectTasks.length,
+        tags: projectData.tags || []
+      };
+
+      return formattedProject;
+    } catch (error) {
+      console.error('Error in fetchProjectDirectly:', error);
+      return null;
+    }
+  }, [user?.id, projectTasks]);
+
   // Check if project exists and user has access
   useEffect(() => {
-    console.log('useProjectTasksView effect running', {
-      projectId,
-      user: !!user,
-      projectsLength: projects.length,
-      foundProject: !!project
-    });
+    const checkProjectAccess = async () => {
+      console.log('useProjectTasksView effect running', {
+        projectId,
+        user: !!user,
+        projectsLength: projects.length,
+        foundProject: !!project
+      });
 
-    if (!projectId) {
-      setLoadError("No project ID provided");
-      setIsLoading(false);
-      return;
-    }
+      if (!projectId) {
+        setLoadError("No project ID provided");
+        setIsLoading(false);
+        return;
+      }
 
-    if (!user) {
-      setLoadError("User not authenticated");
-      setIsLoading(false);
-      return;
-    }
+      if (!user) {
+        setLoadError("User not authenticated");
+        setIsLoading(false);
+        return;
+      }
 
-    // Wait for projects to load
-    if (projects.length === 0) {
-      console.log('Projects still loading, keeping loading state');
       setIsLoading(true);
       setLoadError(null);
-      return;
-    }
+      setFallbackProject(null);
 
-    const foundProject = projects.find(p => p.id === projectId);
-    
-    if (!foundProject) {
-      console.log('Project not found in accessible projects', { projectId, availableProjects: projects.map(p => p.id) });
-      setLoadError("Project not found or you don't have access to it");
-      setIsLoading(false);
-      return;
-    }
+      // First, try to find project in context
+      const contextProject = projects.find(p => p.id === projectId);
+      
+      if (contextProject) {
+        console.log('Found project in context:', contextProject.title);
+        
+        // Check access for context project
+        const isManager = contextProject.managerId === user.id;
+        const isTeamMember = contextProject.teamMembers?.some(memberId => 
+          String(memberId) === String(user.id)
+        );
+        
+        if (isManager || isTeamMember) {
+          console.log('User has access to context project');
+          setIsLoading(false);
+          return;
+        } else {
+          console.log('User does not have access to context project');
+          setLoadError("You don't have access to this project");
+          setIsLoading(false);
+          return;
+        }
+      }
 
-    // Check if user has access (is manager or team member)
-    const isManager = foundProject.managerId === user.id;
-    const isTeamMember = foundProject.teamMembers?.some(memberId => 
-      String(memberId) === String(user.id)
-    );
-    
-    console.log('Access check results', {
-      isManager,
-      isTeamMember,
-      foundProject: foundProject.title,
-      managerId: foundProject.managerId,
-      userId: user.id,
-      teamMembers: foundProject.teamMembers
-    });
-    
-    if (!isManager && !isTeamMember) {
-      setLoadError("You don't have access to this project");
-      setIsLoading(false);
-      return;
-    }
+      // If not found in context, try to fetch directly
+      console.log('Project not found in context, fetching directly from database');
+      
+      const directProject = await fetchProjectDirectly(projectId);
+      
+      if (directProject) {
+        console.log('Successfully fetched project directly, setting as fallback');
+        setFallbackProject(directProject);
+        setIsLoading(false);
+      } else {
+        console.log('Failed to fetch project directly or no access');
+        setLoadError("Project not found or you don't have access to it");
+        setIsLoading(false);
+      }
+    };
 
-    // Clear any previous errors and set loading to false
-    console.log('Project access confirmed, clearing errors');
-    setLoadError(null);
-    setIsLoading(false);
-  }, [projectId, user, projects, project]);
+    checkProjectAccess();
+  }, [projectId, user, projects, fetchProjectDirectly]);
 
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
