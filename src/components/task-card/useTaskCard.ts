@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Task, TaskStatus } from "@/types";
 import { useTask } from "@/contexts/task";
@@ -47,15 +46,18 @@ export const useTaskCard = (task: Task) => {
   };
 
   const getAssignedToName = () => {
-    if (!task.assignedToName || task.assignedToName.trim() === '') {
-      return 'Unassigned';
+    // If we have a proper name that's not empty and not the same as the ID
+    if (task.assignedToName && task.assignedToName.trim() !== '' && task.assignedToName !== task.assignedToId) {
+      return task.assignedToName;
     }
     
-    if (task.assignedToId && (!task.assignedToName || task.assignedToName === task.assignedToId)) {
-      return 'Unassigned';
+    // If we have an assignedToId but no proper name, show "Assigned User"
+    if (task.assignedToId && task.assignedToId.trim() !== '') {
+      return 'Assigned User';
     }
     
-    return task.assignedToName;
+    // Otherwise, truly unassigned
+    return 'Unassigned';
   };
 
   return {

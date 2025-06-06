@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Clock, User } from 'lucide-react';
 import { format } from 'date-fns';
@@ -7,18 +6,34 @@ import { motion } from 'framer-motion';
 interface TaskCardMetadataProps {
   deadline: Date;
   assignedToName?: string;
+  assignedToId?: string;
   isOverdue: boolean;
 }
 
 const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({
   deadline,
   assignedToName,
+  assignedToId,
   isOverdue,
 }) => {
-  // Format the display name - if empty or undefined, show "Unassigned"
-  const displayName = assignedToName && assignedToName.trim() !== '' 
-    ? assignedToName 
-    : 'Unassigned';
+  // Improved logic for display name - same as the other component
+  const getDisplayName = () => {
+    // If we have a proper name that's not empty and not the same as the ID
+    if (assignedToName && assignedToName.trim() !== '' && assignedToName !== assignedToId) {
+      return assignedToName;
+    }
+    
+    // If we have an assignedToId but no proper name, show "Assigned User"
+    if (assignedToId && assignedToId.trim() !== '') {
+      return 'Assigned User';
+    }
+    
+    // Otherwise, truly unassigned
+    return 'Unassigned';
+  };
+
+  const displayName = getDisplayName();
+  const isAssigned = assignedToId && assignedToId.trim() !== '';
 
   // Check if deadline is today
   const isToday = new Date().toDateString() === new Date(deadline).toDateString();
@@ -54,7 +69,7 @@ const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({
       >
         <User className="h-3 w-3 flex-shrink-0" />
         <span 
-          className={`truncate max-w-[100px] ${assignedToName ? "" : "italic text-gray-400"}`}
+          className={`truncate max-w-[100px] ${!isAssigned ? "italic text-gray-400" : ""}`}
         >
           {displayName}
         </span>

@@ -1,11 +1,11 @@
 
 import React from "react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Task, TaskStatus } from "@/types";
-import { CardContent } from "@/components/ui/card";
 import TaskCardHeader from "./TaskCardHeader";
 import TaskCardDescription from "./TaskCardDescription";
 import TaskCardMetadata from "./TaskCardMetadata";
-import TaskCardFooter from "@/components/task/TaskCardFooter";
+import TaskCardFooter from "./TaskCardFooter";
 import { isTaskOverdue } from "@/utils/taskUtils";
 
 interface TaskCardContentProps {
@@ -21,24 +21,33 @@ const TaskCardContent: React.FC<TaskCardContentProps> = ({
   commentCount,
   onShowComments,
 }) => {
-  const { title, description, deadline, priority, status, assignedToName } = task;
   const isOverdue = isTaskOverdue(task);
 
   return (
-    <CardContent className="p-5 pt-10">
-      <TaskCardHeader title={title} priority={priority} />
-      <TaskCardDescription description={description} />
-      <TaskCardMetadata
-        deadline={deadline}
-        isOverdue={isOverdue}
-        assignedToName={assignedToName}
-      />
-      <TaskCardFooter
-        status={status}
-        isOverdue={isOverdue}
-        commentCount={commentCount}
-        onShowComments={onShowComments}
+    <CardContent className="p-3 md:p-4 h-full flex flex-col">
+      <TaskCardHeader
+        title={task.title}
+        priority={task.priority}
+        status={task.status}
         onStatusChange={handleStatusChange}
+      />
+      
+      <TaskCardDescription description={task.description} />
+      
+      <div className="flex-1" />
+      
+      <TaskCardMetadata 
+        deadline={task.deadline} 
+        assignedToName={task.assignedToName}
+        assignedToId={task.assignedToId}
+        isOverdue={isOverdue}
+      />
+      
+      <TaskCardFooter
+        status={task.status}
+        commentCount={commentCount}
+        onStatusChange={handleStatusChange}
+        onShowComments={onShowComments}
       />
     </CardContent>
   );
