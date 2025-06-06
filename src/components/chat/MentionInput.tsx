@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -61,7 +62,7 @@ const MentionInput: React.FC<MentionInputProps> = ({
       const users = data?.map(participant => ({
         id: participant.users.id,
         email: participant.users.email,
-        name: participant.users.name || participant.users.email,
+        name: participant.users.name,
       })).filter(user => user.id !== currentUser?.id) || [];
 
       setMentionUsers(users);
@@ -96,6 +97,7 @@ const MentionInput: React.FC<MentionInputProps> = ({
     const mentionMatch = textBeforeCursor.match(/@(\w*)$/);
     if (mentionMatch) {
       const beforeMention = textBeforeCursor.slice(0, mentionMatch.index);
+      // Use the user's name (full name from profile settings) for the mention
       const newValue = `${beforeMention}@${user.name || user.email} ${textAfterCursor}`;
       onChange(newValue);
     }
