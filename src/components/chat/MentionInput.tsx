@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -49,7 +48,7 @@ const MentionInput: React.FC<MentionInputProps> = ({
         .from('chat_room_participants')
         .select(`
           user_id,
-          users!inner(
+          users!user_id(
             id,
             email,
             name
