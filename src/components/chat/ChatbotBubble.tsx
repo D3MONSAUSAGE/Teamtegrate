@@ -66,7 +66,20 @@ const ChatbotBubble = () => {
 
   // Prevent drawer from opening when dragging or long pressing
   const handleDrawerOpenChange = (open: boolean) => {
-    if (isDragging || isLongPressing || wasLastInteractionDrag()) return;
+    console.log('Drawer open change requested:', open, { isDragging, isLongPressing });
+    
+    if (isDragging || isLongPressing) {
+      console.log('Preventing drawer open due to drag/long press');
+      return;
+    }
+    
+    // Check if this was a drag operation
+    if (wasLastInteractionDrag()) {
+      console.log('Preventing drawer open due to recent drag');
+      return;
+    }
+    
+    console.log('Allowing drawer open change to:', open);
     setIsOpen(open);
     if (open) {
       setTimeout(scrollToBottom, 100);
@@ -74,9 +87,20 @@ const ChatbotBubble = () => {
   };
 
   const handleButtonClick = (e: React.MouseEvent) => {
+    console.log('Button clicked', { isDragging, isLongPressing });
+    
+    // If we're currently dragging or long pressing, prevent the click
+    if (isDragging || isLongPressing) {
+      console.log('Preventing button click due to drag/long press');
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    
     // Small delay to check if this was a drag operation
     setTimeout(() => {
       if (wasLastInteractionDrag()) {
+        console.log('Button click was part of drag operation');
         e.preventDefault();
         e.stopPropagation();
         return;
@@ -106,13 +130,12 @@ const ChatbotBubble = () => {
                 size="icon" 
                 className={`h-12 w-12 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 bg-primary text-primary-foreground hover:scale-105 active:scale-95 select-none ${
                   isLongPressing ? 'scale-95 opacity-80' : ''
-                }`}
+                } ${isDragging ? 'cursor-grabbing' : 'cursor-pointer'}`}
                 onMouseDown={onMouseDown}
                 onTouchStart={onTouchStart}
                 onClick={handleButtonClick}
                 style={{ 
-                  touchAction: 'none',
-                  cursor: isDragging ? 'grabbing' : 'pointer'
+                  touchAction: 'none'
                 }}
               >
                 {isOpen ? (

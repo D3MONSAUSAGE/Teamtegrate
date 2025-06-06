@@ -30,7 +30,13 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
     }
   }, []);
 
+  const handleDragStart = useCallback(() => {
+    console.log('Drag started');
+    setIsDragging(true);
+  }, []);
+
   const handleDragEnd = useCallback(() => {
+    console.log('Drag ended');
     // Snap to edges if close
     const finalPosition = snapToEdges(dragState.current.currentPosition);
     
@@ -55,12 +61,14 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
     elementRef,
     constrainPosition,
     updateElementPosition,
-    () => setIsDragging(true),
+    handleDragStart,
     setIsLongPressing
   );
 
-  // Global event listeners
+  // Global event listeners - watch for changes in dragState
   useEffect(() => {
+    console.log('Drag state changed:', dragState.current.isDragging);
+    
     const handleMouseMove = (e: MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
@@ -86,7 +94,9 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
       handleEnd(handleDragEnd);
     };
 
-    if (dragState.current.isDragging) {
+    // Add listeners when dragging starts
+    if (isDragging) {
+      console.log('Adding global event listeners');
       document.addEventListener('mousemove', handleMouseMove, { passive: false, capture: true });
       document.addEventListener('mouseup', handleMouseUp, { passive: false, capture: true });
       document.addEventListener('touchmove', handleTouchMove, { passive: false, capture: true });
@@ -95,6 +105,7 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
     }
 
     return () => {
+      console.log('Removing global event listeners');
       document.removeEventListener('mousemove', handleMouseMove, true);
       document.removeEventListener('mouseup', handleMouseUp, true);
       document.removeEventListener('touchmove', handleTouchMove, true);
@@ -105,7 +116,7 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [handleMove, handleEnd, handleDragEnd, animationFrameRef]);
+  }, [isDragging, handleMove, handleEnd, handleDragEnd, animationFrameRef]);
 
   // Initialize position only once
   useEffect(() => {
@@ -115,6 +126,7 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
       updateElementPosition(initialPos);
       setPosition(initialPos);
       isInitialized.current = true;
+      console.log('Initialized position:', initialPos);
     }
   }, [getInitialPosition, updateElementPosition]);
 
@@ -124,6 +136,7 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
     updateElementPosition(defaultPos);
     setPosition(defaultPos);
     savePosition(defaultPos);
+    console.log('Reset position:', defaultPos);
   }, [getInitialPosition, updateElementPosition, savePosition]);
 
   return {
