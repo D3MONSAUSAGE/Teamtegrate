@@ -48,7 +48,8 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
     handleEnd,
     onMouseDown,
     onTouchStart,
-    animationFrameRef
+    animationFrameRef,
+    wasLastInteractionDrag
   } = useDraggableEvents(
     dragState,
     elementRef,
@@ -132,6 +133,7 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
     onTouchStart,
     resetPosition,
     isDragging,
-    isLongPressing
+    isLongPressing,
+    wasLastInteractionDrag
   };
 };

@@ -14,6 +14,7 @@ export const useDraggableEvents = (
   const longPressTimer = useRef<number>();
   const startPosition = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const hasMoved = useRef(false);
+  const isDragOperation = useRef(false);
 
   const preventDefault = (e: Event) => e.preventDefault();
 
@@ -28,28 +29,26 @@ export const useDraggableEvents = (
   }, []);
 
   const handleMove = useCallback((clientX: number, clientY: number) => {
-    if (!dragState.current.isDragging) {
-      // Check if we've moved enough to cancel long press
-      const deltaX = Math.abs(clientX - startPosition.current.x);
-      const deltaY = Math.abs(clientY - startPosition.current.y);
+    const deltaX = Math.abs(clientX - startPosition.current.x);
+    const deltaY = Math.abs(clientY - startPosition.current.y);
+    
+    if (!hasMoved.current && (deltaX > MOVEMENT_THRESHOLD || deltaY > MOVEMENT_THRESHOLD)) {
+      hasMoved.current = true;
+      isDragOperation.current = true;
+      clearLongPressTimer();
+      setIsLongPressing?.(false);
       
-      if (deltaX > MOVEMENT_THRESHOLD || deltaY > MOVEMENT_THRESHOLD) {
-        hasMoved.current = true;
-        clearLongPressTimer();
-        setIsLongPressing?.(false);
-        
-        // Start dragging immediately on desktop (mouse)
-        if (!('ontouchstart' in window)) {
-          dragState.current.isDragging = true;
-          if (onDragStart) {
-            onDragStart();
-          }
+      // Start dragging on any movement
+      if (!dragState.current.isDragging) {
+        dragState.current.isDragging = true;
+        if (onDragStart) {
+          onDragStart();
         }
       }
-      
-      // Don't continue if not dragging
-      if (!dragState.current.isDragging) return;
     }
+    
+    // Only continue if we're dragging
+    if (!dragState.current.isDragging) return;
     
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
@@ -74,6 +73,7 @@ export const useDraggableEvents = (
     
     // Reset state
     hasMoved.current = false;
+    isDragOperation.current = false;
     startPosition.current = { x: clientX, y: clientY };
     
     const rect = elementRef.current.getBoundingClientRect();
@@ -88,15 +88,13 @@ export const useDraggableEvents = (
       longPressTimer.current = window.setTimeout(() => {
         if (!hasMoved.current) {
           dragState.current.isDragging = true;
+          isDragOperation.current = true;
           if (onDragStart) {
             onDragStart();
           }
         }
         setIsLongPressing?.(false);
       }, LONG_PRESS_DURATION);
-    } else {
-      // For mouse, start dragging immediately but wait for movement
-      // This will be handled in handleMove
     }
     
     // Add visual feedback and performance hints
@@ -113,7 +111,9 @@ export const useDraggableEvents = (
     clearLongPressTimer();
     setIsLongPressing?.(false);
     
-    if (!dragState.current.isDragging) {
+    const wasDragging = dragState.current.isDragging;
+    
+    if (!wasDragging) {
       // Clean up if we never started dragging
       if (elementRef.current) {
         elementRef.current.style.userSelect = '';
@@ -138,6 +138,11 @@ export const useDraggableEvents = (
     onEndCallback();
   }, [dragState, elementRef, clearLongPressTimer, setIsLongPressing]);
 
+  // Check if the last interaction was a drag operation
+  const wasLastInteractionDrag = useCallback(() => {
+    return isDragOperation.current;
+  }, []);
+
   // Mouse events
   const onMouseDown = useCallback((e: React.MouseEvent) => {
     handleStart(e.clientX, e.clientY, e.nativeEvent);
@@ -154,6 +159,7 @@ export const useDraggableEvents = (
     handleEnd,
     onMouseDown,
     onTouchStart,
-    animationFrameRef
+    animationFrameRef,
+    wasLastInteractionDrag
   };
 };

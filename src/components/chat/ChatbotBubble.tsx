@@ -41,7 +41,8 @@ const ChatbotBubble = () => {
     onTouchStart,
     resetPosition,
     isDragging,
-    isLongPressing
+    isLongPressing,
+    wasLastInteractionDrag
   } = useDraggable({
     defaultPosition: { x: window.innerWidth - 80, y: window.innerHeight - 80 },
     storageKey: 'chatbot-position',
@@ -65,7 +66,7 @@ const ChatbotBubble = () => {
 
   // Prevent drawer from opening when dragging or long pressing
   const handleDrawerOpenChange = (open: boolean) => {
-    if (isDragging || isLongPressing) return;
+    if (isDragging || isLongPressing || wasLastInteractionDrag()) return;
     setIsOpen(open);
     if (open) {
       setTimeout(scrollToBottom, 100);
@@ -73,12 +74,14 @@ const ChatbotBubble = () => {
   };
 
   const handleButtonClick = (e: React.MouseEvent) => {
-    // Prevent opening if we're dragging or long pressing
-    if (isDragging || isLongPressing) {
-      e.preventDefault();
-      e.stopPropagation();
-      return;
-    }
+    // Small delay to check if this was a drag operation
+    setTimeout(() => {
+      if (wasLastInteractionDrag()) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+    }, 50);
   };
 
   return (
@@ -104,7 +107,6 @@ const ChatbotBubble = () => {
                 className={`h-12 w-12 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 bg-primary text-primary-foreground hover:scale-105 active:scale-95 select-none ${
                   isLongPressing ? 'scale-95 opacity-80' : ''
                 }`}
-                disabled={isDragging}
                 onMouseDown={onMouseDown}
                 onTouchStart={onTouchStart}
                 onClick={handleButtonClick}
