@@ -5,6 +5,7 @@ import { ChevronLeft, LogOut, UserPlus, Trash2 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import ChatParticipants from './ChatParticipants';
 import AddChatParticipantDialog from './AddChatParticipantDialog';
+import DeleteChatRoomDialog from './DeleteChatRoomDialog';
 import { toast } from 'sonner';
 import { playSuccessSound } from '@/utils/sounds';
 
@@ -24,10 +25,18 @@ const ChatRoomHeader: React.FC<ChatRoomHeaderProps> = ({
   room, isMobile, currentUserId, onBack, toggleParticipants, onLeave, onDelete, leaving, canDelete,
 }) => {
   const [showAddParticipant, setShowAddParticipant] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const handleParticipantAdded = () => {
     playSuccessSound();
     toast.success('Member added to the chat room');
+  };
+
+  const handleDeleteRoom = async () => {
+    if (onDelete) {
+      await onDelete();
+    }
+    setShowDeleteConfirm(false);
   };
 
   return (
@@ -64,6 +73,17 @@ const ChatRoomHeader: React.FC<ChatRoomHeaderProps> = ({
       </div>
       
       <div className="flex gap-1 items-center flex-shrink-0">
+        {canDelete && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setShowDeleteConfirm(true)}
+            className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+          >
+            <Trash2 className="h-5 w-5" />
+          </Button>
+        )}
+        
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" aria-label="More options" className="dark:hover:bg-gray-800/50">
@@ -79,19 +99,6 @@ const ChatRoomHeader: React.FC<ChatRoomHeaderProps> = ({
               <LogOut className="h-4 w-4 mr-2" />
               Leave Chat
             </DropdownMenuItem>
-            
-            {canDelete && onDelete && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem 
-                  className="text-red-600 cursor-pointer"
-                  onClick={onDelete}
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete Room
-                </DropdownMenuItem>
-              </>
-            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -101,6 +108,13 @@ const ChatRoomHeader: React.FC<ChatRoomHeaderProps> = ({
         onOpenChange={setShowAddParticipant}
         roomId={room.id}
         onAdded={handleParticipantAdded}
+      />
+
+      <DeleteChatRoomDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        onConfirm={handleDeleteRoom}
+        isDeleting={false}
       />
     </div>
   );
