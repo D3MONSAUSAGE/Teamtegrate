@@ -39,6 +39,9 @@ const ChatRoomHeader: React.FC<ChatRoomHeaderProps> = ({
     setShowDeleteConfirm(false);
   };
 
+  // Check if current user is the room creator
+  const isCreator = currentUserId === room.created_by;
+
   return (
     <div className="p-2 border-b border-border dark:border-gray-800 flex items-center justify-between bg-card dark:bg-[#1f2133] shadow-sm">
       <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -61,6 +64,9 @@ const ChatRoomHeader: React.FC<ChatRoomHeaderProps> = ({
             <ChatParticipants roomId={room.id} compact showAddButton={false} />
           </div>
         </div>
+      </div>
+      
+      <div className="flex gap-1 items-center flex-shrink-0">
         <Button
           variant="outline"
           size="sm"
@@ -70,10 +76,8 @@ const ChatRoomHeader: React.FC<ChatRoomHeaderProps> = ({
           <UserPlus className="h-4 w-4 mr-1" />
           Add Member
         </Button>
-      </div>
-      
-      <div className="flex gap-1 items-center flex-shrink-0">
-        {canDelete && (
+
+        {isCreator && (
           <Button
             variant="ghost"
             size="icon"
