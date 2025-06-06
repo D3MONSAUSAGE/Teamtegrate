@@ -81,6 +81,20 @@ const ChatRooms: React.FC<ChatRoomsProps> = ({ selectedRoom, onRoomSelect }) => 
     return channel;
   };
 
+  const handleRoomSelect = (room: ChatRoomData) => {
+    // Clear the unread count for the selected room
+    setRooms(prevRooms => 
+      prevRooms.map(r => 
+        r.id === room.id 
+          ? { ...r, unread_count: 0 }
+          : r
+      )
+    );
+    
+    // Call the parent's onRoomSelect with the updated room
+    onRoomSelect({ ...room, unread_count: 0 });
+  };
+
   const filteredRooms = rooms.filter(room => 
     room.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -121,7 +135,7 @@ const ChatRooms: React.FC<ChatRoomsProps> = ({ selectedRoom, onRoomSelect }) => 
                 key={room.id}
                 variant={selectedRoom?.id === room.id ? "default" : "ghost"}
                 className="w-full justify-start font-normal relative"
-                onClick={() => onRoomSelect(room)}
+                onClick={() => handleRoomSelect(room)}
               >
                 <div className="truncate flex-1 text-left">{room.name}</div>
                 {room.unread_count > 0 && selectedRoom?.id !== room.id && (
