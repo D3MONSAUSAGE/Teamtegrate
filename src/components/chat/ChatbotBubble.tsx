@@ -1,7 +1,7 @@
 
 import React, { useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { MessageCircle, X, Move } from "lucide-react";
+import { MessageCircle, X } from "lucide-react";
 import {
   Drawer,
   DrawerContent,
@@ -40,7 +40,8 @@ const ChatbotBubble = () => {
     onMouseDown,
     onTouchStart,
     resetPosition,
-    isDragging
+    isDragging,
+    isLongPressing
   } = useDraggable({
     defaultPosition: { x: window.innerWidth - 80, y: window.innerHeight - 80 },
     storageKey: 'chatbot-position',
@@ -62,12 +63,21 @@ const ChatbotBubble = () => {
     setMessage("");
   };
 
-  // Prevent drawer from opening when dragging
+  // Prevent drawer from opening when dragging or long pressing
   const handleDrawerOpenChange = (open: boolean) => {
-    if (isDragging) return;
+    if (isDragging || isLongPressing) return;
     setIsOpen(open);
     if (open) {
       setTimeout(scrollToBottom, 100);
+    }
+  };
+
+  const handleButtonClick = (e: React.MouseEvent) => {
+    // Prevent opening if we're dragging or long pressing
+    if (isDragging || isLongPressing) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
     }
   };
 
@@ -87,32 +97,29 @@ const ChatbotBubble = () => {
           <ChatResetButton onReset={resetPosition} show={isChatPage} />
 
           <Drawer open={isOpen} onOpenChange={handleDrawerOpenChange}>
-            <div className="relative">
-              {/* Dedicated drag handle */}
-              <div 
-                className="absolute -top-2 -left-2 h-6 w-6 bg-muted/80 backdrop-blur-sm rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing border border-border/50 hover:bg-muted transition-colors z-10"
+            {/* Main chat button - draggable and opens drawer */}
+            <DrawerTrigger asChild>
+              <Button 
+                size="icon" 
+                className={`h-12 w-12 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 bg-primary text-primary-foreground hover:scale-105 active:scale-95 select-none ${
+                  isLongPressing ? 'scale-95 opacity-80' : ''
+                }`}
+                disabled={isDragging}
                 onMouseDown={onMouseDown}
                 onTouchStart={onTouchStart}
-                style={{ touchAction: 'none' }}
+                onClick={handleButtonClick}
+                style={{ 
+                  touchAction: 'none',
+                  cursor: isDragging ? 'grabbing' : 'pointer'
+                }}
               >
-                <Move className="h-3 w-3 text-muted-foreground" />
-              </div>
-
-              {/* Main chat button - only for opening drawer */}
-              <DrawerTrigger asChild>
-                <Button 
-                  size="icon" 
-                  className="h-12 w-12 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 bg-primary text-primary-foreground hover:scale-105 active:scale-95"
-                  disabled={isDragging}
-                >
-                  {isOpen ? (
-                    <X className="h-6 w-6" />
-                  ) : (
-                    <MessageCircle className="h-6 w-6" />
-                  )}
-                </Button>
-              </DrawerTrigger>
-            </div>
+                {isOpen ? (
+                  <X className="h-6 w-6" />
+                ) : (
+                  <MessageCircle className="h-6 w-6" />
+                )}
+              </Button>
+            </DrawerTrigger>
 
             <DrawerContent className="max-h-[85vh] flex flex-col">
               <div className="flex flex-col h-full max-h-[85vh]">

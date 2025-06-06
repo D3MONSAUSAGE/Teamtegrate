@@ -22,6 +22,7 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
 
   const [position, setPosition] = useState<Position>(() => getInitialPosition());
   const [isDragging, setIsDragging] = useState(false);
+  const [isLongPressing, setIsLongPressing] = useState(false);
 
   const updateElementPosition = useCallback((pos: Position) => {
     if (elementRef.current) {
@@ -39,6 +40,7 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
     setPosition(finalPosition);
     savePosition(finalPosition);
     setIsDragging(false);
+    setIsLongPressing(false);
   }, [snapToEdges, updateElementPosition, savePosition]);
 
   const {
@@ -52,7 +54,8 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
     elementRef,
     constrainPosition,
     updateElementPosition,
-    () => setIsDragging(true)
+    () => setIsDragging(true),
+    setIsLongPressing
   );
 
   // Global event listeners
@@ -128,6 +131,7 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
     onMouseDown,
     onTouchStart,
     resetPosition,
-    isDragging
+    isDragging,
+    isLongPressing
   };
 };

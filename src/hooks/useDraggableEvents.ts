@@ -7,14 +7,49 @@ export const useDraggableEvents = (
   elementRef: React.RefObject<HTMLDivElement>,
   constrainPosition: (pos: Position) => Position,
   updateElementPosition: (pos: Position) => void,
-  onDragStart?: () => void
+  onDragStart?: () => void,
+  setIsLongPressing?: (value: boolean) => void
 ) => {
   const animationFrameRef = useRef<number>();
+  const longPressTimer = useRef<number>();
+  const startPosition = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const hasMoved = useRef(false);
 
   const preventDefault = (e: Event) => e.preventDefault();
 
+  const LONG_PRESS_DURATION = 500; // 500ms for long press
+  const MOVEMENT_THRESHOLD = 5; // 5px movement threshold
+
+  const clearLongPressTimer = useCallback(() => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = undefined;
+    }
+  }, []);
+
   const handleMove = useCallback((clientX: number, clientY: number) => {
-    if (!dragState.current.isDragging) return;
+    if (!dragState.current.isDragging) {
+      // Check if we've moved enough to cancel long press
+      const deltaX = Math.abs(clientX - startPosition.current.x);
+      const deltaY = Math.abs(clientY - startPosition.current.y);
+      
+      if (deltaX > MOVEMENT_THRESHOLD || deltaY > MOVEMENT_THRESHOLD) {
+        hasMoved.current = true;
+        clearLongPressTimer();
+        setIsLongPressing?.(false);
+        
+        // Start dragging immediately on desktop (mouse)
+        if (!('ontouchstart' in window)) {
+          dragState.current.isDragging = true;
+          if (onDragStart) {
+            onDragStart();
+          }
+        }
+      }
+      
+      // Don't continue if not dragging
+      if (!dragState.current.isDragging) return;
+    }
     
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
@@ -29,7 +64,7 @@ export const useDraggableEvents = (
       dragState.current.currentPosition = newPosition;
       updateElementPosition(newPosition);
     });
-  }, [constrainPosition, updateElementPosition, dragState]);
+  }, [constrainPosition, updateElementPosition, dragState, onDragStart, clearLongPressTimer, setIsLongPressing]);
 
   const handleStart = useCallback((clientX: number, clientY: number, e: Event) => {
     if (!elementRef.current) return;
@@ -37,32 +72,56 @@ export const useDraggableEvents = (
     e.preventDefault();
     e.stopPropagation();
     
-    dragState.current.isDragging = true;
+    // Reset state
+    hasMoved.current = false;
+    startPosition.current = { x: clientX, y: clientY };
+    
     const rect = elementRef.current.getBoundingClientRect();
     dragState.current.dragOffset = {
       x: clientX - rect.left,
       y: clientY - rect.top
     };
     
-    // Call onDragStart callback
-    if (onDragStart) {
-      onDragStart();
+    // For touch devices, start long press timer
+    if ('ontouchstart' in window && e.type.startsWith('touch')) {
+      setIsLongPressing?.(true);
+      longPressTimer.current = window.setTimeout(() => {
+        if (!hasMoved.current) {
+          dragState.current.isDragging = true;
+          if (onDragStart) {
+            onDragStart();
+          }
+        }
+        setIsLongPressing?.(false);
+      }, LONG_PRESS_DURATION);
+    } else {
+      // For mouse, start dragging immediately but wait for movement
+      // This will be handled in handleMove
     }
     
     // Add visual feedback and performance hints
     if (elementRef.current) {
-      elementRef.current.style.cursor = 'grabbing';
-      elementRef.current.style.willChange = 'transform';
       elementRef.current.style.userSelect = 'none';
     }
     document.body.style.userSelect = 'none';
     
     // Prevent default to avoid conflicts
     document.addEventListener('selectstart', preventDefault, { passive: false });
-  }, [dragState, elementRef, onDragStart]);
+  }, [dragState, elementRef, onDragStart, setIsLongPressing]);
 
   const handleEnd = useCallback((onEndCallback: () => void) => {
-    if (!dragState.current.isDragging) return;
+    clearLongPressTimer();
+    setIsLongPressing?.(false);
+    
+    if (!dragState.current.isDragging) {
+      // Clean up if we never started dragging
+      if (elementRef.current) {
+        elementRef.current.style.userSelect = '';
+      }
+      document.body.style.userSelect = '';
+      document.removeEventListener('selectstart', preventDefault);
+      return;
+    }
     
     dragState.current.isDragging = false;
     
@@ -71,15 +130,13 @@ export const useDraggableEvents = (
     }
     
     if (elementRef.current) {
-      elementRef.current.style.cursor = 'grab';
-      elementRef.current.style.willChange = 'auto';
       elementRef.current.style.userSelect = '';
     }
     document.body.style.userSelect = '';
     document.removeEventListener('selectstart', preventDefault);
     
     onEndCallback();
-  }, [dragState, elementRef]);
+  }, [dragState, elementRef, clearLongPressTimer, setIsLongPressing]);
 
   // Mouse events
   const onMouseDown = useCallback((e: React.MouseEvent) => {
