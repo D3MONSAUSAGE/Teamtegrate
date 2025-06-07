@@ -7,7 +7,7 @@ import { Plus, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import TaskDetailDrawer from '@/components/task/TaskDetailDrawer';
-import CreateTaskDialog from '@/components/CreateTaskDialog';
+import CreateTaskDialogWithAI from '@/components/CreateTaskDialogWithAI';
 
 interface DailyTasksSectionProps {
   tasks: Task[];
@@ -40,6 +40,11 @@ const DailyTasksSection: React.FC<DailyTasksSectionProps> = ({
     setEditingTask(task);
     setIsCreateTaskOpen(true);
     onEditTask(task);
+  };
+
+  const handleTaskDialogComplete = () => {
+    setIsCreateTaskOpen(false);
+    setEditingTask(undefined);
   };
   
   return (
@@ -84,10 +89,11 @@ const DailyTasksSection: React.FC<DailyTasksSectionProps> = ({
         task={selectedTask}
       />
 
-      <CreateTaskDialog
+      <CreateTaskDialogWithAI
         open={isCreateTaskOpen}
         onOpenChange={setIsCreateTaskOpen}
         editingTask={editingTask}
+        onTaskComplete={handleTaskDialogComplete}
       />
     </div>
   );
