@@ -2,8 +2,6 @@
 import React from "react";
 import { Task, TaskStatus } from "@/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PlusCircle } from "lucide-react";
-import { Button } from "../ui/button";
 import TaskList from "./TaskList";
 
 interface TaskTabsProps {
@@ -27,46 +25,40 @@ const TaskTabs: React.FC<TaskTabsProps> = ({
 }) => {
   return (
     <Tabs defaultValue="todo" className="w-full">
-      <div className="flex justify-between items-center mb-4">
-        <TabsList className="grid grid-cols-4">
-          <TabsTrigger value="todo" className="relative">
-            To Do
-            {todoTasks.length > 0 && (
-              <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
-                {todoTasks.length}
-              </span>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="inprogress" className="relative">
-            In Progress
-            {inProgressTasks.length > 0 && (
-              <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
-                {inProgressTasks.length}
-              </span>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="pending" className="relative">
-            Pending
-            {pendingTasks.length > 0 && (
-              <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
-                {pendingTasks.length}
-              </span>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="completed" className="relative">
-            Completed
-            {completedTasks.length > 0 && (
-              <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
-                {completedTasks.length}
-              </span>
-            )}
-          </TabsTrigger>
-        </TabsList>
-
-        <Button onClick={onNewTask} size="sm" variant="outline" className="gap-1">
-          <PlusCircle className="h-4 w-4" /> New Task
-        </Button>
-      </div>
+      <TabsList className="grid grid-cols-4 mb-4">
+        <TabsTrigger value="todo" className="relative">
+          To Do
+          {todoTasks.length > 0 && (
+            <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+              {todoTasks.length}
+            </span>
+          )}
+        </TabsTrigger>
+        <TabsTrigger value="inprogress" className="relative">
+          In Progress
+          {inProgressTasks.length > 0 && (
+            <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+              {inProgressTasks.length}
+            </span>
+          )}
+        </TabsTrigger>
+        <TabsTrigger value="pending" className="relative">
+          Pending
+          {pendingTasks.length > 0 && (
+            <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+              {pendingTasks.length}
+            </span>
+          )}
+        </TabsTrigger>
+        <TabsTrigger value="completed" className="relative">
+          Completed
+          {completedTasks.length > 0 && (
+            <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+              {completedTasks.length}
+            </span>
+          )}
+        </TabsTrigger>
+      </TabsList>
 
       <TabsContent value="todo">
         <TaskList 

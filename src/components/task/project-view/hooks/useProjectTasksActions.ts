@@ -28,7 +28,7 @@ export const useProjectTasksActions = ({ updateTaskStatus }: UseProjectTasksActi
     setTimeout(() => setIsRefreshing(false), 1000);
   }, []);
 
-  const handleTaskStatusChange = useCallback(async (taskId: string, status: TaskStatus) => {
+  const handleTaskStatusChange = useCallback(async (taskId: string, status: TaskStatus): Promise<void> => {
     try {
       await updateTaskStatus(taskId, status);
       toast.success(`Task status updated to ${status}`);
