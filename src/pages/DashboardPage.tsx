@@ -1,11 +1,10 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { useTask } from '@/contexts/task';
 import { useAuth } from '@/contexts/AuthContext';
 import { Task, Project } from '@/types';
 import { Plus } from 'lucide-react';
-import CreateTaskDialog from '@/components/CreateTaskDialog';
+import CreateTaskDialogWithAI from '@/components/CreateTaskDialogWithAI';
 import { format } from 'date-fns';
 import TasksSummary from '@/components/dashboard/TasksSummary';
 import DailyTasksSection from '@/components/dashboard/DailyTasksSection';
@@ -55,6 +54,12 @@ const DashboardPage = () => {
     setEditingTask(undefined);
     setSelectedProject(project || null);
     setIsCreateTaskOpen(true);
+  };
+
+  const handleTaskDialogComplete = () => {
+    setIsCreateTaskOpen(false);
+    setEditingTask(undefined);
+    setSelectedProject(null);
   };
 
   const handleViewTasks = (project: Project) => {
@@ -115,11 +120,12 @@ const DashboardPage = () => {
         )}
       </div>
       
-      <CreateTaskDialog 
+      <CreateTaskDialogWithAI 
         open={isCreateTaskOpen} 
         onOpenChange={setIsCreateTaskOpen}
         editingTask={editingTask}
         currentProjectId={selectedProject?.id}
+        onTaskComplete={handleTaskDialogComplete}
       />
     </div>
   );

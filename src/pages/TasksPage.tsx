@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTask } from '@/contexts/task';
@@ -6,7 +5,7 @@ import { Task, TaskStatus } from '@/types';
 import TaskCommentsDialog from '@/components/TaskCommentsDialog';
 import TaskHeader from '@/components/task/TaskHeader';
 import TaskTabs from '@/components/task/TaskTabs';
-import CreateTaskDialog from '@/components/CreateTaskDialog';
+import CreateTaskDialogWithAI from '@/components/CreateTaskDialogWithAI';
 import { toast } from '@/components/ui/sonner';
 
 const TasksPage = () => {
@@ -41,6 +40,11 @@ const TasksPage = () => {
       console.error('Error updating task status:', error);
       toast.error('Failed to update task status');
     }
+  };
+  
+  const handleTaskDialogComplete = () => {
+    setIsCreateTaskOpen(false);
+    setEditingTask(undefined);
   };
   
   const todoTasks = tasks.filter((task) => task.status === 'To Do');
@@ -102,10 +106,11 @@ const TasksPage = () => {
         onStatusChange={handleStatusChange}
       />
       
-      <CreateTaskDialog
+      <CreateTaskDialogWithAI
         open={isCreateTaskOpen} 
         onOpenChange={setIsCreateTaskOpen}
         editingTask={editingTask}
+        onTaskComplete={handleTaskDialogComplete}
       />
       
       <TaskCommentsDialog
