@@ -28,7 +28,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
     >
       {/* Main sidebar content */}
       <div className="flex flex-col flex-1 min-h-0">
-        <SidebarHeader isDark={isDark} onToggleDarkMode={toggle} />
+        <SidebarHeader isDark={isDark} onToggleDarkMode={toggle} onNavigation={onNavigation} />
         {/* Nav wraps & grows */}
         <div className="flex-1 min-h-0 overflow-y-auto">
           <SidebarNav onNavigation={onNavigation} />

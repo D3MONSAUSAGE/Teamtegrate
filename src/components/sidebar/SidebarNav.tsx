@@ -1,9 +1,7 @@
-
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
-  LayoutDashboard, 
   CheckSquare, 
   FolderKanban,  
   Users, 
@@ -28,12 +26,6 @@ interface SidebarNavProps {
 }
 
 const navItems: NavItem[] = [
-  {
-    name: "Dashboard",
-    path: "/dashboard",
-    icon: <LayoutDashboard className="h-5 w-5" />,
-    allowed: true,
-  },
   {
     name: "Projects",
     path: "/dashboard/projects",
