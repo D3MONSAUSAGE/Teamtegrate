@@ -3,7 +3,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Sun, Moon, Home } from "lucide-react";
-import { useDarkMode } from "@/hooks/useDarkMode";
+import { useSidebar } from "@/components/ui/sidebar";
 
 interface SidebarHeaderProps {
   onToggleDarkMode?: () => void;
@@ -12,15 +12,27 @@ interface SidebarHeaderProps {
 }
 
 const SidebarHeader: React.FC<SidebarHeaderProps> = ({ onToggleDarkMode, isDark, onNavigation }) => {
+  const { state } = useSidebar();
+  const isCollapsed = state === "collapsed";
+
   return (
-    <div className="p-6 pt-5 flex items-center justify-between gap-2">
-      <div>
-        <h2 className="text-lg font-bold tracking-wide text-primary">
-          TeamStream
-        </h2>
-        <p className="text-sm text-muted-foreground">Manage your tasks & projects</p>
-      </div>
-      <div className="flex items-center gap-2">
+    <div className={cn(
+      "p-6 pt-5 flex items-center gap-2",
+      isCollapsed ? "justify-center flex-col" : "justify-between"
+    )}>
+      {!isCollapsed && (
+        <div>
+          <h2 className="text-lg font-bold tracking-wide text-primary">
+            TeamStream
+          </h2>
+          <p className="text-sm text-muted-foreground">Manage your tasks & projects</p>
+        </div>
+      )}
+      
+      <div className={cn(
+        "flex items-center gap-2",
+        isCollapsed && "flex-col"
+      )}>
         <Link
           to="/dashboard"
           onClick={onNavigation}

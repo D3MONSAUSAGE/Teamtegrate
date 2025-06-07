@@ -22,6 +22,7 @@ import {
   DrawerContent,
   DrawerTrigger,
 } from "@/components/ui/drawer";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 
 const Navbar = () => {
   const { user, logout } = useAuth();
@@ -79,19 +80,16 @@ const Navbar = () => {
   };
 
   const handleNotificationsOpen = () => {
-    fetchNotifications(); // Refresh notifications when opened
+    fetchNotifications();
     console.log("Opening notifications, current count:", unreadCount);
-    // Don't mark as read immediately, let the user see which ones are new
   };
 
   const handleNotificationClick = (notificationType: string) => {
-    // Navigate based on notification type
     if (notificationType.includes('task')) {
       navigate('/dashboard/tasks');
     } else if (notificationType.includes('chat')) {
       navigate('/dashboard/chat');
     }
-    // Mark all as read when user interacts with notifications
     markAsRead();
   };
 
@@ -158,8 +156,12 @@ const Navbar = () => {
 
   return (
     <nav className="bg-white dark:bg-background border-b border-gray-200 dark:border-gray-800 py-4 px-6 flex items-center justify-between">
-      <div className="flex items-center space-x-4 md:space-x-0">
-        <Link to="/" className="text-xl font-bold text-primary ml-10 md:ml-0">TeamStream</Link>
+      <div className="flex items-center space-x-4">
+        {/* Desktop sidebar trigger */}
+        <div className="hidden md:block">
+          <SidebarTrigger />
+        </div>
+        <Link to="/" className="text-xl font-bold text-primary">TeamStream</Link>
       </div>
 
       <div className="flex items-center space-x-4">

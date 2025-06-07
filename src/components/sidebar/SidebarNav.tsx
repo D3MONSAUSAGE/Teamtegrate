@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -13,11 +14,19 @@ import {
   BookOpen,
   Calendar
 } from "lucide-react";
+import {
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+} from "@/components/ui/sidebar";
 
 interface NavItem {
   name: string;
   path: string;
-  icon: React.ReactNode;
+  icon: React.ComponentType<{ className?: string }>;
   allowed: boolean;
 }
 
@@ -29,61 +38,61 @@ const navItems: NavItem[] = [
   {
     name: "Projects",
     path: "/dashboard/projects",
-    icon: <FolderKanban className="h-5 w-5" />,
+    icon: FolderKanban,
     allowed: true,
   },
   {
     name: "My Tasks",
     path: "/dashboard/tasks",
-    icon: <CheckSquare className="h-5 w-5" />,
+    icon: CheckSquare,
     allowed: true,
   },
   {
     name: "Calendar",
     path: "/dashboard/calendar",
-    icon: <Calendar className="h-5 w-5" />,
+    icon: Calendar,
     allowed: true,
   },
   {
     name: "Time Tracking",
     path: "/dashboard/time-tracking",
-    icon: <Timer className="h-5 w-5" />,
+    icon: Timer,
     allowed: true,
   },
   {
     name: "Team",
     path: "/dashboard/team",
-    icon: <Users className="h-5 w-5" />,
+    icon: Users,
     allowed: true,
   },
   {
     name: "Reports",
     path: "/dashboard/reports",
-    icon: <BarChart3 className="h-5 w-5" />,
+    icon: BarChart3,
     allowed: true,
   },
   {
     name: "Finance",
     path: "/dashboard/finance",
-    icon: <DollarSign className="h-5 w-5" />,
+    icon: DollarSign,
     allowed: true,
   },
   {
     name: "Documents",
     path: "/dashboard/documents",
-    icon: <FileText className="h-5 w-5" />,
+    icon: FileText,
     allowed: true,
   },
   {
     name: "Notebook",
     path: "/dashboard/notebook",
-    icon: <BookOpen className="h-5 w-5" />,
+    icon: BookOpen,
     allowed: true,
   },
   {
     name: "Team Chat",
     path: "/dashboard/chat",
-    icon: <MessageSquare className="h-5 w-5" />,
+    icon: MessageSquare,
     allowed: true,
   }
 ];
@@ -100,61 +109,38 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ onNavigation }) => {
   };
 
   return (
-    <div className="flex-1 px-4 overflow-y-auto">
-      <ul className="space-y-2">
-        {navItems.map((item) => {
-          if (!item.allowed) return null;
+    <SidebarGroup>
+      <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+      <SidebarGroupContent>
+        <SidebarMenu>
+          {navItems.map((item) => {
+            if (!item.allowed) return null;
 
-          const isActiveItem = isActive(item.path);
+            const isActiveItem = isActive(item.path);
+            const IconComponent = item.icon;
 
-          return (
-            <li key={item.path}>
-              <Link
-                to={item.path}
-                onClick={handleNavClick}
-                className={cn(
-                  "flex items-center gap-3 px-4 py-2.5 rounded-lg text-base font-medium transition-all duration-200 focus:outline-none",
-                  isActiveItem
-                    ? "bg-primary text-primary-foreground shadow-md"
-                    : "bg-background text-foreground hover:bg-muted hover:text-primary focus:ring-2 focus:ring-primary"
-                )}
-                style={{
-                  letterSpacing: "0.02em",
-                }}
-              >
-                <span
-                  className={cn(
-                    "flex items-center justify-center",
-                    isActiveItem
-                      ? "text-primary-foreground"
-                      : "text-primary group-hover:text-primary group-focus:text-primary"
-                  )}
+            return (
+              <SidebarMenuItem key={item.path}>
+                <SidebarMenuButton 
+                  asChild 
+                  isActive={isActiveItem}
+                  tooltip={item.name}
                 >
-                  {React.cloneElement(item.icon as JSX.Element, {
-                    className: cn(
-                      "w-6 h-6",
-                      isActiveItem
-                        ? "stroke-[2.2] text-primary-foreground"
-                        : "stroke-[2.2] text-primary"
-                    ),
-                  })}
-                </span>
-                <span
-                  className={cn(
-                    "ml-2",
-                    isActiveItem
-                      ? "text-primary-foreground font-bold"
-                      : "text-foreground font-semibold"
-                  )}
-                >
-                  {item.name}
-                </span>
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </div>
+                  <Link
+                    to={item.path}
+                    onClick={handleNavClick}
+                    className="flex items-center gap-3"
+                  >
+                    <IconComponent className="h-5 w-5" />
+                    <span>{item.name}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            );
+          })}
+        </SidebarMenu>
+      </SidebarGroupContent>
+    </SidebarGroup>
   );
 };
 

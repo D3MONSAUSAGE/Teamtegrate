@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Outlet, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -8,8 +9,7 @@ import { Button } from './ui/button';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
 import { useIsMobile } from '@/hooks/use-mobile';
 import ChatbotBubble from './chat/ChatbotBubble';
-
-const SIDEBAR_WIDTH = 256; // Tailwind w-64
+import { SidebarProvider, SidebarInset, SidebarTrigger } from './ui/sidebar';
 
 const AppLayout = () => {
   const { user, loading } = useAuth();
@@ -29,53 +29,42 @@ const AppLayout = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background overflow-x-hidden">
-      {/* Mobile sidebar with Sheet component */}
-      <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-        <SheetTrigger asChild>
-          <Button 
-            variant="outline" 
-            size="icon" 
-            className="absolute top-4 left-4 z-50 md:hidden bg-white dark:bg-gray-800 dark:border-gray-700 shadow-md"
-          >
-            <Menu className="h-5 w-5" />
-            <span className="sr-only">Toggle Sidebar</span>
-          </Button>
-        </SheetTrigger>
-        <SheetContent side="left" className="p-0 w-64 max-h-[100dvh] overflow-y-auto">
-          <Sidebar onNavigation={() => setSidebarOpen(false)} />
-        </SheetContent>
-      </Sheet>
+    <SidebarProvider>
+      <div className="min-h-screen bg-background overflow-x-hidden w-full flex">
+        {/* Mobile sidebar with Sheet component */}
+        <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+          <SheetTrigger asChild>
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="absolute top-4 left-4 z-50 md:hidden bg-white dark:bg-gray-800 dark:border-gray-700 shadow-md"
+            >
+              <Menu className="h-5 w-5" />
+              <span className="sr-only">Toggle Sidebar</span>
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="p-0 w-64 max-h-[100dvh] overflow-y-auto">
+            <Sidebar onNavigation={() => setSidebarOpen(false)} />
+          </SheetContent>
+        </Sheet>
 
-      {/* Desktop sidebar - fixed and not scrollable */}
-      <div
-        className="hidden md:block"
-        aria-hidden={isMobile ? "true" : "false"}
-      >
-        <div
-          className="fixed top-0 left-0 h-screen w-64 z-30"
-          style={{ height: '100vh', width: SIDEBAR_WIDTH }}
-        >
+        {/* Desktop collapsible sidebar */}
+        <div className="hidden md:block">
           <Sidebar />
         </div>
-      </div>
-      
-      {/* Main content area (with sidebar offset on desktop) */}
-      <div
-        className={`flex flex-col flex-1 overflow-x-hidden`}
-        style={{
-          marginLeft: !isMobile ? SIDEBAR_WIDTH : 0,
-        }}
-      >
-        <Navbar />
-        <main className="flex-1 overflow-y-auto p-3 md:p-6 overflow-x-hidden">
-          <Outlet />
-        </main>
-      </div>
+        
+        {/* Main content area */}
+        <SidebarInset className="flex flex-col flex-1 overflow-x-hidden">
+          <Navbar />
+          <main className="flex-1 overflow-y-auto p-3 md:p-6 overflow-x-hidden">
+            <Outlet />
+          </main>
+        </SidebarInset>
 
-      {/* Chatbot Bubble */}
-      <ChatbotBubble />
-    </div>
+        {/* Chatbot Bubble */}
+        <ChatbotBubble />
+      </div>
+    </SidebarProvider>
   );
 };
 

@@ -5,6 +5,12 @@ import { useDarkMode } from '@/hooks/useDarkMode';
 import SidebarHeader from './sidebar/SidebarHeader';
 import SidebarNav from './sidebar/SidebarNav';
 import SidebarFooter from './sidebar/SidebarFooter';
+import {
+  Sidebar as ShadcnSidebar,
+  SidebarContent,
+  SidebarHeader as ShadcnSidebarHeader,
+  SidebarFooter as ShadcnSidebarFooter,
+} from '@/components/ui/sidebar';
 
 interface SidebarProps {
   onNavigation?: () => void;
@@ -17,26 +23,26 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
   if (!user) return null;
 
   return (
-    <aside
-      className="flex flex-col h-full w-64 z-30 bg-background text-foreground border-r border-border fixed top-0 left-0 transition-colors duration-300"
-      style={{
-        minHeight: '100vh',
-        height: '100vh',
-        overflow: 'hidden',
-      }}
-      aria-label="Sidebar"
+    <ShadcnSidebar 
+      collapsible="icon"
+      className="border-r border-border"
     >
-      {/* Main sidebar content */}
-      <div className="flex flex-col flex-1 min-h-0">
-        <SidebarHeader isDark={isDark} onToggleDarkMode={toggle} onNavigation={onNavigation} />
-        {/* Nav wraps & grows */}
-        <div className="flex-1 min-h-0 overflow-y-auto">
-          <SidebarNav onNavigation={onNavigation} />
-        </div>
-      </div>
-      {/* Footer sticks to bottom */}
-      <SidebarFooter user={user} />
-    </aside>
+      <ShadcnSidebarHeader>
+        <SidebarHeader 
+          isDark={isDark} 
+          onToggleDarkMode={toggle} 
+          onNavigation={onNavigation} 
+        />
+      </ShadcnSidebarHeader>
+      
+      <SidebarContent>
+        <SidebarNav onNavigation={onNavigation} />
+      </SidebarContent>
+      
+      <ShadcnSidebarFooter>
+        <SidebarFooter user={user} />
+      </ShadcnSidebarFooter>
+    </ShadcnSidebar>
   );
 };
 
