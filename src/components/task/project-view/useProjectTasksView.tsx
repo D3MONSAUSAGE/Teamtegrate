@@ -29,6 +29,14 @@ export const useProjectTasksView = (projectId: string | null) => {
     onSortByChange
   } = useProjectTasksFilters(projectTasks);
 
+  // Wrap updateTaskStatus to ensure it returns a Promise
+  const wrappedUpdateTaskStatus = async (taskId: string, status: any): Promise<void> => {
+    const result = updateTaskStatus(taskId, status);
+    if (result instanceof Promise) {
+      await result;
+    }
+  };
+
   const {
     isRefreshing,
     isCreateTaskOpen,
@@ -39,7 +47,7 @@ export const useProjectTasksView = (projectId: string | null) => {
     handleManualRefresh,
     handleTaskStatusChange,
     handleTaskDialogComplete
-  } = useProjectTasksActions({ updateTaskStatus });
+  } = useProjectTasksActions({ updateTaskStatus: wrappedUpdateTaskStatus });
 
   return {
     isLoading,
