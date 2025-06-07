@@ -749,6 +749,30 @@ export type Database = {
         }
         Relationships: []
       }
+      shared_folders: {
+        Row: {
+          created_at: string
+          folder_name: string
+          id: string
+          owner_id: string
+          shared_with_user_id: string
+        }
+        Insert: {
+          created_at?: string
+          folder_name: string
+          id?: string
+          owner_id: string
+          shared_with_user_id: string
+        }
+        Update: {
+          created_at?: string
+          folder_name?: string
+          id?: string
+          owner_id?: string
+          shared_with_user_id?: string
+        }
+        Relationships: []
+      }
       tasks: {
         Row: {
           assigned_to_id: string | null
