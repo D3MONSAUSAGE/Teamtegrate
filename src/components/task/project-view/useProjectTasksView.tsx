@@ -31,11 +31,7 @@ export const useProjectTasksView = (projectId: string | null) => {
 
   // Wrap updateTaskStatus to ensure it returns a Promise
   const wrappedUpdateTaskStatus = async (taskId: string, status: any): Promise<void> => {
-    const result = updateTaskStatus(taskId, status);
-    // Check if result is a Promise by checking if it has a 'then' method
-    if (result && typeof result === 'object' && 'then' in result) {
-      await result;
-    }
+    updateTaskStatus(taskId, status);
   };
 
   const {
