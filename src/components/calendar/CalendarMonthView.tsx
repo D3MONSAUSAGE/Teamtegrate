@@ -12,7 +12,7 @@ import {
   eachDayOfInterval,
   isToday 
 } from 'date-fns';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import CalendarTaskItem from './CalendarTaskItem';
@@ -36,25 +36,21 @@ const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
   const days = eachDayOfInterval({ start: startDate, end: endDate });
   
   return (
-    <Card className="h-[calc(100vh-240px)]">
-      <CardHeader className="pb-4">
-        <CardTitle className="text-xl font-semibold">
-          {format(selectedDate, 'MMMM yyyy')}
-        </CardTitle>
-      </CardHeader>
+    <Card className="h-[calc(100vh-300px)]">
       <CardContent className="p-0">
         {/* Day headers */}
-        <div className="grid grid-cols-7 border-b">
-          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((dayName, i) => (
-            <div key={i} className="text-center p-3 font-semibold text-sm bg-muted/30 border-r last:border-r-0">
-              {dayName}
+        <div className="grid grid-cols-7 border-b bg-muted/20">
+          {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((dayName, i) => (
+            <div key={i} className="text-center p-4 font-semibold text-sm border-r last:border-r-0">
+              <div className="hidden sm:block">{dayName}</div>
+              <div className="sm:hidden">{dayName.slice(0, 3)}</div>
             </div>
           ))}
         </div>
         
-        {/* Calendar grid */}
-        <ScrollArea className="h-[calc(100vh-360px)]">
-          <div className="grid grid-cols-7 auto-rows-[140px]">
+        {/* Calendar grid with increased height */}
+        <ScrollArea className="h-[calc(100vh-400px)]">
+          <div className="grid grid-cols-7 auto-rows-[180px] sm:auto-rows-[200px]">
             {days.map((day, i) => {
               const dayTasks = tasks.filter(task => {
                 try {
@@ -67,30 +63,36 @@ const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
               });
               
               const withinCurrentMonth = isSameMonth(day, selectedDate);
+              const maxVisibleTasks = 4; // Increased from 3
               
               return (
                 <div 
                   key={i} 
                   className={cn(
-                    "border-b border-r last:border-r-0 p-2 relative min-h-[140px] hover:bg-accent/20 transition-colors",
-                    !withinCurrentMonth && "bg-muted/10 text-muted-foreground"
+                    "border-b border-r last:border-r-0 p-3 relative hover:bg-accent/10 transition-colors",
+                    !withinCurrentMonth && "bg-muted/5 text-muted-foreground"
                   )}
                 >
-                  {/* Day number */}
-                  <div className="flex justify-between items-start mb-1">
+                  {/* Day number with better styling */}
+                  <div className="flex justify-between items-start mb-2">
                     <span className={cn(
-                      "inline-flex h-7 w-7 items-center justify-center rounded-full text-sm font-medium",
-                      isToday(day) && "bg-primary text-primary-foreground font-bold",
+                      "inline-flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium transition-colors",
+                      isToday(day) && "bg-primary text-primary-foreground font-bold shadow-md",
                       !isToday(day) && withinCurrentMonth && "hover:bg-accent",
                       !withinCurrentMonth && "text-muted-foreground"
                     )}>
                       {format(day, 'd')}
                     </span>
+                    {dayTasks.length > 0 && (
+                      <div className="text-xs text-muted-foreground font-medium">
+                        {dayTasks.length}
+                      </div>
+                    )}
                   </div>
                   
-                  {/* Tasks */}
+                  {/* Tasks with improved spacing */}
                   <div className="space-y-1 overflow-hidden">
-                    {dayTasks.slice(0, 3).map(task => (
+                    {dayTasks.slice(0, maxVisibleTasks).map(task => (
                       <CalendarTaskItem 
                         key={task.id} 
                         task={task}
@@ -98,14 +100,14 @@ const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
                         onClick={() => onTaskClick(task)}
                       />
                     ))}
-                    {dayTasks.length > 3 && (
+                    {dayTasks.length > maxVisibleTasks && (
                       <div 
-                        className="text-xs text-primary cursor-pointer hover:text-primary/80 px-1 py-0.5 rounded bg-accent/30"
+                        className="text-xs text-primary cursor-pointer hover:text-primary/80 px-2 py-1 rounded bg-accent/50 text-center font-medium"
                         onClick={() => {
-                          if (dayTasks[3]) onTaskClick(dayTasks[3]);
+                          if (dayTasks[maxVisibleTasks]) onTaskClick(dayTasks[maxVisibleTasks]);
                         }}
                       >
-                        +{dayTasks.length - 3} more
+                        +{dayTasks.length - maxVisibleTasks} more
                       </div>
                     )}
                   </div>
