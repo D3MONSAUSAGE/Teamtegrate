@@ -37,21 +37,24 @@ const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
   
   return (
     <Card className="h-[calc(100vh-240px)]">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-medium">
+      <CardHeader className="pb-4">
+        <CardTitle className="text-xl font-semibold">
           {format(selectedDate, 'MMMM yyyy')}
         </CardTitle>
       </CardHeader>
       <CardContent className="p-0">
-        <div className="grid grid-cols-7">
+        {/* Day headers */}
+        <div className="grid grid-cols-7 border-b">
           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((dayName, i) => (
-            <div key={i} className="text-center p-2 border-b font-medium text-sm">
+            <div key={i} className="text-center p-3 font-semibold text-sm bg-muted/30 border-r last:border-r-0">
               {dayName}
             </div>
           ))}
         </div>
-        <ScrollArea className="h-[calc(100vh-350px)]">
-          <div className="grid grid-cols-7 auto-rows-[minmax(100px,1fr)]">
+        
+        {/* Calendar grid */}
+        <ScrollArea className="h-[calc(100vh-360px)]">
+          <div className="grid grid-cols-7 auto-rows-[140px]">
             {days.map((day, i) => {
               const dayTasks = tasks.filter(task => {
                 try {
@@ -69,35 +72,37 @@ const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
                 <div 
                   key={i} 
                   className={cn(
-                    "border-t p-1 relative",
-                    (i + 1) % 7 === 0 ? "" : "border-r",
-                    !withinCurrentMonth && "bg-muted/20"
+                    "border-b border-r last:border-r-0 p-2 relative min-h-[140px] hover:bg-accent/20 transition-colors",
+                    !withinCurrentMonth && "bg-muted/10 text-muted-foreground"
                   )}
                 >
-                  <div className="absolute top-1 right-1">
+                  {/* Day number */}
+                  <div className="flex justify-between items-start mb-1">
                     <span className={cn(
-                      "inline-flex h-6 w-6 items-center justify-center rounded-full text-xs",
-                      isToday(day) && "bg-primary text-primary-foreground",
-                      !isToday(day) && !withinCurrentMonth && "text-muted-foreground"
+                      "inline-flex h-7 w-7 items-center justify-center rounded-full text-sm font-medium",
+                      isToday(day) && "bg-primary text-primary-foreground font-bold",
+                      !isToday(day) && withinCurrentMonth && "hover:bg-accent",
+                      !withinCurrentMonth && "text-muted-foreground"
                     )}>
                       {format(day, 'd')}
                     </span>
                   </div>
-                  <div className="pt-6 space-y-1">
+                  
+                  {/* Tasks */}
+                  <div className="space-y-1 overflow-hidden">
                     {dayTasks.slice(0, 3).map(task => (
                       <CalendarTaskItem 
                         key={task.id} 
                         task={task}
-                        compact={true}
                         minimal={true}
                         onClick={() => onTaskClick(task)}
                       />
                     ))}
                     {dayTasks.length > 3 && (
                       <div 
-                        className="text-xs text-muted-foreground cursor-pointer hover:text-foreground px-1"
+                        className="text-xs text-primary cursor-pointer hover:text-primary/80 px-1 py-0.5 rounded bg-accent/30"
                         onClick={() => {
-                          if (dayTasks[0]) onTaskClick(dayTasks[0]);
+                          if (dayTasks[3]) onTaskClick(dayTasks[3]);
                         }}
                       >
                         +{dayTasks.length - 3} more
