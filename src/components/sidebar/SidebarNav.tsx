@@ -15,13 +15,11 @@ import {
   Calendar
 } from "lucide-react";
 import {
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-} from "@/components/ui/sidebar";
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface NavItem {
   name: string;
@@ -32,6 +30,7 @@ interface NavItem {
 
 interface SidebarNavProps {
   onNavigation?: () => void;
+  isCollapsed?: boolean;
 }
 
 const navItems: NavItem[] = [
@@ -97,7 +96,7 @@ const navItems: NavItem[] = [
   }
 ];
 
-const SidebarNav: React.FC<SidebarNavProps> = ({ onNavigation }) => {
+const SidebarNav: React.FC<SidebarNavProps> = ({ onNavigation, isCollapsed = false }) => {
   const location = useLocation();
 
   const isActive = (path: string) => {
@@ -109,38 +108,55 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ onNavigation }) => {
   };
 
   return (
-    <SidebarGroup>
-      <SidebarGroupLabel>Navigation</SidebarGroupLabel>
-      <SidebarGroupContent>
-        <SidebarMenu>
+    <TooltipProvider>
+      <div className="px-2 py-4">
+        <div className={cn(
+          "space-y-1 transition-all duration-300",
+          isCollapsed && "space-y-2"
+        )}>
           {navItems.map((item) => {
             if (!item.allowed) return null;
 
             const isActiveItem = isActive(item.path);
             const IconComponent = item.icon;
 
-            return (
-              <SidebarMenuItem key={item.path}>
-                <SidebarMenuButton 
-                  asChild 
-                  isActive={isActiveItem}
-                  tooltip={item.name}
-                >
-                  <Link
-                    to={item.path}
-                    onClick={handleNavClick}
-                    className="flex items-center gap-3"
-                  >
-                    <IconComponent className="h-5 w-5" />
-                    <span>{item.name}</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+            const NavButton = (
+              <Link
+                key={item.path}
+                to={item.path}
+                onClick={handleNavClick}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors duration-200",
+                  "hover:bg-muted hover:text-primary",
+                  isActiveItem && "bg-primary text-primary-foreground",
+                  isCollapsed ? "justify-center px-2" : "justify-start"
+                )}
+              >
+                <IconComponent className="h-5 w-5 flex-shrink-0" />
+                {!isCollapsed && (
+                  <span className="transition-opacity duration-300">{item.name}</span>
+                )}
+              </Link>
             );
+
+            if (isCollapsed) {
+              return (
+                <Tooltip key={item.path}>
+                  <TooltipTrigger asChild>
+                    {NavButton}
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="ml-2">
+                    {item.name}
+                  </TooltipContent>
+                </Tooltip>
+              );
+            }
+
+            return NavButton;
           })}
-        </SidebarMenu>
-      </SidebarGroupContent>
-    </SidebarGroup>
+        </div>
+      </div>
+    </TooltipProvider>
   );
 };
 

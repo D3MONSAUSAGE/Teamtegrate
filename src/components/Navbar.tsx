@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { useAuth } from '@/contexts/AuthContext';
@@ -22,7 +21,6 @@ import {
   DrawerContent,
   DrawerTrigger,
 } from "@/components/ui/drawer";
-import { SidebarTrigger } from "@/components/ui/sidebar";
 
 const Navbar = () => {
   const { user, logout } = useAuth();
@@ -157,10 +155,6 @@ const Navbar = () => {
   return (
     <nav className="bg-white dark:bg-background border-b border-gray-200 dark:border-gray-800 py-4 px-6 flex items-center justify-between">
       <div className="flex items-center space-x-4">
-        {/* Desktop sidebar trigger */}
-        <div className="hidden md:block">
-          <SidebarTrigger />
-        </div>
         <Link to="/" className="text-xl font-bold text-primary">TeamStream</Link>
       </div>
 

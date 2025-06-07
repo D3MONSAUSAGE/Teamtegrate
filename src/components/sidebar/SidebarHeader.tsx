@@ -3,25 +3,27 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Sun, Moon, Home } from "lucide-react";
-import { useSidebar } from "@/components/ui/sidebar";
 
 interface SidebarHeaderProps {
   onToggleDarkMode?: () => void;
   isDark: boolean;
   onNavigation?: () => void;
+  isCollapsed?: boolean;
 }
 
-const SidebarHeader: React.FC<SidebarHeaderProps> = ({ onToggleDarkMode, isDark, onNavigation }) => {
-  const { state } = useSidebar();
-  const isCollapsed = state === "collapsed";
-
+const SidebarHeader: React.FC<SidebarHeaderProps> = ({ 
+  onToggleDarkMode, 
+  isDark, 
+  onNavigation,
+  isCollapsed = false 
+}) => {
   return (
     <div className={cn(
-      "p-6 pt-5 flex items-center gap-2",
-      isCollapsed ? "justify-center flex-col" : "justify-between"
+      "p-6 pt-5 flex items-center gap-2 transition-all duration-300",
+      isCollapsed ? "justify-center flex-col px-2" : "justify-between"
     )}>
       {!isCollapsed && (
-        <div>
+        <div className="transition-opacity duration-300">
           <h2 className="text-lg font-bold tracking-wide text-primary">
             TeamStream
           </h2>
@@ -30,7 +32,7 @@ const SidebarHeader: React.FC<SidebarHeaderProps> = ({ onToggleDarkMode, isDark,
       )}
       
       <div className={cn(
-        "flex items-center gap-2",
+        "flex items-center gap-2 transition-all duration-300",
         isCollapsed && "flex-col"
       )}>
         <Link

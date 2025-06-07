@@ -3,8 +3,13 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useSidebar } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface SidebarFooterProps {
   user: {
@@ -12,39 +17,59 @@ interface SidebarFooterProps {
     email: string;
     role: string;
   };
+  isCollapsed?: boolean;
 }
 
-const SidebarFooter: React.FC<SidebarFooterProps> = ({ user }) => {
+const SidebarFooter: React.FC<SidebarFooterProps> = ({ user, isCollapsed = false }) => {
   const navigate = useNavigate();
-  const { state } = useSidebar();
-  const isCollapsed = state === "collapsed";
 
   const handleSettingsClick = () => {
     navigate("/dashboard/settings");
   };
 
   return (
-    <div className={cn(
-      "p-4 border-t border-border bg-background min-h-[56px]",
-      isCollapsed ? "flex flex-col items-center gap-2" : "flex items-center justify-between"
-    )}>
-      {!isCollapsed && (
-        <div>
-          <p className="text-xs text-muted-foreground mb-0.5">Logged in as</p>
-          <p className="font-semibold text-primary text-sm">{user.name}</p>
-        </div>
-      )}
-      <Button
-        size="icon"
-        variant="ghost"
-        className={cn(isCollapsed ? "" : "ml-2")}
-        aria-label="Settings"
-        onClick={handleSettingsClick}
-        title="Settings"
-      >
-        <Settings className="h-5 w-5" />
-      </Button>
-    </div>
+    <TooltipProvider>
+      <div className={cn(
+        "p-4 border-t border-border bg-background min-h-[56px] transition-all duration-300",
+        isCollapsed ? "flex flex-col items-center gap-2 px-2" : "flex items-center justify-between"
+      )}>
+        {!isCollapsed && (
+          <div className="transition-opacity duration-300">
+            <p className="text-xs text-muted-foreground mb-0.5">Logged in as</p>
+            <p className="font-semibold text-primary text-sm">{user.name}</p>
+          </div>
+        )}
+        
+        {isCollapsed ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="icon"
+                variant="ghost"
+                aria-label="Settings"
+                onClick={handleSettingsClick}
+              >
+                <Settings className="h-5 w-5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="ml-2">
+              Settings
+            </TooltipContent>
+          </Tooltip>
+        ) : (
+          <Button
+            size="icon"
+            variant="ghost"
+            className="ml-2"
+            aria-label="Settings"
+            onClick={handleSettingsClick}
+            title="Settings"
+          >
+            <Settings className="h-5 w-5" />
+          </Button>
+        )}
+      </div>
+    </TooltipProvider>
   );
 };
 
