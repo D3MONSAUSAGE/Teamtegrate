@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -23,6 +22,7 @@ import FinancePage from "./pages/FinancePage";
 import ChatPage from "./pages/ChatPage";
 import NotebookPage from "./pages/NotebookPage";
 import ProjectTasksPage from "./pages/ProjectTasksPage";
+import CalendarPage from "./pages/CalendarPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -52,6 +52,7 @@ const App: React.FC = () => {
                   <Route path="tasks/create" element={<TasksPage />} />
                   <Route path="projects" element={<ProjectsPage />} />
                   <Route path="projects/:projectId/tasks" element={<ProjectTasksPage />} />
+                  <Route path="calendar" element={<CalendarPage />} />
                   <Route path="team" element={<TeamPage />} />
                   <Route path="chat" element={<ChatPage />} />
                   <Route path="reports" element={<ReportsPage />} />
