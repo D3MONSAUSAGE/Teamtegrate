@@ -13,6 +13,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAIChat } from '@/hooks/use-ai-chat';
 import { useDraggable } from '@/hooks/useDraggable';
 import { useChatBubble } from '@/hooks/useChatBubble';
+import { useIsMobile } from '@/hooks/use-mobile';
 import ChatDragHint from './ChatDragHint';
 import ChatResetButton from './ChatResetButton';
 import ChatMessagesArea from './ChatMessagesArea';
@@ -20,6 +21,7 @@ import ChatInputArea from './ChatInputArea';
 
 const ChatbotBubble = () => {
   const { messages, isProcessing, sendMessage } = useAIChat();
+  const isMobile = useIsMobile();
   const {
     isOpen,
     setIsOpen,
@@ -33,7 +35,10 @@ const ChatbotBubble = () => {
     scrollToBottom
   } = useChatBubble();
 
-  // Use draggable hook with smart positioning
+  // Button size for boundary calculations
+  const buttonSize = 48; // h-12 w-12 = 48px
+
+  // Use draggable hook with mobile-responsive positioning
   const {
     position,
     elementRef,
@@ -44,13 +49,16 @@ const ChatbotBubble = () => {
     isLongPressing,
     wasLastInteractionDrag
   } = useDraggable({
-    defaultPosition: { x: window.innerWidth - 80, y: window.innerHeight - 80 },
+    defaultPosition: { 
+      x: window.innerWidth - buttonSize - (isMobile ? 0 : 20), 
+      y: window.innerHeight - buttonSize - (isMobile ? 0 : 20) 
+    },
     storageKey: 'chatbot-position',
     boundaries: {
-      top: 20,
-      left: 20,
-      right: window.innerWidth - 80,
-      bottom: window.innerHeight - 80
+      top: isMobile ? 0 : 20,
+      left: isMobile ? 0 : 20,
+      right: window.innerWidth - buttonSize - (isMobile ? 0 : 20),
+      bottom: window.innerHeight - buttonSize - (isMobile ? 0 : 20)
     }
   });
 
