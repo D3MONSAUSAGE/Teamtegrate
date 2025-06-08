@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -132,9 +133,7 @@ const ProfileHeader = () => {
     <Card className={`bg-gradient-to-br ${getRoleGradient(user.role)} border-none shadow-lg`}>
       <CardContent className="p-8">
         <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-8">
-          {/* Left section - Profile Info */}
           <div className="flex flex-col lg:flex-row lg:items-start gap-8 flex-1">
-            {/* Avatar Section */}
             <div className="flex flex-col items-center lg:items-start">
               <ProfileAvatar 
                 user={user} 
@@ -146,8 +145,10 @@ const ProfileHeader = () => {
                   variant={getRoleBadgeVariant(user.role)} 
                   className="flex items-center gap-1 px-3 py-1"
                 >
-                  {getRoleIcon(user.role)}
-                  {getRoleDisplayName(user.role)}
+                  <span className="flex items-center gap-1">
+                    {getRoleIcon(user.role)}
+                    {getRoleDisplayName(user.role)}
+                  </span>
                 </Badge>
                 <Button
                   variant="ghost"
@@ -162,7 +163,6 @@ const ProfileHeader = () => {
               </div>
             </div>
             
-            {/* Profile Form Section */}
             <div className="flex-1 min-w-0">
               <ProfileInfoForm
                 user={user}
@@ -172,12 +172,11 @@ const ProfileHeader = () => {
                 isLoading={isLoading}
               />
               
-              {/* User Stats */}
               <div className="mt-6 grid grid-cols-2 gap-4">
                 <div className="bg-white/50 dark:bg-gray-800/50 rounded-lg p-4 border">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Users className="h-4 w-4" />
-                    Member since
+                    <span>Member since</span>
                   </div>
                   <div className="font-semibold">
                     {new Date(user.createdAt || Date.now()).toLocaleDateString('en-US', { 
@@ -189,7 +188,7 @@ const ProfileHeader = () => {
                 <div className="bg-white/50 dark:bg-gray-800/50 rounded-lg p-4 border">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <User className="h-4 w-4" />
-                    Access Level
+                    <span>Access Level</span>
                   </div>
                   <div className="font-semibold">
                     {getRoleDisplayName(user.role)}
@@ -199,7 +198,6 @@ const ProfileHeader = () => {
             </div>
           </div>
           
-          {/* Right section - Action Buttons */}
           <div className="flex flex-col sm:flex-row xl:flex-col gap-3 xl:min-w-[200px]">
             <Button 
               variant="outline" 
@@ -207,7 +205,7 @@ const ProfileHeader = () => {
               className="flex items-center gap-2 hover:bg-blue-50 dark:hover:bg-blue-900/20"
             >
               <Calendar className="h-4 w-4" />
-              View Calendar
+              <span>View Calendar</span>
             </Button>
             <Button 
               variant="outline" 
@@ -215,7 +213,7 @@ const ProfileHeader = () => {
               className="flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-800/50"
             >
               <Settings className="h-4 w-4" />
-              Settings
+              <span>Settings</span>
             </Button>
           </div>
         </div>
