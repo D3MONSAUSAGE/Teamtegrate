@@ -73,7 +73,7 @@ export const useTask = () => {
 };
 
 export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -85,7 +85,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
 
   const refreshProjects = async () => {
-    if (!user) return;
+    if (!user || !isAuthenticated) return;
     
     try {
       setIsLoading(true);
@@ -100,13 +100,15 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const loadData = async () => {
-      if (!user) {
+      if (!user || !isAuthenticated) {
+        console.log('No authenticated user, clearing data');
         setProjects([]);
         setTasks([]);
         setIsLoading(false);
         return;
       }
 
+      console.log('Loading data for authenticated user:', user.id);
       setIsLoading(true);
       try {
         await Promise.all([
@@ -122,14 +124,14 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
     
     loadData();
-  }, [user]);
+  }, [user, isAuthenticated]);
 
   useEffect(() => {
-    if (user) {
+    if (user && isAuthenticated) {
       const score = calculateDailyScore(tasks);
       setDailyScore(score);
     }
-  }, [tasks, user]);
+  }, [tasks, user, isAuthenticated]);
 
   const value = {
     tasks,
