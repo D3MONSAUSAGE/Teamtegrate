@@ -16,17 +16,20 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import CalendarTaskItem from './CalendarTaskItem';
+import { Plus } from 'lucide-react';
 
 interface CalendarMonthViewProps {
   selectedDate: Date;
   tasks: Task[];
   onTaskClick: (task: Task) => void;
+  onDateCreate: (date: Date) => void;
 }
 
 const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({ 
   selectedDate,
   tasks,
-  onTaskClick
+  onTaskClick,
+  onDateCreate
 }) => {
   const monthStart = startOfMonth(selectedDate);
   const monthEnd = endOfMonth(selectedDate);
@@ -34,6 +37,17 @@ const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
   const endDate = endOfWeek(monthEnd);
   
   const days = eachDayOfInterval({ start: startDate, end: endDate });
+  
+  const handleDrop = (e: React.DragEvent, targetDate: Date) => {
+    e.preventDefault();
+    const taskId = e.dataTransfer.getData('text/plain');
+    // We'll implement the reschedule logic here
+    console.log('Dropped task', taskId, 'on date', targetDate);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
   
   return (
     <Card className="h-[calc(100vh-300px)]">
@@ -63,7 +77,7 @@ const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
               });
               
               const withinCurrentMonth = isSameMonth(day, selectedDate);
-              const maxVisibleTasks = 4; // Increased from 3
+              const maxVisibleTasks = 4;
               
               return (
                 <div 
@@ -72,6 +86,8 @@ const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
                     "border-b border-r last:border-r-0 p-3 relative hover:bg-accent/10 transition-colors",
                     !withinCurrentMonth && "bg-muted/5 text-muted-foreground"
                   )}
+                  onDrop={(e) => handleDrop(e, day)}
+                  onDragOver={handleDragOver}
                 >
                   {/* Day number with better styling */}
                   <div className="flex justify-between items-start mb-2">
@@ -98,6 +114,7 @@ const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
                         task={task}
                         minimal={true}
                         onClick={() => onTaskClick(task)}
+                        draggable={true}
                       />
                     ))}
                     {dayTasks.length > maxVisibleTasks && (
@@ -108,6 +125,15 @@ const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
                         }}
                       >
                         +{dayTasks.length - maxVisibleTasks} more
+                      </div>
+                    )}
+                    {dayTasks.length === 0 && (
+                      <div 
+                        className="py-2 text-xs text-center text-muted-foreground cursor-pointer hover:bg-muted/50 rounded flex items-center justify-center gap-1"
+                        onClick={() => onDateCreate(day)}
+                      >
+                        <Plus className="h-3 w-3" />
+                        Add task
                       </div>
                     )}
                   </div>

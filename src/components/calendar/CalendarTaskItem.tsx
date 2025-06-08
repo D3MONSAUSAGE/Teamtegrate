@@ -5,6 +5,8 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { generateProjectColor, generateProjectBadgeColor } from '@/utils/colorUtils';
+import { useTask } from '@/contexts/task';
+import { toast } from '@/components/ui/sonner';
 
 interface CalendarTaskItemProps {
   task: Task;
@@ -12,6 +14,7 @@ interface CalendarTaskItemProps {
   minimal?: boolean;
   onClick?: () => void;
   projectName?: string;
+  draggable?: boolean;
 }
 
 const CalendarTaskItem: React.FC<CalendarTaskItemProps> = ({ 
@@ -19,8 +22,37 @@ const CalendarTaskItem: React.FC<CalendarTaskItemProps> = ({
   compact = false,
   minimal = false,
   onClick,
-  projectName
+  projectName,
+  draggable = false
 }) => {
+  const { updateTask } = useTask();
+
+  const handleDragStart = (e: React.DragEvent) => {
+    e.dataTransfer.setData('text/plain', task.id);
+    e.dataTransfer.effectAllowed = 'move';
+    console.log('Started dragging task:', task.id);
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetDate: Date) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    try {
+      // Update the task deadline to the new date
+      const newDeadline = new Date(targetDate);
+      newDeadline.setHours(23, 59, 59, 999);
+      
+      await updateTask(task.id, {
+        deadline: newDeadline
+      });
+      
+      toast.success('Task rescheduled successfully');
+    } catch (error) {
+      console.error('Error rescheduling task:', error);
+      toast.error('Failed to reschedule task');
+    }
+  };
+
   const getPriorityColor = (priority: string) => {
     switch(priority) {
       case 'Low': return 'bg-blue-100 text-blue-800 border-blue-200';
@@ -68,13 +100,16 @@ const CalendarTaskItem: React.FC<CalendarTaskItemProps> = ({
     return (
       <div 
         className={cn(
-          "text-xs px-2 py-1 mb-1 truncate rounded cursor-pointer border transition-all duration-200 relative",
+          "text-xs px-2 py-1 mb-1 truncate rounded border transition-all duration-200 relative",
           "hover:shadow-sm hover:scale-[1.02]",
           getStatusColor(task.status),
           isOverdue() && "ring-1 ring-rose-400",
-          onClick && "cursor-pointer"
+          onClick && "cursor-pointer",
+          draggable && "cursor-move"
         )}
         onClick={onClick}
+        draggable={draggable}
+        onDragStart={handleDragStart}
         title={`${task.title} - ${task.status} - ${task.priority} priority${projectName ? ` - ${projectName}` : ''}`}
       >
         {/* Project color indicator */}
@@ -89,12 +124,15 @@ const CalendarTaskItem: React.FC<CalendarTaskItemProps> = ({
   return (
     <div 
       className={cn(
-        "border rounded-lg mb-2 cursor-pointer transition-all duration-200 bg-card shadow-sm relative overflow-hidden",
+        "border rounded-lg mb-2 transition-all duration-200 bg-card shadow-sm relative overflow-hidden",
         "hover:shadow-md hover:scale-[1.02]",
         isOverdue() && "ring-2 ring-rose-400 ring-opacity-50",
-        onClick && "cursor-pointer"
+        onClick && "cursor-pointer",
+        draggable && "cursor-move"
       )}
       onClick={onClick}
+      draggable={draggable}
+      onDragStart={handleDragStart}
     >
       {/* Project color indicator */}
       {task.projectId && (

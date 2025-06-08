@@ -51,8 +51,7 @@ const QuickTaskCreateDialog: React.FC<QuickTaskCreateDialogProps> = ({
         deadline,
         status: 'To Do',
         projectId: projectId || undefined,
-        userId: '', // Will be set by the addTask function
-        updatedAt: new Date()
+        userId: '' // Will be set by the addTask function
       });
 
       toast.success('Task created successfully');

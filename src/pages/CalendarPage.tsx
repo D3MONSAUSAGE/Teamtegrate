@@ -12,8 +12,6 @@ import TaskDetailDrawer from '@/components/calendar/TaskDetailDrawer';
 import CalendarDayView from '@/components/calendar/CalendarDayView';
 import CalendarWeekView from '@/components/calendar/CalendarWeekView';
 import CalendarMonthView from '@/components/calendar/CalendarMonthView';
-import MiniCalendarNav from '@/components/calendar/MiniCalendarNav';
-import CalendarLegend from '@/components/calendar/CalendarLegend';
 import QuickTaskCreateDialog from '@/components/calendar/QuickTaskCreateDialog';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Filter, Clock, Plus } from 'lucide-react';
 
@@ -23,8 +21,6 @@ const CalendarPage = () => {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [viewType, setViewType] = useState<'day' | 'week' | 'month'>('month');
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
-  const [isMiniCalendarCollapsed, setIsMiniCalendarCollapsed] = useState<boolean>(true);
-  const [showLegend, setShowLegend] = useState<boolean>(true);
   const [isQuickCreateOpen, setIsQuickCreateOpen] = useState<boolean>(false);
   const [quickCreateDate, setQuickCreateDate] = useState<Date>(new Date());
 
@@ -64,25 +60,10 @@ const CalendarPage = () => {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Task Calendar</h1>
-            <p className="text-muted-foreground mt-1">View and manage your tasks by date</p>
+            <p className="text-muted-foreground mt-1">View and manage your tasks by date - drag to reschedule</p>
           </div>
           
           <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowLegend(!showLegend)}
-            >
-              Legend
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsMiniCalendarCollapsed(!isMiniCalendarCollapsed)}
-            >
-              <CalendarIcon className="h-4 w-4 mr-2" />
-              Mini Calendar
-            </Button>
             <Select 
               value={viewType} 
               onValueChange={(value: 'day' | 'week' | 'month') => setViewType(value)}
@@ -99,9 +80,6 @@ const CalendarPage = () => {
             </Select>
           </div>
         </div>
-
-        {/* Color Legend */}
-        <CalendarLegend projects={projects} isVisible={showLegend} />
 
         {/* Date Navigation and Stats */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 p-4 bg-muted/30 rounded-lg">
@@ -167,15 +145,6 @@ const CalendarPage = () => {
           </div>
         </div>
       </div>
-
-      {/* Mini Calendar Navigation */}
-      <MiniCalendarNav
-        selectedDate={selectedDate}
-        onDateSelect={setSelectedDate}
-        tasks={tasks}
-        isCollapsed={isMiniCalendarCollapsed}
-        onToggle={() => setIsMiniCalendarCollapsed(!isMiniCalendarCollapsed)}
-      />
 
       {/* Main Calendar View - Full Width */}
       <div className="w-full">
