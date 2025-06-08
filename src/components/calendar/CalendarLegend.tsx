@@ -21,8 +21,8 @@ const CalendarLegend: React.FC<CalendarLegendProps> = ({ projects, isVisible }) 
       <CardContent className="flex flex-wrap gap-2">
         {projects.map((project) => (
           <div key={project.id} className="flex items-center gap-2">
-            <div className={`w-3 h-3 rounded-full ${generateProjectBadgeColor(project.id, project.name)}`} />
-            <span className="text-xs text-muted-foreground">{project.name}</span>
+            <div className={`w-3 h-3 rounded-full ${generateProjectBadgeColor(project.id, project.title)}`} />
+            <span className="text-xs text-muted-foreground">{project.title}</span>
           </div>
         ))}
         <div className="flex items-center gap-2">

@@ -52,7 +52,6 @@ const QuickTaskCreateDialog: React.FC<QuickTaskCreateDialogProps> = ({
         status: 'To Do',
         projectId: projectId || undefined,
         userId: '', // Will be set by the addTask function
-        createdAt: new Date(),
         updatedAt: new Date()
       });
 
@@ -128,7 +127,7 @@ const QuickTaskCreateDialog: React.FC<QuickTaskCreateDialogProps> = ({
                   <SelectItem value="">No Project</SelectItem>
                   {projects.map((project) => (
                     <SelectItem key={project.id} value={project.id}>
-                      {project.name}
+                      {project.title}
                     </SelectItem>
                   ))}
                 </SelectContent>

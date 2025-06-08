@@ -6,17 +6,21 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import CalendarTaskItem from './CalendarTaskItem';
 import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
 
 interface CalendarDayViewProps {
   selectedDate: Date;
   tasks: Task[];
   onTaskClick: (task: Task) => void;
+  onDateCreate: (date: Date) => void;
 }
 
 const CalendarDayView: React.FC<CalendarDayViewProps> = ({ 
   selectedDate,
   tasks,
-  onTaskClick
+  onTaskClick,
+  onDateCreate
 }) => {
   const dayStart = startOfDay(selectedDate);
   const tasksForDay = tasks.filter(task => {
@@ -57,8 +61,16 @@ const CalendarDayView: React.FC<CalendarDayViewProps> = ({
   return (
     <Card className="h-[calc(100vh-240px)]">
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-medium">
+        <CardTitle className="text-lg font-medium flex items-center justify-between">
           {format(selectedDate, 'EEEE, MMMM d, yyyy')}
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => onDateCreate(selectedDate)}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Task
+          </Button>
         </CardTitle>
       </CardHeader>
       <CardContent className="p-0">
@@ -80,8 +92,11 @@ const CalendarDayView: React.FC<CalendarDayViewProps> = ({
                     />
                   ))
                 ) : (
-                  <div className="py-2 px-3 text-sm text-muted-foreground">
-                    No tasks
+                  <div 
+                    className="py-2 px-3 text-sm text-muted-foreground cursor-pointer hover:bg-muted/50 rounded"
+                    onClick={() => onDateCreate(selectedDate)}
+                  >
+                    No tasks - Click to add
                   </div>
                 )}
               </div>

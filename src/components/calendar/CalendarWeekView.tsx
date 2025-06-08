@@ -13,17 +13,20 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import CalendarTaskItem from './CalendarTaskItem';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { Plus } from 'lucide-react';
 
 interface CalendarWeekViewProps {
   selectedDate: Date;
   tasks: Task[];
   onTaskClick: (task: Task) => void;
+  onDateCreate: (date: Date) => void;
 }
 
 const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({ 
   selectedDate,
   tasks,
-  onTaskClick
+  onTaskClick,
+  onDateCreate
 }) => {
   const startOfWeekDate = startOfWeek(selectedDate, { weekStartsOn: 0 });
   const endOfWeekDate = endOfWeek(selectedDate, { weekStartsOn: 0 });
@@ -80,8 +83,12 @@ const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
                         />
                       ))
                     ) : (
-                      <div className="py-2 text-xs text-center text-muted-foreground">
-                        No tasks
+                      <div 
+                        className="py-2 text-xs text-center text-muted-foreground cursor-pointer hover:bg-muted/50 rounded flex items-center justify-center gap-1"
+                        onClick={() => onDateCreate(day)}
+                      >
+                        <Plus className="h-3 w-3" />
+                        Add task
                       </div>
                     )}
                   </div>
