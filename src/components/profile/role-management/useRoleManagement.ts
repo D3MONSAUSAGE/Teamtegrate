@@ -67,35 +67,38 @@ export const useRoleManagement = ({ targetUser, onRoleChanged }: UseRoleManageme
 
     setIsChangingRole(true);
     try {
-      // Update in auth metadata
-      const { error: authError } = await supabase.auth.admin.updateUserById(
-        targetUser.id,
-        {
-          user_metadata: { role: newRole }
+      console.log('Calling update-user-role function with:', {
+        targetUserId: targetUser.id,
+        newRole: newRole
+      });
+
+      // Call the edge function to update the role
+      const { data, error } = await supabase.functions.invoke('update-user-role', {
+        body: {
+          targetUserId: targetUser.id,
+          newRole: newRole
         }
-      );
+      });
 
-      if (authError) {
-        console.error('Auth update error:', authError);
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(error.message || 'Failed to update role');
       }
 
-      // Update in users table
-      const { error: dbError } = await supabase
-        .from('users')
-        .update({ role: newRole })
-        .eq('id', targetUser.id);
-
-      if (dbError) {
-        throw dbError;
+      if (data?.error) {
+        console.error('Edge function returned error:', data.error);
+        throw new Error(data.error);
       }
 
-      toast.success(`Role updated to ${newRole} successfully`);
+      console.log('Role update successful:', data);
+      toast.success(data?.message || `Role updated to ${newRole} successfully`);
       onRoleChanged();
       setConfirmDialogOpen(false);
       setNewRole(null);
     } catch (error) {
       console.error('Error updating role:', error);
-      toast.error('Failed to update role');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update role';
+      toast.error(errorMessage);
     } finally {
       setIsChangingRole(false);
     }
