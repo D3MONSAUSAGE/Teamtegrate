@@ -1,4 +1,5 @@
-export type UserRole = 'user' | 'manager';
+
+export type UserRole = 'superadmin' | 'admin' | 'manager' | 'user';
 
 export interface User {
   id: string;
@@ -97,3 +98,34 @@ export interface TeamMemberPerformance {
   completionRate: number;
   projects: number;
 }
+
+// Role hierarchy utility functions
+export const ROLE_HIERARCHY: Record<UserRole, number> = {
+  'superadmin': 4,
+  'admin': 3,
+  'manager': 2,
+  'user': 1
+};
+
+export const hasRoleAccess = (userRole: UserRole, requiredRole: UserRole): boolean => {
+  return ROLE_HIERARCHY[userRole] >= ROLE_HIERARCHY[requiredRole];
+};
+
+export const canManageUser = (managerRole: UserRole, targetRole: UserRole): boolean => {
+  return ROLE_HIERARCHY[managerRole] > ROLE_HIERARCHY[targetRole];
+};
+
+export const getRoleDisplayName = (role: UserRole): string => {
+  switch (role) {
+    case 'superadmin':
+      return 'Super Admin';
+    case 'admin':
+      return 'Admin';
+    case 'manager':
+      return 'Manager';
+    case 'user':
+      return 'Team Member';
+    default:
+      return 'Unknown';
+  }
+};

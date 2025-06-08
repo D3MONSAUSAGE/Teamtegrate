@@ -13,6 +13,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import { getRoleDisplayName } from '@/types';
 
 interface UserMenuProps {
   onLogout: () => Promise<void>;
@@ -60,7 +61,7 @@ const UserMenu: React.FC<UserMenuProps> = ({ onLogout, onSettings }) => {
   return (
     <div className="flex items-center space-x-4">
       <span className="text-sm text-gray-600 dark:text-gray-300 mr-2 hidden md:inline">
-        {user.role === 'manager' ? 'Manager' : 'Team Member'}
+        {getRoleDisplayName(user.role)}
       </span>
 
       <DropdownMenu>

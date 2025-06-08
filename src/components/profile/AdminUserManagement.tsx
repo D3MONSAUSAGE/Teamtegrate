@@ -22,11 +22,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Trash2, Users, Shield, Crown, User, Loader2 } from 'lucide-react';
+import { Trash2, Users, Shield, Crown, User, Loader2, Star } from 'lucide-react';
 import { useUsers } from '@/hooks/useUsers';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { useAuth } from '@/contexts/AuthContext';
+import { UserRole, getRoleDisplayName, hasRoleAccess } from '@/types';
+import RoleManagement from './RoleManagement';
 
 const AdminUserManagement = () => {
   const { users, isLoading, refetchUsers } = useUsers();
@@ -34,8 +36,13 @@ const AdminUserManagement = () => {
   const [userToDelete, setUserToDelete] = useState<string | null>(null);
   const [deletingUser, setDeletingUser] = useState<string | null>(null);
 
+  // Only show for admins and above
+  if (!currentUser || !hasRoleAccess(currentUser.role, 'admin')) {
+    return null;
+  }
+
   const handleDeleteUser = async (userId: string) => {
-    if (!currentUser || currentUser.role !== 'manager') {
+    if (!currentUser || !hasRoleAccess(currentUser.role, 'admin')) {
       toast.error("Unauthorized to perform this action");
       return;
     }
@@ -47,7 +54,6 @@ const AdminUserManagement = () => {
 
     setDeletingUser(userId);
     try {
-      // First, delete the user from the public.users table
       const { error: publicUserError } = await supabase
         .from('users')
         .delete()
@@ -56,9 +62,6 @@ const AdminUserManagement = () => {
       if (publicUserError) {
         throw publicUserError;
       }
-
-      // The auth.users deletion should be handled by the trigger or RLS
-      // For now, we'll just remove from public.users as that's what we display
       
       toast.success("User removed successfully");
       refetchUsers();
@@ -73,10 +76,12 @@ const AdminUserManagement = () => {
 
   const getRoleIcon = (role: string) => {
     switch (role) {
-      case 'manager':
-        return <Crown className="h-4 w-4 text-yellow-600" />;
+      case 'superadmin':
+        return <Star className="h-4 w-4 text-purple-600" />;
       case 'admin':
         return <Shield className="h-4 w-4 text-red-600" />;
+      case 'manager':
+        return <Crown className="h-4 w-4 text-yellow-600" />;
       default:
         return <User className="h-4 w-4 text-gray-600" />;
     }
@@ -84,14 +89,28 @@ const AdminUserManagement = () => {
 
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
-      case 'manager':
+      case 'superadmin':
         return 'default';
       case 'admin':
         return 'destructive';
+      case 'manager':
+        return 'default';
       default:
         return 'secondary';
     }
   };
+
+  const canDeleteUser = (targetUser: any) => {
+    if (targetUser.id === currentUser?.id) return false;
+    if (currentUser?.role === 'superadmin') return true;
+    if (currentUser?.role === 'admin' && ['manager', 'user'].includes(targetUser.role)) return true;
+    return false;
+  };
+
+  const sortedUsers = users.sort((a, b) => {
+    const roleOrder = { 'superadmin': 4, 'admin': 3, 'manager': 2, 'user': 1 };
+    return (roleOrder[b.role as UserRole] || 0) - (roleOrder[a.role as UserRole] || 0);
+  });
 
   if (isLoading) {
     return (
@@ -136,7 +155,7 @@ const AdminUserManagement = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {users.map((user) => (
+                {sortedUsers.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell>
                       <div className="flex items-center gap-3">
@@ -157,28 +176,34 @@ const AdminUserManagement = () => {
                     <TableCell>
                       <Badge variant={getRoleBadgeVariant(user.role)} className="flex items-center gap-1 w-fit">
                         {getRoleIcon(user.role)}
-                        {user.role?.charAt(0).toUpperCase() + user.role?.slice(1)}
+                        {getRoleDisplayName(user.role as UserRole)}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {user.email}
                     </TableCell>
                     <TableCell className="text-right">
-                      {user.id !== currentUser?.id && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setUserToDelete(user.id)}
-                          disabled={deletingUser === user.id}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-                        >
-                          {deletingUser === user.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Trash2 className="h-4 w-4" />
-                          )}
-                        </Button>
-                      )}
+                      <div className="flex items-center justify-end gap-2">
+                        <RoleManagement 
+                          targetUser={user} 
+                          onRoleChanged={refetchUsers}
+                        />
+                        {canDeleteUser(user) && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setUserToDelete(user.id)}
+                            disabled={deletingUser === user.id}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                          >
+                            {deletingUser === user.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
