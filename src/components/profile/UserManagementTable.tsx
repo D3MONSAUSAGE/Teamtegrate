@@ -14,18 +14,22 @@ import UserTableRow from './UserTableRow';
 interface UserManagementTableProps {
   users: AppUser[];
   currentUserId?: string;
+  currentUserRole?: string;
   canDeleteUser: (user: AppUser) => boolean;
   deletingUser: string | null;
   onDeleteClick: (userId: string) => void;
+  onEditClick: (user: AppUser) => void;
   onRoleChanged: () => void;
 }
 
 const UserManagementTable: React.FC<UserManagementTableProps> = ({
   users,
   currentUserId,
+  currentUserRole,
   canDeleteUser,
   deletingUser,
   onDeleteClick,
+  onEditClick,
   onRoleChanged
 }) => {
   const sortedUsers = users.sort((a, b) => {
@@ -59,9 +63,11 @@ const UserManagementTable: React.FC<UserManagementTableProps> = ({
               key={user.id}
               user={user}
               currentUserId={currentUserId}
+              currentUserRole={currentUserRole}
               canDeleteUser={canDeleteUser(user)}
               isDeleting={deletingUser === user.id}
               onDeleteClick={() => onDeleteClick(user.id)}
+              onEditClick={() => onEditClick(user)}
               onRoleChanged={onRoleChanged}
             />
           ))}

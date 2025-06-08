@@ -4,8 +4,8 @@ import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Trash2, Loader2, Star, Shield, Crown, User } from 'lucide-react';
-import { UserRole, getRoleDisplayName } from '@/types';
+import { Trash2, Loader2, Star, Shield, Crown, User, Edit } from 'lucide-react';
+import { UserRole, getRoleDisplayName, canManageUser } from '@/types';
 import RoleManagement from './RoleManagement';
 import { cn } from "@/lib/utils";
 
@@ -18,18 +18,22 @@ interface UserTableRowProps {
     avatar_url?: string;
   };
   currentUserId?: string;
+  currentUserRole?: string;
   canDeleteUser: boolean;
   isDeleting: boolean;
   onDeleteClick: () => void;
+  onEditClick: () => void;
   onRoleChanged: () => void;
 }
 
 const UserTableRow: React.FC<UserTableRowProps> = ({
   user,
   currentUserId,
+  currentUserRole,
   canDeleteUser,
   isDeleting,
   onDeleteClick,
+  onEditClick,
   onRoleChanged
 }) => {
   const getRoleIcon = (role: string) => {
@@ -57,6 +61,17 @@ const UserTableRow: React.FC<UserTableRowProps> = ({
         return 'secondary';
     }
   };
+
+  // Determine if current user can edit this user
+  const canEditUser = currentUserRole && (() => {
+    // User can edit themselves
+    if (user.id === currentUserId) {
+      return true;
+    }
+    
+    // Role-based editing permissions
+    return canManageUser(currentUserRole as UserRole, user.role as UserRole);
+  })();
 
   return (
     <TableRow>
@@ -91,6 +106,17 @@ const UserTableRow: React.FC<UserTableRowProps> = ({
             targetUser={user} 
             onRoleChanged={onRoleChanged}
           />
+          {canEditUser && (
+            <button
+              onClick={onEditClick}
+              className={cn(
+                buttonVariants({ variant: "ghost", size: "sm" }),
+                "text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+              )}
+            >
+              <Edit className="h-4 w-4" />
+            </button>
+          )}
           {canDeleteUser && (
             <button
               onClick={onDeleteClick}

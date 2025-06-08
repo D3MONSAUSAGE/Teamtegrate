@@ -11,7 +11,7 @@ import AdminUserManagement from '@/components/profile/AdminUserManagement';
 
 const ProfilePage = () => {
   const navigate = useNavigate();
-  const { user, isAuthenticated, loading, hasRoleAccess } = useAuth();
+  const { user, isAuthenticated, loading } = useAuth();
 
   if (loading) {
     return (
@@ -38,8 +38,8 @@ const ProfilePage = () => {
         {/* Quick Actions Panel */}
         <ProfileQuickActions />
         
-        {/* Admin User Management - Show for admins and above */}
-        {hasRoleAccess('admin') && <AdminUserManagement />}
+        {/* Admin User Management - AdminUserManagement handles its own access control */}
+        <AdminUserManagement />
         
         {/* Team & Project Overview */}
         <ProfileTeamOverview />

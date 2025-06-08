@@ -7,14 +7,17 @@ import { useUsers } from '@/hooks/useUsers';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { useAuth } from '@/contexts/AuthContext';
+import { AppUser } from '@/types';
 import UserManagementHeader from './UserManagementHeader';
 import UserManagementTable from './UserManagementTable';
 import UserDeleteDialog from './UserDeleteDialog';
+import EditUserDialog from './EditUserDialog';
 
 const AdminUserManagement = () => {
   const { users, isLoading, refetchUsers } = useUsers();
   const { user: currentUser } = useAuth();
   const [userToDelete, setUserToDelete] = useState<string | null>(null);
+  const [userToEdit, setUserToEdit] = useState<AppUser | null>(null);
   const [deletingUser, setDeletingUser] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -54,6 +57,10 @@ const AdminUserManagement = () => {
       setDeletingUser(null);
       setUserToDelete(null);
     }
+  };
+
+  const handleEditUser = (user: AppUser) => {
+    setUserToEdit(user);
   };
 
   const canDeleteUser = (targetUser: any) => {
@@ -101,9 +108,11 @@ const AdminUserManagement = () => {
           <UserManagementTable
             users={filteredUsers}
             currentUserId={currentUser?.id}
+            currentUserRole={currentUser?.role}
             canDeleteUser={canDeleteUser}
             deletingUser={deletingUser}
             onDeleteClick={setUserToDelete}
+            onEditClick={handleEditUser}
             onRoleChanged={refetchUsers}
           />
         </CardContent>
@@ -114,6 +123,15 @@ const AdminUserManagement = () => {
         onClose={() => setUserToDelete(null)}
         onConfirm={() => userToDelete && handleDeleteUser(userToDelete)}
       />
+
+      {userToEdit && (
+        <EditUserDialog
+          isOpen={!!userToEdit}
+          onClose={() => setUserToEdit(null)}
+          onUserUpdated={refetchUsers}
+          user={userToEdit}
+        />
+      )}
     </>
   );
 };
