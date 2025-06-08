@@ -102,14 +102,15 @@ const ChatRooms: React.FC<ChatRoomsProps> = ({ selectedRoom, onRoomSelect }) => 
   const handleRoomSelect = (room: ChatRoomData) => {
     debug.logRoomSelection(room);
     
-    setRooms(prevRooms => 
-      prevRooms.map(r => 
-        r.id === room.id 
-          ? { ...r, unread_count: 0 }
-          : r
-      )
+    // Clear the unread count for the selected room immediately
+    const updatedRooms = rooms.map(r => 
+      r.id === room.id 
+        ? { ...r, unread_count: 0 }
+        : r
     );
+    setRooms(updatedRooms);
     
+    // Pass the room with cleared unread count to parent
     onRoomSelect({ ...room, unread_count: 0 });
   };
 

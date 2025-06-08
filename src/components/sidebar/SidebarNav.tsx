@@ -139,7 +139,10 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ onNavigation, isCollapsed = fal
                   isCollapsed ? "justify-center px-2" : "justify-start"
                 )}
               >
-                <IconComponent className="h-5 w-5 flex-shrink-0" />
+                <IconComponent className={cn(
+                  "h-5 w-5 flex-shrink-0",
+                  isActiveItem && "text-black"
+                )} />
                 {!isCollapsed && (
                   <span className="transition-opacity duration-300">{item.name}</span>
                 )}

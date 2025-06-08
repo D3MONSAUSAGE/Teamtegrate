@@ -29,7 +29,7 @@ const ChatRoomsList: React.FC<ChatRoomsListProps> = ({ rooms, selectedRoom, onRo
           onClick={() => onRoomSelect(room)}
         >
           <div className="truncate flex-1 text-left">{room.name}</div>
-          {room.unread_count > 0 && selectedRoom?.id !== room.id && (
+          {(room.unread_count && room.unread_count > 0) && selectedRoom?.id !== room.id && (
             <Badge className="ml-2 bg-primary hover:bg-primary">{room.unread_count}</Badge>
           )}
         </Button>
