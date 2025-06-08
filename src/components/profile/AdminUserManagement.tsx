@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -39,20 +38,32 @@ const AdminUserManagement = () => {
 
     setDeletingUser(userId);
     try {
-      const { error: publicUserError } = await supabase
-        .from('users')
-        .delete()
-        .eq('id', userId);
+      console.log('Calling delete-user function with:', { targetUserId: userId });
 
-      if (publicUserError) {
-        throw publicUserError;
+      // Call the edge function to delete the user
+      const { data, error } = await supabase.functions.invoke('delete-user', {
+        body: {
+          targetUserId: userId
+        }
+      });
+
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(error.message || 'Failed to delete user');
       }
-      
-      toast.success("User removed successfully");
+
+      if (data?.error) {
+        console.error('Edge function returned error:', data.error);
+        throw new Error(data.error);
+      }
+
+      console.log('User deletion successful:', data);
+      toast.success(data?.message || 'User deleted successfully');
       refetchUsers();
     } catch (error) {
       console.error("Error deleting user:", error);
-      toast.error("Failed to remove user");
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete user';
+      toast.error(errorMessage);
     } finally {
       setDeletingUser(null);
       setUserToDelete(null);
