@@ -65,21 +65,21 @@ const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
   };
   
   return (
-    <Card className="h-full flex flex-col">
-      <CardContent className="p-0 flex-1 flex flex-col">
-        {/* Day headers - More compact */}
-        <div className="grid grid-cols-7 border-b bg-muted/20 flex-shrink-0">
-          {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((dayName, i) => (
-            <div key={i} className="text-center p-2 font-semibold text-xs border-r last:border-r-0">
-              <div className="hidden sm:block">{dayName}</div>
-              <div className="sm:hidden">{dayName.slice(0, 3)}</div>
+    <Card className="h-full flex flex-col overflow-hidden">
+      <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
+        {/* Day headers - Mobile optimized */}
+        <div className="grid grid-cols-7 border-b bg-muted/10 flex-shrink-0">
+          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((dayName, i) => (
+            <div key={i} className="text-center p-2 md:p-3 font-semibold text-xs md:text-sm border-r last:border-r-0">
+              <div className="hidden sm:block">{['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][i]}</div>
+              <div className="sm:hidden">{dayName}</div>
             </div>
           ))}
         </div>
         
-        {/* Calendar grid - Smaller cells */}
-        <div className="flex-1 overflow-hidden">
-          <div className="grid grid-cols-7 auto-rows-[120px] sm:auto-rows-[130px] h-full">
+        {/* Calendar grid - Mobile optimized */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="grid grid-cols-7 auto-rows-[100px] sm:auto-rows-[120px] md:auto-rows-[140px]">
             {days.map((day, i) => {
               const dayTasks = tasks.filter(task => {
                 try {
@@ -92,36 +92,36 @@ const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
               });
               
               const withinCurrentMonth = isSameMonth(day, selectedDate);
-              const maxVisibleTasks = 3; // Reduced from 4
+              const maxVisibleTasks = 2; // Reduced for mobile
               
               return (
                 <div 
                   key={i} 
                   className={cn(
-                    "border-b border-r last:border-r-0 p-2 relative hover:bg-accent/10 transition-colors overflow-hidden",
+                    "border-b border-r last:border-r-0 p-1 md:p-2 relative hover:bg-accent/10 transition-colors overflow-hidden",
                     !withinCurrentMonth && "bg-muted/5 text-muted-foreground"
                   )}
                   onDrop={(e) => handleDrop(e, day)}
                   onDragOver={handleDragOver}
                 >
-                  {/* Day number - More compact */}
+                  {/* Day number - Mobile optimized */}
                   <div className="flex justify-between items-start mb-1">
                     <span className={cn(
-                      "inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium transition-colors",
+                      "inline-flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-full text-xs md:text-sm font-medium transition-colors",
                       isToday(day) && "bg-primary text-primary-foreground font-bold shadow-md",
                       !isToday(day) && withinCurrentMonth && "hover:bg-accent",
-                      !withinCurrentMonth && "text-muted-foreground"
+                      !withinCurrentMonth && "text-muted-foreground/60"
                     )}>
                       {format(day, 'd')}
                     </span>
                     {dayTasks.length > 0 && (
-                      <div className="text-xs text-muted-foreground font-medium">
+                      <div className="text-xs text-muted-foreground font-medium bg-muted/50 rounded-full h-4 w-4 flex items-center justify-center">
                         {dayTasks.length}
                       </div>
                     )}
                   </div>
                   
-                  {/* Tasks - More compact */}
+                  {/* Tasks - Mobile optimized */}
                   <div className="space-y-0.5 overflow-hidden">
                     {dayTasks.slice(0, maxVisibleTasks).map(task => (
                       <CalendarTaskItem 
@@ -139,16 +139,16 @@ const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
                           if (dayTasks[maxVisibleTasks]) onTaskClick(dayTasks[maxVisibleTasks]);
                         }}
                       >
-                        +{dayTasks.length - maxVisibleTasks} more
+                        +{dayTasks.length - maxVisibleTasks}
                       </div>
                     )}
                     {dayTasks.length === 0 && (
                       <div 
-                        className="py-1 text-xs text-center text-muted-foreground cursor-pointer hover:bg-muted/50 rounded flex items-center justify-center gap-1"
+                        className="py-1 md:py-2 text-xs text-center text-muted-foreground cursor-pointer hover:bg-muted/50 rounded flex items-center justify-center gap-1 border border-dashed border-muted-foreground/20 hover:border-muted-foreground/40 transition-colors min-h-[24px] md:min-h-[32px]"
                         onClick={() => onDateCreate(day)}
                       >
                         <Plus className="h-3 w-3" />
-                        Add
+                        <span className="hidden md:inline text-xs">Add</span>
                       </div>
                     )}
                   </div>

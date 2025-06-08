@@ -151,6 +151,16 @@
       max-width: 100vw;
       overflow-x: hidden;
     }
+    
+    /* Hide scrollbars on mobile but keep scrolling */
+    .mobile-hide-scrollbar {
+      scrollbar-width: none; /* Firefox */
+      -ms-overflow-style: none; /* IE and Edge */
+    }
+    
+    .mobile-hide-scrollbar::-webkit-scrollbar {
+      display: none; /* Chrome, Safari, Opera */
+    }
   }
 }
 
@@ -181,12 +191,22 @@
     -webkit-tap-highlight-color: transparent;
   }
 
-  /* Prevent horizontal overflow on mobile */
+  /* Hide scrollbars globally on mobile */
   @media (max-width: 768px) {
     .mobile-container {
       width: 100vw;
       max-width: 100vw;
       overflow-x: hidden;
+    }
+    
+    /* Hide all scrollbars on mobile */
+    * {
+      scrollbar-width: none !important; /* Firefox */
+      -ms-overflow-style: none !important; /* IE and Edge */
+    }
+    
+    *::-webkit-scrollbar {
+      display: none !important; /* Chrome, Safari, Opera */
     }
   }
 }

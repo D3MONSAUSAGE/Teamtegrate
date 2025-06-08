@@ -3,7 +3,6 @@ import React from 'react';
 import { Task } from '@/types';
 import { format, isSameDay, addHours, startOfDay } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import CalendarTaskItem from './CalendarTaskItem';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
@@ -60,50 +59,54 @@ const CalendarDayView: React.FC<CalendarDayViewProps> = ({
   
   return (
     <Card className="h-full flex flex-col">
-      <CardHeader className="pb-2 flex-shrink-0">
-        <CardTitle className="text-base font-medium flex items-center justify-between">
-          {format(selectedDate, 'EEEE, MMMM d, yyyy')}
+      <CardHeader className="pb-2 flex-shrink-0 px-3 py-2 md:px-6 md:py-4">
+        <CardTitle className="text-sm md:text-base font-medium flex items-center justify-between">
+          <span className="truncate">{format(selectedDate, 'EEE, MMM d, yyyy')}</span>
           <Button 
             variant="outline" 
             size="sm"
             onClick={() => onDateCreate(selectedDate)}
+            className="h-7 text-xs px-2 ml-2"
           >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Task
+            <Plus className="h-3 w-3 mr-1" />
+            Add
           </Button>
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-0 flex-1">
-        <ScrollArea className="h-full">
+      <CardContent className="p-0 flex-1 overflow-y-auto">
+        <div className="space-y-0">
           {timeBlocks.map((block, index) => (
             <div key={index} className="relative">
-              <div className="p-2 sticky top-0 bg-background z-10 border-b">
-                <div className="text-sm font-medium text-muted-foreground">
+              <div className="sticky top-0 bg-background z-10 border-b px-3 py-2">
+                <div className="text-xs md:text-sm font-medium text-muted-foreground">
                   {formatTimeLabel(block.hour)}
                 </div>
               </div>
-              <div className="p-2">
+              <div className="px-3 py-2 min-h-[60px] md:min-h-[80px]">
                 {block.tasks.length > 0 ? (
-                  block.tasks.map(task => (
-                    <CalendarTaskItem 
-                      key={task.id} 
-                      task={task}
-                      onClick={() => onTaskClick(task)}
-                    />
-                  ))
+                  <div className="space-y-2">
+                    {block.tasks.map(task => (
+                      <CalendarTaskItem 
+                        key={task.id} 
+                        task={task}
+                        onClick={() => onTaskClick(task)}
+                      />
+                    ))}
+                  </div>
                 ) : (
                   <div 
-                    className="py-2 px-3 text-sm text-muted-foreground cursor-pointer hover:bg-muted/50 rounded"
+                    className="py-4 px-3 text-xs md:text-sm text-muted-foreground cursor-pointer hover:bg-muted/50 rounded transition-colors text-center border-2 border-dashed border-muted-foreground/20 hover:border-muted-foreground/40"
                     onClick={() => onDateCreate(selectedDate)}
                   >
-                    No tasks - Click to add
+                    <Plus className="h-4 w-4 mx-auto mb-1" />
+                    Tap to add task
                   </div>
                 )}
               </div>
               {index < timeBlocks.length - 1 && <Separator />}
             </div>
           ))}
-        </ScrollArea>
+        </div>
       </CardContent>
     </Card>
   );
