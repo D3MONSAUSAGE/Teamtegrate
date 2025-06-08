@@ -19,25 +19,10 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
   },
   global: {
     headers: {
-      'x-application-name': 'daily-team-sync'
+      'x-application-name': 'teamtegrate'
     }
+  },
+  db: {
+    schema: 'public'
   }
 });
-
-// Helper function to ensure authenticated requests
-export const executeWithAuth = async <T>(operation: () => Promise<T>): Promise<T> => {
-  const { data: { session }, error } = await supabase.auth.getSession();
-  
-  if (error) {
-    console.error('Session error:', error);
-    throw error;
-  }
-  
-  if (!session) {
-    console.error('No active session found');
-    throw new Error('Authentication required');
-  }
-  
-  console.log('Executing with authenticated session for user:', session.user.id);
-  return await operation();
-};

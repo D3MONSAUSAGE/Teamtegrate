@@ -27,6 +27,18 @@ export function useChatParticipantCheck(roomId: string): ParticipantCheckResult 
         setIsLoading(true);
         setError(null);
 
+        // Ensure we have an active session
+        const { data: sessionData } = await supabase.auth.getSession();
+        console.log('useChatParticipantCheck: Session exists:', !!sessionData.session);
+        
+        if (!sessionData.session) {
+          console.error('useChatParticipantCheck: No active session');
+          setError('Authentication required');
+          setIsParticipant(false);
+          setIsLoading(false);
+          return;
+        }
+
         // Superadmins and admins have automatic access to all rooms
         if (hasRoleAccess(user.role as any, 'admin')) {
           console.log('useChatParticipantCheck: User is admin+, granting access');

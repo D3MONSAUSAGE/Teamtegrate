@@ -61,6 +61,18 @@ const ChatRooms: React.FC<ChatRoomsProps> = ({ selectedRoom, onRoomSelect }) => 
     try {
       console.log('ChatRooms: Fetching rooms for user:', user.id, 'role:', user.role);
       
+      // Get current session to ensure authentication context is available
+      const { data: sessionData } = await supabase.auth.getSession();
+      console.log('ChatRooms: Current session exists:', !!sessionData.session);
+      console.log('ChatRooms: Session user ID:', sessionData.session?.user?.id);
+      
+      if (!sessionData.session) {
+        console.error('ChatRooms: No active session found');
+        setError('Authentication required. Please refresh the page.');
+        toast.error('Authentication required. Please refresh the page.');
+        return;
+      }
+
       // The database policies will now handle access control automatically
       const { data, error } = await supabase
         .from('chat_rooms')
