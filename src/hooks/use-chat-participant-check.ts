@@ -27,18 +27,6 @@ export function useChatParticipantCheck(roomId: string): ParticipantCheckResult 
         setIsLoading(true);
         setError(null);
 
-        // Ensure we have an active session
-        const { data: sessionData } = await supabase.auth.getSession();
-        console.log('useChatParticipantCheck: Session exists:', !!sessionData.session);
-        
-        if (!sessionData.session) {
-          console.error('useChatParticipantCheck: No active session');
-          setError('Authentication required');
-          setIsParticipant(false);
-          setIsLoading(false);
-          return;
-        }
-
         // Superadmins and admins have automatic access to all rooms
         if (hasRoleAccess(user.role as any, 'admin')) {
           console.log('useChatParticipantCheck: User is admin+, granting access');
@@ -47,8 +35,7 @@ export function useChatParticipantCheck(roomId: string): ParticipantCheckResult 
           return;
         }
 
-        // For other users, check if they are a participant in the room
-        // The new security definer functions will handle the access control
+        // Simple query - RLS policies will handle access control
         const { data, error: checkError } = await supabase
           .from('chat_room_participants')
           .select('id')

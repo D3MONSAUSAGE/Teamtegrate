@@ -38,19 +38,7 @@ export function useChatRoomsFetch({ setRooms, setIsLoading, setError }: UseChatR
     try {
       console.log('ChatRooms: Fetching rooms for user:', user.id, 'role:', user.role);
       
-      // Get current session to ensure authentication context is available
-      const { data: sessionData } = await supabase.auth.getSession();
-      console.log('ChatRooms: Current session exists:', !!sessionData.session);
-      console.log('ChatRooms: Session user ID:', sessionData.session?.user?.id);
-      
-      if (!sessionData.session) {
-        console.error('ChatRooms: No active session found');
-        setError('Authentication required. Please refresh the page.');
-        toast.error('Authentication required. Please refresh the page.');
-        return;
-      }
-
-      // The database policies will now handle access control automatically
+      // Simple query - RLS policies will handle access control
       const { data, error } = await supabase
         .from('chat_rooms')
         .select('*')
@@ -70,26 +58,13 @@ export function useChatRoomsFetch({ setRooms, setIsLoading, setError }: UseChatR
         return;
       }
 
-      // Process rooms without adding unread_count
-      const roomsWithMeta = data.map(room => {
-        console.log('Processing room:', room);
-        return {
-          ...room
-          // No unread_count property added
-        };
-      });
-
-      debug.logProcessedRooms(roomsWithMeta);
-      setRooms(roomsWithMeta);
+      setRooms(data);
       
     } catch (error: any) {
       console.error('Error fetching rooms:', error);
       debug.logUnexpectedError(error);
       
-      if (error.message === 'Authentication required') {
-        setError('Please log in to view chat rooms.');
-        toast.error('Authentication required. Please log in again.');
-      } else if (error.message?.includes('JWT')) {
+      if (error.message?.includes('JWT') || error.message?.includes('session')) {
         setError('Session expired. Please refresh the page.');
         toast.error('Session expired. Please refresh the page.');
       } else {
