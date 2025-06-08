@@ -202,22 +202,18 @@ const ProfileHeader = () => {
             <Button 
               variant="outline" 
               onClick={() => navigate('/dashboard/calendar')}
-              className="flex items-center gap-2 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+              className="hover:bg-blue-50 dark:hover:bg-blue-900/20"
             >
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                <span>View Calendar</span>
-              </div>
+              <Calendar className="h-4 w-4 mr-2" />
+              View Calendar
             </Button>
             <Button 
               variant="outline" 
               onClick={() => navigate('/dashboard/settings')}
-              className="flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+              className="hover:bg-gray-50 dark:hover:bg-gray-800/50"
             >
-              <div className="flex items-center gap-2">
-                <Settings className="h-4 w-4" />
-                <span>Settings</span>
-              </div>
+              <Settings className="h-4 w-4 mr-2" />
+              Settings
             </Button>
           </div>
         </div>
