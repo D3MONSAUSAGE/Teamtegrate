@@ -40,6 +40,9 @@ export function useChatRoom(room: ChatRoomData, onBack?: () => void, onRoomDelet
   const [autoScrollEnabled, setAutoScrollEnabled] = useState(true);
   const [initialScrollDone, setInitialScrollDone] = useState(false);
 
+  // Check if current user is the creator of the room
+  const isCreator = user?.id === room.created_by;
+
   const scrollToBottom = (behavior: ScrollBehavior = 'auto') => {
     if (autoScrollEnabled) {
       messagesEndRef.current?.scrollIntoView({ behavior });
@@ -177,6 +180,7 @@ export function useChatRoom(room: ChatRoomData, onBack?: () => void, onRoomDelet
     hasMoreMessages,
     loadMoreMessages,
     leaving,
+    isCreator,
     handleScroll,
     handleSendMessage,
     handleLeaveChat,
