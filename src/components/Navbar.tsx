@@ -4,6 +4,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useNotifications } from '@/hooks/use-notifications';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { SidebarTrigger } from '@/components/ui/sidebar';
 import NavbarBrand from './navbar/NavbarBrand';
 import NotificationButton from './navbar/NotificationButton';
 import UserMenu from './navbar/UserMenu';
@@ -12,6 +14,7 @@ const Navbar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { markAsRead, fetchNotifications } = useNotifications();
+  const isMobile = useIsMobile();
 
   // Refresh notifications when component mounts
   useEffect(() => {
@@ -68,7 +71,12 @@ const Navbar = () => {
 
   return (
     <nav className="bg-white dark:bg-background border-b border-gray-200 dark:border-gray-800 py-4 pl-3 md:pl-6 pr-6 flex items-center justify-between">
-      <NavbarBrand />
+      <div className="flex items-center gap-3">
+        {isMobile && (
+          <SidebarTrigger className="h-9 w-9" />
+        )}
+        <NavbarBrand />
+      </div>
 
       <div className="flex items-center space-x-4">
         <NotificationButton 

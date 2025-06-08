@@ -138,6 +138,19 @@
       min-height: 44px;
       min-width: 44px;
     }
+
+    /* Prevent horizontal scrolling */
+    * {
+      max-width: 100vw;
+      box-sizing: border-box;
+    }
+    
+    /* Ensure main content doesn't overflow */
+    main {
+      width: 100%;
+      max-width: 100vw;
+      overflow-x: hidden;
+    }
   }
 }
 
@@ -166,6 +179,15 @@
     user-select: none;
     -webkit-touch-callout: none;
     -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Prevent horizontal overflow on mobile */
+  @media (max-width: 768px) {
+    .mobile-container {
+      width: 100vw;
+      max-width: 100vw;
+      overflow-x: hidden;
+    }
   }
 }
 

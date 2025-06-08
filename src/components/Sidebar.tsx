@@ -2,7 +2,6 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDarkMode } from '@/hooks/useDarkMode';
-import { useAutoSidebar } from '@/hooks/useAutoSidebar';
 import SidebarHeader from './sidebar/SidebarHeader';
 import SidebarNav from './sidebar/SidebarNav';
 import SidebarFooter from './sidebar/SidebarFooter';
@@ -11,8 +10,8 @@ import {
   SidebarContent,
   SidebarHeader as ShadcnSidebarHeader,
   SidebarFooter as ShadcnSidebarFooter,
+  useSidebar,
 } from '@/components/ui/sidebar';
-import { cn } from '@/lib/utils';
 
 interface SidebarProps {
   onNavigation?: () => void;
@@ -21,84 +20,48 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
   const { user } = useAuth();
   const { isDark, toggle } = useDarkMode();
-  const {
-    isExpanded,
-    isMobileOpen,
-    handleMouseEnter,
-    handleMouseLeave,
-    handleMobileToggle,
-    handleBackdropClick,
-    isMobile
-  } = useAutoSidebar();
+  const { state, isMobile, setOpenMobile } = useSidebar();
+
+  const handleNavigation = () => {
+    // Close mobile sidebar when navigating
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+    onNavigation?.();
+  };
 
   if (!user) return null;
 
-  return (
-    <>
-      {/* Mobile backdrop */}
-      {isMobile && isMobileOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-40 md:hidden"
-          onClick={handleBackdropClick}
-        />
-      )}
-      
-      {/* Hover area for desktop - matches collapsed sidebar width */}
-      {!isMobile && (
-        <div
-          className="fixed left-0 top-0 h-full w-12 z-30 hidden md:block"
-          onMouseEnter={handleMouseEnter}
-          onMouseLeave={handleMouseLeave}
-        />
-      )}
-      
-      {/* Mobile edge trigger */}
-      {isMobile && !isMobileOpen && (
-        <div
-          className="fixed left-0 top-0 h-full w-4 z-30 md:hidden"
-          onTouchStart={handleMobileToggle}
-        />
-      )}
+  const isCollapsed = !isMobile && state === 'collapsed';
 
-      <div
-        className={cn(
-          "fixed left-0 top-0 h-full z-50 transition-transform duration-300 ease-in-out",
-          isMobile ? (isMobileOpen ? "translate-x-0" : "-translate-x-full") : "translate-x-0"
-        )}
-        onMouseEnter={!isMobile ? handleMouseEnter : undefined}
-        onMouseLeave={!isMobile ? handleMouseLeave : undefined}
-      >
-        <ShadcnSidebar 
-          className={cn(
-            "border-r border-border transition-all duration-300",
-            !isMobile && !isExpanded ? "w-12" : "w-64"
-          )}
-        >
-          <ShadcnSidebarHeader>
-            <SidebarHeader 
-              isDark={isDark} 
-              onToggleDarkMode={toggle} 
-              onNavigation={onNavigation}
-              isCollapsed={!isMobile && !isExpanded}
-            />
-          </ShadcnSidebarHeader>
-          
-          <SidebarContent>
-            <SidebarNav 
-              onNavigation={onNavigation} 
-              isCollapsed={!isMobile && !isExpanded}
-            />
-          </SidebarContent>
-          
-          <ShadcnSidebarFooter>
-            <SidebarFooter 
-              user={user} 
-              isCollapsed={!isMobile && !isExpanded}
-            />
-          </ShadcnSidebarFooter>
-        </ShadcnSidebar>
-      </div>
-    </>
+  return (
+    <ShadcnSidebar 
+      className="border-r border-border"
+      collapsible="icon"
+    >
+      <ShadcnSidebarHeader>
+        <SidebarHeader 
+          isDark={isDark} 
+          onToggleDarkMode={toggle} 
+          onNavigation={handleNavigation}
+          isCollapsed={isCollapsed}
+        />
+      </ShadcnSidebarHeader>
+      
+      <SidebarContent>
+        <SidebarNav 
+          onNavigation={handleNavigation} 
+          isCollapsed={isCollapsed}
+        />
+      </SidebarContent>
+      
+      <ShadcnSidebarFooter>
+        <SidebarFooter 
+          user={user} 
+          isCollapsed={isCollapsed}
+        />
+      </ShadcnSidebarFooter>
+    </ShadcnSidebar>
   );
 };
 
