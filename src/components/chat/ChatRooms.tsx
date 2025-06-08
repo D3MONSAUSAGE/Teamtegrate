@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, executeWithAuth } from "@/integrations/supabase/client";
 import { useAuth } from '@/contexts/AuthContext';
 import { useChatPermissions } from '@/hooks/use-chat-permissions';
 import { useChatRoomsDebug } from '@/hooks/use-chat-rooms-debug';
@@ -30,45 +31,58 @@ const ChatRooms: React.FC<ChatRoomsProps> = ({ selectedRoom, onRoomSelect }) => 
   const [rooms, setRooms] = useState<ChatRoomData[]>([]);
   const [isCreateRoomOpen, setIsCreateRoomOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
   const { canCreateRooms } = useChatPermissions();
   const debug = useChatRoomsDebug();
   
   useEffect(() => {
-    fetchRooms();
-    const channel = subscribeToRooms();
+    if (user) {
+      fetchRooms();
+      const channel = subscribeToRooms();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [user]);
 
   const fetchRooms = async () => {
+    if (!user) {
+      console.log('ChatRooms: No user found, skipping fetch');
+      setIsLoading(false);
+      return;
+    }
+
     await debug.logDebugInfo();
+    setIsLoading(true);
+    setError(null);
     
     try {
-      console.log('ChatRooms: Fetching rooms for user:', user?.id, 'role:', user?.role);
+      console.log('ChatRooms: Fetching rooms for user:', user.id, 'role:', user.role);
       
-      // The new RLS policy will automatically filter rooms based on role
-      // Superadmins and admins will see all rooms
-      // Others will only see rooms they created or participate in
-      const { data, error } = await supabase
-        .from('chat_rooms')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // Use executeWithAuth to ensure proper authentication context
+      const data = await executeWithAuth(async () => {
+        const { data, error } = await supabase
+          .from('chat_rooms')
+          .select('*')
+          .order('created_at', { ascending: false });
 
-      debug.logQueryResult(data, error);
+        if (error) {
+          console.error('Supabase error:', error);
+          throw error;
+        }
 
-      if (error) {
-        console.error('Error fetching rooms:', error);
-        toast.error('Failed to load chat rooms');
-        return;
-      }
+        return data;
+      });
 
-      console.log('ChatRooms: Fetched rooms:', data?.length || 0);
+      debug.logQueryResult(data, null);
+      console.log('ChatRooms: Successfully fetched rooms:', data?.length || 0);
 
       if (!data || data.length === 0) {
         setRooms([]);
+        setError('No chat rooms found. You may need to create one or be added to existing rooms.');
         return;
       }
 
@@ -84,9 +98,22 @@ const ChatRooms: React.FC<ChatRoomsProps> = ({ selectedRoom, onRoomSelect }) => 
       debug.logProcessedRooms(roomsWithMeta);
       setRooms(roomsWithMeta);
       
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Error fetching rooms:', error);
       debug.logUnexpectedError(error);
-      toast.error('Failed to load chat rooms');
+      
+      if (error.message === 'Authentication required') {
+        setError('Please log in to view chat rooms.');
+        toast.error('Authentication required. Please log in again.');
+      } else if (error.message?.includes('JWT')) {
+        setError('Session expired. Please refresh the page.');
+        toast.error('Session expired. Please refresh the page.');
+      } else {
+        setError(`Failed to load chat rooms: ${error.message}`);
+        toast.error('Failed to load chat rooms');
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -129,6 +156,41 @@ const ChatRooms: React.FC<ChatRoomsProps> = ({ selectedRoom, onRoomSelect }) => 
   );
 
   debug.logRenderState(rooms, filteredRooms, searchQuery, canCreateRooms());
+
+  if (isLoading) {
+    return (
+      <Card className="h-full flex flex-col border-0 rounded-none">
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-muted-foreground">Loading chat rooms...</div>
+        </div>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="h-full flex flex-col border-0 rounded-none">
+        <div className="p-4 border-b border-border dark:border-gray-800">
+          <ChatRoomsHeader
+            canCreateRooms={canCreateRooms()}
+            onCreateRoom={() => setIsCreateRoomOpen(true)}
+          />
+        </div>
+        <div className="flex-1 flex items-center justify-center p-4">
+          <div className="text-center">
+            <div className="text-destructive mb-2">Error loading rooms</div>
+            <div className="text-sm text-muted-foreground mb-4">{error}</div>
+            <button 
+              onClick={fetchRooms}
+              className="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <Card className="h-full flex flex-col border-0 rounded-none">

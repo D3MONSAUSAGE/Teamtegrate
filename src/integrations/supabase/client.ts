@@ -15,5 +15,29 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
+    flowType: 'pkce'
+  },
+  global: {
+    headers: {
+      'x-application-name': 'daily-team-sync'
+    }
   }
 });
+
+// Helper function to ensure authenticated requests
+export const executeWithAuth = async <T>(operation: () => Promise<T>): Promise<T> => {
+  const { data: { session }, error } = await supabase.auth.getSession();
+  
+  if (error) {
+    console.error('Session error:', error);
+    throw error;
+  }
+  
+  if (!session) {
+    console.error('No active session found');
+    throw new Error('Authentication required');
+  }
+  
+  console.log('Executing with authenticated session for user:', session.user.id);
+  return await operation();
+};
