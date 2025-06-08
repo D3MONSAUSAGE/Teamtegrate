@@ -61,11 +61,13 @@ const ProfileQuickActions = () => {
                 "h-auto p-4 flex flex-col items-center gap-2 text-center"
               )}
             >
-              <action.icon className="h-6 w-6" />
-              <div>
-                <div className="font-medium">{action.title}</div>
-                <div className="text-xs text-muted-foreground">{action.description}</div>
-              </div>
+              <>
+                <action.icon className="h-6 w-6" />
+                <div>
+                  <div className="font-medium">{action.title}</div>
+                  <div className="text-xs text-muted-foreground">{action.description}</div>
+                </div>
+              </>
             </button>
           ))}
         </div>
