@@ -154,7 +154,7 @@ const Navbar = () => {
   if (!user) return null;
 
   return (
-    <nav className="bg-white dark:bg-background border-b border-gray-200 dark:border-gray-800 py-4 px-6 flex items-center justify-between">
+    <nav className="bg-white dark:bg-background border-b border-gray-200 dark:border-gray-800 py-4 pl-3 md:pl-6 pr-6 flex items-center justify-between">
       <div className="flex items-center space-x-4">
         <Link to="/" className="text-xl font-bold text-primary">TeamStream</Link>
       </div>
