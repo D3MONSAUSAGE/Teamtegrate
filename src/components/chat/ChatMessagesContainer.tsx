@@ -1,8 +1,8 @@
 
 import React from 'react';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import ChatMessageGroups from './ChatMessageGroups';
 import ChatMessageLoader from './ChatMessageLoader';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ChatMessagesContainerProps {
   scrollAreaRef: React.RefObject<HTMLDivElement>;
@@ -27,6 +27,8 @@ const ChatMessagesContainer: React.FC<ChatMessagesContainerProps> = ({
   onReplyClick,
   messagesEndRef
 }) => {
+  const isMobile = useIsMobile();
+
   const getMessageDate = (timestamp: string) => {
     if (!timestamp) return '';
     const date = new Date(timestamp);
@@ -54,10 +56,14 @@ const ChatMessagesContainer: React.FC<ChatMessagesContainerProps> = ({
   }, [messages]);
 
   return (
-    <ScrollArea 
+    <div 
       ref={scrollAreaRef}
-      className="flex-1 p-3 bg-[url('https://web.whatsapp.com/img/bg-chat-tile-light_04fcacde539c58cca6745483d4858c52.png')] dark:bg-[url('https://web.whatsapp.com/img/bg-chat-tile-dark_f1e8c06e8d4e3296352ae4682c0632c3.png')] bg-repeat"
+      className={`flex-1 overflow-y-auto p-3 md:p-4 bg-[url('https://web.whatsapp.com/img/bg-chat-tile-light_04fcacde539c58cca6745483d4858c52.png')] dark:bg-[url('https://web.whatsapp.com/img/bg-chat-tile-dark_f1e8c06e8d4e3296352ae4682c0632c3.png')] bg-repeat ${isMobile ? 'mobile-hide-scrollbar' : ''}`}
       onScroll={onScroll}
+      style={{ 
+        scrollBehavior: 'smooth',
+        WebkitOverflowScrolling: 'touch'
+      }}
     >
       <ChatMessageLoader 
         isLoading={isLoading}
@@ -73,7 +79,7 @@ const ChatMessagesContainer: React.FC<ChatMessagesContainerProps> = ({
       />
       
       <div ref={messagesEndRef} />
-    </ScrollArea>
+    </div>
   );
 };
 

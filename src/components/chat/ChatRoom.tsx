@@ -7,6 +7,7 @@ import ChatTypingIndicator from './ChatTypingIndicator';
 import ChatMessagesContainer from './ChatMessagesContainer';
 import { useChatRoom } from '@/hooks/use-chat-room';
 import { markUserInteraction } from '@/utils/chatSounds';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ChatRoomProps {
   room: {
@@ -19,11 +20,11 @@ interface ChatRoomProps {
 }
 
 const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, onRoomDeleted }) => {
+  const isMobile = useIsMobile();
   const {
     user,
     messagesEndRef,
     scrollAreaRef,
-    isMobile,
     messages,
     newMessage,
     setNewMessage,
@@ -56,8 +57,8 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, onRoomDeleted }) => {
   };
 
   return (
-    <Card 
-      className="flex flex-col h-full border-border dark:border-gray-800 shadow-none bg-background dark:bg-[#111827] overflow-hidden"
+    <div 
+      className="flex flex-col h-full bg-background overflow-hidden"
       onClick={handleChatClick}
     >
       <ChatRoomHeader
@@ -72,32 +73,34 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, onRoomDeleted }) => {
         canDelete={isCreator}
       />
 
-      <ChatMessagesContainer
-        scrollAreaRef={scrollAreaRef}
-        messages={messages}
-        userId={user?.id}
-        isLoading={isLoading}
-        hasMoreMessages={hasMoreMessages}
-        loadMoreMessages={loadMoreMessages}
-        onScroll={handleScroll}
-        onReplyClick={handleReplyClick}
-        messagesEndRef={messagesEndRef}
-      />
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <ChatMessagesContainer
+          scrollAreaRef={scrollAreaRef}
+          messages={messages}
+          userId={user?.id}
+          isLoading={isLoading}
+          hasMoreMessages={hasMoreMessages}
+          loadMoreMessages={loadMoreMessages}
+          onScroll={handleScroll}
+          onReplyClick={handleReplyClick}
+          messagesEndRef={messagesEndRef}
+        />
 
-      <ChatTypingIndicator typingUsers={typingUsers} />
+        <ChatTypingIndicator typingUsers={typingUsers} />
 
-      <ChatMessageInput
-        newMessage={newMessage}
-        setNewMessage={setNewMessage}
-        fileUploads={fileUploads}
-        setFileUploads={setFileUploads}
-        onSubmit={handleSendMessage}
-        replyTo={replyTo}
-        setReplyTo={setReplyTo}
-        isSending={isSending}
-        roomId={room.id}
-      />
-    </Card>
+        <ChatMessageInput
+          newMessage={newMessage}
+          setNewMessage={setNewMessage}
+          fileUploads={fileUploads}
+          setFileUploads={setFileUploads}
+          onSubmit={handleSendMessage}
+          replyTo={replyTo}
+          setReplyTo={setReplyTo}
+          isSending={isSending}
+          roomId={room.id}
+        />
+      </div>
+    </div>
   );
 };
 
