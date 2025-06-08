@@ -31,9 +31,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Check if user is logged in on mount and set up auth state listener
+  // Set up auth state listener - this handles ALL authentication state changes
   useEffect(() => {
-    // Set up auth state listener FIRST
+    console.log('Setting up auth state listener...');
+    
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state changed:', event, session?.user?.id);
@@ -43,35 +44,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (session?.user) {
             const userData = await createUserFromSession(session);
             setUser(userData);
+            console.log('User authenticated:', userData.id, userData.role);
           } else {
             setUser(null);
+            console.log('User logged out or no session');
           }
         } catch (error) {
           console.error('Error in auth state change:', error);
           setUser(null);
+          setSession(null);
         } finally {
           // Always clear loading state after handling auth state change
           setLoading(false);
+          console.log('Loading state cleared');
         }
       }
     );
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      try {
-        setSession(session);
-        if (session?.user) {
-          const userData = await createUserFromSession(session);
-          setUser(userData);
-        }
-      } catch (error) {
-        console.error('Error getting initial session:', error);
-      } finally {
-        setLoading(false);
-      }
-    });
-
     return () => {
+      console.log('Cleaning up auth state listener');
       subscription.unsubscribe();
     };
   }, []);
@@ -80,10 +71,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(true);
     try {
       await authLogin(email, password);
+      // Don't set loading to false here - let onAuthStateChange handle it
     } catch (error) {
+      setLoading(false); // Only set to false on error
       throw error;
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -91,19 +82,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(true);
     try {
       await authSignup(email, password, name, role);
+      // Don't set loading to false here - let onAuthStateChange handle it
     } catch (error) {
+      setLoading(false); // Only set to false on error
       throw error;
-    } finally {
-      setLoading(false);
     }
   };
 
   const logout = async () => {
     try {
       await authLogout(!!session);
-      setUser(null);
-      setSession(null);
+      // Don't manually clear state here - let onAuthStateChange handle it
     } catch (error) {
+      // On error, clear state manually as fallback
       setUser(null);
       setSession(null);
       throw error;
