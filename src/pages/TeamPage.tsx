@@ -8,7 +8,6 @@ import TeamStatsCards from '@/components/team/TeamStatsCards';
 import TeamPageHeader from '@/components/team/TeamPageHeader';
 import TeamPageContent from '@/components/team/TeamPageContent';
 import TeamDebugPanel from '@/components/team/TeamDebugPanel';
-import AllUsersSection from '@/components/team/AllUsersSection';
 import useTeamMembers from '@/hooks/useTeamMembers';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -33,23 +32,6 @@ const TeamPage = () => {
     refreshTeamMembers,
     isLoading: isTeamMembersLoading,
   } = useTeamMembers();
-
-  const { data: allUsers, isLoading: isUsersLoading } = useQuery({
-    queryKey: ['all-users'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('users')
-        .select('id, name, email, role, avatar_url')
-        .order('name');
-      
-      if (error) {
-        toast.error('Failed to load users');
-        throw error;
-      }
-      
-      return data || [];
-    }
-  });
 
   const handleRemoveMember = async (memberId: string) => {
     setRemovingMemberId(memberId);
@@ -114,11 +96,6 @@ const TeamPage = () => {
         onRemoveMember={handleRemoveMember}
         onAddMember={() => setIsAddMemberOpen(true)}
         onReassignTask={handleReassignTask}
-      />
-      
-      <AllUsersSection
-        allUsers={allUsers}
-        isUsersLoading={isUsersLoading}
       />
       
       <AddTeamMemberDialog 

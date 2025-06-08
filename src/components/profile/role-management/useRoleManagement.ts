@@ -23,30 +23,35 @@ export const useRoleManagement = ({ targetUser, onRoleChanged }: UseRoleManageme
 
   const currentTargetRole = targetUser.role as UserRole;
 
-  const canManageThisUser = currentUser && 
-    hasRoleAccess(currentUser.role, 'admin') && 
-    canManageUser(currentUser.role, currentTargetRole);
+  // Enhanced role management permissions
+  const canManageThisUser = currentUser && (() => {
+    // Superadmin can manage everyone except themselves
+    if (currentUser.role === 'superadmin' && targetUser.id !== currentUser.id) {
+      return true;
+    }
+    
+    // Admin can manage managers and users (but not superadmins or other admins)
+    if (currentUser.role === 'admin' && 
+        ['manager', 'user'].includes(currentTargetRole) && 
+        targetUser.id !== currentUser.id) {
+      return true;
+    }
+    
+    // Managers cannot change roles
+    return false;
+  })();
 
   const getAvailableRoles = (): UserRole[] => {
-    if (!currentUser) return [];
+    if (!currentUser || !canManageThisUser) return [];
     
     const roles: UserRole[] = [];
     
-    // Users can always be demoted to user level
-    roles.push('user');
-    
-    // Add roles based on current user's permissions
-    if (hasRoleAccess(currentUser.role, 'manager')) {
-      roles.push('manager');
-    }
-    
-    if (hasRoleAccess(currentUser.role, 'admin')) {
-      roles.push('admin');
-    }
-    
-    // Only superadmins can create other superadmins
     if (currentUser.role === 'superadmin') {
-      roles.push('superadmin');
+      // Superadmin can assign any role except to themselves
+      roles.push('user', 'manager', 'admin', 'superadmin');
+    } else if (currentUser.role === 'admin') {
+      // Admin can only assign user and manager roles
+      roles.push('user', 'manager');
     }
     
     return roles.filter(role => role !== currentTargetRole);
@@ -58,7 +63,7 @@ export const useRoleManagement = ({ targetUser, onRoleChanged }: UseRoleManageme
   };
 
   const handleRoleChange = async () => {
-    if (!newRole || !currentUser) return;
+    if (!newRole || !currentUser || !canManageThisUser) return;
 
     setIsChangingRole(true);
     try {
