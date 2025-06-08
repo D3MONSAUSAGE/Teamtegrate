@@ -1,4 +1,3 @@
-
 import React, { useRef, useState, useEffect } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Loader2, Camera } from "lucide-react";
@@ -12,6 +11,7 @@ interface ProfileAvatarProps {
 }
 
 const ProfileAvatar: React.FC<ProfileAvatarProps> = ({ user, setAvatarUrl, avatarUrl }) => {
+  console.log("ProfileAvatar rendering");
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -95,6 +95,8 @@ const ProfileAvatar: React.FC<ProfileAvatarProps> = ({ user, setAvatarUrl, avata
       }
     }
   };
+
+  console.log("ProfileAvatar about to render Avatar and button");
 
   return (
     <div className="flex flex-col items-center gap-4">

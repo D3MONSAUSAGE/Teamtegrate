@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +14,7 @@ import { UserRole, getRoleDisplayName } from '@/types';
 import { cn } from "@/lib/utils";
 
 const ProfileHeader = () => {
+  console.log("ProfileHeader rendering");
   const { user, refreshUserSession } = useAuth();
   const navigate = useNavigate();
   const [name, setName] = useState<string>(user?.name || "");
@@ -130,12 +130,15 @@ const ProfileHeader = () => {
     return <div className="p-4">Loading...</div>;
   }
 
+  console.log("ProfileHeader about to render main content");
+
   return (
     <Card className={`bg-gradient-to-br ${getRoleGradient(user.role)} border-none shadow-lg`}>
       <CardContent className="p-8">
         <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-8">
           <div className="flex flex-col lg:flex-row lg:items-start gap-8 flex-1">
             <div className="flex flex-col items-center lg:items-start">
+              {console.log("About to render ProfileAvatar")}
               <ProfileAvatar 
                 user={user} 
                 setAvatarUrl={setAvatarUrl} 
@@ -166,6 +169,7 @@ const ProfileHeader = () => {
             </div>
             
             <div className="flex-1 min-w-0">
+              {console.log("About to render ProfileInfoForm")}
               <ProfileInfoForm
                 user={user}
                 name={name}
