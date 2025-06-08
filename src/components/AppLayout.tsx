@@ -27,7 +27,7 @@ const AppLayout = () => {
       <div className="min-h-screen bg-background w-full flex">
         <Sidebar />
         
-        <SidebarInset className="flex flex-col flex-1 ml-3">
+        <SidebarInset className="flex flex-col flex-1 ml-12 md:ml-16">
           <Navbar />
           <main className="flex-1 overflow-y-auto p-3 md:p-6">
             <Outlet />
