@@ -7,7 +7,6 @@ import TaskList from "./TaskList";
 interface TaskTabsProps {
   todoTasks: Task[];
   inProgressTasks: Task[];
-  pendingTasks: Task[];
   completedTasks: Task[];
   onEdit: (task: Task) => void;
   onNewTask: () => void;
@@ -17,7 +16,6 @@ interface TaskTabsProps {
 const TaskTabs: React.FC<TaskTabsProps> = ({
   todoTasks,
   inProgressTasks,
-  pendingTasks,
   completedTasks,
   onEdit,
   onNewTask,
@@ -25,7 +23,7 @@ const TaskTabs: React.FC<TaskTabsProps> = ({
 }) => {
   return (
     <Tabs defaultValue="todo" className="w-full">
-      <TabsList className="grid grid-cols-4 mb-4">
+      <TabsList className="grid grid-cols-3 mb-4">
         <TabsTrigger value="todo" className="relative">
           To Do
           {todoTasks.length > 0 && (
@@ -39,14 +37,6 @@ const TaskTabs: React.FC<TaskTabsProps> = ({
           {inProgressTasks.length > 0 && (
             <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
               {inProgressTasks.length}
-            </span>
-          )}
-        </TabsTrigger>
-        <TabsTrigger value="pending" className="relative">
-          Pending
-          {pendingTasks.length > 0 && (
-            <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
-              {pendingTasks.length}
             </span>
           )}
         </TabsTrigger>
@@ -77,16 +67,6 @@ const TaskTabs: React.FC<TaskTabsProps> = ({
           onNewTask={onNewTask}
           onStatusChange={onStatusChange} 
           emptyMessage="No tasks in progress" 
-        />
-      </TabsContent>
-      
-      <TabsContent value="pending">
-        <TaskList 
-          tasks={pendingTasks} 
-          onEdit={onEdit} 
-          onNewTask={onNewTask}
-          onStatusChange={onStatusChange} 
-          emptyMessage="No pending tasks" 
         />
       </TabsContent>
       

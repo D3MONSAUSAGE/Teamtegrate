@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTask } from '@/contexts/task';
@@ -49,7 +50,6 @@ const TasksPage = () => {
   
   const todoTasks = tasks.filter((task) => task.status === 'To Do');
   const inProgressTasks = tasks.filter((task) => task.status === 'In Progress');
-  const pendingTasks = tasks.filter((task) => task.status === 'Pending');
   const completedTasks = tasks.filter((task) => task.status === 'Completed');
   
   const sortTasks = (tasksToSort: Task[]) => {
@@ -79,7 +79,6 @@ const TasksPage = () => {
   
   const sortedTodo = sortTasks(todoTasks);
   const sortedInProgress = sortTasks(inProgressTasks);
-  const sortedPending = sortTasks(pendingTasks);
   const sortedCompleted = sortTasks(completedTasks);
 
   return (
@@ -96,7 +95,6 @@ const TasksPage = () => {
       <TaskTabs
         todoTasks={sortedTodo}
         inProgressTasks={sortedInProgress}
-        pendingTasks={sortedPending}
         completedTasks={sortedCompleted}
         onEdit={handleEditTask}
         onNewTask={() => {

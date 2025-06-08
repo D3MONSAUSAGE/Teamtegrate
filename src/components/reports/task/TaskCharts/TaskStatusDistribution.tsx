@@ -13,7 +13,7 @@ interface TaskStatusDistributionProps {
 
 const TaskStatusDistribution: React.FC<TaskStatusDistributionProps> = ({ statusCounts }) => {
   const isMobile = useIsMobile();
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+  const COLORS = ['#0088FE', '#00C49F', '#FF8042'];
 
   const renderPieChartLabel = ({ name, percent }: { name: string; percent: number }) => {
     if (!isMobile || percent > 0.15) {
@@ -25,8 +25,7 @@ const TaskStatusDistribution: React.FC<TaskStatusDistributionProps> = ({ statusC
   const chartConfig = {
     'To Do': { color: COLORS[0] },
     'In Progress': { color: COLORS[1] },
-    'Pending': { color: COLORS[2] },
-    'Completed': { color: COLORS[3] }
+    'Completed': { color: COLORS[2] }
   };
 
   return (

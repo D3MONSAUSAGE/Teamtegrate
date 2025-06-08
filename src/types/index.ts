@@ -1,4 +1,3 @@
-
 export type UserRole = 'superadmin' | 'admin' | 'manager' | 'user';
 
 export interface User {
@@ -20,7 +19,7 @@ export interface AppUser {
 
 export type TaskPriority = 'Low' | 'Medium' | 'High';
 
-export type TaskStatus = 'To Do' | 'In Progress' | 'Pending' | 'Completed';
+export type TaskStatus = 'To Do' | 'In Progress' | 'Completed';
 
 export interface TaskComment {
   id: string;
