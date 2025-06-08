@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { supabase, executeWithAuth } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from '@/contexts/AuthContext';
 import { useChatPermissions } from '@/hooks/use-chat-permissions';
 import { useChatRoomsDebug } from '@/hooks/use-chat-rooms-debug';
@@ -62,20 +61,16 @@ const ChatRooms: React.FC<ChatRoomsProps> = ({ selectedRoom, onRoomSelect }) => 
     try {
       console.log('ChatRooms: Fetching rooms for user:', user.id, 'role:', user.role);
       
-      // Use executeWithAuth to ensure proper authentication context
-      const data = await executeWithAuth(async () => {
-        const { data, error } = await supabase
-          .from('chat_rooms')
-          .select('*')
-          .order('created_at', { ascending: false });
+      // The database policies will now handle access control automatically
+      const { data, error } = await supabase
+        .from('chat_rooms')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-        if (error) {
-          console.error('Supabase error:', error);
-          throw error;
-        }
-
-        return data;
-      });
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
 
       debug.logQueryResult(data, null);
       console.log('ChatRooms: Successfully fetched rooms:', data?.length || 0);

@@ -991,6 +991,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      is_admin_or_superadmin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       send_reminders: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -1005,6 +1009,10 @@ export type Database = {
       }
       user_is_project_team_member: {
         Args: { project_id_val: string; user_id_val: string }
+        Returns: boolean
+      }
+      user_participates_in_room: {
+        Args: { room_id: string }
         Returns: boolean
       }
     }

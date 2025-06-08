@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { supabase, executeWithAuth } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { hasRoleAccess } from '@/contexts/auth/roleUtils';
 
@@ -36,21 +36,20 @@ export function useChatParticipantCheck(roomId: string): ParticipantCheckResult 
         }
 
         // For other users, check if they are a participant in the room
-        await executeWithAuth(async () => {
-          const { data, error: checkError } = await supabase
-            .from('chat_room_participants')
-            .select('id')
-            .eq('room_id', roomId)
-            .eq('user_id', user.id)
-            .single();
+        // The new security definer functions will handle the access control
+        const { data, error: checkError } = await supabase
+          .from('chat_room_participants')
+          .select('id')
+          .eq('room_id', roomId)
+          .eq('user_id', user.id)
+          .single();
 
-          if (checkError && checkError.code !== 'PGRST116') {
-            // PGRST116 means no rows found, which is expected if not a participant
-            throw checkError;
-          }
+        if (checkError && checkError.code !== 'PGRST116') {
+          // PGRST116 means no rows found, which is expected if not a participant
+          throw checkError;
+        }
 
-          setIsParticipant(!!data);
-        });
+        setIsParticipant(!!data);
       } catch (err: any) {
         console.error('Error checking participant status:', err);
         setError(err.message || 'Failed to verify room access');
