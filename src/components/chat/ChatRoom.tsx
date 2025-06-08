@@ -5,7 +5,9 @@ import ChatMessageInput from './ChatMessageInput';
 import ChatRoomHeader from './ChatRoomHeader';
 import ChatTypingIndicator from './ChatTypingIndicator';
 import ChatMessagesContainer from './ChatMessagesContainer';
+import ChatRoomAccessDenied from './ChatRoomAccessDenied';
 import { useChatRoom } from '@/hooks/use-chat-room';
+import { useChatParticipantCheck } from '@/hooks/use-chat-participant-check';
 import { markUserInteraction } from '@/utils/chatSounds';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -21,6 +23,8 @@ interface ChatRoomProps {
 
 const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, onRoomDeleted }) => {
   const isMobile = useIsMobile();
+  const { isParticipant, isLoading: checkingAccess } = useChatParticipantCheck(room.id);
+  
   const {
     user,
     messagesEndRef,
@@ -55,6 +59,20 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, onRoomDeleted }) => {
   const handleChatClick = () => {
     markUserInteraction();
   };
+
+  // Show loading state while checking access
+  if (checkingAccess) {
+    return (
+      <div className="h-full flex items-center justify-center bg-background">
+        <div className="text-muted-foreground">Checking room access...</div>
+      </div>
+    );
+  }
+
+  // Show access denied if user is not a participant
+  if (!isParticipant) {
+    return <ChatRoomAccessDenied roomName={room.name} onBack={onBack} />;
+  }
 
   return (
     <div 
