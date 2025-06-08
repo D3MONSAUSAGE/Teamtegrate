@@ -4,19 +4,22 @@ import { Task } from '@/types';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { generateProjectColor, generateProjectBadgeColor } from '@/utils/colorUtils';
 
 interface CalendarTaskItemProps {
   task: Task;
   compact?: boolean;
   minimal?: boolean;
   onClick?: () => void;
+  projectName?: string;
 }
 
 const CalendarTaskItem: React.FC<CalendarTaskItemProps> = ({ 
   task,
   compact = false,
   minimal = false,
-  onClick
+  onClick,
+  projectName
 }) => {
   const getPriorityColor = (priority: string) => {
     switch(priority) {
@@ -34,6 +37,10 @@ const CalendarTaskItem: React.FC<CalendarTaskItemProps> = ({
       case 'Pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
+  };
+
+  const getProjectIndicatorColor = () => {
+    return generateProjectBadgeColor(task.projectId, projectName);
   };
   
   const isOverdue = () => {
@@ -61,16 +68,20 @@ const CalendarTaskItem: React.FC<CalendarTaskItemProps> = ({
     return (
       <div 
         className={cn(
-          "text-xs px-2 py-1 mb-1 truncate rounded cursor-pointer border transition-all duration-200",
+          "text-xs px-2 py-1 mb-1 truncate rounded cursor-pointer border transition-all duration-200 relative",
           "hover:shadow-sm hover:scale-[1.02]",
           getStatusColor(task.status),
           isOverdue() && "ring-1 ring-rose-400",
           onClick && "cursor-pointer"
         )}
         onClick={onClick}
-        title={`${task.title} - ${task.status} - ${task.priority} priority`}
+        title={`${task.title} - ${task.status} - ${task.priority} priority${projectName ? ` - ${projectName}` : ''}`}
       >
-        <div className="font-medium truncate">{task.title}</div>
+        {/* Project color indicator */}
+        {task.projectId && (
+          <div className={`absolute left-0 top-0 bottom-0 w-1 rounded-l ${getProjectIndicatorColor()}`} />
+        )}
+        <div className="font-medium truncate pl-2">{task.title}</div>
       </div>
     );
   }
@@ -78,14 +89,19 @@ const CalendarTaskItem: React.FC<CalendarTaskItemProps> = ({
   return (
     <div 
       className={cn(
-        "border rounded-lg mb-2 cursor-pointer transition-all duration-200 bg-card shadow-sm",
+        "border rounded-lg mb-2 cursor-pointer transition-all duration-200 bg-card shadow-sm relative overflow-hidden",
         "hover:shadow-md hover:scale-[1.02]",
         isOverdue() && "ring-2 ring-rose-400 ring-opacity-50",
         onClick && "cursor-pointer"
       )}
       onClick={onClick}
     >
-      <div className="p-3">
+      {/* Project color indicator */}
+      {task.projectId && (
+        <div className={`absolute left-0 top-0 bottom-0 w-1 ${getProjectIndicatorColor()}`} />
+      )}
+      
+      <div className="p-3 pl-4">
         <div className="flex items-start justify-between gap-2 mb-2">
           <div className="font-semibold text-sm truncate flex-1">
             {task.title}
@@ -106,9 +122,16 @@ const CalendarTaskItem: React.FC<CalendarTaskItemProps> = ({
               <span className="font-medium text-primary">
                 {formatTaskTime(task.deadline)}
               </span>
-              <Badge variant="secondary" className={cn("text-xs", getStatusColor(task.status))}>
-                {task.status}
-              </Badge>
+              <div className="flex items-center gap-2">
+                {projectName && (
+                  <span className="text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                    {projectName}
+                  </span>
+                )}
+                <Badge variant="secondary" className={cn("text-xs", getStatusColor(task.status))}>
+                  {task.status}
+                </Badge>
+              </div>
             </div>
           </>
         )}

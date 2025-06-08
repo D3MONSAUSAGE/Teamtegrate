@@ -12,14 +12,21 @@ import TaskDetailDrawer from '@/components/calendar/TaskDetailDrawer';
 import CalendarDayView from '@/components/calendar/CalendarDayView';
 import CalendarWeekView from '@/components/calendar/CalendarWeekView';
 import CalendarMonthView from '@/components/calendar/CalendarMonthView';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Filter, Clock } from 'lucide-react';
+import MiniCalendarNav from '@/components/calendar/MiniCalendarNav';
+import CalendarLegend from '@/components/calendar/CalendarLegend';
+import QuickTaskCreateDialog from '@/components/calendar/QuickTaskCreateDialog';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Filter, Clock, Plus } from 'lucide-react';
 
 const CalendarPage = () => {
-  const { tasks } = useTask();
+  const { tasks, projects } = useTask();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [viewType, setViewType] = useState<'day' | 'week' | 'month'>('month');
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
+  const [isMiniCalendarCollapsed, setIsMiniCalendarCollapsed] = useState<boolean>(true);
+  const [showLegend, setShowLegend] = useState<boolean>(true);
+  const [isQuickCreateOpen, setIsQuickCreateOpen] = useState<boolean>(false);
+  const [quickCreateDate, setQuickCreateDate] = useState<Date>(new Date());
 
   // Handle task click to open drawer with details
   const handleTaskClick = (task: Task) => {
@@ -39,6 +46,11 @@ const CalendarPage = () => {
     setSelectedDate(new Date());
   };
 
+  const handleDateCreate = (date: Date) => {
+    setQuickCreateDate(date);
+    setIsQuickCreateOpen(true);
+  };
+
   const todayTasksCount = tasks.filter(task => {
     try {
       return isSameDay(new Date(task.deadline), new Date());
@@ -56,6 +68,21 @@ const CalendarPage = () => {
           </div>
           
           <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowLegend(!showLegend)}
+            >
+              Legend
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsMiniCalendarCollapsed(!isMiniCalendarCollapsed)}
+            >
+              <CalendarIcon className="h-4 w-4 mr-2" />
+              Mini Calendar
+            </Button>
             <Select 
               value={viewType} 
               onValueChange={(value: 'day' | 'week' | 'month') => setViewType(value)}
@@ -72,6 +99,9 @@ const CalendarPage = () => {
             </Select>
           </div>
         </div>
+
+        {/* Color Legend */}
+        <CalendarLegend projects={projects} isVisible={showLegend} />
 
         {/* Date Navigation and Stats */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 p-4 bg-muted/30 rounded-lg">
@@ -108,6 +138,15 @@ const CalendarPage = () => {
             >
               Today
             </Button>
+
+            <Button
+              variant="default"
+              onClick={() => handleDateCreate(selectedDate)}
+              className="ml-2"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Task
+            </Button>
           </div>
 
           {/* Quick Stats */}
@@ -129,6 +168,15 @@ const CalendarPage = () => {
         </div>
       </div>
 
+      {/* Mini Calendar Navigation */}
+      <MiniCalendarNav
+        selectedDate={selectedDate}
+        onDateSelect={setSelectedDate}
+        tasks={tasks}
+        isCollapsed={isMiniCalendarCollapsed}
+        onToggle={() => setIsMiniCalendarCollapsed(!isMiniCalendarCollapsed)}
+      />
+
       {/* Main Calendar View - Full Width */}
       <div className="w-full">
         {viewType === 'day' && (
@@ -136,6 +184,7 @@ const CalendarPage = () => {
             selectedDate={selectedDate} 
             tasks={tasks}
             onTaskClick={handleTaskClick}
+            onDateCreate={handleDateCreate}
           />
         )}
         
@@ -144,6 +193,7 @@ const CalendarPage = () => {
             selectedDate={selectedDate} 
             tasks={tasks}
             onTaskClick={handleTaskClick}
+            onDateCreate={handleDateCreate}
           />
         )}
         
@@ -152,6 +202,7 @@ const CalendarPage = () => {
             selectedDate={selectedDate} 
             tasks={tasks}
             onTaskClick={handleTaskClick}
+            onDateCreate={handleDateCreate}
           />
         )}
       </div>
@@ -160,6 +211,13 @@ const CalendarPage = () => {
         open={isDrawerOpen}
         onOpenChange={setIsDrawerOpen}
         task={selectedTask}
+      />
+
+      <QuickTaskCreateDialog
+        isOpen={isQuickCreateOpen}
+        onClose={() => setIsQuickCreateOpen(false)}
+        selectedDate={quickCreateDate}
+        projects={projects}
       />
     </div>
   );
