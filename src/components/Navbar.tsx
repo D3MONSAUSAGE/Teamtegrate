@@ -44,6 +44,8 @@ const Navbar = () => {
       navigate('/dashboard/tasks');
     } else if (notificationType.includes('chat')) {
       navigate('/dashboard/chat');
+    } else if (notificationType.includes('project')) {
+      navigate('/dashboard/projects');
     }
     markAsRead();
   };

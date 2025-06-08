@@ -3,6 +3,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ChatAttachment } from "./useChatFileUpload";
+import { createChatMessageNotification } from "@/contexts/task/operations/assignment/createChatNotification";
 
 export function useChatSendMessage(roomId: string, userId: string | undefined) {
   const [isSending, setIsSending] = useState(false);
@@ -52,6 +53,30 @@ export function useChatSendMessage(roomId: string, userId: string | undefined) {
           console.error('Error adding attachments:', attachmentError);
           toast.error('Message sent, but attachments could not be added');
         }
+      }
+
+      // Get room name and user info for notifications
+      const { data: roomData } = await supabase
+        .from('chat_rooms')
+        .select('name')
+        .eq('id', roomId)
+        .single();
+
+      const { data: userData } = await supabase
+        .from('users')
+        .select('name')
+        .eq('id', userId)
+        .single();
+
+      // Create notifications for other participants
+      if (roomData && userData) {
+        await createChatMessageNotification(
+          roomId,
+          userId,
+          userData.name,
+          roomData.name,
+          content.trim() || 'Shared attachments'
+        );
       }
 
       // Return the message data for optimistic updates

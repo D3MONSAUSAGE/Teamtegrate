@@ -28,3 +28,30 @@ export const createTaskAssignmentNotification = async (
     // Don't block the task assignment if notification fails
   }
 };
+
+/**
+ * Create notifications for multiple task assignments
+ */
+export const createMultipleTaskAssignmentNotifications = async (
+  userIds: string[],
+  taskTitle: string,
+  currentUserId: string
+): Promise<void> => {
+  try {
+    const notifications = userIds.map(userId => ({
+      user_id: userId,
+      title: userId === currentUserId ? 'Task Self-Assigned' : 'Task Assigned',
+      content: userId === currentUserId 
+        ? `You assigned yourself to task: ${taskTitle}`
+        : `You've been assigned to task: ${taskTitle}`,
+      type: 'task_assignment'
+    }));
+
+    await supabase.from('notifications').insert(notifications);
+    
+    console.log(`Created ${notifications.length} task assignment notifications for task:`, taskTitle);
+  } catch (error) {
+    console.error('Error sending multiple task assignment notifications:', error);
+    // Don't block the task assignment if notification fails
+  }
+};

@@ -3,6 +3,7 @@ import { Project, User } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { playSuccessSound, playErrorSound } from '@/utils/sounds';
+import { createProjectTeamAdditionNotification } from './assignment/createProjectNotification';
 
 export const addTeamMemberToProject = async (
   projectId: string,
@@ -58,6 +59,23 @@ export const addTeamMemberToProject = async (
     }
 
     console.log('Team member added successfully, updating local state');
+
+    // Get current user info for notification
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+    const { data: currentUserData } = await supabase
+      .from('users')
+      .select('name')
+      .eq('id', currentUser?.id || '')
+      .single();
+
+    // Create notification for the added team member
+    if (currentUserData) {
+      await createProjectTeamAdditionNotification(
+        userId,
+        project.title,
+        currentUserData.name
+      );
+    }
 
     const updatedProjects = projects.map((p) => {
       if (p.id === projectId) {

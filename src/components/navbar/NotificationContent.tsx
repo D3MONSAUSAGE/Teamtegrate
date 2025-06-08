@@ -16,6 +16,57 @@ const NotificationContent: React.FC<NotificationContentProps> = ({
   const { notifications } = useNotifications();
   const navigate = useNavigate();
 
+  const getActionButton = (notificationType: string) => {
+    switch (notificationType) {
+      case 'chat_message':
+        return (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="mt-1 h-7 text-xs text-primary"
+            onClick={() => navigate('/dashboard/chat')}
+          >
+            Go to Chat
+          </Button>
+        );
+      case 'task_assignment':
+        return (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="mt-1 h-7 text-xs text-primary"
+            onClick={() => navigate('/dashboard/tasks')}
+          >
+            View Task
+          </Button>
+        );
+      case 'project_team_addition':
+        return (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="mt-1 h-7 text-xs text-primary"
+            onClick={() => navigate('/dashboard/projects')}
+          >
+            View Projects
+          </Button>
+        );
+      case 'chat_invitation':
+        return (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="mt-1 h-7 text-xs text-primary"
+            onClick={() => navigate('/dashboard/chat')}
+          >
+            Go to Chat
+          </Button>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="max-h-[400px] overflow-y-auto">
       {notifications && notifications.length > 0 ? (
@@ -33,26 +84,7 @@ const NotificationContent: React.FC<NotificationContentProps> = ({
               <span className="text-xs text-muted-foreground">{formatNotificationTime(notification.created_at)}</span>
             </div>
             <span className="text-sm">{notification.content}</span>
-            {notification.type === 'chat_invitation' && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="mt-1 h-7 text-xs text-primary"
-                onClick={() => navigate('/dashboard/chat')}
-              >
-                Go to Chat
-              </Button>
-            )}
-            {notification.type === 'task_assignment' && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="mt-1 h-7 text-xs text-primary"
-                onClick={() => navigate('/dashboard/tasks')}
-              >
-                View Task
-              </Button>
-            )}
+            {getActionButton(notification.type)}
           </div>
         ))
       ) : (
