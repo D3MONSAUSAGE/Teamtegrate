@@ -15,7 +15,6 @@ import { useDraggable } from '@/hooks/useDraggable';
 import { useChatBubble } from '@/hooks/useChatBubble';
 import { useIsMobile } from '@/hooks/use-mobile';
 import ChatDragHint from './ChatDragHint';
-import ChatResetButton from './ChatResetButton';
 import ChatMessagesArea from './ChatMessagesArea';
 import ChatInputArea from './ChatInputArea';
 
@@ -129,7 +128,6 @@ const ChatbotBubble = () => {
       <TooltipProvider>
         <div className="relative">
           <ChatDragHint show={showDragHint} />
-          <ChatResetButton onReset={resetPosition} show={isChatPage} />
 
           <Drawer open={isOpen} onOpenChange={handleDrawerOpenChange}>
             {/* Main chat button - draggable and opens drawer */}
