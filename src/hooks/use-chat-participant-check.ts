@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { hasRoleAccess } from '@/contexts/auth/roleUtils';
 
 interface ParticipantCheckResult {
   isParticipant: boolean;
@@ -26,7 +27,15 @@ export function useChatParticipantCheck(roomId: string): ParticipantCheckResult 
         setIsLoading(true);
         setError(null);
 
-        // Check if user is a participant in the room
+        // Superadmins and admins have automatic access to all rooms
+        if (hasRoleAccess(user.role as any, 'admin')) {
+          console.log('useChatParticipantCheck: User is admin+, granting access');
+          setIsParticipant(true);
+          setIsLoading(false);
+          return;
+        }
+
+        // For other users, check if they are a participant in the room
         const { data, error: checkError } = await supabase
           .from('chat_room_participants')
           .select('id')

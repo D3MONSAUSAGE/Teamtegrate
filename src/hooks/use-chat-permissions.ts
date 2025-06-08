@@ -1,4 +1,3 @@
-
 import { useAuth } from '@/contexts/AuthContext';
 import { hasRoleAccess } from '@/contexts/auth/roleUtils';
 
@@ -70,10 +69,27 @@ export function useChatPermissions() {
     return false;
   };
 
+  const canAccessRoom = (roomCreatedBy: string) => {
+    if (!user) {
+      console.log('useChatPermissions: No user found for canAccessRoom');
+      return false;
+    }
+
+    // Superadmins and admins can access any room
+    if (hasRoleAccess(user.role as any, 'admin')) {
+      console.log('useChatPermissions: User is admin+, can access any room');
+      return true;
+    }
+
+    // Others need to be participants or room creators
+    return false; // This will be handled by the participant check
+  };
+
   return {
     canCreateRooms,
     canDeleteRoom,
     canAddParticipants,
+    canAccessRoom,
     userRole: user?.role
   };
 }

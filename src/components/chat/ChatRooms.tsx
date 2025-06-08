@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from '@/contexts/AuthContext';
@@ -48,6 +47,11 @@ const ChatRooms: React.FC<ChatRoomsProps> = ({ selectedRoom, onRoomSelect }) => 
     await debug.logDebugInfo();
     
     try {
+      console.log('ChatRooms: Fetching rooms for user:', user?.id, 'role:', user?.role);
+      
+      // The new RLS policy will automatically filter rooms based on role
+      // Superadmins and admins will see all rooms
+      // Others will only see rooms they created or participate in
       const { data, error } = await supabase
         .from('chat_rooms')
         .select('*')
@@ -61,12 +65,14 @@ const ChatRooms: React.FC<ChatRoomsProps> = ({ selectedRoom, onRoomSelect }) => 
         return;
       }
 
+      console.log('ChatRooms: Fetched rooms:', data?.length || 0);
+
       if (!data || data.length === 0) {
         setRooms([]);
         return;
       }
 
-      // Don't add any unread_count - leave it undefined
+      // Process rooms without adding unread_count
       const roomsWithMeta = data.map(room => {
         console.log('Processing room:', room);
         return {
