@@ -1,9 +1,8 @@
-
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Settings, Calendar, User, Crown, Users, Shield, Star } from 'lucide-react';
+import { Settings, Calendar, User, Crown, Users, Shield, Star, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ProfileAvatar from '@/components/settings/ProfileSection/ProfileAvatar';
 import ProfileInfoForm from '@/components/settings/ProfileSection/ProfileInfoForm';
@@ -14,11 +13,12 @@ import { toast } from '@/components/ui/sonner';
 import { UserRole, getRoleDisplayName } from '@/types';
 
 const ProfileHeader = () => {
-  const { user } = useAuth();
+  const { user, refreshUserSession } = useAuth();
   const navigate = useNavigate();
   const [name, setName] = useState<string>(user?.name || "");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     const fetchAvatar = async () => {
@@ -69,6 +69,19 @@ const ProfileHeader = () => {
       toast.error("Failed to update profile");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleRefreshRole = async () => {
+    setIsRefreshing(true);
+    try {
+      await refreshUserSession();
+      toast.success("Role information refreshed!");
+    } catch (error) {
+      console.error("Error refreshing role:", error);
+      toast.error("Failed to refresh role information");
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
@@ -128,7 +141,7 @@ const ProfileHeader = () => {
                 setAvatarUrl={setAvatarUrl} 
                 avatarUrl={avatarUrl} 
               />
-              <div className="mt-4 text-center lg:text-left">
+              <div className="mt-4 text-center lg:text-left flex items-center gap-2">
                 <Badge 
                   variant={getRoleBadgeVariant(user.role)} 
                   className="flex items-center gap-1 px-3 py-1"
@@ -136,6 +149,16 @@ const ProfileHeader = () => {
                   {getRoleIcon(user.role)}
                   {getRoleDisplayName(user.role)}
                 </Badge>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleRefreshRole}
+                  disabled={isRefreshing}
+                  className="h-6 w-6 p-0"
+                  title="Refresh role information"
+                >
+                  <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
+                </Button>
               </div>
             </div>
             

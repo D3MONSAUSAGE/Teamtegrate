@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { User, UserRole } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -16,6 +15,7 @@ interface AuthContextType {
   updateUserProfile: (data: { name?: string }) => Promise<void>;
   hasRoleAccess: (requiredRole: UserRole) => boolean;
   canManageUser: (targetRole: UserRole) => boolean;
+  refreshUserSession: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -50,20 +50,69 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return ROLE_HIERARCHY[user.role] > ROLE_HIERARCHY[targetRole as UserRole];
   };
 
+  const createUserFromSession = async (session: Session): Promise<User> => {
+    // First try to get the most up-to-date role from the database
+    const { data: dbUser, error } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', session.user.id)
+      .single();
+
+    const dbRole = dbUser?.role as UserRole;
+    const metaRole = session.user.user_metadata.role as UserRole;
+    
+    // Use database role if available, otherwise fall back to metadata
+    const currentRole = dbRole || metaRole || 'user';
+
+    // If the roles don't match, update the auth metadata
+    if (dbRole && dbRole !== metaRole) {
+      console.log(`Role mismatch detected. DB: ${dbRole}, Meta: ${metaRole}. Updating metadata.`);
+      try {
+        await supabase.auth.updateUser({
+          data: { role: dbRole }
+        });
+      } catch (error) {
+        console.warn('Failed to update user metadata:', error);
+      }
+    }
+
+    return {
+      id: session.user.id,
+      email: session.user.email || '',
+      name: session.user.user_metadata.name || session.user.email?.split('@')[0] || '',
+      role: currentRole,
+      createdAt: new Date(session.user.created_at),
+    };
+  };
+
+  const refreshUserSession = async (): Promise<void> => {
+    try {
+      const { data: { session: newSession }, error } = await supabase.auth.refreshSession();
+      
+      if (error) {
+        console.error('Error refreshing session:', error);
+        return;
+      }
+
+      if (newSession) {
+        const userData = await createUserFromSession(newSession);
+        setSession(newSession);
+        setUser(userData);
+        console.log('Session refreshed successfully, updated role:', userData.role);
+      }
+    } catch (error) {
+      console.error('Error refreshing user session:', error);
+    }
+  };
+
   // Check if user is logged in on mount and set up auth state listener
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         setSession(session);
         if (session?.user) {
-          const userData: User = {
-            id: session.user.id,
-            email: session.user.email || '',
-            name: session.user.user_metadata.name || session.user.email?.split('@')[0] || '',
-            role: session.user.user_metadata.role as UserRole || 'user',
-            createdAt: new Date(session.user.created_at),
-          };
+          const userData = await createUserFromSession(session);
           setUser(userData);
         } else {
           setUser(null);
@@ -72,16 +121,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       if (session?.user) {
-        const userData: User = {
-          id: session.user.id,
-          email: session.user.email || '',
-          name: session.user.user_metadata.name || session.user.email?.split('@')[0] || '',
-          role: session.user.user_metadata.role as UserRole || 'user',
-          createdAt: new Date(session.user.created_at),
-        };
+        const userData = await createUserFromSession(session);
         setUser(userData);
       }
       setLoading(false);
@@ -200,6 +243,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isAuthenticated: !!user,
     hasRoleAccess,
     canManageUser,
+    refreshUserSession,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
