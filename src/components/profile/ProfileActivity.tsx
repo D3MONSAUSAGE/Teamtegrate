@@ -8,7 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
 
 const ProfileActivity = () => {
-  const { tasks } = useTask();
+  const { tasks, projects } = useTask();
   const { user } = useAuth();
 
   if (!user) return null;
@@ -18,6 +18,12 @@ const ProfileActivity = () => {
     .filter(task => task.userId === user.id || task.assignedToId === user.id)
     .sort((a, b) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime())
     .slice(0, 5);
+
+  // Create a map of project IDs to project titles for quick lookup
+  const projectMap = new Map();
+  projects.forEach(project => {
+    projectMap.set(project.id, project.title);
+  });
 
   const getActivityIcon = (status: string) => {
     switch (status) {
@@ -54,30 +60,34 @@ const ProfileActivity = () => {
       <CardContent>
         <div className="space-y-4">
           {userTasks.length > 0 ? (
-            userTasks.map((task) => (
-              <div key={task.id} className="flex items-start gap-3 p-3 border rounded-lg">
-                {getActivityIcon(task.status)}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1">
-                      <p className="text-sm font-medium truncate">{task.title}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {task.projectTitle && `${task.projectTitle} • `}
-                        {format(new Date(task.updatedAt || task.createdAt), 'MMM d, yyyy')}
-                      </p>
+            userTasks.map((task) => {
+              const projectTitle = task.projectId ? projectMap.get(task.projectId) : null;
+              
+              return (
+                <div key={task.id} className="flex items-start gap-3 p-3 border rounded-lg">
+                  {getActivityIcon(task.status)}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium truncate">{task.title}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {projectTitle && `${projectTitle} • `}
+                          {format(new Date(task.updatedAt || task.createdAt), 'MMM d, yyyy')}
+                        </p>
+                      </div>
+                      <Badge variant={getStatusColor(task.status)} className="text-xs">
+                        {task.status}
+                      </Badge>
                     </div>
-                    <Badge variant={getStatusColor(task.status)} className="text-xs">
-                      {task.status}
-                    </Badge>
+                    {task.description && (
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                        {task.description}
+                      </p>
+                    )}
                   </div>
-                  {task.description && (
-                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                      {task.description}
-                    </p>
-                  )}
                 </div>
-              </div>
-            ))
+              );
+            })
           ) : (
             <div className="text-center py-8">
               <Activity className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
