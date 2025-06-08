@@ -7,6 +7,7 @@ import ProfileStats from '@/components/profile/ProfileStats';
 import ProfileActivity from '@/components/profile/ProfileActivity';
 import ProfileTeamOverview from '@/components/profile/ProfileTeamOverview';
 import ProfileQuickActions from '@/components/profile/ProfileQuickActions';
+import AdminUserManagement from '@/components/profile/AdminUserManagement';
 
 const ProfilePage = () => {
   const navigate = useNavigate();
@@ -36,6 +37,9 @@ const ProfilePage = () => {
         
         {/* Quick Actions Panel */}
         <ProfileQuickActions />
+        
+        {/* Admin User Management - Only show for managers */}
+        {user.role === 'manager' && <AdminUserManagement />}
         
         {/* Team & Project Overview */}
         <ProfileTeamOverview />
