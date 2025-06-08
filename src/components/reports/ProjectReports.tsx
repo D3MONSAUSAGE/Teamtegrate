@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useTask } from '@/contexts/task';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -163,56 +164,60 @@ const ProjectReports: React.FC = () => {
   
   return (
     <div className="space-y-6">
-      {/* Project Selector */}
-      <ProjectSelector
-        projects={projects}
-        selectedProjectIds={selectedProjectIds}
-        onProjectToggle={handleProjectToggle}
-        onRemoveProject={handleRemoveProject}
-        onClearAll={handleClearAll}
-      />
-      
       {/* Project Completion Rates */}
       <Card>
         <CardHeader>
           <CardTitle>Project Completion Rates</CardTitle>
           <CardDescription>
-            Progress of selected projects ({selectedProjects.length} of {projects.length} total)
+            Select up to 5 projects to track their completion progress
           </CardDescription>
         </CardHeader>
-        <CardContent className="h-96">
-          {projectStatus.length > 0 ? (
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={projectStatus}
-                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                layout="vertical"
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" domain={[0, 100]} unit="%" />
-                <YAxis type="category" dataKey="name" width={150} />
-                <Tooltip formatter={(value) => `${value}%`} />
-                <Legend />
-                <Bar 
-                  dataKey="completionRate" 
-                  name="Completion Rate" 
-                  fill="#0088FE"
-                  background={{ fill: '#eee' }}
+        <CardContent className="space-y-4">
+          {/* Project Selector integrated into this card */}
+          <ProjectSelector
+            projects={projects}
+            selectedProjectIds={selectedProjectIds}
+            onProjectToggle={handleProjectToggle}
+            onRemoveProject={handleRemoveProject}
+            onClearAll={handleClearAll}
+            maxProjects={5}
+          />
+          
+          {/* Chart */}
+          <div className="h-96">
+            {projectStatus.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={projectStatus}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  layout="vertical"
                 >
-                  {projectStatus.map((entry, index) => (
-                    <Cell 
-                      key={`cell-${index}`} 
-                      fill={entry.isOverdue ? '#FF8042' : '#0088FE'}
-                    />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="flex items-center justify-center h-full">
-              <p className="text-muted-foreground">Select projects to view completion rates</p>
-            </div>
-          )}
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis type="number" domain={[0, 100]} unit="%" />
+                  <YAxis type="category" dataKey="name" width={150} />
+                  <Tooltip formatter={(value) => `${value}%`} />
+                  <Legend />
+                  <Bar 
+                    dataKey="completionRate" 
+                    name="Completion Rate" 
+                    fill="#0088FE"
+                    background={{ fill: '#eee' }}
+                  >
+                    {projectStatus.map((entry, index) => (
+                      <Cell 
+                        key={`cell-${index}`} 
+                        fill={entry.isOverdue ? '#FF8042' : '#0088FE'}
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <p className="text-muted-foreground">Select projects to view completion rates</p>
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
       
