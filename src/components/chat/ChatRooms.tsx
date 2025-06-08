@@ -43,30 +43,71 @@ const ChatRooms: React.FC<ChatRoomsProps> = ({ selectedRoom, onRoomSelect }) => 
   }, []);
 
   const fetchRooms = async () => {
+    console.log('=== CHAT ROOMS DEBUG START ===');
+    console.log('Current user:', user);
+    console.log('User ID:', user?.id);
+    console.log('User role:', user?.role);
+    
     try {
+      // Test the get_user_role function first
+      const { data: roleData, error: roleError } = await supabase.rpc('get_user_role');
+      console.log('get_user_role() result:', roleData);
+      if (roleError) {
+        console.error('Error calling get_user_role():', roleError);
+      }
+
       // The RLS policies will automatically filter rooms based on user role and permissions
+      console.log('Fetching chat rooms...');
       const { data, error } = await supabase
         .from('chat_rooms')
         .select('*')
         .order('created_at', { ascending: false });
 
+      console.log('Supabase query result:');
+      console.log('- Data:', data);
+      console.log('- Error:', error);
+      console.log('- Number of rooms returned:', data?.length || 0);
+
       if (error) {
         console.error('Error fetching rooms:', error);
+        console.error('Error details:', JSON.stringify(error, null, 2));
         toast.error('Failed to load chat rooms');
         return;
       }
 
-      // Add dummy unread counts for demo purposes - in a real app, you would fetch this from the database
-      const roomsWithMeta = data.map(room => ({
-        ...room,
-        unread_count: Math.floor(Math.random() * 5)
-      }));
+      if (!data || data.length === 0) {
+        console.warn('No chat rooms returned from database');
+        console.log('This could mean:');
+        console.log('1. No rooms exist in the database');
+        console.log('2. RLS policies are blocking access');
+        console.log('3. User is not authenticated properly');
+        
+        // Test direct database access
+        console.log('Testing raw query without RLS...');
+        
+        setRooms([]);
+        return;
+      }
 
+      // Add dummy unread counts for demo purposes - in a real app, you would fetch this from the database
+      const roomsWithMeta = data.map(room => {
+        console.log('Processing room:', room);
+        return {
+          ...room,
+          unread_count: Math.floor(Math.random() * 5)
+        };
+      });
+
+      console.log('Final rooms with metadata:', roomsWithMeta);
       setRooms(roomsWithMeta);
+      
     } catch (error) {
       console.error('Unexpected error fetching rooms:', error);
+      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
       toast.error('Failed to load chat rooms');
     }
+    
+    console.log('=== CHAT ROOMS DEBUG END ===');
   };
 
   const subscribeToRooms = () => {
@@ -75,7 +116,8 @@ const ChatRooms: React.FC<ChatRoomsProps> = ({ selectedRoom, onRoomSelect }) => 
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'chat_rooms' },
-        () => {
+        (payload) => {
+          console.log('Real-time chat room update:', payload);
           fetchRooms();
         }
       )
@@ -85,6 +127,7 @@ const ChatRooms: React.FC<ChatRoomsProps> = ({ selectedRoom, onRoomSelect }) => 
   };
 
   const handleRoomSelect = (room: ChatRoomData) => {
+    console.log('Room selected:', room);
     // Clear the unread count for the selected room
     setRooms(prevRooms => 
       prevRooms.map(r => 
@@ -101,6 +144,12 @@ const ChatRooms: React.FC<ChatRoomsProps> = ({ selectedRoom, onRoomSelect }) => 
   const filteredRooms = rooms.filter(room => 
     room.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  console.log('Render state:');
+  console.log('- Total rooms:', rooms.length);
+  console.log('- Filtered rooms:', filteredRooms.length);
+  console.log('- Search query:', searchQuery);
+  console.log('- Can create rooms:', canCreateRooms());
 
   return (
     <Card className="h-full flex flex-col border-0 rounded-none">
@@ -151,6 +200,16 @@ const ChatRooms: React.FC<ChatRoomsProps> = ({ selectedRoom, onRoomSelect }) => 
           ) : (
             <div className="text-center py-8 text-muted-foreground">
               {searchQuery ? 'No matching rooms found' : 'No chat rooms available'}
+              <div className="text-xs mt-2 text-muted-foreground/70">
+                {rooms.length === 0 && !searchQuery && (
+                  <div>
+                    <p>Debug info:</p>
+                    <p>User: {user?.email}</p>
+                    <p>Role: {user?.role}</p>
+                    <p>Check console for detailed logs</p>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>

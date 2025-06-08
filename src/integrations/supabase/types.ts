@@ -987,6 +987,10 @@ export type Database = {
           updated_at: string | null
         }[]
       }
+      get_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       send_reminders: {
         Args: Record<PropertyKey, never>
         Returns: undefined
