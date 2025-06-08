@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useChat } from '@/hooks/use-chat';
+import { useChatPermissions } from '@/hooks/use-chat-permissions';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -17,6 +18,7 @@ export function useChatRoom(room: ChatRoomData, onBack?: () => void, onRoomDelet
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
+  const { canDeleteRoom } = useChatPermissions();
   
   const {
     messages,
@@ -35,11 +37,8 @@ export function useChatRoom(room: ChatRoomData, onBack?: () => void, onRoomDelet
   } = useChat(room.id, user?.id);
 
   const [leaving, setLeaving] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
   const [autoScrollEnabled, setAutoScrollEnabled] = useState(true);
   const [initialScrollDone, setInitialScrollDone] = useState(false);
-  
-  const isCreator = user?.id === room.created_by;
 
   const scrollToBottom = (behavior: ScrollBehavior = 'auto') => {
     if (autoScrollEnabled) {
@@ -78,7 +77,19 @@ export function useChatRoom(room: ChatRoomData, onBack?: () => void, onRoomDelet
     setLeaving(true);
 
     try {
-      const { error } = await supabase
+      // Remove user from participants
+      const { error: participantError } = await supabase
+        .from('chat_room_participants')
+        .delete()
+        .eq('room_id', room.id)
+        .eq('user_id', user.id);
+
+      if (participantError) {
+        throw participantError;
+      }
+
+      // Add system message about leaving
+      const { error: messageError } = await supabase
         .from('chat_messages')
         .insert({
           room_id: room.id,
@@ -87,12 +98,13 @@ export function useChatRoom(room: ChatRoomData, onBack?: () => void, onRoomDelet
           type: 'system'
         });
 
-      if (error) {
-        throw error;
-      } else {
-        toast.success('Left chat room successfully');
-        if (onBack) onBack();
+      if (messageError) {
+        console.error('Error adding leave message:', messageError);
+        // Don't throw error as the main action (leaving) succeeded
       }
+
+      toast.success('Left chat room successfully');
+      if (onBack) onBack();
     } catch (error) {
       console.error('Error leaving chat:', error);
       toast.error('Failed to leave the chat');
@@ -102,10 +114,13 @@ export function useChatRoom(room: ChatRoomData, onBack?: () => void, onRoomDelet
   };
   
   const handleDeleteRoom = async () => {
-    if (!user || !isCreator) return;
-    setIsDeleting(true);
+    if (!user || !canDeleteRoom(room.created_by)) {
+      toast.error('You do not have permission to delete this room');
+      return;
+    }
     
     try {
+      // Delete all messages first
       const { error: messagesError } = await supabase
         .from('chat_messages')
         .delete()
@@ -113,6 +128,7 @@ export function useChatRoom(room: ChatRoomData, onBack?: () => void, onRoomDelet
       
       if (messagesError) throw messagesError;
       
+      // Delete all participants
       const { error: participantsError } = await supabase
         .from('chat_room_participants')
         .delete()
@@ -120,6 +136,7 @@ export function useChatRoom(room: ChatRoomData, onBack?: () => void, onRoomDelet
       
       if (participantsError) throw participantsError;
       
+      // Delete the room
       const { error: roomError } = await supabase
         .from('chat_rooms')
         .delete()
@@ -134,8 +151,7 @@ export function useChatRoom(room: ChatRoomData, onBack?: () => void, onRoomDelet
     } catch (error) {
       console.error('Error deleting chat room:', error);
       toast.error('Failed to delete the chat room');
-    } finally {
-      setIsDeleting(false);
+      throw error; // Re-throw to handle loading state in component
     }
   };
 
@@ -161,8 +177,6 @@ export function useChatRoom(room: ChatRoomData, onBack?: () => void, onRoomDelet
     hasMoreMessages,
     loadMoreMessages,
     leaving,
-    isDeleting,
-    isCreator,
     handleScroll,
     handleSendMessage,
     handleLeaveChat,

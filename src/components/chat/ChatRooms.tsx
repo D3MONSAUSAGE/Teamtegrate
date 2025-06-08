@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from '@/contexts/AuthContext';
+import { useChatPermissions } from '@/hooks/use-chat-permissions';
 import CreateRoomDialog from './CreateRoomDialog';
 import { Button } from '@/components/ui/button';
 import { Plus, Search, MessagesSquare } from 'lucide-react';
@@ -30,6 +31,7 @@ const ChatRooms: React.FC<ChatRoomsProps> = ({ selectedRoom, onRoomSelect }) => 
   const [isCreateRoomOpen, setIsCreateRoomOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const { user } = useAuth();
+  const { canCreateRooms } = useChatPermissions();
   
   useEffect(() => {
     fetchRooms();
@@ -42,6 +44,7 @@ const ChatRooms: React.FC<ChatRoomsProps> = ({ selectedRoom, onRoomSelect }) => 
 
   const fetchRooms = async () => {
     try {
+      // The RLS policies will automatically filter rooms based on user role and permissions
       const { data, error } = await supabase
         .from('chat_rooms')
         .select('*')
@@ -107,13 +110,15 @@ const ChatRooms: React.FC<ChatRoomsProps> = ({ selectedRoom, onRoomSelect }) => 
             <MessagesSquare className="h-5 w-5 text-primary" />
             Team Chat
           </h2>
-          <Button
-            size="sm"
-            onClick={() => setIsCreateRoomOpen(true)}
-            className="bg-primary hover:bg-primary/90"
-          >
-            <Plus className="h-4 w-4 mr-1" /> New
-          </Button>
+          {canCreateRooms() && (
+            <Button
+              size="sm"
+              onClick={() => setIsCreateRoomOpen(true)}
+              className="bg-primary hover:bg-primary/90"
+            >
+              <Plus className="h-4 w-4 mr-1" /> New
+            </Button>
+          )}
         </div>
         
         <div className="relative">
@@ -151,10 +156,12 @@ const ChatRooms: React.FC<ChatRoomsProps> = ({ selectedRoom, onRoomSelect }) => 
         </div>
       </ScrollArea>
 
-      <CreateRoomDialog
-        open={isCreateRoomOpen}
-        onOpenChange={setIsCreateRoomOpen}
-      />
+      {canCreateRooms() && (
+        <CreateRoomDialog
+          open={isCreateRoomOpen}
+          onOpenChange={setIsCreateRoomOpen}
+        />
+      )}
     </Card>
   );
 };

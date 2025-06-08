@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, LogOut, UserPlus, Trash2 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { useChatPermissions } from '@/hooks/use-chat-permissions';
 import ChatParticipants from './ChatParticipants';
 import ChatSoundSettings from './ChatSoundSettings';
 import AddChatParticipantDialog from './AddChatParticipantDialog';
@@ -23,10 +24,12 @@ interface ChatRoomHeaderProps {
 }
 
 const ChatRoomHeader: React.FC<ChatRoomHeaderProps> = ({
-  room, isMobile, currentUserId, onBack, toggleParticipants, onLeave, onDelete, leaving, canDelete,
+  room, isMobile, currentUserId, onBack, toggleParticipants, onLeave, onDelete, leaving,
 }) => {
   const [showAddParticipant, setShowAddParticipant] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const { canDeleteRoom, canAddParticipants } = useChatPermissions();
 
   const handleParticipantAdded = () => {
     playSuccessSound();
@@ -34,14 +37,19 @@ const ChatRoomHeader: React.FC<ChatRoomHeaderProps> = ({
   };
 
   const handleDeleteRoom = async () => {
-    if (onDelete) {
+    if (!onDelete) return;
+    
+    setIsDeleting(true);
+    try {
       await onDelete();
+      setShowDeleteConfirm(false);
+    } finally {
+      setIsDeleting(false);
     }
-    setShowDeleteConfirm(false);
   };
 
-  // Check if current user is the room creator
-  const isCreator = currentUserId === room.created_by;
+  const canUserDeleteRoom = canDeleteRoom(room.created_by);
+  const canUserAddParticipants = canAddParticipants(room.created_by);
 
   return (
     <div className="p-2 border-b border-border dark:border-gray-800 flex items-center justify-between bg-card dark:bg-[#1f2133] shadow-sm">
@@ -70,17 +78,19 @@ const ChatRoomHeader: React.FC<ChatRoomHeaderProps> = ({
       <div className="flex gap-1 items-center flex-shrink-0">
         <ChatSoundSettings />
         
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setShowAddParticipant(true)}
-          className="flex-shrink-0"
-        >
-          <UserPlus className="h-4 w-4 mr-1" />
-          Add Member
-        </Button>
+        {canUserAddParticipants && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowAddParticipant(true)}
+            className="flex-shrink-0"
+          >
+            <UserPlus className="h-4 w-4 mr-1" />
+            Add Member
+          </Button>
+        )}
 
-        {isCreator && (
+        {canUserDeleteRoom && (
           <Button
             variant="ghost"
             size="icon"
@@ -111,18 +121,20 @@ const ChatRoomHeader: React.FC<ChatRoomHeaderProps> = ({
         </DropdownMenu>
       </div>
 
-      <AddChatParticipantDialog
-        open={showAddParticipant}
-        onOpenChange={setShowAddParticipant}
-        roomId={room.id}
-        onAdded={handleParticipantAdded}
-      />
+      {canUserAddParticipants && (
+        <AddChatParticipantDialog
+          open={showAddParticipant}
+          onOpenChange={setShowAddParticipant}
+          roomId={room.id}
+          onAdded={handleParticipantAdded}
+        />
+      )}
 
       <DeleteChatRoomDialog
         open={showDeleteConfirm}
         onOpenChange={setShowDeleteConfirm}
         onConfirm={handleDeleteRoom}
-        isDeleting={false}
+        isDeleting={isDeleting}
       />
     </div>
   );
