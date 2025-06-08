@@ -66,11 +66,12 @@ const ChatRooms: React.FC<ChatRoomsProps> = ({ selectedRoom, onRoomSelect }) => 
         return;
       }
 
+      // Don't add any unread_count - leave it undefined
       const roomsWithMeta = data.map(room => {
         console.log('Processing room:', room);
         return {
-          ...room,
-          unread_count: Math.floor(Math.random() * 5)
+          ...room
+          // No unread_count property added
         };
       });
 
@@ -102,16 +103,19 @@ const ChatRooms: React.FC<ChatRoomsProps> = ({ selectedRoom, onRoomSelect }) => 
   const handleRoomSelect = (room: ChatRoomData) => {
     debug.logRoomSelection(room);
     
-    // Clear the unread count for the selected room immediately
-    const updatedRooms = rooms.map(r => 
-      r.id === room.id 
-        ? { ...r, unread_count: 0 }
-        : r
-    );
+    // Clear the unread count for the selected room by removing the property entirely
+    const updatedRooms = rooms.map(r => {
+      if (r.id === room.id) {
+        const { unread_count, ...roomWithoutUnreadCount } = r;
+        return roomWithoutUnreadCount;
+      }
+      return r;
+    });
     setRooms(updatedRooms);
     
-    // Pass the room with cleared unread count to parent
-    onRoomSelect({ ...room, unread_count: 0 });
+    // Pass the room without unread_count to parent
+    const { unread_count, ...roomWithoutUnreadCount } = room;
+    onRoomSelect(roomWithoutUnreadCount);
   };
 
   const filteredRooms = rooms.filter(room => 
