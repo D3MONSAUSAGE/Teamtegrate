@@ -143,12 +143,12 @@ const ProfileHeader = () => {
               <div className="mt-4 text-center lg:text-left flex items-center gap-2">
                 <Badge 
                   variant={getRoleBadgeVariant(user.role)} 
-                  className="flex items-center gap-1 px-3 py-1"
+                  className="px-3 py-1"
                 >
-                  <div className="flex items-center gap-1">
+                  <span className="flex items-center gap-1">
                     {getRoleIcon(user.role)}
                     {getRoleDisplayName(user.role)}
-                  </div>
+                  </span>
                 </Badge>
                 <Button
                   variant="ghost"
@@ -204,16 +204,20 @@ const ProfileHeader = () => {
               onClick={() => navigate('/dashboard/calendar')}
               className="hover:bg-blue-50 dark:hover:bg-blue-900/20"
             >
-              <Calendar className="h-4 w-4 mr-2" />
-              View Calendar
+              <span className="flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                View Calendar
+              </span>
             </Button>
             <Button 
               variant="outline" 
               onClick={() => navigate('/dashboard/settings')}
               className="hover:bg-gray-50 dark:hover:bg-gray-800/50"
             >
-              <Settings className="h-4 w-4 mr-2" />
-              Settings
+              <span className="flex items-center gap-2">
+                <Settings className="h-4 w-4" />
+                Settings
+              </span>
             </Button>
           </div>
         </div>
