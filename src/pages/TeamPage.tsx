@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Loader2, Plus, Users as UsersIcon, RefreshCw } from 'lucide-react';
@@ -153,7 +154,7 @@ const TeamPage = () => {
         <>
           <h2 className="text-xl font-semibold mb-4">Manager Performance</h2>
           <div className="mb-8">
-            <ManagerPerformanceCard member={managerPerformance} />
+            <ManagerPerformanceCard manager={managerPerformance} />
           </div>
         </>
       )}
