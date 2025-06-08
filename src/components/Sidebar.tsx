@@ -43,10 +43,10 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
         />
       )}
       
-      {/* Hover area for desktop - extends beyond collapsed sidebar */}
+      {/* Hover area for desktop - matches collapsed sidebar width */}
       {!isMobile && (
         <div
-          className="fixed left-0 top-0 h-full w-16 z-30 hidden md:block"
+          className="fixed left-0 top-0 h-full w-12 z-30 hidden md:block"
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
         />
@@ -63,16 +63,15 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
       <div
         className={cn(
           "fixed left-0 top-0 h-full z-50 transition-transform duration-300 ease-in-out",
-          isMobile ? (isMobileOpen ? "translate-x-0" : "-translate-x-full") : "translate-x-0",
-          !isMobile && !isExpanded && "-translate-x-44" // Show only 3rem (48px) when collapsed
+          isMobile ? (isMobileOpen ? "translate-x-0" : "-translate-x-full") : "translate-x-0"
         )}
         onMouseEnter={!isMobile ? handleMouseEnter : undefined}
         onMouseLeave={!isMobile ? handleMouseLeave : undefined}
       >
         <ShadcnSidebar 
           className={cn(
-            "border-r border-border w-64 transition-all duration-300",
-            !isMobile && !isExpanded && "w-12"
+            "border-r border-border transition-all duration-300",
+            !isMobile && !isExpanded ? "w-12" : "w-64"
           )}
         >
           <ShadcnSidebarHeader>
