@@ -39,10 +39,10 @@ const RoleSelector: React.FC<RoleSelectorProps> = ({
       <SelectContent>
         {availableRoles.map((role) => (
           <SelectItem key={role} value={role}>
-            <div className="flex items-center gap-2">
+            <span className="flex items-center gap-2">
               {getRoleIcon(role)}
               {getRoleDisplayName(role)}
-            </div>
+            </span>
           </SelectItem>
         ))}
       </SelectContent>

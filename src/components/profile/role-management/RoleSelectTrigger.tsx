@@ -11,20 +11,18 @@ interface RoleSelectTriggerProps {
 
 const RoleSelectTrigger: React.FC<RoleSelectTriggerProps> = ({ isChanging }) => {
   return (
-    <SelectTrigger asChild>
-      <button
-        disabled={isChanging}
-        className={cn(
-          buttonVariants({ variant: "ghost", size: "sm" }),
-          "text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-        )}
-      >
-        {isChanging ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : (
-          <UserCog className="h-4 w-4" />
-        )}
-      </button>
+    <SelectTrigger 
+      className={cn(
+        buttonVariants({ variant: "ghost", size: "sm" }),
+        "text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 w-auto h-auto"
+      )}
+      disabled={isChanging}
+    >
+      {isChanging ? (
+        <Loader2 className="h-4 w-4 animate-spin" />
+      ) : (
+        <UserCog className="h-4 w-4" />
+      )}
     </SelectTrigger>
   );
 };
