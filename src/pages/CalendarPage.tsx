@@ -54,13 +54,13 @@ const CalendarPage = () => {
   }).length;
 
   return (
-    <div className="h-screen flex flex-col bg-background">
-      {/* Header Section - Fixed height */}
-      <div className="flex-shrink-0 p-6 pb-4">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+    <div className="h-screen flex flex-col">
+      {/* Header Section - More compact */}
+      <div className="flex-shrink-0 p-4 pb-2">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-3">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Task Calendar</h1>
-            <p className="text-muted-foreground mt-1">View and manage your tasks by date - drag to reschedule</p>
+            <h1 className="text-2xl font-bold text-foreground">Task Calendar</h1>
+            <p className="text-muted-foreground text-sm mt-1">View and manage your tasks by date - drag to reschedule</p>
           </div>
           
           <div className="flex items-center gap-3">
@@ -68,77 +68,79 @@ const CalendarPage = () => {
               value={viewType} 
               onValueChange={(value: 'day' | 'week' | 'month') => setViewType(value)}
             >
-              <SelectTrigger className="w-[140px]">
+              <SelectTrigger className="w-[120px] h-9">
                 <Filter className="mr-2 h-4 w-4" />
                 <SelectValue placeholder="View" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="day">Day View</SelectItem>
-                <SelectItem value="week">Week View</SelectItem>
-                <SelectItem value="month">Month View</SelectItem>
+                <SelectItem value="day">Day</SelectItem>
+                <SelectItem value="week">Week</SelectItem>
+                <SelectItem value="month">Month</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
 
-        {/* Date Navigation and Stats */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 p-4 bg-muted/30 rounded-lg">
-          <div className="flex items-center gap-3">
+        {/* Date Navigation and Stats - More compact */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 p-3 bg-muted/30 rounded-lg">
+          <div className="flex items-center gap-2">
             <Button
               variant="outline"
-              size="icon"
+              size="sm"
               onClick={goToPreviousMonth}
-              className="h-8 w-8"
+              className="h-8 w-8 p-0"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
             
             <div className="flex items-center gap-2">
-              <CalendarIcon className="h-5 w-5 text-primary" />
-              <h2 className="text-lg font-semibold min-w-[200px]">
+              <CalendarIcon className="h-4 w-4 text-primary" />
+              <h2 className="text-base font-semibold min-w-[160px]">
                 {format(selectedDate, 'MMMM yyyy')}
               </h2>
             </div>
             
             <Button
               variant="outline"
-              size="icon"
+              size="sm"
               onClick={goToNextMonth}
-              className="h-8 w-8"
+              className="h-8 w-8 p-0"
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
             
             <Button
               variant="outline"
+              size="sm"
               onClick={goToToday}
-              className="ml-2"
+              className="ml-2 h-8"
             >
               Today
             </Button>
 
             <Button
               variant="default"
+              size="sm"
               onClick={() => handleDateCreate(selectedDate)}
-              className="ml-2"
+              className="ml-2 h-8"
             >
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus className="h-4 w-4 mr-1" />
               Add Task
             </Button>
           </div>
 
-          {/* Quick Stats */}
-          <div className="flex items-center gap-4 text-sm">
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-muted-foreground" />
-              <span className="text-muted-foreground">Today:</span>
-              <Badge variant="secondary" className="font-medium">
+          {/* Quick Stats - More compact */}
+          <div className="flex items-center gap-3 text-sm">
+            <div className="flex items-center gap-1">
+              <Clock className="h-3 w-3 text-muted-foreground" />
+              <span className="text-muted-foreground text-xs">Today:</span>
+              <Badge variant="secondary" className="text-xs h-5">
                 {todayTasksCount}
               </Badge>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-muted-foreground">Total:</span>
-              <Badge variant="outline" className="font-medium">
+            <div className="flex items-center gap-1">
+              <span className="text-muted-foreground text-xs">Total:</span>
+              <Badge variant="outline" className="text-xs h-5">
                 {tasks.length}
               </Badge>
             </div>
@@ -146,8 +148,8 @@ const CalendarPage = () => {
         </div>
       </div>
 
-      {/* Main Calendar View - Flexible height */}
-      <div className="flex-1 px-6 pb-6 min-h-0">
+      {/* Main Calendar View - Takes remaining space */}
+      <div className="flex-1 px-4 pb-4 min-h-0">
         {viewType === 'day' && (
           <CalendarDayView 
             selectedDate={selectedDate} 

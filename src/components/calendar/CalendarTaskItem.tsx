@@ -4,9 +4,8 @@ import { Task } from '@/types';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { generateProjectColor, generateProjectBadgeColor } from '@/utils/colorUtils';
+import { generateProjectBadgeColor } from '@/utils/colorUtils';
 import { useTask } from '@/contexts/task';
-import { toast } from '@/components/ui/sonner';
 
 interface CalendarTaskItemProps {
   task: Task;
@@ -25,32 +24,12 @@ const CalendarTaskItem: React.FC<CalendarTaskItemProps> = ({
   projectName,
   draggable = false
 }) => {
-  const { updateTask } = useTask();
+  const { projects } = useTask();
 
   const handleDragStart = (e: React.DragEvent) => {
     e.dataTransfer.setData('text/plain', task.id);
     e.dataTransfer.effectAllowed = 'move';
     console.log('Started dragging task:', task.id);
-  };
-
-  const handleDrop = async (e: React.DragEvent, targetDate: Date) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    try {
-      // Update the task deadline to the new date
-      const newDeadline = new Date(targetDate);
-      newDeadline.setHours(23, 59, 59, 999);
-      
-      await updateTask(task.id, {
-        deadline: newDeadline
-      });
-      
-      toast.success('Task rescheduled successfully');
-    } catch (error) {
-      console.error('Error rescheduling task:', error);
-      toast.error('Failed to reschedule task');
-    }
   };
 
   const getPriorityColor = (priority: string) => {
@@ -95,13 +74,16 @@ const CalendarTaskItem: React.FC<CalendarTaskItemProps> = ({
       return "Invalid time";
     }
   };
+
+  // Get project name if not provided
+  const displayProjectName = projectName || (task.projectId ? projects.find(p => p.id === task.projectId)?.title : undefined);
   
   if (minimal) {
     return (
       <div 
         className={cn(
-          "text-xs px-2 py-1 mb-1 truncate rounded border transition-all duration-200 relative",
-          "hover:shadow-sm hover:scale-[1.02]",
+          "text-xs px-1.5 py-0.5 mb-0.5 truncate rounded border transition-all duration-200 relative",
+          "hover:shadow-sm",
           getStatusColor(task.status),
           isOverdue() && "ring-1 ring-rose-400",
           onClick && "cursor-pointer",
@@ -110,13 +92,13 @@ const CalendarTaskItem: React.FC<CalendarTaskItemProps> = ({
         onClick={onClick}
         draggable={draggable}
         onDragStart={handleDragStart}
-        title={`${task.title} - ${task.status} - ${task.priority} priority${projectName ? ` - ${projectName}` : ''}`}
+        title={`${task.title} - ${task.status} - ${task.priority} priority${displayProjectName ? ` - ${displayProjectName}` : ''}`}
       >
         {/* Project color indicator */}
         {task.projectId && (
-          <div className={`absolute left-0 top-0 bottom-0 w-1 rounded-l ${getProjectIndicatorColor()}`} />
+          <div className={`absolute left-0 top-0 bottom-0 w-0.5 rounded-l ${getProjectIndicatorColor()}`} />
         )}
-        <div className="font-medium truncate pl-2">{task.title}</div>
+        <div className="font-medium truncate pl-1">{task.title}</div>
       </div>
     );
   }
@@ -124,8 +106,8 @@ const CalendarTaskItem: React.FC<CalendarTaskItemProps> = ({
   return (
     <div 
       className={cn(
-        "border rounded-lg mb-2 transition-all duration-200 bg-card shadow-sm relative overflow-hidden",
-        "hover:shadow-md hover:scale-[1.02]",
+        "border rounded-lg mb-1 transition-all duration-200 bg-card shadow-sm relative overflow-hidden",
+        "hover:shadow-md",
         isOverdue() && "ring-2 ring-rose-400 ring-opacity-50",
         onClick && "cursor-pointer",
         draggable && "cursor-move"
@@ -139,8 +121,8 @@ const CalendarTaskItem: React.FC<CalendarTaskItemProps> = ({
         <div className={`absolute left-0 top-0 bottom-0 w-1 ${getProjectIndicatorColor()}`} />
       )}
       
-      <div className="p-3 pl-4">
-        <div className="flex items-start justify-between gap-2 mb-2">
+      <div className="p-2 pl-3">
+        <div className="flex items-start justify-between gap-2 mb-1">
           <div className="font-semibold text-sm truncate flex-1">
             {task.title}
           </div>
@@ -153,17 +135,17 @@ const CalendarTaskItem: React.FC<CalendarTaskItemProps> = ({
         
         {!compact && (
           <>
-            <div className="text-xs text-muted-foreground mb-2 line-clamp-2">
+            <div className="text-xs text-muted-foreground mb-1 line-clamp-2">
               {task.description}
             </div>
             <div className="flex items-center justify-between text-xs">
               <span className="font-medium text-primary">
                 {formatTaskTime(task.deadline)}
               </span>
-              <div className="flex items-center gap-2">
-                {projectName && (
-                  <span className="text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                    {projectName}
+              <div className="flex items-center gap-1">
+                {displayProjectName && (
+                  <span className="text-muted-foreground bg-muted px-1 py-0.5 rounded text-xs">
+                    {displayProjectName}
                   </span>
                 )}
                 <Badge variant="secondary" className={cn("text-xs", getStatusColor(task.status))}>

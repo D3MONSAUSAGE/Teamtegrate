@@ -39,7 +39,7 @@ const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
   return (
     <Card className="h-full flex flex-col">
       <CardHeader className="pb-2 flex-shrink-0">
-        <CardTitle className="text-lg font-medium">
+        <CardTitle className="text-base font-medium">
           Week of {format(startOfWeekDate, 'MMMM d, yyyy')}
         </CardTitle>
       </CardHeader>
@@ -47,9 +47,9 @@ const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
         <div className="grid grid-cols-7 flex-shrink-0">
           {weekDays.map((day, i) => (
             <div key={i} className="text-center p-2 border-b font-medium text-sm">
-              <div className="mb-1">{format(day, 'EEE')}</div>
+              <div className="mb-1 text-xs">{format(day, 'EEE')}</div>
               <div className={cn(
-                "h-7 w-7 rounded-full flex items-center justify-center mx-auto",
+                "h-6 w-6 rounded-full flex items-center justify-center mx-auto text-xs",
                 isToday(day) && "bg-primary text-primary-foreground"
               )}>
                 {format(day, 'd')}
@@ -73,7 +73,7 @@ const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
                 
                 return (
                   <div key={dayIndex} className="min-h-[100px]">
-                    <div className="p-2 space-y-2">
+                    <div className="p-2 space-y-1">
                       {dayTasks.length > 0 ? (
                         dayTasks.map(task => (
                           <CalendarTaskItem 
@@ -85,11 +85,11 @@ const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
                         ))
                       ) : (
                         <div 
-                          className="py-2 text-xs text-center text-muted-foreground cursor-pointer hover:bg-muted/50 rounded flex items-center justify-center gap-1"
+                          className="py-1 text-xs text-center text-muted-foreground cursor-pointer hover:bg-muted/50 rounded flex items-center justify-center gap-1"
                           onClick={() => onDateCreate(day)}
                         >
                           <Plus className="h-3 w-3" />
-                          Add task
+                          Add
                         </div>
                       )}
                     </div>

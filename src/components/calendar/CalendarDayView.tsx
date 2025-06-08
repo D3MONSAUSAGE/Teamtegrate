@@ -61,7 +61,7 @@ const CalendarDayView: React.FC<CalendarDayViewProps> = ({
   return (
     <Card className="h-full flex flex-col">
       <CardHeader className="pb-2 flex-shrink-0">
-        <CardTitle className="text-lg font-medium flex items-center justify-between">
+        <CardTitle className="text-base font-medium flex items-center justify-between">
           {format(selectedDate, 'EEEE, MMMM d, yyyy')}
           <Button 
             variant="outline" 
