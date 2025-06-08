@@ -22,6 +22,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [initialCheckDone, setInitialCheckDone] = useState(false);
 
   const refreshUserSession = async (): Promise<void> => {
     const { session: newSession, user: userData } = await refreshSession();
@@ -31,32 +32,75 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Set up auth state listener - this handles ALL authentication state changes
+  // Handle user data creation after session is set
+  const handleUserCreation = async (session: Session | null) => {
+    try {
+      if (session?.user) {
+        console.log('Creating user data for session:', session.user.id);
+        const userData = await createUserFromSession(session);
+        setUser(userData);
+        console.log('User data created successfully:', userData.id, userData.role);
+      } else {
+        setUser(null);
+        console.log('No session, clearing user data');
+      }
+    } catch (error) {
+      console.error('Error creating user data:', error);
+      setUser(null);
+    } finally {
+      if (!initialCheckDone) {
+        setInitialCheckDone(true);
+        setLoading(false);
+        console.log('Initial auth check completed');
+      }
+    }
+  };
+
+  // Check for existing session on mount
+  useEffect(() => {
+    console.log('Checking for existing session...');
+    
+    const checkSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error('Error getting session:', error);
+        } else {
+          console.log('Initial session check:', session?.user?.id || 'no session');
+          setSession(session);
+          // Defer user creation to prevent blocking
+          setTimeout(() => handleUserCreation(session), 0);
+        }
+      } catch (error) {
+        console.error('Error in initial session check:', error);
+        setLoading(false);
+        setInitialCheckDone(true);
+      }
+    };
+
+    checkSession();
+  }, []);
+
+  // Set up auth state listener for session changes
   useEffect(() => {
     console.log('Setting up auth state listener...');
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         console.log('Auth state changed:', event, session?.user?.id);
         
-        try {
-          setSession(session);
-          if (session?.user) {
-            const userData = await createUserFromSession(session);
-            setUser(userData);
-            console.log('User authenticated:', userData.id, userData.role);
-          } else {
-            setUser(null);
-            console.log('User logged out or no session');
-          }
-        } catch (error) {
-          console.error('Error in auth state change:', error);
-          setUser(null);
-          setSession(null);
-        } finally {
-          // Always clear loading state after handling auth state change
+        // Only handle synchronous operations in the callback
+        setSession(session);
+        
+        // Defer user creation to prevent deadlocks
+        setTimeout(() => {
+          handleUserCreation(session);
+        }, 0);
+        
+        // Clear loading state for auth events after initial check
+        if (initialCheckDone) {
           setLoading(false);
-          console.log('Loading state cleared');
+          console.log('Auth state loading cleared');
         }
       }
     );
@@ -65,7 +109,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('Cleaning up auth state listener');
       subscription.unsubscribe();
     };
-  }, []);
+  }, [initialCheckDone]);
 
   const login = async (email: string, password: string) => {
     setLoading(true);
