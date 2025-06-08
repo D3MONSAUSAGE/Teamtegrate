@@ -14,7 +14,8 @@ import {
   DollarSign,
   NotebookPen,
   Calendar,
-  Bell
+  Bell,
+  User
 } from 'lucide-react';
 import {
   SidebarMenu,
@@ -56,6 +57,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ onNavigation, isCollapsed }) =>
     { name: 'Documents', href: '/dashboard/documents', icon: FileText },
     { name: 'Finance', href: '/dashboard/finance', icon: DollarSign },
     { name: 'Notebook', href: '/dashboard/notebook', icon: NotebookPen },
+    { name: 'Profile', href: '/dashboard/profile', icon: User },
   ];
 
   return (
