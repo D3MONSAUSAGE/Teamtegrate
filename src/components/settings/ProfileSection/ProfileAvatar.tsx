@@ -1,7 +1,6 @@
 
 import React, { useRef, useState, useEffect } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import { Loader2, Camera } from "lucide-react";
 import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -115,12 +114,10 @@ const ProfileAvatar: React.FC<ProfileAvatarProps> = ({ user, setAvatarUrl, avata
           onChange={handleAvatarUpload}
           disabled={uploading}
         />
-        <Button
-          variant="outline"
-          size="sm"
+        <button
           onClick={triggerFileInput}
           disabled={uploading}
-          className="flex items-center dark:border-gray-700 dark:bg-[#181928]/70"
+          className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3 dark:border-gray-700 dark:bg-[#181928]/70"
         >
           {uploading ? (
             <>
@@ -133,7 +130,7 @@ const ProfileAvatar: React.FC<ProfileAvatarProps> = ({ user, setAvatarUrl, avata
               Change Avatar
             </>
           )}
-        </Button>
+        </button>
       </div>
     </div>
   );
