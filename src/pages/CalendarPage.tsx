@@ -54,9 +54,9 @@ const CalendarPage = () => {
   }).length;
 
   return (
-    <div className="p-6 bg-background min-h-screen">
-      {/* Header Section */}
-      <div className="mb-6">
+    <div className="h-screen flex flex-col bg-background">
+      {/* Header Section - Fixed height */}
+      <div className="flex-shrink-0 p-6 pb-4">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Task Calendar</h1>
@@ -146,8 +146,8 @@ const CalendarPage = () => {
         </div>
       </div>
 
-      {/* Main Calendar View - Full Width */}
-      <div className="w-full">
+      {/* Main Calendar View - Flexible height */}
+      <div className="flex-1 px-6 pb-6 min-h-0">
         {viewType === 'day' && (
           <CalendarDayView 
             selectedDate={selectedDate} 

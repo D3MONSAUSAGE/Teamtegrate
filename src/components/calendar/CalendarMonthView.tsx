@@ -50,10 +50,10 @@ const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
   };
   
   return (
-    <Card className="h-[calc(100vh-300px)]">
-      <CardContent className="p-0">
+    <Card className="h-full flex flex-col">
+      <CardContent className="p-0 flex-1 flex flex-col">
         {/* Day headers */}
-        <div className="grid grid-cols-7 border-b bg-muted/20">
+        <div className="grid grid-cols-7 border-b bg-muted/20 flex-shrink-0">
           {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((dayName, i) => (
             <div key={i} className="text-center p-4 font-semibold text-sm border-r last:border-r-0">
               <div className="hidden sm:block">{dayName}</div>
@@ -62,86 +62,88 @@ const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
           ))}
         </div>
         
-        {/* Calendar grid with increased height */}
-        <ScrollArea className="h-[calc(100vh-400px)]">
-          <div className="grid grid-cols-7 auto-rows-[180px] sm:auto-rows-[200px]">
-            {days.map((day, i) => {
-              const dayTasks = tasks.filter(task => {
-                try {
-                  const taskDeadline = new Date(task.deadline);
-                  return isSameDay(taskDeadline, day);
-                } catch (error) {
-                  console.error("Invalid date for task in month view:", task.id);
-                  return false;
-                }
-              });
-              
-              const withinCurrentMonth = isSameMonth(day, selectedDate);
-              const maxVisibleTasks = 4;
-              
-              return (
-                <div 
-                  key={i} 
-                  className={cn(
-                    "border-b border-r last:border-r-0 p-3 relative hover:bg-accent/10 transition-colors",
-                    !withinCurrentMonth && "bg-muted/5 text-muted-foreground"
-                  )}
-                  onDrop={(e) => handleDrop(e, day)}
-                  onDragOver={handleDragOver}
-                >
-                  {/* Day number with better styling */}
-                  <div className="flex justify-between items-start mb-2">
-                    <span className={cn(
-                      "inline-flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium transition-colors",
-                      isToday(day) && "bg-primary text-primary-foreground font-bold shadow-md",
-                      !isToday(day) && withinCurrentMonth && "hover:bg-accent",
-                      !withinCurrentMonth && "text-muted-foreground"
-                    )}>
-                      {format(day, 'd')}
-                    </span>
-                    {dayTasks.length > 0 && (
-                      <div className="text-xs text-muted-foreground font-medium">
-                        {dayTasks.length}
-                      </div>
+        {/* Calendar grid - Takes remaining space */}
+        <div className="flex-1">
+          <ScrollArea className="h-full">
+            <div className="grid grid-cols-7 auto-rows-[180px] sm:auto-rows-[200px]">
+              {days.map((day, i) => {
+                const dayTasks = tasks.filter(task => {
+                  try {
+                    const taskDeadline = new Date(task.deadline);
+                    return isSameDay(taskDeadline, day);
+                  } catch (error) {
+                    console.error("Invalid date for task in month view:", task.id);
+                    return false;
+                  }
+                });
+                
+                const withinCurrentMonth = isSameMonth(day, selectedDate);
+                const maxVisibleTasks = 4;
+                
+                return (
+                  <div 
+                    key={i} 
+                    className={cn(
+                      "border-b border-r last:border-r-0 p-3 relative hover:bg-accent/10 transition-colors",
+                      !withinCurrentMonth && "bg-muted/5 text-muted-foreground"
                     )}
+                    onDrop={(e) => handleDrop(e, day)}
+                    onDragOver={handleDragOver}
+                  >
+                    {/* Day number with better styling */}
+                    <div className="flex justify-between items-start mb-2">
+                      <span className={cn(
+                        "inline-flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium transition-colors",
+                        isToday(day) && "bg-primary text-primary-foreground font-bold shadow-md",
+                        !isToday(day) && withinCurrentMonth && "hover:bg-accent",
+                        !withinCurrentMonth && "text-muted-foreground"
+                      )}>
+                        {format(day, 'd')}
+                      </span>
+                      {dayTasks.length > 0 && (
+                        <div className="text-xs text-muted-foreground font-medium">
+                          {dayTasks.length}
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Tasks with improved spacing */}
+                    <div className="space-y-1 overflow-hidden">
+                      {dayTasks.slice(0, maxVisibleTasks).map(task => (
+                        <CalendarTaskItem 
+                          key={task.id} 
+                          task={task}
+                          minimal={true}
+                          onClick={() => onTaskClick(task)}
+                          draggable={true}
+                        />
+                      ))}
+                      {dayTasks.length > maxVisibleTasks && (
+                        <div 
+                          className="text-xs text-primary cursor-pointer hover:text-primary/80 px-2 py-1 rounded bg-accent/50 text-center font-medium"
+                          onClick={() => {
+                            if (dayTasks[maxVisibleTasks]) onTaskClick(dayTasks[maxVisibleTasks]);
+                          }}
+                        >
+                          +{dayTasks.length - maxVisibleTasks} more
+                        </div>
+                      )}
+                      {dayTasks.length === 0 && (
+                        <div 
+                          className="py-2 text-xs text-center text-muted-foreground cursor-pointer hover:bg-muted/50 rounded flex items-center justify-center gap-1"
+                          onClick={() => onDateCreate(day)}
+                        >
+                          <Plus className="h-3 w-3" />
+                          Add task
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  
-                  {/* Tasks with improved spacing */}
-                  <div className="space-y-1 overflow-hidden">
-                    {dayTasks.slice(0, maxVisibleTasks).map(task => (
-                      <CalendarTaskItem 
-                        key={task.id} 
-                        task={task}
-                        minimal={true}
-                        onClick={() => onTaskClick(task)}
-                        draggable={true}
-                      />
-                    ))}
-                    {dayTasks.length > maxVisibleTasks && (
-                      <div 
-                        className="text-xs text-primary cursor-pointer hover:text-primary/80 px-2 py-1 rounded bg-accent/50 text-center font-medium"
-                        onClick={() => {
-                          if (dayTasks[maxVisibleTasks]) onTaskClick(dayTasks[maxVisibleTasks]);
-                        }}
-                      >
-                        +{dayTasks.length - maxVisibleTasks} more
-                      </div>
-                    )}
-                    {dayTasks.length === 0 && (
-                      <div 
-                        className="py-2 text-xs text-center text-muted-foreground cursor-pointer hover:bg-muted/50 rounded flex items-center justify-center gap-1"
-                        onClick={() => onDateCreate(day)}
-                      >
-                        <Plus className="h-3 w-3" />
-                        Add task
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </ScrollArea>
+                );
+              })}
+            </div>
+          </ScrollArea>
+        </div>
       </CardContent>
     </Card>
   );

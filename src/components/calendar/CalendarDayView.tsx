@@ -59,8 +59,8 @@ const CalendarDayView: React.FC<CalendarDayViewProps> = ({
   };
   
   return (
-    <Card className="h-[calc(100vh-240px)]">
-      <CardHeader className="pb-2">
+    <Card className="h-full flex flex-col">
+      <CardHeader className="pb-2 flex-shrink-0">
         <CardTitle className="text-lg font-medium flex items-center justify-between">
           {format(selectedDate, 'EEEE, MMMM d, yyyy')}
           <Button 
@@ -73,8 +73,8 @@ const CalendarDayView: React.FC<CalendarDayViewProps> = ({
           </Button>
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-0">
-        <ScrollArea className="h-[calc(100vh-300px)]">
+      <CardContent className="p-0 flex-1">
+        <ScrollArea className="h-full">
           {timeBlocks.map((block, index) => (
             <div key={index} className="relative">
               <div className="p-2 sticky top-0 bg-background z-10 border-b">
