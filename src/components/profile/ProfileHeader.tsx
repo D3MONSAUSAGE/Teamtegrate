@@ -140,15 +140,15 @@ const ProfileHeader = () => {
                 avatarUrl={avatarUrl} 
               />
               <div className="mt-4 text-center lg:text-left flex items-center gap-2">
-                <Badge 
-                  variant={getRoleBadgeVariant(user.role)} 
-                  className="px-3 py-1"
-                >
-                  <span className="flex items-center gap-1">
-                    {getRoleIcon(user.role)}
+                <div className="flex items-center gap-1">
+                  {getRoleIcon(user.role)}
+                  <Badge 
+                    variant={getRoleBadgeVariant(user.role)} 
+                    className="px-3 py-1"
+                  >
                     {getRoleDisplayName(user.role)}
-                  </span>
-                </Badge>
+                  </Badge>
+                </div>
                 <Button
                   variant="ghost"
                   size="sm"
