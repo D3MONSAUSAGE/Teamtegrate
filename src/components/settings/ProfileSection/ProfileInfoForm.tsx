@@ -2,7 +2,6 @@
 import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
 import { Save } from "lucide-react";
 import { toast } from '@/components/ui/sonner';
 
@@ -50,19 +49,19 @@ const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({
       />
     </div>
     <div className="flex justify-end mt-4">
-      <Button
+      <button
         onClick={onSave}
         disabled={isLoading}
-        className="bg-primary hover:bg-primary/90 text-primary-foreground"
+        className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2"
       >
         {isLoading ? (
-          <>Saving...</>
+          "Saving..."
         ) : (
           <>
             <Save className="mr-2 h-4 w-4" /> Save Profile
           </>
         )}
-      </Button>
+      </button>
     </div>
   </div>
 );
