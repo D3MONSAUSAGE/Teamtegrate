@@ -999,6 +999,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      user_can_access_room: {
+        Args: { room_id: string; user_id: string }
+        Returns: boolean
+      }
+      user_is_admin_or_superadmin: {
+        Args: { user_id: string }
+        Returns: boolean
+      }
       user_is_project_creator: {
         Args: { project_id: string; user_id: string }
         Returns: boolean
