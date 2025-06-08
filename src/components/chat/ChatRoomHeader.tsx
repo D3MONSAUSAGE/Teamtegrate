@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, LogOut, UserPlus, Trash2 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
@@ -31,6 +31,21 @@ const ChatRoomHeader: React.FC<ChatRoomHeaderProps> = ({
   const [isDeleting, setIsDeleting] = useState(false);
   const { canDeleteRoom, canAddParticipants } = useChatPermissions();
 
+  const canUserDeleteRoom = canDeleteRoom(room.created_by);
+  const canUserAddParticipants = canAddParticipants(room.created_by);
+
+  // Debug logging
+  useEffect(() => {
+    console.log('ChatRoomHeader: Room details:', {
+      roomId: room.id,
+      roomName: room.name,
+      roomCreatedBy: room.created_by,
+      currentUserId,
+      canUserDeleteRoom,
+      canUserAddParticipants
+    });
+  }, [room, currentUserId, canUserDeleteRoom, canUserAddParticipants]);
+
   const handleParticipantAdded = () => {
     playSuccessSound();
     toast.success('Member added to the chat room');
@@ -47,9 +62,6 @@ const ChatRoomHeader: React.FC<ChatRoomHeaderProps> = ({
       setIsDeleting(false);
     }
   };
-
-  const canUserDeleteRoom = canDeleteRoom(room.created_by);
-  const canUserAddParticipants = canAddParticipants(room.created_by);
 
   return (
     <div className="p-2 border-b border-border dark:border-gray-800 flex items-center justify-between bg-card dark:bg-[#1f2133] shadow-sm">

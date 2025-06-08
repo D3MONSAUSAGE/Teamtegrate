@@ -5,7 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Trash2, Loader2, Star, Shield, Crown, User, Edit } from 'lucide-react';
-import { UserRole, getRoleDisplayName, canManageUser } from '@/types';
+import { UserRole, getRoleDisplayName } from '@/types';
+import { canManageUser } from '@/contexts/auth/roleUtils';
 import RoleManagement from './RoleManagement';
 import { cn } from "@/lib/utils";
 

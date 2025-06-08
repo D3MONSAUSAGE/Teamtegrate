@@ -99,36 +99,12 @@ export interface TeamMemberPerformance {
   projects: number;
 }
 
-// Role hierarchy utility functions
+// Role hierarchy utility functions - use these from @/contexts/auth/roleUtils instead
 export const ROLE_HIERARCHY: Record<UserRole, number> = {
   'superadmin': 4,
   'admin': 3,
   'manager': 2,
   'user': 1
-};
-
-export const hasRoleAccess = (userRole: UserRole, requiredRole: UserRole): boolean => {
-  return ROLE_HIERARCHY[userRole] >= ROLE_HIERARCHY[requiredRole];
-};
-
-export const canManageUser = (managerRole: UserRole, targetRole: UserRole): boolean => {
-  // Superadmin can manage everyone except other superadmins
-  if (managerRole === 'superadmin') {
-    return targetRole !== 'superadmin';
-  }
-  
-  // Admin can manage managers and users (but not other admins or superadmins)
-  if (managerRole === 'admin') {
-    return ['manager', 'user'].includes(targetRole);
-  }
-  
-  // Managers can manage their team members (users) but not other managers, admins, or superadmins
-  if (managerRole === 'manager') {
-    return targetRole === 'user';
-  }
-  
-  // Users cannot manage anyone
-  return false;
 };
 
 export const getRoleDisplayName = (role: UserRole): string => {
