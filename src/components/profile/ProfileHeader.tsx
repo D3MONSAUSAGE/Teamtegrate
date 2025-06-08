@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -138,7 +139,6 @@ const ProfileHeader = () => {
         <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-8">
           <div className="flex flex-col lg:flex-row lg:items-start gap-8 flex-1">
             <div className="flex flex-col items-center lg:items-start">
-              {console.log("About to render ProfileAvatar")}
               <ProfileAvatar 
                 user={user} 
                 setAvatarUrl={setAvatarUrl} 
@@ -169,7 +169,6 @@ const ProfileHeader = () => {
             </div>
             
             <div className="flex-1 min-w-0">
-              {console.log("About to render ProfileInfoForm")}
               <ProfileInfoForm
                 user={user}
                 name={name}
