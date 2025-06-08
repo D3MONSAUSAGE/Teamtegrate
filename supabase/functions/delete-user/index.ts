@@ -1,4 +1,3 @@
-
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
@@ -155,7 +154,20 @@ Deno.serve(async (req) => {
       console.log('Updated project tasks assigned to user');
     }
 
-    // 5. Delete from custom users table
+    // 5. Delete all documents belonging to the user
+    const { error: documentsDeleteError } = await supabaseAdmin
+      .from('documents')
+      .delete()
+      .eq('user_id', targetUserId);
+
+    if (documentsDeleteError) {
+      console.error('Error deleting user documents:', documentsDeleteError);
+      // Continue with deletion even if this fails
+    } else {
+      console.log('Deleted all user documents');
+    }
+
+    // 6. Delete from custom users table
     const { error: dbDeleteError } = await supabaseAdmin
       .from('users')
       .delete()
@@ -168,7 +180,7 @@ Deno.serve(async (req) => {
 
     console.log('Deleted user from custom users table');
 
-    // 6. Finally, delete from auth.users using admin client
+    // 7. Finally, delete from auth.users using admin client
     const { error: authDeleteError } = await supabaseAdmin.auth.admin.deleteUser(
       targetUserId
     );
