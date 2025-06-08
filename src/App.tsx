@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -13,6 +14,7 @@ import TasksPage from "./pages/TasksPage";
 import ProjectsPage from "./pages/ProjectsPage";
 import TeamPage from "./pages/TeamPage";
 import SettingsPage from "./pages/SettingsPage";
+import ProfilePage from "./pages/ProfilePage";
 import ReportsPage from "./pages/ReportsPage";
 import TimeTrackingPage from "./pages/TimeTrackingPage";
 import NotFound from "./pages/NotFound";
@@ -57,6 +59,7 @@ const App: React.FC = () => {
                   <Route path="chat" element={<ChatPage />} />
                   <Route path="reports" element={<ReportsPage />} />
                   <Route path="settings" element={<SettingsPage />} />
+                  <Route path="profile" element={<ProfilePage />} />
                   <Route path="time-tracking" element={<TimeTrackingPage />} />
                   <Route path="documents" element={<DocumentsPage />} />
                   <Route path="finance" element={<FinancePage />} />

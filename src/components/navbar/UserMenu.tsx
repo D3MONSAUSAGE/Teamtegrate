@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 
 interface UserMenuProps {
   onLogout: () => Promise<void>;
@@ -20,6 +21,7 @@ interface UserMenuProps {
 
 const UserMenu: React.FC<UserMenuProps> = ({ onLogout, onSettings }) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -49,6 +51,10 @@ const UserMenu: React.FC<UserMenuProps> = ({ onLogout, onSettings }) => {
     }
   }, [user]);
 
+  const handleProfile = () => {
+    navigate('/dashboard/profile');
+  };
+
   if (!user) return null;
 
   return (
@@ -74,6 +80,10 @@ const UserMenu: React.FC<UserMenuProps> = ({ onLogout, onSettings }) => {
             <span>{user.name}</span>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
+          <DropdownMenuItem className="flex items-center gap-2" onClick={handleProfile}>
+            <UserIcon className="h-4 w-4" />
+            <span>Profile</span>
+          </DropdownMenuItem>
           <DropdownMenuItem className="flex items-center gap-2" onClick={onSettings}>
             <Settings className="h-4 w-4" />
             <span>Settings</span>

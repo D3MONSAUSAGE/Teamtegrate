@@ -12,7 +12,8 @@ import {
   DollarSign,
   MessageSquare,
   BookOpen,
-  Calendar
+  Calendar,
+  User
 } from "lucide-react";
 import {
   Tooltip,
@@ -34,6 +35,12 @@ interface SidebarNavProps {
 }
 
 const navItems: NavItem[] = [
+  {
+    name: "Profile",
+    path: "/dashboard/profile",
+    icon: User,
+    allowed: true,
+  },
   {
     name: "Projects",
     path: "/dashboard/projects",
