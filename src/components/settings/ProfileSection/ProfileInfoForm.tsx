@@ -1,11 +1,10 @@
-
 import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Save } from "lucide-react";
 import { toast } from '@/components/ui/sonner';
 import { useAuth } from '@/contexts/AuthContext';
-import { canManageUser } from '@/types';
+import { canManageUser } from '@/contexts/auth/roleUtils';
 
 interface ProfileInfoFormProps {
   user: { id: string; name: string; email: string; role: string };

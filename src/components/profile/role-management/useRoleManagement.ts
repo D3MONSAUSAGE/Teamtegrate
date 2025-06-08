@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
-import { UserRole, hasRoleAccess, canManageUser } from '@/types';
+import { UserRole } from '@/types';
+import { hasRoleAccess, canManageUser } from '@/contexts/auth/roleUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { useAuth } from '@/contexts/AuthContext';
