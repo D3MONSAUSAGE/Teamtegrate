@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -202,22 +201,18 @@ const ProfileHeader = () => {
             <Button 
               variant="outline" 
               onClick={() => navigate('/dashboard/calendar')}
-              className="hover:bg-blue-50 dark:hover:bg-blue-900/20"
+              className="hover:bg-blue-50 dark:hover:bg-blue-900/20 flex items-center gap-2"
             >
-              <span className="flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                View Calendar
-              </span>
+              <Calendar className="h-4 w-4" />
+              View Calendar
             </Button>
             <Button 
               variant="outline" 
               onClick={() => navigate('/dashboard/settings')}
-              className="hover:bg-gray-50 dark:hover:bg-gray-800/50"
+              className="hover:bg-gray-50 dark:hover:bg-gray-800/50 flex items-center gap-2"
             >
-              <span className="flex items-center gap-2">
-                <Settings className="h-4 w-4" />
-                Settings
-              </span>
+              <Settings className="h-4 w-4" />
+              Settings
             </Button>
           </div>
         </div>
