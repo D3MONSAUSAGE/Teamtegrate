@@ -6,7 +6,7 @@ import { CheckCircle2, X } from "lucide-react";
 
 interface TaskDetailFooterProps {
   status: string;
-  onStatusChange: (status: 'To Do' | 'In Progress' | 'Pending' | 'Completed') => void;
+  onStatusChange: (status: 'To Do' | 'In Progress' | 'Completed') => void;
 }
 
 const TaskDetailFooter: React.FC<TaskDetailFooterProps> = ({ status, onStatusChange }) => {

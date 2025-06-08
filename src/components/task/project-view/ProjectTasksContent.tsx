@@ -12,7 +12,6 @@ interface ProjectTasksContentProps {
   progress: number;
   todoTasks: Task[];
   inProgressTasks: Task[];
-  pendingTasks: Task[];
   completedTasks: Task[];
   searchQuery: string;
   sortBy: string;
@@ -30,7 +29,6 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
   progress,
   todoTasks,
   inProgressTasks,
-  pendingTasks,
   completedTasks,
   searchQuery,
   sortBy,
@@ -50,7 +48,6 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
           progress={progress}
           todoTasksLength={todoTasks.length}
           inProgressTasksLength={inProgressTasks.length}
-          pendingTasksLength={pendingTasks.length}
           completedTasksLength={completedTasks.length}
           onCreateTask={onCreateTask}
         />
@@ -81,7 +78,6 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
       <TaskTabs
         todoTasks={todoTasks}
         inProgressTasks={inProgressTasks}
-        pendingTasks={pendingTasks}
         completedTasks={completedTasks}
         onEdit={onEditTask}
         onNewTask={onCreateTask}

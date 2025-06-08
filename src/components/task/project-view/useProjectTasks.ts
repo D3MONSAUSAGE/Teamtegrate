@@ -70,11 +70,6 @@ export const useProjectTasks = (allTasks: Task[], projectId: string | null) => {
     [filteredTasks, sortTasks]
   );
   
-  const pendingTasks = useMemo(() => 
-    sortTasks(filteredTasks.filter(task => task.status === 'Pending')),
-    [filteredTasks, sortTasks]
-  );
-  
   const completedTasks = useMemo(() => 
     sortTasks(filteredTasks.filter(task => task.status === 'Completed')),
     [filteredTasks, sortTasks]
@@ -96,7 +91,6 @@ export const useProjectTasks = (allTasks: Task[], projectId: string | null) => {
     setSortBy,
     todoTasks,
     inProgressTasks,
-    pendingTasks,
     completedTasks,
     progress,
     projectTasks

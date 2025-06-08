@@ -35,7 +35,7 @@ const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
     formatTime
   } = useTaskDetailUtils(task);
 
-  const handleStatusChange = (status: 'To Do' | 'In Progress' | 'Pending' | 'Completed') => {
+  const handleStatusChange = (status: 'To Do' | 'In Progress' | 'Completed') => {
     updateTaskStatus(task.id, status);
   };
 

@@ -35,7 +35,6 @@ export const useProjectTasksFilters = (projectTasks: Task[]) => {
   // Group tasks by status
   const todoTasks = useMemo(() => filteredTasks.filter(task => task.status === 'To Do'), [filteredTasks]);
   const inProgressTasks = useMemo(() => filteredTasks.filter(task => task.status === 'In Progress'), [filteredTasks]);
-  const pendingTasks = useMemo(() => filteredTasks.filter(task => task.status === 'Pending'), [filteredTasks]);
   const completedTasks = useMemo(() => filteredTasks.filter(task => task.status === 'Completed'), [filteredTasks]);
 
   // Calculate progress
@@ -58,7 +57,6 @@ export const useProjectTasksFilters = (projectTasks: Task[]) => {
     sortBy,
     todoTasks,
     inProgressTasks,
-    pendingTasks,
     completedTasks,
     progress,
     handleSearchChange,
