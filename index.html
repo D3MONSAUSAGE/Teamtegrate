@@ -3,10 +3,17 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>TeamStream</title>
     <meta name="description" content="Collaborate and manage team tasks effortlessly" />
     <meta name="author" content="Lovable" />
+
+    <!-- PWA and mobile app meta tags -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="TeamStream" />
+    <meta name="theme-color" content="#86b7d3" />
 
     <meta property="og:title" content="TeamStream" />
     <meta property="og:description" content="Collaborate and manage team tasks effortlessly" />
@@ -16,6 +23,27 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@lovable_dev" />
     <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+
+    <style>
+      /* Prevent text selection and touch callouts for app-like feel */
+      * {
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+      
+      /* Allow text selection for input fields */
+      input, textarea, [contenteditable] {
+        -webkit-user-select: text;
+        user-select: text;
+      }
+      
+      /* Prevent pull-to-refresh and overscroll */
+      body {
+        overscroll-behavior: none;
+        -webkit-overflow-scrolling: touch;
+      }
+    </style>
   </head>
 
   <body>
@@ -25,4 +53,3 @@
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
-

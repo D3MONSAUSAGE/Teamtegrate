@@ -24,12 +24,12 @@ const AppLayout = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen bg-background w-full flex">
+      <div className="min-h-screen bg-background w-full flex mobile-safe-area">
         <Sidebar />
         
         <SidebarInset className="flex flex-col flex-1 ml-12 md:ml-16">
           <Navbar />
-          <main className="flex-1 overflow-y-auto p-3 md:p-6">
+          <main className="flex-1 overflow-y-auto p-3 md:p-6 no-bounce">
             <Outlet />
           </main>
         </SidebarInset>
