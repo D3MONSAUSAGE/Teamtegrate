@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { User, UserRole } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -51,38 +52,50 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const createUserFromSession = async (session: Session): Promise<User> => {
-    // First try to get the most up-to-date role from the database
-    const { data: dbUser, error } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', session.user.id)
-      .single();
+    try {
+      // First try to get the most up-to-date role from the database
+      const { data: dbUser, error } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', session.user.id)
+        .single();
 
-    const dbRole = dbUser?.role as UserRole;
-    const metaRole = session.user.user_metadata.role as UserRole;
-    
-    // Use database role if available, otherwise fall back to metadata
-    const currentRole = dbRole || metaRole || 'user';
+      const dbRole = dbUser?.role as UserRole;
+      const metaRole = session.user.user_metadata.role as UserRole;
+      
+      // Use database role if available, otherwise fall back to metadata
+      const currentRole = dbRole || metaRole || 'user';
 
-    // If the roles don't match, update the auth metadata
-    if (dbRole && dbRole !== metaRole) {
-      console.log(`Role mismatch detected. DB: ${dbRole}, Meta: ${metaRole}. Updating metadata.`);
-      try {
-        await supabase.auth.updateUser({
-          data: { role: dbRole }
-        });
-      } catch (error) {
-        console.warn('Failed to update user metadata:', error);
+      // If the roles don't match, update the auth metadata
+      if (dbRole && dbRole !== metaRole) {
+        console.log(`Role mismatch detected. DB: ${dbRole}, Meta: ${metaRole}. Updating metadata.`);
+        try {
+          await supabase.auth.updateUser({
+            data: { role: dbRole }
+          });
+        } catch (error) {
+          console.warn('Failed to update user metadata:', error);
+        }
       }
-    }
 
-    return {
-      id: session.user.id,
-      email: session.user.email || '',
-      name: session.user.user_metadata.name || session.user.email?.split('@')[0] || '',
-      role: currentRole,
-      createdAt: new Date(session.user.created_at),
-    };
+      return {
+        id: session.user.id,
+        email: session.user.email || '',
+        name: session.user.user_metadata.name || session.user.email?.split('@')[0] || '',
+        role: currentRole,
+        createdAt: new Date(session.user.created_at),
+      };
+    } catch (error) {
+      console.error('Error creating user from session:', error);
+      // Return basic user info if database call fails
+      return {
+        id: session.user.id,
+        email: session.user.email || '',
+        name: session.user.user_metadata.name || session.user.email?.split('@')[0] || '',
+        role: (session.user.user_metadata.role as UserRole) || 'user',
+        createdAt: new Date(session.user.created_at),
+      };
+    }
   };
 
   const refreshUserSession = async (): Promise<void> => {
@@ -110,24 +123,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        setSession(session);
-        if (session?.user) {
-          const userData = await createUserFromSession(session);
-          setUser(userData);
-        } else {
+        console.log('Auth state changed:', event, session?.user?.id);
+        
+        try {
+          setSession(session);
+          if (session?.user) {
+            const userData = await createUserFromSession(session);
+            setUser(userData);
+          } else {
+            setUser(null);
+          }
+        } catch (error) {
+          console.error('Error in auth state change:', error);
           setUser(null);
+        } finally {
+          // Always clear loading state after handling auth state change
+          setLoading(false);
         }
       }
     );
 
     // THEN check for existing session
     supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session);
-      if (session?.user) {
-        const userData = await createUserFromSession(session);
-        setUser(userData);
+      try {
+        setSession(session);
+        if (session?.user) {
+          const userData = await createUserFromSession(session);
+          setUser(userData);
+        }
+      } catch (error) {
+        console.error('Error getting initial session:', error);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => {
