@@ -1,7 +1,6 @@
-
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useTask } from "@/contexts/task/TaskContext";
+import { useTask } from "@/contexts/task";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { differenceInMinutes, isToday, format } from "date-fns";
@@ -190,4 +189,3 @@ const DailyPerformanceReport: React.FC = () => {
 };
 
 export default DailyPerformanceReport;
-
