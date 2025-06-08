@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Loader2, Plus, Users as UsersIcon } from 'lucide-react';
+import { Loader2, Plus, Users as UsersIcon, RefreshCw } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,6 +18,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 const TeamPage = () => {
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
   const [removingMemberId, setRemovingMemberId] = useState<string | null>(null);
+  const [showDebug, setShowDebug] = useState(false);
   const { user } = useAuth();
   const isMobile = useIsMobile();
   
@@ -55,6 +56,12 @@ const TeamPage = () => {
     setRemovingMemberId(null);
   };
 
+  const handleRefresh = async () => {
+    console.log('Manual refresh triggered');
+    await refreshTeamMembers();
+    toast.success('Team data refreshed');
+  };
+
   if (!user) {
     return (
       <div className="p-6 text-center">
@@ -67,9 +74,20 @@ const TeamPage = () => {
     <div className={`p-3 sm:p-6`}>
       <div className="flex items-center justify-between mb-8 flex-wrap gap-3">
         <h1 className="text-xl sm:text-2xl font-bold">Team Management</h1>
-        <Button onClick={() => setIsAddMemberOpen(true)} disabled={isTeamMembersLoading} size={isMobile ? "sm" : "default"}>
-          <Plus className="h-4 w-4 mr-2" /> Add Team Member
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size={isMobile ? "sm" : "default"}
+            onClick={handleRefresh}
+            disabled={isTeamMembersLoading}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isTeamMembersLoading ? 'animate-spin' : ''}`} /> 
+            Refresh
+          </Button>
+          <Button onClick={() => setIsAddMemberOpen(true)} disabled={isTeamMembersLoading} size={isMobile ? "sm" : "default"}>
+            <Plus className="h-4 w-4 mr-2" /> Add Team Member
+          </Button>
+        </div>
       </div>
       
       <TeamStatsCards 
@@ -78,6 +96,43 @@ const TeamPage = () => {
         completedTasks={totalTasksCompleted}
         projectsCount={projectsCount}
       />
+
+      {/* Debug Panel */}
+      <div className="mb-4">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={() => setShowDebug(!showDebug)}
+          className="text-xs"
+        >
+          {showDebug ? 'Hide' : 'Show'} Debug Info
+        </Button>
+        
+        {showDebug && (
+          <Card className="mt-2">
+            <CardHeader>
+              <CardTitle className="text-sm">Debug Information</CardTitle>
+            </CardHeader>
+            <CardContent className="text-xs space-y-2">
+              <div>Team Members Count: {teamMembersCount}</div>
+              <div>Total Tasks Assigned: {totalTasksAssigned}</div>
+              <div>Total Tasks Completed: {totalTasksCompleted}</div>
+              <div>Projects Count: {projectsCount}</div>
+              <div>Performance Data:</div>
+              <pre className="text-xs bg-gray-100 p-2 rounded overflow-auto max-h-40">
+                {JSON.stringify(teamMembersPerformance.map(m => ({
+                  name: m.name,
+                  totalTasks: m.totalTasks,
+                  completedTasks: m.completedTasks,
+                  completionRate: m.completionRate,
+                  dueTodayTasks: m.dueTodayTasks,
+                  projects: m.projects
+                })), null, 2)}
+              </pre>
+            </CardContent>
+          </Card>
+        )}
+      </div>
       
       <h2 className="text-xl font-semibold mb-4">My Team Members</h2>
       
