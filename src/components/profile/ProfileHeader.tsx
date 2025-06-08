@@ -149,16 +149,14 @@ const ProfileHeader = () => {
                     {getRoleDisplayName(user.role)}
                   </Badge>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
+                <button
                   onClick={handleRefreshRole}
                   disabled={isRefreshing}
-                  className="h-6 w-6 p-0"
+                  className="h-6 w-6 p-0 bg-transparent border-none hover:bg-gray-100 dark:hover:bg-gray-800 rounded flex items-center justify-center"
                   title="Refresh role information"
                 >
                   <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
-                </Button>
+                </button>
               </div>
             </div>
             
@@ -198,22 +196,20 @@ const ProfileHeader = () => {
           </div>
           
           <div className="flex flex-col sm:flex-row xl:flex-col gap-3 xl:min-w-[200px]">
-            <Button 
-              variant="outline" 
+            <button 
               onClick={() => navigate('/dashboard/calendar')}
-              className="hover:bg-blue-50 dark:hover:bg-blue-900/20 flex items-center gap-2"
+              className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 hover:bg-blue-50 dark:hover:bg-blue-900/20"
             >
               <Calendar className="h-4 w-4" />
               View Calendar
-            </Button>
-            <Button 
-              variant="outline" 
+            </button>
+            <button 
               onClick={() => navigate('/dashboard/settings')}
-              className="hover:bg-gray-50 dark:hover:bg-gray-800/50 flex items-center gap-2"
+              className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-800/50"
             >
               <Settings className="h-4 w-4" />
               Settings
-            </Button>
+            </button>
           </div>
         </div>
       </CardContent>
