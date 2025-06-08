@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Loader2, Plus, Users as UsersIcon, RefreshCw } from 'lucide-react';
@@ -10,6 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import AddTeamMemberDialog from '@/components/AddTeamMemberDialog';
 import TeamStatsCards from '@/components/team/TeamStatsCards';
 import TeamMemberCard from '@/components/team/TeamMemberCard';
+import ManagerPerformanceCard from '@/components/team/ManagerPerformanceCard';
+import UnassignedTasksSection from '@/components/team/UnassignedTasksSection';
 import NoTeamMembers from '@/components/team/NoTeamMembers';
 import useTeamMembers from '@/hooks/useTeamMembers';
 import { useAuth } from '@/contexts/AuthContext';
@@ -24,9 +25,14 @@ const TeamPage = () => {
   
   const {
     teamMembersPerformance,
+    managerPerformance,
+    unassignedTasks,
     teamMembersCount,
     totalTasksAssigned,
     totalTasksCompleted,
+    teamTasksAssigned,
+    managerTasksAssigned,
+    unassignedTasksCount,
     projectsCount,
     removeTeamMember,
     refreshTeamMembers,
@@ -62,6 +68,11 @@ const TeamPage = () => {
     toast.success('Team data refreshed');
   };
 
+  const handleReassignTask = (taskId: string) => {
+    // TODO: Implement task reassignment functionality
+    toast.info('Task reassignment feature coming soon');
+  };
+
   if (!user) {
     return (
       <div className="p-6 text-center">
@@ -95,6 +106,9 @@ const TeamPage = () => {
         totalTasks={totalTasksAssigned}
         completedTasks={totalTasksCompleted}
         projectsCount={projectsCount}
+        teamTasksAssigned={teamTasksAssigned}
+        managerTasksAssigned={managerTasksAssigned}
+        unassignedTasksCount={unassignedTasksCount}
       />
 
       {/* Debug Panel */}
@@ -134,7 +148,17 @@ const TeamPage = () => {
         )}
       </div>
       
-      <h2 className="text-xl font-semibold mb-4">My Team Members</h2>
+      {/* Manager Performance Section */}
+      {managerPerformance && managerPerformance.totalTasks > 0 && (
+        <>
+          <h2 className="text-xl font-semibold mb-4">Manager Performance</h2>
+          <div className="mb-8">
+            <ManagerPerformanceCard member={managerPerformance} />
+          </div>
+        </>
+      )}
+      
+      <h2 className="text-xl font-semibold mb-4">Team Members</h2>
       
       {isTeamMembersLoading ? (
         <div className="flex items-center justify-center py-8">
@@ -144,7 +168,7 @@ const TeamPage = () => {
       ) : teamMembersCount === 0 ? (
         <NoTeamMembers onAddMember={() => setIsAddMemberOpen(true)} />
       ) : (
-        <div className="grid grid-cols-1 gap-4">
+        <div className="grid grid-cols-1 gap-4 mb-8">
           {teamMembersPerformance.map((member) => (
             <TeamMemberCard 
               key={member.id} 
@@ -155,6 +179,12 @@ const TeamPage = () => {
           ))}
         </div>
       )}
+      
+      {/* Unassigned Tasks Section */}
+      <UnassignedTasksSection 
+        unassignedTasks={unassignedTasks}
+        onReassignTask={handleReassignTask}
+      />
       
       <h2 className="text-xl font-semibold mb-4 mt-8">All App Users</h2>
       <p className="text-sm text-muted-foreground mb-4">

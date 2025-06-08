@@ -2,19 +2,26 @@
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Badge } from "@/components/ui/badge";
 
 interface TeamStatsCardsProps {
   teamMembersCount: number;
   totalTasks: number;
   completedTasks: number;
   projectsCount: number;
+  teamTasksAssigned?: number;
+  managerTasksAssigned?: number;
+  unassignedTasksCount?: number;
 }
 
 const TeamStatsCards: React.FC<TeamStatsCardsProps> = ({ 
   teamMembersCount, 
   totalTasks, 
   completedTasks, 
-  projectsCount 
+  projectsCount,
+  teamTasksAssigned = 0,
+  managerTasksAssigned = 0,
+  unassignedTasksCount = 0
 }) => {
   const isMobile = useIsMobile();
 
@@ -35,6 +42,19 @@ const TeamStatsCards: React.FC<TeamStatsCardsProps> = ({
         </CardHeader>
         <CardContent className={isMobile ? 'p-3 pt-0' : undefined}>
           <div className="text-xl sm:text-2xl font-bold">{totalTasks}</div>
+          <div className="flex gap-1 mt-1 text-xs text-muted-foreground flex-wrap">
+            <Badge variant="secondary" className="text-xs">
+              Team: {teamTasksAssigned}
+            </Badge>
+            <Badge variant="outline" className="text-xs">
+              Manager: {managerTasksAssigned}
+            </Badge>
+            {unassignedTasksCount > 0 && (
+              <Badge variant="destructive" className="text-xs">
+                Unassigned: {unassignedTasksCount}
+              </Badge>
+            )}
+          </div>
         </CardContent>
       </Card>
       
@@ -44,6 +64,9 @@ const TeamStatsCards: React.FC<TeamStatsCardsProps> = ({
         </CardHeader>
         <CardContent className={isMobile ? 'p-3 pt-0' : undefined}>
           <div className="text-xl sm:text-2xl font-bold">{completedTasks}</div>
+          <div className="text-xs text-muted-foreground mt-1">
+            {totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0}% completion rate
+          </div>
         </CardContent>
       </Card>
       

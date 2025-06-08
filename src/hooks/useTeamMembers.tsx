@@ -23,6 +23,19 @@ interface TeamMemberPerformance extends TeamMember {
   projects: number;
 }
 
+interface ManagerPerformance {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  assignedTasks: Task[];
+  completedTasks: number;
+  totalTasks: number;
+  completionRate: number;
+  dueTodayTasks: number;
+  projects: number;
+}
+
 const useTeamMembers = () => {
   const { tasks, projects } = useTask();
   const { user } = useAuth();
@@ -154,6 +167,62 @@ const useTeamMembers = () => {
       setIsLoading(false);
     }
   };
+
+  // Calculate manager's performance (tasks they created/own)
+  const managerPerformance: ManagerPerformance | null = useMemo(() => {
+    if (!user) return null;
+
+    console.log('Calculating manager performance with', tasks.length, 'total tasks');
+    
+    // Manager's tasks are those where user_id matches (tasks they created/own)
+    const managerTasks = tasks.filter(task => {
+      const taskUserId = task.userId?.toString();
+      const userIdStr = user.id.toString();
+      const isManagerTask = taskUserId === userIdStr;
+      
+      if (isManagerTask) {
+        console.log(`Task "${task.title}" belongs to manager`);
+      }
+      
+      return isManagerTask;
+    });
+    
+    console.log(`Manager has ${managerTasks.length} tasks`);
+    
+    const completedTasks = managerTasks.filter(task => task.status === 'Completed');
+    
+    const completionRate = managerTasks.length > 0
+      ? Math.round((completedTasks.length / managerTasks.length) * 100)
+      : 0;
+    
+    // Tasks due today
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const dueTodayTasks = managerTasks.filter((task) => {
+      const taskDate = new Date(task.deadline);
+      taskDate.setHours(0, 0, 0, 0);
+      return taskDate.getTime() === today.getTime();
+    });
+    
+    // Get projects this manager is involved in
+    const managerProjects = projects.filter(project => 
+      project.managerId === user.id
+    );
+    
+    return {
+      id: user.id,
+      name: user.name || 'Manager',
+      email: user.email || '',
+      role: 'Manager',
+      assignedTasks: managerTasks,
+      completedTasks: completedTasks.length,
+      totalTasks: managerTasks.length,
+      completionRate,
+      dueTodayTasks: dueTodayTasks.length,
+      projects: managerProjects.length,
+    };
+  }, [user, tasks, projects, lastTaskUpdate]);
   
   // Memoized calculation of team member performance with proper type conversion
   const teamMembersPerformance: TeamMemberPerformance[] = useMemo(() => {
@@ -220,44 +289,107 @@ const useTeamMembers = () => {
       return performance;
     });
   }, [teamMembers, tasks, projects, lastTaskUpdate]);
+
+  // Calculate unassigned/orphaned tasks
+  const unassignedTasks = useMemo(() => {
+    if (!user) return [];
+    
+    const teamMemberIds = teamMembers.map(m => m.id.toString());
+    const managerId = user.id.toString();
+    
+    return tasks.filter(task => {
+      const taskAssignedId = task.assignedToId?.toString();
+      const taskUserId = task.userId?.toString();
+      
+      // Task is unassigned if:
+      // 1. Has assigned_to_id but it's not in team or manager
+      // 2. Has no assigned_to_id and user_id is not manager
+      const isAssignedToNonTeamMember = taskAssignedId && 
+        !teamMemberIds.includes(taskAssignedId) && 
+        taskAssignedId !== managerId;
+      
+      const isOrphanedTask = !taskAssignedId && taskUserId !== managerId;
+      
+      return isAssignedToNonTeamMember || isOrphanedTask;
+    });
+  }, [tasks, teamMembers, user]);
   
   // Generate data specifically for the performance bar chart
   const memberPerformanceChartData = useMemo(() => {
-    return teamMembersPerformance.map(member => ({
+    const chartData = teamMembersPerformance.map(member => ({
       name: member.name,
       assignedTasks: member.totalTasks,
       completedTasks: member.completedTasks,
       completionRate: member.completionRate
     }));
-  }, [teamMembersPerformance]);
+
+    // Include manager in chart data
+    if (managerPerformance) {
+      chartData.unshift({
+        name: `${managerPerformance.name} (Manager)`,
+        assignedTasks: managerPerformance.totalTasks,
+        completedTasks: managerPerformance.completedTasks,
+        completionRate: managerPerformance.completionRate
+      });
+    }
+
+    return chartData;
+  }, [teamMembersPerformance, managerPerformance]);
   
-  // Calculate summary statistics with memoization
+  // Calculate summary statistics with memoization (include manager's tasks)
   const summaryStats = useMemo(() => {
-    const totalTasksAssigned = teamMembersPerformance.reduce(
+    const teamTasksAssigned = teamMembersPerformance.reduce(
       (sum, member) => sum + member.totalTasks, 0
     );
     
-    const totalTasksCompleted = teamMembersPerformance.reduce(
+    const teamTasksCompleted = teamMembersPerformance.reduce(
       (sum, member) => sum + member.completedTasks, 0
     );
 
-    console.log('Summary stats:', { totalTasksAssigned, totalTasksCompleted });
+    // Include manager's tasks in totals
+    const managerTasksAssigned = managerPerformance?.totalTasks || 0;
+    const managerTasksCompleted = managerPerformance?.completedTasks || 0;
+
+    const totalTasksAssigned = teamTasksAssigned + managerTasksAssigned;
+    const totalTasksCompleted = teamTasksCompleted + managerTasksCompleted;
+
+    console.log('Summary stats:', { 
+      teamTasksAssigned, 
+      teamTasksCompleted, 
+      managerTasksAssigned, 
+      managerTasksCompleted,
+      totalTasksAssigned, 
+      totalTasksCompleted,
+      unassignedCount: unassignedTasks.length
+    });
 
     return {
       totalTasksAssigned,
-      totalTasksCompleted
+      totalTasksCompleted,
+      teamTasksAssigned,
+      teamTasksCompleted,
+      managerTasksAssigned,
+      managerTasksCompleted,
+      unassignedTasksCount: unassignedTasks.length
     };
-  }, [teamMembersPerformance]);
+  }, [teamMembersPerformance, managerPerformance, unassignedTasks]);
   
   return {
     teamMembers,
     teamMembersPerformance,
+    managerPerformance,
     memberPerformanceChartData,
+    unassignedTasks,
     isLoading,
     removeTeamMember,
     refreshTeamMembers,
     totalTasksAssigned: summaryStats.totalTasksAssigned,
     totalTasksCompleted: summaryStats.totalTasksCompleted,
+    teamTasksAssigned: summaryStats.teamTasksAssigned,
+    teamTasksCompleted: summaryStats.teamTasksCompleted,
+    managerTasksAssigned: summaryStats.managerTasksAssigned,
+    managerTasksCompleted: summaryStats.managerTasksCompleted,
+    unassignedTasksCount: summaryStats.unassignedTasksCount,
     teamMembersCount: teamMembers.length,
     projectsCount: projects.length,
   };
