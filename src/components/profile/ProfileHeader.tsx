@@ -1,6 +1,8 @@
+
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
 import { Settings, Calendar, User, Crown, Users, Shield, Star, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ProfileAvatar from '@/components/settings/ProfileSection/ProfileAvatar';
@@ -10,6 +12,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { UserRole, getRoleDisplayName } from '@/types';
+import { cn } from "@/lib/utils";
 
 const ProfileHeader = () => {
   const { user, refreshUserSession } = useAuth();
@@ -151,7 +154,10 @@ const ProfileHeader = () => {
                 <button
                   onClick={handleRefreshRole}
                   disabled={isRefreshing}
-                  className="h-6 w-6 p-0 bg-transparent border-none hover:bg-gray-100 dark:hover:bg-gray-800 rounded flex items-center justify-center"
+                  className={cn(
+                    buttonVariants({ variant: "ghost", size: "sm" }),
+                    "h-6 w-6 p-0"
+                  )}
                   title="Refresh role information"
                 >
                   <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
@@ -197,14 +203,20 @@ const ProfileHeader = () => {
           <div className="flex flex-col sm:flex-row xl:flex-col gap-3 xl:min-w-[200px]">
             <button 
               onClick={() => navigate('/dashboard/calendar')}
-              className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+              className={cn(
+                buttonVariants({ variant: "outline" }),
+                "hover:bg-blue-50 dark:hover:bg-blue-900/20"
+              )}
             >
               <Calendar className="h-4 w-4" />
               View Calendar
             </button>
             <button 
               onClick={() => navigate('/dashboard/settings')}
-              className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+              className={cn(
+                buttonVariants({ variant: "outline" }),
+                "hover:bg-gray-50 dark:hover:bg-gray-800/50"
+              )}
             >
               <Settings className="h-4 w-4" />
               Settings
