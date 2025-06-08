@@ -1,10 +1,11 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { Plus, CheckSquare, FolderKanban, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { cn } from "@/lib/utils";
 
 const ProfileQuickActions = () => {
   const navigate = useNavigate();
@@ -52,18 +53,20 @@ const ProfileQuickActions = () => {
       <CardContent>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {actions.map((action, index) => (
-            <Button
+            <button
               key={index}
-              variant={action.variant}
               onClick={action.onClick}
-              className="h-auto p-4 flex flex-col items-center gap-2 text-center"
+              className={cn(
+                buttonVariants({ variant: action.variant }),
+                "h-auto p-4 flex flex-col items-center gap-2 text-center"
+              )}
             >
               <action.icon className="h-6 w-6" />
               <div>
                 <div className="font-medium">{action.title}</div>
                 <div className="text-xs text-muted-foreground">{action.description}</div>
               </div>
-            </Button>
+            </button>
           ))}
         </div>
       </CardContent>

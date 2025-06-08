@@ -1,12 +1,13 @@
 
 import React from 'react';
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Trash2, Loader2, Star, Shield, Crown, User } from 'lucide-react';
 import { UserRole, getRoleDisplayName } from '@/types';
 import RoleManagement from './RoleManagement';
+import { cn } from "@/lib/utils";
 
 interface UserTableRowProps {
   user: {
@@ -91,19 +92,20 @@ const UserTableRow: React.FC<UserTableRowProps> = ({
             onRoleChanged={onRoleChanged}
           />
           {canDeleteUser && (
-            <Button
-              variant="ghost"
-              size="sm"
+            <button
               onClick={onDeleteClick}
               disabled={isDeleting}
-              className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+              className={cn(
+                buttonVariants({ variant: "ghost", size: "sm" }),
+                "text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+              )}
             >
               {isDeleting ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <Trash2 className="h-4 w-4" />
               )}
-            </Button>
+            </button>
           )}
         </div>
       </TableCell>

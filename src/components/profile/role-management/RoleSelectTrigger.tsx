@@ -1,8 +1,9 @@
 
 import React from 'react';
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { SelectTrigger } from "@/components/ui/select";
 import { UserCog, Loader2 } from 'lucide-react';
+import { cn } from "@/lib/utils";
 
 interface RoleSelectTriggerProps {
   isChanging: boolean;
@@ -11,18 +12,19 @@ interface RoleSelectTriggerProps {
 const RoleSelectTrigger: React.FC<RoleSelectTriggerProps> = ({ isChanging }) => {
   return (
     <SelectTrigger asChild>
-      <Button
-        variant="ghost"
-        size="sm"
+      <button
         disabled={isChanging}
-        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+        className={cn(
+          buttonVariants({ variant: "ghost", size: "sm" }),
+          "text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+        )}
       >
         {isChanging ? (
           <Loader2 className="h-4 w-4 animate-spin" />
         ) : (
           <UserCog className="h-4 w-4" />
         )}
-      </Button>
+      </button>
     </SelectTrigger>
   );
 };
