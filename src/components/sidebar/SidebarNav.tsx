@@ -1,172 +1,100 @@
 
-import React from "react";
-import { Link, useLocation } from "react-router-dom";
-import { cn } from "@/lib/utils";
-import {
+import React from 'react';
+import { useLocation, Link } from 'react-router-dom';
+import { cn } from '@/lib/utils';
+import { 
+  LayoutDashboard, 
   CheckSquare, 
-  FolderKanban,  
+  FolderOpen, 
   Users, 
-  BarChart3,
-  Timer,
+  MessageSquare, 
+  BarChart3, 
+  Clock,
   FileText,
   DollarSign,
-  MessageSquare,
-  BookOpen,
+  NotebookPen,
   Calendar,
-  User
-} from "lucide-react";
+  Bell
+} from 'lucide-react';
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-
-interface NavItem {
-  name: string;
-  path: string;
-  icon: React.ComponentType<{ className?: string }>;
-  allowed: boolean;
-}
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
+  useSidebar,
+} from '@/components/ui/sidebar';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { useNotifications } from '@/hooks/use-notifications';
 
 interface SidebarNavProps {
-  onNavigation?: () => void;
-  isCollapsed?: boolean;
+  onNavigation: () => void;
+  isCollapsed: boolean;
 }
 
-const navItems: NavItem[] = [
-  {
-    name: "Profile",
-    path: "/dashboard/profile",
-    icon: User,
-    allowed: true,
-  },
-  {
-    name: "Projects",
-    path: "/dashboard/projects",
-    icon: FolderKanban,
-    allowed: true,
-  },
-  {
-    name: "My Tasks",
-    path: "/dashboard/tasks",
-    icon: CheckSquare,
-    allowed: true,
-  },
-  {
-    name: "Calendar",
-    path: "/dashboard/calendar",
-    icon: Calendar,
-    allowed: true,
-  },
-  {
-    name: "Time Tracking",
-    path: "/dashboard/time-tracking",
-    icon: Timer,
-    allowed: true,
-  },
-  {
-    name: "Team",
-    path: "/dashboard/team",
-    icon: Users,
-    allowed: true,
-  },
-  {
-    name: "Reports",
-    path: "/dashboard/reports",
-    icon: BarChart3,
-    allowed: true,
-  },
-  {
-    name: "Finance",
-    path: "/dashboard/finance",
-    icon: DollarSign,
-    allowed: true,
-  },
-  {
-    name: "Documents",
-    path: "/dashboard/documents",
-    icon: FileText,
-    allowed: true,
-  },
-  {
-    name: "Notebook",
-    path: "/dashboard/notebook",
-    icon: BookOpen,
-    allowed: true,
-  },
-  {
-    name: "Team Chat",
-    path: "/dashboard/chat",
-    icon: MessageSquare,
-    allowed: true,
-  }
-];
-
-const SidebarNav: React.FC<SidebarNavProps> = ({ onNavigation, isCollapsed = false }) => {
+const SidebarNav: React.FC<SidebarNavProps> = ({ onNavigation, isCollapsed }) => {
   const location = useLocation();
+  const { unreadCount } = useNotifications();
+  const { isMobile } = useSidebar();
 
-  const isActive = (path: string) => {
-    return location.pathname === path;
-  };
-
-  const handleNavClick = () => {
-    if (onNavigation) onNavigation();
-  };
+  const navigation = [
+    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+    { name: 'Tasks', href: '/dashboard/tasks', icon: CheckSquare },
+    { name: 'Projects', href: '/dashboard/projects', icon: FolderOpen },
+    { name: 'Calendar', href: '/dashboard/calendar', icon: Calendar },
+    { name: 'Team', href: '/dashboard/team', icon: Users },
+    { name: 'Chat', href: '/dashboard/chat', icon: MessageSquare },
+    { 
+      name: 'Notifications', 
+      href: '/dashboard/notifications', 
+      icon: Bell,
+      badge: unreadCount > 0 ? unreadCount : undefined
+    },
+    { name: 'Reports', href: '/dashboard/reports', icon: BarChart3 },
+    { name: 'Time Tracking', href: '/dashboard/time-tracking', icon: Clock },
+    { name: 'Documents', href: '/dashboard/documents', icon: FileText },
+    { name: 'Finance', href: '/dashboard/finance', icon: DollarSign },
+    { name: 'Notebook', href: '/dashboard/notebook', icon: NotebookPen },
+  ];
 
   return (
-    <TooltipProvider>
-      <div className="px-2 py-4">
-        <div className={cn(
-          "space-y-1 transition-all duration-300",
-          isCollapsed && "space-y-2"
-        )}>
-          {navItems.map((item) => {
-            if (!item.allowed) return null;
-
-            const isActiveItem = isActive(item.path);
-            const IconComponent = item.icon;
-
-            const NavButton = (
-              <Link
-                key={item.path}
-                to={item.path}
-                onClick={handleNavClick}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors duration-200",
-                  "hover:bg-muted hover:text-primary",
-                  isActiveItem && "bg-primary text-primary-foreground",
-                  isCollapsed ? "justify-center px-2" : "justify-start"
-                )}
+    <SidebarMenu>
+      {navigation.map((item) => {
+        const isActive = location.pathname === item.href;
+        return (
+          <SidebarMenuItem key={item.name}>
+            <SidebarMenuButton
+              asChild
+              isActive={isActive}
+              className={cn(
+                "flex items-center gap-3 px-3 py-2 text-gray-700 dark:text-gray-200 rounded-lg transition-colors",
+                isActive && "bg-primary/10 text-primary dark:text-primary",
+                "hover:bg-gray-100 dark:hover:bg-gray-800"
+              )}
+            >
+              <Link 
+                to={item.href} 
+                onClick={onNavigation}
+                className="flex items-center gap-3 w-full"
               >
-                <IconComponent className={cn(
-                  "h-5 w-5 flex-shrink-0",
-                  isActiveItem && "text-black"
-                )} />
-                {!isCollapsed && (
-                  <span className="transition-opacity duration-300">{item.name}</span>
+                <item.icon className="h-5 w-5 flex-shrink-0" />
+                {(!isCollapsed || isMobile) && (
+                  <div className="flex items-center justify-between w-full">
+                    <span className="font-medium">{item.name}</span>
+                    {item.badge && (
+                      <span className="bg-primary text-primary-foreground text-xs rounded-full px-2 py-0.5 min-w-[1.25rem] h-5 flex items-center justify-center">
+                        {item.badge}
+                      </span>
+                    )}
+                  </div>
                 )}
               </Link>
-            );
-
-            if (isCollapsed) {
-              return (
-                <Tooltip key={item.path}>
-                  <TooltipTrigger asChild>
-                    {NavButton}
-                  </TooltipTrigger>
-                  <TooltipContent side="right" className="ml-2">
-                    {item.name}
-                  </TooltipContent>
-                </Tooltip>
-              );
-            }
-
-            return NavButton;
-          })}
-        </div>
-      </div>
-    </TooltipProvider>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        );
+      })}
+    </SidebarMenu>
   );
 };
 

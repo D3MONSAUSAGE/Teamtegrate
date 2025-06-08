@@ -25,6 +25,7 @@ import ChatPage from "./pages/ChatPage";
 import NotebookPage from "./pages/NotebookPage";
 import ProjectTasksPage from "./pages/ProjectTasksPage";
 import CalendarPage from "./pages/CalendarPage";
+import NotificationsPage from "./pages/NotificationsPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -57,6 +58,7 @@ const App: React.FC = () => {
                   <Route path="calendar" element={<CalendarPage />} />
                   <Route path="team" element={<TeamPage />} />
                   <Route path="chat" element={<ChatPage />} />
+                  <Route path="notifications" element={<NotificationsPage />} />
                   <Route path="reports" element={<ReportsPage />} />
                   <Route path="settings" element={<SettingsPage />} />
                   <Route path="profile" element={<ProfilePage />} />

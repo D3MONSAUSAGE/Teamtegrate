@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Bell, BellRing } from "lucide-react";
+import { Bell, BellRing, ExternalLink } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/drawer";
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useNotifications } from '@/hooks/use-notifications';
+import { useNavigate } from 'react-router-dom';
 import NotificationContent from './NotificationContent';
 
 interface NotificationButtonProps {
@@ -32,6 +33,7 @@ const NotificationButton: React.FC<NotificationButtonProps> = ({
 }) => {
   const { unreadCount, markAsRead } = useNotifications();
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
 
   if (isMobile) {
     return (
@@ -54,11 +56,24 @@ const NotificationButton: React.FC<NotificationButtonProps> = ({
           <div className="px-3 py-4">
             <div className="flex justify-between items-center mb-2">
               <h3 className="font-semibold text-lg">Notifications</h3>
-              <DrawerClose asChild>
-                <Button variant="ghost" size="sm" onClick={() => markAsRead()}>
-                  Mark all as read
-                </Button>
-              </DrawerClose>
+              <div className="flex gap-2">
+                <DrawerClose asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => navigate('/dashboard/notifications')}
+                    className="flex items-center gap-1"
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                    View All
+                  </Button>
+                </DrawerClose>
+                <DrawerClose asChild>
+                  <Button variant="ghost" size="sm" onClick={() => markAsRead()}>
+                    Mark all as read
+                  </Button>
+                </DrawerClose>
+              </div>
             </div>
             <NotificationContent 
               onNotificationClick={onNotificationClick}
@@ -89,9 +104,20 @@ const NotificationButton: React.FC<NotificationButtonProps> = ({
       <DropdownMenuContent align="end" className="w-80">
         <div className="flex justify-between items-center px-3 pt-2 pb-1">
           <div className="text-sm font-semibold">Notifications</div>
-          <Button variant="ghost" size="sm" onClick={() => markAsRead()} className="h-7 text-xs">
-            Mark all as read
-          </Button>
+          <div className="flex gap-1">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => navigate('/dashboard/notifications')} 
+              className="h-7 text-xs flex items-center gap-1"
+            >
+              <ExternalLink className="h-3 w-3" />
+              View All
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => markAsRead()} className="h-7 text-xs">
+              Mark all as read
+            </Button>
+          </div>
         </div>
         <DropdownMenuSeparator />
         <NotificationContent 
