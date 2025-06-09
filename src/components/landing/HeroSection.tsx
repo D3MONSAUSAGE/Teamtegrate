@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Play, Users, Zap, Target } from 'lucide-react';
 import SectionContainer from '@/components/shared/SectionContainer';
+import FeatureSlideshow from './FeatureSlideshow';
 import { HERO_CONFIG } from '@/constants/brandConstants';
 
 const HeroSection: React.FC = () => {
@@ -106,25 +107,9 @@ const HeroSection: React.FC = () => {
           </div>
         </div>
 
-        {/* Product mockup */}
+        {/* Feature Slideshow */}
         <div className="mt-16 animate-fade-in delay-500">
-          <div className="relative max-w-5xl mx-auto">
-            <div className="bg-gradient-to-br from-white/80 to-white/40 dark:from-card/80 dark:to-card/40 backdrop-blur-xl rounded-3xl shadow-2xl border border-border/50 p-8 transform hover:scale-105 transition-transform duration-700">
-              <div className="bg-gradient-to-br from-primary/5 to-accent/5 rounded-2xl p-6 min-h-[300px] flex items-center justify-center">
-                <div className="text-center">
-                  <div className="w-24 h-24 bg-gradient-to-br from-primary to-accent rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg">
-                    <Target className="h-12 w-12 text-white" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-foreground mb-2">Dashboard Preview</h3>
-                  <p className="text-muted-foreground">Experience the power of unified team management</p>
-                </div>
-              </div>
-            </div>
-            {/* Floating elements around mockup */}
-            <div className="absolute -top-4 -left-4 w-8 h-8 bg-primary rounded-full animate-bounce delay-100"></div>
-            <div className="absolute -top-2 -right-6 w-6 h-6 bg-accent rounded-full animate-bounce delay-300"></div>
-            <div className="absolute -bottom-4 left-8 w-10 h-10 bg-secondary rounded-full animate-bounce delay-500"></div>
-          </div>
+          <FeatureSlideshow />
         </div>
       </div>
     </SectionContainer>
