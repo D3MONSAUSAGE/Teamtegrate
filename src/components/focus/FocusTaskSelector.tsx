@@ -23,8 +23,8 @@ const FocusTaskSelector: React.FC<FocusTaskSelectorProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState<'all' | 'today' | 'high-priority' | 'overdue'>('all');
 
-  const isTaskOverdue = (deadline: string) => {
-    const taskDeadline = new Date(deadline);
+  const isTaskOverdue = (deadline: Date) => {
+    const taskDeadline = startOfDay(deadline);
     const today = startOfDay(new Date());
     return isBefore(taskDeadline, today);
   };
@@ -37,7 +37,7 @@ const FocusTaskSelector: React.FC<FocusTaskSelectorProps> = ({
 
     switch (filter) {
       case 'today':
-        return isToday(new Date(task.deadline));
+        return isToday(task.deadline);
       case 'high-priority':
         return task.priority === 'High';
       case 'overdue':
@@ -58,7 +58,7 @@ const FocusTaskSelector: React.FC<FocusTaskSelectorProps> = ({
 
   const getTaskStatus = (task: Task) => {
     if (isTaskOverdue(task.deadline)) return 'overdue';
-    if (isToday(new Date(task.deadline))) return 'today';
+    if (isToday(task.deadline)) return 'today';
     return 'upcoming';
   };
 
@@ -160,7 +160,7 @@ const FocusTaskSelector: React.FC<FocusTaskSelectorProps> = ({
 
                   <div className="flex items-center gap-1 text-xs text-muted-foreground flex-shrink-0">
                     <Calendar className="h-3 w-3" />
-                    {format(new Date(task.deadline), 'MMM d')}
+                    {format(task.deadline, 'MMM d')}
                   </div>
                 </div>
               </div>
