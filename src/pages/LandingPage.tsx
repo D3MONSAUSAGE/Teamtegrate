@@ -13,9 +13,15 @@ const LandingPage = () => {
     <div className="min-h-screen bg-background overflow-x-hidden w-full">
       <LandingNavigation />
       <HeroSection />
-      <FeaturesSection />
-      <BenefitsSection />
-      <TestimonialsSection />
+      <div id="features">
+        <FeaturesSection />
+      </div>
+      <div id="benefits">
+        <BenefitsSection />
+      </div>
+      <div id="testimonials">
+        <TestimonialsSection />
+      </div>
       <CTASection />
       <LandingFooter />
     </div>

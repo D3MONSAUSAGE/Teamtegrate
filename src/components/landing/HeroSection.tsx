@@ -2,7 +2,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Play, Users, Zap, Target } from 'lucide-react';
 import SectionContainer from '@/components/shared/SectionContainer';
 import { HERO_CONFIG } from '@/constants/brandConstants';
 
@@ -10,32 +10,123 @@ const HeroSection: React.FC = () => {
   return (
     <SectionContainer 
       background="default" 
-      maxWidth="4xl"
-      className="text-center bg-gradient-to-br from-background to-muted overflow-x-hidden"
+      maxWidth="7xl"
+      className="relative text-center bg-gradient-to-br from-background via-background/50 to-primary/5 overflow-hidden"
     >
-      <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-foreground mb-6 px-4">
-        {HERO_CONFIG.title}
-        <span className="text-primary block">{HERO_CONFIG.highlight}</span>
-      </h1>
-      <p className="text-lg sm:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto px-4">
-        {HERO_CONFIG.subtitle}
-      </p>
-      <div className="flex flex-col sm:flex-row gap-4 justify-center px-4">
-        <Link to="/login?signup=true" className="w-full sm:w-auto">
-          <Button size="lg" className="w-full sm:w-auto">
-            {HERO_CONFIG.cta.primary}
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
-        </Link>
-        <Link to="/login" className="w-full sm:w-auto">
-          <Button variant="outline" size="lg" className="w-full sm:w-auto">
-            {HERO_CONFIG.cta.secondary}
-          </Button>
-        </Link>
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-accent/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-secondary/5 rounded-full blur-3xl animate-pulse delay-500"></div>
       </div>
-      <p className="text-sm text-muted-foreground mt-4 px-4">
-        {HERO_CONFIG.features.join(' • ')}
-      </p>
+
+      <div className="relative z-10">
+        {/* Floating stats cards */}
+        <div className="hidden lg:block absolute top-20 left-10 animate-float">
+          <div className="bg-white/80 dark:bg-card/80 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-border/50">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <Users className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-foreground">10K+</p>
+                <p className="text-xs text-muted-foreground">Active Teams</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="hidden lg:block absolute top-32 right-10 animate-float delay-300">
+          <div className="bg-white/80 dark:bg-card/80 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-border/50">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-accent/10 rounded-lg">
+                <Zap className="h-5 w-5 text-accent-foreground" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-foreground">40%</p>
+                <p className="text-xs text-muted-foreground">Productivity Boost</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="hidden lg:block absolute bottom-32 left-20 animate-float delay-700">
+          <div className="bg-white/80 dark:bg-card/80 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-border/50">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-secondary/10 rounded-lg">
+                <Target className="h-5 w-5 text-secondary-foreground" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-foreground">99.9%</p>
+                <p className="text-xs text-muted-foreground">Uptime</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main hero content */}
+        <div className="animate-fade-in">
+          <div className="inline-flex items-center px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-8">
+            <span className="text-sm font-medium text-primary">🎉 New: AI-powered task management</span>
+          </div>
+
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-foreground mb-6 px-4 leading-tight">
+            {HERO_CONFIG.title}
+            <span className="block bg-gradient-to-r from-primary via-primary to-accent bg-clip-text text-transparent animate-gradient">
+              {HERO_CONFIG.highlight}
+            </span>
+          </h1>
+
+          <p className="text-lg sm:text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto px-4 leading-relaxed">
+            {HERO_CONFIG.subtitle}
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-4 justify-center px-4 mb-8">
+            <Link to="/login?signup=true" className="w-full sm:w-auto group">
+              <Button size="lg" className="w-full sm:w-auto text-lg px-8 py-4 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg hover:shadow-xl transition-all duration-300 group-hover:scale-105">
+                {HERO_CONFIG.cta.primary}
+                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform duration-300" />
+              </Button>
+            </Link>
+            <Link to="/login" className="w-full sm:w-auto group">
+              <Button variant="outline" size="lg" className="w-full sm:w-auto text-lg px-8 py-4 bg-white/80 dark:bg-card/80 backdrop-blur-sm border-2 hover:bg-accent/10 hover:border-primary/30 transition-all duration-300 group-hover:scale-105">
+                <Play className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform duration-300" />
+                {HERO_CONFIG.cta.secondary}
+              </Button>
+            </Link>
+          </div>
+
+          <div className="flex flex-wrap justify-center gap-4 text-sm text-muted-foreground px-4">
+            {HERO_CONFIG.features.map((feature, index) => (
+              <div key={index} className="flex items-center">
+                <div className="w-2 h-2 bg-primary rounded-full mr-2"></div>
+                {feature}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Product mockup */}
+        <div className="mt-16 animate-fade-in delay-500">
+          <div className="relative max-w-5xl mx-auto">
+            <div className="bg-gradient-to-br from-white/80 to-white/40 dark:from-card/80 dark:to-card/40 backdrop-blur-xl rounded-3xl shadow-2xl border border-border/50 p-8 transform hover:scale-105 transition-transform duration-700">
+              <div className="bg-gradient-to-br from-primary/5 to-accent/5 rounded-2xl p-6 min-h-[300px] flex items-center justify-center">
+                <div className="text-center">
+                  <div className="w-24 h-24 bg-gradient-to-br from-primary to-accent rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg">
+                    <Target className="h-12 w-12 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-foreground mb-2">Dashboard Preview</h3>
+                  <p className="text-muted-foreground">Experience the power of unified team management</p>
+                </div>
+              </div>
+            </div>
+            {/* Floating elements around mockup */}
+            <div className="absolute -top-4 -left-4 w-8 h-8 bg-primary rounded-full animate-bounce delay-100"></div>
+            <div className="absolute -top-2 -right-6 w-6 h-6 bg-accent rounded-full animate-bounce delay-300"></div>
+            <div className="absolute -bottom-4 left-8 w-10 h-10 bg-secondary rounded-full animate-bounce delay-500"></div>
+          </div>
+        </div>
+      </div>
     </SectionContainer>
   );
 };

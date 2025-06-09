@@ -1,3 +1,4 @@
+
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
 @tailwind base;
@@ -225,6 +226,27 @@
       display: none !important; /* Chrome, Safari, Opera */
     }
   }
+
+  /* New landing page animations */
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .animate-gradient {
+    background-size: 200% 200%;
+    animation: gradient 4s ease infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-20px); }
+  }
+
+  @keyframes gradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
 }
 
 body {
@@ -343,4 +365,13 @@ textarea {
 /* Utility for hover scale effect */
 .hover-scale {
   @apply transition-transform duration-200 hover:scale-105;
+}
+
+/* Glass morphism effects for landing page */
+.glass-card {
+  @apply bg-white/80 dark:bg-card/80 backdrop-blur-xl border border-white/20 dark:border-white/10;
+}
+
+.glass-nav {
+  @apply bg-white/80 dark:bg-background/80 backdrop-blur-xl border-b border-border/50;
 }
