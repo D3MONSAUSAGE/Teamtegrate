@@ -56,9 +56,9 @@ const TaskCard: React.FC<TaskCardProps> = ({
     <>
       <Card
         className={cn(
-          "relative transition-all duration-200 cursor-pointer rounded-lg overflow-hidden h-full min-h-[280px] flex flex-col group hover:shadow-md",
-          "border border-border",
-          isOverdue && "ring-1 ring-red-400"
+          "relative transition-all duration-200 cursor-pointer rounded-lg overflow-hidden h-full min-h-[280px] flex flex-col group hover:shadow-lg hover:-translate-y-1",
+          "border bg-card",
+          isOverdue && "border-red-500/50 shadow-red-100"
         )}
         onClick={handleCardClick}
         tabIndex={0}
