@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 interface TaskCardDescriptionProps {
   description: string;
@@ -9,46 +9,48 @@ interface TaskCardDescriptionProps {
 const TaskCardDescription: React.FC<TaskCardDescriptionProps> = ({ description }) => {
   const [expanded, setExpanded] = useState(false);
   
-  // If the description is short, don't enable expansion
-  const isExpandable = description && description.length > 100;
-
   // Handle empty descriptions
   if (!description || description.trim() === '') {
     return (
-      <p className="text-xs md:text-sm text-gray-400 italic">No description provided</p>
+      <div className="px-4 pb-2">
+        <p className="text-xs text-muted-foreground italic">No description provided</p>
+      </div>
     );
   }
 
+  // If the description is short, don't enable expansion
+  const isExpandable = description.length > 100;
+  const shouldShowExpansion = isExpandable && !expanded;
+
   return (
-    <div 
-      className="relative"
-      onMouseEnter={() => isExpandable && setExpanded(true)}
-      onMouseLeave={() => isExpandable && setExpanded(false)}
-      onTouchStart={() => isExpandable && setExpanded(!expanded)}
-    >
-      <motion.p 
-        className={cn(
-          "text-xs md:text-sm text-gray-600",
-          expanded ? "" : "line-clamp-2"
-        )}
-        animate={expanded ? { height: "auto" } : { height: "auto" }}
-        transition={{ duration: 0.3 }}
+    <div className="px-4 pb-2">
+      <div 
+        className="relative cursor-pointer"
+        onClick={() => isExpandable && setExpanded(!expanded)}
       >
-        {description}
-      </motion.p>
-      
-      {isExpandable && !expanded && (
-        <div className="absolute bottom-0 right-0 bg-gradient-to-l from-white dark:from-gray-800 py-0.5 px-1 text-xs text-gray-500">
-          ...more
-        </div>
-      )}
+        <p className={cn(
+          "text-xs text-muted-foreground leading-relaxed",
+          shouldShowExpansion ? "line-clamp-2" : ""
+        )}>
+          {description}
+        </p>
+        
+        {shouldShowExpansion && (
+          <div className="absolute bottom-0 right-0 bg-gradient-to-l from-background via-background to-transparent pl-2">
+            <span className="text-xs text-primary hover:text-primary/80 font-medium">
+              ...more
+            </span>
+          </div>
+        )}
+        
+        {expanded && isExpandable && (
+          <button className="text-xs text-primary hover:text-primary/80 mt-1 font-medium">
+            Show less
+          </button>
+        )}
+      </div>
     </div>
   );
-};
-
-// Helper function for class names
-const cn = (...classes: string[]) => {
-  return classes.filter(Boolean).join(' ');
 };
 
 export default TaskCardDescription;

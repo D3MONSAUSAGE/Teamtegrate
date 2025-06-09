@@ -36,8 +36,9 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
 
   return (
     <ShadcnSidebar 
-      className="glass-sidebar border-r border-sidebar-border/60 backdrop-blur-xl no-scrollbar overflow-hidden"
+      className="glass-sidebar border-r border-sidebar-border/60 backdrop-blur-xl no-scrollbar overflow-hidden transition-all duration-300"
       collapsible="icon"
+      variant="sidebar"
     >
       <ShadcnSidebarHeader className="border-b border-sidebar-border/30">
         <SidebarHeader 

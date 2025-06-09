@@ -63,7 +63,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
       >
         <Card
           className={cn(
-            "relative transition-all duration-300 cursor-pointer rounded-xl overflow-hidden shadow-sm hover:shadow-md ring-1 ring-border h-full",
+            "relative transition-all duration-300 cursor-pointer rounded-xl overflow-hidden shadow-sm hover:shadow-md ring-1 ring-border h-full min-h-[280px] flex flex-col",
             getPriorityBackground(task.priority),
             isTaskOverdue() && "outline outline-2 outline-red-400 dark:outline-red-500",
           )}
@@ -73,7 +73,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
           role="button"
         >
           {/* Actions button (three dots) */}
-          <div className="absolute top-2 right-2 z-10">
+          <div className="absolute top-3 right-3 z-10">
             <TaskCardActions
               task={task}
               onEdit={onEdit}
@@ -97,7 +97,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
             <motion.div 
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="absolute top-2 left-1/2 -translate-x-1/2 z-20"
+              className="absolute top-3 left-1/2 -translate-x-1/2 z-20"
             >
               <span className="inline-block bg-red-500/90 text-white text-xs px-3 py-1 rounded-full shadow font-semibold tracking-wide">
                 Overdue
