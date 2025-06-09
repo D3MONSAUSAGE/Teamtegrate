@@ -23,12 +23,11 @@ export const useFocusTimer = ({
   const [startTime, setStartTime] = useState<number | null>(null);
   const [pausedTime, setPausedTime] = useState<number>(0);
   
-  // Refs for cleanup and accuracy
+  // Refs for stable timing
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const animationFrameRef = useRef<number | null>(null);
-  const isCleanedUpRef = useRef(false);
+  const timeRemainingRef = useRef<number>(duration * 60);
   const lastTickTimeRef = useRef<number>(0);
-  const accurateTimeRef = useRef<number>(0);
+  const isCleanedUpRef = useRef(false);
 
   const totalSeconds = duration * 60;
   // Prevent division by zero and ensure valid progress
@@ -51,15 +50,10 @@ export const useFocusTimer = ({
       intervalRef.current = null;
     }
     
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
-      animationFrameRef.current = null;
-    }
-    
     isCleanedUpRef.current = true;
   }, []);
 
-  // Accurate timer tick using performance timing
+  // Stable tick function - no dependencies on changing state
   const tick = useCallback(() => {
     // Prevent execution after cleanup
     if (isCleanedUpRef.current) {
@@ -72,25 +66,24 @@ export const useFocusTimer = ({
     // Initialize on first tick
     if (lastTickTimeRef.current === 0) {
       lastTickTimeRef.current = now;
-      accurateTimeRef.current = timeRemaining;
       return;
     }
 
-    // Calculate accurate elapsed time in seconds
+    // Calculate elapsed time in seconds
     const deltaMs = now - lastTickTimeRef.current;
     const deltaSeconds = deltaMs / 1000;
     
-    // Update accurate time reference
-    accurateTimeRef.current = Math.max(0, accurateTimeRef.current - deltaSeconds);
+    // Update time remaining using ref
+    timeRemainingRef.current = Math.max(0, timeRemainingRef.current - deltaSeconds);
     lastTickTimeRef.current = now;
 
     // Round to nearest second for display
-    const newTimeRemaining = Math.max(0, Math.round(accurateTimeRef.current));
+    const newTimeRemaining = Math.max(0, Math.round(timeRemainingRef.current));
 
     setTimeRemaining(prev => {
       if (newTimeRemaining !== prev) {
         if (newTimeRemaining <= 0) {
-          // Session completed - use setTimeout to avoid state update during render
+          // Session completed
           setTimeout(() => {
             if (!isCleanedUpRef.current) {
               console.log('⏰ Timer completed, calling onSessionComplete');
@@ -107,7 +100,7 @@ export const useFocusTimer = ({
       }
       return prev;
     });
-  }, [timeRemaining, clearAllTimers, onSessionComplete]);
+  }, [clearAllTimers, onSessionComplete]); // Removed timeRemaining dependency
 
   // Reset timer state
   const resetTimerState = useCallback(() => {
@@ -115,13 +108,14 @@ export const useFocusTimer = ({
     clearAllTimers();
     setIsActive(false);
     setIsPaused(false);
-    setTimeRemaining(duration * 60);
+    const newDuration = duration * 60;
+    setTimeRemaining(newDuration);
+    timeRemainingRef.current = newDuration;
     setSessionId(null);
     setStartTime(null);
     setPausedTime(0);
     isCleanedUpRef.current = false;
     lastTickTimeRef.current = 0;
-    accurateTimeRef.current = duration * 60;
   }, [duration, clearAllTimers]);
 
   // Handle duration changes properly
@@ -131,7 +125,7 @@ export const useFocusTimer = ({
       console.log('📏 Duration changed, updating timer');
       const newDuration = duration * 60;
       setTimeRemaining(newDuration);
-      accurateTimeRef.current = newDuration;
+      timeRemainingRef.current = newDuration;
     }
     // If duration is changed during active session, warn but don't change timer
     else if (isActive && timeRemaining > duration * 60) {
@@ -139,17 +133,17 @@ export const useFocusTimer = ({
     }
   }, [duration, isActive, sessionId, timeRemaining]);
 
-  // Main timer effect - handles the timing loop
+  // Main timer effect - FIXED: removed tick and timeRemaining dependencies
   useEffect(() => {
-    if (isActive && !isPaused && timeRemaining > 0 && !isCleanedUpRef.current) {
+    if (isActive && !isPaused && !isCleanedUpRef.current) {
       console.log('▶️ Starting timer loop');
       
       // Reset timing references when starting
       lastTickTimeRef.current = 0;
-      accurateTimeRef.current = timeRemaining;
+      timeRemainingRef.current = timeRemaining;
       
       // Use interval for consistent updates
-      intervalRef.current = setInterval(tick, 100); // 100ms for smooth progress
+      intervalRef.current = setInterval(tick, 1000); // Changed to 1 second for cleaner timing
     } else {
       if (intervalRef.current) {
         console.log('⏸️ Stopping timer loop');
@@ -165,7 +159,7 @@ export const useFocusTimer = ({
         intervalRef.current = null;
       }
     };
-  }, [isActive, isPaused, timeRemaining, tick]);
+  }, [isActive, isPaused, tick]); // Removed timeRemaining dependency
 
   // Task change effect
   useEffect(() => {
@@ -254,13 +248,14 @@ export const useFocusTimer = ({
     clearAllTimers();
     setIsActive(false);
     setIsPaused(false);
-    setTimeRemaining(duration * 60);
+    const resetDuration = duration * 60;
+    setTimeRemaining(resetDuration);
+    timeRemainingRef.current = resetDuration;
     setSessionId(null);
     setStartTime(null);
     setPausedTime(0);
     isCleanedUpRef.current = false;
     lastTickTimeRef.current = 0;
-    accurateTimeRef.current = duration * 60;
   };
 
   const handleReset = () => {
