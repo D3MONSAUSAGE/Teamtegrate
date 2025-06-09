@@ -2,6 +2,7 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDarkMode } from '@/hooks/useDarkMode';
+import { useAutoSidebar } from '@/hooks/useAutoSidebar';
 import SidebarHeader from './sidebar/SidebarHeader';
 import SidebarNav from './sidebar/SidebarNav';
 import SidebarFooter from './sidebar/SidebarFooter';
@@ -21,6 +22,15 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
   const { user } = useAuth();
   const { isDark, toggle } = useDarkMode();
   const { state, isMobile, setOpenMobile } = useSidebar();
+  
+  // Use auto-sidebar for desktop hover behavior
+  const {
+    isExpanded,
+    handleMouseEnter,
+    handleMouseLeave,
+    handleMobileToggle,
+    handleBackdropClick
+  } = useAutoSidebar();
 
   const handleNavigation = () => {
     // Close mobile sidebar when navigating
@@ -32,13 +42,17 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
 
   if (!user) return null;
 
-  const isCollapsed = !isMobile && state === 'collapsed';
+  // For mobile, use the original shadcn behavior
+  // For desktop, use auto-collapse behavior
+  const isCollapsed = isMobile ? (state === 'collapsed') : !isExpanded;
 
   return (
     <ShadcnSidebar 
-      className="border-r border-sidebar-border no-scrollbar overflow-hidden transition-all duration-300"
+      className="border-r border-sidebar-border transition-all duration-300"
       collapsible="icon"
       variant="sidebar"
+      onMouseEnter={!isMobile ? handleMouseEnter : undefined}
+      onMouseLeave={!isMobile ? handleMouseLeave : undefined}
     >
       <ShadcnSidebarHeader className="border-b border-sidebar-border">
         <SidebarHeader 
@@ -49,7 +63,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
         />
       </ShadcnSidebarHeader>
       
-      <SidebarContent className="no-scrollbar overflow-y-auto">
+      <SidebarContent className="overflow-y-auto">
         <div className="p-2">
           <SidebarNav 
             onNavigation={handleNavigation} 

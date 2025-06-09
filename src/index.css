@@ -198,28 +198,20 @@ body {
 
 /* Modern Card Styles */
 .modern-card {
-  @apply bg-card/95 backdrop-blur-xl border border-border/60 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300;
+  @apply bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200;
 }
 
 .glass-card {
-  @apply bg-white/10 dark:bg-black/10 backdrop-blur-xl border border-white/20 dark:border-white/10 rounded-2xl shadow-2xl;
+  @apply bg-card/95 backdrop-blur-sm border border-border rounded-lg shadow-lg;
 }
 
 /* Interactive Elements */
 .interactive-button {
-  @apply transition-all duration-300 hover:scale-105 hover:shadow-lg active:scale-95;
+  @apply transition-all duration-200 hover:scale-105 active:scale-95;
 }
 
 .hover-scale {
   @apply transition-transform duration-200 hover:scale-105;
-}
-
-.hover-glow {
-  @apply transition-all duration-300;
-}
-
-.hover-glow:hover {
-  filter: drop-shadow(0 0 20px rgba(34, 197, 94, 0.5));
 }
 
 /* Enhanced Focus States */
@@ -239,7 +231,7 @@ body {
 
 /* Improved Card Hover Effects */
 .card-hover {
-  @apply transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-primary/10;
+  @apply transition-all duration-200 hover:shadow-md;
 }
 
 /* Status Indicators */
@@ -266,10 +258,6 @@ body {
 /* Enhanced Typography */
 .heading-gradient {
   @apply bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent font-bold;
-}
-
-.text-glow {
-  text-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
 }
 
 /* Performance Optimizations */
@@ -318,12 +306,12 @@ body {
 
 /* Achievement Badges */
 .achievement-badge {
-  @apply inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-primary/20 to-accent/20 text-primary border border-primary/30;
+  @apply inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20;
 }
 
 /* Data Visualization Enhancements */
 .chart-tooltip {
-  @apply bg-card/95 backdrop-blur-xl border border-border/60 rounded-lg shadow-xl p-3;
+  @apply bg-card border border-border rounded-lg shadow-lg p-3;
 }
 
 /* Notification Styles */
@@ -338,7 +326,7 @@ body {
   }
   
   .mobile-card {
-    @apply rounded-xl shadow-md;
+    @apply rounded-lg shadow-sm;
   }
 }
 
