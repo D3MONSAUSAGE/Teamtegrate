@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useTask } from '@/contexts/task';
 import { Task } from '@/types';
@@ -28,7 +27,7 @@ const FocusZonePage = () => {
   const [animationType, setAnimationType] = useState<'tree' | 'flower' | 'city'>('tree');
 
   const availableTasks = tasks.filter(task => 
-    task.status !== 'Completed' && task.status !== 'Done' && task.status !== 'Complete'
+    task.status !== 'Completed'
   );
 
   const handleTaskSelect = (task: Task) => {
