@@ -30,13 +30,13 @@ const SidebarFooter: React.FC<SidebarFooterProps> = ({ user, isCollapsed = false
   return (
     <TooltipProvider>
       <div className={cn(
-        "p-4 border-t border-border bg-background min-h-[56px] transition-all duration-300",
+        "p-4 border-t border-sidebar-border bg-sidebar-background min-h-[56px] transition-all duration-300",
         isCollapsed ? "flex flex-col items-center gap-2 px-2" : "flex items-center justify-between"
       )}>
         {!isCollapsed && (
           <div className="transition-opacity duration-300">
-            <p className="text-xs text-muted-foreground mb-0.5">Logged in as</p>
-            <p className="font-semibold text-primary text-sm">{user.name}</p>
+            <p className="text-xs text-sidebar-foreground/70 mb-0.5">Logged in as</p>
+            <p className="font-semibold text-sidebar-primary text-sm">{user.name}</p>
           </div>
         )}
         
@@ -48,6 +48,7 @@ const SidebarFooter: React.FC<SidebarFooterProps> = ({ user, isCollapsed = false
                 variant="ghost"
                 aria-label="Settings"
                 onClick={handleSettingsClick}
+                className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               >
                 <Settings className="h-5 w-5" />
               </Button>
@@ -60,7 +61,7 @@ const SidebarFooter: React.FC<SidebarFooterProps> = ({ user, isCollapsed = false
           <Button
             size="icon"
             variant="ghost"
-            className="ml-2"
+            className="ml-2 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
             aria-label="Settings"
             onClick={handleSettingsClick}
             title="Settings"

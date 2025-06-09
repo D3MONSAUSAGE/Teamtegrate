@@ -32,11 +32,11 @@ const EnhancedDailyScoreCard: React.FC<EnhancedDailyScoreCardProps> = ({ score }
   const BadgeIcon = badge.icon;
 
   return (
-    <Card className="modern-card overflow-hidden relative group">
+    <Card className="modern-card overflow-hidden relative group bg-card border-border">
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
       
       <CardHeader className="pb-2 relative">
-        <CardTitle className="text-lg flex items-center gap-2">
+        <CardTitle className="text-lg flex items-center gap-2 text-card-foreground">
           <div className="w-8 h-8 bg-gradient-to-br from-primary/20 to-accent/20 rounded-lg flex items-center justify-center">
             <Trophy className="h-4 w-4 text-primary" />
           </div>
@@ -57,7 +57,7 @@ const EnhancedDailyScoreCard: React.FC<EnhancedDailyScoreCardProps> = ({ score }
                 stroke="currentColor"
                 strokeWidth="8"
                 fill="none"
-                className="text-muted/20"
+                className="text-muted/30 dark:text-muted/20"
               />
               {/* Progress circle */}
               <circle
@@ -104,12 +104,12 @@ const EnhancedDailyScoreCard: React.FC<EnhancedDailyScoreCardProps> = ({ score }
             <span className="text-sm text-muted-foreground">
               {score.completedTasks} of {score.totalTasks} tasks completed
             </span>
-            <span className="font-medium text-foreground">
+            <span className="font-medium text-card-foreground">
               {score.totalTasks > 0 ? Math.round((score.completedTasks / score.totalTasks) * 100) : 0}%
             </span>
           </div>
           
-          <div className="w-full bg-muted/30 rounded-full h-2 overflow-hidden">
+          <div className="w-full bg-muted/30 dark:bg-muted/20 rounded-full h-2 overflow-hidden">
             <div 
               className={cn(
                 "h-full rounded-full transition-all duration-1000 ease-out bg-gradient-to-r",
