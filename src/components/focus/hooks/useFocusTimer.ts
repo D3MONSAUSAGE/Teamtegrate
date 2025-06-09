@@ -23,12 +23,16 @@ export const useFocusTimer = ({
   const [startTime, setStartTime] = useState<number | null>(null);
   const [pausedTime, setPausedTime] = useState<number>(0);
   
+  // Refs for cleanup and accuracy
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const animationFrameRef = useRef<number | null>(null);
-  const lastUpdateRef = useRef<number>(Date.now());
+  const isCleanedUpRef = useRef(false);
+  const lastTickTimeRef = useRef<number>(0);
+  const accurateTimeRef = useRef<number>(0);
 
   const totalSeconds = duration * 60;
-  const progress = Math.max(0, Math.min(100, ((totalSeconds - timeRemaining) / totalSeconds) * 100));
+  // Prevent division by zero and ensure valid progress
+  const progress = totalSeconds > 0 ? Math.max(0, Math.min(100, ((totalSeconds - timeRemaining) / totalSeconds) * 100)) : 0;
 
   // Generate unique session ID
   const generateSessionId = useCallback(() => {
@@ -38,43 +42,76 @@ export const useFocusTimer = ({
     return `${taskId}-${timestamp}-${random}`;
   }, [selectedTask?.id]);
 
-  // Clear all timer references
+  // Comprehensive cleanup function
   const clearAllTimers = useCallback(() => {
+    console.log('🧹 Clearing all timers');
+    
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
     }
+    
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
       animationFrameRef.current = null;
     }
+    
+    isCleanedUpRef.current = true;
   }, []);
 
-  // More accurate timer tick using performance.now()
+  // Accurate timer tick using performance timing
   const tick = useCallback(() => {
-    const now = performance.now();
-    const deltaTime = Math.round((now - lastUpdateRef.current) / 1000);
-    lastUpdateRef.current = now;
+    // Prevent execution after cleanup
+    if (isCleanedUpRef.current) {
+      console.log('⚠️ Tick called after cleanup, aborting');
+      return;
+    }
 
-    setTimeRemaining((prev) => {
-      const newTime = Math.max(0, prev - deltaTime);
-      if (newTime <= 0) {
-        // Use setTimeout to avoid state update during render
-        setTimeout(() => {
-          clearAllTimers();
-          setIsActive(false);
-          setIsPaused(false);
-          setTimeRemaining(0);
-          onSessionComplete();
-        }, 0);
-        return 0;
+    const now = performance.now();
+    
+    // Initialize on first tick
+    if (lastTickTimeRef.current === 0) {
+      lastTickTimeRef.current = now;
+      accurateTimeRef.current = timeRemaining;
+      return;
+    }
+
+    // Calculate accurate elapsed time in seconds
+    const deltaMs = now - lastTickTimeRef.current;
+    const deltaSeconds = deltaMs / 1000;
+    
+    // Update accurate time reference
+    accurateTimeRef.current = Math.max(0, accurateTimeRef.current - deltaSeconds);
+    lastTickTimeRef.current = now;
+
+    // Round to nearest second for display
+    const newTimeRemaining = Math.max(0, Math.round(accurateTimeRef.current));
+
+    setTimeRemaining(prev => {
+      if (newTimeRemaining !== prev) {
+        if (newTimeRemaining <= 0) {
+          // Session completed - use setTimeout to avoid state update during render
+          setTimeout(() => {
+            if (!isCleanedUpRef.current) {
+              console.log('⏰ Timer completed, calling onSessionComplete');
+              clearAllTimers();
+              setIsActive(false);
+              setIsPaused(false);
+              setTimeRemaining(0);
+              onSessionComplete();
+            }
+          }, 0);
+          return 0;
+        }
+        return newTimeRemaining;
       }
-      return newTime;
+      return prev;
     });
-  }, [clearAllTimers, onSessionComplete]);
+  }, [timeRemaining, clearAllTimers, onSessionComplete]);
 
   // Reset timer state
   const resetTimerState = useCallback(() => {
+    console.log('🔄 Resetting timer state');
     clearAllTimers();
     setIsActive(false);
     setIsPaused(false);
@@ -82,45 +119,69 @@ export const useFocusTimer = ({
     setSessionId(null);
     setStartTime(null);
     setPausedTime(0);
+    isCleanedUpRef.current = false;
+    lastTickTimeRef.current = 0;
+    accurateTimeRef.current = duration * 60;
   }, [duration, clearAllTimers]);
 
   // Handle duration changes properly
   useEffect(() => {
     // Only reset time remaining if not in an active session
     if (!isActive && !sessionId) {
-      setTimeRemaining(duration * 60);
+      console.log('📏 Duration changed, updating timer');
+      const newDuration = duration * 60;
+      setTimeRemaining(newDuration);
+      accurateTimeRef.current = newDuration;
     }
-    // If duration is changed during active session, warn user but don't change timer
+    // If duration is changed during active session, warn but don't change timer
     else if (isActive && timeRemaining > duration * 60) {
-      console.warn('Duration changed during active session - timer will continue with original duration');
+      console.warn('⚠️ Duration changed during active session - timer will continue with original duration');
     }
   }, [duration, isActive, sessionId, timeRemaining]);
 
-  // Timer management effect
+  // Main timer effect - handles the timing loop
   useEffect(() => {
-    if (isActive && !isPaused && timeRemaining > 0) {
-      lastUpdateRef.current = performance.now();
-      intervalRef.current = setInterval(tick, 100); // More frequent updates for accuracy
+    if (isActive && !isPaused && timeRemaining > 0 && !isCleanedUpRef.current) {
+      console.log('▶️ Starting timer loop');
+      
+      // Reset timing references when starting
+      lastTickTimeRef.current = 0;
+      accurateTimeRef.current = timeRemaining;
+      
+      // Use interval for consistent updates
+      intervalRef.current = setInterval(tick, 100); // 100ms for smooth progress
     } else {
-      clearAllTimers();
+      if (intervalRef.current) {
+        console.log('⏸️ Stopping timer loop');
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
     }
 
-    return clearAllTimers;
-  }, [isActive, isPaused, timeRemaining, tick, clearAllTimers]);
+    // Cleanup on effect dependency change
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [isActive, isPaused, timeRemaining, tick]);
 
-  // Reset when task changes (but only if no active session)
+  // Task change effect
   useEffect(() => {
     if (!selectedTask) {
+      console.log('🚫 No task selected, resetting timer');
       resetTimerState();
     } else if (selectedTask && !sessionId && !isActive) {
       // Reset only if switching tasks while not active
+      console.log('🔄 Task changed while not active, resetting timer');
       resetTimerState();
     }
   }, [selectedTask?.id, sessionId, isActive, resetTimerState]);
 
-  // Update parent with session state
+  // Session update effect
   useEffect(() => {
-    if (selectedTask && sessionId) {
+    if (selectedTask && sessionId && !isCleanedUpRef.current) {
       const session: FocusSession = {
         id: sessionId,
         taskId: selectedTask.id,
@@ -134,37 +195,62 @@ export const useFocusTimer = ({
     }
   }, [selectedTask, sessionId, timeRemaining, isActive, isPaused, progress, duration, onSessionUpdate]);
 
+  // Page visibility handling for cleanup
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden && isActive) {
+        console.log('👁️ Page hidden, pausing timer to prevent issues');
+        setIsPaused(true);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isActive]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
+      console.log('🧹 Component unmounting, final cleanup');
       clearAllTimers();
     };
   }, [clearAllTimers]);
 
+  // Timer control handlers
   const handleStart = () => {
-    if (!selectedTask) return;
+    if (!selectedTask) {
+      console.warn('⚠️ Cannot start timer without selected task');
+      return;
+    }
     
+    console.log('▶️ Starting focus session');
     const newSessionId = generateSessionId();
     setSessionId(newSessionId);
     setIsActive(true);
     setIsPaused(false);
     setStartTime(Date.now());
     setPausedTime(0);
-    lastUpdateRef.current = performance.now();
+    isCleanedUpRef.current = false;
   };
 
   const handlePause = () => {
+    console.log('⏸️ Pausing focus session');
     setIsPaused(true);
     setPausedTime(prev => prev + (Date.now() - (startTime || Date.now())));
   };
 
   const handleResume = () => {
+    console.log('▶️ Resuming focus session');
     setIsPaused(false);
     setStartTime(Date.now());
-    lastUpdateRef.current = performance.now();
+    isCleanedUpRef.current = false;
   };
 
   const handleStop = () => {
+    console.log('⏹️ Stopping focus session');
     clearAllTimers();
     setIsActive(false);
     setIsPaused(false);
@@ -172,9 +258,13 @@ export const useFocusTimer = ({
     setSessionId(null);
     setStartTime(null);
     setPausedTime(0);
+    isCleanedUpRef.current = false;
+    lastTickTimeRef.current = 0;
+    accurateTimeRef.current = duration * 60;
   };
 
   const handleReset = () => {
+    console.log('🔄 Resetting focus timer');
     resetTimerState();
   };
 

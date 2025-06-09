@@ -22,9 +22,18 @@ const TimerProgress: React.FC<TimerProgressProps> = ({
   };
 
   const circumference = 2 * Math.PI * 45; // radius = 45
-  // Safeguard against invalid progress values
+  // Ensure progress is always valid (0-100)
   const safeProgress = Math.max(0, Math.min(100, isNaN(progress) ? 0 : progress));
   const strokeDashoffset = circumference - (safeProgress / 100) * circumference;
+
+  // Determine the visual state for styling
+  const getTimerState = () => {
+    if (!isActive) return 'ready';
+    if (isPaused) return 'paused';
+    return 'active';
+  };
+
+  const timerState = getTimerState();
 
   return (
     <div className="relative w-40 h-40 mx-auto mb-6">
@@ -39,7 +48,7 @@ const TimerProgress: React.FC<TimerProgressProps> = ({
           fill="transparent"
           className="text-muted/20"
         />
-        {/* Progress circle */}
+        {/* Progress circle with smooth transitions */}
         <circle
           cx="50"
           cy="50"
@@ -51,19 +60,46 @@ const TimerProgress: React.FC<TimerProgressProps> = ({
           strokeDashoffset={strokeDashoffset}
           strokeLinecap="round"
           className={cn(
-            "transition-all duration-300",
-            isActive && !isPaused ? "text-primary" : "text-muted-foreground"
+            "transition-all duration-300 ease-out",
+            timerState === 'active' && "text-primary animate-pulse",
+            timerState === 'paused' && "text-yellow-500",
+            timerState === 'ready' && "text-muted-foreground"
           )}
+          style={{
+            // Smooth transition for stroke dash offset
+            transitionProperty: 'stroke-dashoffset, color',
+            transitionDuration: '0.3s',
+            transitionTimingFunction: 'ease-out'
+          }}
         />
       </svg>
-      {/* Time display */}
+      
+      {/* Time display with enhanced styling */}
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-2xl font-bold font-mono">
+          <div className={cn(
+            "text-2xl font-bold font-mono transition-colors duration-300",
+            timerState === 'active' && "text-primary",
+            timerState === 'paused' && "text-yellow-600",
+            timerState === 'ready' && "text-foreground"
+          )}>
             {formatTime(timeRemaining)}
           </div>
-          <div className="text-xs text-muted-foreground">
+          
+          <div className="text-xs text-muted-foreground mt-1">
             {safeProgress}% complete
+          </div>
+          
+          {/* Status indicator */}
+          <div className={cn(
+            "text-xs mt-1 font-medium transition-colors duration-300",
+            timerState === 'active' && "text-primary",
+            timerState === 'paused' && "text-yellow-600",
+            timerState === 'ready' && "text-muted-foreground"
+          )}>
+            {timerState === 'active' && '🎯 Focusing'}
+            {timerState === 'paused' && '⏸️ Paused'}
+            {timerState === 'ready' && '⭐ Ready'}
           </div>
         </div>
       </div>
