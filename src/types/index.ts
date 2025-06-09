@@ -13,7 +13,7 @@ export interface AppUser {
   id: string;
   name: string;
   email: string;
-  role: string;
+  role: UserRole;
   avatar_url?: string;
 }
 

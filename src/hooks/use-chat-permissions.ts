@@ -1,6 +1,7 @@
 
 import { useAuth } from '@/contexts/AuthContext';
 import { hasRoleAccess } from '@/contexts/auth/roleUtils';
+import { UserRole } from '@/types';
 
 export function useChatPermissions() {
   const { user } = useAuth();
@@ -10,10 +11,14 @@ export function useChatPermissions() {
       console.log('useChatPermissions: No user role found for canCreateRooms');
       return false;
     }
-    console.log('useChatPermissions: Checking canCreateRooms for role:', user.role);
-    // Updated to match new RLS policy: managers and above can create rooms
-    const result = hasRoleAccess(user.role as any, 'manager');
-    console.log('useChatPermissions: canCreateRooms result:', result);
+    
+    console.log('useChatPermissions: Checking canCreateRooms for role:', user.role, 'type:', typeof user.role);
+    
+    // Ensure the role is properly typed
+    const userRole = user.role as UserRole;
+    const result = hasRoleAccess(userRole, 'manager');
+    
+    console.log('useChatPermissions: canCreateRooms result:', result, 'for role:', userRole);
     return result;
   };
 
@@ -26,7 +31,7 @@ export function useChatPermissions() {
     console.log('useChatPermissions: Checking canDeleteRoom for user:', user.id, 'role:', user.role, 'roomCreatedBy:', roomCreatedBy);
     
     // Admins can delete any room (matches new RLS policy)
-    if (hasRoleAccess(user.role as any, 'admin')) {
+    if (hasRoleAccess(user.role as UserRole, 'admin')) {
       console.log('useChatPermissions: User is admin+, can delete any room');
       return true;
     }
@@ -50,7 +55,7 @@ export function useChatPermissions() {
     console.log('useChatPermissions: Checking canAddParticipants for user:', user.id, 'role:', user.role);
     
     // Admins can add participants to any room (matches new RLS policy)
-    if (hasRoleAccess(user.role as any, 'admin')) {
+    if (hasRoleAccess(user.role as UserRole, 'admin')) {
       console.log('useChatPermissions: User is admin+, can add participants to any room');
       return true;
     }
@@ -72,7 +77,7 @@ export function useChatPermissions() {
     }
 
     // Admins can access any room (matches new RLS policy)
-    if (hasRoleAccess(user.role as any, 'admin')) {
+    if (hasRoleAccess(user.role as UserRole, 'admin')) {
       console.log('useChatPermissions: User is admin+, can access any room');
       return true;
     }

@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { AppUser } from '@/types';
+import { AppUser, UserRole } from '@/types';
 import { toast } from '@/components/ui/sonner';
 import { useQuery } from '@tanstack/react-query';
 
@@ -19,7 +19,12 @@ export const useUsers = () => {
     }
     
     console.log(`Successfully loaded ${data?.length || 0} users`);
-    return data as AppUser[];
+    
+    // Ensure role is properly typed
+    return data?.map(user => ({
+      ...user,
+      role: user.role as UserRole
+    })) as AppUser[] || [];
   };
 
   const { 
