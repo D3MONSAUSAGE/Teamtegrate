@@ -10,7 +10,7 @@ const Index = () => {
 
   console.log('Index page - Loading:', loading, 'User:', !!user, 'IsAuthenticated:', isAuthenticated);
 
-  // Show loading while auth is initializing
+  // Show loading only briefly during auth initialization
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center bg-background">

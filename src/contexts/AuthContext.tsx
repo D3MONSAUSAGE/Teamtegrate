@@ -22,17 +22,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [authReady, setAuthReady] = useState(false);
 
-  // Create user data from session - simplified version
-  const handleUserCreation = async (session: Session | null) => {
+  // Create user data from session - only when needed
+  const handleUserCreation = async (session: Session | null, forceCreate: boolean = false) => {
     try {
-      if (session?.user) {
+      if (session?.user && forceCreate) {
         console.log('Creating user data for:', session.user.id);
         const userData = await createUserFromSession(session);
         setUser(userData);
         console.log('User data created successfully:', userData.id, userData.role);
-      } else {
+      } else if (!session) {
         setUser(null);
         console.log('No session, clearing user data');
       }
@@ -43,9 +42,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Initialize auth
+  // Initialize auth - simplified for faster loading
   useEffect(() => {
     let mounted = true;
+    let initTimeout: NodeJS.Timeout;
     
     const initializeAuth = async () => {
       console.log('Initializing auth...');
@@ -57,43 +57,50 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (error) {
           console.error('Error getting initial session:', error);
-          // Don't force reset for session errors, just continue
-          if (mounted) {
-            setSession(null);
-            setUser(null);
-            setLoading(false);
-            setAuthReady(true);
-          }
-          return;
         }
         
         console.log('Initial session:', currentSession?.user?.id || 'no session');
         
         if (mounted) {
           setSession(currentSession);
+          // For landing page, we don't need to create user data immediately
+          // Only set basic session state and let the app decide when to load user data
           if (currentSession) {
-            await handleUserCreation(currentSession);
+            // Create a basic user object without database calls
+            const basicUser: User = {
+              id: currentSession.user.id,
+              email: currentSession.user.email || '',
+              name: currentSession.user.user_metadata.name || currentSession.user.email?.split('@')[0] || '',
+              role: (currentSession.user.user_metadata.role as any) || 'user',
+              createdAt: new Date(currentSession.user.created_at),
+            };
+            setUser(basicUser);
           }
-          setAuthReady(true);
+          setLoading(false);
         }
       } catch (error) {
         console.error('Error in auth initialization:', error);
         if (mounted) {
           setSession(null);
           setUser(null);
-          setAuthReady(true);
-        }
-      } finally {
-        if (mounted) {
           setLoading(false);
         }
       }
     };
 
+    // Set timeout to prevent infinite loading
+    initTimeout = setTimeout(() => {
+      if (mounted && loading) {
+        console.warn('Auth initialization timeout, setting loading to false');
+        setLoading(false);
+      }
+    }, 3000);
+
     initializeAuth();
     
     return () => {
       mounted = false;
+      if (initTimeout) clearTimeout(initTimeout);
     };
   }, []);
 
@@ -113,8 +120,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         
         setSession(session);
-        await handleUserCreation(session);
+        
+        // Create basic user object immediately
+        const basicUser: User = {
+          id: session.user.id,
+          email: session.user.email || '',
+          name: session.user.user_metadata.name || session.user.email?.split('@')[0] || '',
+          role: (session.user.user_metadata.role as any) || 'user',
+          createdAt: new Date(session.user.created_at),
+        };
+        setUser(basicUser);
         setLoading(false);
+        
+        // Only create database user record after successful login (not during initialization)
+        if (event === 'SIGNED_IN') {
+          setTimeout(() => {
+            handleUserCreation(session, true);
+          }, 100);
+        }
       }
     );
 
@@ -187,13 +210,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const value = {
     user,
-    loading: loading || !authReady,
-    isLoading: loading || !authReady,
+    loading,
+    isLoading: loading,
     login,
     signup,
     logout,
     updateUserProfile,
-    isAuthenticated: !!user && !!session && authReady,
+    isAuthenticated: !!user && !!session,
     hasRoleAccess: (requiredRole: any) => hasRoleAccess(user?.role, requiredRole),
     canManageUser: (targetRole: any) => canManageUser(user?.role, targetRole),
     refreshUserSession,
