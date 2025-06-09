@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { User } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,7 +22,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [initialCheckDone, setInitialCheckDone] = useState(false);
 
   const refreshUserSession = async (): Promise<void> => {
     const { session: newSession, user: userData } = await refreshSession();
@@ -47,89 +47,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error('Error creating user data:', error);
       setUser(null);
     } finally {
-      if (!initialCheckDone) {
-        setInitialCheckDone(true);
-        setLoading(false);
-        console.log('Initial auth check completed');
-      }
+      setLoading(false);
     }
   };
 
-  // Check for existing session on mount with improved error handling
+  // Check for existing session on mount
   useEffect(() => {
     console.log('Checking for existing session...');
     
-    const checkSession = async () => {
+    const getInitialSession = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error) {
           console.error('Error getting session:', error);
-          // Force a session refresh if there's an error
-          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-          if (refreshError) {
-            console.error('Error refreshing session:', refreshError);
-          } else {
-            console.log('Session refreshed successfully');
-            setSession(refreshData.session);
-            setTimeout(() => handleUserCreation(refreshData.session), 0);
-            return;
-          }
-        } else {
-          console.log('Initial session check:', session?.user?.id || 'no session');
-          setSession(session);
-          // Defer user creation to prevent blocking
-          setTimeout(() => handleUserCreation(session), 0);
+          setLoading(false);
+          return;
         }
+        
+        console.log('Initial session check:', session?.user?.id || 'no session');
+        setSession(session);
+        await handleUserCreation(session);
       } catch (error) {
         console.error('Error in initial session check:', error);
         setLoading(false);
-        setInitialCheckDone(true);
       }
     };
 
-    checkSession();
+    getInitialSession();
   }, []);
 
-  // Set up auth state listener for session changes with better session handling
+  // Set up auth state listener
   useEffect(() => {
     console.log('Setting up auth state listener...');
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state changed:', event, session?.user?.id);
-        
-        // Validate session before using it
-        if (session) {
-          // Test the session by making a simple authenticated query
-          try {
-            const { data, error } = await supabase.from('users').select('id').limit(1);
-            if (error && error.message.includes('JWT')) {
-              console.error('Session appears invalid, refreshing...');
-              const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-              if (!refreshError && refreshData.session) {
-                setSession(refreshData.session);
-                setTimeout(() => handleUserCreation(refreshData.session), 0);
-                return;
-              }
-            }
-          } catch (testError) {
-            console.error('Session validation failed:', testError);
-          }
-        }
-        
-        // Only handle synchronous operations in the callback
         setSession(session);
-        
-        // Defer user creation to prevent deadlocks
-        setTimeout(() => {
-          handleUserCreation(session);
-        }, 0);
-        
-        // Clear loading state for auth events after initial check
-        if (initialCheckDone) {
-          setLoading(false);
-          console.log('Auth state loading cleared');
-        }
+        await handleUserCreation(session);
       }
     );
 
@@ -137,19 +92,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('Cleaning up auth state listener');
       subscription.unsubscribe();
     };
-  }, [initialCheckDone]);
+  }, []);
 
   const login = async (email: string, password: string) => {
     setLoading(true);
     try {
       await authLogin(email, password);
-      // Force session refresh after login to ensure DB connectivity
-      setTimeout(async () => {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-          console.log('Post-login session verification successful');
-        }
-      }, 1000);
     } catch (error) {
       setLoading(false);
       throw error;

@@ -31,35 +31,12 @@ export function useChatRoomsFetch({ setRooms, setIsLoading, setError }: UseChatR
       return;
     }
 
-    await debug.logDebugInfo();
     setIsLoading(true);
     setError(null);
     
     try {
       console.log('ChatRooms: Fetching rooms for user:', user.id, 'role:', user.role);
       
-      // First, verify that the session is working by testing auth
-      const { data: authTest, error: authError } = await supabase.auth.getSession();
-      if (authError || !authTest.session) {
-        console.error('Session validation failed:', authError);
-        throw new Error('Authentication session expired. Please refresh the page.');
-      }
-      
-      // Test if we can access the users table first
-      const { data: userTest, error: userError } = await supabase
-        .from('users')
-        .select('id, role')
-        .eq('id', user.id)
-        .single();
-      
-      if (userError) {
-        console.error('User table access failed:', userError);
-        throw new Error('Database access error. Please refresh the page.');
-      }
-      
-      console.log('User verification successful:', userTest);
-      
-      // Now try to fetch chat rooms with more specific error handling
       const { data, error } = await supabase
         .from('chat_rooms')
         .select('*')
@@ -67,17 +44,7 @@ export function useChatRoomsFetch({ setRooms, setIsLoading, setError }: UseChatR
 
       if (error) {
         console.error('Supabase chat rooms error:', error);
-        
-        // Handle specific error types
-        if (error.message?.includes('infinite recursion')) {
-          throw new Error('Database configuration error. Please contact support.');
-        } else if (error.message?.includes('JWT') || error.message?.includes('session')) {
-          throw new Error('Session expired. Please refresh the page.');
-        } else if (error.code === 'PGRST301') {
-          throw new Error('Access denied. Please check your permissions.');
-        } else {
-          throw error;
-        }
+        throw error;
       }
 
       debug.logQueryResult(data, null);
@@ -87,7 +54,7 @@ export function useChatRoomsFetch({ setRooms, setIsLoading, setError }: UseChatR
       
       if (!data || data.length === 0) {
         console.log('No rooms found - this is normal for new users');
-        setError(null); // Don't show error for empty rooms list
+        setError(null);
       }
       
     } catch (error: any) {

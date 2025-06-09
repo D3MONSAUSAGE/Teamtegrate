@@ -34,10 +34,8 @@ const ChatbotBubble = () => {
     scrollToBottom
   } = useChatBubble();
 
-  // Button size for boundary calculations
-  const buttonSize = 48; // h-12 w-12 = 48px
+  const buttonSize = 48;
 
-  // Use draggable hook with mobile-responsive positioning
   const {
     position,
     elementRef,
@@ -71,22 +69,11 @@ const ChatbotBubble = () => {
     setMessage("");
   };
 
-  // Prevent drawer from opening when dragging or long pressing
   const handleDrawerOpenChange = (open: boolean) => {
-    console.log('Drawer open change requested:', open, { isDragging, isLongPressing });
-    
-    if (isDragging || isLongPressing) {
-      console.log('Preventing drawer open due to drag/long press');
+    if (isDragging || isLongPressing || wasLastInteractionDrag()) {
       return;
     }
     
-    // Check if this was a drag operation
-    if (wasLastInteractionDrag()) {
-      console.log('Preventing drawer open due to recent drag');
-      return;
-    }
-    
-    console.log('Allowing drawer open change to:', open);
     setIsOpen(open);
     if (open) {
       setTimeout(scrollToBottom, 100);
@@ -94,25 +81,11 @@ const ChatbotBubble = () => {
   };
 
   const handleButtonClick = (e: React.MouseEvent) => {
-    console.log('Button clicked', { isDragging, isLongPressing });
-    
-    // If we're currently dragging or long pressing, prevent the click
-    if (isDragging || isLongPressing) {
-      console.log('Preventing button click due to drag/long press');
+    if (isDragging || isLongPressing || wasLastInteractionDrag()) {
       e.preventDefault();
       e.stopPropagation();
       return;
     }
-    
-    // Small delay to check if this was a drag operation
-    setTimeout(() => {
-      if (wasLastInteractionDrag()) {
-        console.log('Button click was part of drag operation');
-        e.preventDefault();
-        e.stopPropagation();
-        return;
-      }
-    }, 50);
   };
 
   return (
@@ -130,7 +103,6 @@ const ChatbotBubble = () => {
           <ChatDragHint show={showDragHint} />
 
           <Drawer open={isOpen} onOpenChange={handleDrawerOpenChange}>
-            {/* Main chat button - draggable and opens drawer */}
             <DrawerTrigger asChild>
               <Button 
                 size="icon" 
