@@ -37,8 +37,9 @@ export function useMobileOptimization(options: MobileOptimizationOptions = {}) {
 
       // Optimize scrolling performance
       if (optimizeScrolling) {
-        document.body.style.webkitOverflowScrolling = 'touch';
-        document.body.style.overscrollBehaviorY = 'none';
+        // Use setProperty to avoid TypeScript issues with webkit-specific properties
+        document.body.style.setProperty('-webkit-overflow-scrolling', 'touch');
+        document.body.style.setProperty('overscroll-behavior-y', 'none');
       }
 
       // Handle viewport height on mobile
