@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +15,7 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { toast } from '@/components/ui/sonner';
 import { UserRole } from '@/types';
 import { ArrowLeft } from 'lucide-react';
+import BrandLogo from '@/components/shared/BrandLogo';
 
 const LoginPage = () => {
   const [searchParams] = useSearchParams();
@@ -73,11 +73,8 @@ const LoginPage = () => {
 
         <Card className="w-full shadow-lg">
           <CardHeader className="text-center">
-            <div className="flex items-center justify-center space-x-2 mb-2">
-              <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm">T</span>
-              </div>
-              <span className="text-xl font-bold text-primary">TeamTegrate</span>
+            <div className="flex justify-center mb-2">
+              <BrandLogo size="md" />
             </div>
             <CardTitle className="text-2xl font-bold">
               {isLogin ? 'Welcome Back' : 'Join TeamTegrate'}
