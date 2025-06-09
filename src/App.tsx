@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -28,6 +27,7 @@ import NotebookPage from "./pages/NotebookPage";
 import ProjectTasksPage from "./pages/ProjectTasksPage";
 import CalendarPage from "./pages/CalendarPage";
 import NotificationsPage from "./pages/NotificationsPage";
+import FocusZonePage from "./pages/FocusZonePage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -75,6 +75,7 @@ const App: React.FC = () => {
                       <Route path="settings" element={<SettingsPage />} />
                       <Route path="profile" element={<ProfilePage />} />
                       <Route path="time-tracking" element={<TimeTrackingPage />} />
+                      <Route path="focus-zone" element={<FocusZonePage />} />
                       <Route path="documents" element={<DocumentsPage />} />
                       <Route path="finance" element={<FinancePage />} />
                       <Route path="notebook" element={<NotebookPage />} />

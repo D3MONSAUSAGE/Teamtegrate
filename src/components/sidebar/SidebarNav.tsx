@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -15,7 +14,8 @@ import {
   NotebookPen,
   Calendar,
   Bell,
-  User
+  User,
+  Target
 } from 'lucide-react';
 import {
   SidebarMenu,
@@ -50,6 +50,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ onNavigation, isCollapsed }) =>
     },
     { name: 'Reports', href: '/dashboard/reports', icon: BarChart3 },
     { name: 'Time Tracking', href: '/dashboard/time-tracking', icon: Clock },
+    { name: 'Focus Zone', href: '/dashboard/focus-zone', icon: Target },
     { name: 'Documents', href: '/dashboard/documents', icon: FileText },
     { name: 'Finance', href: '/dashboard/finance', icon: DollarSign },
     { name: 'Notebook', href: '/dashboard/notebook', icon: NotebookPen },
