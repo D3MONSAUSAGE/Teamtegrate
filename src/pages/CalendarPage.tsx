@@ -13,7 +13,8 @@ import CalendarDayView from '@/components/calendar/CalendarDayView';
 import CalendarWeekView from '@/components/calendar/CalendarWeekView';
 import CalendarMonthView from '@/components/calendar/CalendarMonthView';
 import QuickTaskCreateDialog from '@/components/calendar/QuickTaskCreateDialog';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Filter, Clock, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, Plus, Grid2X2, Layers, List } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const CalendarPage = () => {
   const { tasks, projects } = useTask();
@@ -53,51 +54,86 @@ const CalendarPage = () => {
     } catch { return false; }
   }).length;
 
+  const upcomingTasksCount = tasks.filter(task => {
+    try {
+      const taskDate = new Date(task.deadline);
+      const today = new Date();
+      return taskDate > today && task.status !== 'Completed';
+    } catch { return false; }
+  }).length;
+
+  const overdueTasksCount = tasks.filter(task => {
+    try {
+      const taskDate = new Date(task.deadline);
+      const today = new Date();
+      return taskDate < today && task.status !== 'Completed';
+    } catch { return false; }
+  }).length;
+
+  const getViewIcon = (view: string) => {
+    switch(view) {
+      case 'day': return List;
+      case 'week': return Layers;
+      case 'month': return Grid2X2;
+      default: return Grid2X2;
+    }
+  };
+
   return (
-    <div className="h-full flex flex-col w-full overflow-hidden">
-      {/* Mobile-optimized Header Section */}
-      <div className="flex-shrink-0 p-2 md:p-4">
-        <div className="flex flex-col gap-2 mb-2">
-          <div className="flex justify-between items-center">
+    <div className="h-full flex flex-col w-full overflow-hidden bg-gradient-to-br from-background via-background to-muted/30">
+      {/* Enhanced Header Section with Gradient */}
+      <div className="flex-shrink-0 p-4 md:p-6 bg-gradient-to-r from-primary/5 via-primary/10 to-secondary/5 border-b border-border/50 backdrop-blur-sm">
+        <div className="flex flex-col gap-4">
+          {/* Title and Actions Row */}
+          <div className="flex justify-between items-start">
             <div className="min-w-0 flex-1">
-              <h1 className="text-lg md:text-2xl font-bold text-foreground truncate">Calendar</h1>
-              <p className="text-muted-foreground text-xs hidden sm:block">Manage your tasks by date</p>
+              <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                Calendar
+              </h1>
+              <p className="text-muted-foreground text-sm mt-1 hidden sm:block">
+                Organize and track your tasks by date
+              </p>
             </div>
             
-            <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
-              <Select 
-                value={viewType} 
-                onValueChange={(value: 'day' | 'week' | 'month') => setViewType(value)}
-              >
-                <SelectTrigger className="w-[80px] md:w-[120px] h-8 md:h-9 text-xs md:text-sm">
-                  <Filter className="mr-1 h-3 w-3 md:h-4 md:w-4" />
-                  <SelectValue placeholder="View" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="day">Day</SelectItem>
-                  <SelectItem value="week">Week</SelectItem>
-                  <SelectItem value="month">Month</SelectItem>
-                </SelectContent>
-              </Select>
+            {/* Modern View Selector */}
+            <div className="flex items-center gap-2 bg-background/80 backdrop-blur-sm rounded-xl p-1 border border-border/50 shadow-lg">
+              {(['day', 'week', 'month'] as const).map((view) => {
+                const Icon = getViewIcon(view);
+                return (
+                  <button
+                    key={view}
+                    onClick={() => setViewType(view)}
+                    className={cn(
+                      "flex items-center gap-2 px-3 py-2 rounded-lg text-xs md:text-sm font-medium transition-all duration-200",
+                      viewType === view
+                        ? "bg-primary text-primary-foreground shadow-md scale-105"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                    )}
+                  >
+                    <Icon className="h-4 w-4" />
+                    <span className="capitalize hidden sm:inline">{view}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          {/* Compact Date Navigation */}
-          <div className="flex items-center justify-between gap-2 p-2 bg-muted/20 rounded-lg">
-            <div className="flex items-center gap-1">
+          {/* Enhanced Navigation Bar */}
+          <div className="flex items-center justify-between gap-4 p-4 bg-background/60 backdrop-blur-sm rounded-2xl border border-border/50 shadow-lg">
+            <div className="flex items-center gap-3">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={goToPreviousMonth}
-                className="h-8 w-8 p-0"
+                className="h-10 w-10 p-0 rounded-full hover:scale-110 transition-all duration-200 shadow-md hover:shadow-lg"
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
               
-              <div className="flex items-center gap-1 min-w-0">
-                <CalendarIcon className="h-4 w-4 text-primary flex-shrink-0" />
-                <h2 className="text-sm md:text-base font-semibold truncate">
-                  {format(selectedDate, 'MMM yyyy')}
+              <div className="flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-xl">
+                <CalendarIcon className="h-5 w-5 text-primary" />
+                <h2 className="text-lg md:text-xl font-bold text-foreground">
+                  {format(selectedDate, 'MMMM yyyy')}
                 </h2>
               </div>
               
@@ -105,55 +141,64 @@ const CalendarPage = () => {
                 variant="outline"
                 size="sm"
                 onClick={goToNextMonth}
-                className="h-8 w-8 p-0"
+                className="h-10 w-10 p-0 rounded-full hover:scale-110 transition-all duration-200 shadow-md hover:shadow-lg"
               >
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
 
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={goToToday}
-                className="h-8 text-xs px-2"
+                className="px-4 py-2 rounded-xl hover:scale-105 transition-all duration-200 shadow-md hover:shadow-lg"
               >
                 Today
               </Button>
 
               <Button
-                variant="default"
                 size="sm"
                 onClick={() => handleDateCreate(selectedDate)}
-                className="h-8 text-xs px-2"
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200"
               >
-                <Plus className="h-3 w-3 mr-1" />
-                <span className="hidden sm:inline">Add</span>
+                <Plus className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">Add Task</span>
               </Button>
             </div>
           </div>
 
-          {/* Simplified Stats - Hidden on small mobile */}
-          <div className="hidden sm:flex items-center justify-center gap-4 text-xs">
-            <div className="flex items-center gap-1">
-              <Clock className="h-3 w-3 text-muted-foreground" />
-              <span className="text-muted-foreground">Today:</span>
-              <Badge variant="secondary" className="text-xs h-4">
+          {/* Enhanced Stats Section */}
+          <div className="flex items-center justify-center gap-6 py-3">
+            <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500/10 to-blue-600/10 rounded-xl border border-blue-200/20">
+              <Clock className="h-4 w-4 text-blue-500" />
+              <span className="text-sm font-medium text-muted-foreground">Today:</span>
+              <Badge variant="secondary" className="bg-blue-500/20 text-blue-700 dark:text-blue-300 font-bold">
                 {todayTasksCount}
               </Badge>
             </div>
-            <div className="flex items-center gap-1">
-              <span className="text-muted-foreground">Total:</span>
-              <Badge variant="outline" className="text-xs h-4">
-                {tasks.length}
+            
+            <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500/10 to-emerald-600/10 rounded-xl border border-emerald-200/20">
+              <span className="text-sm font-medium text-muted-foreground">Upcoming:</span>
+              <Badge variant="secondary" className="bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-bold">
+                {upcomingTasksCount}
               </Badge>
             </div>
+            
+            {overdueTasksCount > 0 && (
+              <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-rose-500/10 to-rose-600/10 rounded-xl border border-rose-200/20">
+                <span className="text-sm font-medium text-muted-foreground">Overdue:</span>
+                <Badge variant="destructive" className="bg-rose-500/20 text-rose-700 dark:text-rose-300 font-bold animate-pulse">
+                  {overdueTasksCount}
+                </Badge>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Main Calendar View - Mobile optimized */}
-      <div className="flex-1 px-2 md:px-4 pb-2 md:pb-4 min-h-0 overflow-hidden">
+      {/* Enhanced Calendar View */}
+      <div className="flex-1 p-4 md:p-6 min-h-0 overflow-hidden">
         <div className="h-full w-full">
           {viewType === 'day' && (
             <CalendarDayView 

@@ -7,12 +7,13 @@ import {
   startOfWeek, 
   endOfWeek, 
   eachDayOfInterval, 
-  isToday 
+  isToday,
+  isWeekend
 } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import CalendarTaskItem from './CalendarTaskItem';
 import { cn } from '@/lib/utils';
-import { Plus } from 'lucide-react';
+import { Plus, Calendar } from 'lucide-react';
 
 interface CalendarWeekViewProps {
   selectedDate: Date;
@@ -36,21 +37,29 @@ const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
   });
   
   return (
-    <Card className="h-full flex flex-col">
-      <CardHeader className="pb-2 flex-shrink-0 px-3 py-2 md:px-6 md:py-4">
-        <CardTitle className="text-sm md:text-base font-medium">
-          Week of {format(startOfWeekDate, 'MMM d, yyyy')}
+    <Card className="h-full flex flex-col shadow-xl border-0 bg-gradient-to-br from-background to-muted/30">
+      <CardHeader className="pb-3 flex-shrink-0 px-4 py-4 md:px-6 md:py-5 bg-gradient-to-r from-primary/5 to-secondary/5 border-b">
+        <CardTitle className="text-lg md:text-xl font-bold flex items-center gap-2 text-foreground">
+          <Calendar className="h-5 w-5 text-primary" />
+          Week of {format(startOfWeekDate, 'MMMM d, yyyy')}
         </CardTitle>
       </CardHeader>
       <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
-        {/* Day headers - Mobile optimized */}
-        <div className="grid grid-cols-7 flex-shrink-0 border-b">
+        {/* Enhanced Day headers */}
+        <div className="grid grid-cols-7 flex-shrink-0 border-b bg-gradient-to-r from-muted/20 via-muted/30 to-muted/20">
           {weekDays.map((day, i) => (
-            <div key={i} className="text-center p-2 border-r last:border-r-0 font-medium">
-              <div className="mb-1 text-xs text-muted-foreground">{format(day, 'EEE')}</div>
+            <div key={i} className={cn(
+              "text-center p-3 md:p-4 border-r last:border-r-0 font-semibold transition-colors duration-200",
+              isWeekend(day) && "bg-gradient-to-b from-muted/20 to-transparent text-muted-foreground",
+              isToday(day) && "bg-gradient-to-b from-primary/20 to-primary/5"
+            )}>
+              <div className="mb-1 text-xs md:text-sm text-muted-foreground font-medium">
+                {format(day, 'EEE')}
+              </div>
               <div className={cn(
-                "h-6 w-6 rounded-full flex items-center justify-center mx-auto text-xs font-medium",
-                isToday(day) && "bg-primary text-primary-foreground"
+                "h-7 w-7 md:h-8 md:w-8 rounded-full flex items-center justify-center mx-auto text-sm md:text-base font-bold transition-all duration-200",
+                isToday(day) && "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg scale-110 ring-2 ring-primary/30",
+                !isToday(day) && "hover:bg-gradient-to-br hover:from-primary/20 hover:to-secondary/20 hover:scale-105"
               )}>
                 {format(day, 'd')}
               </div>
@@ -58,7 +67,7 @@ const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
           ))}
         </div>
         
-        {/* Week content - Native scrolling */}
+        {/* Enhanced Week content */}
         <div className="flex-1 overflow-y-auto">
           <div className="grid grid-cols-7 divide-x min-h-full">
             {weekDays.map((day, dayIndex) => {
@@ -72,9 +81,25 @@ const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
                 }
               });
               
+              const isWeekendDay = isWeekend(day);
+              
               return (
-                <div key={dayIndex} className="min-h-[120px] md:min-h-[160px] p-1 md:p-2">
-                  <div className="space-y-1">
+                <div key={dayIndex} className={cn(
+                  "min-h-[140px] md:min-h-[180px] p-2 md:p-3 transition-all duration-200 relative",
+                  "hover:bg-gradient-to-br hover:from-primary/5 hover:to-secondary/5",
+                  isWeekendDay && "bg-gradient-to-b from-muted/10 to-background"
+                )}>
+                  {/* Task density indicator */}
+                  {dayTasks.length > 0 && (
+                    <div className={cn(
+                      "absolute top-0 right-0 w-1 h-full bg-gradient-to-b transition-opacity duration-300",
+                      dayTasks.length <= 2 ? "from-blue-300 to-blue-400 opacity-30" :
+                      dayTasks.length <= 4 ? "from-amber-300 to-amber-400 opacity-50" :
+                      "from-rose-300 to-rose-400 opacity-70"
+                    )} />
+                  )}
+                  
+                  <div className="space-y-2">
                     {dayTasks.length > 0 ? (
                       dayTasks.map(task => (
                         <CalendarTaskItem 
@@ -86,11 +111,11 @@ const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
                       ))
                     ) : (
                       <div 
-                        className="py-2 text-xs text-center text-muted-foreground cursor-pointer hover:bg-muted/50 rounded flex items-center justify-center gap-1 border-2 border-dashed border-muted-foreground/20 hover:border-muted-foreground/40 transition-colors min-h-[40px]"
+                        className="group py-3 md:py-4 text-xs text-center text-muted-foreground cursor-pointer hover:bg-gradient-to-br hover:from-primary/10 hover:to-secondary/10 rounded-lg flex items-center justify-center gap-1 border-2 border-dashed border-muted-foreground/20 hover:border-primary/40 transition-all duration-200 min-h-[50px] hover:scale-105"
                         onClick={() => onDateCreate(day)}
                       >
-                        <Plus className="h-3 w-3" />
-                        <span className="hidden sm:inline">Add</span>
+                        <Plus className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                        <span className="hidden sm:inline font-medium">Add task</span>
                       </div>
                     )}
                   </div>
