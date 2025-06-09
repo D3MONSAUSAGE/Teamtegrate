@@ -282,7 +282,7 @@
   }
 
   .glass-sidebar {
-    @apply bg-white/95 dark:bg-sidebar-background/95 backdrop-blur-xl border-r border-sidebar-border/60;
+    @apply bg-white/95 dark:bg-card/95 backdrop-blur-xl border-r border-sidebar-border/60;
   }
 
   /* Modern card effects */
