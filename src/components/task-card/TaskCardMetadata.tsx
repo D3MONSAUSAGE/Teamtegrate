@@ -38,26 +38,20 @@ const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({
   const hasSingleAssignee = assignedToName && !hasMultipleAssignees;
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-muted/50">
-            <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-          </div>
-          <span className={cn(
-            "text-sm font-medium",
-            isOverdue ? "text-red-600 dark:text-red-400" : "text-foreground"
-          )}>
-            {formatDeadline(deadline)}
-          </span>
-        </div>
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        <Calendar className="h-3 w-3 text-muted-foreground" />
+        <span className={cn(
+          "text-xs font-medium",
+          isOverdue ? "text-red-600 dark:text-red-400" : "text-foreground"
+        )}>
+          {formatDeadline(deadline)}
+        </span>
       </div>
 
       <div className="flex items-center gap-2">
-        <div className="p-1.5 rounded-lg bg-muted/50">
-          <User className="h-3.5 w-3.5 text-muted-foreground" />
-        </div>
-        <div className="text-sm min-w-0 flex-1">
+        <User className="h-3 w-3 text-muted-foreground" />
+        <div className="text-xs min-w-0 flex-1">
           {hasMultipleAssignees ? (
             <TaskMultipleAssignees
               assignedToNames={assignedToNames}
@@ -65,7 +59,7 @@ const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({
               variant="card"
             />
           ) : hasSingleAssignee ? (
-            <Badge variant="outline" className="text-xs px-2 py-1 bg-background/50">
+            <Badge variant="outline" className="text-xs px-2 py-0.5">
               {assignedToName}
             </Badge>
           ) : (

@@ -3,7 +3,7 @@ import React from "react";
 import { Task, TaskStatus } from "@/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TaskList from "./TaskList";
-import { CheckCircle2, Clock, AlertCircle, Flame } from "lucide-react";
+import { CheckCircle2, Clock, AlertCircle } from "lucide-react";
 
 interface TaskTabsProps {
   todoTasks: Task[];
@@ -23,20 +23,18 @@ const TaskTabs: React.FC<TaskTabsProps> = ({
   onStatusChange,
 }) => {
   return (
-    <div className="p-6 md:p-10">
+    <div className="p-6">
       <Tabs defaultValue="todo" className="w-full">
-        <TabsList className="grid grid-cols-3 mb-10 h-16 bg-muted/30 backdrop-blur-sm rounded-2xl border border-border/40 p-2">
+        <TabsList className="grid grid-cols-3 mb-8 h-12 bg-muted/50 rounded-lg">
           <TabsTrigger 
             value="todo" 
-            className="relative data-[state=active]:bg-background/90 data-[state=active]:shadow-lg transition-all duration-300 rounded-xl h-12 font-semibold"
+            className="data-[state=active]:bg-background data-[state=active]:shadow-sm h-10 rounded-md"
           >
-            <div className="flex items-center gap-3">
-              <div className="p-1.5 rounded-lg bg-blue-500/20">
-                <AlertCircle className="h-4 w-4 text-blue-600" />
-              </div>
-              <span className="font-semibold">To Do</span>
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 text-blue-600" />
+              <span>To Do</span>
               {todoTasks.length > 0 && (
-                <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs px-3 py-1.5 rounded-full min-w-[24px] h-6 flex items-center justify-center font-bold shadow-lg">
+                <div className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-xs px-2 py-1 rounded-full min-w-[20px] text-center">
                   {todoTasks.length}
                 </div>
               )}
@@ -44,15 +42,13 @@ const TaskTabs: React.FC<TaskTabsProps> = ({
           </TabsTrigger>
           <TabsTrigger 
             value="inprogress" 
-            className="relative data-[state=active]:bg-background/90 data-[state=active]:shadow-lg transition-all duration-300 rounded-xl h-12 font-semibold"
+            className="data-[state=active]:bg-background data-[state=active]:shadow-sm h-10 rounded-md"
           >
-            <div className="flex items-center gap-3">
-              <div className="p-1.5 rounded-lg bg-amber-500/20">
-                <Flame className="h-4 w-4 text-amber-600" />
-              </div>
-              <span className="font-semibold">In Progress</span>
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-amber-600" />
+              <span>In Progress</span>
               {inProgressTasks.length > 0 && (
-                <div className="bg-gradient-to-r from-amber-500 to-amber-600 text-white text-xs px-3 py-1.5 rounded-full min-w-[24px] h-6 flex items-center justify-center font-bold shadow-lg">
+                <div className="bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200 text-xs px-2 py-1 rounded-full min-w-[20px] text-center">
                   {inProgressTasks.length}
                 </div>
               )}
@@ -60,15 +56,13 @@ const TaskTabs: React.FC<TaskTabsProps> = ({
           </TabsTrigger>
           <TabsTrigger 
             value="completed" 
-            className="relative data-[state=active]:bg-background/90 data-[state=active]:shadow-lg transition-all duration-300 rounded-xl h-12 font-semibold"
+            className="data-[state=active]:bg-background data-[state=active]:shadow-sm h-10 rounded-md"
           >
-            <div className="flex items-center gap-3">
-              <div className="p-1.5 rounded-lg bg-green-500/20">
-                <CheckCircle2 className="h-4 w-4 text-green-600" />
-              </div>
-              <span className="font-semibold">Completed</span>
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-green-600" />
+              <span>Completed</span>
               {completedTasks.length > 0 && (
-                <div className="bg-gradient-to-r from-green-500 to-green-600 text-white text-xs px-3 py-1.5 rounded-full min-w-[24px] h-6 flex items-center justify-center font-bold shadow-lg">
+                <div className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 text-xs px-2 py-1 rounded-full min-w-[20px] text-center">
                   {completedTasks.length}
                 </div>
               )}
@@ -77,39 +71,33 @@ const TaskTabs: React.FC<TaskTabsProps> = ({
         </TabsList>
 
         <TabsContent value="todo" className="mt-0">
-          <div className="animate-fade-in">
-            <TaskList 
-              tasks={todoTasks} 
-              onEdit={onEdit} 
-              onNewTask={onNewTask} 
-              onStatusChange={onStatusChange}
-              emptyMessage="No to-do tasks" 
-            />
-          </div>
+          <TaskList 
+            tasks={todoTasks} 
+            onEdit={onEdit} 
+            onNewTask={onNewTask} 
+            onStatusChange={onStatusChange}
+            emptyMessage="No to-do tasks" 
+          />
         </TabsContent>
         
         <TabsContent value="inprogress" className="mt-0">
-          <div className="animate-fade-in">
-            <TaskList 
-              tasks={inProgressTasks} 
-              onEdit={onEdit} 
-              onNewTask={onNewTask}
-              onStatusChange={onStatusChange} 
-              emptyMessage="No tasks in progress" 
-            />
-          </div>
+          <TaskList 
+            tasks={inProgressTasks} 
+            onEdit={onEdit} 
+            onNewTask={onNewTask}
+            onStatusChange={onStatusChange} 
+            emptyMessage="No tasks in progress" 
+          />
         </TabsContent>
         
         <TabsContent value="completed" className="mt-0">
-          <div className="animate-fade-in">
-            <TaskList 
-              tasks={completedTasks} 
-              onEdit={onEdit} 
-              onNewTask={onNewTask}
-              onStatusChange={onStatusChange} 
-              emptyMessage="No completed tasks" 
-            />
-          </div>
+          <TaskList 
+            tasks={completedTasks} 
+            onEdit={onEdit} 
+            onNewTask={onNewTask}
+            onStatusChange={onStatusChange} 
+            emptyMessage="No completed tasks" 
+          />
         </TabsContent>
       </Tabs>
     </div>

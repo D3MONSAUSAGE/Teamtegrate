@@ -82,35 +82,31 @@ const TasksPage = () => {
   const sortedCompleted = sortTasks(completedTasks);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
-      <div className="container mx-auto max-w-8xl px-3 md:px-6 lg:px-8 py-4 md:py-8 space-y-6 md:space-y-8">
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto max-w-7xl px-4 py-6 space-y-8">
         {/* Page Header */}
-        <div className="animate-fade-in">
-          <TaskHeader 
+        <TaskHeader 
+          onNewTask={() => {
+            setEditingTask(undefined);
+            setIsCreateTaskOpen(true);
+          }}
+          sortBy={sortBy}
+          onSortChange={setSortBy}
+        />
+        
+        {/* Main Content Area */}
+        <div className="bg-card border border-border rounded-xl shadow-sm">
+          <TaskTabs
+            todoTasks={sortedTodo}
+            inProgressTasks={sortedInProgress}
+            completedTasks={sortedCompleted}
+            onEdit={handleEditTask}
             onNewTask={() => {
               setEditingTask(undefined);
               setIsCreateTaskOpen(true);
             }}
-            sortBy={sortBy}
-            onSortChange={setSortBy}
+            onStatusChange={handleStatusChange}
           />
-        </div>
-        
-        {/* Main Content Area */}
-        <div className="animate-slide-up" style={{ animationDelay: '0.1s' }}>
-          <div className="bg-card/30 backdrop-blur-xl border border-border/40 rounded-3xl shadow-xl overflow-hidden">
-            <TaskTabs
-              todoTasks={sortedTodo}
-              inProgressTasks={sortedInProgress}
-              completedTasks={sortedCompleted}
-              onEdit={handleEditTask}
-              onNewTask={() => {
-                setEditingTask(undefined);
-                setIsCreateTaskOpen(true);
-              }}
-              onStatusChange={handleStatusChange}
-            />
-          </div>
         </div>
       </div>
       

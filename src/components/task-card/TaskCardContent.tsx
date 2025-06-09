@@ -1,6 +1,5 @@
 
 import React from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Task, TaskStatus } from "@/types";
 import TaskCardHeader from "./TaskCardHeader";
 import TaskCardDescription from "./TaskCardDescription";
@@ -24,17 +23,17 @@ const TaskCardContent: React.FC<TaskCardContentProps> = ({
   const isOverdue = isTaskOverdue(task);
 
   return (
-    <div className="h-full flex flex-col p-6">
+    <div className="h-full flex flex-col p-4">
       <TaskCardHeader
         title={task.title}
         priority={task.priority}
       />
       
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0 mt-2">
         <TaskCardDescription description={task.description} />
       </div>
       
-      <div className="mt-4 space-y-4">
+      <div className="mt-auto space-y-3">
         <TaskCardMetadata 
           deadline={task.deadline} 
           assignedToName={task.assignedToName}
