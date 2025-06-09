@@ -36,10 +36,10 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
 
   return (
     <ShadcnSidebar 
-      className="border-r border-border"
+      className="glass-sidebar border-r border-sidebar-border/60 backdrop-blur-xl no-scrollbar overflow-hidden"
       collapsible="icon"
     >
-      <ShadcnSidebarHeader>
+      <ShadcnSidebarHeader className="border-b border-sidebar-border/30">
         <SidebarHeader 
           isDark={isDark} 
           onToggleDarkMode={toggle} 
@@ -48,14 +48,16 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
         />
       </ShadcnSidebarHeader>
       
-      <SidebarContent>
-        <SidebarNav 
-          onNavigation={handleNavigation} 
-          isCollapsed={isCollapsed}
-        />
+      <SidebarContent className="no-scrollbar overflow-y-auto">
+        <div className="p-2">
+          <SidebarNav 
+            onNavigation={handleNavigation} 
+            isCollapsed={isCollapsed}
+          />
+        </div>
       </SidebarContent>
       
-      <ShadcnSidebarFooter>
+      <ShadcnSidebarFooter className="border-t border-sidebar-border/30 bg-gradient-to-t from-sidebar-background/80 to-transparent">
         <SidebarFooter 
           user={user} 
           isCollapsed={isCollapsed}

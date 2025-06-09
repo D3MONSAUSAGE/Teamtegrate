@@ -16,10 +16,13 @@ const AppLayout = () => {
   // Show loading while auth is initializing
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading application...</p>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-muted/30 to-background">
+        <div className="text-center glass-card p-8 rounded-2xl animate-scale-in">
+          <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-r from-primary/20 to-accent/20 rounded-full flex items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+          <h3 className="text-lg font-semibold text-foreground mb-2">Loading TeamTegrate</h3>
+          <p className="text-muted-foreground">Preparing your workspace...</p>
         </div>
       </div>
     );
@@ -33,13 +36,15 @@ const AppLayout = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen bg-background w-full flex mobile-safe-area">
+      <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background w-full flex mobile-safe-area no-scrollbar overflow-hidden">
         <Sidebar />
         
-        <SidebarInset className="flex flex-col flex-1">
+        <SidebarInset className="flex flex-col flex-1 no-scrollbar overflow-hidden">
           <Navbar />
-          <main className="flex-1 overflow-y-auto p-3 md:p-6 no-bounce">
-            <Outlet />
+          <main className="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar smooth-scroll">
+            <div className="p-3 md:p-6 space-y-6 animate-fade-in">
+              <Outlet />
+            </div>
           </main>
         </SidebarInset>
 

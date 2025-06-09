@@ -1,9 +1,10 @@
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { useTask } from '@/contexts/task';
 import { useAuth } from '@/contexts/AuthContext';
 import { Task, Project } from '@/types';
-import { Plus } from 'lucide-react';
+import { Plus, Sparkles } from 'lucide-react';
 import CreateTaskDialogWithAI from '@/components/CreateTaskDialogWithAI';
 import { format } from 'date-fns';
 import TasksSummary from '@/components/dashboard/TasksSummary';
@@ -67,58 +68,90 @@ const DashboardPage = () => {
   };
   
   return (
-    <div className="p-2 md:p-6">
-      <div className="flex flex-col gap-4 md:gap-8">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <h1 className="text-xl md:text-2xl font-bold">Welcome, {user?.name}!</h1>
-            <p className="text-sm md:text-base text-gray-600">
-              {format(new Date(), "EEEE, MMMM d")} · Here's your overview
+    <div className="space-y-8 no-scrollbar">
+      {/* Welcome Header */}
+      <div className="modern-card p-6 md:p-8 animate-fade-in">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
+                Welcome back, {user?.name}!
+              </h1>
+              <Sparkles className="h-6 w-6 text-primary animate-pulse" />
+            </div>
+            <p className="text-muted-foreground text-lg">
+              {format(new Date(), "EEEE, MMMM d")} · Here's your productivity overview
             </p>
           </div>
-          <Button onClick={() => handleCreateTask()} size={isMobile ? "sm" : "default"} className="self-start sm:self-auto">
-            <Plus className="h-4 w-4 mr-2" /> New Task
+          <Button 
+            onClick={() => handleCreateTask()} 
+            size={isMobile ? "default" : "lg"} 
+            className="interactive-button bg-gradient-to-r from-primary to-emerald-500 hover:from-emerald-600 hover:to-lime-500 shadow-lg"
+          >
+            <Plus className="h-5 w-5 mr-2" /> 
+            Create Task
           </Button>
         </div>
-        
+      </div>
+      
+      {/* Quick Stats Summary */}
+      <div className="animate-slide-up" style={{ animationDelay: '0.1s' }}>
         <TasksSummary 
           dailyScore={dailyScore}
           todaysTasks={todaysTasks}
           upcomingTasks={upcomingTasks}
         />
+      </div>
 
+      {/* Time Tracking Section */}
+      <div className="animate-slide-up" style={{ animationDelay: '0.2s' }}>
         <TimeTracking />
+      </div>
 
+      {/* Analytics Overview */}
+      <div className="animate-slide-up" style={{ animationDelay: '0.3s' }}>
         <AnalyticsSection 
           tasks={tasks} 
           projects={projects}
         />
+      </div>
+      
+      {/* Tasks Sections */}
+      <div className="grid lg:grid-cols-2 gap-8">
+        <div className="animate-slide-up" style={{ animationDelay: '0.4s' }}>
+          <DailyTasksSection 
+            tasks={todaysTasks}
+            onCreateTask={() => handleCreateTask()}
+            onEditTask={handleEditTask}
+          />
+        </div>
         
-        <DailyTasksSection 
-          tasks={todaysTasks}
-          onCreateTask={() => handleCreateTask()}
-          onEditTask={handleEditTask}
-        />
-        
-        <UpcomingTasksSection 
-          tasks={upcomingTasks}
-          onCreateTask={() => handleCreateTask()}
-          onEditTask={handleEditTask}
-        />
-        
-        {user?.role === 'manager' && (
-          <>
+        <div className="animate-slide-up" style={{ animationDelay: '0.5s' }}>
+          <UpcomingTasksSection 
+            tasks={upcomingTasks}
+            onCreateTask={() => handleCreateTask()}
+            onEditTask={handleEditTask}
+          />
+        </div>
+      </div>
+      
+      {/* Manager-only sections */}
+      {user?.role === 'manager' && (
+        <div className="space-y-8">
+          <div className="animate-slide-up" style={{ animationDelay: '0.6s' }}>
             <RecentProjects 
               projects={recentProjects}
               onViewTasks={handleViewTasks}
               onCreateTask={handleCreateTask}
               onRefresh={refreshProjects}
             />
-            
+          </div>
+          
+          <div className="animate-slide-up" style={{ animationDelay: '0.7s' }}>
             <TeamManagement />
-          </>
-        )}
-      </div>
+          </div>
+        </div>
+      )}
       
       <CreateTaskDialogWithAI 
         open={isCreateTaskOpen} 

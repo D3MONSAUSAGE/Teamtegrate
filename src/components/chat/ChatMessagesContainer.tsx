@@ -58,27 +58,32 @@ const ChatMessagesContainer: React.FC<ChatMessagesContainerProps> = ({
   return (
     <div 
       ref={scrollAreaRef}
-      className={`flex-1 overflow-y-auto p-3 md:p-4 bg-[url('https://web.whatsapp.com/img/bg-chat-tile-light_04fcacde539c58cca6745483d4858c52.png')] dark:bg-[url('https://web.whatsapp.com/img/bg-chat-tile-dark_f1e8c06e8d4e3296352ae4682c0632c3.png')] bg-repeat ${isMobile ? 'mobile-hide-scrollbar' : ''}`}
+      className="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar smooth-scroll p-3 md:p-4 bg-gradient-to-b from-background/50 via-transparent to-background/30"
       onScroll={onScroll}
       style={{ 
         scrollBehavior: 'smooth',
-        WebkitOverflowScrolling: 'touch'
+        WebkitOverflowScrolling: 'touch',
+        backgroundImage: `url('https://web.whatsapp.com/img/bg-chat-tile-light_04fcacde539c58cca6745483d4858c52.png')`,
+        backgroundRepeat: 'repeat',
+        backgroundSize: '400px'
       }}
     >
-      <ChatMessageLoader 
-        isLoading={isLoading}
-        hasMoreMessages={hasMoreMessages}
-        loadMoreMessages={loadMoreMessages}
-      />
-      
-      <ChatMessageGroups
-        groupedMessages={groupedMessages}
-        msgMap={msgMap}
-        userId={userId}
-        onReplyClick={onReplyClick}
-      />
-      
-      <div ref={messagesEndRef} />
+      <div className="space-y-4 animate-fade-in">
+        <ChatMessageLoader 
+          isLoading={isLoading}
+          hasMoreMessages={hasMoreMessages}
+          loadMoreMessages={loadMoreMessages}
+        />
+        
+        <ChatMessageGroups
+          groupedMessages={groupedMessages}
+          msgMap={msgMap}
+          userId={userId}
+          onReplyClick={onReplyClick}
+        />
+        
+        <div ref={messagesEndRef} className="h-4" />
+      </div>
     </div>
   );
 };
