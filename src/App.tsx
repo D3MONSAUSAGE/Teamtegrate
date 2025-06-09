@@ -50,10 +50,17 @@ const App: React.FC = () => {
                 <Sonner />
                 <BrowserRouter>
                   <Routes>
-                    <Route path="/login" element={<LoginPage />} />
-                    <Route path="/auth/login" element={<Navigate to="/login" replace />} />
+                    {/* Public routes */}
                     <Route path="/" element={<Index />} />
+                    <Route path="/login" element={<LoginPage />} />
+                    
+                    {/* Legacy route redirects */}
+                    <Route path="/auth/login" element={<Navigate to="/login" replace />} />
+                    
+                    {/* App entry point - handles auth check and redirect */}
                     <Route path="/app" element={<AppEntry />} />
+                    
+                    {/* Protected dashboard routes */}
                     <Route path="/dashboard" element={<AppLayout />}>
                       <Route index element={<DashboardPage />} />
                       <Route path="tasks" element={<TasksPage />} />
@@ -72,6 +79,8 @@ const App: React.FC = () => {
                       <Route path="finance" element={<FinancePage />} />
                       <Route path="notebook" element={<NotebookPage />} />
                     </Route>
+                    
+                    {/* 404 fallback */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </BrowserRouter>

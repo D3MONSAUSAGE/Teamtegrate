@@ -24,7 +24,7 @@ const Index = () => {
 
   // If user is authenticated, redirect to app
   if (isAuthenticated && user) {
-    return <Navigate to="/app" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   // Show marketing landing page for non-authenticated users
