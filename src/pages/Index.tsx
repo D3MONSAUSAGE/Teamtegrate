@@ -1,14 +1,14 @@
 
 import React from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { Navigate } from 'react-router-dom';
+import LandingPage from './LandingPage';
 import { Loader2 } from 'lucide-react';
 
 const Index = () => {
   const { user, loading, isAuthenticated } = useAuth();
-  const location = useLocation();
 
-  console.log('Index page - Current path:', location.pathname, 'Loading:', loading, 'User:', !!user, 'IsAuthenticated:', isAuthenticated);
+  console.log('Index page - Loading:', loading, 'User:', !!user, 'IsAuthenticated:', isAuthenticated);
 
   // Show loading while auth is initializing
   if (loading) {
@@ -22,12 +22,13 @@ const Index = () => {
     );
   }
 
-  // Redirect based on authentication status
-  if (!isAuthenticated || !user) {
-    return <Navigate to="/login" replace />;
+  // If user is authenticated, redirect to app
+  if (isAuthenticated && user) {
+    return <Navigate to="/app" replace />;
   }
 
-  return <Navigate to="/dashboard" replace />;
+  // Show marketing landing page for non-authenticated users
+  return <LandingPage />;
 };
 
 export default Index;

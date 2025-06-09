@@ -20,6 +20,7 @@ import ReportsPage from "./pages/ReportsPage";
 import TimeTrackingPage from "./pages/TimeTrackingPage";
 import NotFound from "./pages/NotFound";
 import Index from "./pages/Index";
+import AppEntry from "./pages/AppEntry";
 import DocumentsPage from "./pages/DocumentsPage";
 import FinancePage from "./pages/FinancePage";
 import ChatPage from "./pages/ChatPage";
@@ -52,6 +53,7 @@ const App: React.FC = () => {
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/auth/login" element={<Navigate to="/login" replace />} />
                     <Route path="/" element={<Index />} />
+                    <Route path="/app" element={<AppEntry />} />
                     <Route path="/dashboard" element={<AppLayout />}>
                       <Route index element={<DashboardPage />} />
                       <Route path="tasks" element={<TasksPage />} />
