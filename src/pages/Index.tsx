@@ -9,6 +9,7 @@ const Index = () => {
   const { user, loading, isAuthenticated } = useAuth();
 
   console.log('Index page - Loading:', loading, 'User:', !!user, 'IsAuthenticated:', isAuthenticated);
+  console.log('Current URL:', window.location.href);
 
   // Show loading only briefly during auth initialization
   if (loading) {
@@ -22,12 +23,14 @@ const Index = () => {
     );
   }
 
-  // If user is authenticated, redirect to app
+  // If user is authenticated, redirect to dashboard
   if (isAuthenticated && user) {
+    console.log('User is authenticated, redirecting to dashboard');
     return <Navigate to="/dashboard" replace />;
   }
 
   // Show marketing landing page for non-authenticated users
+  console.log('Showing landing page for non-authenticated user');
   return <LandingPage />;
 };
 
