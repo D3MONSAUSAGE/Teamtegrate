@@ -2,7 +2,6 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDarkMode } from '@/hooks/useDarkMode';
-import { useAutoSidebar } from '@/hooks/useAutoSidebar';
 import SidebarHeader from './sidebar/SidebarHeader';
 import SidebarNav from './sidebar/SidebarNav';
 import SidebarFooter from './sidebar/SidebarFooter';
@@ -21,16 +20,48 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
   const { user } = useAuth();
   const { isDark, toggle } = useDarkMode();
-  const { state, isMobile, setOpenMobile } = useSidebar();
+  const { state, isMobile, setOpenMobile, setOpen, open } = useSidebar();
   
-  // Use auto-sidebar for desktop hover behavior
-  const {
-    isExpanded,
-    handleMouseEnter,
-    handleMouseLeave,
-    handleMobileToggle,
-    handleBackdropClick
-  } = useAutoSidebar();
+  // Auto-collapse logic for desktop
+  const [hoverTimeoutRef, setHoverTimeoutRef] = React.useState<NodeJS.Timeout | null>(null);
+
+  const handleMouseEnter = React.useCallback(() => {
+    if (!isMobile) {
+      // Clear any existing timeout
+      if (hoverTimeoutRef) {
+        clearTimeout(hoverTimeoutRef);
+        setHoverTimeoutRef(null);
+      }
+      // Expand sidebar on desktop
+      setOpen(true);
+    }
+  }, [isMobile, setOpen, hoverTimeoutRef]);
+
+  const handleMouseLeave = React.useCallback(() => {
+    if (!isMobile) {
+      // Clear any existing timeout
+      if (hoverTimeoutRef) {
+        clearTimeout(hoverTimeoutRef);
+      }
+      
+      // Set a new timeout to collapse after 300ms
+      const timeout = setTimeout(() => {
+        setOpen(false);
+        setHoverTimeoutRef(null);
+      }, 300);
+      
+      setHoverTimeoutRef(timeout);
+    }
+  }, [isMobile, setOpen, hoverTimeoutRef]);
+
+  // Clean up timeout on unmount
+  React.useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef) {
+        clearTimeout(hoverTimeoutRef);
+      }
+    };
+  }, [hoverTimeoutRef]);
 
   const handleNavigation = () => {
     // Close mobile sidebar when navigating
@@ -43,8 +74,8 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
   if (!user) return null;
 
   // For mobile, use the original shadcn behavior
-  // For desktop, use auto-collapse behavior
-  const isCollapsed = isMobile ? (state === 'collapsed') : !isExpanded;
+  // For desktop, use the open state from shadcn
+  const isCollapsed = isMobile ? (state === 'collapsed') : !open;
 
   return (
     <ShadcnSidebar 

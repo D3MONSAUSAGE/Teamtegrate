@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 
-// This hook is deprecated in favor of the shadcn sidebar system
+// This hook is deprecated - sidebar now uses shadcn's built-in state management
+// with custom hover handlers directly in the Sidebar component
 // Keeping for backward compatibility but recommend using useSidebar from @/components/ui/sidebar
 export const useAutoSidebar = () => {
   const [isExpanded, setIsExpanded] = useState(false);
