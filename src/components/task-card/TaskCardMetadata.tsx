@@ -38,20 +38,24 @@ const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({
   const hasSingleAssignee = assignedToName && !hasMultipleAssignees;
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2">
-        <Calendar className="h-3 w-3 text-muted-foreground" />
+    <div className="space-y-3">
+      <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-muted/30 to-muted/20 border border-border/30">
+        <div className="p-2 rounded-lg bg-primary/10">
+          <Calendar className="h-4 w-4 text-primary" />
+        </div>
         <span className={cn(
-          "text-xs font-medium",
+          "text-sm font-semibold",
           isOverdue ? "text-red-600 dark:text-red-400" : "text-foreground"
         )}>
           {formatDeadline(deadline)}
         </span>
       </div>
 
-      <div className="flex items-center gap-2">
-        <User className="h-3 w-3 text-muted-foreground" />
-        <div className="text-xs min-w-0 flex-1">
+      <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-muted/30 to-muted/20 border border-border/30">
+        <div className="p-2 rounded-lg bg-accent/10">
+          <User className="h-4 w-4 text-accent" />
+        </div>
+        <div className="text-sm min-w-0 flex-1">
           {hasMultipleAssignees ? (
             <TaskMultipleAssignees
               assignedToNames={assignedToNames}
@@ -59,11 +63,11 @@ const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({
               variant="card"
             />
           ) : hasSingleAssignee ? (
-            <Badge variant="outline" className="text-xs px-2 py-0.5">
+            <Badge variant="outline" className="text-sm px-3 py-1 bg-gradient-to-r from-secondary/50 to-secondary/30 border-border/50">
               {assignedToName}
             </Badge>
           ) : (
-            <span className="text-muted-foreground italic">Unassigned</span>
+            <span className="text-muted-foreground italic font-medium">Unassigned</span>
           )}
         </div>
       </div>

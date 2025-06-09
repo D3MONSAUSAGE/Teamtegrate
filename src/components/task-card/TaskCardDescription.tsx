@@ -12,42 +12,46 @@ const TaskCardDescription: React.FC<TaskCardDescriptionProps> = ({ description }
   // Handle empty descriptions
   if (!description || description.trim() === '') {
     return (
-      <div className="px-4 pb-2">
-        <p className="text-xs text-muted-foreground italic">No description provided</p>
+      <div className="py-3">
+        <p className="text-sm text-muted-foreground italic bg-gradient-to-r from-muted/20 to-muted/10 p-3 rounded-xl border border-border/30">
+          No description provided
+        </p>
       </div>
     );
   }
 
   // If the description is short, don't enable expansion
-  const isExpandable = description.length > 100;
+  const isExpandable = description.length > 120;
   const shouldShowExpansion = isExpandable && !expanded;
 
   return (
-    <div className="px-4 pb-2">
+    <div className="py-3">
       <div 
-        className="relative cursor-pointer"
+        className="relative cursor-pointer group"
         onClick={() => isExpandable && setExpanded(!expanded)}
       >
-        <p className={cn(
-          "text-xs text-muted-foreground leading-relaxed",
-          shouldShowExpansion ? "line-clamp-2" : ""
-        )}>
-          {description}
-        </p>
-        
-        {shouldShowExpansion && (
-          <div className="absolute bottom-0 right-0 bg-gradient-to-l from-background via-background to-transparent pl-2">
-            <span className="text-xs text-primary hover:text-primary/80 font-medium">
-              ...more
-            </span>
-          </div>
-        )}
-        
-        {expanded && isExpandable && (
-          <button className="text-xs text-primary hover:text-primary/80 mt-1 font-medium">
-            Show less
-          </button>
-        )}
+        <div className="bg-gradient-to-r from-muted/20 to-muted/10 p-4 rounded-xl border border-border/30 hover:border-border/50 transition-all duration-300">
+          <p className={cn(
+            "text-sm text-muted-foreground leading-relaxed",
+            shouldShowExpansion ? "line-clamp-3" : ""
+          )}>
+            {description}
+          </p>
+          
+          {shouldShowExpansion && (
+            <div className="absolute bottom-4 right-4 bg-gradient-to-l from-card via-card to-transparent pl-4">
+              <span className="text-sm text-primary hover:text-primary/80 font-semibold">
+                ...read more
+              </span>
+            </div>
+          )}
+          
+          {expanded && isExpandable && (
+            <button className="text-sm text-primary hover:text-primary/80 mt-2 font-semibold">
+              Show less
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

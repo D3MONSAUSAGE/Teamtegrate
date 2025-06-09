@@ -82,31 +82,42 @@ const TasksPage = () => {
   const sortedCompleted = sortTasks(completedTasks);
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto max-w-7xl px-4 py-6 space-y-8">
-        {/* Page Header */}
-        <TaskHeader 
-          onNewTask={() => {
-            setEditingTask(undefined);
-            setIsCreateTaskOpen(true);
-          }}
-          sortBy={sortBy}
-          onSortChange={setSortBy}
-        />
-        
-        {/* Main Content Area */}
-        <div className="bg-card border border-border rounded-xl shadow-sm">
-          <TaskTabs
-            todoTasks={sortedTodo}
-            inProgressTasks={sortedInProgress}
-            completedTasks={sortedCompleted}
-            onEdit={handleEditTask}
+    <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-accent/10 relative overflow-hidden">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-accent/5 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-secondary/3 rounded-full blur-3xl animate-pulse delay-500"></div>
+      </div>
+
+      <div className="container mx-auto max-w-7xl px-4 lg:px-6 py-8 space-y-10 relative z-10">
+        {/* Enhanced Page Header */}
+        <div className="animate-fade-in">
+          <TaskHeader 
             onNewTask={() => {
               setEditingTask(undefined);
               setIsCreateTaskOpen(true);
             }}
-            onStatusChange={handleStatusChange}
+            sortBy={sortBy}
+            onSortChange={setSortBy}
           />
+        </div>
+        
+        {/* Enhanced Main Content Area */}
+        <div className="animate-fade-in delay-200">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/40 rounded-3xl shadow-2xl shadow-primary/5 overflow-hidden">
+            <TaskTabs
+              todoTasks={sortedTodo}
+              inProgressTasks={sortedInProgress}
+              completedTasks={sortedCompleted}
+              onEdit={handleEditTask}
+              onNewTask={() => {
+                setEditingTask(undefined);
+                setIsCreateTaskOpen(true);
+              }}
+              onStatusChange={handleStatusChange}
+            />
+          </div>
         </div>
       </div>
       

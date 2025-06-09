@@ -30,13 +30,13 @@ const TaskCardFooter: React.FC<TaskCardFooterProps> = ({
   const getStatusColor = (status: TaskStatus) => {
     switch(status) {
       case 'To Do': 
-        return 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200';
+        return 'bg-gradient-to-r from-slate-500 to-slate-600 text-white shadow-lg shadow-slate-500/25';
       case 'In Progress': 
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-200';
+        return 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25';
       case 'Completed': 
-        return 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-200';
+        return 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg shadow-green-500/25';
       default: 
-        return 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200';
+        return 'bg-gradient-to-r from-slate-500 to-slate-600 text-white shadow-lg shadow-slate-500/25';
     }
   };
 
@@ -55,26 +55,26 @@ const TaskCardFooter: React.FC<TaskCardFooterProps> = ({
         value={status} 
         onValueChange={handleStatusChange}
       >
-        <SelectTrigger className="w-[130px] h-8 border-none bg-transparent p-0">
+        <SelectTrigger className="w-[140px] h-10 border-2 border-border/40 bg-card/80 backdrop-blur-sm rounded-xl hover:border-primary/40 transition-all duration-300">
           <SelectValue>
-            <Badge className={cn("px-2 py-1 text-xs border-none", getStatusColor(status))}>
+            <Badge className={cn("px-3 py-1.5 text-sm border-0 font-bold rounded-lg", getStatusColor(status))}>
               {status}
             </Badge>
           </SelectValue>
         </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="To Do">
-            <Badge className="bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border-none px-2 py-1 text-xs">
+        <SelectContent className="rounded-xl border-2 border-border/40 bg-card/95 backdrop-blur-xl shadow-2xl">
+          <SelectItem value="To Do" className="rounded-lg">
+            <Badge className="bg-gradient-to-r from-slate-500 to-slate-600 text-white border-0 px-3 py-1.5 text-sm font-bold">
               To Do
             </Badge>
           </SelectItem>
-          <SelectItem value="In Progress">
-            <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-200 border-none px-2 py-1 text-xs">
+          <SelectItem value="In Progress" className="rounded-lg">
+            <Badge className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0 px-3 py-1.5 text-sm font-bold">
               In Progress
             </Badge>
           </SelectItem>
-          <SelectItem value="Completed">
-            <Badge className="bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-200 border-none px-2 py-1 text-xs">
+          <SelectItem value="Completed" className="rounded-lg">
+            <Badge className="bg-gradient-to-r from-green-500 to-green-600 text-white border-0 px-3 py-1.5 text-sm font-bold">
               Completed
             </Badge>
           </SelectItem>
@@ -84,10 +84,10 @@ const TaskCardFooter: React.FC<TaskCardFooterProps> = ({
       {commentCount > 0 && (
         <button
           onClick={onShowComments}
-          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors duration-200 p-1 rounded"
+          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-all duration-300 p-2 rounded-lg hover:bg-primary/10 hover:scale-105"
         >
-          <MessageCircle className="h-3 w-3" />
-          <span>{commentCount}</span>
+          <MessageCircle className="h-4 w-4" />
+          <span className="font-semibold">{commentCount}</span>
         </button>
       )}
     </div>

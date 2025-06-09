@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Task, TaskStatus } from '@/types';
 import TaskCard from '@/components/task-card';
 import { Button } from "@/components/ui/button";
-import { Plus, Rocket } from 'lucide-react';
+import { Plus, Rocket, Sparkles } from 'lucide-react';
 import TaskDetailDrawer from './TaskDetailDrawer';
 
 interface TaskListProps {
@@ -35,20 +35,25 @@ const TaskList = ({ tasks, onEdit, onNewTask, onStatusChange, emptyMessage = "No
 
   if (tasks.length === 0) {
     return (
-      <div className="text-center py-16">
-        <div className="max-w-sm mx-auto">
-          <div className="w-16 h-16 mx-auto mb-4 bg-muted rounded-lg flex items-center justify-center">
-            <Rocket className="h-8 w-8 text-muted-foreground" />
+      <div className="text-center py-20">
+        <div className="max-w-md mx-auto">
+          <div className="relative mb-8">
+            <div className="w-24 h-24 mx-auto bg-gradient-to-br from-primary/10 to-accent/10 rounded-3xl flex items-center justify-center backdrop-blur-sm border border-border/30 shadow-xl">
+              <Rocket className="h-12 w-12 text-primary" />
+            </div>
+            <div className="absolute -top-2 -right-2">
+              <Sparkles className="h-6 w-6 text-accent animate-pulse" />
+            </div>
           </div>
-          <h3 className="text-lg font-semibold text-foreground mb-2">{emptyMessage}</h3>
-          <p className="text-muted-foreground mb-6">Create your first task to get started!</p>
+          <h3 className="text-2xl font-bold text-foreground mb-3">{emptyMessage}</h3>
+          <p className="text-muted-foreground mb-8 text-lg leading-relaxed">Ready to boost your productivity? Create your first task and start achieving your goals!</p>
           <Button 
             variant="outline" 
             onClick={onNewTask}
-            className="gap-2"
+            className="gap-3 h-12 px-6 rounded-2xl border-2 border-primary/30 bg-gradient-to-r from-primary/5 to-accent/5 hover:from-primary/10 hover:to-accent/10 hover:border-primary/50 hover:shadow-lg hover:scale-105 transition-all duration-300"
           >
-            <Plus className="h-4 w-4" /> 
-            Add Task
+            <Plus className="h-5 w-5" /> 
+            <span className="font-semibold">Create Task</span>
           </Button>
         </div>
       </div>
@@ -57,15 +62,20 @@ const TaskList = ({ tasks, onEdit, onNewTask, onStatusChange, emptyMessage = "No
 
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-1">
-        {tasks.map((task) => (
-          <TaskCard 
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 p-2">
+        {tasks.map((task, index) => (
+          <div 
             key={task.id}
-            task={task} 
-            onEdit={onEdit} 
-            onClick={() => handleOpenDetails(task)}
-            onStatusChange={handleStatusChange}
-          />
+            className="animate-fade-in"
+            style={{ animationDelay: `${index * 100}ms` }}
+          >
+            <TaskCard 
+              task={task} 
+              onEdit={onEdit} 
+              onClick={() => handleOpenDetails(task)}
+              onStatusChange={handleStatusChange}
+            />
+          </div>
         ))}
       </div>
       <TaskDetailDrawer
