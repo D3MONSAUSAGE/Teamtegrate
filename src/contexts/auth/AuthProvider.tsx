@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { AuthContextType } from './types';
+import { User as AppUser, UserRole } from '@/types';
 import { hasRoleAccess, canManageUser } from './roleUtils';
 import { useAuthSession } from './hooks/useAuthSession';
 import { useAuthOperations } from './hooks/useAuthOperations';
@@ -133,8 +134,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     logout,
     updateUserProfile,
     isAuthenticated: !!user && !!session,
-    hasRoleAccess: (requiredRole: any) => hasRoleAccess(user?.role, requiredRole),
-    canManageUser: (targetRole: any) => canManageUser(user?.role, targetRole),
+    hasRoleAccess: (requiredRole: UserRole) => hasRoleAccess(user?.role as UserRole, requiredRole),
+    canManageUser: (targetRole: UserRole) => canManageUser(user?.role as UserRole, targetRole),
     refreshUserSession,
   };
 

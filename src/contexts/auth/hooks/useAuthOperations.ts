@@ -1,13 +1,14 @@
 
 import { useState } from 'react';
 import { login as authLogin, signup as authSignup, logout as authLogout, updateUserProfile as updateProfile } from '../authOperations';
-import { User, Session } from '@supabase/supabase-js';
+import { User as SupabaseUser, Session } from '@supabase/supabase-js';
+import { User as AppUser, UserRole } from '@/types';
 
 export const useAuthOperations = (
   session: Session | null,
-  user: User | null,
+  user: AppUser | null,
   setSession: (session: Session | null) => void,
-  setUser: (user: User | null) => void,
+  setUser: (user: AppUser | null) => void,
   setLoading: (loading: boolean) => void
 ) => {
   const login = async (email: string, password: string) => {
@@ -20,7 +21,7 @@ export const useAuthOperations = (
     }
   };
 
-  const signup = async (email: string, password: string, name: string, role: any) => {
+  const signup = async (email: string, password: string, name: string, role: UserRole) => {
     setLoading(true);
     try {
       await authSignup(email, password, name, role);

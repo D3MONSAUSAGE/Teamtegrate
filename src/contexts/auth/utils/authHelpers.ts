@@ -1,13 +1,13 @@
 
-import { User } from '@supabase/supabase-js';
-import { User as AppUser } from '@/types';
+import { User as SupabaseUser } from '@supabase/supabase-js';
+import { User as AppUser, UserRole } from '@/types';
 
-export const createBasicUserFromSession = (sessionUser: User): AppUser => {
+export const createBasicUserFromSession = (sessionUser: SupabaseUser): AppUser => {
   return {
     id: sessionUser.id,
     email: sessionUser.email || '',
     name: sessionUser.user_metadata.name || sessionUser.email?.split('@')[0] || '',
-    role: (sessionUser.user_metadata.role as any) || 'user',
+    role: (sessionUser.user_metadata.role as UserRole) || 'user',
     createdAt: new Date(sessionUser.created_at),
   };
 };
