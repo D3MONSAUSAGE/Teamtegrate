@@ -1,9 +1,10 @@
 
 import React from "react";
 import { Badge } from "@/components/ui/badge";
-import { Calendar } from "lucide-react";
+import { Calendar, User } from "lucide-react";
 import { format, isToday, isTomorrow } from "date-fns";
 import TaskMultipleAssignees from "@/components/task/TaskMultipleAssignees";
+import { cn } from "@/lib/utils";
 
 interface TaskCardMetadataProps {
   deadline: Date;
@@ -37,18 +38,26 @@ const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({
   const hasSingleAssignee = assignedToName && !hasMultipleAssignees;
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-300">
-        <div className="flex items-center gap-1">
-          <Calendar className="h-3 w-3" />
-          <span className={isOverdue ? "text-red-600 font-medium" : ""}>
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 rounded-lg bg-muted/50">
+            <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+          </div>
+          <span className={cn(
+            "text-sm font-medium",
+            isOverdue ? "text-red-600 dark:text-red-400" : "text-foreground"
+          )}>
             {formatDeadline(deadline)}
           </span>
         </div>
       </div>
 
-      <div className="flex items-center justify-between">
-        <div className="text-xs">
+      <div className="flex items-center gap-2">
+        <div className="p-1.5 rounded-lg bg-muted/50">
+          <User className="h-3.5 w-3.5 text-muted-foreground" />
+        </div>
+        <div className="text-sm min-w-0 flex-1">
           {hasMultipleAssignees ? (
             <TaskMultipleAssignees
               assignedToNames={assignedToNames}
@@ -56,11 +65,11 @@ const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({
               variant="card"
             />
           ) : hasSingleAssignee ? (
-            <Badge variant="outline" className="text-xs px-2 py-1">
+            <Badge variant="outline" className="text-xs px-2 py-1 bg-background/50">
               {assignedToName}
             </Badge>
           ) : (
-            <span className="text-gray-500">Unassigned</span>
+            <span className="text-muted-foreground italic">Unassigned</span>
           )}
         </div>
       </div>

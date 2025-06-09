@@ -24,17 +24,17 @@ const TaskCardContent: React.FC<TaskCardContentProps> = ({
   const isOverdue = isTaskOverdue(task);
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col p-6">
       <TaskCardHeader
         title={task.title}
         priority={task.priority}
       />
       
-      <TaskCardDescription description={task.description} />
+      <div className="flex-1 min-h-0">
+        <TaskCardDescription description={task.description} />
+      </div>
       
-      <div className="flex-1" />
-      
-      <div className="px-4 pb-2">
+      <div className="mt-4 space-y-4">
         <TaskCardMetadata 
           deadline={task.deadline} 
           assignedToName={task.assignedToName}
@@ -43,9 +43,7 @@ const TaskCardContent: React.FC<TaskCardContentProps> = ({
           assignedToIds={task.assignedToIds}
           isOverdue={isOverdue}
         />
-      </div>
-      
-      <div className="px-4 pb-4">
+        
         <TaskCardFooter
           status={task.status}
           isOverdue={isOverdue}

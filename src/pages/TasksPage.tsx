@@ -82,8 +82,8 @@ const TasksPage = () => {
   const sortedCompleted = sortTasks(completedTasks);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background">
-      <div className="container mx-auto max-w-7xl px-4 md:px-6 py-6 space-y-8">
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
+      <div className="container mx-auto max-w-8xl px-3 md:px-6 lg:px-8 py-4 md:py-8 space-y-6 md:space-y-8">
         {/* Page Header */}
         <div className="animate-fade-in">
           <TaskHeader 
@@ -98,7 +98,7 @@ const TasksPage = () => {
         
         {/* Main Content Area */}
         <div className="animate-slide-up" style={{ animationDelay: '0.1s' }}>
-          <div className="modern-card backdrop-blur-xl bg-card/50 border border-border/50 rounded-2xl shadow-2xl overflow-hidden">
+          <div className="bg-card/30 backdrop-blur-xl border border-border/40 rounded-3xl shadow-xl overflow-hidden">
             <TaskTabs
               todoTasks={sortedTodo}
               inProgressTasks={sortedInProgress}

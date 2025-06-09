@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Filter, Plus, Sparkles } from 'lucide-react';
+import { Filter, Plus, Sparkles, Zap } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,43 +19,47 @@ interface TaskHeaderProps {
 
 const TaskHeader = ({ onNewTask, sortBy, onSortChange }: TaskHeaderProps) => {
   return (
-    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-      <div className="space-y-2">
+    <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 mb-8">
+      <div className="space-y-3">
         <div className="flex items-center gap-3">
-          <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
-            My Tasks
-          </h1>
-          <Sparkles className="h-6 w-6 text-primary animate-pulse" />
+          <div className="relative">
+            <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-foreground via-primary to-purple-600 bg-clip-text text-transparent">
+              My Tasks
+            </h1>
+            <div className="absolute -top-1 -right-1">
+              <Zap className="h-6 w-6 md:h-8 md:w-8 text-primary animate-pulse" />
+            </div>
+          </div>
         </div>
-        <p className="text-muted-foreground text-lg">
-          Organize and track your work efficiently
+        <p className="text-muted-foreground text-lg md:text-xl font-medium">
+          Organize and conquer your work with style
         </p>
       </div>
       
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-4">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button 
               variant="outline" 
-              size="default" 
-              className="gap-2 bg-background/50 backdrop-blur-sm border-border/50 hover:bg-background/80 transition-all duration-200"
+              size="lg" 
+              className="gap-3 h-12 px-6 bg-background/60 backdrop-blur-sm border-border/60 hover:bg-background/80 transition-all duration-300 shadow-lg hover:shadow-xl"
             >
               <Filter className="h-4 w-4" /> 
-              Sort by
+              <span className="font-medium">Sort by</span>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
+          <DropdownMenuContent align="end" className="w-56 bg-background/95 backdrop-blur-xl border-border/60">
             <DropdownMenuRadioGroup value={sortBy} onValueChange={onSortChange}>
-              <DropdownMenuRadioItem value="deadline" className="flex items-center gap-2">
+              <DropdownMenuRadioItem value="deadline" className="flex items-center gap-3 py-3">
                 <Calendar className="h-4 w-4" /> Deadline
               </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="upcoming" className="flex items-center gap-2">
+              <DropdownMenuRadioItem value="upcoming" className="flex items-center gap-3 py-3">
                 <Clock className="h-4 w-4" /> Upcoming
               </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="priority" className="flex items-center gap-2">
+              <DropdownMenuRadioItem value="priority" className="flex items-center gap-3 py-3">
                 <ListOrdered className="h-4 w-4" /> Priority
               </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="created" className="flex items-center gap-2">
+              <DropdownMenuRadioItem value="created" className="flex items-center gap-3 py-3">
                 <Clock className="h-4 w-4" /> Newest First
               </DropdownMenuRadioItem>
             </DropdownMenuRadioGroup>
@@ -64,9 +68,10 @@ const TaskHeader = ({ onNewTask, sortBy, onSortChange }: TaskHeaderProps) => {
         
         <Button 
           onClick={onNewTask}
-          className="interactive-button bg-gradient-to-r from-primary to-emerald-500 hover:from-emerald-600 hover:to-lime-500 shadow-lg px-6"
+          size="lg"
+          className="h-12 px-8 bg-gradient-to-r from-primary via-primary to-purple-600 hover:from-purple-600 hover:via-primary hover:to-emerald-500 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 font-semibold"
         >
-          <Plus className="h-4 w-4 mr-2" /> 
+          <Plus className="h-5 w-5 mr-2" /> 
           New Task
         </Button>
       </div>

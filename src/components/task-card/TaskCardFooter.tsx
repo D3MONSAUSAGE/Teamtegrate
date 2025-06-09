@@ -29,10 +29,14 @@ const TaskCardFooter: React.FC<TaskCardFooterProps> = ({
 }) => {
   const getStatusColor = (status: TaskStatus) => {
     switch(status) {
-      case 'To Do': return 'bg-slate-500 dark:bg-slate-600';
-      case 'In Progress': return 'bg-blue-500 dark:bg-blue-600';
-      case 'Completed': return 'bg-green-500 dark:bg-green-600';
-      default: return 'bg-slate-500 dark:bg-slate-600';
+      case 'To Do': 
+        return 'bg-gradient-to-r from-slate-500 to-slate-600 hover:from-slate-600 hover:to-slate-700 shadow-sm';
+      case 'In Progress': 
+        return 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-sm';
+      case 'Completed': 
+        return 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-sm';
+      default: 
+        return 'bg-gradient-to-r from-slate-500 to-slate-600 hover:from-slate-600 hover:to-slate-700 shadow-sm';
     }
   };
 
@@ -51,27 +55,39 @@ const TaskCardFooter: React.FC<TaskCardFooterProps> = ({
         value={status} 
         onValueChange={handleStatusChange}
       >
-        <SelectTrigger className="w-[140px] dark:bg-card">
+        <SelectTrigger className="w-[150px] h-9 bg-background/60 backdrop-blur-sm border-border/60 hover:bg-background/80 transition-all duration-200">
           <SelectValue>
-            <Badge className={cn("px-2 py-1", getStatusColor(status))}>
+            <Badge className={cn("px-3 py-1 text-white border-0", getStatusColor(status))}>
               {status}
             </Badge>
           </SelectValue>
         </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="To Do">To Do</SelectItem>
-          <SelectItem value="In Progress">In Progress</SelectItem>
-          <SelectItem value="Completed">Completed</SelectItem>
+        <SelectContent className="bg-background/95 backdrop-blur-xl border-border/60">
+          <SelectItem value="To Do" className="focus:bg-muted/80">
+            <Badge className="bg-gradient-to-r from-slate-500 to-slate-600 text-white border-0 px-3 py-1">
+              To Do
+            </Badge>
+          </SelectItem>
+          <SelectItem value="In Progress" className="focus:bg-muted/80">
+            <Badge className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0 px-3 py-1">
+              In Progress
+            </Badge>
+          </SelectItem>
+          <SelectItem value="Completed" className="focus:bg-muted/80">
+            <Badge className="bg-gradient-to-r from-green-500 to-green-600 text-white border-0 px-3 py-1">
+              Completed
+            </Badge>
+          </SelectItem>
         </SelectContent>
       </Select>
 
       {commentCount > 0 && (
         <button
           onClick={onShowComments}
-          className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors duration-200 p-2 rounded-lg hover:bg-muted/50"
         >
-          <MessageCircle className="h-3 w-3" />
-          {commentCount}
+          <MessageCircle className="h-4 w-4" />
+          <span className="font-medium">{commentCount}</span>
         </button>
       )}
     </div>

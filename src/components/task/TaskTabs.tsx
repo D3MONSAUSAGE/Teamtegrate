@@ -3,7 +3,7 @@ import React from "react";
 import { Task, TaskStatus } from "@/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TaskList from "./TaskList";
-import { CheckCircle2, Clock, AlertCircle } from "lucide-react";
+import { CheckCircle2, Clock, AlertCircle, Flame } from "lucide-react";
 
 interface TaskTabsProps {
   todoTasks: Task[];
@@ -23,48 +23,54 @@ const TaskTabs: React.FC<TaskTabsProps> = ({
   onStatusChange,
 }) => {
   return (
-    <div className="p-6 md:p-8">
+    <div className="p-6 md:p-10">
       <Tabs defaultValue="todo" className="w-full">
-        <TabsList className="grid grid-cols-3 mb-8 h-12 bg-muted/50 backdrop-blur-sm rounded-xl border border-border/50">
+        <TabsList className="grid grid-cols-3 mb-10 h-16 bg-muted/30 backdrop-blur-sm rounded-2xl border border-border/40 p-2">
           <TabsTrigger 
             value="todo" 
-            className="relative data-[state=active]:bg-background/80 data-[state=active]:shadow-md transition-all duration-200 rounded-lg"
+            className="relative data-[state=active]:bg-background/90 data-[state=active]:shadow-lg transition-all duration-300 rounded-xl h-12 font-semibold"
           >
-            <div className="flex items-center gap-2">
-              <AlertCircle className="h-4 w-4" />
-              <span className="font-medium">To Do</span>
+            <div className="flex items-center gap-3">
+              <div className="p-1.5 rounded-lg bg-blue-500/20">
+                <AlertCircle className="h-4 w-4 text-blue-600" />
+              </div>
+              <span className="font-semibold">To Do</span>
               {todoTasks.length > 0 && (
-                <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full min-w-[20px] h-5 flex items-center justify-center font-semibold">
+                <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs px-3 py-1.5 rounded-full min-w-[24px] h-6 flex items-center justify-center font-bold shadow-lg">
                   {todoTasks.length}
-                </span>
+                </div>
               )}
             </div>
           </TabsTrigger>
           <TabsTrigger 
             value="inprogress" 
-            className="relative data-[state=active]:bg-background/80 data-[state=active]:shadow-md transition-all duration-200 rounded-lg"
+            className="relative data-[state=active]:bg-background/90 data-[state=active]:shadow-lg transition-all duration-300 rounded-xl h-12 font-semibold"
           >
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4" />
-              <span className="font-medium">In Progress</span>
+            <div className="flex items-center gap-3">
+              <div className="p-1.5 rounded-lg bg-amber-500/20">
+                <Flame className="h-4 w-4 text-amber-600" />
+              </div>
+              <span className="font-semibold">In Progress</span>
               {inProgressTasks.length > 0 && (
-                <span className="bg-amber-500 text-white text-xs px-2 py-1 rounded-full min-w-[20px] h-5 flex items-center justify-center font-semibold">
+                <div className="bg-gradient-to-r from-amber-500 to-amber-600 text-white text-xs px-3 py-1.5 rounded-full min-w-[24px] h-6 flex items-center justify-center font-bold shadow-lg">
                   {inProgressTasks.length}
-                </span>
+                </div>
               )}
             </div>
           </TabsTrigger>
           <TabsTrigger 
             value="completed" 
-            className="relative data-[state=active]:bg-background/80 data-[state=active]:shadow-md transition-all duration-200 rounded-lg"
+            className="relative data-[state=active]:bg-background/90 data-[state=active]:shadow-lg transition-all duration-300 rounded-xl h-12 font-semibold"
           >
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4" />
-              <span className="font-medium">Completed</span>
+            <div className="flex items-center gap-3">
+              <div className="p-1.5 rounded-lg bg-green-500/20">
+                <CheckCircle2 className="h-4 w-4 text-green-600" />
+              </div>
+              <span className="font-semibold">Completed</span>
               {completedTasks.length > 0 && (
-                <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full min-w-[20px] h-5 flex items-center justify-center font-semibold">
+                <div className="bg-gradient-to-r from-green-500 to-green-600 text-white text-xs px-3 py-1.5 rounded-full min-w-[24px] h-6 flex items-center justify-center font-bold shadow-lg">
                   {completedTasks.length}
-                </span>
+                </div>
               )}
             </div>
           </TabsTrigger>
