@@ -24,77 +24,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const [authReady, setAuthReady] = useState(false);
 
-  // Force complete session reset
-  const forceSessionReset = async () => {
-    console.log('Force resetting all session data...');
-    setUser(null);
-    setSession(null);
-    
-    // Clear all possible auth data
-    localStorage.clear();
-    sessionStorage.clear();
-    
-    // Clear IndexedDB auth data if it exists
-    try {
-      if (window.indexedDB) {
-        const databases = await indexedDB.databases();
-        for (const db of databases) {
-          if (db.name?.includes('supabase')) {
-            indexedDB.deleteDatabase(db.name);
-          }
-        }
-      }
-    } catch (error) {
-      console.warn('Could not clear IndexedDB:', error);
-    }
-
-    // Sign out from Supabase to clear server session
-    try {
-      await supabase.auth.signOut();
-    } catch (error) {
-      console.warn('Error during signout:', error);
-    }
-  };
-
-  // Validate session health
-  const validateSessionHealth = async (session: Session | null): Promise<boolean> => {
-    if (!session) return false;
-    
-    try {
-      // Test if auth.uid() works by making a simple RPC call
-      const { data, error } = await supabase.rpc('get_user_role');
-      
-      if (error) {
-        console.error('Session validation failed:', error);
-        if (error.message.includes('JWT') || error.message.includes('auth')) {
-          await forceSessionReset();
-          return false;
-        }
-      }
-      
-      return !error;
-    } catch (error) {
-      console.error('Session health check failed:', error);
-      await forceSessionReset();
-      return false;
-    }
-  };
-
-  // Create user data from session
+  // Create user data from session - simplified version
   const handleUserCreation = async (session: Session | null) => {
     try {
       if (session?.user) {
         console.log('Creating user data for:', session.user.id);
-        
-        // Validate session first
-        const isHealthy = await validateSessionHealth(session);
-        if (!isHealthy) {
-          console.log('Session is not healthy, clearing data');
-          setUser(null);
-          setSession(null);
-          return;
-        }
-        
         const userData = await createUserFromSession(session);
         setUser(userData);
         console.log('User data created successfully:', userData.id, userData.role);
@@ -104,7 +38,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } catch (error) {
       console.error('Error creating user data:', error);
-      await forceSessionReset();
+      // Don't force reset on user creation errors, just clear user data
+      setUser(null);
     }
   };
 
@@ -122,10 +57,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (error) {
           console.error('Error getting initial session:', error);
-          if (error.message.includes('Invalid Refresh Token')) {
-            await forceSessionReset();
-          }
+          // Don't force reset for session errors, just continue
           if (mounted) {
+            setSession(null);
+            setUser(null);
             setLoading(false);
             setAuthReady(true);
           }
@@ -136,13 +71,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (mounted) {
           setSession(currentSession);
-          await handleUserCreation(currentSession);
+          if (currentSession) {
+            await handleUserCreation(currentSession);
+          }
           setAuthReady(true);
         }
       } catch (error) {
         console.error('Error in auth initialization:', error);
         if (mounted) {
-          await forceSessionReset();
+          setSession(null);
+          setUser(null);
           setAuthReady(true);
         }
       } finally {
@@ -190,15 +128,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const { session: newSession, user: userData } = await refreshSession();
       if (newSession && userData) {
-        const isHealthy = await validateSessionHealth(newSession);
-        if (isHealthy) {
-          setSession(newSession);
-          setUser(userData);
-        }
+        setSession(newSession);
+        setUser(userData);
       }
     } catch (error) {
       console.error('Error refreshing session:', error);
-      await forceSessionReset();
+      // Don't force reset on refresh errors
     }
   };
 
@@ -225,9 +160,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     try {
       await authLogout(!!session);
-      await forceSessionReset();
+      setSession(null);
+      setUser(null);
     } catch (error) {
-      await forceSessionReset();
+      // Still clear local state even if logout fails
+      setSession(null);
+      setUser(null);
       throw error;
     }
   };
