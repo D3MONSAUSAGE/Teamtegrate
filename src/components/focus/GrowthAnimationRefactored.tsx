@@ -21,7 +21,7 @@ const GrowthAnimationRefactored: React.FC<GrowthAnimationRefactoredProps> = ({
   const safeProgress = Math.max(0, Math.min(100, isNaN(progress) ? 0 : progress));
   const stage = getGrowthStage(safeProgress);
   const reducedMotion = shouldReduceMotion();
-  const isMilestone = MILESTONE_PERCENTAGES.includes(safeProgress);
+  const isMilestone = MILESTONE_PERCENTAGES.some(milestone => milestone === safeProgress);
 
   return (
     <Card className="p-6 glass-card overflow-hidden relative">
