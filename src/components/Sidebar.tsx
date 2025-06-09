@@ -20,7 +20,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
   const { user } = useAuth();
   const { isDark, toggle } = useDarkMode();
-  const { state, isMobile, setOpenMobile } = useSidebar();
+  const { state, isMobile, setOpenMobile, setOpen } = useSidebar();
 
   const handleNavigation = () => {
     // Close mobile sidebar when navigating
@@ -28,6 +28,20 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
       setOpenMobile(false);
     }
     onNavigation?.();
+  };
+
+  const handleMouseEnter = () => {
+    // Only expand on hover for desktop
+    if (!isMobile) {
+      setOpen(true);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    // Only collapse on hover leave for desktop
+    if (!isMobile) {
+      setOpen(false);
+    }
   };
 
   if (!user) return null;
@@ -39,6 +53,8 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
       className="glass-sidebar border-r border-sidebar-border/60 backdrop-blur-xl no-scrollbar overflow-hidden transition-all duration-300"
       collapsible="icon"
       variant="sidebar"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       <ShadcnSidebarHeader className="border-b border-sidebar-border/30">
         <SidebarHeader 
