@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Search, Calendar, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { format, isToday, isPast } from 'date-fns';
+import { format, isToday, isBefore, startOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 interface FocusTaskSelectorProps {
@@ -23,6 +23,12 @@ const FocusTaskSelector: React.FC<FocusTaskSelectorProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState<'all' | 'today' | 'high-priority' | 'overdue'>('all');
 
+  const isTaskOverdue = (deadline: string) => {
+    const taskDeadline = new Date(deadline);
+    const today = startOfDay(new Date());
+    return isBefore(taskDeadline, today);
+  };
+
   const filteredTasks = tasks.filter(task => {
     const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          task.description?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -35,7 +41,7 @@ const FocusTaskSelector: React.FC<FocusTaskSelectorProps> = ({
       case 'high-priority':
         return task.priority === 'High';
       case 'overdue':
-        return isPast(new Date(task.deadline));
+        return isTaskOverdue(task.deadline);
       default:
         return true;
     }
@@ -51,7 +57,7 @@ const FocusTaskSelector: React.FC<FocusTaskSelectorProps> = ({
   };
 
   const getTaskStatus = (task: Task) => {
-    if (isPast(new Date(task.deadline))) return 'overdue';
+    if (isTaskOverdue(task.deadline)) return 'overdue';
     if (isToday(new Date(task.deadline))) return 'today';
     return 'upcoming';
   };

@@ -16,13 +16,15 @@ const TimerProgress: React.FC<TimerProgressProps> = ({
   isPaused
 }) => {
   const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
+    const mins = Math.floor(Math.max(0, seconds) / 60);
+    const secs = Math.max(0, seconds) % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
   const circumference = 2 * Math.PI * 45; // radius = 45
-  const strokeDashoffset = circumference - (progress / 100) * circumference;
+  // Safeguard against invalid progress values
+  const safeProgress = Math.max(0, Math.min(100, isNaN(progress) ? 0 : progress));
+  const strokeDashoffset = circumference - (safeProgress / 100) * circumference;
 
   return (
     <div className="relative w-40 h-40 mx-auto mb-6">
@@ -61,7 +63,7 @@ const TimerProgress: React.FC<TimerProgressProps> = ({
             {formatTime(timeRemaining)}
           </div>
           <div className="text-xs text-muted-foreground">
-            {Math.round(progress)}% complete
+            {safeProgress}% complete
           </div>
         </div>
       </div>

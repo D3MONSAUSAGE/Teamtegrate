@@ -15,15 +15,17 @@ const GrowthAnimation: React.FC<GrowthAnimationProps> = ({
   isActive
 }) => {
   const getGrowthStage = (progress: number) => {
-    if (progress === 0) return 'seed';
-    if (progress < 25) return 'sprout';
-    if (progress < 50) return 'small';
-    if (progress < 75) return 'medium';
-    if (progress < 100) return 'large';
+    const safeProgress = Math.max(0, Math.min(100, isNaN(progress) ? 0 : progress));
+    if (safeProgress === 0) return 'seed';
+    if (safeProgress < 25) return 'sprout';
+    if (safeProgress < 50) return 'small';
+    if (safeProgress < 75) return 'medium';
+    if (safeProgress < 100) return 'large';
     return 'complete';
   };
 
   const stage = getGrowthStage(progress);
+  const safeProgress = Math.max(0, Math.min(100, isNaN(progress) ? 0 : progress));
 
   const TreeAnimation = () => (
     <div className="relative w-full h-80 overflow-hidden">
@@ -189,7 +191,7 @@ const GrowthAnimation: React.FC<GrowthAnimationProps> = ({
         {[...Array(5)].map((_, i) => {
           const heights = [16, 24, 32, 20, 12];
           const maxHeights = [16, 24, 32, 20, 12];
-          const currentHeight = Math.min(heights[i], (progress / 100) * maxHeights[i] + (i + 1) * 2);
+          const currentHeight = Math.min(heights[i], (safeProgress / 100) * maxHeights[i] + (i + 1) * 2);
           
           return (
             <div
@@ -245,7 +247,7 @@ const GrowthAnimation: React.FC<GrowthAnimationProps> = ({
       {renderAnimation()}
 
       <div className="mt-4 text-center">
-        <div className="text-2xl font-bold text-primary">{Math.round(progress)}%</div>
+        <div className="text-2xl font-bold text-primary">{safeProgress}%</div>
         <div className="text-sm text-muted-foreground capitalize">
           {stage === 'seed' && 'Ready to plant your focus'}
           {stage === 'sprout' && 'Beginning to grow'}

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useTask } from '@/contexts/task';
 import { Task } from '@/types';
@@ -40,9 +39,10 @@ const FocusZonePage = () => {
   };
 
   const handleSessionComplete = () => {
-    // Session completed logic
+    // Session completed logic - only reset the session, keep the selected task
     setFocusSession(null);
-    setSelectedTask(null);
+    // Don't reset selectedTask - let user start another session with the same task if they want
+    console.log('Focus session completed successfully!');
   };
 
   return (
