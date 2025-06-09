@@ -1,17 +1,16 @@
 
 import React from 'react';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { TreePine, Flower, Building2, Settings } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Clock, Palette, TreePine, Flower, Building, Waves, Rocket } from 'lucide-react';
 
 interface FocusSettingsProps {
   duration: number;
   onDurationChange: (duration: number) => void;
-  animationType: 'tree' | 'flower' | 'city';
-  onAnimationTypeChange: (type: 'tree' | 'flower' | 'city') => void;
+  animationType: 'forest' | 'garden' | 'city' | 'ocean' | 'space';
+  onAnimationTypeChange: (type: 'forest' | 'garden' | 'city' | 'ocean' | 'space') => void;
 }
 
 const FocusSettings: React.FC<FocusSettingsProps> = ({
@@ -20,105 +19,116 @@ const FocusSettings: React.FC<FocusSettingsProps> = ({
   animationType,
   onAnimationTypeChange
 }) => {
-  const presetDurations = [15, 25, 45, 60];
-
   const animationOptions = [
-    { type: 'tree' as const, icon: TreePine, label: 'Tree Growth', description: 'Watch a tree grow from seed to full bloom' },
-    { type: 'flower' as const, icon: Flower, label: 'Flower Bloom', description: 'See a beautiful flower blossom' },
-    { type: 'city' as const, icon: Building2, label: 'City Builder', description: 'Build a city skyline as you focus' }
+    { value: 'forest', label: 'Enchanted Forest', icon: TreePine, description: 'Watch trees grow in a magical forest' },
+    { value: 'garden', label: 'Blooming Garden', icon: Flower, description: 'Cultivate beautiful flowers' },
+    { value: 'city', label: 'Rising Metropolis', icon: Building, description: 'Build a thriving cityscape' },
+    { value: 'ocean', label: 'Ocean Depths', icon: Waves, description: 'Grow coral reefs underwater' },
+    { value: 'space', label: 'Cosmic Journey', icon: Rocket, description: 'Develop planets in space' }
   ];
 
+  const currentAnimation = animationOptions.find(opt => opt.value === animationType);
+
   return (
-    <Card className="p-4 md:p-6 glass-card">
-      <div className="flex items-center gap-2 mb-4 md:mb-6">
-        <Settings className="h-4 w-4 md:h-5 md:w-5 text-primary" />
-        <h3 className="text-base md:text-lg font-semibold">Focus Settings</h3>
-      </div>
-
-      {/* Duration Settings */}
-      <div className="mb-4 md:mb-6">
-        <Label className="text-sm font-medium mb-3 block">Focus Duration</Label>
-        
-        {/* Preset buttons */}
-        <div className="grid grid-cols-2 gap-2 mb-3 md:mb-4">
-          {presetDurations.map((preset) => (
-            <Button
-              key={preset}
-              variant={duration === preset ? "default" : "outline"}
-              size="sm"
-              onClick={() => onDurationChange(preset)}
-              className="text-xs h-8"
-            >
-              {preset} min
-            </Button>
-          ))}
+    <Card className="p-6 glass-card">
+      <div className="space-y-6">
+        <div className="text-center">
+          <h3 className="text-lg font-semibold mb-2">Focus Settings</h3>
+          <p className="text-sm text-muted-foreground">
+            Customize your focus experience
+          </p>
         </div>
 
-        {/* Custom slider */}
+        {/* Duration Setting */}
         <div className="space-y-3">
-          <div className="flex items-center justify-between text-sm">
-            <span>Custom Duration</span>
-            <span className="font-medium">{duration} minutes</span>
+          <div className="flex items-center gap-2">
+            <Clock className="h-4 w-4 text-primary" />
+            <Label className="text-sm font-medium">Focus Duration</Label>
           </div>
-          <Slider
-            value={[duration]}
-            onValueChange={(value) => onDurationChange(value[0])}
-            max={120}
-            min={5}
-            step={5}
-            className="w-full"
-          />
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>5 min</span>
-            <span>120 min</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Animation Type */}
-      <div>
-        <Label className="text-sm font-medium mb-3 block">Growth Animation</Label>
-        <div className="space-y-2">
-          {animationOptions.map(({ type, icon: Icon, label, description }) => (
-            <div
-              key={type}
-              onClick={() => onAnimationTypeChange(type)}
-              className={cn(
-                "p-3 rounded-lg border-2 cursor-pointer transition-all duration-200",
-                animationType === type
-                  ? "border-primary bg-primary/5"
-                  : "border-border/50 hover:border-primary/50 hover:bg-muted/50"
-              )}
-            >
-              <div className="flex items-start gap-3">
-                <div className={cn(
-                  "p-2 rounded-lg flex-shrink-0",
-                  animationType === type ? "bg-primary/20" : "bg-muted/20"
-                )}>
-                  <Icon className="h-4 w-4" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="font-medium text-sm">{label}</div>
-                  <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                    {description}
-                  </div>
-                </div>
-              </div>
+          
+          <div className="space-y-2">
+            <Slider
+              value={[duration]}
+              onValueChange={(value) => onDurationChange(value[0])}
+              max={120}
+              min={5}
+              step={5}
+              className="w-full"
+            />
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>5 min</span>
+              <span className="font-medium text-primary">{duration} minutes</span>
+              <span>2 hours</span>
             </div>
-          ))}
+          </div>
         </div>
-      </div>
 
-      {/* Tips */}
-      <div className="mt-4 md:mt-6 p-3 rounded-lg bg-muted/30 border border-border/50">
-        <div className="text-xs text-muted-foreground">
-          <p className="font-medium mb-1">💡 Focus Tips:</p>
-          <ul className="space-y-1 text-xs">
-            <li>• Start with shorter sessions (15-25 min)</li>
-            <li>• Take 5-minute breaks between sessions</li>
-            <li>• Find a quiet environment</li>
-            <li>• Turn off notifications</li>
-          </ul>
+        {/* Animation Theme Setting */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Palette className="h-4 w-4 text-primary" />
+            <Label className="text-sm font-medium">Growth Theme</Label>
+          </div>
+          
+          <Select value={animationType} onValueChange={onAnimationTypeChange}>
+            <SelectTrigger className="w-full">
+              <SelectValue>
+                <div className="flex items-center gap-2">
+                  {currentAnimation && (
+                    <>
+                      <currentAnimation.icon className="h-4 w-4" />
+                      <span>{currentAnimation.label}</span>
+                    </>
+                  )}
+                </div>
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {animationOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  <div className="flex items-start gap-3 py-1">
+                    <option.icon className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <div className="font-medium">{option.label}</div>
+                      <div className="text-xs text-muted-foreground">{option.description}</div>
+                    </div>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Quick Duration Presets */}
+        <div className="space-y-3">
+          <Label className="text-sm font-medium">Quick Presets</Label>
+          <div className="grid grid-cols-4 gap-2">
+            {[15, 25, 45, 60].map((preset) => (
+              <button
+                key={preset}
+                onClick={() => onDurationChange(preset)}
+                className={`px-3 py-2 text-xs rounded-lg border transition-colors ${
+                  duration === preset
+                    ? 'bg-primary text-primary-foreground border-primary'
+                    : 'bg-background text-foreground border-border hover:bg-muted'
+                }`}
+              >
+                {preset}m
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Current Selection Summary */}
+        <div className="p-3 rounded-lg bg-muted/50 border border-border/50">
+          <div className="text-xs text-muted-foreground mb-1">Current Selection:</div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {currentAnimation && <currentAnimation.icon className="h-3 w-3" />}
+              <span className="text-sm font-medium">{currentAnimation?.label}</span>
+            </div>
+            <span className="text-sm font-medium text-primary">{duration} min</span>
+          </div>
         </div>
       </div>
     </Card>

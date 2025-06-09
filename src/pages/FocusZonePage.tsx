@@ -1,9 +1,10 @@
+
 import React, { useState } from 'react';
 import { useTask } from '@/contexts/task';
 import { Task } from '@/types';
 import FocusTaskSelector from '@/components/focus/FocusTaskSelector';
 import FocusTimer from '@/components/focus/FocusTimer';
-import GrowthAnimation from '@/components/focus/GrowthAnimation';
+import EnhancedGrowthAnimation from '@/components/focus/EnhancedGrowthAnimation';
 import FocusSettings from '@/components/focus/FocusSettings';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -24,7 +25,8 @@ const FocusZonePage = () => {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [focusSession, setFocusSession] = useState<FocusSession | null>(null);
   const [focusDuration, setFocusDuration] = useState(25); // Default 25 minutes
-  const [animationType, setAnimationType] = useState<'tree' | 'flower' | 'city'>('tree');
+  const [animationType, setAnimationType] = useState<'forest' | 'garden' | 'city' | 'ocean' | 'space'>('forest');
+  const [timeOfDay, setTimeOfDay] = useState<'morning' | 'noon' | 'evening' | 'night'>('noon');
 
   const availableTasks = tasks.filter(task => 
     task.status !== 'Completed'
@@ -45,6 +47,15 @@ const FocusZonePage = () => {
     console.log('Focus session completed successfully!');
   };
 
+  // Auto-cycle time of day based on real time (optional enhancement)
+  React.useEffect(() => {
+    const hour = new Date().getHours();
+    if (hour >= 6 && hour < 12) setTimeOfDay('morning');
+    else if (hour >= 12 && hour < 17) setTimeOfDay('noon');
+    else if (hour >= 17 && hour < 21) setTimeOfDay('evening');
+    else setTimeOfDay('night');
+  }, []);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30 p-3 md:p-4 lg:p-6">
       {/* Header */}
@@ -58,7 +69,7 @@ const FocusZonePage = () => {
           </h1>
         </div>
         <p className="text-muted-foreground text-xs md:text-sm lg:text-base">
-          Select a task, set your timer, and watch your progress grow as you focus.
+          Select a task, set your timer, and watch your world grow as you focus.
         </p>
       </div>
 
@@ -70,10 +81,11 @@ const FocusZonePage = () => {
           onSessionUpdate={handleTimerUpdate}
           onSessionComplete={handleSessionComplete}
         />
-        <GrowthAnimation
+        <EnhancedGrowthAnimation
           progress={focusSession?.progress || 0}
           animationType={animationType}
           isActive={focusSession?.isActive || false}
+          timeOfDay={timeOfDay}
         />
       </div>
 
