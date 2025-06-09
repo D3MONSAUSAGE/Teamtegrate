@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Task } from '@/types';
 import { FocusSession } from '@/pages/FocusZonePage';
 import { Card } from '@/components/ui/card';
@@ -23,44 +22,93 @@ const FocusTimer: React.FC<FocusTimerProps> = ({
   const [timeRemaining, setTimeRemaining] = useState(duration * 60); // in seconds
   const [isActive, setIsActive] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const lastTickRef = useRef<number>(Date.now());
 
   const totalSeconds = duration * 60;
-  const progress = ((totalSeconds - timeRemaining) / totalSeconds) * 100;
+  const progress = Math.max(0, Math.min(100, ((totalSeconds - timeRemaining) / totalSeconds) * 100));
 
+  // Clear interval helper
+  const clearTimerInterval = useCallback(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  }, []);
+
+  // Reset timer state
+  const resetTimerState = useCallback(() => {
+    setIsActive(false);
+    setIsPaused(false);
+    setTimeRemaining(duration * 60);
+    setSessionId(null);
+    clearTimerInterval();
+  }, [duration, clearTimerInterval]);
+
+  // Handle session completion
+  const handleComplete = useCallback(() => {
+    clearTimerInterval();
+    setIsActive(false);
+    setIsPaused(false);
+    setTimeRemaining(0);
+    onSessionComplete();
+  }, [clearTimerInterval, onSessionComplete]);
+
+  // Timer tick function with better accuracy
+  const tick = useCallback(() => {
+    const now = Date.now();
+    const deltaTime = Math.round((now - lastTickRef.current) / 1000);
+    lastTickRef.current = now;
+
+    setTimeRemaining((prev) => {
+      const newTime = Math.max(0, prev - deltaTime);
+      if (newTime <= 0) {
+        // Use setTimeout to prevent calling handleComplete during render
+        setTimeout(handleComplete, 0);
+        return 0;
+      }
+      return newTime;
+    });
+  }, [handleComplete]);
+
+  // Timer effect
   useEffect(() => {
     if (isActive && !isPaused && timeRemaining > 0) {
-      intervalRef.current = setInterval(() => {
-        setTimeRemaining((prev) => {
-          if (prev <= 1) {
-            handleComplete();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+      lastTickRef.current = Date.now();
+      intervalRef.current = setInterval(tick, 1000);
     } else {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
+      clearTimerInterval();
     }
 
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, [isActive, isPaused, timeRemaining]);
+    return clearTimerInterval;
+  }, [isActive, isPaused, timeRemaining, tick, clearTimerInterval]);
 
+  // Handle duration changes
   useEffect(() => {
-    setTimeRemaining(duration * 60);
-  }, [duration]);
+    // Only reset if timer is not active or if task changed
+    if (!isActive || !selectedTask) {
+      setTimeRemaining(duration * 60);
+    }
+    // If timer is active and duration changed, ask user what to do
+    // For now, we'll keep the current session running
+  }, [duration, isActive, selectedTask]);
 
+  // Reset when task changes
   useEffect(() => {
-    if (selectedTask) {
+    if (!selectedTask) {
+      resetTimerState();
+    } else if (selectedTask && !sessionId) {
+      // New task selected, reset timer
+      resetTimerState();
+    }
+  }, [selectedTask, sessionId, resetTimerState]);
+
+  // Update parent with session state
+  useEffect(() => {
+    if (selectedTask && sessionId) {
       const session: FocusSession = {
-        id: `${selectedTask.id}-${Date.now()}`,
+        id: sessionId,
         taskId: selectedTask.id,
         duration: duration * 60,
         timeRemaining,
@@ -70,12 +118,23 @@ const FocusTimer: React.FC<FocusTimerProps> = ({
       };
       onSessionUpdate(session);
     }
-  }, [selectedTask, timeRemaining, isActive, isPaused, progress, duration, onSessionUpdate]);
+  }, [selectedTask, sessionId, timeRemaining, isActive, isPaused, progress, duration, onSessionUpdate]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      clearTimerInterval();
+    };
+  }, [clearTimerInterval]);
 
   const handleStart = () => {
     if (!selectedTask) return;
+    
+    const newSessionId = `${selectedTask.id}-${Date.now()}`;
+    setSessionId(newSessionId);
     setIsActive(true);
     setIsPaused(false);
+    lastTickRef.current = Date.now();
   };
 
   const handlePause = () => {
@@ -84,24 +143,19 @@ const FocusTimer: React.FC<FocusTimerProps> = ({
 
   const handleResume = () => {
     setIsPaused(false);
+    lastTickRef.current = Date.now();
   };
 
   const handleStop = () => {
+    clearTimerInterval();
     setIsActive(false);
     setIsPaused(false);
     setTimeRemaining(duration * 60);
+    setSessionId(null);
   };
 
   const handleReset = () => {
-    setIsActive(false);
-    setIsPaused(false);
-    setTimeRemaining(duration * 60);
-  };
-
-  const handleComplete = () => {
-    setIsActive(false);
-    setIsPaused(false);
-    onSessionComplete();
+    resetTimerState();
   };
 
   const formatTime = (seconds: number) => {
@@ -112,6 +166,16 @@ const FocusTimer: React.FC<FocusTimerProps> = ({
 
   const circumference = 2 * Math.PI * 45; // radius = 45
   const strokeDashoffset = circumference - (progress / 100) * circumference;
+
+  const getStatusMessage = () => {
+    if (!selectedTask) return "";
+    if (timeRemaining === 0) return "Great job! Focus session completed.";
+    if (isActive && !isPaused) return "Stay focused! You're doing great.";
+    if (isPaused) return "Timer paused. Take a breath and resume when ready.";
+    if (!isActive && timeRemaining === duration * 60) return "Ready to start your focus session?";
+    if (!isActive && timeRemaining < duration * 60 && timeRemaining > 0) return "Session stopped. Reset to start fresh.";
+    return "";
+  };
 
   return (
     <Card className="p-6 glass-card">
@@ -176,6 +240,7 @@ const FocusTimer: React.FC<FocusTimerProps> = ({
                   onClick={handleStart}
                   size="lg"
                   className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+                  disabled={timeRemaining === 0}
                 >
                   <Play className="h-5 w-5 mr-2" />
                   Start Focus
@@ -199,7 +264,12 @@ const FocusTimer: React.FC<FocusTimerProps> = ({
                 </Button>
               )}
 
-              <Button onClick={handleReset} variant="ghost" size="lg">
+              <Button 
+                onClick={handleReset} 
+                variant="ghost" 
+                size="lg"
+                disabled={isActive && !isPaused}
+              >
                 <RotateCcw className="h-5 w-5 mr-2" />
                 Reset
               </Button>
@@ -208,11 +278,7 @@ const FocusTimer: React.FC<FocusTimerProps> = ({
             {/* Status */}
             <div className="mt-4">
               <p className="text-sm text-muted-foreground">
-                {isActive && !isPaused && "Stay focused! You're doing great."}
-                {isPaused && "Timer paused. Take a breath and resume when ready."}
-                {!isActive && timeRemaining === duration * 60 && "Ready to start your focus session?"}
-                {!isActive && timeRemaining < duration * 60 && timeRemaining > 0 && "Session stopped. Reset to start fresh."}
-                {timeRemaining === 0 && "Great job! Focus session completed."}
+                {getStatusMessage()}
               </p>
             </div>
           </>
