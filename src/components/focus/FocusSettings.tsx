@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { Trees, Flower, Building2, Settings } from 'lucide-react';
+import { TreePine, Flower, Building2, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface FocusSettingsProps {
@@ -23,31 +23,31 @@ const FocusSettings: React.FC<FocusSettingsProps> = ({
   const presetDurations = [15, 25, 45, 60];
 
   const animationOptions = [
-    { type: 'tree' as const, icon: Trees, label: 'Tree Growth', description: 'Watch a tree grow from seed to full bloom' },
+    { type: 'tree' as const, icon: TreePine, label: 'Tree Growth', description: 'Watch a tree grow from seed to full bloom' },
     { type: 'flower' as const, icon: Flower, label: 'Flower Bloom', description: 'See a beautiful flower blossom' },
     { type: 'city' as const, icon: Building2, label: 'City Builder', description: 'Build a city skyline as you focus' }
   ];
 
   return (
-    <Card className="p-6 glass-card">
-      <div className="flex items-center gap-2 mb-6">
-        <Settings className="h-5 w-5 text-primary" />
-        <h3 className="text-lg font-semibold">Focus Settings</h3>
+    <Card className="p-4 md:p-6 glass-card">
+      <div className="flex items-center gap-2 mb-4 md:mb-6">
+        <Settings className="h-4 w-4 md:h-5 md:w-5 text-primary" />
+        <h3 className="text-base md:text-lg font-semibold">Focus Settings</h3>
       </div>
 
       {/* Duration Settings */}
-      <div className="mb-6">
+      <div className="mb-4 md:mb-6">
         <Label className="text-sm font-medium mb-3 block">Focus Duration</Label>
         
         {/* Preset buttons */}
-        <div className="grid grid-cols-2 gap-2 mb-4">
+        <div className="grid grid-cols-2 gap-2 mb-3 md:mb-4">
           {presetDurations.map((preset) => (
             <Button
               key={preset}
               variant={duration === preset ? "default" : "outline"}
               size="sm"
               onClick={() => onDurationChange(preset)}
-              className="text-xs"
+              className="text-xs h-8"
             >
               {preset} min
             </Button>
@@ -99,7 +99,7 @@ const FocusSettings: React.FC<FocusSettingsProps> = ({
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="font-medium text-sm">{label}</div>
-                  <div className="text-xs text-muted-foreground mt-1">
+                  <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
                     {description}
                   </div>
                 </div>
@@ -110,7 +110,7 @@ const FocusSettings: React.FC<FocusSettingsProps> = ({
       </div>
 
       {/* Tips */}
-      <div className="mt-6 p-3 rounded-lg bg-muted/30 border border-border/50">
+      <div className="mt-4 md:mt-6 p-3 rounded-lg bg-muted/30 border border-border/50">
         <div className="text-xs text-muted-foreground">
           <p className="font-medium mb-1">💡 Focus Tips:</p>
           <ul className="space-y-1 text-xs">
