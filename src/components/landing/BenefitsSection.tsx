@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { CheckCircle, TrendingUp, Users, Clock, Shield, Zap } from 'lucide-react';
 import SectionContainer from '@/components/shared/SectionContainer';
@@ -14,7 +13,7 @@ const BenefitsSection: React.FC = () => {
           <span className="text-sm font-medium text-secondary-foreground">🚀 Benefits</span>
         </div>
         <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4">
-          Why Teams Choose TeamTegrate
+          Why Teams Choose Teamtegrate
         </h2>
         <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
           Join thousands of teams already transforming their productivity

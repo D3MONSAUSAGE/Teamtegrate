@@ -1,8 +1,8 @@
 
 export const BRAND_CONFIG = {
-  name: "TeamTegrate",
+  name: "Teamtegrate",
   tagline: "Team Collaboration Platform",
-  description: "Transform your team's productivity with TeamTegrate - the all-in-one team management platform that streamlines collaboration and boosts efficiency",
+  description: "Transform your team's productivity with Teamtegrate - the all-in-one team management platform that streamlines collaboration and boosts efficiency",
   logo: {
     text: "T",
     bgColor: "bg-primary",

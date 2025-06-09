@@ -25,7 +25,7 @@ const SidebarHeader: React.FC<SidebarHeaderProps> = ({
       {!isCollapsed && (
         <div className="transition-opacity duration-300">
           <h2 className="text-lg font-bold tracking-wide text-primary">
-            TeamTegrate
+            Teamtegrate
           </h2>
           <p className="text-sm text-muted-foreground">Manage your tasks & projects</p>
         </div>

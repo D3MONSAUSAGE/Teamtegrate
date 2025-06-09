@@ -16,7 +16,7 @@ const TestimonialsSection: React.FC = () => {
           Loved by Teams Worldwide
         </h2>
         <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
-          See what our customers have to say about TeamTegrate
+          See what our customers have to say about Teamtegrate
         </p>
       </div>
 

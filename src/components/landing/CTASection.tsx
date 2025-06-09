@@ -26,7 +26,7 @@ const CTASection: React.FC = () => {
         </h2>
         
         <p className="text-lg md:text-xl text-primary-foreground/90 mb-8 max-w-3xl mx-auto leading-relaxed">
-          Join thousands of teams already using TeamTegrate to boost productivity and streamline collaboration.
+          Join thousands of teams already using Teamtegrate to boost productivity and streamline collaboration.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
@@ -61,7 +61,7 @@ const CTASection: React.FC = () => {
         {/* Social proof */}
         <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
           <p className="text-primary-foreground/90 mb-4">
-            "Switching to TeamTegrate was the best decision we made for our team. 
+            "Switching to Teamtegrate was the best decision we made for our team. 
             Our productivity increased by 40% in just the first month!"
           </p>
           <div className="flex items-center justify-center">

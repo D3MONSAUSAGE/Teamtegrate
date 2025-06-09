@@ -57,7 +57,7 @@ export const testimonials = [
     name: "Sarah Johnson",
     role: "Project Manager",
     company: "TechCorp",
-    content: "TeamTegrate transformed how our team collaborates. We've never been more organized and productive.",
+    content: "Teamtegrate transformed how our team collaborates. We've never been more organized and productive.",
     rating: 5
   },
   {
