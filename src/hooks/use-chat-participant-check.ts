@@ -27,7 +27,7 @@ export function useChatParticipantCheck(roomId: string): ParticipantCheckResult 
         setIsLoading(true);
         setError(null);
 
-        // Superadmins and admins have automatic access to all rooms
+        // Admins have automatic access to all rooms
         if (hasRoleAccess(user.role as any, 'admin')) {
           console.log('useChatParticipantCheck: User is admin+, granting access');
           setIsParticipant(true);
@@ -35,20 +35,24 @@ export function useChatParticipantCheck(roomId: string): ParticipantCheckResult 
           return;
         }
 
-        // Simple query - RLS policies will handle access control
-        const { data, error: checkError } = await supabase
-          .from('chat_room_participants')
+        // Check if user is room creator OR participant - RLS will handle the filtering
+        const { data: roomData, error: roomError } = await supabase
+          .from('chat_rooms')
           .select('id')
-          .eq('room_id', roomId)
-          .eq('user_id', user.id)
+          .eq('id', roomId)
           .single();
 
-        if (checkError && checkError.code !== 'PGRST116') {
-          // PGRST116 means no rows found, which is expected if not a participant
-          throw checkError;
+        if (roomError) {
+          // If we can't see the room, we're not a participant
+          if (roomError.code === 'PGRST116') {
+            setIsParticipant(false);
+          } else {
+            throw roomError;
+          }
+        } else {
+          // If we can see the room, we have access (creator or participant)
+          setIsParticipant(true);
         }
-
-        setIsParticipant(!!data);
       } catch (err: any) {
         console.error('Error checking participant status:', err);
         setError(err.message || 'Failed to verify room access');

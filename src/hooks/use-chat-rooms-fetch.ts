@@ -38,7 +38,7 @@ export function useChatRoomsFetch({ setRooms, setIsLoading, setError }: UseChatR
     try {
       console.log('ChatRooms: Fetching rooms for user:', user.id, 'role:', user.role);
       
-      // Simple query - RLS policies will handle access control
+      // RLS policies will automatically filter to only rooms the user can access
       const { data, error } = await supabase
         .from('chat_rooms')
         .select('*')
@@ -52,13 +52,11 @@ export function useChatRoomsFetch({ setRooms, setIsLoading, setError }: UseChatR
       debug.logQueryResult(data, null);
       console.log('ChatRooms: Successfully fetched rooms:', data?.length || 0);
 
+      setRooms(data || []);
+      
       if (!data || data.length === 0) {
-        setRooms([]);
         setError('No chat rooms found. You may need to create one or be added to existing rooms.');
-        return;
       }
-
-      setRooms(data);
       
     } catch (error: any) {
       console.error('Error fetching rooms:', error);
