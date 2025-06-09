@@ -3,6 +3,8 @@ import React from 'react';
 import TreeAnimation from './TreeAnimation';
 import FlowerAnimation from './FlowerAnimation';
 import CityAnimationSimple from './CityAnimationSimple';
+import { shouldReduceMotion } from './AnimationUtils';
+import './AnimationStyles.css';
 
 interface AnimationControllerProps {
   progress: number;
@@ -15,18 +17,29 @@ const AnimationController: React.FC<AnimationControllerProps> = ({
   animationType,
   isActive
 }) => {
+  const reducedMotion = shouldReduceMotion();
+
   const renderAnimation = () => {
+    const commonProps = {
+      progress,
+      isActive: isActive && !reducedMotion
+    };
+
     switch (animationType) {
       case 'flower':
-        return <FlowerAnimation progress={progress} isActive={isActive} />;
+        return <FlowerAnimation {...commonProps} />;
       case 'city':
-        return <CityAnimationSimple progress={progress} isActive={isActive} />;
+        return <CityAnimationSimple {...commonProps} />;
       default:
-        return <TreeAnimation progress={progress} isActive={isActive} />;
+        return <TreeAnimation {...commonProps} />;
     }
   };
 
-  return renderAnimation();
+  return (
+    <div className="gpu-accelerated">
+      {renderAnimation()}
+    </div>
+  );
 };
 
 export default AnimationController;
