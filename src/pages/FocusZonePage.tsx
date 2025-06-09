@@ -28,7 +28,7 @@ const FocusZonePage = () => {
   const [animationType, setAnimationType] = useState<'tree' | 'flower' | 'city'>('tree');
 
   const availableTasks = tasks.filter(task => 
-    task.status !== 'Completed' && task.status !== 'Done'
+    task.status !== 'Completed' && task.status !== 'Done' && task.status !== 'Complete'
   );
 
   const handleTaskSelect = (task: Task) => {

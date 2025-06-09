@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { Tree, Flower, Building2, Settings } from 'lucide-react';
+import { Trees, Flower, Building2, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface FocusSettingsProps {
@@ -23,7 +23,7 @@ const FocusSettings: React.FC<FocusSettingsProps> = ({
   const presetDurations = [15, 25, 45, 60];
 
   const animationOptions = [
-    { type: 'tree' as const, icon: Tree, label: 'Tree Growth', description: 'Watch a tree grow from seed to full bloom' },
+    { type: 'tree' as const, icon: Trees, label: 'Tree Growth', description: 'Watch a tree grow from seed to full bloom' },
     { type: 'flower' as const, icon: Flower, label: 'Flower Bloom', description: 'See a beautiful flower blossom' },
     { type: 'city' as const, icon: Building2, label: 'City Builder', description: 'Build a city skyline as you focus' }
   ];
