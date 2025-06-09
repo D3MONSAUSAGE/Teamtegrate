@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -63,68 +62,66 @@ const GrowthAnimation: React.FC<GrowthAnimationProps> = ({
         <div className="absolute bottom-0 w-full h-8 bg-gradient-to-r from-green-200/30 to-green-300/30 rounded-lg" />
         
         {/* Tree Container */}
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
-          {/* Trunk - grows smoothly with progress */}
+        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex flex-col items-center">
+          {/* Leaves/Crown - now at the top */}
+          {stage !== 'seed' && (
+            <div className="relative mb-2">
+              {/* Main crown */}
+              <div 
+                className={getAnimationClass(
+                  "bg-gradient-to-b from-green-400 to-green-600 rounded-full"
+                )}
+                style={{
+                  width: `${getCrownSize(safeProgress)}px`,
+                  height: `${getCrownSize(safeProgress)}px`
+                }}
+              />
+              
+              {/* Side branches for larger stages */}
+              {safeProgress >= 25 && (
+                <>
+                  <div 
+                    className={getAnimationClass(
+                      "absolute top-1 -left-2 bg-gradient-to-b from-green-400 to-green-600 rounded-full"
+                    )}
+                    style={{
+                      width: `${getSideBranchSize(safeProgress)}px`,
+                      height: `${getSideBranchSize(safeProgress)}px`
+                    }}
+                  />
+                  <div 
+                    className={getAnimationClass(
+                      "absolute top-1 -right-2 bg-gradient-to-b from-green-400 to-green-600 rounded-full"
+                    )}
+                    style={{
+                      width: `${getSideBranchSize(safeProgress)}px`,
+                      height: `${getSideBranchSize(safeProgress)}px`
+                    }}
+                  />
+                </>
+              )}
+              
+              {/* Flowers for complete stage */}
+              {stage === 'complete' && (
+                <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 animate-bounce">
+                  <div className="flex gap-1">
+                    <div className="w-2 h-2 bg-pink-400 rounded-full" style={{ animationDelay: '0s' }} />
+                    <div className="w-2 h-2 bg-purple-400 rounded-full" style={{ animationDelay: '0.2s' }} />
+                    <div className="w-2 h-2 bg-yellow-400 rounded-full" style={{ animationDelay: '0.4s' }} />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* Trunk - now at the bottom */}
           <div 
-            className={getAnimationClass("w-3 bg-gradient-to-t from-amber-700 to-amber-600 rounded-t-lg mx-auto")}
+            className={getAnimationClass("w-3 bg-gradient-to-t from-amber-700 to-amber-600 rounded-b-lg")}
             style={{
               height: `${getTrunkHeight(safeProgress)}px`,
               minHeight: stage === 'seed' ? '0px' : '20px'
             }}
           />
-          
-          {/* Leaves/Crown */}
-          <div className="relative">
-            {stage !== 'seed' && (
-              <>
-                {/* Main crown - scales with progress */}
-                <div 
-                  className={getAnimationClass(
-                    "absolute -top-2 left-1/2 transform -translate-x-1/2 bg-gradient-to-b from-green-400 to-green-600 rounded-full"
-                  )}
-                  style={{
-                    width: `${getCrownSize(safeProgress)}px`,
-                    height: `${getCrownSize(safeProgress)}px`
-                  }}
-                />
-                
-                {/* Side branches for larger stages */}
-                {safeProgress >= 25 && (
-                  <>
-                    <div 
-                      className={getAnimationClass(
-                        "absolute -top-1 -left-2 bg-gradient-to-b from-green-400 to-green-600 rounded-full"
-                      )}
-                      style={{
-                        width: `${getSideBranchSize(safeProgress)}px`,
-                        height: `${getSideBranchSize(safeProgress)}px`
-                      }}
-                    />
-                    <div 
-                      className={getAnimationClass(
-                        "absolute -top-1 -right-2 bg-gradient-to-b from-green-400 to-green-600 rounded-full"
-                      )}
-                      style={{
-                        width: `${getSideBranchSize(safeProgress)}px`,
-                        height: `${getSideBranchSize(safeProgress)}px`
-                      }}
-                    />
-                  </>
-                )}
-                
-                {/* Flowers for complete stage */}
-                {stage === 'complete' && (
-                  <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 animate-bounce">
-                    <div className="flex gap-1">
-                      <div className="w-2 h-2 bg-pink-400 rounded-full" style={{ animationDelay: '0s' }} />
-                      <div className="w-2 h-2 bg-purple-400 rounded-full" style={{ animationDelay: '0.2s' }} />
-                      <div className="w-2 h-2 bg-yellow-400 rounded-full" style={{ animationDelay: '0.4s' }} />
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
         </div>
         
         {/* Floating particles for active state */}
