@@ -50,13 +50,17 @@ export const useTimerControls = ({
     setStartTime(Date.now());
     setPausedTime(0);
     isCleanedUpRef.current = false;
-  }, [selectedTask, generateSessionId, setSessionId, setIsActive, setIsPaused, setStartTime, setPausedTime, isCleanedUpRef]);
+    
+    // Ensure timer starts with correct duration
+    const startDuration = duration * 60;
+    setTimeRemaining(startDuration);
+    timeRemainingRef.current = startDuration;
+  }, [selectedTask, generateSessionId, setSessionId, setIsActive, setIsPaused, setStartTime, setPausedTime, isCleanedUpRef, duration, setTimeRemaining, timeRemainingRef]);
 
   const handlePause = useCallback(() => {
     console.log('⏸️ Pausing focus session');
     setIsPaused(true);
-    setPausedTime(prev => prev + (Date.now() - (Date.now())));
-  }, [setIsPaused, setPausedTime]);
+  }, [setIsPaused]);
 
   const handleResume = useCallback(() => {
     console.log('▶️ Resuming focus session');

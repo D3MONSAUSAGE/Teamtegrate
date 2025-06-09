@@ -40,63 +40,60 @@ export const useTimerInterval = ({
     isCleanedUpRef.current = true;
   }, [isCleanedUpRef]);
 
-  // Stable tick function - no dependencies on changing state
-  const tick = useCallback(() => {
-    // Prevent execution after cleanup
-    if (isCleanedUpRef.current) {
-      console.log('⚠️ Tick called after cleanup, aborting');
-      return;
-    }
-
-    const now = performance.now();
-    
-    // Initialize on first tick
-    if (lastTickTimeRef.current === 0) {
-      lastTickTimeRef.current = now;
-      return;
-    }
-
-    // Calculate elapsed time in seconds
-    const deltaMs = now - lastTickTimeRef.current;
-    const deltaSeconds = deltaMs / 1000;
-    
-    // Update time remaining using ref
-    timeRemainingRef.current = Math.max(0, timeRemainingRef.current - deltaSeconds);
-    lastTickTimeRef.current = now;
-
-    // Round to nearest second for display
-    const newTimeRemaining = Math.max(0, Math.round(timeRemainingRef.current));
-
-    setTimeRemaining(prev => {
-      if (newTimeRemaining !== prev) {
-        if (newTimeRemaining <= 0) {
-          // Session completed
-          setTimeout(() => {
-            if (!isCleanedUpRef.current) {
-              console.log('⏰ Timer completed, calling onSessionComplete');
-              clearAllTimers();
-              setIsActive(false);
-              setIsPaused(false);
-              setTimeRemaining(0);
-              onSessionComplete();
-            }
-          }, 0);
-          return 0;
-        }
-        return newTimeRemaining;
-      }
-      return prev;
-    });
-  }, [clearAllTimers, onSessionComplete, timeRemainingRef, lastTickTimeRef, isCleanedUpRef, setTimeRemaining, setIsActive, setIsPaused]);
-
-  // Main timer effect
+  // Main timer effect - only depends on isActive and isPaused
   useEffect(() => {
     if (isActive && !isPaused && !isCleanedUpRef.current) {
       console.log('▶️ Starting timer loop');
       
       // Reset timing references when starting
-      lastTickTimeRef.current = 0;
+      lastTickTimeRef.current = performance.now();
       timeRemainingRef.current = timeRemaining;
+      
+      // Create stable tick function inside the effect
+      const tick = () => {
+        // Prevent execution after cleanup
+        if (isCleanedUpRef.current) {
+          console.log('⚠️ Tick called after cleanup, aborting');
+          return;
+        }
+
+        const now = performance.now();
+        
+        // Calculate elapsed time in seconds
+        const deltaMs = now - lastTickTimeRef.current;
+        const deltaSeconds = deltaMs / 1000;
+        
+        // Update time remaining using ref
+        timeRemainingRef.current = Math.max(0, timeRemainingRef.current - deltaSeconds);
+        lastTickTimeRef.current = now;
+
+        // Round to nearest second for display
+        const newTimeRemaining = Math.max(0, Math.round(timeRemainingRef.current));
+
+        setTimeRemaining(prev => {
+          if (newTimeRemaining !== prev) {
+            if (newTimeRemaining <= 0) {
+              // Session completed
+              setTimeout(() => {
+                if (!isCleanedUpRef.current) {
+                  console.log('⏰ Timer completed, calling onSessionComplete');
+                  if (intervalRef.current) {
+                    clearInterval(intervalRef.current);
+                    intervalRef.current = null;
+                  }
+                  setIsActive(false);
+                  setIsPaused(false);
+                  setTimeRemaining(0);
+                  onSessionComplete();
+                }
+              }, 0);
+              return 0;
+            }
+            return newTimeRemaining;
+          }
+          return prev;
+        });
+      };
       
       // Use interval for consistent updates
       intervalRef.current = setInterval(tick, 1000);
@@ -115,7 +112,7 @@ export const useTimerInterval = ({
         intervalRef.current = null;
       }
     };
-  }, [isActive, isPaused, tick, timeRemaining, timeRemainingRef, lastTickTimeRef, isCleanedUpRef]);
+  }, [isActive, isPaused]); // Only depend on isActive and isPaused
 
   // Cleanup on unmount
   useEffect(() => {

@@ -75,21 +75,4 @@ export const useTimerEffects = ({
       onSessionUpdate(session);
     }
   }, [selectedTask, sessionId, timeRemaining, isActive, isPaused, progress, duration, onSessionUpdate, isCleanedUpRef]);
-
-  // Page visibility handling for cleanup
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.hidden && isActive) {
-        console.log('👁️ Page hidden, pausing timer to prevent issues');
-        // Note: This would need to be passed in if we want to pause on visibility change
-        // setPaused(true);
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [isActive]);
 };
