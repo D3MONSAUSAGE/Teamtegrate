@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Task, TaskStatus } from '@/types';
 import TaskCard from '@/components/task-card';
 import { Button } from "@/components/ui/button";
-import { Plus } from 'lucide-react';
+import { Plus, Sparkles } from 'lucide-react';
 import TaskDetailDrawer from './TaskDetailDrawer';
 
 interface TaskListProps {
@@ -35,31 +35,46 @@ const TaskList = ({ tasks, onEdit, onNewTask, onStatusChange, emptyMessage = "No
 
   if (tasks.length === 0) {
     return (
-      <div className="bg-white dark:bg-card p-6 rounded-lg border text-center">
-        <p className="text-gray-500 dark:text-gray-300">{emptyMessage}</p>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="mt-2" 
-          onClick={onNewTask}
-        >
-          <Plus className="h-4 w-4 mr-2" /> Add Task
-        </Button>
+      <div className="text-center py-16">
+        <div className="modern-card bg-gradient-to-br from-muted/30 to-muted/10 border border-border/30 p-8 rounded-2xl backdrop-blur-sm">
+          <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-muted to-muted/50 rounded-full flex items-center justify-center">
+            <Sparkles className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <h3 className="text-lg font-semibold text-foreground mb-2">{emptyMessage}</h3>
+          <p className="text-muted-foreground mb-6">Get started by creating your first task</p>
+          <Button 
+            variant="outline" 
+            size="lg" 
+            className="interactive-button bg-background/50 backdrop-blur-sm border-border/50 hover:bg-background/80 px-6" 
+            onClick={onNewTask}
+          >
+            <Plus className="h-4 w-4 mr-2" /> 
+            Add Task
+          </Button>
+        </div>
       </div>
     );
   }
 
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {tasks.map((task) => (
-          <TaskCard 
-            key={task.id} 
-            task={task} 
-            onEdit={onEdit} 
-            onClick={() => handleOpenDetails(task)}
-            onStatusChange={handleStatusChange}
-          />
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+        {tasks.map((task, index) => (
+          <div
+            key={task.id}
+            className="animate-fade-in"
+            style={{ 
+              animationDelay: `${index * 0.1}s`,
+              animationFillMode: 'both'
+            }}
+          >
+            <TaskCard 
+              task={task} 
+              onEdit={onEdit} 
+              onClick={() => handleOpenDetails(task)}
+              onStatusChange={handleStatusChange}
+            />
+          </div>
         ))}
       </div>
       <TaskDetailDrawer

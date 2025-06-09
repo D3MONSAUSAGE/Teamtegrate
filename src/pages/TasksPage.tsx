@@ -82,27 +82,37 @@ const TasksPage = () => {
   const sortedCompleted = sortTasks(completedTasks);
 
   return (
-    <div className="p-6">
-      <TaskHeader 
-        onNewTask={() => {
-          setEditingTask(undefined);
-          setIsCreateTaskOpen(true);
-        }}
-        sortBy={sortBy}
-        onSortChange={setSortBy}
-      />
-      
-      <TaskTabs
-        todoTasks={sortedTodo}
-        inProgressTasks={sortedInProgress}
-        completedTasks={sortedCompleted}
-        onEdit={handleEditTask}
-        onNewTask={() => {
-          setEditingTask(undefined);
-          setIsCreateTaskOpen(true);
-        }}
-        onStatusChange={handleStatusChange}
-      />
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background">
+      <div className="container mx-auto max-w-7xl px-4 md:px-6 py-6 space-y-8">
+        {/* Page Header */}
+        <div className="animate-fade-in">
+          <TaskHeader 
+            onNewTask={() => {
+              setEditingTask(undefined);
+              setIsCreateTaskOpen(true);
+            }}
+            sortBy={sortBy}
+            onSortChange={setSortBy}
+          />
+        </div>
+        
+        {/* Main Content Area */}
+        <div className="animate-slide-up" style={{ animationDelay: '0.1s' }}>
+          <div className="modern-card backdrop-blur-xl bg-card/50 border border-border/50 rounded-2xl shadow-2xl overflow-hidden">
+            <TaskTabs
+              todoTasks={sortedTodo}
+              inProgressTasks={sortedInProgress}
+              completedTasks={sortedCompleted}
+              onEdit={handleEditTask}
+              onNewTask={() => {
+                setEditingTask(undefined);
+                setIsCreateTaskOpen(true);
+              }}
+              onStatusChange={handleStatusChange}
+            />
+          </div>
+        </div>
+      </div>
       
       <CreateTaskDialogWithAI
         open={isCreateTaskOpen} 
