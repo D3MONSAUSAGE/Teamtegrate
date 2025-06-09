@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { useTask } from '@/contexts/task';
@@ -116,8 +115,8 @@ const DashboardPage = () => {
         />
       </div>
       
-      {/* Tasks Sections */}
-      <div className="grid lg:grid-cols-2 gap-8">
+      {/* Tasks Sections - Changed from grid to stacked */}
+      <div className="space-y-8">
         <div className="animate-slide-up" style={{ animationDelay: '0.4s' }}>
           <DailyTasksSection 
             tasks={todaysTasks}
