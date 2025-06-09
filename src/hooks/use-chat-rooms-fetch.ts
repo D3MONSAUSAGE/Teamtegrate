@@ -38,7 +38,7 @@ export function useChatRoomsFetch({ setRooms, setIsLoading, setError }: UseChatR
     try {
       console.log('ChatRooms: Fetching rooms for user:', user.id, 'role:', user.role);
       
-      // RLS policies will automatically filter to only rooms the user can access
+      // Simple query - new RLS policies handle all access control automatically
       const { data, error } = await supabase
         .from('chat_rooms')
         .select('*')

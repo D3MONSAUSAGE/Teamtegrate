@@ -35,7 +35,7 @@ export function useChatParticipantCheck(roomId: string): ParticipantCheckResult 
           return;
         }
 
-        // Check if user is room creator OR participant - RLS will handle the filtering
+        // Simple check - if we can see the room via RLS, we have access
         const { data: roomData, error: roomError } = await supabase
           .from('chat_rooms')
           .select('id')
@@ -43,14 +43,14 @@ export function useChatParticipantCheck(roomId: string): ParticipantCheckResult 
           .single();
 
         if (roomError) {
-          // If we can't see the room, we're not a participant
+          // If we can't see the room, we don't have access
           if (roomError.code === 'PGRST116') {
             setIsParticipant(false);
           } else {
             throw roomError;
           }
         } else {
-          // If we can see the room, we have access (creator or participant)
+          // If we can see the room, we have access (RLS filtered it for us)
           setIsParticipant(true);
         }
       } catch (err: any) {
