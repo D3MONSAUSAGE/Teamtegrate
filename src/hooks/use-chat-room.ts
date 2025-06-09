@@ -14,7 +14,7 @@ interface ChatRoomData {
 }
 
 export function useChatRoom(room: ChatRoomData, onBack?: () => void, onRoomDeleted?: () => void) {
-  const { user, logout, isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
@@ -82,12 +82,7 @@ export function useChatRoom(room: ChatRoomData, onBack?: () => void, onRoomDelet
       await sendMessage();
     } catch (error: any) {
       console.error('Error sending message:', error);
-      if (error.message?.includes('JWT') || error.message?.includes('auth')) {
-        toast.error('Session expired. Please log in again.');
-        await logout();
-      } else {
-        toast.error('Failed to send message');
-      }
+      toast.error('Failed to send message');
     }
   };
 
@@ -96,14 +91,6 @@ export function useChatRoom(room: ChatRoomData, onBack?: () => void, onRoomDelet
     setLeaving(true);
 
     try {
-      // Test session first
-      const { error: sessionError } = await supabase.auth.getSession();
-      if (sessionError) {
-        toast.error('Session expired. Please log in again.');
-        await logout();
-        return;
-      }
-
       // Remove user from participants
       const { error: participantError } = await supabase
         .from('chat_room_participants')
@@ -112,12 +99,9 @@ export function useChatRoom(room: ChatRoomData, onBack?: () => void, onRoomDelet
         .eq('user_id', user.id);
 
       if (participantError) {
-        if (participantError.message.includes('JWT') || participantError.message.includes('auth')) {
-          toast.error('Session expired. Please log in again.');
-          await logout();
-          return;
-        }
-        throw participantError;
+        console.error('Error removing participant:', participantError);
+        toast.error('Failed to leave the chat');
+        return;
       }
 
       // Add system message about leaving
@@ -152,14 +136,6 @@ export function useChatRoom(room: ChatRoomData, onBack?: () => void, onRoomDelet
     }
     
     try {
-      // Test session first
-      const { error: sessionError } = await supabase.auth.getSession();
-      if (sessionError) {
-        toast.error('Session expired. Please log in again.');
-        await logout();
-        return;
-      }
-
       // Delete all messages first
       const { error: messagesError } = await supabase
         .from('chat_messages')
@@ -167,12 +143,9 @@ export function useChatRoom(room: ChatRoomData, onBack?: () => void, onRoomDelet
         .eq('room_id', room.id);
       
       if (messagesError) {
-        if (messagesError.message.includes('JWT') || messagesError.message.includes('auth')) {
-          toast.error('Session expired. Please log in again.');
-          await logout();
-          return;
-        }
-        throw messagesError;
+        console.error('Error deleting messages:', messagesError);
+        toast.error('Failed to delete chat messages');
+        return;
       }
       
       // Delete all participants
@@ -182,12 +155,9 @@ export function useChatRoom(room: ChatRoomData, onBack?: () => void, onRoomDelet
         .eq('room_id', room.id);
       
       if (participantsError) {
-        if (participantsError.message.includes('JWT') || participantsError.message.includes('auth')) {
-          toast.error('Session expired. Please log in again.');
-          await logout();
-          return;
-        }
-        throw participantsError;
+        console.error('Error deleting participants:', participantsError);
+        toast.error('Failed to delete chat participants');
+        return;
       }
       
       // Delete the room
@@ -197,12 +167,9 @@ export function useChatRoom(room: ChatRoomData, onBack?: () => void, onRoomDelet
         .eq('id', room.id);
       
       if (roomError) {
-        if (roomError.message.includes('JWT') || roomError.message.includes('auth')) {
-          toast.error('Session expired. Please log in again.');
-          await logout();
-          return;
-        }
-        throw roomError;
+        console.error('Error deleting room:', roomError);
+        toast.error('Failed to delete the chat room');
+        return;
       }
       
       toast.success('Chat room deleted successfully');

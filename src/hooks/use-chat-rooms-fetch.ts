@@ -21,7 +21,7 @@ interface UseChatRoomsFetchProps {
 }
 
 export function useChatRoomsFetch({ setRooms, setIsLoading, setError }: UseChatRoomsFetchProps) {
-  const { user, logout, isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const debug = useChatRoomsDebug();
 
   const fetchRooms = useCallback(async () => {
@@ -38,33 +38,6 @@ export function useChatRoomsFetch({ setRooms, setIsLoading, setError }: UseChatR
     try {
       console.log('ChatRooms: Fetching rooms for user:', user.id, 'role:', user.role);
       
-      // Test session validity first with a simple query
-      const { data: sessionTest, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError || !sessionTest.session) {
-        console.error('Session invalid during room fetch:', sessionError);
-        toast.error('Session expired. Please log in again.');
-        await logout();
-        return;
-      }
-
-      // Test RPC call to ensure auth.uid() works
-      try {
-        const { error: rpcError } = await supabase.rpc('get_user_role');
-        if (rpcError) {
-          console.error('RPC test failed:', rpcError);
-          if (rpcError.message.includes('JWT') || rpcError.message.includes('auth')) {
-            toast.error('Authentication error. Please log in again.');
-            await logout();
-            return;
-          }
-        }
-      } catch (rpcErr) {
-        console.error('RPC call failed:', rpcErr);
-        toast.error('Authentication error. Please log in again.');
-        await logout();
-        return;
-      }
-
       // Now fetch chat rooms with improved error handling
       const { data, error } = await supabase
         .from('chat_rooms')
@@ -74,18 +47,15 @@ export function useChatRoomsFetch({ setRooms, setIsLoading, setError }: UseChatR
       if (error) {
         console.error('Supabase chat rooms error:', error);
         
-        // Check if it's an auth-related error
-        if (error.message.includes('JWT') || 
-            error.message.includes('auth') || 
-            error.code === 'PGRST301' ||
-            error.message.includes('permission denied')) {
-          console.log('Authentication error detected, forcing logout');
-          toast.error('Session expired. Please log in again.');
-          await logout();
-          return;
+        // Only throw error if it's not a simple permissions issue
+        if (error.code !== 'PGRST116' && !error.message.includes('permission denied')) {
+          throw error;
         }
         
-        throw error;
+        // For permission errors, just return empty results
+        setRooms([]);
+        setError(null);
+        return;
       }
 
       debug.logQueryResult(data, null);
@@ -102,23 +72,12 @@ export function useChatRoomsFetch({ setRooms, setIsLoading, setError }: UseChatR
       console.error('Error fetching rooms:', error);
       debug.logUnexpectedError(error);
       
-      // Handle specific auth errors
-      if (error.message?.includes('infinite recursion') || 
-          error.message?.includes('JWT') || 
-          error.message?.includes('auth') ||
-          error.message?.includes('permission denied')) {
-        console.log('Authentication/RLS error, forcing logout');
-        toast.error('Authentication error. Please log in again.');
-        await logout();
-        return;
-      }
-      
       setError(`Failed to load chat rooms: ${error.message}`);
       toast.error('Failed to load chat rooms: ' + error.message);
     } finally {
       setIsLoading(false);
     }
-  }, [user?.id, user?.role, isAuthenticated, debug, setRooms, setIsLoading, setError, logout]);
+  }, [user?.id, user?.role, isAuthenticated, debug, setRooms, setIsLoading, setError]);
 
   return {
     fetchRooms
