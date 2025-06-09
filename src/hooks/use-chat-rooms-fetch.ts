@@ -72,26 +72,9 @@ export function useChatRoomsFetch({ setRooms, setIsLoading, setError }: UseChatR
     } finally {
       setIsLoading(false);
     }
-  }, [user, debug, setRooms, setIsLoading, setError]);
-
-  const subscribeToRooms = useCallback(() => {
-    const channel = supabase
-      .channel('chat-rooms')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'chat_rooms' },
-        (payload) => {
-          debug.logRealtimeUpdate(payload);
-          fetchRooms();
-        }
-      )
-      .subscribe();
-
-    return channel;
-  }, [debug, fetchRooms]);
+  }, [user?.id, user?.role, debug, setRooms, setIsLoading, setError]);
 
   return {
-    fetchRooms,
-    subscribeToRooms
+    fetchRooms
   };
 }

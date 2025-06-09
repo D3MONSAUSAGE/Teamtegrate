@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from '@/contexts/AuthContext';
 import { useChatPermissions } from '@/hooks/use-chat-permissions';
@@ -28,6 +28,7 @@ const ChatRooms: React.FC<ChatRoomsProps> = ({ selectedRoom, onRoomSelect }) => 
   const { user } = useAuth();
   const { canCreateRooms } = useChatPermissions();
   const debug = useChatRoomsDebug();
+  const subscriptionRef = useRef<any>(null);
   
   const {
     rooms,
@@ -44,22 +45,47 @@ const ChatRooms: React.FC<ChatRoomsProps> = ({ selectedRoom, onRoomSelect }) => 
     handleRoomSelect
   } = useChatRoomsState();
 
-  const { fetchRooms, subscribeToRooms } = useChatRoomsFetch({
+  const { fetchRooms } = useChatRoomsFetch({
     setRooms,
     setIsLoading,
     setError
   });
-  
-  useEffect(() => {
-    if (user) {
-      fetchRooms();
-      const channel = subscribeToRooms();
 
-      return () => {
-        supabase.removeChannel(channel);
-      };
+  // Simplified subscription with proper cleanup
+  useEffect(() => {
+    if (!user) return;
+
+    // Initial fetch
+    fetchRooms();
+
+    // Clean up any existing subscription
+    if (subscriptionRef.current) {
+      supabase.removeChannel(subscriptionRef.current);
     }
-  }, [user, fetchRooms, subscribeToRooms]);
+
+    // Create new subscription for room changes only
+    subscriptionRef.current = supabase
+      .channel('chat-rooms-simple')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'chat_rooms' },
+        (payload) => {
+          console.log('ChatRooms: Room change detected:', payload.eventType);
+          debug.logRealtimeUpdate(payload);
+          // Simple refetch on any room change
+          fetchRooms();
+        }
+      )
+      .subscribe();
+
+    // Cleanup function
+    return () => {
+      if (subscriptionRef.current) {
+        supabase.removeChannel(subscriptionRef.current);
+        subscriptionRef.current = null;
+      }
+    };
+  }, [user?.id]); // Only depend on user.id to prevent recreation
 
   debug.logRenderState(rooms, filteredRooms, searchQuery, canCreateRooms());
 

@@ -11,31 +11,45 @@ export function useChatSubscription(
   setMessages: React.Dispatch<React.SetStateAction<any[]>>
 ) {
   const typingTimeout = useRef<NodeJS.Timeout | null>(null);
+  const presenceChannelRef = useRef<any>(null);
+  const messageChannelRef = useRef<any>(null);
   const soundSettings = useSoundSettings();
 
   useEffect(() => {
-    // Initialize subscription when component mounts
-    const channel = supabase
+    if (!roomId || !userId) return;
+
+    // Clean up existing subscriptions
+    if (presenceChannelRef.current) {
+      supabase.removeChannel(presenceChannelRef.current);
+    }
+    if (messageChannelRef.current) {
+      supabase.removeChannel(messageChannelRef.current);
+    }
+
+    // Initialize presence subscription for typing indicators
+    presenceChannelRef.current = supabase
       .channel(`room:${roomId}`)
       .on('presence', { event: 'sync' }, () => {
-        const newState = channel.presenceState();
+        const newState = presenceChannelRef.current?.presenceState();
         const typingUsernames: string[] = [];
         
-        Object.values(newState).forEach((presences: any) => {
-          presences.forEach((presence: any) => {
-            if (presence.isTyping && presence.user_id !== userId) {
-              typingUsernames.push(presence.username);
-            }
+        if (newState) {
+          Object.values(newState).forEach((presences: any) => {
+            presences.forEach((presence: any) => {
+              if (presence.isTyping && presence.user_id !== userId) {
+                typingUsernames.push(presence.username);
+              }
+            });
           });
-        });
+        }
         
         setTypingUsers(typingUsernames);
       })
       .subscribe();
 
-    // Subscribe to messages in this room
-    const messageChannel = supabase
-      .channel('chat-messages')
+    // Subscribe to new messages only (no updates/deletes to prevent loops)
+    messageChannelRef.current = supabase
+      .channel(`messages:${roomId}`)
       .on(
         'postgres_changes',
         {
@@ -45,13 +59,14 @@ export function useChatSubscription(
           filter: `room_id=eq.${roomId}`,
         },
         (payload) => {
-          // Only handle messages from other users to prevent duplicates
+          // Only handle messages from other users
           if (payload.new?.user_id !== userId) {
-            console.log('New message received, playing notification with settings:', soundSettings);
+            console.log('New message received from other user');
             playChatNotification(soundSettings);
             
-            // Add the new message without duplicating existing ones
+            // Add the new message
             setMessages(prev => {
+              // Check if message already exists to prevent duplicates
               const messageExists = prev.some(msg => msg.id === payload.new.id);
               if (messageExists) return prev;
               return [...prev, payload.new];
@@ -62,42 +77,49 @@ export function useChatSubscription(
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
-      supabase.removeChannel(messageChannel);
+      if (presenceChannelRef.current) {
+        supabase.removeChannel(presenceChannelRef.current);
+        presenceChannelRef.current = null;
+      }
+      if (messageChannelRef.current) {
+        supabase.removeChannel(messageChannelRef.current);
+        messageChannelRef.current = null;
+      }
       
       if (typingTimeout.current) {
         clearTimeout(typingTimeout.current);
         typingTimeout.current = null;
       }
     };
-  }, [roomId, userId, setTypingUsers, setMessages, soundSettings.enabled, soundSettings.volume]);
+  }, [roomId, userId]); // Minimal dependencies
 
   const sendTypingStatus = useCallback(() => {
-    if (!userId) return;
+    if (!userId || !presenceChannelRef.current) return;
     
-    // If a timeout exists, clear it
+    // Clear existing timeout
     if (typingTimeout.current) {
       clearTimeout(typingTimeout.current);
     }
     
-    // Send typing status through presence channel
-    const channel = supabase.channel(`room:${roomId}`);
-    channel.track({
+    // Send typing status
+    presenceChannelRef.current.track({
       user_id: userId,
-      username: userId.substring(0, 6), // Use a substring of user ID as temporary username
+      username: userId.substring(0, 6),
       isTyping: true
     });
     
-    // Set a timeout to clear typing status
+    // Set timeout to clear typing status
     typingTimeout.current = setTimeout(() => {
-      channel.track({
-        user_id: userId,
-        username: userId.substring(0, 6),
-        isTyping: false
-      });
+      if (presenceChannelRef.current) {
+        presenceChannelRef.current.track({
+          user_id: userId,
+          username: userId.substring(0, 6),
+          isTyping: false
+        });
+      }
       typingTimeout.current = null;
     }, 3000);
-  }, [roomId, userId]);
+  }, [userId]);
 
   return { sendTypingStatus, typingTimeout };
 }
