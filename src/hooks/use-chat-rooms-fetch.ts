@@ -38,7 +38,8 @@ export function useChatRoomsFetch({ setRooms, setIsLoading, setError }: UseChatR
     try {
       console.log('ChatRooms: Fetching rooms for user:', user.id, 'role:', user.role);
       
-      // Now fetch chat rooms with improved error handling
+      // With the new RLS policies, this query will automatically filter
+      // to only show rooms the user has access to
       const { data, error } = await supabase
         .from('chat_rooms')
         .select('*')
@@ -46,16 +47,7 @@ export function useChatRoomsFetch({ setRooms, setIsLoading, setError }: UseChatR
 
       if (error) {
         console.error('Supabase chat rooms error:', error);
-        
-        // Only throw error if it's not a simple permissions issue
-        if (error.code !== 'PGRST116' && !error.message.includes('permission denied')) {
-          throw error;
-        }
-        
-        // For permission errors, just return empty results
-        setRooms([]);
-        setError(null);
-        return;
+        throw error;
       }
 
       debug.logQueryResult(data, null);
@@ -64,7 +56,7 @@ export function useChatRoomsFetch({ setRooms, setIsLoading, setError }: UseChatR
       setRooms(data || []);
       
       if (!data || data.length === 0) {
-        console.log('No rooms found - this is normal for new users');
+        console.log('No rooms found - this is normal for new users or users without room access');
         setError(null);
       }
       

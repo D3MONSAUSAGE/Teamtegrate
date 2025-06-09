@@ -36,25 +36,27 @@ export function useChatParticipantCheck(roomId: string): ParticipantCheckResult 
           return;
         }
 
-        // Simple check - if we can see the room via RLS, we have access
+        // With the new RLS policies, we can simply try to fetch the room
+        // If the user has access (creator or participant), they'll see it
+        // If not, the query will return no results due to RLS
         const { data: roomData, error: roomError } = await supabase
           .from('chat_rooms')
-          .select('id')
+          .select('id, created_by')
           .eq('id', roomId)
-          .single();
+          .maybeSingle();
 
         if (roomError) {
-          // If we can't see the room, we don't have access
-          if (roomError.code === 'PGRST116') {
-            setIsParticipant(false);
-          } else {
-            console.error('Error checking room access:', roomError);
-            setError('Failed to verify room access');
-            setIsParticipant(false);
-          }
-        } else {
+          console.error('Error checking room access:', roomError);
+          setError('Failed to verify room access');
+          setIsParticipant(false);
+        } else if (roomData) {
           // If we can see the room, we have access (RLS filtered it for us)
+          console.log('useChatParticipantCheck: User has access to room');
           setIsParticipant(true);
+        } else {
+          // Room not found or no access
+          console.log('useChatParticipantCheck: User does not have access to room');
+          setIsParticipant(false);
         }
       } catch (err: any) {
         console.error('Error checking participant status:', err);
