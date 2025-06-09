@@ -11,29 +11,29 @@ const HeroSection: React.FC = () => {
     <SectionContainer 
       background="default" 
       maxWidth="4xl"
-      className="text-center bg-gradient-to-br from-background to-muted"
+      className="text-center bg-gradient-to-br from-background to-muted overflow-x-hidden"
     >
-      <h1 className="text-5xl md:text-6xl font-bold text-foreground mb-6">
+      <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-foreground mb-6 px-4">
         {HERO_CONFIG.title}
         <span className="text-primary block">{HERO_CONFIG.highlight}</span>
       </h1>
-      <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+      <p className="text-lg sm:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto px-4">
         {HERO_CONFIG.subtitle}
       </p>
-      <div className="flex flex-col sm:flex-row gap-4 justify-center">
-        <Link to="/login?signup=true">
+      <div className="flex flex-col sm:flex-row gap-4 justify-center px-4">
+        <Link to="/login?signup=true" className="w-full sm:w-auto">
           <Button size="lg" className="w-full sm:w-auto">
             {HERO_CONFIG.cta.primary}
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </Link>
-        <Link to="/login">
+        <Link to="/login" className="w-full sm:w-auto">
           <Button variant="outline" size="lg" className="w-full sm:w-auto">
             {HERO_CONFIG.cta.secondary}
           </Button>
         </Link>
       </div>
-      <p className="text-sm text-muted-foreground mt-4">
+      <p className="text-sm text-muted-foreground mt-4 px-4">
         {HERO_CONFIG.features.join(' • ')}
       </p>
     </SectionContainer>

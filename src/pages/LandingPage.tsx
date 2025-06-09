@@ -10,7 +10,7 @@ import LandingFooter from '@/components/landing/LandingFooter';
 
 const LandingPage = () => {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-x-hidden w-full">
       <LandingNavigation />
       <HeroSection />
       <FeaturesSection />
