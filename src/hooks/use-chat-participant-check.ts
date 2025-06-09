@@ -14,18 +14,27 @@ export function useChatParticipantCheck(roomId: string): ParticipantCheckResult 
   const [isParticipant, setIsParticipant] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { user } = useAuth();
+  const { user, logout, isAuthenticated } = useAuth();
 
   useEffect(() => {
     const checkParticipation = async () => {
-      if (!user || !roomId) {
+      if (!user || !roomId || !isAuthenticated) {
         setIsLoading(false);
+        setIsParticipant(false);
         return;
       }
 
       try {
         setIsLoading(true);
         setError(null);
+
+        // Test session first
+        const { error: sessionError } = await supabase.auth.getSession();
+        if (sessionError) {
+          console.error('Session error in participant check:', sessionError);
+          await logout();
+          return;
+        }
 
         // Admins have automatic access to all rooms
         if (hasRoleAccess(user.role as any, 'admin')) {
@@ -46,6 +55,10 @@ export function useChatParticipantCheck(roomId: string): ParticipantCheckResult 
           // If we can't see the room, we don't have access
           if (roomError.code === 'PGRST116') {
             setIsParticipant(false);
+          } else if (roomError.message.includes('JWT') || roomError.message.includes('auth')) {
+            console.log('Auth error in participant check, forcing logout');
+            await logout();
+            return;
           } else {
             throw roomError;
           }
@@ -55,6 +68,11 @@ export function useChatParticipantCheck(roomId: string): ParticipantCheckResult 
         }
       } catch (err: any) {
         console.error('Error checking participant status:', err);
+        if (err.message?.includes('JWT') || err.message?.includes('auth')) {
+          console.log('Auth error in participant check, forcing logout');
+          await logout();
+          return;
+        }
         setError(err.message || 'Failed to verify room access');
         setIsParticipant(false);
       } finally {
@@ -63,7 +81,7 @@ export function useChatParticipantCheck(roomId: string): ParticipantCheckResult 
     };
 
     checkParticipation();
-  }, [user, roomId]);
+  }, [user, roomId, isAuthenticated, logout]);
 
   return { isParticipant, isLoading, error };
 }

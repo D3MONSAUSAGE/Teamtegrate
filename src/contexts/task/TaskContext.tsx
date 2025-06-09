@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { Task, Project, TaskStatus, TaskPriority, DailyScore, TeamMemberPerformance } from '@/types';
 import { useAuth } from '../AuthContext';
@@ -36,6 +37,7 @@ interface TaskContextType {
   tasks: Task[];
   projects: Project[];
   dailyScore: DailyScore;
+  isLoading: boolean;
   refreshProjects: () => Promise<void>;
   addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateTask: (taskId: string, updates: Partial<Task>) => void;
@@ -76,6 +78,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [tasks, setTasks] = useState<Task[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [authReady, setAuthReady] = useState(false);
   const [dailyScore, setDailyScore] = useState<DailyScore>({
     completedTasks: 0,
     totalTasks: 0,
@@ -83,8 +86,15 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     date: new Date(),
   });
 
+  // Wait for auth to be ready before doing anything
+  useEffect(() => {
+    if (!authLoading) {
+      setAuthReady(true);
+    }
+  }, [authLoading]);
+
   const refreshProjects = async () => {
-    if (!user || !isAuthenticated || authLoading) return;
+    if (!user || !isAuthenticated || !authReady) return;
     
     try {
       setIsLoading(true);
@@ -97,10 +107,10 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Load data only when auth is fully ready
   useEffect(() => {
-    // Wait for auth to finish loading before attempting to load data
-    if (authLoading) {
-      console.log('TaskProvider: Waiting for auth to finish loading...');
+    if (!authReady) {
+      console.log('TaskProvider: Waiting for auth to be ready...');
       return;
     }
 
@@ -115,33 +125,42 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       console.log('TaskProvider: Loading data for authenticated user:', user.id);
       setIsLoading(true);
+      
       try {
-        await Promise.all([
-          fetchUserProjects(user, setProjects),
-          fetchUserTasks(user, setTasks)
+        // Load projects and tasks with proper error handling
+        await Promise.allSettled([
+          fetchUserProjects(user, setProjects).catch(error => {
+            console.error("Error loading projects:", error);
+            toast.error("Failed to load projects");
+          }),
+          fetchUserTasks(user, setTasks).catch(error => {
+            console.error("Error loading tasks:", error);
+            toast.error("Failed to load tasks");
+          })
         ]);
       } catch (error) {
-        console.error("TaskProvider: Error loading data:", error);
-        toast.error("Failed to load data");
+        console.error("TaskProvider: Critical error loading data:", error);
       } finally {
         setIsLoading(false);
       }
     };
     
     loadData();
-  }, [user, isAuthenticated, authLoading]); // Include authLoading in dependencies
+  }, [user, isAuthenticated, authReady]);
 
+  // Calculate daily score when tasks change
   useEffect(() => {
-    if (user && isAuthenticated && !authLoading) {
+    if (authReady && user && isAuthenticated) {
       const score = calculateDailyScore(tasks);
       setDailyScore(score);
     }
-  }, [tasks, user, isAuthenticated, authLoading]);
+  }, [tasks, user, isAuthenticated, authReady]);
 
   const value = {
     tasks,
     projects,
     dailyScore,
+    isLoading,
     refreshProjects,
     addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => 
       addTask(task, user, tasks, setTasks, projects, setProjects),

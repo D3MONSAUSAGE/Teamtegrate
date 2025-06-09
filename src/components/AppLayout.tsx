@@ -9,10 +9,11 @@ import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { Loader2 } from 'lucide-react';
 
 const AppLayout = () => {
-  const { user, loading } = useAuth();
+  const { user, loading, isAuthenticated } = useAuth();
 
-  console.log('AppLayout - Loading:', loading, 'User:', !!user);
+  console.log('AppLayout - Loading:', loading, 'User:', !!user, 'IsAuthenticated:', isAuthenticated);
 
+  // Show loading while auth is initializing
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -24,8 +25,9 @@ const AppLayout = () => {
     );
   }
 
-  if (!user) {
-    console.log('AppLayout: No user, redirecting to login');
+  // Redirect to login if not authenticated
+  if (!isAuthenticated || !user) {
+    console.log('AppLayout: Not authenticated, redirecting to login');
     return <Navigate to="/login" replace />;
   }
 

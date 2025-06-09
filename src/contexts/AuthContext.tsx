@@ -22,77 +22,141 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authReady, setAuthReady] = useState(false);
 
-  // Simplified session clearing
-  const clearSession = () => {
-    console.log('Clearing session data');
+  // Force complete session reset
+  const forceSessionReset = async () => {
+    console.log('Force resetting all session data...');
     setUser(null);
     setSession(null);
-    localStorage.removeItem('sb-zlfpiovyodiyecdueiig-auth-token');
+    
+    // Clear all possible auth data
+    localStorage.clear();
     sessionStorage.clear();
-  };
-
-  const refreshUserSession = async (): Promise<void> => {
+    
+    // Clear IndexedDB auth data if it exists
     try {
-      const { session: newSession, user: userData } = await refreshSession();
-      if (newSession && userData) {
-        setSession(newSession);
-        setUser(userData);
+      if (window.indexedDB) {
+        const databases = await indexedDB.databases();
+        for (const db of databases) {
+          if (db.name?.includes('supabase')) {
+            indexedDB.deleteDatabase(db.name);
+          }
+        }
       }
     } catch (error) {
-      console.error('Error refreshing session:', error);
-      clearSession();
+      console.warn('Could not clear IndexedDB:', error);
+    }
+
+    // Sign out from Supabase to clear server session
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.warn('Error during signout:', error);
     }
   };
 
-  // Simplified user creation
+  // Validate session health
+  const validateSessionHealth = async (session: Session | null): Promise<boolean> => {
+    if (!session) return false;
+    
+    try {
+      // Test if auth.uid() works by making a simple RPC call
+      const { data, error } = await supabase.rpc('get_user_role');
+      
+      if (error) {
+        console.error('Session validation failed:', error);
+        if (error.message.includes('JWT') || error.message.includes('auth')) {
+          await forceSessionReset();
+          return false;
+        }
+      }
+      
+      return !error;
+    } catch (error) {
+      console.error('Session health check failed:', error);
+      await forceSessionReset();
+      return false;
+    }
+  };
+
+  // Create user data from session
   const handleUserCreation = async (session: Session | null) => {
     try {
       if (session?.user) {
         console.log('Creating user data for:', session.user.id);
+        
+        // Validate session first
+        const isHealthy = await validateSessionHealth(session);
+        if (!isHealthy) {
+          console.log('Session is not healthy, clearing data');
+          setUser(null);
+          setSession(null);
+          return;
+        }
+        
         const userData = await createUserFromSession(session);
         setUser(userData);
-        console.log('User data created:', userData.id, userData.role);
+        console.log('User data created successfully:', userData.id, userData.role);
       } else {
         setUser(null);
         console.log('No session, clearing user data');
       }
     } catch (error) {
       console.error('Error creating user data:', error);
-      clearSession();
-    } finally {
-      setLoading(false);
+      await forceSessionReset();
     }
   };
 
-  // Check for existing session on mount
+  // Initialize auth
   useEffect(() => {
-    console.log('Initializing auth...');
+    let mounted = true;
     
     const initializeAuth = async () => {
+      console.log('Initializing auth...');
+      setLoading(true);
+      
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
+        // Get current session
+        const { data: { session: currentSession }, error } = await supabase.auth.getSession();
         
         if (error) {
           console.error('Error getting initial session:', error);
           if (error.message.includes('Invalid Refresh Token')) {
-            clearSession();
+            await forceSessionReset();
           }
-          setLoading(false);
+          if (mounted) {
+            setLoading(false);
+            setAuthReady(true);
+          }
           return;
         }
         
-        console.log('Initial session:', session?.user?.id || 'no session');
-        setSession(session);
-        await handleUserCreation(session);
+        console.log('Initial session:', currentSession?.user?.id || 'no session');
+        
+        if (mounted) {
+          setSession(currentSession);
+          await handleUserCreation(currentSession);
+          setAuthReady(true);
+        }
       } catch (error) {
         console.error('Error in auth initialization:', error);
-        clearSession();
-        setLoading(false);
+        if (mounted) {
+          await forceSessionReset();
+          setAuthReady(true);
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
 
     initializeAuth();
+    
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   // Set up auth state listener
@@ -104,13 +168,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log('Auth state changed:', event, session?.user?.id);
         
         if (event === 'SIGNED_OUT' || !session) {
-          clearSession();
+          setSession(null);
+          setUser(null);
           setLoading(false);
           return;
         }
         
         setSession(session);
         await handleUserCreation(session);
+        setLoading(false);
       }
     );
 
@@ -119,6 +185,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       subscription.unsubscribe();
     };
   }, []);
+
+  const refreshUserSession = async (): Promise<void> => {
+    try {
+      const { session: newSession, user: userData } = await refreshSession();
+      if (newSession && userData) {
+        const isHealthy = await validateSessionHealth(newSession);
+        if (isHealthy) {
+          setSession(newSession);
+          setUser(userData);
+        }
+      }
+    } catch (error) {
+      console.error('Error refreshing session:', error);
+      await forceSessionReset();
+    }
+  };
 
   const login = async (email: string, password: string) => {
     setLoading(true);
@@ -143,9 +225,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     try {
       await authLogout(!!session);
-      clearSession();
+      await forceSessionReset();
     } catch (error) {
-      clearSession();
+      await forceSessionReset();
       throw error;
     }
   };
@@ -167,13 +249,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const value = {
     user,
-    loading,
-    isLoading: loading,
+    loading: loading || !authReady,
+    isLoading: loading || !authReady,
     login,
     signup,
     logout,
     updateUserProfile,
-    isAuthenticated: !!user,
+    isAuthenticated: !!user && !!session && authReady,
     hasRoleAccess: (requiredRole: any) => hasRoleAccess(user?.role, requiredRole),
     canManageUser: (targetRole: any) => canManageUser(user?.role, targetRole),
     refreshUserSession,

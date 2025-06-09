@@ -5,11 +5,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 
 const Index = () => {
-  const { user, loading } = useAuth();
+  const { user, loading, isAuthenticated } = useAuth();
   const location = useLocation();
 
-  console.log('Index page - Current path:', location.pathname, 'Loading:', loading, 'User:', !!user);
+  console.log('Index page - Current path:', location.pathname, 'Loading:', loading, 'User:', !!user, 'IsAuthenticated:', isAuthenticated);
 
+  // Show loading while auth is initializing
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center bg-background">
@@ -21,7 +22,8 @@ const Index = () => {
     );
   }
 
-  if (!user) {
+  // Redirect based on authentication status
+  if (!isAuthenticated || !user) {
     return <Navigate to="/login" replace />;
   }
 
