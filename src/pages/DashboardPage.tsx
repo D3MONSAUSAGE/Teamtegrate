@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { useTask } from '@/contexts/task';
@@ -6,7 +7,8 @@ import { Task, Project } from '@/types';
 import { Plus, Sparkles } from 'lucide-react';
 import CreateTaskDialogWithAI from '@/components/CreateTaskDialogWithAI';
 import { format } from 'date-fns';
-import TasksSummary from '@/components/dashboard/TasksSummary';
+import EnhancedTasksSummary from '@/components/dashboard/EnhancedTasksSummary';
+import EnhancedWelcomeHeader from '@/components/dashboard/EnhancedWelcomeHeader';
 import DailyTasksSection from '@/components/dashboard/DailyTasksSection';
 import UpcomingTasksSection from '@/components/dashboard/UpcomingTasksSection';
 import RecentProjects from '@/components/dashboard/RecentProjects';
@@ -68,34 +70,17 @@ const DashboardPage = () => {
   
   return (
     <div className="space-y-8 no-scrollbar">
-      {/* Welcome Header */}
-      <div className="modern-card p-6 md:p-8 animate-fade-in">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
-                Welcome back, {user?.name}!
-              </h1>
-              <Sparkles className="h-6 w-6 text-primary animate-pulse" />
-            </div>
-            <p className="text-muted-foreground text-lg">
-              {format(new Date(), "EEEE, MMMM d")} · Here's your productivity overview
-            </p>
-          </div>
-          <Button 
-            onClick={() => handleCreateTask()} 
-            size={isMobile ? "default" : "lg"} 
-            className="interactive-button bg-gradient-to-r from-primary to-emerald-500 hover:from-emerald-600 hover:to-lime-500 shadow-lg"
-          >
-            <Plus className="h-5 w-5 mr-2" /> 
-            Create Task
-          </Button>
-        </div>
+      {/* Enhanced Welcome Header */}
+      <div className="animate-fade-in">
+        <EnhancedWelcomeHeader 
+          userName={user?.name}
+          onCreateTask={() => handleCreateTask()}
+        />
       </div>
       
-      {/* Quick Stats Summary */}
+      {/* Enhanced Quick Stats Summary */}
       <div className="animate-slide-up" style={{ animationDelay: '0.1s' }}>
-        <TasksSummary 
+        <EnhancedTasksSummary 
           dailyScore={dailyScore}
           todaysTasks={todaysTasks}
           upcomingTasks={upcomingTasks}
@@ -115,7 +100,7 @@ const DashboardPage = () => {
         />
       </div>
       
-      {/* Tasks Sections - Changed from grid to stacked */}
+      {/* Tasks Sections */}
       <div className="space-y-8">
         <div className="animate-slide-up" style={{ animationDelay: '0.4s' }}>
           <DailyTasksSection 
