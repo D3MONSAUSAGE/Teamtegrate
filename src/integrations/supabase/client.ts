@@ -15,7 +15,8 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
-    flowType: 'pkce'
+    flowType: 'pkce',
+    debug: true // Enable auth debugging
   },
   global: {
     headers: {
@@ -24,5 +25,19 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
   },
   db: {
     schema: 'public'
+  },
+  realtime: {
+    params: {
+      eventsPerSecond: 10
+    }
+  }
+});
+
+// Add session debugging
+supabase.auth.onAuthStateChange((event, session) => {
+  console.log('Auth state change:', event, 'Session:', session ? 'exists' : 'null');
+  if (session) {
+    console.log('User ID:', session.user?.id);
+    console.log('Access token (first 50 chars):', session.access_token?.substring(0, 50));
   }
 });

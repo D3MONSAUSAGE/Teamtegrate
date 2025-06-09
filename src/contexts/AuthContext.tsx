@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { User } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -56,7 +55,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Check for existing session on mount
+  // Check for existing session on mount with improved error handling
   useEffect(() => {
     console.log('Checking for existing session...');
     
@@ -65,6 +64,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error) {
           console.error('Error getting session:', error);
+          // Force a session refresh if there's an error
+          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+          if (refreshError) {
+            console.error('Error refreshing session:', refreshError);
+          } else {
+            console.log('Session refreshed successfully');
+            setSession(refreshData.session);
+            setTimeout(() => handleUserCreation(refreshData.session), 0);
+            return;
+          }
         } else {
           console.log('Initial session check:', session?.user?.id || 'no session');
           setSession(session);
@@ -81,13 +90,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     checkSession();
   }, []);
 
-  // Set up auth state listener for session changes
+  // Set up auth state listener for session changes with better session handling
   useEffect(() => {
     console.log('Setting up auth state listener...');
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         console.log('Auth state changed:', event, session?.user?.id);
+        
+        // Validate session before using it
+        if (session) {
+          // Test the session by making a simple authenticated query
+          try {
+            const { data, error } = await supabase.from('users').select('id').limit(1);
+            if (error && error.message.includes('JWT')) {
+              console.error('Session appears invalid, refreshing...');
+              const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+              if (!refreshError && refreshData.session) {
+                setSession(refreshData.session);
+                setTimeout(() => handleUserCreation(refreshData.session), 0);
+                return;
+              }
+            }
+          } catch (testError) {
+            console.error('Session validation failed:', testError);
+          }
+        }
         
         // Only handle synchronous operations in the callback
         setSession(session);
@@ -115,9 +143,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(true);
     try {
       await authLogin(email, password);
-      // Don't set loading to false here - let onAuthStateChange handle it
+      // Force session refresh after login to ensure DB connectivity
+      setTimeout(async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          console.log('Post-login session verification successful');
+        }
+      }, 1000);
     } catch (error) {
-      setLoading(false); // Only set to false on error
+      setLoading(false);
       throw error;
     }
   };
@@ -126,9 +160,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(true);
     try {
       await authSignup(email, password, name, role);
-      // Don't set loading to false here - let onAuthStateChange handle it
     } catch (error) {
-      setLoading(false); // Only set to false on error
+      setLoading(false);
       throw error;
     }
   };
@@ -136,9 +169,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     try {
       await authLogout(!!session);
-      // Don't manually clear state here - let onAuthStateChange handle it
     } catch (error) {
-      // On error, clear state manually as fallback
       setUser(null);
       setSession(null);
       throw error;

@@ -1,4 +1,3 @@
-
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from "@/integrations/supabase/client";
 
@@ -20,11 +19,36 @@ export function useChatRoomsDebug() {
     console.log('User ID:', user?.id);
     console.log('User role:', user?.role);
     
-    // Test the get_user_role function first
-    const { data: roleData, error: roleError } = await supabase.rpc('get_user_role');
-    console.log('get_user_role() result:', roleData);
-    if (roleError) {
-      console.error('Error calling get_user_role():', roleError);
+    // Check session status first
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    console.log('Current session:', sessionData.session ? 'exists' : 'null');
+    if (sessionError) {
+      console.error('Session error:', sessionError);
+    }
+    
+    // Test auth.uid() function directly
+    try {
+      const { data: uidData, error: uidError } = await supabase.rpc('get_user_role');
+      console.log('get_user_role() result:', uidData);
+      if (uidError) {
+        console.error('Error calling get_user_role():', uidError);
+      }
+    } catch (err) {
+      console.error('RPC call failed:', err);
+    }
+
+    // Test simple authenticated query
+    try {
+      const { data: simpleTest, error: simpleError } = await supabase
+        .from('users')
+        .select('id')
+        .limit(1);
+      console.log('Simple auth test result:', simpleTest?.length || 0, 'rows');
+      if (simpleError) {
+        console.error('Simple auth test error:', simpleError);
+      }
+    } catch (err) {
+      console.error('Simple auth test failed:', err);
     }
 
     console.log('Fetching chat rooms...');
@@ -41,12 +65,11 @@ export function useChatRoomsDebug() {
     }
 
     if (!data || data.length === 0) {
-      console.warn('No chat rooms returned from database');
+      console.log('No chat rooms returned from database');
       console.log('This could mean:');
       console.log('1. No rooms exist in the database');
       console.log('2. RLS policies are blocking access');
       console.log('3. User is not authenticated properly');
-      console.log('Testing raw query without RLS...');
     }
   };
 
