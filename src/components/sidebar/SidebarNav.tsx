@@ -21,12 +21,8 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubItem,
-  SidebarMenuSubButton,
   useSidebar,
 } from '@/components/ui/sidebar';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useNotifications } from '@/hooks/use-notifications';
 
 interface SidebarNavProps {
@@ -69,6 +65,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ onNavigation, isCollapsed }) =>
             <SidebarMenuButton
               asChild
               isActive={isActive}
+              tooltip={item.name}
               className={cn(
                 "flex items-center gap-3 px-3 py-2 text-gray-700 dark:text-gray-200 rounded-lg transition-colors",
                 isActive && "bg-primary/10 text-primary dark:text-primary",
