@@ -13,24 +13,24 @@ const TaskCardHeader: React.FC<TaskCardHeaderProps> = ({ title, priority }) => {
   const getPriorityColor = (priority: string) => {
     switch(priority) {
       case 'Low': 
-        return 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25';
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200 border-blue-200 dark:border-blue-800/50';
       case 'Medium': 
-        return 'bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-lg shadow-amber-500/25';
+        return 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-200 border-amber-200 dark:border-amber-800/50';
       case 'High': 
-        return 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/25';
+        return 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200 border-red-200 dark:border-red-800/50';
       default: 
-        return 'bg-gradient-to-r from-gray-500 to-gray-600 text-white shadow-lg shadow-gray-500/25';
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-900/50 dark:text-gray-200 border-gray-200 dark:border-gray-800/50';
     }
   };
 
   return (
-    <CardHeader className="p-6 pb-4 space-y-3">
+    <CardHeader className="p-0 pb-3 space-y-3">
       <div className="flex items-start justify-between gap-3">
-        <CardTitle className="text-lg font-bold leading-tight line-clamp-2 flex-1 min-w-0 text-foreground group-hover:text-primary transition-colors duration-300">
+        <CardTitle className="text-base font-semibold leading-tight line-clamp-2 flex-1 min-w-0 text-foreground group-hover:text-primary/90 transition-colors duration-200">
           {title}
         </CardTitle>
         <Badge className={cn(
-          "text-xs px-3 py-1.5 shrink-0 font-bold border-0 rounded-full transition-all duration-300 hover:scale-105",
+          "text-xs px-2.5 py-1 shrink-0 font-medium rounded-md border",
           getPriorityColor(priority)
         )}>
           {priority}
