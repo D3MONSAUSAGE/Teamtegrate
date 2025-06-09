@@ -2,7 +2,8 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Sun, Moon, Home } from "lucide-react";
+import { Home } from "lucide-react";
+import DarkModeToggle from "@/components/shared/DarkModeToggle";
 
 interface SidebarHeaderProps {
   onToggleDarkMode?: () => void;
@@ -54,23 +55,14 @@ const SidebarHeader: React.FC<SidebarHeaderProps> = ({
         >
           <Home className="h-5 w-5 text-primary" />
         </Link>
-        <button
-          aria-label="Toggle dark mode"
-          className={cn(
-            "rounded-full p-1.5 hover:bg-muted border border-transparent hover:border-primary transition-colors duration-200",
-            "focus:outline-none"
-          )}
-          onClick={onToggleDarkMode}
-          style={{
-            minWidth: "34px",
-            minHeight: "34px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          {isDark ? <Moon className="h-5 w-5 text-yellow-300" /> : <Sun className="h-5 w-5 text-yellow-400" />}
-        </button>
+        
+        {onToggleDarkMode && (
+          <DarkModeToggle 
+            isDark={isDark}
+            onToggle={onToggleDarkMode}
+            size="md"
+          />
+        )}
       </div>
     </div>
   );
