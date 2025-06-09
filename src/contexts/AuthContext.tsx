@@ -23,6 +23,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Clear corrupted session data
+  const clearSession = () => {
+    console.log('Clearing corrupted session data');
+    setUser(null);
+    setSession(null);
+    localStorage.removeItem('sb-zlfpiovyodiyecdueiig-auth-token');
+    // Clear any other potential session storage
+    sessionStorage.clear();
+  };
+
+  // Validate session by checking if auth.uid() works
+  const validateSession = async (currentSession: Session): Promise<boolean> => {
+    try {
+      // Test if we can make an authenticated request
+      const { data, error } = await supabase
+        .from('users')
+        .select('id')
+        .eq('id', currentSession.user.id)
+        .single();
+      
+      if (error) {
+        console.error('Session validation failed:', error);
+        return false;
+      }
+      
+      return !!data;
+    } catch (error) {
+      console.error('Session validation error:', error);
+      return false;
+    }
+  };
+
   const refreshUserSession = async (): Promise<void> => {
     const { session: newSession, user: userData } = await refreshSession();
     if (newSession && userData) {
@@ -35,7 +67,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const handleUserCreation = async (session: Session | null) => {
     try {
       if (session?.user) {
-        console.log('Creating user data for session:', session.user.id);
+        console.log('Processing session for user:', session.user.id);
+        
+        // Validate the session first
+        const isValid = await validateSession(session);
+        if (!isValid) {
+          console.log('Session is invalid, clearing...');
+          clearSession();
+          setLoading(false);
+          return;
+        }
+        
         const userData = await createUserFromSession(session);
         setUser(userData);
         console.log('User data created successfully:', userData.id, userData.role);
@@ -45,7 +87,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } catch (error) {
       console.error('Error creating user data:', error);
-      setUser(null);
+      // If we get an error, the session might be corrupted
+      clearSession();
     } finally {
       setLoading(false);
     }
@@ -60,6 +103,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error) {
           console.error('Error getting session:', error);
+          if (error.message.includes('Invalid Refresh Token')) {
+            console.log('Detected invalid refresh token, clearing session');
+            clearSession();
+          }
           setLoading(false);
           return;
         }
@@ -69,6 +116,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         await handleUserCreation(session);
       } catch (error) {
         console.error('Error in initial session check:', error);
+        clearSession();
         setLoading(false);
       }
     };
@@ -83,6 +131,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state changed:', event, session?.user?.id);
+        
+        if (event === 'TOKEN_REFRESHED') {
+          console.log('Token refreshed successfully');
+        }
+        
+        if (event === 'SIGNED_OUT' || !session) {
+          clearSession();
+          setLoading(false);
+          return;
+        }
+        
         setSession(session);
         await handleUserCreation(session);
       }
@@ -117,9 +176,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     try {
       await authLogout(!!session);
+      clearSession();
     } catch (error) {
-      setUser(null);
-      setSession(null);
+      // Force clear session even if logout fails
+      clearSession();
       throw error;
     }
   };

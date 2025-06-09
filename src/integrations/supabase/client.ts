@@ -16,7 +16,7 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     autoRefreshToken: true,
     detectSessionInUrl: true,
     flowType: 'pkce',
-    debug: true // Enable auth debugging
+    debug: false // Disable debug to reduce noise
   },
   global: {
     headers: {
@@ -33,11 +33,22 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
   }
 });
 
-// Add session debugging
+// Enhanced session debugging with error handling
 supabase.auth.onAuthStateChange((event, session) => {
   console.log('Auth state change:', event, 'Session:', session ? 'exists' : 'null');
+  
+  if (event === 'TOKEN_REFRESHED') {
+    console.log('Token successfully refreshed');
+  }
+  
+  if (event === 'SIGNED_OUT') {
+    console.log('User signed out, clearing local storage');
+    // Clear any cached data
+    localStorage.removeItem('sb-zlfpiovyodiyecdueiig-auth-token');
+  }
+  
   if (session) {
     console.log('User ID:', session.user?.id);
-    console.log('Access token (first 50 chars):', session.access_token?.substring(0, 50));
+    console.log('Session expires at:', new Date(session.expires_at! * 1000));
   }
 });

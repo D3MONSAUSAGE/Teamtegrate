@@ -21,7 +21,7 @@ interface UseChatRoomsFetchProps {
 }
 
 export function useChatRoomsFetch({ setRooms, setIsLoading, setError }: UseChatRoomsFetchProps) {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const debug = useChatRoomsDebug();
 
   const fetchRooms = useCallback(async () => {
@@ -37,6 +37,15 @@ export function useChatRoomsFetch({ setRooms, setIsLoading, setError }: UseChatR
     try {
       console.log('ChatRooms: Fetching rooms for user:', user.id, 'role:', user.role);
       
+      // Test session validity first
+      const { data: sessionTest, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !sessionTest.session) {
+        console.error('Session invalid during room fetch:', sessionError);
+        toast.error('Session expired. Please log in again.');
+        await logout();
+        return;
+      }
+
       const { data, error } = await supabase
         .from('chat_rooms')
         .select('*')
@@ -44,6 +53,15 @@ export function useChatRoomsFetch({ setRooms, setIsLoading, setError }: UseChatR
 
       if (error) {
         console.error('Supabase chat rooms error:', error);
+        
+        // Check if it's an auth-related error
+        if (error.message.includes('JWT') || error.message.includes('auth') || error.code === 'PGRST301') {
+          console.log('Authentication error detected, forcing logout');
+          toast.error('Session expired. Please log in again.');
+          await logout();
+          return;
+        }
+        
         throw error;
       }
 
@@ -61,12 +79,22 @@ export function useChatRoomsFetch({ setRooms, setIsLoading, setError }: UseChatR
       console.error('Error fetching rooms:', error);
       debug.logUnexpectedError(error);
       
+      // Handle specific auth errors
+      if (error.message?.includes('infinite recursion') || 
+          error.message?.includes('JWT') || 
+          error.message?.includes('auth')) {
+        console.log('Authentication/RLS error, forcing logout');
+        toast.error('Authentication error. Please log in again.');
+        await logout();
+        return;
+      }
+      
       setError(`Failed to load chat rooms: ${error.message}`);
       toast.error('Failed to load chat rooms: ' + error.message);
     } finally {
       setIsLoading(false);
     }
-  }, [user?.id, user?.role, debug, setRooms, setIsLoading, setError]);
+  }, [user?.id, user?.role, debug, setRooms, setIsLoading, setError, logout]);
 
   return {
     fetchRooms
