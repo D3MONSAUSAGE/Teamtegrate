@@ -5,8 +5,35 @@ import { useAuth } from '@/contexts/AuthContext';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 import ChatbotBubble from './chat/ChatbotBubble';
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
+import { SidebarProvider, SidebarInset, useSidebar } from '@/components/ui/sidebar';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Loader2 } from 'lucide-react';
+
+const MainContent = ({ children }: { children: React.ReactNode }) => {
+  const { setOpen, isMobile } = useSidebar();
+  const isDesktop = !isMobile;
+
+  const handleMainContentClick = () => {
+    // Only auto-collapse on desktop, not mobile
+    if (isDesktop) {
+      setOpen(false);
+    }
+  };
+
+  return (
+    <SidebarInset 
+      className="flex flex-col flex-1 no-scrollbar overflow-hidden"
+      onClick={handleMainContentClick}
+    >
+      <Navbar />
+      <main className="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar smooth-scroll">
+        <div className="p-3 md:p-6 space-y-6 animate-fade-in">
+          {children}
+        </div>
+      </main>
+    </SidebarInset>
+  );
+};
 
 const AppLayout = () => {
   const { user, loading, isAuthenticated } = useAuth();
@@ -39,14 +66,9 @@ const AppLayout = () => {
       <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background w-full flex mobile-safe-area no-scrollbar overflow-hidden">
         <Sidebar />
         
-        <SidebarInset className="flex flex-col flex-1 no-scrollbar overflow-hidden">
-          <Navbar />
-          <main className="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar smooth-scroll">
-            <div className="p-3 md:p-6 space-y-6 animate-fade-in">
-              <Outlet />
-            </div>
-          </main>
-        </SidebarInset>
+        <MainContent>
+          <Outlet />
+        </MainContent>
 
         <ChatbotBubble />
       </div>

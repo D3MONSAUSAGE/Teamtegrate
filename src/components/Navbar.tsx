@@ -72,7 +72,9 @@ const Navbar = () => {
   return (
     <nav className="bg-white dark:bg-background border-b border-gray-200 dark:border-gray-800 py-4 pl-3 md:pl-6 pr-6 flex items-center justify-between">
       <div className="flex items-center gap-3">
-        <SidebarTrigger className="h-9 w-9" />
+        {isMobile && (
+          <SidebarTrigger className="h-9 w-9" />
+        )}
         <NavbarBrand />
       </div>
 
