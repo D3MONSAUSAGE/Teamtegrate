@@ -10,6 +10,7 @@ interface SectionContainerProps {
   background?: BackgroundType;
   maxWidth?: MaxWidthType;
   className?: string;
+  id?: string;
 }
 
 const backgroundStyles: Record<BackgroundType, string> = {
@@ -31,15 +32,19 @@ const SectionContainer: React.FC<SectionContainerProps> = ({
   children, 
   background = 'default', 
   maxWidth = '6xl',
-  className = ''
+  className = '',
+  id
 }) => {
   return (
-    <section className={cn(
-      'py-12 md:py-20',
-      backgroundStyles[background],
-      'w-full overflow-x-hidden',
-      className
-    )}>
+    <section 
+      id={id}
+      className={cn(
+        'py-12 md:py-20',
+        backgroundStyles[background],
+        'w-full overflow-x-hidden',
+        className
+      )}
+    >
       <div className={cn(
         'container mx-auto px-4 sm:px-6 lg:px-8',
         maxWidthStyles[maxWidth],
