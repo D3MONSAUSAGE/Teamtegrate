@@ -85,16 +85,6 @@ const FramerTreeAnimation: React.FC<FramerTreeAnimationProps> = ({ progress, isA
             className="relative mb-2"
             animate={controls}
             initial={{ scale: 0, opacity: 0 }}
-            animate={{
-              scale: 1,
-              opacity: 1
-            }}
-            transition={{
-              type: "spring",
-              stiffness: 100,
-              damping: 15,
-              duration: 0.8
-            }}
           >
             {/* Main crown with physics-based growth */}
             <motion.div 

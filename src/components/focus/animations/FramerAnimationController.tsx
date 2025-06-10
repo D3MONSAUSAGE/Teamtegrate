@@ -2,6 +2,8 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import FramerTreeAnimation from './FramerTreeAnimation';
+import FramerFlowerAnimation from './FramerFlowerAnimation';
+import FramerCityAnimation from './FramerCityAnimation';
 import FramerParticleSystem from './FramerParticleSystem';
 import { shouldReduceMotion } from './AnimationUtils';
 
@@ -21,10 +23,16 @@ const FramerAnimationController: React.FC<FramerAnimationControllerProps> = ({
 
   if (reducedMotion) {
     // Fallback to basic animation for reduced motion
+    const fallbackEmoji = animationType === 'tree' ? '🌳' : animationType === 'flower' ? '🌸' : '🏙️';
+    const seedEmoji = animationType === 'tree' ? '🌱' : animationType === 'flower' ? '🌱' : '🏗️';
+    const growingEmoji = animationType === 'tree' ? '🌿' : animationType === 'flower' ? '🌺' : '🏢';
+    
     return (
       <div className="w-full h-full bg-gradient-to-b from-sky-200 to-sky-100 rounded-xl overflow-hidden">
         <div className="w-full h-full flex items-center justify-center">
-          <div className="text-6xl">{progress === 0 ? '🌱' : progress < 50 ? '🌿' : '🌳'}</div>
+          <div className="text-6xl">
+            {progress === 0 ? seedEmoji : progress < 50 ? growingEmoji : fallbackEmoji}
+          </div>
         </div>
       </div>
     );
@@ -47,20 +55,54 @@ const FramerAnimationController: React.FC<FramerAnimationControllerProps> = ({
     }
   };
 
+  const getBackgroundGradient = () => {
+    switch (animationType) {
+      case 'flower':
+        return isActive 
+          ? [
+              'linear-gradient(to bottom, #fdf2f8, #fce7f3)',
+              'linear-gradient(to bottom, #fef3f2, #fed7d7)', 
+              'linear-gradient(to bottom, #fdf2f8, #fce7f3)'
+            ]
+          : 'linear-gradient(to bottom, #fdf2f8, #fce7f3)';
+      case 'city':
+        return isActive 
+          ? [
+              'linear-gradient(to bottom, #eff6ff, #dbeafe)',
+              'linear-gradient(to bottom, #f0f9ff, #e0f2fe)', 
+              'linear-gradient(to bottom, #eff6ff, #dbeafe)'
+            ]
+          : 'linear-gradient(to bottom, #eff6ff, #dbeafe)';
+      default: // tree
+        return isActive 
+          ? [
+              'linear-gradient(to bottom, #e0f2fe, #bae6fd)',
+              'linear-gradient(to bottom, #dbeafe, #bfdbfe)', 
+              'linear-gradient(to bottom, #e0f2fe, #bae6fd)'
+            ]
+          : 'linear-gradient(to bottom, #e0f2fe, #bae6fd)';
+    }
+  };
+
   const backgroundVariants = {
     animate: {
-      background: isActive 
-        ? [
-            'linear-gradient(to bottom, #e0f2fe, #bae6fd)',
-            'linear-gradient(to bottom, #dbeafe, #bfdbfe)', 
-            'linear-gradient(to bottom, #e0f2fe, #bae6fd)'
-          ]
-        : 'linear-gradient(to bottom, #e0f2fe, #bae6fd)',
+      background: getBackgroundGradient(),
       transition: {
         duration: 6,
         repeat: Infinity,
         ease: "easeInOut"
       }
+    }
+  };
+
+  const getParticleTheme = () => {
+    switch (animationType) {
+      case 'flower':
+        return 'garden';
+      case 'city':
+        return 'city';
+      default:
+        return 'forest';
     }
   };
 
@@ -82,7 +124,7 @@ const FramerAnimationController: React.FC<FramerAnimationControllerProps> = ({
           exit="exit"
           className="absolute inset-0"
         >
-          {/* Render the appropriate animation */}
+          {/* Render the appropriate animation based on type */}
           {animationType === 'tree' && (
             <FramerTreeAnimation 
               progress={progress}
@@ -90,9 +132,15 @@ const FramerAnimationController: React.FC<FramerAnimationControllerProps> = ({
             />
           )}
           
-          {/* For now, fallback to tree for other types */}
-          {(animationType === 'flower' || animationType === 'city') && (
-            <FramerTreeAnimation 
+          {animationType === 'flower' && (
+            <FramerFlowerAnimation 
+              progress={progress}
+              isActive={isActive}
+            />
+          )}
+
+          {animationType === 'city' && (
+            <FramerCityAnimation 
               progress={progress}
               isActive={isActive}
             />
@@ -102,7 +150,7 @@ const FramerAnimationController: React.FC<FramerAnimationControllerProps> = ({
           <FramerParticleSystem 
             isActive={isActive} 
             stage={stage} 
-            theme={animationType === 'tree' ? 'forest' : animationType === 'flower' ? 'garden' : 'city'}
+            theme={getParticleTheme()}
             progress={progress}
             intensity={progress < 30 ? 'low' : progress < 70 ? 'medium' : 'high'}
           />
