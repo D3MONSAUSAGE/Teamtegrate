@@ -100,7 +100,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
         aria-label={`Open details for ${task.title}`}
         role="button"
       >
-        {/* Priority Corner Ribbon - Moved to Top Left */}
+        {/* Priority Corner Ribbon - Top Left */}
         <div className="absolute top-0 left-0 w-16 h-16 overflow-hidden z-10">
           <div className={cn(
             "absolute top-3 -left-3 w-20 h-6 shadow-lg transform -rotate-45 transition-all duration-300 group-hover:scale-110",
@@ -108,7 +108,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
           )} />
         </div>
 
-        {/* Floating Action Button - Moved to ensure no conflict */}
+        {/* Floating Action Button - Top Right */}
         <div className="absolute top-4 right-4 z-30 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
           <div className="backdrop-blur-md bg-background/80 rounded-full p-1 shadow-lg border border-border/40">
             <TaskCardActions
@@ -135,9 +135,9 @@ const TaskCard: React.FC<TaskCardProps> = ({
           />
         </div>
         
-        {/* Enhanced Overdue Indicator - Repositioned to avoid footer conflicts */}
+        {/* Enhanced Overdue Indicator - Bottom Right Corner */}
         {isOverdue && (
-          <div className="absolute top-4 left-20 z-20">
+          <div className="absolute bottom-4 right-4 z-20">
             <div className="flex items-center gap-2 bg-gradient-to-r from-red-500 to-red-600 text-white px-3 py-1.5 rounded-full shadow-lg backdrop-blur-sm border border-red-400/30">
               <div className="w-1.5 h-1.5 bg-white rounded-full animate-ping" />
               <span className="text-xs font-semibold">Overdue</span>
