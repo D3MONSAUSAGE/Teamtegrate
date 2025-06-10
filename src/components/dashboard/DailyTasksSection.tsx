@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import TaskCard from '@/components/task-card';
@@ -7,7 +6,7 @@ import { Plus, ChevronRight, Calendar } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import TaskDetailDrawer from '@/components/task/TaskDetailDrawer';
-import CreateTaskDialogWithAI from '@/components/CreateTaskDialogWithAI';
+import CreateTaskDialogEnhanced from '@/components/CreateTaskDialogEnhanced';
 
 interface DailyTasksSectionProps {
   tasks: Task[];
@@ -105,7 +104,7 @@ const DailyTasksSection: React.FC<DailyTasksSectionProps> = ({
         task={selectedTask}
       />
 
-      <CreateTaskDialogWithAI
+      <CreateTaskDialogEnhanced
         open={isCreateTaskOpen}
         onOpenChange={setIsCreateTaskOpen}
         editingTask={editingTask}

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTask } from '@/contexts/task';
@@ -6,7 +5,7 @@ import { Task, TaskStatus } from '@/types';
 import TaskCommentsDialog from '@/components/TaskCommentsDialog';
 import TaskHeader from '@/components/task/TaskHeader';
 import TaskTabs from '@/components/task/TaskTabs';
-import CreateTaskDialogWithAI from '@/components/CreateTaskDialogWithAI';
+import CreateTaskDialogEnhanced from '@/components/CreateTaskDialogEnhanced';
 import { toast } from '@/components/ui/sonner';
 
 const TasksPage = () => {
@@ -121,7 +120,7 @@ const TasksPage = () => {
         </div>
       </div>
       
-      <CreateTaskDialogWithAI
+      <CreateTaskDialogEnhanced
         open={isCreateTaskOpen} 
         onOpenChange={setIsCreateTaskOpen}
         editingTask={editingTask}

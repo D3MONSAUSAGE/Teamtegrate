@@ -1,11 +1,10 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { useTask } from '@/contexts/task';
 import { useAuth } from '@/contexts/AuthContext';
 import { Task, Project } from '@/types';
 import { Plus, Sparkles, TrendingUp, Calendar } from 'lucide-react';
-import CreateTaskDialogWithAI from '@/components/CreateTaskDialogWithAI';
+import CreateTaskDialogEnhanced from '@/components/CreateTaskDialogEnhanced';
 import { format } from 'date-fns';
 import TasksSummary from '@/components/dashboard/TasksSummary';
 import DailyTasksSection from '@/components/dashboard/DailyTasksSection';
@@ -221,7 +220,7 @@ const DashboardPage = () => {
           </div>
         )}
         
-        <CreateTaskDialogWithAI 
+        <CreateTaskDialogEnhanced 
           open={isCreateTaskOpen} 
           onOpenChange={setIsCreateTaskOpen}
           editingTask={editingTask}
