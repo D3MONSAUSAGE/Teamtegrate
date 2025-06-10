@@ -11,109 +11,104 @@ interface TreeCrownProps {
 const TreeCrown: React.FC<TreeCrownProps> = ({ progress, isActive, stage }) => {
   const getCrownSize = (progress: number, multiplier: number = 1) => {
     if (progress === 0) return 0;
-    return Math.max(80, 80 + (progress / 100) * 50 * multiplier);
+    return Math.max(60, 60 + (progress / 100) * 40 * multiplier);
   };
 
   if (stage === 'seed') return null;
 
   return (
     <motion.div 
-      className="relative mb-2"
+      className="relative mb-1"
       initial={{ scale: 0, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
-      transition={{ duration: 0.3, type: "spring" }}
+      transition={{ duration: 0.5, type: "spring" }}
     >
-      {/* Main crown */}
+      {/* Main crown with organic shape */}
       <motion.div 
         className="relative"
         style={{
           width: `${getCrownSize(progress)}px`,
-          height: `${getCrownSize(progress)}px`,
+          height: `${getCrownSize(progress) * 0.9}px`,
         }}
         animate={isActive ? {
-          scale: [1, 1.05, 1],
-          rotate: [-1, 1, -1]
+          scale: [1, 1.02, 1],
+          rotate: [-0.5, 0.5, -0.5]
         } : {}}
         transition={{
-          duration: 3,
+          duration: 4,
           repeat: Infinity,
           ease: "easeInOut"
         }}
       >
-        {/* Outer glow for visibility */}
+        {/* Organic crown shape with multiple layers */}
         <div 
-          className="absolute inset-0 bg-green-400 rounded-full blur-sm opacity-50"
+          className="absolute inset-0 bg-gradient-to-b from-green-400 via-green-500 to-green-600 shadow-lg"
           style={{
-            width: `${getCrownSize(progress)}px`,
-            height: `${getCrownSize(progress)}px`,
+            borderRadius: '60% 40% 50% 70% / 50% 60% 40% 50%',
+            filter: 'drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2))'
           }}
         />
         
-        {/* Main crown with dark colors and white border */}
+        {/* Additional organic layers for depth */}
         <div 
-          className="relative bg-gradient-to-b from-green-700 to-green-900 rounded-full border-4 border-white shadow-2xl"
+          className="absolute top-1 left-1 right-2 bottom-2 bg-gradient-to-b from-green-300/60 to-transparent"
           style={{
-            width: `${getCrownSize(progress)}px`,
-            height: `${getCrownSize(progress)}px`,
-            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5), inset 0 2px 8px rgba(255, 255, 255, 0.2)'
+            borderRadius: '50% 60% 40% 70% / 60% 50% 60% 40%'
           }}
-        >
-          {/* Inner highlight for depth */}
-          <div 
-            className="absolute top-2 left-2 right-2 h-1/3 bg-gradient-to-b from-green-500/40 to-transparent rounded-full"
+        />
+        
+        {/* Natural texture spots */}
+        {Array.from({ length: 6 }, (_, i) => (
+          <div
+            key={i}
+            className="absolute w-1.5 h-1.5 bg-green-300 rounded-full opacity-40"
+            style={{
+              top: `${25 + (i % 2) * 30}%`,
+              left: `${20 + (i % 3) * 25}%`,
+            }}
           />
-          
-          {/* Texture dots for realism */}
-          {Array.from({ length: 8 }, (_, i) => (
-            <div
-              key={i}
-              className="absolute w-1 h-1 bg-green-400 rounded-full opacity-60"
-              style={{
-                top: `${20 + (i % 3) * 20}%`,
-                left: `${20 + (i % 4) * 20}%`,
-              }}
-            />
-          ))}
-        </div>
+        ))}
       </motion.div>
       
-      {/* Side branches */}
+      {/* Side branches with organic shapes */}
       {progress >= 25 && (
         <>
           <motion.div 
-            className="absolute top-1 bg-gradient-to-b from-green-700 to-green-900 rounded-full border-2 border-white shadow-lg"
+            className="absolute top-2 bg-gradient-to-b from-green-400 to-green-600 shadow-md"
             style={{
-              left: `-${getCrownSize(progress) * 0.15}px`,
-              width: `${getCrownSize(progress) * 0.6}px`,
-              height: `${getCrownSize(progress) * 0.7}px`,
+              left: `-${getCrownSize(progress) * 0.12}px`,
+              width: `${getCrownSize(progress) * 0.5}px`,
+              height: `${getCrownSize(progress) * 0.6}px`,
+              borderRadius: '70% 30% 60% 40% / 40% 70% 30% 60%'
             }}
-            initial={{ scale: 0, x: -20 }}
+            initial={{ scale: 0, x: -15 }}
             animate={{ 
               scale: 1, 
               x: 0,
-              rotate: isActive ? [-3, 3, -3] : 0
+              rotate: isActive ? [-2, 2, -2] : 0
             }}
             transition={{
               scale: { type: "spring", delay: 0.3 },
               rotate: {
-                duration: 4,
+                duration: 5,
                 repeat: Infinity,
                 ease: "easeInOut"
               }
             }}
           />
           <motion.div 
-            className="absolute top-1 bg-gradient-to-b from-green-700 to-green-900 rounded-full border-2 border-white shadow-lg"
+            className="absolute top-2 bg-gradient-to-b from-green-400 to-green-600 shadow-md"
             style={{
-              right: `-${getCrownSize(progress) * 0.15}px`,
-              width: `${getCrownSize(progress) * 0.6}px`,
-              height: `${getCrownSize(progress) * 0.7}px`,
+              right: `-${getCrownSize(progress) * 0.12}px`,
+              width: `${getCrownSize(progress) * 0.5}px`,
+              height: `${getCrownSize(progress) * 0.6}px`,
+              borderRadius: '30% 70% 40% 60% / 70% 40% 60% 30%'
             }}
-            initial={{ scale: 0, x: 20 }}
+            initial={{ scale: 0, x: 15 }}
             animate={{ 
               scale: 1, 
               x: 0,
-              rotate: isActive ? [3, -3, 3] : 0
+              rotate: isActive ? [2, -2, 2] : 0
             }}
             transition={{
               scale: { type: "spring", delay: 0.5 },
@@ -127,28 +122,24 @@ const TreeCrown: React.FC<TreeCrownProps> = ({ progress, isActive, stage }) => {
         </>
       )}
       
-      {/* Blooming flowers for complete stage */}
+      {/* Flowers for complete stage */}
       {stage === 'complete' && (
         <motion.div 
           className="absolute left-1/2 transform -translate-x-1/2"
-          style={{ top: `-${getCrownSize(progress) * 0.2}px` }}
+          style={{ top: `-${getCrownSize(progress) * 0.15}px` }}
           initial={{ scale: 0, y: 10 }}
           animate={{ scale: 1, y: 0 }}
           transition={{ type: "spring", delay: 0.8 }}
         >
           <div className="flex gap-1">
-            {['#ec4899', '#a855f7', '#facc15'].map((color, i) => (
+            {['#f472b6', '#a78bfa', '#fbbf24'].map((color, i) => (
               <motion.div
                 key={i}
-                className="w-3 h-3 rounded-full border border-white shadow-lg"
+                className="w-2 h-2 rounded-full shadow-sm"
                 style={{ backgroundColor: color }}
                 animate={{
-                  scale: [1, 1.3, 1],
-                  boxShadow: [
-                    `0 0 5px ${color}`,
-                    `0 0 20px ${color}`,
-                    `0 0 5px ${color}`
-                  ]
+                  scale: [1, 1.2, 1],
+                  opacity: [0.8, 1, 0.8]
                 }}
                 transition={{
                   duration: 2 + i * 0.3,
