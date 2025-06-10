@@ -1,9 +1,10 @@
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { useTask } from '@/contexts/task';
 import { useAuth } from '@/contexts/AuthContext';
 import { Task, Project } from '@/types';
-import { Plus, Sparkles } from 'lucide-react';
+import { Plus, Sparkles, TrendingUp, Calendar } from 'lucide-react';
 import CreateTaskDialogWithAI from '@/components/CreateTaskDialogWithAI';
 import { format } from 'date-fns';
 import TasksSummary from '@/components/dashboard/TasksSummary';
@@ -67,98 +68,167 @@ const DashboardPage = () => {
   };
   
   return (
-    <div className="space-y-8 no-scrollbar">
-      {/* Welcome Header */}
-      <div className="modern-card p-6 md:p-8 animate-fade-in">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
-                Welcome back, {user?.name}!
-              </h1>
-              <Sparkles className="h-6 w-6 text-primary animate-pulse" />
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/10 to-background">
+      {/* Enhanced Background Pattern */}
+      <div className="absolute inset-0 bg-grid-pattern opacity-[0.02] pointer-events-none" />
+      
+      <div className="relative space-y-8 no-scrollbar">
+        {/* Enhanced Welcome Header */}
+        <div className="relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-emerald-500/5 to-primary/5 animate-gradient" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(134,239,172,0.1),transparent_70%)]" />
+          
+          <div className="relative glass-card border-0 shadow-2xl bg-gradient-to-br from-white/95 via-white/90 to-white/85 dark:from-card/95 dark:via-card/90 dark:to-card/85 backdrop-blur-xl p-8 md:p-10 animate-fade-in">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-foreground via-primary to-emerald-600 bg-clip-text text-transparent">
+                      Welcome back, {user?.name}!
+                    </h1>
+                    <div className="absolute -top-1 -right-1">
+                      <Sparkles className="h-6 w-6 text-primary animate-pulse" />
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-4 text-lg">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Calendar className="h-5 w-5" />
+                    <span className="font-medium">{format(new Date(), "EEEE, MMMM d")}</span>
+                  </div>
+                  <div className="hidden sm:block w-px h-4 bg-border" />
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <TrendingUp className="h-5 w-5" />
+                    <span>Your productivity overview</span>
+                  </div>
+                </div>
+
+                {/* Quick Stats */}
+                <div className="flex items-center gap-6 pt-2">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-primary">{todaysTasks.length}</div>
+                    <div className="text-xs text-muted-foreground">Today's Tasks</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-emerald-600">{upcomingTasks.length}</div>
+                    <div className="text-xs text-muted-foreground">Upcoming</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-amber-600">{projects.length}</div>
+                    <div className="text-xs text-muted-foreground">Projects</div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button 
+                  onClick={() => handleCreateTask()} 
+                  size={isMobile ? "default" : "lg"} 
+                  className="group relative overflow-hidden bg-gradient-to-r from-primary via-emerald-500 to-primary bg-size-200 animate-gradient hover:shadow-xl hover:shadow-primary/25 transition-all duration-300 hover:scale-105"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <Plus className="h-5 w-5 mr-2 group-hover:rotate-90 transition-transform duration-300" /> 
+                  Create Task
+                </Button>
+              </div>
             </div>
-            <p className="text-muted-foreground text-lg">
-              {format(new Date(), "EEEE, MMMM d")} · Here's your productivity overview
-            </p>
           </div>
-          <Button 
-            onClick={() => handleCreateTask()} 
-            size={isMobile ? "default" : "lg"} 
-            className="interactive-button bg-gradient-to-r from-primary to-emerald-500 hover:from-emerald-600 hover:to-lime-500 shadow-lg"
-          >
-            <Plus className="h-5 w-5 mr-2" /> 
-            Create Task
-          </Button>
-        </div>
-      </div>
-      
-      {/* Quick Stats Summary */}
-      <div className="animate-slide-up" style={{ animationDelay: '0.1s' }}>
-        <TasksSummary 
-          dailyScore={dailyScore}
-          todaysTasks={todaysTasks}
-          upcomingTasks={upcomingTasks}
-        />
-      </div>
-
-      {/* Time Tracking Section */}
-      <div className="animate-slide-up" style={{ animationDelay: '0.2s' }}>
-        <TimeTracking />
-      </div>
-
-      {/* Analytics Overview */}
-      <div className="animate-slide-up" style={{ animationDelay: '0.3s' }}>
-        <AnalyticsSection 
-          tasks={tasks} 
-          projects={projects}
-        />
-      </div>
-      
-      {/* Tasks Sections - Changed from grid to stacked */}
-      <div className="space-y-8">
-        <div className="animate-slide-up" style={{ animationDelay: '0.4s' }}>
-          <DailyTasksSection 
-            tasks={todaysTasks}
-            onCreateTask={() => handleCreateTask()}
-            onEditTask={handleEditTask}
-          />
         </div>
         
-        <div className="animate-slide-up" style={{ animationDelay: '0.5s' }}>
-          <UpcomingTasksSection 
-            tasks={upcomingTasks}
-            onCreateTask={() => handleCreateTask()}
-            onEditTask={handleEditTask}
+        {/* Enhanced Quick Stats Summary */}
+        <div className="animate-slide-up" style={{ animationDelay: '0.1s' }}>
+          <TasksSummary 
+            dailyScore={dailyScore}
+            todaysTasks={todaysTasks}
+            upcomingTasks={upcomingTasks}
           />
         </div>
-      </div>
-      
-      {/* Manager-only sections */}
-      {user?.role === 'manager' && (
-        <div className="space-y-8">
-          <div className="animate-slide-up" style={{ animationDelay: '0.6s' }}>
-            <RecentProjects 
-              projects={recentProjects}
-              onViewTasks={handleViewTasks}
-              onCreateTask={handleCreateTask}
-              onRefresh={refreshProjects}
-            />
-          </div>
-          
-          <div className="animate-slide-up" style={{ animationDelay: '0.7s' }}>
-            <TeamManagement />
+
+        {/* Enhanced Time Tracking Section */}
+        <div className="animate-slide-up" style={{ animationDelay: '0.2s' }}>
+          <div className="glass-card border shadow-xl bg-gradient-to-br from-white/90 via-white/85 to-white/80 dark:from-card/90 dark:via-card/85 dark:to-card/80 backdrop-blur-xl rounded-2xl">
+            <div className="p-6 border-b border-border/50">
+              <h2 className="text-xl font-semibold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
+                Time Tracking
+              </h2>
+            </div>
+            <div className="p-6">
+              <TimeTracking />
+            </div>
           </div>
         </div>
-      )}
-      
-      <CreateTaskDialogWithAI 
-        open={isCreateTaskOpen} 
-        onOpenChange={setIsCreateTaskOpen}
-        editingTask={editingTask}
-        currentProjectId={selectedProject?.id}
-        onTaskComplete={handleTaskDialogComplete}
-      />
+
+        {/* Enhanced Analytics Overview */}
+        <div className="animate-slide-up" style={{ animationDelay: '0.3s' }}>
+          <div className="glass-card border shadow-xl bg-gradient-to-br from-white/90 via-white/85 to-white/80 dark:from-card/90 dark:via-card/85 dark:to-card/80 backdrop-blur-xl rounded-2xl">
+            <div className="p-6 border-b border-border/50">
+              <h2 className="text-xl font-semibold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
+                Analytics & Insights
+              </h2>
+            </div>
+            <div className="p-6">
+              <AnalyticsSection 
+                tasks={tasks} 
+                projects={projects}
+              />
+            </div>
+          </div>
+        </div>
+        
+        {/* Enhanced Tasks Sections */}
+        <div className="space-y-8">
+          <div className="animate-slide-up" style={{ animationDelay: '0.4s' }}>
+            <div className="glass-card border shadow-xl bg-gradient-to-br from-white/90 via-white/85 to-white/80 dark:from-card/90 dark:via-card/85 dark:to-card/80 backdrop-blur-xl rounded-2xl p-6">
+              <DailyTasksSection 
+                tasks={todaysTasks}
+                onCreateTask={() => handleCreateTask()}
+                onEditTask={handleEditTask}
+              />
+            </div>
+          </div>
+          
+          <div className="animate-slide-up" style={{ animationDelay: '0.5s' }}>
+            <div className="glass-card border shadow-xl bg-gradient-to-br from-white/90 via-white/85 to-white/80 dark:from-card/90 dark:via-card/85 dark:to-card/80 backdrop-blur-xl rounded-2xl p-6">
+              <UpcomingTasksSection 
+                tasks={upcomingTasks}
+                onCreateTask={() => handleCreateTask()}
+                onEditTask={handleEditTask}
+              />
+            </div>
+          </div>
+        </div>
+        
+        {/* Enhanced Manager-only sections */}
+        {user?.role === 'manager' && (
+          <div className="space-y-8">
+            <div className="animate-slide-up" style={{ animationDelay: '0.6s' }}>
+              <div className="glass-card border shadow-xl bg-gradient-to-br from-white/90 via-white/85 to-white/80 dark:from-card/90 dark:via-card/85 dark:to-card/80 backdrop-blur-xl rounded-2xl p-6">
+                <RecentProjects 
+                  projects={recentProjects}
+                  onViewTasks={handleViewTasks}
+                  onCreateTask={handleCreateTask}
+                  onRefresh={refreshProjects}
+                />
+              </div>
+            </div>
+            
+            <div className="animate-slide-up" style={{ animationDelay: '0.7s' }}>
+              <div className="glass-card border shadow-xl bg-gradient-to-br from-white/90 via-white/85 to-white/80 dark:from-card/90 dark:via-card/85 dark:to-card/80 backdrop-blur-xl rounded-2xl">
+                <TeamManagement />
+              </div>
+            </div>
+          </div>
+        )}
+        
+        <CreateTaskDialogWithAI 
+          open={isCreateTaskOpen} 
+          onOpenChange={setIsCreateTaskOpen}
+          editingTask={editingTask}
+          currentProjectId={selectedProject?.id}
+          onTaskComplete={handleTaskDialogComplete}
+        />
+      </div>
     </div>
   );
 };
