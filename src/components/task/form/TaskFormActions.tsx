@@ -1,33 +1,33 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
+import { CheckCircle } from "lucide-react";
 
 interface TaskFormActionsProps {
   isEditMode: boolean;
   onCancel: () => void;
-  isMobile: boolean;
 }
 
-const TaskFormActions: React.FC<TaskFormActionsProps> = ({ 
-  isEditMode, 
-  onCancel,
-  isMobile 
+const TaskFormActions: React.FC<TaskFormActionsProps> = ({
+  isEditMode,
+  onCancel
 }) => {
   return (
-    <div className="flex justify-end gap-2 pt-2">
+    <div className="flex justify-end gap-3 pt-6 border-t border-border/30">
       <Button 
         type="button" 
         variant="outline" 
         onClick={onCancel}
-        size={isMobile ? "sm" : "default"}
+        className="hover:bg-muted/50 transition-colors"
       >
         Cancel
       </Button>
       <Button 
-        type="submit"
-        size={isMobile ? "sm" : "default"}
+        type="submit" 
+        className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
       >
-        {isEditMode ? 'Update' : 'Create'}
+        <CheckCircle className="h-4 w-4 mr-2" />
+        {isEditMode ? 'Update Task' : 'Create Task'}
       </Button>
     </div>
   );
