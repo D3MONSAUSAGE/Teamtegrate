@@ -1,17 +1,15 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Input } from "@/components/ui/input";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Check, ChevronsUpDown, X, Users, User, Search, UserCheck, Clock } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Users, User, Clock } from "lucide-react";
 import { AppUser } from '@/types';
 import TaskAssigneeSelect from './TaskAssigneeSelect';
+import AssignedMemberCard from './assignment/AssignedMemberCard';
+import UserSearchDropdown from './assignment/UserSearchDropdown';
+import AssignmentSummary from './assignment/AssignmentSummary';
+import { getUserInitials, getUserStatus, getStatusColor } from './assignment/utils';
 
 interface TaskAssignmentSectionEnhancedProps {
   selectedMember: string;
@@ -72,25 +70,6 @@ const TaskAssignmentSectionEnhanced: React.FC<TaskAssignmentSectionEnhancedProps
     }
   };
 
-  const getUserInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-  };
-
-  const getUserStatus = (userId: string) => {
-    // Mock status for demo - in real app, this would come from your user status system
-    const statuses = ['online', 'busy', 'away', 'offline'];
-    return statuses[Math.floor(Math.random() * statuses.length)];
-  };
-
-  const getStatusColor = (status: string) => {
-    switch(status) {
-      case 'online': return 'bg-green-500';
-      case 'busy': return 'bg-red-500';
-      case 'away': return 'bg-yellow-500';
-      default: return 'bg-gray-400';
-    }
-  };
-
   if (isLoading) {
     return (
       <Card className="border-2 border-border/30 shadow-sm">
@@ -140,43 +119,16 @@ const TaskAssignmentSectionEnhanced: React.FC<TaskAssignmentSectionEnhancedProps
           <div className="space-y-3">
             <Label className="text-sm text-muted-foreground">Assigned Members</Label>
             <div className="space-y-2">
-              {selectedUsers.map((user) => {
-                const status = getUserStatus(user.id);
-                return (
-                  <div
-                    key={user.id}
-                    className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50/50 to-purple-50/50 rounded-lg border border-blue-200/30"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="relative">
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={user.avatar_url} />
-                          <AvatarFallback className="text-xs bg-gradient-to-r from-blue-500 to-purple-500 text-white">
-                            {getUserInitials(user.name)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className={cn(
-                          "absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background",
-                          getStatusColor(status)
-                        )} />
-                      </div>
-                      <div>
-                        <div className="font-medium text-sm">{user.name}</div>
-                        <div className="text-xs text-muted-foreground capitalize">{status}</div>
-                      </div>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeUser(user.id)}
-                      className="h-8 w-8 p-0 hover:bg-red-100 hover:text-red-600"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                );
-              })}
+              {selectedUsers.map((user) => (
+                <AssignedMemberCard
+                  key={user.id}
+                  user={user}
+                  onRemove={removeUser}
+                  getUserInitials={getUserInitials}
+                  getUserStatus={getUserStatus}
+                  getStatusColor={getStatusColor}
+                />
+              ))}
             </div>
           </div>
         )}
@@ -184,83 +136,21 @@ const TaskAssignmentSectionEnhanced: React.FC<TaskAssignmentSectionEnhancedProps
         {/* Add Member Section */}
         <div className="space-y-3">
           <Label className="text-sm text-muted-foreground">Add Team Members</Label>
-          <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                role="combobox"
-                aria-expanded={open}
-                className="w-full justify-between border-2 hover:border-primary/40 transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  <Search className="h-4 w-4 text-muted-foreground" />
-                  <span>Search and add team members...</span>
-                </div>
-                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-full p-0 bg-background/95 backdrop-blur-xl border-2">
-              <Command>
-                <CommandInput 
-                  placeholder="Search team members..." 
-                  value={searchTerm}
-                  onValueChange={setSearchTerm}
-                />
-                <CommandEmpty>
-                  <div className="flex flex-col items-center gap-2 py-4">
-                    <Users className="h-8 w-8 text-muted-foreground" />
-                    <span>No team members found</span>
-                  </div>
-                </CommandEmpty>
-                <CommandGroup className="max-h-60 overflow-y-auto">
-                  {availableUsers.map((user) => {
-                    const status = getUserStatus(user.id);
-                    return (
-                      <CommandItem
-                        key={user.id}
-                        onSelect={() => handleSelectUser(user.id)}
-                        className="flex items-center gap-3 p-3 cursor-pointer"
-                      >
-                        <div className="relative">
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage src={user.avatar_url} />
-                            <AvatarFallback className="text-xs bg-gradient-to-r from-blue-500 to-purple-500 text-white">
-                              {getUserInitials(user.name)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className={cn(
-                            "absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background",
-                            getStatusColor(status)
-                          )} />
-                        </div>
-                        <div className="flex-1">
-                          <div className="font-medium text-sm">{user.name}</div>
-                          <div className="text-xs text-muted-foreground capitalize">{status}</div>
-                        </div>
-                        <UserCheck className="h-4 w-4 text-green-600" />
-                      </CommandItem>
-                    );
-                  })}
-                </CommandGroup>
-              </Command>
-            </PopoverContent>
-          </Popover>
+          <UserSearchDropdown
+            open={open}
+            onOpenChange={setOpen}
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            availableUsers={availableUsers}
+            onSelectUser={handleSelectUser}
+            getUserInitials={getUserInitials}
+            getUserStatus={getUserStatus}
+            getStatusColor={getStatusColor}
+          />
         </div>
 
         {/* Assignment Summary */}
-        {safeSelectedMembers.length > 0 && (
-          <div className="p-3 bg-gradient-to-r from-green-50/50 to-blue-50/50 rounded-lg border border-green-200/30">
-            <div className="flex items-center gap-2 text-sm">
-              <UserCheck className="h-4 w-4 text-green-600" />
-              <span className="font-medium text-green-700">
-                {safeSelectedMembers.length} team member{safeSelectedMembers.length !== 1 ? 's' : ''} assigned
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              All assigned members will receive notifications about this task
-            </p>
-          </div>
-        )}
+        <AssignmentSummary selectedMembersCount={safeSelectedMembers.length} />
       </CardContent>
     </Card>
   );
