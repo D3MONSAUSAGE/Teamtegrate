@@ -20,48 +20,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
   const { user } = useAuth();
   const { isDark, toggle } = useDarkMode();
-  const { state, isMobile, setOpenMobile, setOpen, open } = useSidebar();
-  
-  // Auto-collapse logic for desktop
-  const [hoverTimeoutRef, setHoverTimeoutRef] = React.useState<NodeJS.Timeout | null>(null);
-
-  const handleMouseEnter = React.useCallback(() => {
-    if (!isMobile) {
-      // Clear any existing timeout
-      if (hoverTimeoutRef) {
-        clearTimeout(hoverTimeoutRef);
-        setHoverTimeoutRef(null);
-      }
-      // Expand sidebar on desktop
-      setOpen(true);
-    }
-  }, [isMobile, setOpen, hoverTimeoutRef]);
-
-  const handleMouseLeave = React.useCallback(() => {
-    if (!isMobile) {
-      // Clear any existing timeout
-      if (hoverTimeoutRef) {
-        clearTimeout(hoverTimeoutRef);
-      }
-      
-      // Set a new timeout to collapse after 300ms
-      const timeout = setTimeout(() => {
-        setOpen(false);
-        setHoverTimeoutRef(null);
-      }, 300);
-      
-      setHoverTimeoutRef(timeout);
-    }
-  }, [isMobile, setOpen, hoverTimeoutRef]);
-
-  // Clean up timeout on unmount
-  React.useEffect(() => {
-    return () => {
-      if (hoverTimeoutRef) {
-        clearTimeout(hoverTimeoutRef);
-      }
-    };
-  }, [hoverTimeoutRef]);
+  const { state, isMobile, setOpenMobile, setOpen } = useSidebar();
 
   const handleNavigation = () => {
     // Close mobile sidebar when navigating
@@ -71,21 +30,33 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
     onNavigation?.();
   };
 
+  const handleMouseEnter = () => {
+    // Only expand on hover for desktop
+    if (!isMobile) {
+      setOpen(true);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    // Only collapse on hover leave for desktop
+    if (!isMobile) {
+      setOpen(false);
+    }
+  };
+
   if (!user) return null;
 
-  // For mobile, use the original shadcn behavior
-  // For desktop, use the open state from shadcn
-  const isCollapsed = isMobile ? (state === 'collapsed') : !open;
+  const isCollapsed = !isMobile && state === 'collapsed';
 
   return (
     <ShadcnSidebar 
-      className="border-r border-sidebar-border transition-all duration-300"
+      className="glass-sidebar border-r border-sidebar-border/60 backdrop-blur-xl no-scrollbar overflow-hidden transition-all duration-300"
       collapsible="icon"
       variant="sidebar"
-      onMouseEnter={!isMobile ? handleMouseEnter : undefined}
-      onMouseLeave={!isMobile ? handleMouseLeave : undefined}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
-      <ShadcnSidebarHeader className="border-b border-sidebar-border">
+      <ShadcnSidebarHeader className="border-b border-sidebar-border/30">
         <SidebarHeader 
           isDark={isDark} 
           onToggleDarkMode={toggle} 
@@ -94,7 +65,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
         />
       </ShadcnSidebarHeader>
       
-      <SidebarContent className="overflow-y-auto">
+      <SidebarContent className="no-scrollbar overflow-y-auto">
         <div className="p-2">
           <SidebarNav 
             onNavigation={handleNavigation} 
@@ -103,7 +74,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
         </div>
       </SidebarContent>
       
-      <ShadcnSidebarFooter className="border-t border-sidebar-border">
+      <ShadcnSidebarFooter className="border-t border-sidebar-border/30 bg-gradient-to-t from-sidebar-background/80 to-transparent">
         <SidebarFooter 
           user={user} 
           isCollapsed={isCollapsed}

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -69,9 +68,9 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ onNavigation, isCollapsed }) =>
               isActive={isActive}
               tooltip={item.name}
               className={cn(
-                "flex items-center gap-3 px-3 py-2 text-sidebar-foreground rounded-lg transition-colors",
-                isActive && "bg-sidebar-accent text-sidebar-accent-foreground",
-                "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                "flex items-center gap-3 px-3 py-2 text-gray-700 dark:text-gray-200 rounded-lg transition-colors",
+                isActive && "bg-primary/10 text-primary dark:text-primary",
+                "hover:bg-gray-100 dark:hover:bg-gray-800"
               )}
             >
               <Link 
@@ -84,7 +83,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ onNavigation, isCollapsed }) =>
                   <div className="flex items-center justify-between w-full">
                     <span className="font-medium">{item.name}</span>
                     {item.badge && (
-                      <span className="bg-sidebar-primary text-sidebar-primary-foreground text-xs rounded-full px-2 py-0.5 min-w-[1.25rem] h-5 flex items-center justify-center">
+                      <span className="bg-primary text-primary-foreground text-xs rounded-full px-2 py-0.5 min-w-[1.25rem] h-5 flex items-center justify-center">
                         {item.badge}
                       </span>
                     )}

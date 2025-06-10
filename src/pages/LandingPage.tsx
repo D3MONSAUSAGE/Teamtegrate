@@ -17,9 +17,9 @@ const LandingPage = () => {
   });
 
   useEffect(() => {
-    // Ensure body prevents scrolling completely
-    document.body.style.overflow = 'hidden';
-    document.body.style.height = '100vh';
+    // Ensure body can scroll on mobile
+    document.body.style.overflow = 'auto';
+    document.body.style.height = 'auto';
     document.body.style.minHeight = '100vh';
     
     return () => {
@@ -32,7 +32,7 @@ const LandingPage = () => {
 
   if (isLoading) {
     return (
-      <div className="h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading Teamtegrate...</p>
@@ -42,22 +42,20 @@ const LandingPage = () => {
   }
 
   return (
-    <div className={`h-screen bg-background overflow-hidden w-full ${isOptimized ? 'fade-in' : 'loading'}`}>
+    <div className={`min-h-screen bg-background overflow-x-hidden w-full ${isOptimized ? 'fade-in' : 'loading'}`}>
       <LandingNavigation />
-      <div className="h-full overflow-y-auto overflow-x-hidden">
-        <HeroSection />
-        <div id="features">
-          <FeaturesSection />
-        </div>
-        <div id="benefits">
-          <BenefitsSection />
-        </div>
-        <div id="testimonials">
-          <TestimonialsSection />
-        </div>
-        <CTASection />
-        <LandingFooter />
+      <HeroSection />
+      <div id="features">
+        <FeaturesSection />
       </div>
+      <div id="benefits">
+        <BenefitsSection />
+      </div>
+      <div id="testimonials">
+        <TestimonialsSection />
+      </div>
+      <CTASection />
+      <LandingFooter />
     </div>
   );
 };
