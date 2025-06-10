@@ -100,7 +100,6 @@ const FramerParticleSystem: React.FC<FramerParticleSystemProps> = ({
               }}
               variants={i % 2 === 0 ? floatingVariants : magneticVariants}
               custom={i}
-              animate="animate"
               initial={{ opacity: 0, scale: 0 }}
               animate={{
                 opacity: [0, 1, 1, 0],
