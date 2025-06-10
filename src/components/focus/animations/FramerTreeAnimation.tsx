@@ -12,20 +12,20 @@ const FramerTreeAnimation: React.FC<FramerTreeAnimationProps> = ({ progress, isA
   const safeProgress = Math.max(0, Math.min(100, isNaN(progress) ? 0 : progress));
   const controls = useAnimation();
 
-  const getTrunkHeight = (progress: number) => {
+  const getTrunkHeight = (progress: number, multiplier: number = 1) => {
     if (progress === 0) return 0;
-    return Math.max(20, 20 + (progress / 100) * 60);
+    return Math.max(20, 20 + (progress / 100) * 60 * multiplier);
   };
 
-  const getCrownSize = (progress: number) => {
+  const getCrownSize = (progress: number, multiplier: number = 1) => {
     if (progress === 0) return 0;
-    return Math.max(24, 24 + (progress / 100) * 56);
+    return Math.max(24, 24 + (progress / 100) * 56 * multiplier);
   };
 
-  const getSideBranchSize = (progress: number) => {
-    if (progress < 25) return 0;
-    const adjustedProgress = (progress - 25) / 75;
-    return Math.max(16, 16 + adjustedProgress * 32);
+  const getBackgroundTreeSize = (progress: number, threshold: number, multiplier: number = 0.7) => {
+    if (progress < threshold) return 0;
+    const adjustedProgress = (progress - threshold) / (100 - threshold);
+    return Math.max(16, 16 + adjustedProgress * 40 * multiplier);
   };
 
   const stage = safeProgress === 0 ? 'seed' : safeProgress < 100 ? 'growing' : 'complete';
@@ -47,38 +47,263 @@ const FramerTreeAnimation: React.FC<FramerTreeAnimationProps> = ({ progress, isA
 
   return (
     <div className="relative w-full h-80 overflow-hidden">
-      {/* Enhanced Ground with gradient */}
+      {/* Enhanced Sky Background with Clouds */}
       <motion.div 
-        className="absolute bottom-0 w-full h-8 bg-gradient-to-r from-green-200/30 to-green-300/30 rounded-lg"
+        className="absolute inset-0 bg-gradient-to-b from-sky-200 via-sky-100 to-green-100"
+        animate={{
+          background: isActive 
+            ? [
+                'linear-gradient(to bottom, #bae6fd, #e0f2fe, #dcfce7)',
+                'linear-gradient(to bottom, #dbeafe, #f0f9ff, #ecfdf5)',
+                'linear-gradient(to bottom, #bae6fd, #e0f2fe, #dcfce7)'
+              ]
+            : 'linear-gradient(to bottom, #bae6fd, #e0f2fe, #dcfce7)'
+        }}
+        transition={{
+          duration: 6,
+          repeat: Infinity,
+          ease: "easeInOut"
+        }}
+      >
+        {/* Animated Clouds */}
+        {safeProgress >= 10 && (
+          <>
+            <motion.div
+              className="absolute top-4 w-16 h-8 bg-white/60 rounded-full"
+              style={{ left: '20%' }}
+              animate={{
+                x: [0, 30, 0],
+                opacity: [0.6, 0.8, 0.6]
+              }}
+              transition={{
+                duration: 8,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+            />
+            <motion.div
+              className="absolute top-8 w-12 h-6 bg-white/40 rounded-full"
+              style={{ right: '25%' }}
+              animate={{
+                x: [0, -20, 0],
+                opacity: [0.4, 0.6, 0.4]
+              }}
+              transition={{
+                duration: 10,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: 2
+              }}
+            />
+          </>
+        )}
+
+        {/* Sun */}
+        <motion.div 
+          className="absolute top-6 right-8 w-10 h-10 bg-yellow-400 rounded-full shadow-lg shadow-yellow-300/50"
+          animate={{
+            boxShadow: isActive 
+              ? [
+                  '0 0 20px rgba(251, 191, 36, 0.5)',
+                  '0 0 40px rgba(251, 191, 36, 0.8)',
+                  '0 0 20px rgba(251, 191, 36, 0.5)'
+                ]
+              : '0 0 20px rgba(251, 191, 36, 0.5)'
+          }}
+          transition={{
+            duration: 4,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
+      </motion.div>
+
+      {/* Enhanced Forest Ground with Texture */}
+      <motion.div 
+        className="absolute bottom-0 w-full h-12 bg-gradient-to-t from-green-600 via-green-500 to-green-400 rounded-t-lg"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        {/* Animated grass */}
-        {Array.from({ length: 8 }, (_, i) => (
+        {/* Forest Floor Details */}
+        {Array.from({ length: 15 }, (_, i) => (
           <motion.div
             key={i}
-            className="absolute bottom-0 w-0.5 bg-green-400 rounded-t-full opacity-60"
+            className="absolute bottom-0 w-0.5 bg-green-600 rounded-t-full opacity-70"
             style={{
-              left: `${15 + i * 10}%`,
-              height: `${4 + Math.sin(i) * 2}px`
+              left: `${8 + i * 6}%`,
+              height: `${6 + Math.sin(i) * 3}px`
             }}
             animate={{
               rotate: [-2, 2, -2],
               scaleY: [1, 1.1, 1]
             }}
             transition={{
-              duration: 2 + i * 0.2,
+              duration: 3 + i * 0.1,
               repeat: Infinity,
               ease: "easeInOut",
-              delay: i * 0.1
+              delay: i * 0.05
+            }}
+          />
+        ))}
+
+        {/* Forest Undergrowth */}
+        {safeProgress >= 30 && Array.from({ length: 6 }, (_, i) => (
+          <motion.div
+            key={`bush-${i}`}
+            className="absolute bottom-2 w-4 h-3 bg-green-700 rounded-full opacity-60"
+            style={{
+              left: `${15 + i * 12}%`,
+            }}
+            initial={{ scale: 0 }}
+            animate={{ 
+              scale: 1,
+              y: [0, -1, 0]
+            }}
+            transition={{
+              scale: { delay: 0.5 + i * 0.1 },
+              y: {
+                duration: 4 + i * 0.3,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }
             }}
           />
         ))}
       </motion.div>
+
+      {/* Background Forest Trees - Left Side */}
+      {safeProgress >= 20 && (
+        <>
+          <motion.div 
+            className="absolute bottom-12 opacity-60"
+            style={{ left: '15%' }}
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 0.6 }}
+            transition={{ delay: 0.3, type: "spring" }}
+          >
+            <motion.div 
+              className="bg-gradient-to-b from-green-500 to-green-700 rounded-full mb-1"
+              style={{
+                width: `${getBackgroundTreeSize(safeProgress, 20, 0.6)}px`,
+                height: `${getBackgroundTreeSize(safeProgress, 20, 0.8)}px`
+              }}
+              animate={{
+                rotate: isActive ? [-1, 1, -1] : 0
+              }}
+              transition={{
+                duration: 4,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+            />
+            <div 
+              className="w-2 bg-amber-700 rounded-b-lg mx-auto"
+              style={{
+                height: `${getBackgroundTreeSize(safeProgress, 20, 0.4)}px`
+              }}
+            />
+          </motion.div>
+
+          <motion.div 
+            className="absolute bottom-12 opacity-50"
+            style={{ left: '75%' }}
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 0.5 }}
+            transition={{ delay: 0.5, type: "spring" }}
+          >
+            <motion.div 
+              className="bg-gradient-to-b from-green-500 to-green-700 rounded-full mb-1"
+              style={{
+                width: `${getBackgroundTreeSize(safeProgress, 20, 0.7)}px`,
+                height: `${getBackgroundTreeSize(safeProgress, 20, 0.9)}px`
+              }}
+              animate={{
+                rotate: isActive ? [1, -1, 1] : 0
+              }}
+              transition={{
+                duration: 5,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+            />
+            <div 
+              className="w-2 bg-amber-700 rounded-b-lg mx-auto"
+              style={{
+                height: `${getBackgroundTreeSize(safeProgress, 20, 0.5)}px`
+              }}
+            />
+          </motion.div>
+        </>
+      )}
+
+      {/* Additional Background Trees for Deeper Forest */}
+      {safeProgress >= 40 && (
+        <>
+          <motion.div 
+            className="absolute bottom-12 opacity-40"
+            style={{ left: '25%' }}
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 0.4 }}
+            transition={{ delay: 0.7, type: "spring" }}
+          >
+            <motion.div 
+              className="bg-gradient-to-b from-green-600 to-green-800 rounded-full mb-1"
+              style={{
+                width: `${getBackgroundTreeSize(safeProgress, 40, 0.5)}px`,
+                height: `${getBackgroundTreeSize(safeProgress, 40, 0.7)}px`
+              }}
+              animate={{
+                rotate: isActive ? [-0.5, 0.5, -0.5] : 0
+              }}
+              transition={{
+                duration: 6,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+            />
+            <div 
+              className="w-1.5 bg-amber-800 rounded-b-lg mx-auto"
+              style={{
+                height: `${getBackgroundTreeSize(safeProgress, 40, 0.3)}px`
+              }}
+            />
+          </motion.div>
+
+          <motion.div 
+            className="absolute bottom-12 opacity-35"
+            style={{ right: '15%' }}
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 0.35 }}
+            transition={{ delay: 0.9, type: "spring" }}
+          >
+            <motion.div 
+              className="bg-gradient-to-b from-green-600 to-green-800 rounded-full mb-1"
+              style={{
+                width: `${getBackgroundTreeSize(safeProgress, 40, 0.6)}px`,
+                height: `${getBackgroundTreeSize(safeProgress, 40, 0.8)}px`
+              }}
+              animate={{
+                rotate: isActive ? [0.5, -0.5, 0.5] : 0
+              }}
+              transition={{
+                duration: 7,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+            />
+            <div 
+              className="w-1.5 bg-amber-800 rounded-b-lg mx-auto"
+              style={{
+                height: `${getBackgroundTreeSize(safeProgress, 40, 0.4)}px`
+              }}
+            />
+          </motion.div>
+        </>
+      )}
       
-      {/* Tree Container */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex flex-col items-center">
+      {/* Main Tree Container */}
+      <div className="absolute bottom-12 left-1/2 transform -translate-x-1/2 flex flex-col items-center z-10">
         {/* Enhanced Crown with Framer Motion */}
         {stage !== 'seed' && (
           <motion.div 
@@ -86,7 +311,7 @@ const FramerTreeAnimation: React.FC<FramerTreeAnimationProps> = ({ progress, isA
             animate={controls}
             initial={{ scale: 0, opacity: 0 }}
           >
-            {/* Main crown with physics-based growth */}
+            {/* Main crown with enhanced physics */}
             <motion.div 
               className="bg-gradient-to-b from-green-400 to-green-600 rounded-full relative"
               style={{
@@ -106,7 +331,7 @@ const FramerTreeAnimation: React.FC<FramerTreeAnimationProps> = ({ progress, isA
                 }
               }}
             >
-              {/* Rustling leaves effect */}
+              {/* Enhanced rustling leaves effect */}
               {isActive && (
                 <motion.div
                   className="absolute inset-0 rounded-full bg-gradient-to-b from-green-300/30 to-transparent"
@@ -129,8 +354,8 @@ const FramerTreeAnimation: React.FC<FramerTreeAnimationProps> = ({ progress, isA
                 <motion.div 
                   className="absolute top-1 -left-2 bg-gradient-to-b from-green-400 to-green-600 rounded-full"
                   style={{
-                    width: `${getSideBranchSize(safeProgress)}px`,
-                    height: `${getSideBranchSize(safeProgress)}px`
+                    width: `${getCrownSize(safeProgress) * 0.6}px`,
+                    height: `${getCrownSize(safeProgress) * 0.7}px`
                   }}
                   initial={{ scale: 0, x: -10 }}
                   animate={{ 
@@ -150,8 +375,8 @@ const FramerTreeAnimation: React.FC<FramerTreeAnimationProps> = ({ progress, isA
                 <motion.div 
                   className="absolute top-1 -right-2 bg-gradient-to-b from-green-400 to-green-600 rounded-full"
                   style={{
-                    width: `${getSideBranchSize(safeProgress)}px`,
-                    height: `${getSideBranchSize(safeProgress)}px`
+                    width: `${getCrownSize(safeProgress) * 0.6}px`,
+                    height: `${getCrownSize(safeProgress) * 0.7}px`
                   }}
                   initial={{ scale: 0, x: 10 }}
                   animate={{ 
@@ -228,7 +453,7 @@ const FramerTreeAnimation: React.FC<FramerTreeAnimationProps> = ({ progress, isA
             }
           }}
         >
-          {/* Bark texture with subtle animation */}
+          {/* Enhanced bark texture */}
           {safeProgress > 0 && (
             <>
               <motion.div 
@@ -247,6 +472,113 @@ const FramerTreeAnimation: React.FC<FramerTreeAnimationProps> = ({ progress, isA
           )}
         </motion.div>
       </div>
+
+      {/* Forest Animals */}
+      {safeProgress >= 50 && (
+        <motion.div 
+          className="absolute bottom-20 text-sm"
+          style={{ right: '20%' }}
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ 
+            scale: 1, 
+            opacity: 1,
+            y: [0, -4, 0]
+          }}
+          transition={{
+            scale: { delay: 1, type: "spring" },
+            y: {
+              duration: 3,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }
+          }}
+        >
+          🐰
+        </motion.div>
+      )}
+
+      {safeProgress >= 70 && (
+        <>
+          <motion.div 
+            className="absolute bottom-32 text-sm"
+            style={{ left: '25%' }}
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ 
+              scale: 1, 
+              opacity: 1,
+              x: [0, 10, 0],
+              y: [0, -8, 0]
+            }}
+            transition={{
+              scale: { delay: 1.2, type: "spring" },
+              x: {
+                duration: 4,
+                repeat: Infinity,
+                ease: "easeInOut"
+              },
+              y: {
+                duration: 2,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }
+            }}
+          >
+            🦋
+          </motion.div>
+
+          <motion.div 
+            className="absolute bottom-24 text-xs"
+            style={{ left: '70%' }}
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ 
+              scale: 1, 
+              opacity: 1,
+              y: [0, -6, 0]
+            }}
+            transition={{
+              scale: { delay: 1.5, type: "spring" },
+              y: {
+                duration: 5,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }
+            }}
+          >
+            🐦
+          </motion.div>
+        </>
+      )}
+
+      {/* Enhanced Falling Leaves Animation */}
+      {isActive && safeProgress >= 40 && (
+        <div className="absolute inset-0 pointer-events-none">
+          {Array.from({ length: 8 }, (_, i) => (
+            <motion.div
+              key={i}
+              className="absolute text-xs opacity-70"
+              style={{
+                left: `${15 + (i * 10)}%`,
+                top: `${5 + (i % 3) * 10}%`,
+                color: ['#f59e0b', '#ef4444', '#eab308', '#f97316'][i % 4]
+              }}
+              animate={{
+                y: [0, 200],
+                x: [0, (i % 2 === 0 ? 20 : -20)],
+                rotate: [0, 360],
+                opacity: [0.7, 0]
+              }}
+              transition={{
+                duration: 6 + i * 0.5,
+                repeat: Infinity,
+                ease: "easeOut",
+                delay: i * 0.8
+              }}
+            >
+              🍃
+            </motion.div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
