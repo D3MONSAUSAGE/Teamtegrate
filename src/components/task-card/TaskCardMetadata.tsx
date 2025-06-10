@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Clock, User, Users } from 'lucide-react';
 import { format } from 'date-fns';
@@ -47,29 +48,47 @@ const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({
   const displayName = getDisplayName();
 
   return (
-    <div className="flex items-center justify-between pt-2 gap-2">
+    <div className="flex items-center justify-between pt-3 gap-3">
+      {/* Enhanced Deadline Badge */}
       <div className={cn(
-        "flex items-center text-xs gap-1.5 px-2 py-1 rounded-md",
-        "bg-muted/50 border border-border/30",
-        isOverdue && "bg-red-50 border-red-200 text-red-700 dark:bg-red-950/30 dark:border-red-800 dark:text-red-300"
+        "flex items-center text-sm gap-2 px-3 py-2 rounded-xl backdrop-blur-sm",
+        "border border-border/40 shadow-sm transition-all duration-200",
+        "bg-gradient-to-r from-background/80 to-background/60",
+        isOverdue ? [
+          "bg-gradient-to-r from-red-50/90 to-red-100/70 dark:from-red-950/40 dark:to-red-900/30",
+          "border-red-200/70 dark:border-red-800/50 text-red-700 dark:text-red-300",
+          "shadow-red-100/50 dark:shadow-red-900/30"
+        ] : "hover:bg-gradient-to-r hover:from-background/90 hover:to-background/70"
       )}>
-        <Clock className="h-3 w-3 flex-shrink-0" />
-        <span className="truncate font-medium">
+        <Clock className={cn(
+          "h-4 w-4 flex-shrink-0",
+          isOverdue ? "text-red-600 dark:text-red-400" : "text-muted-foreground"
+        )} />
+        <span className="font-medium whitespace-nowrap">
           {format(deadline, 'MMM d')} at {format(deadline, 'h:mm a')}
         </span>
       </div>
       
+      {/* Enhanced Assignee Badge */}
       <div className={cn(
-        "flex items-center text-xs gap-1.5 px-2 py-1 rounded-md",
-        "bg-muted/50 border border-border/30",
-        !hasAssignees && "italic opacity-75"
+        "flex items-center text-sm gap-2 px-3 py-2 rounded-xl backdrop-blur-sm",
+        "border border-border/40 shadow-sm transition-all duration-200",
+        "bg-gradient-to-r from-background/80 to-background/60",
+        "hover:bg-gradient-to-r hover:from-background/90 hover:to-background/70",
+        !hasAssignees && "opacity-75"
       )}>
         {hasMultipleAssignees ? (
-          <Users className="h-3 w-3 flex-shrink-0" />
+          <Users className="h-4 w-4 flex-shrink-0 text-primary" />
         ) : (
-          <User className="h-3 w-3 flex-shrink-0" />
+          <User className={cn(
+            "h-4 w-4 flex-shrink-0",
+            hasAssignees ? "text-primary" : "text-muted-foreground"
+          )} />
         )}
-        <span className="truncate max-w-[100px] font-medium">
+        <span className={cn(
+          "truncate max-w-[120px] font-medium",
+          hasAssignees ? "text-foreground" : "text-muted-foreground italic"
+        )}>
           {displayName}
         </span>
       </div>

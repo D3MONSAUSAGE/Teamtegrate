@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { MessageCircle } from 'lucide-react';
+import { MessageCircle, CheckCircle, Clock, Play } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { TaskStatus } from '@/types';
 import {
@@ -27,18 +27,37 @@ const TaskCardFooter: React.FC<TaskCardFooterProps> = ({
   onShowComments,
   onStatusChange
 }) => {
-  const getStatusColor = (status: TaskStatus) => {
+  const getStatusConfig = (status: TaskStatus) => {
     switch(status) {
       case 'To Do': 
-        return 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-700';
+        return {
+          color: 'bg-gradient-to-r from-slate-50 to-slate-100 text-slate-700 dark:from-slate-900/50 dark:to-slate-800/50 dark:text-slate-300 border-slate-200/60 dark:border-slate-700/60',
+          icon: Clock,
+          shadowColor: 'shadow-slate-200/40 dark:shadow-slate-900/30'
+        };
       case 'In Progress': 
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-200 border-blue-200 dark:border-blue-700';
+        return {
+          color: 'bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 dark:from-blue-900/50 dark:to-blue-800/50 dark:text-blue-300 border-blue-200/60 dark:border-blue-700/60',
+          icon: Play,
+          shadowColor: 'shadow-blue-200/40 dark:shadow-blue-900/30'
+        };
       case 'Completed': 
-        return 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-200 border-green-200 dark:border-green-700';
+        return {
+          color: 'bg-gradient-to-r from-green-50 to-green-100 text-green-700 dark:from-green-900/50 dark:to-green-800/50 dark:text-green-300 border-green-200/60 dark:border-green-700/60',
+          icon: CheckCircle,
+          shadowColor: 'shadow-green-200/40 dark:shadow-green-900/30'
+        };
       default: 
-        return 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-700';
+        return {
+          color: 'bg-gradient-to-r from-slate-50 to-slate-100 text-slate-700 dark:from-slate-900/50 dark:to-slate-800/50 dark:text-slate-300 border-slate-200/60 dark:border-slate-700/60',
+          icon: Clock,
+          shadowColor: 'shadow-slate-200/40 dark:shadow-slate-900/30'
+        };
     }
   };
+
+  const statusConfig = getStatusConfig(status);
+  const StatusIcon = statusConfig.icon;
 
   const handleStatusChange = (newStatus: TaskStatus) => {
     if (onStatusChange) {
@@ -50,44 +69,60 @@ const TaskCardFooter: React.FC<TaskCardFooterProps> = ({
   };
 
   return (
-    <div className="flex items-center justify-between pt-1">
-      <Select 
-        value={status} 
-        onValueChange={handleStatusChange}
-      >
-        <SelectTrigger className="w-[130px] h-8 border border-border/40 bg-card/80 backdrop-blur-sm rounded-lg hover:border-primary/40 transition-all duration-200">
+    <div className="flex items-center justify-between pt-2 gap-3">
+      {/* Enhanced Status Selector */}
+      <Select value={status} onValueChange={handleStatusChange}>
+        <SelectTrigger className="w-[160px] h-10 border-2 border-border/40 bg-gradient-to-r from-background/90 to-background/70 backdrop-blur-sm rounded-xl hover:border-primary/40 transition-all duration-200 shadow-sm hover:shadow-md">
           <SelectValue>
-            <Badge className={cn("px-2 py-1 text-xs border font-medium rounded-md", getStatusColor(status))}>
+            <Badge className={cn(
+              "px-3 py-1.5 text-sm border-2 font-semibold rounded-lg shadow-sm",
+              "flex items-center gap-2 transition-all duration-200",
+              statusConfig.color,
+              statusConfig.shadowColor
+            )}>
+              <StatusIcon className="h-3.5 w-3.5" />
               {status}
             </Badge>
           </SelectValue>
         </SelectTrigger>
-        <SelectContent className="rounded-lg border border-border/40 bg-card/95 backdrop-blur-xl shadow-lg">
-          <SelectItem value="To Do" className="rounded-md">
-            <Badge className="bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-700 border px-2 py-1 text-xs font-medium">
+        <SelectContent className="rounded-xl border-2 border-border/40 bg-background/95 backdrop-blur-xl shadow-xl">
+          <SelectItem value="To Do" className="rounded-lg">
+            <Badge className="bg-gradient-to-r from-slate-50 to-slate-100 text-slate-700 dark:from-slate-900/50 dark:to-slate-800/50 dark:text-slate-300 border-slate-200/60 dark:border-slate-700/60 border-2 px-3 py-1.5 text-sm font-semibold flex items-center gap-2">
+              <Clock className="h-3.5 w-3.5" />
               To Do
             </Badge>
           </SelectItem>
-          <SelectItem value="In Progress" className="rounded-md">
-            <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-200 border-blue-200 dark:border-blue-700 border px-2 py-1 text-xs font-medium">
+          <SelectItem value="In Progress" className="rounded-lg">
+            <Badge className="bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 dark:from-blue-900/50 dark:to-blue-800/50 dark:text-blue-300 border-blue-200/60 dark:border-blue-700/60 border-2 px-3 py-1.5 text-sm font-semibold flex items-center gap-2">
+              <Play className="h-3.5 w-3.5" />
               In Progress
             </Badge>
           </SelectItem>
-          <SelectItem value="Completed" className="rounded-md">
-            <Badge className="bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-200 border-green-200 dark:border-green-700 border px-2 py-1 text-xs font-medium">
+          <SelectItem value="Completed" className="rounded-lg">
+            <Badge className="bg-gradient-to-r from-green-50 to-green-100 text-green-700 dark:from-green-900/50 dark:to-green-800/50 dark:text-green-300 border-green-200/60 dark:border-green-700/60 border-2 px-3 py-1.5 text-sm font-semibold flex items-center gap-2">
+              <CheckCircle className="h-3.5 w-3.5" />
               Completed
             </Badge>
           </SelectItem>
         </SelectContent>
       </Select>
 
+      {/* Enhanced Comments Button */}
       {commentCount > 0 && (
         <button
           onClick={onShowComments}
-          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-all duration-200 p-1.5 rounded-md hover:bg-primary/10 hover:scale-105"
+          className={cn(
+            "flex items-center gap-2 px-3 py-2 rounded-xl backdrop-blur-sm",
+            "bg-gradient-to-r from-background/80 to-background/60",
+            "border border-border/40 shadow-sm",
+            "text-sm font-medium text-muted-foreground",
+            "hover:text-primary hover:bg-gradient-to-r hover:from-primary/5 hover:to-primary/10",
+            "hover:border-primary/30 hover:shadow-md hover:scale-105",
+            "transition-all duration-200"
+          )}
         >
-          <MessageCircle className="h-3.5 w-3.5" />
-          <span className="font-medium">{commentCount}</span>
+          <MessageCircle className="h-4 w-4" />
+          <span>{commentCount}</span>
         </button>
       )}
     </div>
