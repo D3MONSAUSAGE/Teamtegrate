@@ -17,8 +17,8 @@ const LandingPage = () => {
   });
 
   useEffect(() => {
-    // Ensure body can scroll on mobile
-    document.body.style.overflow = 'auto';
+    // Ensure body prevents scrolling completely
+    document.body.style.overflow = 'hidden';
     document.body.style.height = 'auto';
     document.body.style.minHeight = '100vh';
     
