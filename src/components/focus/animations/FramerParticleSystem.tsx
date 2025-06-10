@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface FramerParticleSystemProps {
@@ -19,7 +19,7 @@ const FramerParticleSystem: React.FC<FramerParticleSystemProps> = ({
 }) => {
   if (!isActive || stage === 'seed') return null;
 
-  const getParticleConfig = () => {
+  const particleConfig = useMemo(() => {
     const baseCount = intensity === 'low' ? 4 : intensity === 'medium' ? 8 : 12;
     const count = Math.min(baseCount + Math.floor(progress / 15), 20);
     
@@ -49,11 +49,9 @@ const FramerParticleSystem: React.FC<FramerParticleSystemProps> = ({
           colors: ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444']
         };
     }
-  };
+  }, [theme, progress, intensity]);
 
-  const config = getParticleConfig();
-
-  const floatingVariants = {
+  const floatingVariants = useMemo(() => ({
     animate: {
       y: [-20, 20, -20],
       x: [-10, 10, -10],
@@ -65,9 +63,9 @@ const FramerParticleSystem: React.FC<FramerParticleSystemProps> = ({
         ease: "easeInOut"
       }
     }
-  };
+  }), []);
 
-  const magneticVariants = {
+  const magneticVariants = useMemo(() => ({
     animate: (custom: number) => ({
       x: [0, Math.sin(custom) * 30, 0],
       y: [0, Math.cos(custom) * 20, 0],
@@ -78,88 +76,96 @@ const FramerParticleSystem: React.FC<FramerParticleSystemProps> = ({
         delay: custom * 0.2
       }
     })
-  };
+  }), []);
+
+  const particleData = useMemo(() => 
+    Array.from({ length: particleConfig.count }, (_, i) => ({
+      id: i,
+      isEmoji: Math.random() > 0.5,
+      particle: particleConfig.particles[i % particleConfig.particles.length],
+      color: particleConfig.colors[i % particleConfig.colors.length],
+      size: 0.8 + Math.random() * 1.2,
+      left: 10 + (i * 8) % 80,
+      top: 15 + (i % 4) * 20
+    })), [particleConfig]
+  );
+
+  const isCelebrationMilestone = progress === 25 || progress === 50 || progress === 75 || progress === 100;
 
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden">
       <AnimatePresence>
         {/* Enhanced Floating Particles */}
-        {Array.from({ length: config.count }, (_, i) => {
-          const isEmoji = Math.random() > 0.5;
-          const particle = config.particles[i % config.particles.length];
-          const color = config.colors[i % config.colors.length];
-          const size = 0.8 + Math.random() * 1.2;
-          
-          return (
-            <motion.div
-              key={i}
-              className="absolute"
-              style={{
-                left: `${10 + (i * 8) % 80}%`,
-                top: `${15 + (i % 4) * 20}%`
-              }}
-              variants={i % 2 === 0 ? floatingVariants : magneticVariants}
-              custom={i}
-              initial={{ opacity: 0, scale: 0 }}
-              animate={{
-                opacity: [0, 1, 1, 0],
-                scale: [0, size, size, 0]
-              }}
-              transition={{
-                opacity: {
-                  duration: 8,
+        {particleData.map((data) => (
+          <motion.div
+            key={data.id}
+            className="absolute"
+            style={{
+              left: `${data.left}%`,
+              top: `${data.top}%`
+            }}
+            variants={data.id % 2 === 0 ? floatingVariants : magneticVariants}
+            custom={data.id}
+            initial={{ opacity: 0, scale: 0 }}
+            animate={{
+              opacity: [0, 1, 1, 0],
+              scale: [0, data.size, data.size, 0],
+              ...floatingVariants.animate
+            }}
+            transition={{
+              opacity: {
+                duration: 8,
+                repeat: Infinity,
+                delay: data.id * 0.3
+              },
+              scale: {
+                duration: 8,
+                repeat: Infinity,
+                delay: data.id * 0.3
+              }
+            }}
+          >
+            {data.isEmoji ? (
+              <motion.div 
+                className="text-sm"
+                animate={{
+                  filter: [
+                    'brightness(1)',
+                    'brightness(1.3)',
+                    'brightness(1)'
+                  ]
+                }}
+                transition={{
+                  duration: 2,
                   repeat: Infinity,
-                  delay: i * 0.3
-                },
-                scale: {
-                  duration: 8,
+                  ease: "easeInOut"
+                }}
+              >
+                {data.particle}
+              </motion.div>
+            ) : (
+              <motion.div 
+                className="w-2 h-2 rounded-full"
+                style={{ backgroundColor: data.color }}
+                animate={{
+                  boxShadow: [
+                    `0 0 0px ${data.color}`,
+                    `0 0 20px ${data.color}`,
+                    `0 0 0px ${data.color}`
+                  ]
+                }}
+                transition={{
+                  duration: 2.5,
                   repeat: Infinity,
-                  delay: i * 0.3
-                }
-              }}
-            >
-              {isEmoji ? (
-                <motion.div 
-                  className="text-sm"
-                  animate={{
-                    filter: [
-                      'brightness(1)',
-                      'brightness(1.3)',
-                      'brightness(1)'
-                    ]
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                    ease: "easeInOut"
-                  }}
-                >
-                  {particle}
-                </motion.div>
-              ) : (
-                <motion.div 
-                  className="w-2 h-2 rounded-full"
-                  style={{ backgroundColor: color }}
-                  animate={{
-                    boxShadow: [
-                      `0 0 0px ${color}`,
-                      `0 0 20px ${color}`,
-                      `0 0 0px ${color}`
-                    ]
-                  }}
-                  transition={{
-                    duration: 2.5,
-                    repeat: Infinity,
-                    ease: "easeInOut"
-                  }}
-                />
-              )}
-            </motion.div>
-          );
-        })}
+                  ease: "easeInOut"
+                }}
+              />
+            )}
+          </motion.div>
+        ))}
 
         {/* Milestone Celebration Burst */}
-        {(progress === 25 || progress === 50 || progress === 75 || progress === 100) && (
+        {isCelebrationMilestone && (
           <motion.div 
             className="absolute inset-0 flex items-center justify-center"
             initial={{ opacity: 0 }}

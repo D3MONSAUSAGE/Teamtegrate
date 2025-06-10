@@ -57,8 +57,11 @@ const FramerGrowthAnimation: React.FC<FramerGrowthAnimationProps> = ({
         <div className="text-center mb-4">
           <motion.h3 
             className="text-lg font-semibold mb-2"
+            style={{
+              color: isActive ? '#22c55e' : undefined
+            }}
             animate={{
-              color: isActive ? '#22c55e' : 'currentColor'
+              color: isActive ? '#22c55e' : '#000000'
             }}
             transition={{ duration: 0.3 }}
           >
@@ -88,21 +91,11 @@ const FramerGrowthAnimation: React.FC<FramerGrowthAnimationProps> = ({
               isActive ? "text-primary" : "text-foreground"
             )}
             animate={{
-              scale: isActive ? [1, 1.05, 1] : 1,
-              textShadow: isActive ? [
-                '0 0 0px currentColor',
-                '0 0 20px currentColor',
-                '0 0 0px currentColor'
-              ] : '0 0 0px currentColor'
+              scale: isActive ? [1, 1.05, 1] : 1
             }}
             transition={{
               scale: {
                 duration: 2,
-                repeat: Infinity,
-                ease: "easeInOut"
-              },
-              textShadow: {
-                duration: 3,
                 repeat: Infinity,
                 ease: "easeInOut"
               }
@@ -138,9 +131,9 @@ const FramerGrowthAnimation: React.FC<FramerGrowthAnimationProps> = ({
               variants={progressBarVariants}
               animate={{
                 boxShadow: isActive && !reducedMotion ? [
-                  '0 0 0px currentColor',
-                  '0 0 15px currentColor',
-                  '0 0 0px currentColor'
+                  '0 0 0px rgba(34, 197, 94, 0.5)',
+                  '0 0 15px rgba(34, 197, 94, 0.5)',
+                  '0 0 0px rgba(34, 197, 94, 0.5)'
                 ] : 'none'
               }}
               transition={{
