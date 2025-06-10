@@ -4,7 +4,7 @@ import { useTask } from '@/contexts/task';
 import { Task } from '@/types';
 import { isSameDay, addMonths, subMonths } from 'date-fns';
 import TaskDetailDrawer from '@/components/calendar/TaskDetailDrawer';
-import QuickTaskCreateDialog from '@/components/calendar/QuickTaskCreateDialog';
+import CreateTaskDialogEnhanced from '@/components/CreateTaskDialogEnhanced';
 import CalendarHeader from '@/components/calendar/CalendarHeader';
 import CalendarViewSelector from '@/components/calendar/CalendarViewSelector';
 import CalendarNavigation from '@/components/calendar/CalendarNavigation';
@@ -17,8 +17,9 @@ const CalendarPage = () => {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [viewType, setViewType] = useState<'day' | 'week' | 'month'>('month');
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
-  const [isQuickCreateOpen, setIsQuickCreateOpen] = useState<boolean>(false);
+  const [isCreateTaskOpen, setIsCreateTaskOpen] = useState<boolean>(false);
   const [quickCreateDate, setQuickCreateDate] = useState<Date>(new Date());
+  const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
 
   // Handle task click to open drawer with details
   const handleTaskClick = (task: Task) => {
@@ -40,7 +41,13 @@ const CalendarPage = () => {
 
   const handleDateCreate = (date: Date) => {
     setQuickCreateDate(date);
-    setIsQuickCreateOpen(true);
+    setEditingTask(undefined);
+    setIsCreateTaskOpen(true);
+  };
+
+  const handleTaskDialogComplete = () => {
+    setIsCreateTaskOpen(false);
+    setEditingTask(undefined);
   };
 
   const todayTasksCount = tasks.filter(task => {
@@ -104,11 +111,11 @@ const CalendarPage = () => {
         task={selectedTask}
       />
 
-      <QuickTaskCreateDialog
-        isOpen={isQuickCreateOpen}
-        onClose={() => setIsQuickCreateOpen(false)}
-        selectedDate={quickCreateDate}
-        projects={projects}
+      <CreateTaskDialogEnhanced
+        open={isCreateTaskOpen}
+        onOpenChange={setIsCreateTaskOpen}
+        editingTask={editingTask}
+        onTaskComplete={handleTaskDialogComplete}
       />
     </div>
   );
