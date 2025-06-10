@@ -44,14 +44,15 @@ const TaskCardHeader: React.FC<TaskCardHeaderProps> = ({ title, priority }) => {
   const PriorityIcon = priorityConfig.icon;
 
   return (
-    <CardHeader className="p-6 pb-4 space-y-4">
+    <CardHeader className="p-6 pb-4 space-y-4 relative">
       <div className="flex items-start justify-between gap-4">
-        <CardTitle className="text-lg font-bold leading-tight line-clamp-2 flex-1 min-w-0 text-foreground group-hover:text-primary/90 transition-colors duration-300">
+        {/* Title with better spacing to avoid ribbon overlap */}
+        <CardTitle className="text-lg font-bold leading-tight line-clamp-2 flex-1 min-w-0 text-foreground group-hover:text-primary/90 transition-colors duration-300 ml-8">
           {title}
         </CardTitle>
         
-        {/* Enhanced Floating Priority Badge */}
-        <div className="relative shrink-0">
+        {/* Enhanced Floating Priority Badge - Positioned to avoid overlap */}
+        <div className="relative shrink-0 ml-2">
           <Badge className={cn(
             "font-bold rounded-xl border-2 backdrop-blur-sm",
             "flex items-center gap-2 px-3 py-2 text-sm",

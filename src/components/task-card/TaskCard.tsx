@@ -100,16 +100,16 @@ const TaskCard: React.FC<TaskCardProps> = ({
         aria-label={`Open details for ${task.title}`}
         role="button"
       >
-        {/* Priority Corner Ribbon */}
-        <div className="absolute top-0 right-0 w-16 h-16 overflow-hidden">
+        {/* Priority Corner Ribbon - Moved to Top Left */}
+        <div className="absolute top-0 left-0 w-16 h-16 overflow-hidden z-10">
           <div className={cn(
-            "absolute top-3 -right-3 w-20 h-6 shadow-lg transform rotate-45 transition-all duration-300 group-hover:scale-110",
+            "absolute top-3 -left-3 w-20 h-6 shadow-lg transform -rotate-45 transition-all duration-300 group-hover:scale-110",
             getPriorityRibbon(task.priority)
           )} />
         </div>
 
-        {/* Floating Action Button */}
-        <div className="absolute top-4 right-4 z-20 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+        {/* Floating Action Button - Moved to ensure no conflict */}
+        <div className="absolute top-4 right-4 z-30 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
           <div className="backdrop-blur-md bg-background/80 rounded-full p-1 shadow-lg border border-border/40">
             <TaskCardActions
               task={task}
@@ -135,12 +135,12 @@ const TaskCard: React.FC<TaskCardProps> = ({
           />
         </div>
         
-        {/* Enhanced Overdue Indicator */}
+        {/* Enhanced Overdue Indicator - Repositioned to avoid footer conflicts */}
         {isOverdue && (
-          <div className="absolute bottom-4 left-4 z-20">
-            <div className="flex items-center gap-2 bg-gradient-to-r from-red-500 to-red-600 text-white px-3 py-2 rounded-full shadow-lg backdrop-blur-sm border border-red-400/30">
-              <div className="w-2 h-2 bg-white rounded-full animate-ping" />
-              <span className="text-sm font-semibold">Overdue</span>
+          <div className="absolute top-4 left-20 z-20">
+            <div className="flex items-center gap-2 bg-gradient-to-r from-red-500 to-red-600 text-white px-3 py-1.5 rounded-full shadow-lg backdrop-blur-sm border border-red-400/30">
+              <div className="w-1.5 h-1.5 bg-white rounded-full animate-ping" />
+              <span className="text-xs font-semibold">Overdue</span>
             </div>
           </div>
         )}
@@ -148,7 +148,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
         {/* Ambient Background Elements */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           {/* Subtle corner highlights */}
-          <div className="absolute top-0 left-0 w-32 h-32 bg-gradient-radial from-primary/[0.03] to-transparent" />
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-radial from-primary/[0.03] to-transparent" />
           <div className="absolute bottom-0 right-0 w-24 h-24 bg-gradient-radial from-accent/[0.02] to-transparent" />
           
           {/* Floating gradient orb */}

@@ -51,7 +51,7 @@ const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({
     <div className="flex items-center justify-between pt-3 gap-3">
       {/* Enhanced Deadline Badge */}
       <div className={cn(
-        "flex items-center text-sm gap-2 px-3 py-2 rounded-xl backdrop-blur-sm",
+        "flex items-center text-sm gap-2 px-3 py-2 rounded-xl backdrop-blur-sm flex-1 min-w-0",
         "border border-border/40 shadow-sm transition-all duration-200",
         "bg-gradient-to-r from-background/80 to-background/60",
         isOverdue ? [
@@ -64,14 +64,14 @@ const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({
           "h-4 w-4 flex-shrink-0",
           isOverdue ? "text-red-600 dark:text-red-400" : "text-muted-foreground"
         )} />
-        <span className="font-medium whitespace-nowrap">
+        <span className="font-medium whitespace-nowrap truncate">
           {format(deadline, 'MMM d')} at {format(deadline, 'h:mm a')}
         </span>
       </div>
       
       {/* Enhanced Assignee Badge */}
       <div className={cn(
-        "flex items-center text-sm gap-2 px-3 py-2 rounded-xl backdrop-blur-sm",
+        "flex items-center text-sm gap-2 px-3 py-2 rounded-xl backdrop-blur-sm flex-shrink-0",
         "border border-border/40 shadow-sm transition-all duration-200",
         "bg-gradient-to-r from-background/80 to-background/60",
         "hover:bg-gradient-to-r hover:from-background/90 hover:to-background/70",
@@ -86,7 +86,7 @@ const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({
           )} />
         )}
         <span className={cn(
-          "truncate max-w-[120px] font-medium",
+          "truncate max-w-[100px] font-medium",
           hasAssignees ? "text-foreground" : "text-muted-foreground italic"
         )}>
           {displayName}
