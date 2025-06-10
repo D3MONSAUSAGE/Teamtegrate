@@ -150,7 +150,7 @@ const TaskAssignmentSectionEnhanced: React.FC<TaskAssignmentSectionEnhancedProps
                     <div className="flex items-center gap-3">
                       <div className="relative">
                         <Avatar className="h-8 w-8">
-                          <AvatarImage src={user.avatar} />
+                          <AvatarImage src={user.avatar_url} />
                           <AvatarFallback className="text-xs bg-gradient-to-r from-blue-500 to-purple-500 text-white">
                             {getUserInitials(user.name)}
                           </AvatarFallback>
@@ -223,7 +223,7 @@ const TaskAssignmentSectionEnhanced: React.FC<TaskAssignmentSectionEnhancedProps
                       >
                         <div className="relative">
                           <Avatar className="h-8 w-8">
-                            <AvatarImage src={user.avatar} />
+                            <AvatarImage src={user.avatar_url} />
                             <AvatarFallback className="text-xs bg-gradient-to-r from-blue-500 to-purple-500 text-white">
                               {getUserInitials(user.name)}
                             </AvatarFallback>

@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { Project, Task } from '@/types';
+import { Project, Task, TaskPriority } from '@/types';
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -41,7 +40,7 @@ const TaskFormFieldsEnhanced: React.FC<TaskFormFieldsEnhancedProps> = ({
   onDateChange,
   onTimeChange
 }) => {
-  const [selectedPriority, setSelectedPriority] = React.useState(editingTask?.priority || "Medium");
+  const [selectedPriority, setSelectedPriority] = React.useState<TaskPriority>(editingTask?.priority || "Medium");
 
   const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement> | string) => {
     const timeValue = typeof e === 'string' ? e : e.target.value;
@@ -67,9 +66,9 @@ const TaskFormFieldsEnhanced: React.FC<TaskFormFieldsEnhancedProps> = ({
   };
 
   const priorityOptions = [
-    { value: 'Low', label: 'Low Priority', description: 'Can be done when time permits' },
-    { value: 'Medium', label: 'Medium Priority', description: 'Standard priority task' },
-    { value: 'High', label: 'High Priority', description: 'Urgent, needs immediate attention' }
+    { value: 'Low' as TaskPriority, label: 'Low Priority', description: 'Can be done when time permits' },
+    { value: 'Medium' as TaskPriority, label: 'Medium Priority', description: 'Standard priority task' },
+    { value: 'High' as TaskPriority, label: 'High Priority', description: 'Urgent, needs immediate attention' }
   ];
 
   const quickDatePresets = [
@@ -132,7 +131,7 @@ const TaskFormFieldsEnhanced: React.FC<TaskFormFieldsEnhancedProps> = ({
             <Label className="font-medium">Priority Level</Label>
             <Select 
               value={selectedPriority} 
-              onValueChange={(value) => {
+              onValueChange={(value: TaskPriority) => {
                 setSelectedPriority(value);
                 setValue('priority', value);
               }}

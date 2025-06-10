@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useForm } from "react-hook-form";
-import { Task } from '@/types';
+import { Task, TaskPriority } from '@/types';
 import { format } from 'date-fns';
 
 export const useTaskFormWithAI = (editingTask?: Task, currentProjectId?: string) => {
@@ -18,7 +18,7 @@ export const useTaskFormWithAI = (editingTask?: Task, currentProjectId?: string)
     editingTask?.deadline ? format(new Date(editingTask.deadline), 'HH:mm') : "12:00"
   );
 
-  // Set default values for the form
+  // Set default values for the form including multi-assignment fields
   const form = useForm({
     defaultValues: {
       title: editingTask?.title || '',
@@ -28,7 +28,9 @@ export const useTaskFormWithAI = (editingTask?: Task, currentProjectId?: string)
       projectId: editingTask?.projectId || currentProjectId || '',
       cost: editingTask?.cost !== undefined ? editingTask.cost : '',
       assignedToId: editingTask?.assignedToId || '',
-      assignedToName: editingTask?.assignedToName || ''
+      assignedToName: editingTask?.assignedToName || '',
+      assignedToIds: editingTask?.assignedToIds || [],
+      assignedToNames: editingTask?.assignedToNames || []
     }
   });
   
@@ -52,6 +54,8 @@ export const useTaskFormWithAI = (editingTask?: Task, currentProjectId?: string)
       setSelectedMember(editingTask.assignedToId);
       setValue('assignedToId', editingTask.assignedToId || '');
       setValue('assignedToName', editingTask.assignedToName || '');
+      setValue('assignedToIds', editingTask.assignedToIds || []);
+      setValue('assignedToNames', editingTask.assignedToNames || []);
     } else {
       // For new tasks
       const today = new Date();
