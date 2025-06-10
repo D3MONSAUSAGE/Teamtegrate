@@ -1,9 +1,6 @@
-
-import React from "react";
-import { Badge } from "@/components/ui/badge";
-import { Calendar, User } from "lucide-react";
-import { format, isToday, isTomorrow } from "date-fns";
-import TaskMultipleAssignees from "@/components/task/TaskMultipleAssignees";
+import React from 'react';
+import { Clock, User, Users } from 'lucide-react';
+import { format } from 'date-fns';
 import { cn } from "@/lib/utils";
 
 interface TaskCardMetadataProps {
@@ -12,7 +9,7 @@ interface TaskCardMetadataProps {
   assignedToId?: string;
   assignedToNames?: string[];
   assignedToIds?: string[];
-  isOverdue: boolean;
+  isOverdue?: boolean;
 }
 
 const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({
@@ -21,55 +18,60 @@ const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({
   assignedToId,
   assignedToNames,
   assignedToIds,
-  isOverdue,
+  isOverdue = false,
 }) => {
-  const formatDeadline = (deadline: Date) => {
-    if (isToday(deadline)) {
-      return "Today";
-    } else if (isTomorrow(deadline)) {
-      return "Tomorrow";
-    } else {
-      return format(deadline, "MMM dd");
+  // Handle multiple assignees
+  const hasMultipleAssignees = assignedToIds && assignedToIds.length > 1;
+  const hasAssignees = assignedToIds && assignedToIds.length > 0;
+
+  // Improved logic for display name
+  const getDisplayName = () => {
+    if (hasMultipleAssignees) {
+      return `${assignedToIds.length} members`;
     }
+    
+    // If we have a proper name that's not empty and not the same as the ID
+    if (assignedToName && assignedToName.trim() !== '' && assignedToName !== assignedToId) {
+      return assignedToName;
+    }
+    
+    // If we have an assignedToId but no proper name, show "Assigned User"
+    if (assignedToId && assignedToId.trim() !== '') {
+      return 'Assigned User';
+    }
+    
+    // Otherwise, truly unassigned
+    return 'Unassigned';
   };
 
-  // Use multiple assignees if available, otherwise fall back to single assignee
-  const hasMultipleAssignees = assignedToNames && assignedToNames.length > 0;
-  const hasSingleAssignee = assignedToName && !hasMultipleAssignees;
+  const displayName = getDisplayName();
 
   return (
-    <div className="space-y-2.5">
-      <div className="flex items-center gap-2.5 p-2.5 rounded-lg bg-muted/30 border border-border/20">
-        <div className="p-1.5 rounded-md bg-primary/10">
-          <Calendar className="h-3.5 w-3.5 text-primary" />
-        </div>
-        <span className={cn(
-          "text-sm font-medium",
-          isOverdue ? "text-red-600 dark:text-red-400" : "text-foreground"
-        )}>
-          {formatDeadline(deadline)}
+    <div className="flex items-center justify-between pt-2 gap-2">
+      <div className={cn(
+        "flex items-center text-xs gap-1.5 px-2 py-1 rounded-md",
+        "bg-muted/50 border border-border/30",
+        isOverdue && "bg-red-50 border-red-200 text-red-700 dark:bg-red-950/30 dark:border-red-800 dark:text-red-300"
+      )}>
+        <Clock className="h-3 w-3 flex-shrink-0" />
+        <span className="truncate font-medium">
+          {format(deadline, 'MMM d')} at {format(deadline, 'h:mm a')}
         </span>
       </div>
-
-      <div className="flex items-center gap-2.5 p-2.5 rounded-lg bg-muted/30 border border-border/20">
-        <div className="p-1.5 rounded-md bg-accent/10">
-          <User className="h-3.5 w-3.5 text-accent" />
-        </div>
-        <div className="text-sm min-w-0 flex-1">
-          {hasMultipleAssignees ? (
-            <TaskMultipleAssignees
-              assignedToNames={assignedToNames}
-              assignedToIds={assignedToIds}
-              variant="card"
-            />
-          ) : hasSingleAssignee ? (
-            <Badge variant="outline" className="text-xs px-2 py-1 bg-secondary/50 border-border/40">
-              {assignedToName}
-            </Badge>
-          ) : (
-            <span className="text-muted-foreground italic font-medium">Unassigned</span>
-          )}
-        </div>
+      
+      <div className={cn(
+        "flex items-center text-xs gap-1.5 px-2 py-1 rounded-md",
+        "bg-muted/50 border border-border/30",
+        !hasAssignees && "italic opacity-75"
+      )}>
+        {hasMultipleAssignees ? (
+          <Users className="h-3 w-3 flex-shrink-0" />
+        ) : (
+          <User className="h-3 w-3 flex-shrink-0" />
+        )}
+        <span className="truncate max-w-[100px] font-medium">
+          {displayName}
+        </span>
       </div>
     </div>
   );
