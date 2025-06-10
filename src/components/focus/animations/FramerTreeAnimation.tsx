@@ -19,7 +19,8 @@ const FramerTreeAnimation: React.FC<FramerTreeAnimationProps> = ({ progress, isA
 
   const getCrownSize = (progress: number, multiplier: number = 1) => {
     if (progress === 0) return 0;
-    return Math.max(24, 24 + (progress / 100) * 56 * multiplier);
+    // Increased minimum size from 24 to 40 for better visibility
+    return Math.max(40, 40 + (progress / 100) * 50 * multiplier);
   };
 
   const getBackgroundTreeSize = (progress: number, threshold: number, multiplier: number = 0.8) => {
@@ -172,22 +173,22 @@ const FramerTreeAnimation: React.FC<FramerTreeAnimationProps> = ({ progress, isA
         ))}
       </motion.div>
 
-      {/* Background Forest Trees - Repositioned for Better Depth */}
+      {/* Background Forest Trees - Better positioned and sized */}
       {safeProgress >= 20 && (
         <>
           {/* Left Side Background Tree */}
           <motion.div 
             className="absolute bottom-12 opacity-60"
-            style={{ left: '15%' }}
+            style={{ left: '10%' }}
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 0.6 }}
             transition={{ delay: 0.3, type: "spring" }}
           >
             <motion.div 
-              className="bg-gradient-to-b from-green-500 to-green-700 rounded-full mb-1"
+              className="bg-gradient-to-b from-green-600 to-green-800 rounded-full mb-1"
               style={{
-                width: `${getBackgroundTreeSize(safeProgress, 20, 0.8)}px`,
-                height: `${getBackgroundTreeSize(safeProgress, 20, 1.0)}px`
+                width: `${getBackgroundTreeSize(safeProgress, 20, 1.0)}px`,
+                height: `${getBackgroundTreeSize(safeProgress, 20, 1.2)}px`
               }}
               animate={{
                 rotate: isActive ? [-1, 1, -1] : 0
@@ -201,7 +202,7 @@ const FramerTreeAnimation: React.FC<FramerTreeAnimationProps> = ({ progress, isA
             <div 
               className="w-2 bg-amber-700 rounded-b-lg mx-auto"
               style={{
-                height: `${getBackgroundTreeSize(safeProgress, 20, 0.6)}px`
+                height: `${getBackgroundTreeSize(safeProgress, 20, 0.8)}px`
               }}
             />
           </motion.div>
@@ -209,16 +210,16 @@ const FramerTreeAnimation: React.FC<FramerTreeAnimationProps> = ({ progress, isA
           {/* Right Side Background Tree */}
           <motion.div 
             className="absolute bottom-12 opacity-50"
-            style={{ right: '15%' }}
+            style={{ right: '10%' }}
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 0.5 }}
             transition={{ delay: 0.5, type: "spring" }}
           >
             <motion.div 
-              className="bg-gradient-to-b from-green-500 to-green-700 rounded-full mb-1"
+              className="bg-gradient-to-b from-green-600 to-green-800 rounded-full mb-1"
               style={{
-                width: `${getBackgroundTreeSize(safeProgress, 20, 0.9)}px`,
-                height: `${getBackgroundTreeSize(safeProgress, 20, 1.1)}px`
+                width: `${getBackgroundTreeSize(safeProgress, 20, 1.1)}px`,
+                height: `${getBackgroundTreeSize(safeProgress, 20, 1.3)}px`
               }}
               animate={{
                 rotate: isActive ? [1, -1, 1] : 0
@@ -232,7 +233,7 @@ const FramerTreeAnimation: React.FC<FramerTreeAnimationProps> = ({ progress, isA
             <div 
               className="w-2 bg-amber-700 rounded-b-lg mx-auto"
               style={{
-                height: `${getBackgroundTreeSize(safeProgress, 20, 0.7)}px`
+                height: `${getBackgroundTreeSize(safeProgress, 20, 0.9)}px`
               }}
             />
           </motion.div>
@@ -245,16 +246,16 @@ const FramerTreeAnimation: React.FC<FramerTreeAnimationProps> = ({ progress, isA
           {/* Far Left Background Tree */}
           <motion.div 
             className="absolute bottom-12 opacity-35"
-            style={{ left: '5%' }}
+            style={{ left: '30%' }}
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 0.35 }}
             transition={{ delay: 0.7, type: "spring" }}
           >
             <motion.div 
-              className="bg-gradient-to-b from-green-600 to-green-800 rounded-full mb-1"
+              className="bg-gradient-to-b from-green-700 to-green-900 rounded-full mb-1"
               style={{
-                width: `${getBackgroundTreeSize(safeProgress, 40, 0.7)}px`,
-                height: `${getBackgroundTreeSize(safeProgress, 40, 0.9)}px`
+                width: `${getBackgroundTreeSize(safeProgress, 40, 0.9)}px`,
+                height: `${getBackgroundTreeSize(safeProgress, 40, 1.1)}px`
               }}
               animate={{
                 rotate: isActive ? [-0.5, 0.5, -0.5] : 0
@@ -268,7 +269,7 @@ const FramerTreeAnimation: React.FC<FramerTreeAnimationProps> = ({ progress, isA
             <div 
               className="w-1.5 bg-amber-800 rounded-b-lg mx-auto"
               style={{
-                height: `${getBackgroundTreeSize(safeProgress, 40, 0.5)}px`
+                height: `${getBackgroundTreeSize(safeProgress, 40, 0.7)}px`
               }}
             />
           </motion.div>
@@ -276,16 +277,16 @@ const FramerTreeAnimation: React.FC<FramerTreeAnimationProps> = ({ progress, isA
           {/* Far Right Background Tree */}
           <motion.div 
             className="absolute bottom-12 opacity-40"
-            style={{ right: '5%' }}
+            style={{ right: '30%' }}
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 0.4 }}
             transition={{ delay: 0.9, type: "spring" }}
           >
             <motion.div 
-              className="bg-gradient-to-b from-green-600 to-green-800 rounded-full mb-1"
+              className="bg-gradient-to-b from-green-700 to-green-900 rounded-full mb-1"
               style={{
-                width: `${getBackgroundTreeSize(safeProgress, 40, 0.8)}px`,
-                height: `${getBackgroundTreeSize(safeProgress, 40, 1.0)}px`
+                width: `${getBackgroundTreeSize(safeProgress, 40, 1.0)}px`,
+                height: `${getBackgroundTreeSize(safeProgress, 40, 1.2)}px`
               }}
               animate={{
                 rotate: isActive ? [0.5, -0.5, 0.5] : 0
@@ -299,7 +300,7 @@ const FramerTreeAnimation: React.FC<FramerTreeAnimationProps> = ({ progress, isA
             <div 
               className="w-1.5 bg-amber-800 rounded-b-lg mx-auto"
               style={{
-                height: `${getBackgroundTreeSize(safeProgress, 40, 0.6)}px`
+                height: `${getBackgroundTreeSize(safeProgress, 40, 0.8)}px`
               }}
             />
           </motion.div>
@@ -311,16 +312,16 @@ const FramerTreeAnimation: React.FC<FramerTreeAnimationProps> = ({ progress, isA
         <>
           <motion.div 
             className="absolute bottom-12 opacity-45"
-            style={{ left: '35%' }}
+            style={{ left: '70%' }}
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 0.45 }}
             transition={{ delay: 1.1, type: "spring" }}
           >
             <motion.div 
-              className="bg-gradient-to-b from-green-500 to-green-700 rounded-full mb-1"
+              className="bg-gradient-to-b from-green-600 to-green-800 rounded-full mb-1"
               style={{
-                width: `${getBackgroundTreeSize(safeProgress, 60, 0.6)}px`,
-                height: `${getBackgroundTreeSize(safeProgress, 60, 0.8)}px`
+                width: `${getBackgroundTreeSize(safeProgress, 60, 0.8)}px`,
+                height: `${getBackgroundTreeSize(safeProgress, 60, 1.0)}px`
               }}
               animate={{
                 rotate: isActive ? [-1, 1, -1] : 0
@@ -334,23 +335,23 @@ const FramerTreeAnimation: React.FC<FramerTreeAnimationProps> = ({ progress, isA
             <div 
               className="w-1.5 bg-amber-700 rounded-b-lg mx-auto"
               style={{
-                height: `${getBackgroundTreeSize(safeProgress, 60, 0.4)}px`
+                height: `${getBackgroundTreeSize(safeProgress, 60, 0.6)}px`
               }}
             />
           </motion.div>
 
           <motion.div 
             className="absolute bottom-12 opacity-40"
-            style={{ right: '35%' }}
+            style={{ left: '20%' }}
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 0.4 }}
             transition={{ delay: 1.3, type: "spring" }}
           >
             <motion.div 
-              className="bg-gradient-to-b from-green-500 to-green-700 rounded-full mb-1"
+              className="bg-gradient-to-b from-green-600 to-green-800 rounded-full mb-1"
               style={{
-                width: `${getBackgroundTreeSize(safeProgress, 60, 0.7)}px`,
-                height: `${getBackgroundTreeSize(safeProgress, 60, 0.9)}px`
+                width: `${getBackgroundTreeSize(safeProgress, 60, 0.9)}px`,
+                height: `${getBackgroundTreeSize(safeProgress, 60, 1.1)}px`
               }}
               animate={{
                 rotate: isActive ? [1, -1, 1] : 0
@@ -364,7 +365,7 @@ const FramerTreeAnimation: React.FC<FramerTreeAnimationProps> = ({ progress, isA
             <div 
               className="w-1.5 bg-amber-700 rounded-b-lg mx-auto"
               style={{
-                height: `${getBackgroundTreeSize(safeProgress, 60, 0.5)}px`
+                height: `${getBackgroundTreeSize(safeProgress, 60, 0.7)}px`
               }}
             />
           </motion.div>
@@ -373,24 +374,30 @@ const FramerTreeAnimation: React.FC<FramerTreeAnimationProps> = ({ progress, isA
       
       {/* Main Tree Container */}
       <div className="absolute bottom-12 left-1/2 transform -translate-x-1/2 flex flex-col items-center z-10">
-        {/* Enhanced Crown with Framer Motion */}
+        {/* Enhanced Crown with Better Visibility */}
         {stage !== 'seed' && (
           <motion.div 
             className="relative mb-2"
             animate={controls}
             initial={{ scale: 0, opacity: 0 }}
+            transition={{ duration: 0.3 }}
           >
-            {/* Main crown with enhanced physics */}
+            {/* Main crown with darker colors and better contrast */}
             <motion.div 
-              className="bg-gradient-to-b from-green-400 to-green-600 rounded-full relative"
+              className="bg-gradient-to-b from-green-500 to-green-800 rounded-full relative border-2 border-green-900/30"
               style={{
                 width: `${getCrownSize(safeProgress)}px`,
-                height: `${getCrownSize(safeProgress)}px`
+                height: `${getCrownSize(safeProgress)}px`,
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
               }}
               animate={{
                 boxShadow: isActive 
-                  ? ['0 0 20px rgba(34, 197, 94, 0.3)', '0 0 40px rgba(34, 197, 94, 0.6)', '0 0 20px rgba(34, 197, 94, 0.3)']
-                  : '0 0 0px rgba(34, 197, 94, 0)'
+                  ? [
+                      '0 4px 12px rgba(0, 0, 0, 0.3), 0 0 20px rgba(34, 197, 94, 0.3)', 
+                      '0 4px 12px rgba(0, 0, 0, 0.3), 0 0 40px rgba(34, 197, 94, 0.6)', 
+                      '0 4px 12px rgba(0, 0, 0, 0.3), 0 0 20px rgba(34, 197, 94, 0.3)'
+                    ]
+                  : '0 4px 12px rgba(0, 0, 0, 0.3)'
               }}
               transition={{
                 boxShadow: {
@@ -417,14 +424,15 @@ const FramerTreeAnimation: React.FC<FramerTreeAnimationProps> = ({ progress, isA
               )}
             </motion.div>
             
-            {/* Animated side branches */}
+            {/* Animated side branches with darker colors */}
             {safeProgress >= 25 && (
               <>
                 <motion.div 
-                  className="absolute top-1 -left-2 bg-gradient-to-b from-green-400 to-green-600 rounded-full"
+                  className="absolute top-1 -left-2 bg-gradient-to-b from-green-500 to-green-800 rounded-full border border-green-900/20"
                   style={{
                     width: `${getCrownSize(safeProgress) * 0.6}px`,
-                    height: `${getCrownSize(safeProgress) * 0.7}px`
+                    height: `${getCrownSize(safeProgress) * 0.7}px`,
+                    boxShadow: '0 2px 6px rgba(0, 0, 0, 0.2)'
                   }}
                   initial={{ scale: 0, x: -10 }}
                   animate={{ 
@@ -442,10 +450,11 @@ const FramerTreeAnimation: React.FC<FramerTreeAnimationProps> = ({ progress, isA
                   }}
                 />
                 <motion.div 
-                  className="absolute top-1 -right-2 bg-gradient-to-b from-green-400 to-green-600 rounded-full"
+                  className="absolute top-1 -right-2 bg-gradient-to-b from-green-500 to-green-800 rounded-full border border-green-900/20"
                   style={{
                     width: `${getCrownSize(safeProgress) * 0.6}px`,
-                    height: `${getCrownSize(safeProgress) * 0.7}px`
+                    height: `${getCrownSize(safeProgress) * 0.7}px`,
+                    boxShadow: '0 2px 6px rgba(0, 0, 0, 0.2)'
                   }}
                   initial={{ scale: 0, x: 10 }}
                   animate={{ 
@@ -503,10 +512,11 @@ const FramerTreeAnimation: React.FC<FramerTreeAnimationProps> = ({ progress, isA
         
         {/* Enhanced Trunk with growth animation */}
         <motion.div 
-          className="bg-gradient-to-t from-amber-700 to-amber-600 rounded-b-lg relative"
+          className="bg-gradient-to-t from-amber-700 to-amber-600 rounded-b-lg relative border-x border-amber-800"
           style={{
             width: '12px',
-            height: stage === 'seed' ? '0px' : `${getTrunkHeight(safeProgress)}px`
+            height: stage === 'seed' ? '0px' : `${getTrunkHeight(safeProgress)}px`,
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)'
           }}
           initial={{ height: 0 }}
           animate={{ 
