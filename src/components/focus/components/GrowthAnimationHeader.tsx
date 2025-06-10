@@ -3,7 +3,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 
 interface GrowthAnimationHeaderProps {
-  animationType: 'tree' | 'flower' | 'city';
+  animationType: 'tree' | 'flower' | 'city' | 'ocean' | 'space';
   isActive: boolean;
 }
 
@@ -11,6 +11,23 @@ const GrowthAnimationHeader: React.FC<GrowthAnimationHeaderProps> = ({
   animationType,
   isActive
 }) => {
+  const getAnimationDescription = () => {
+    switch (animationType) {
+      case 'tree':
+        return 'forest';
+      case 'flower':
+        return 'garden';
+      case 'city':
+        return 'city';
+      case 'ocean':
+        return 'coral reef';
+      case 'space':
+        return 'planetary system';
+      default:
+        return animationType;
+    }
+  };
+
   return (
     <div className="text-center mb-4">
       <motion.h3 
@@ -31,7 +48,7 @@ const GrowthAnimationHeader: React.FC<GrowthAnimationHeaderProps> = ({
           opacity: isActive ? 0.9 : 0.7
         }}
       >
-        Watch your {animationType} grow as you stay focused
+        Watch your {getAnimationDescription()} grow as you stay focused
       </motion.p>
     </div>
   );

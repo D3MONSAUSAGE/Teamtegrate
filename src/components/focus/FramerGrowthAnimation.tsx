@@ -12,7 +12,7 @@ import MilestoneNotification from './components/MilestoneNotification';
 
 interface FramerGrowthAnimationProps {
   progress: number; // 0-100
-  animationType: 'tree' | 'flower' | 'city';
+  animationType: 'tree' | 'flower' | 'city' | 'ocean' | 'space';
   isActive: boolean;
 }
 

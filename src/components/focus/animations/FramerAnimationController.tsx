@@ -4,12 +4,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import FramerTreeAnimation from './FramerTreeAnimation';
 import FramerFlowerAnimation from './FramerFlowerAnimation';
 import FramerCityAnimation from './FramerCityAnimation';
+import FramerOceanAnimation from './FramerOceanAnimation';
+import FramerSpaceAnimation from './FramerSpaceAnimation';
 import FramerParticleSystem from './FramerParticleSystem';
 import { shouldReduceMotion } from './AnimationUtils';
 
 interface FramerAnimationControllerProps {
   progress: number;
-  animationType: 'tree' | 'flower' | 'city';
+  animationType: 'tree' | 'flower' | 'city' | 'ocean' | 'space';
   isActive: boolean;
 }
 
@@ -23,15 +25,21 @@ const FramerAnimationController: React.FC<FramerAnimationControllerProps> = ({
 
   if (reducedMotion) {
     // Fallback to basic animation for reduced motion
-    const fallbackEmoji = animationType === 'tree' ? '🌳' : animationType === 'flower' ? '🌸' : '🏙️';
-    const seedEmoji = animationType === 'tree' ? '🌱' : animationType === 'flower' ? '🌱' : '🏗️';
-    const growingEmoji = animationType === 'tree' ? '🌿' : animationType === 'flower' ? '🌺' : '🏢';
+    const fallbackEmojis = {
+      tree: { seed: '🌱', growing: '🌿', complete: '🌳' },
+      flower: { seed: '🌱', growing: '🌺', complete: '🌸' },
+      city: { seed: '🏗️', growing: '🏢', complete: '🏙️' },
+      ocean: { seed: '💧', growing: '🪸', complete: '🌊' },
+      space: { seed: '☄️', growing: '🪐', complete: '🌌' }
+    };
+    
+    const emoji = fallbackEmojis[animationType][stage];
     
     return (
       <div className="w-full h-full bg-gradient-to-b from-sky-200 to-sky-100 rounded-xl overflow-hidden">
         <div className="w-full h-full flex items-center justify-center">
           <div className="text-6xl">
-            {progress === 0 ? seedEmoji : progress < 50 ? growingEmoji : fallbackEmoji}
+            {emoji}
           </div>
         </div>
       </div>
@@ -73,6 +81,22 @@ const FramerAnimationController: React.FC<FramerAnimationControllerProps> = ({
               'linear-gradient(to bottom, #eff6ff, #dbeafe)'
             ]
           : 'linear-gradient(to bottom, #eff6ff, #dbeafe)';
+      case 'ocean':
+        return isActive 
+          ? [
+              'linear-gradient(to bottom, #0c4a6e, #0369a1)',
+              'linear-gradient(to bottom, #164e63, #0891b2)', 
+              'linear-gradient(to bottom, #0c4a6e, #0369a1)'
+            ]
+          : 'linear-gradient(to bottom, #0c4a6e, #0369a1)';
+      case 'space':
+        return isActive 
+          ? [
+              'linear-gradient(to bottom, #1e1b4b, #312e81)',
+              'linear-gradient(to bottom, #581c87, #7c3aed)', 
+              'linear-gradient(to bottom, #1e1b4b, #312e81)'
+            ]
+          : 'linear-gradient(to bottom, #1e1b4b, #312e81)';
       default: // tree
         return isActive 
           ? [
@@ -101,6 +125,10 @@ const FramerAnimationController: React.FC<FramerAnimationControllerProps> = ({
         return 'garden';
       case 'city':
         return 'city';
+      case 'ocean':
+        return 'ocean';
+      case 'space':
+        return 'space';
       default:
         return 'forest';
     }
@@ -141,6 +169,20 @@ const FramerAnimationController: React.FC<FramerAnimationControllerProps> = ({
 
           {animationType === 'city' && (
             <FramerCityAnimation 
+              progress={progress}
+              isActive={isActive}
+            />
+          )}
+
+          {animationType === 'ocean' && (
+            <FramerOceanAnimation 
+              progress={progress}
+              isActive={isActive}
+            />
+          )}
+
+          {animationType === 'space' && (
+            <FramerSpaceAnimation 
               progress={progress}
               isActive={isActive}
             />

@@ -15,14 +15,28 @@ const EnhancedGrowthAnimation: React.FC<EnhancedGrowthAnimationProps> = ({
   isActive,
   timeOfDay
 }) => {
-  // Map the extended types to the basic ones for now
-  const mappedAnimationType = animationType === 'forest' ? 'tree' : 
-                             animationType === 'garden' ? 'flower' : 'city';
+  // Map the extended types to the Framer animation types
+  const mappedAnimationType = (): 'tree' | 'flower' | 'city' | 'ocean' | 'space' => {
+    switch (animationType) {
+      case 'forest':
+        return 'tree';
+      case 'garden':
+        return 'flower';
+      case 'city':
+        return 'city';
+      case 'ocean':
+        return 'ocean';
+      case 'space':
+        return 'space';
+      default:
+        return 'tree';
+    }
+  };
 
   return (
     <FramerGrowthAnimation
       progress={progress}
-      animationType={mappedAnimationType}
+      animationType={mappedAnimationType()}
       isActive={isActive}
     />
   );
