@@ -42,7 +42,7 @@ const LandingPage = () => {
   }
 
   return (
-    <div className={`min-h-screen bg-background overflow-x-hidden w-full ${isOptimized ? 'fade-in' : 'loading'}`}>
+    <div className={`min-h-screen bg-background overflow-hidden w-full ${isOptimized ? 'fade-in' : 'loading'}`}>
       <LandingNavigation />
       <HeroSection />
       <div id="features">
