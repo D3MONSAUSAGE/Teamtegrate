@@ -11,8 +11,8 @@ export const addProject = async (
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
 ): Promise<Project | null> => {
   try {
-    if (!user) {
-      toast.error('You must be logged in to create a project');
+    if (!user || !user.organization_id) {
+      toast.error('You must be logged in and belong to an organization to create a project');
       return null;
     }
     
@@ -20,7 +20,7 @@ export const addProject = async (
     const projectId = uuidv4();
     const nowISO = now.toISOString();
     
-    console.log('Creating project with user ID:', user.id, 'project:', project);
+    console.log('Creating project with user ID:', user.id, 'organization:', user.organization_id, 'project:', project);
     
     // Prepare budget value - handle undefined or null case
     const budget = project.budget ?? 0; // Use nullish coalescing to default to 0 if undefined or null
@@ -41,7 +41,8 @@ export const addProject = async (
       team_members: project.teamMembers || [],
       status: project.status || 'To Do',
       tasks_count: 0,
-      tags: project.tags || []
+      tags: project.tags || [],
+      organization_id: user.organization_id // Add the required organization_id
     };
 
     // Insert into Supabase

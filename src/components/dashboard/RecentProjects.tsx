@@ -1,16 +1,16 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Project } from '@/types';
+import { FlatProject } from '@/types/flat';
 import { Plus, ChevronRight, FolderKanban } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import ProjectCard from '@/components/project-card';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface RecentProjectsProps {
-  projects: Project[];
-  onViewTasks: (project: Project) => void;
-  onCreateTask: (project: Project) => void;
+  projects: FlatProject[];
+  onViewTasks: (project: FlatProject) => void;
+  onCreateTask: (project: FlatProject) => void;
   onRefresh: () => void;
 }
 

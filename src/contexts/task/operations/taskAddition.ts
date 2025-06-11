@@ -15,7 +15,10 @@ export const addTask = async (
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
 ) => {
   try {
-    if (!user) return;
+    if (!user || !user.organization_id) {
+      toast.error('You must be logged in and belong to an organization to create tasks');
+      return;
+    }
 
     const now = new Date();
     const taskId = uuidv4();
@@ -32,6 +35,10 @@ export const addTask = async (
       created_at: now.toISOString(),
       updated_at: now.toISOString(),
       assigned_to_id: task.assignedToId || null,
+      assigned_to_ids: task.assignedToIds || [],
+      assigned_to_names: task.assignedToNames || [],
+      cost: task.cost || 0,
+      organization_id: user.organization_id // Add the required organization_id
     };
 
     const { data, error } = await supabase
@@ -61,6 +68,8 @@ export const addTask = async (
         updatedAt: new Date(data.updated_at || now),
         assignedToId: data.assigned_to_id || undefined,
         assignedToName: task.assignedToName,
+        assignedToIds: data.assigned_to_ids || [],
+        assignedToNames: data.assigned_to_names || [],
         tags: [],
         comments: [],
         cost: data.cost || 0,

@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Task } from '@/types';
+import { FlatTask } from '@/types/flat';
 import { useTask } from '@/contexts/task';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -15,7 +16,7 @@ import { useUsers } from '@/hooks/useUsers';
 interface CreateTaskDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  editingTask?: Task;
+  editingTask?: FlatTask;
   currentProjectId?: string;
   onTaskComplete?: () => void;
 }
@@ -80,6 +81,11 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
   const onSubmit = (data: any) => {
     console.log('Form submission data:', data);
     
+    if (!user?.organization_id) {
+      console.error('User organization_id is required');
+      return;
+    }
+    
     // Handle the case where deadline might come as string or Date
     const deadlineDate = typeof data.deadline === 'string' 
       ? new Date(data.deadline)
@@ -90,20 +96,27 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
         ...data,
         deadline: deadlineDate,
         assignedToId: selectedMember === "unassigned" ? undefined : selectedMember,
-        assignedToName: data.assignedToName
+        assignedToName: data.assignedToName,
+        cost: Number(data.cost) || 0,
+        organizationId: user.organization_id
       });
     } else {
-      addTask({
+      const newTask: Omit<FlatTask, 'id' | 'createdAt' | 'updatedAt'> = {
         title: data.title,
-        description: data.description,
+        description: data.description || '',
         priority: data.priority,
         deadline: deadlineDate,
         status: 'To Do',
         userId: user?.id || '',
         projectId: data.projectId === "none" ? undefined : data.projectId,
         assignedToId: selectedMember === "unassigned" ? undefined : selectedMember,
-        assignedToName: data.assignedToName
-      });
+        assignedToName: data.assignedToName,
+        assignedToIds: selectedMember && selectedMember !== "unassigned" ? [selectedMember] : [],
+        assignedToNames: data.assignedToName ? [data.assignedToName] : [],
+        cost: Number(data.cost) || 0,
+        organizationId: user.organization_id
+      };
+      addTask(newTask);
     }
     onOpenChange(false);
     reset();

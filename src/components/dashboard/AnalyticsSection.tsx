@@ -9,14 +9,6 @@ import CompletionRateChart from './analytics/CompletionRateChart';
 const AnalyticsSection = () => {
   const { projects, tasks } = useTask();
 
-  // Convert FlatProject[] to compatible format for charts
-  const chartProjects = projects.map(project => ({
-    ...project,
-    // Ensure compatibility with existing chart components
-    teamMembers: project.teamMemberIds || [],
-    tasks: tasks.filter(task => task.projectId === project.id)
-  }));
-
   const completedTasksCount = tasks.filter(task => task.status === 'Completed').length;
   const totalTasksCount = tasks.length;
   const completionRate = totalTasksCount > 0 ? Math.round((completedTasksCount / totalTasksCount) * 100) : 0;
@@ -69,7 +61,7 @@ const AnalyticsSection = () => {
             <CardDescription>Task assignment and completion metrics</CardDescription>
           </CardHeader>
           <CardContent>
-            <TeamPerformanceChart />
+            <TeamPerformanceChart tasks={tasks} />
           </CardContent>
         </Card>
       </div>
@@ -80,7 +72,7 @@ const AnalyticsSection = () => {
           <CardDescription>Task completion rate over time</CardDescription>
         </CardHeader>
         <CardContent>
-          <CompletionRateChart projects={projects} />
+          <CompletionRateChart tasks={tasks} />
         </CardContent>
       </Card>
     </div>
