@@ -18,7 +18,7 @@ export const useAuth = () => {
   return context;
 };
 
-// Helper function to convert AppUser to User
+// Helper function to convert AppUser to User, ensuring createdAt is present
 const toFullUser = (appUser: AppUser): User => {
   return {
     ...appUser,
