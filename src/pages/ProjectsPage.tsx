@@ -170,7 +170,11 @@ const ProjectsPage = () => {
                     <div className="relative">
                       <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 scale-110" />
                       <ProjectCard
-                        project={project}
+                        project={{
+                          ...project,
+                          createdAt: new Date(project.createdAt),
+                          updatedAt: new Date(project.updatedAt)
+                        }}
                         onViewTasks={() => handleViewTasks(project.id)}
                         onCreateTask={() => handleCreateTask(project.id)}
                         onDeleted={refreshProjects}
