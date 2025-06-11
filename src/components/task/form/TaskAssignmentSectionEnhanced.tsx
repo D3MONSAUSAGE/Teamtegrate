@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,7 +10,7 @@ import AssignedMemberCard from './assignment/AssignedMemberCard';
 import UserSearchDropdown from './assignment/UserSearchDropdown';
 import AssignmentSummary from './assignment/AssignmentSummary';
 import { getUserInitials, getUserStatus, getStatusColor } from './assignment/utils';
-import TaskMultiAssigneeSelect from '../TaskMultiAssigneeSelect';
+import TaskMultiAssigneeSelect from './TaskMultiAssigneeSelect';
 import { toast } from '@/components/ui/sonner';
 
 interface TaskAssignmentSectionEnhancedProps {
