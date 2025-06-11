@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { AuthContextType } from './types';
-import { User as AppUser, UserRole } from '@/types';
+import { AppUser, UserRole } from '@/types';
 import { hasRoleAccess, canManageUser } from './roleUtils';
 import { useAuthSession } from './hooks/useAuthSession';
 import { useAuthOperations } from './hooks/useAuthOperations';

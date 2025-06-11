@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from 'react';
 import { User as SupabaseUser, Session } from '@supabase/supabase-js';
-import { User as AppUser } from '@/types';
+import { AppUser } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { createUserFromSession, refreshUserSession as refreshSession } from '../userSessionUtils';
 
@@ -16,8 +16,17 @@ export const useAuthSession = () => {
       if (session?.user && forceCreate) {
         console.log('Creating user data for:', session.user.id);
         const userData = await createUserFromSession(session);
-        setUser(userData);
-        console.log('User data created successfully:', userData.id, userData.role);
+        // Convert User to AppUser by excluding createdAt
+        const appUser: AppUser = {
+          id: userData.id,
+          name: userData.name,
+          email: userData.email,
+          role: userData.role,
+          avatar_url: userData.avatar_url,
+          organization_id: userData.organization_id
+        };
+        setUser(appUser);
+        console.log('User data created successfully:', appUser.id, appUser.role);
       } else if (!session) {
         setUser(null);
         console.log('No session, clearing user data');
@@ -34,7 +43,16 @@ export const useAuthSession = () => {
       const { session: newSession, user: userData } = await refreshSession();
       if (newSession && userData) {
         setSession(newSession);
-        setUser(userData);
+        // Convert User to AppUser
+        const appUser: AppUser = {
+          id: userData.id,
+          name: userData.name,
+          email: userData.email,
+          role: userData.role,
+          avatar_url: userData.avatar_url,
+          organization_id: userData.organization_id
+        };
+        setUser(appUser);
       }
     } catch (error) {
       console.error('Error refreshing session:', error);
