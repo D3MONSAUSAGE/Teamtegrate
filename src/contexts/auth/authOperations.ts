@@ -130,3 +130,42 @@ export const updateUserProfile = async (data: { name?: string }) => {
     throw error;
   }
 };
+
+export const generateInviteCode = async (organizationId: string, expiryDays: number = 7) => {
+  try {
+    const { data, error } = await supabase.rpc('generate_invite_code', {
+      org_id: organizationId,
+      created_by_id: (await supabase.auth.getUser()).data.user?.id,
+      expires_days: expiryDays
+    });
+
+    if (error) {
+      console.error('Error generating invite code:', error);
+      toast.error('Failed to generate invite code');
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error in generateInviteCode:', error);
+    throw error;
+  }
+};
+
+export const validateInviteCode = async (inviteCode: string) => {
+  try {
+    const { data, error } = await supabase.rpc('validate_and_use_invite_code', {
+      code: inviteCode
+    });
+
+    if (error) {
+      console.error('Error validating invite code:', error);
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error in validateInviteCode:', error);
+    throw error;
+  }
+};

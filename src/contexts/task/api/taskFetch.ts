@@ -8,8 +8,13 @@ const parseDate = (dateStr: string | null): Date => {
   return new Date(dateStr);
 };
 
+interface SimpleUser {
+  id: string;
+  organization_id?: string;
+}
+
 export const fetchTasks = async (
-  user: any,
+  user: SimpleUser,
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>
 ): Promise<void> => {
   try {

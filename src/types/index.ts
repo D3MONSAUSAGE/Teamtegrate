@@ -1,3 +1,4 @@
+
 export type UserRole = 'superadmin' | 'admin' | 'manager' | 'user';
 
 export interface User {
@@ -17,6 +18,7 @@ export interface AppUser {
   role: UserRole;
   avatar_url?: string;
   organization_id?: string;
+  timezone?: string;
   createdAt?: Date; // Make this optional to match User interface
 }
 
