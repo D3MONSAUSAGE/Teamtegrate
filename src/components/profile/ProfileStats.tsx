@@ -22,7 +22,7 @@ const ProfileStats = () => {
   // User's projects (as manager or team member)
   const userProjects = projects.filter(project => 
     project.managerId === user.id || 
-    project.teamMembers?.includes(user.id)
+    project.teamMemberIds?.includes(user.id)
   );
 
   // Tasks due today

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Project } from '@/types';
+import { FlatProject } from '@/types/flat';
 import { ProjectDetailsSection } from './ProjectDetailsSection';
 import { TeamMembersSection } from './TeamMembersSection';
 import { toast } from '@/components/ui/sonner';
@@ -28,7 +28,7 @@ export type FormValues = z.infer<typeof projectFormSchema>;
 interface EditProjectDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  project: Project;
+  project: FlatProject;
   onSuccess?: () => void;
 }
 
@@ -49,7 +49,7 @@ const EditProjectDialog: React.FC<EditProjectDialogProps> = ({
       startDate: project?.startDate ? format(new Date(project.startDate), 'yyyy-MM-dd') : '',
       endDate: project?.endDate ? format(new Date(project.endDate), 'yyyy-MM-dd') : '',
       budget: project?.budget,
-      teamMembers: project?.teamMembers?.map(memberId => ({ memberId })) || []
+      teamMembers: project?.teamMemberIds?.map(memberId => ({ memberId })) || []
     }
   });
 
@@ -67,7 +67,7 @@ const EditProjectDialog: React.FC<EditProjectDialogProps> = ({
         startDate: project.startDate ? format(new Date(project.startDate), 'yyyy-MM-dd') : '',
         endDate: project.endDate ? format(new Date(project.endDate), 'yyyy-MM-dd') : '',
         budget: project.budget,
-        teamMembers: project.teamMembers?.map(memberId => ({ memberId })) || []
+        teamMembers: project.teamMemberIds?.map(memberId => ({ memberId })) || []
       });
     }
   }, [project, open, reset]);
@@ -83,7 +83,7 @@ const EditProjectDialog: React.FC<EditProjectDialogProps> = ({
         startDate: new Date(data.startDate),
         endDate: new Date(data.endDate),
         budget: data.budget,
-        teamMembers: teamMemberIds
+        teamMemberIds: teamMemberIds
       });
       
       toast.success("Project updated successfully");

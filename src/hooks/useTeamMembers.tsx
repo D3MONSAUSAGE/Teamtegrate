@@ -215,7 +215,7 @@ const useTeamMembers = () => {
       name: user.name || 'Manager',
       email: user.email || '',
       role: 'Manager',
-      assignedTasks: managerTasks,
+      assignedTasks: managerTasks as Task[],
       completedTasks: completedTasks.length,
       totalTasks: managerTasks.length,
       completionRate,
@@ -260,17 +260,18 @@ const useTeamMembers = () => {
         return taskDate.getTime() === today.getTime();
       });
       
-      // Get projects this member is involved in
-      const memberProjects = projects.filter(project => 
-        project.tasks.some(task => {
+      // Get projects this member is involved in - use project tasks instead
+      const memberProjects = projects.filter(project => {
+        const projectTasks = tasks.filter(task => task.projectId === project.id);
+        return projectTasks.some(task => {
           const taskAssignedId = task.assignedToId?.toString();
           return taskAssignedId === memberIdStr;
-        })
-      );
+        });
+      });
       
       const performance = {
         ...member,
-        assignedTasks,
+        assignedTasks: assignedTasks as Task[],
         completedTasks: completedTasks.length,
         totalTasks: assignedTasks.length,
         completionRate,

@@ -34,6 +34,13 @@ export const TaskDetailsSection: React.FC<TaskDetailsSectionProps> = ({
 }) => {
   const { projects } = useTask();
   
+  // Transform FlatProject[] to Project[] for compatibility
+  const compatibleProjects = projects.map(project => ({
+    ...project,
+    tasks: [],
+    teamMembers: project.teamMemberIds || []
+  }));
+  
   return (
     <>
       <div>
@@ -79,7 +86,7 @@ export const TaskDetailsSection: React.FC<TaskDetailsSectionProps> = ({
         errors={errors}
         editingTask={editingTask}
         currentProjectId={currentProjectId}
-        projects={projects}
+        projects={compatibleProjects}
         setValue={setValue}
       />
 

@@ -77,8 +77,10 @@ const ProjectReports: React.FC = () => {
     
     const dataMap = new Map();
     selectedProjects.forEach(project => {
-      const totalTasks = project.tasks.length;
-      const completedTasks = project.tasks.filter(task => task.status === 'Completed').length;
+      // Get tasks for this project
+      const projectTasks = tasks.filter(task => task.projectId === project.id);
+      const totalTasks = projectTasks.length;
+      const completedTasks = projectTasks.filter(task => task.status === 'Completed').length;
       const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
       
       // Today's date
@@ -96,13 +98,14 @@ const ProjectReports: React.FC = () => {
     });
     
     return Array.from(dataMap.values());
-  }, [selectedProjects]);
+  }, [selectedProjects, tasks]);
   
   // Project tasks by status for selected projects
   const projectTasksByStatus = React.useMemo(() => {
     if (selectedProjects.length === 0) return [];
     
     return selectedProjects.slice(0, 5).map(project => {
+      const projectTasks = tasks.filter(task => task.projectId === project.id);
       const statusCounts = {
         'To Do': 0,
         'In Progress': 0,
@@ -110,7 +113,7 @@ const ProjectReports: React.FC = () => {
         'Completed': 0
       };
       
-      project.tasks.forEach(task => {
+      projectTasks.forEach(task => {
         statusCounts[task.status]++;
       });
       
@@ -119,15 +122,16 @@ const ProjectReports: React.FC = () => {
         ...statusCounts
       };
     });
-  }, [selectedProjects]);
+  }, [selectedProjects, tasks]);
   
   // Project on-time completion rate
   const onTimeCompletionData = React.useMemo(() => {
     const onTime = projects.filter(project => {
       if (!project.endDate) return false;
       
-      const completedTasks = project.tasks.filter(task => task.status === 'Completed');
-      const allTasksCompleted = completedTasks.length === project.tasks.length;
+      const projectTasks = tasks.filter(task => task.projectId === project.id);
+      const completedTasks = projectTasks.filter(task => task.status === 'Completed');
+      const allTasksCompleted = completedTasks.length === projectTasks.length && projectTasks.length > 0;
       
       const endDate = new Date(project.endDate);
       const now = new Date();
@@ -151,7 +155,7 @@ const ProjectReports: React.FC = () => {
       { name: 'In Progress', value: inProgress },
       { name: 'Overdue', value: overdue }
     ];
-  }, [projects]);
+  }, [projects, tasks]);
   
   // Colors for the charts
   const COLORS = ['#00C49F', '#0088FE', '#FF8042'];
@@ -161,6 +165,13 @@ const ProjectReports: React.FC = () => {
     'Pending': '#FFBB28',
     'Completed': '#00C49F'
   };
+  
+  // Transform FlatProject[] to Project[] for ProjectSelector compatibility
+  const compatibleProjects = projects.map(project => ({
+    ...project,
+    tasks: tasks.filter(task => task.projectId === project.id),
+    teamMembers: project.teamMemberIds || []
+  }));
   
   return (
     <div className="space-y-6">
@@ -175,7 +186,7 @@ const ProjectReports: React.FC = () => {
         <CardContent className="space-y-4">
           {/* Project Selector integrated into this card */}
           <ProjectSelector
-            projects={projects}
+            projects={compatibleProjects}
             selectedProjectIds={selectedProjectIds}
             onProjectToggle={handleProjectToggle}
             onRemoveProject={handleRemoveProject}

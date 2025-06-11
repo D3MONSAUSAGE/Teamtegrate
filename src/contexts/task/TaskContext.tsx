@@ -425,6 +425,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (updates.status) updateData.status = updates.status;
       if (updates.is_completed !== undefined) updateData.is_completed = updates.is_completed;
       if (updates.budget !== undefined) updateData.budget = updates.budget;
+      if (updates.teamMemberIds !== undefined) updateData.team_members = updates.teamMemberIds;
 
       const response = await supabase
         .from('projects')

@@ -1,10 +1,11 @@
 
 import React, { useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid, Legend } from 'recharts';
-import { Project, TaskStatus } from '@/types';
+import { FlatProject, FlatTask } from '@/types/flat';
+import { useTask } from '@/contexts/task';
 
 interface ProjectProgressChartProps {
-  projects: Project[];
+  projects: FlatProject[];
 }
 
 interface ChartData {
@@ -23,28 +24,36 @@ const PROJECT_COLORS = {
 };
 
 const ProjectProgressChart: React.FC<ProjectProgressChartProps> = ({ projects }) => {
+  const { tasks } = useTask();
+  
   const chartData = useMemo(() => {
     // Take only the top 5 projects with the most tasks
     return projects
-      .filter(project => project.tasks && project.tasks.length > 0)
-      .sort((a, b) => b.tasks.length - a.tasks.length)
-      .slice(0, 5)
       .map(project => {
-        const tasksByStatus = project.tasks.reduce((acc, task) => {
+        // Get tasks for this project
+        const projectTasks = tasks.filter(task => task.projectId === project.id);
+        
+        const tasksByStatus = projectTasks.reduce((acc, task) => {
           const status = task.status.toLowerCase().replace(/\s+/g, '');
           acc[status as keyof typeof acc] = (acc[status as keyof typeof acc] || 0) + 1;
           return acc;
         }, { todo: 0, inprogress: 0, pending: 0, completed: 0 });
         
         return {
+          project,
+          taskCount: projectTasks.length,
           name: project.title.length > 12 ? project.title.substring(0, 12) + '...' : project.title,
           todo: tasksByStatus.todo,
           inProgress: tasksByStatus.inprogress,
           pending: tasksByStatus.pending,
           completed: tasksByStatus.completed
         };
-      });
-  }, [projects]);
+      })
+      .filter(item => item.taskCount > 0)
+      .sort((a, b) => b.taskCount - a.taskCount)
+      .slice(0, 5)
+      .map(({ project, taskCount, ...rest }) => rest);
+  }, [projects, tasks]);
   
   if (chartData.length === 0) {
     return (
