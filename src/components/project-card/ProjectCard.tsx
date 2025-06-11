@@ -21,7 +21,7 @@ const ProjectCard = ({ project, onViewTasks, onCreateTask, onDeleted }: ProjectC
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
-  const { deleteProject, refreshProjects } = useTask();
+  const { deleteProject, refreshProjects, tasks } = useTask();
 
   const handleDelete = async () => {
     try {
@@ -46,7 +46,7 @@ const ProjectCard = ({ project, onViewTasks, onCreateTask, onDeleted }: ProjectC
   };
 
   // Convert FlatProject to Project for components that expect Project type
-  const convertedProject = flatProjectToProject(project);
+  const convertedProject = flatProjectToProject(project, tasks);
 
   return (
     <>

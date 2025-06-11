@@ -29,7 +29,26 @@ const DashboardPage = () => {
   
   // Convert FlatTasks to Tasks for compatibility
   const convertedTasks = flatTasksToTasks(tasks);
-  const convertedProjects = flatProjectsToProjects(projects, tasks);
+  
+  // Convert SimpleProjects to FlatProjects for components that expect FlatProject
+  const flatProjects = projects.map(project => ({
+    id: project.id,
+    title: project.title,
+    description: project.description,
+    startDate: project.startDate,
+    endDate: project.endDate,
+    managerId: project.managerId,
+    createdAt: project.createdAt,
+    updatedAt: project.updatedAt,
+    teamMemberIds: project.teamMembers || [],
+    budget: project.budget,
+    budgetSpent: project.budgetSpent || 0,
+    is_completed: project.is_completed,
+    status: project.status,
+    tasks_count: project.tasks_count,
+    tags: project.tags || [],
+    organizationId: project.organizationId || user?.organization_id || ''
+  }));
   
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -51,7 +70,7 @@ const DashboardPage = () => {
     return taskDate > today && taskDate <= nextWeek;
   }).sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime());
   
-  const recentProjects = convertedProjects.slice(0, 3);
+  const recentProjects = flatProjects.slice(0, 3);
   
   const handleEditTask = (task: Task) => {
     setEditingTask(task);
@@ -70,8 +89,14 @@ const DashboardPage = () => {
     setSelectedProject(null);
   };
 
-  const handleViewTasks = (project: Project) => {
+  const handleViewTasks = (project: any) => {
     console.log("View tasks for project:", project.title);
+  };
+
+  const handleCreateTaskForProject = (project: any) => {
+    // Convert FlatProject to Project for compatibility
+    const convertedProject = flatProjectsToProjects([project], tasks)[0];
+    handleCreateTask(convertedProject);
   };
   
   return (
@@ -122,7 +147,7 @@ const DashboardPage = () => {
                     <div className="text-xs text-muted-foreground">Upcoming</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-amber-600">{projectsLoading ? '...' : convertedProjects.length}</div>
+                    <div className="text-2xl font-bold text-amber-600">{projectsLoading ? '...' : flatProjects.length}</div>
                     <div className="text-xs text-muted-foreground">Projects</div>
                   </div>
                 </div>
@@ -211,7 +236,7 @@ const DashboardPage = () => {
                 <RecentProjects 
                   projects={recentProjects}
                   onViewTasks={handleViewTasks}
-                  onCreateTask={handleCreateTask}
+                  onCreateTask={handleCreateTaskForProject}
                   onRefresh={refreshProjects}
                 />
               </div>

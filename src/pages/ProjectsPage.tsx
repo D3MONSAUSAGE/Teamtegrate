@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useProjects } from '@/hooks/useProjects';
 import { useAuth } from '@/contexts/AuthContext';
@@ -8,7 +7,7 @@ import { Plus, Search, Loader2, Sparkles, FolderKanban, Zap } from 'lucide-react
 import ProjectCard from '@/components/project-card';
 import CreateProjectDialog from '@/components/CreateProjectDialog';
 import { useNavigate } from 'react-router-dom';
-import { flatProjectsToProjects } from '@/utils/typeConversions';
+import { FlatProject } from '@/types/flat';
 
 const ProjectsPage = () => {
   const { user } = useAuth();
@@ -18,10 +17,23 @@ const ProjectsPage = () => {
   const navigate = useNavigate();
 
   // Convert SimpleProjects to FlatProjects for compatibility
-  const flatProjects = projects.map(project => ({
-    ...project,
+  const flatProjects: FlatProject[] = projects.map(project => ({
+    id: project.id,
+    title: project.title,
+    description: project.description,
+    startDate: project.startDate,
+    endDate: project.endDate,
+    managerId: project.managerId,
+    createdAt: project.createdAt,
+    updatedAt: project.updatedAt,
     teamMemberIds: project.teamMembers || [],
-    organizationId: user?.organization_id || ''
+    budget: project.budget,
+    budgetSpent: project.budgetSpent || 0,
+    is_completed: project.is_completed,
+    status: project.status,
+    tasks_count: project.tasks_count,
+    tags: project.tags || [],
+    organizationId: project.organizationId || user?.organization_id || ''
   }));
 
   const filteredProjects = flatProjects.filter(project =>
