@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Task } from '@/types';
@@ -233,7 +232,7 @@ const CreateTaskDialogEnhanced: React.FC<CreateTaskDialogEnhancedProps> = ({
               register={register}
               errors={errors}
               setValue={setValue}
-              projects={projects}
+              projects={projects as any}
               editingTask={editingTask}
               currentProjectId={currentProjectId}
               selectedMember={selectedMember}

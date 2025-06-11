@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Task } from '@/types';
@@ -145,7 +144,7 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
                   register={register}
                   errors={errors}
                   setValue={setValue}
-                  projects={projects}
+                  projects={projects as any}
                   editingTask={editingTask}
                   currentProjectId={currentProjectId}
                   selectedMember={selectedMember}

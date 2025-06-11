@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -6,7 +5,6 @@ import { AppUser, UserRole } from '@/types';
 import { AuthContextType } from './types';
 import { createBasicUserFromSession, setupAuthTimeout } from './utils/authHelpers';
 import { useAuthOperations } from './hooks/useAuthOperations';
-import { hasRoleAccess } from './roleUtils';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -139,6 +137,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return userLevel > targetLevel;
   };
 
+  // Simple role access check
+  const hasRoleAccess = (requiredRole: UserRole): boolean => {
+    if (!user?.role) return false;
+    
+    const roleHierarchy: Record<UserRole, number> = {
+      'superadmin': 4,
+      'admin': 3,
+      'manager': 2,
+      'user': 1
+    };
+    
+    const userLevel = roleHierarchy[user.role] || 0;
+    const requiredLevel = roleHierarchy[requiredRole] || 0;
+    
+    return userLevel >= requiredLevel;
+  };
+
   const authOperations = useAuthOperations(session, user, setSession, setUser, setLoading);
 
   const value: AuthContextType = {
@@ -146,7 +161,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loading: isLoading,
     isLoading,
     isAuthenticated: !!session && !!user,
-    hasRoleAccess: (requiredRole: UserRole) => hasRoleAccess(user?.role, requiredRole),
+    hasRoleAccess,
     canManageUser: (targetRole: UserRole) => canManageUserRole(user?.role, targetRole),
     refreshUserSession,
     ...authOperations,

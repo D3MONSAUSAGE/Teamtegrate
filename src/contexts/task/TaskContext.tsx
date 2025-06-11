@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Task, DailyScore, TaskStatus, TaskComment } from '@/types';
+import { Task, DailyScore, TaskStatus, TaskComment, ProjectStatus } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { fetchTasks } from './api/taskFetch';
 import { addTask } from './api/taskCreate';
@@ -25,7 +25,7 @@ interface SimpleProject {
   tasks: Task[];
   teamMembers: string[];
   is_completed: boolean;
-  status: string;
+  status: ProjectStatus;
   tasks_count: number;
   tags?: string[];
   organizationId?: string;
@@ -114,8 +114,8 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         teamMembers: Array.isArray(dbProject.team_members) ? dbProject.team_members : [],
         is_completed: Boolean(dbProject.is_completed),
         status: (dbProject.status === 'To Do' || dbProject.status === 'In Progress' || dbProject.status === 'Completed') 
-          ? dbProject.status 
-          : 'To Do',
+          ? dbProject.status as ProjectStatus
+          : 'To Do' as ProjectStatus,
         tasks_count: Number(dbProject.tasks_count) || 0,
         tags: Array.isArray(dbProject.tags) ? dbProject.tags : [],
         organizationId: user.organization_id
@@ -165,7 +165,14 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const handleAddProject = async (project: Omit<SimpleProject, 'id' | 'createdAt' | 'updatedAt' | 'tasks'>) => {
     if (!user) return null;
     const userData = { id: user.id, organization_id: user.organization_id };
-    const newProject = await addProject(project, userData);
+    
+    // Convert SimpleProject to Project format for the API call
+    const projectForApi = {
+      ...project,
+      status: project.status as ProjectStatus
+    };
+    
+    const newProject = await addProject(projectForApi, userData);
     if (newProject) {
       setProjects(prev => [...prev, newProject]);
     }
