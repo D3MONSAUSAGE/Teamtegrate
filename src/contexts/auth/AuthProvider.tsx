@@ -130,7 +130,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isLoading,
     isAuthenticated: !!session && !!user,
     hasRoleAccess: (requiredRole: UserRole) => hasRoleAccess(user?.role, requiredRole),
-    canManageUser: (targetRole: UserRole) => canManageUser(user?.role, targetRole),
+    canManageUser: (targetRole: UserRole) => {
+      // Convert AppUser to User type for canManageUser function
+      if (!user) return false;
+      const userAsUser = {
+        ...user,
+        createdAt: user.createdAt || new Date()
+      };
+      return canManageUser(userAsUser.role, targetRole);
+    },
     refreshUserSession,
     ...authOperations,
   };

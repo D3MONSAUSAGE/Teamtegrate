@@ -8,13 +8,13 @@ const parseDate = (dateStr: string | null): Date => {
   return new Date(dateStr);
 };
 
-interface SimpleUser {
+interface UserData {
   id: string;
   organization_id?: string;
 }
 
 export const fetchTasks = async (
-  user: SimpleUser,
+  user: UserData,
   setTasks: (tasks: Task[]) => void
 ): Promise<void> => {
   try {
