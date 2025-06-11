@@ -2,7 +2,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { Task, Project, TaskStatus, TaskPriority, DailyScore, TeamMemberPerformance } from '@/types';
 import { useAuth } from '../AuthContext';
-import { fetchUserTasks, fetchUserProjects } from './taskApi';
+import { fetchUserTasks } from './taskApi';
 import { calculateDailyScore } from './taskMetrics';
 import { toast } from '@/components/ui/sonner';
 import { 
@@ -94,17 +94,9 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [authLoading]);
 
   const refreshProjects = async () => {
-    if (!user || !isAuthenticated || !authReady) return;
-    
-    try {
-      setIsLoading(true);
-      await fetchUserProjects(user, setProjects);
-    } catch (error) {
-      console.error("Error refreshing projects:", error);
-      toast.error("Failed to refresh projects");
-    } finally {
-      setIsLoading(false);
-    }
+    // Projects are now handled by useProjects hook, so this is a no-op
+    // Components should use useProjects directly instead
+    console.log('refreshProjects called - projects are now managed by useProjects hook');
   };
 
   // Load data only when auth is fully ready
@@ -123,21 +115,15 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
 
-      console.log('TaskProvider: Loading data for authenticated user:', user.id);
+      console.log('TaskProvider: Loading tasks for authenticated user:', user.id);
       setIsLoading(true);
       
       try {
-        // Load projects and tasks with proper error handling
-        await Promise.allSettled([
-          fetchUserProjects(user, setProjects).catch(error => {
-            console.error("Error loading projects:", error);
-            toast.error("Failed to load projects");
-          }),
-          fetchUserTasks(user, setTasks).catch(error => {
-            console.error("Error loading tasks:", error);
-            toast.error("Failed to load tasks");
-          })
-        ]);
+        // Only load tasks - projects are handled by useProjects hook
+        await fetchUserTasks(user, setTasks).catch(error => {
+          console.error("Error loading tasks:", error);
+          toast.error("Failed to load tasks");
+        });
       } catch (error) {
         console.error("TaskProvider: Critical error loading data:", error);
       } finally {
@@ -158,7 +144,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const value = {
     tasks,
-    projects,
+    projects, // Keep for backward compatibility, but components should use useProjects
     dailyScore,
     isLoading,
     refreshProjects,
