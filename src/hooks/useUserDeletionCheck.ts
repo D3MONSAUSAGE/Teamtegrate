@@ -45,9 +45,20 @@ export const useUserDeletionCheck = (user: AppUser | null): UseDeletionCheckResu
           return;
         }
 
-        // Type cast the JSON response to our DeletionImpact interface
-        const typedImpact = data as DeletionImpact;
-        setImpact(typedImpact);
+        // Safely parse the JSON response to our DeletionImpact interface
+        if (data && typeof data === 'object' && !Array.isArray(data)) {
+          const typedImpact: DeletionImpact = {
+            tasks_assigned: Number(data.tasks_assigned) || 0,
+            projects_managed: Number(data.projects_managed) || 0,
+            chat_rooms_created: Number(data.chat_rooms_created) || 0,
+            organizations_created: Number(data.organizations_created) || 0,
+            team_memberships: Number(data.team_memberships) || 0,
+            is_sole_admin: Boolean(data.is_sole_admin)
+          };
+          setImpact(typedImpact);
+        } else {
+          setError('Invalid response format from deletion impact check');
+        }
       } catch (err) {
         console.error('Error in deletion check:', err);
         setError('Failed to check deletion requirements');
