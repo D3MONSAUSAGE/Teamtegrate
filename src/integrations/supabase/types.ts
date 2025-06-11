@@ -53,6 +53,7 @@ export type Database = {
           id: string
           location: string | null
           name: string
+          organization_id: string
           user_id: string
         }
         Insert: {
@@ -60,6 +61,7 @@ export type Database = {
           id?: string
           location?: string | null
           name: string
+          organization_id: string
           user_id: string
         }
         Update: {
@@ -67,9 +69,18 @@ export type Database = {
           id?: string
           location?: string | null
           name?: string
+          organization_id?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_branches_organization"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       chat_message_attachments: {
         Row: {
@@ -251,6 +262,7 @@ export type Database = {
           frequency: string | null
           id: string
           last_generated: string | null
+          organization_id: string
           sections: Json
           tags: string[] | null
           title: string
@@ -263,6 +275,7 @@ export type Database = {
           frequency?: string | null
           id?: string
           last_generated?: string | null
+          organization_id: string
           sections: Json
           tags?: string[] | null
           title: string
@@ -275,11 +288,20 @@ export type Database = {
           frequency?: string | null
           id?: string
           last_generated?: string | null
+          organization_id?: string
           sections?: Json
           tags?: string[] | null
           title?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_checklist_templates_organization"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       checklists: {
         Row: {
@@ -292,6 +314,7 @@ export type Database = {
           due_date: string | null
           execution_window: Json | null
           id: string
+          organization_id: string
           progress: number | null
           sections: Json
           start_date: string
@@ -310,6 +333,7 @@ export type Database = {
           due_date?: string | null
           execution_window?: Json | null
           id?: string
+          organization_id: string
           progress?: number | null
           sections: Json
           start_date: string
@@ -328,6 +352,7 @@ export type Database = {
           due_date?: string | null
           execution_window?: Json | null
           id?: string
+          organization_id?: string
           progress?: number | null
           sections?: Json
           start_date?: string
@@ -342,6 +367,13 @@ export type Database = {
             columns: ["template_id"]
             isOneToOne: false
             referencedRelation: "checklist_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_checklists_organization"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -457,6 +489,7 @@ export type Database = {
           description: string | null
           end_date: string
           id: string
+          organization_id: string
           start_date: string
           title: string
           updated_at: string
@@ -467,6 +500,7 @@ export type Database = {
           description?: string | null
           end_date: string
           id?: string
+          organization_id: string
           start_date: string
           title: string
           updated_at?: string
@@ -477,12 +511,21 @@ export type Database = {
           description?: string | null
           end_date?: string
           id?: string
+          organization_id?: string
           start_date?: string
           title?: string
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_events_organization"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       invoices: {
         Row: {
@@ -1191,6 +1234,10 @@ export type Database = {
           title: string
           updated_at: string | null
         }[]
+      }
+      get_current_user_organization_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
       get_user_deletion_impact: {
         Args: { target_user_id: string }
