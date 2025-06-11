@@ -17,6 +17,7 @@ import {
 } from 'recharts';
 import { format, isAfter } from 'date-fns';
 import ProjectSelector from './ProjectSelector';
+import { flatProjectsToProjects } from '@/utils/typeConversions';
 
 const ProjectReports: React.FC = () => {
   const { projects, tasks } = useTask();
@@ -167,11 +168,7 @@ const ProjectReports: React.FC = () => {
   };
   
   // Transform FlatProject[] to Project[] for ProjectSelector compatibility
-  const compatibleProjects = projects.map(project => ({
-    ...project,
-    tasks: tasks.filter(task => task.projectId === project.id),
-    teamMembers: project.teamMemberIds || []
-  }));
+  const compatibleProjects = flatProjectsToProjects(projects, tasks);
   
   return (
     <div className="space-y-6">

@@ -12,6 +12,11 @@ export const addTask = async (
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
 ): Promise<void> => {
   try {
+    if (!user?.organization_id) {
+      toast.error('You must be logged in and belong to an organization to create tasks');
+      return;
+    }
+
     const newTask = {
       id: crypto.randomUUID(),
       ...task,
@@ -36,6 +41,7 @@ export const addTask = async (
       cost: newTask.cost,
       created_at: newTask.createdAt.toISOString(),
       updated_at: newTask.updatedAt.toISOString(),
+      organization_id: user.organization_id
     });
 
     if (error) {

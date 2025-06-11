@@ -5,6 +5,7 @@ import { useTask } from '@/contexts/task';
 import ProjectProgressChart from './analytics/ProjectProgressChart';
 import TeamPerformanceChart from './analytics/TeamPerformanceChart';
 import CompletionRateChart from './analytics/CompletionRateChart';
+import { flatTasksToTasks } from '@/utils/typeConversions';
 
 const AnalyticsSection = () => {
   const { projects, tasks } = useTask();
@@ -12,6 +13,9 @@ const AnalyticsSection = () => {
   const completedTasksCount = tasks.filter(task => task.status === 'Completed').length;
   const totalTasksCount = tasks.length;
   const completionRate = totalTasksCount > 0 ? Math.round((completedTasksCount / totalTasksCount) * 100) : 0;
+
+  // Convert FlatTasks to Tasks for compatibility with chart components
+  const convertedTasks = flatTasksToTasks(tasks);
 
   return (
     <div className="space-y-6">
@@ -61,7 +65,7 @@ const AnalyticsSection = () => {
             <CardDescription>Task assignment and completion metrics</CardDescription>
           </CardHeader>
           <CardContent>
-            <TeamPerformanceChart tasks={tasks} />
+            <TeamPerformanceChart tasks={convertedTasks} />
           </CardContent>
         </Card>
       </div>
@@ -72,7 +76,7 @@ const AnalyticsSection = () => {
           <CardDescription>Task completion rate over time</CardDescription>
         </CardHeader>
         <CardContent>
-          <CompletionRateChart tasks={tasks} />
+          <CompletionRateChart tasks={convertedTasks} />
         </CardContent>
       </Card>
     </div>

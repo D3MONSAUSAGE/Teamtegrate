@@ -12,8 +12,8 @@ export const useProjectOperations = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const createProject = async (project: Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'tasks'>) => {
-    if (!user) {
-      toast.error('You must be logged in to create a project');
+    if (!user || !user.organization_id) {
+      toast.error('You must be logged in and belong to an organization to create a project');
       playErrorSound();
       return null;
     }
@@ -41,7 +41,8 @@ export const useProjectOperations = () => {
         updated_at: nowISO,
         team_members: project.teamMembers || [],
         status: project.status || 'To Do',
-        tasks_count: 0
+        tasks_count: 0,
+        organization_id: user.organization_id
       });
 
       const { error } = await supabase
@@ -59,7 +60,8 @@ export const useProjectOperations = () => {
           updated_at: nowISO,
           team_members: project.teamMembers || [],
           status: project.status || 'To Do',
-          tasks_count: 0
+          tasks_count: 0,
+          organization_id: user.organization_id
         });
 
       if (error) {

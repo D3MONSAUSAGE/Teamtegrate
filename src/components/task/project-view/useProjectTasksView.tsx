@@ -6,6 +6,7 @@ import { useProjectAccess } from './hooks/useProjectAccess';
 import { useProjectTasksFilters } from './hooks/useProjectTasksFilters';
 import { useProjectTasksActions } from './hooks/useProjectTasksActions';
 import { useProjectTeamMembers } from '@/hooks/useProjectTeamMembers';
+import { flatTasksToTasks } from '@/utils/typeConversions';
 
 export const useProjectTasksView = (projectId: string | null) => {
   const { tasks, updateTaskStatus } = useTask();
@@ -16,6 +17,11 @@ export const useProjectTasksView = (projectId: string | null) => {
     if (!projectId) return [];
     return tasks.filter(task => task.projectId === projectId);
   }, [tasks, projectId]);
+
+  // Convert FlatTasks to Tasks for compatibility
+  const convertedProjectTasks = useMemo(() => {
+    return flatTasksToTasks(projectTasks);
+  }, [projectTasks]);
 
   // Use the separated hooks with projects from useProjects
   const { project, isLoading, loadError } = useProjectAccess(projectId, projects);
@@ -29,7 +35,7 @@ export const useProjectTasksView = (projectId: string | null) => {
     progress,
     handleSearchChange,
     onSortByChange
-  } = useProjectTasksFilters(projectTasks);
+  } = useProjectTasksFilters(convertedProjectTasks);
 
   // Fetch team members for the project
   const { teamMembers, isLoading: isLoadingTeamMembers, error: teamMembersError } = useProjectTeamMembers(projectId);

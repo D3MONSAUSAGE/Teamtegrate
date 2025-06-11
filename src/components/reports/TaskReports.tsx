@@ -9,15 +9,20 @@ import {
   TaskPriorityDistribution, 
   TaskCompletionTrend 
 } from './task/TaskCharts';
+import { flatTasksToTasks } from '@/utils/typeConversions';
 
 const TaskReports: React.FC = () => {
   const { tasks } = useTask();
+  
+  // Convert FlatTasks to Tasks for compatibility with chart components
+  const convertedTasks = flatTasksToTasks(tasks);
   
   // Task status distribution data
   const statusCounts = React.useMemo(() => {
     const counts: Record<TaskStatus, number> = {
       'To Do': 0,
       'In Progress': 0,
+      'Pending': 0,
       'Completed': 0
     };
     
@@ -51,13 +56,13 @@ const TaskReports: React.FC = () => {
   
   // Task completion trend (last 14 days)
   const completionTrend = React.useMemo(() => {
-    const data = getTasksCompletionByDate(tasks, 14);
+    const data = getTasksCompletionByDate(convertedTasks, 14);
     return data.map(item => ({
       date: format(item.date, 'MMM dd'),
       completed: item.completed,
       total: item.total
     }));
-  }, [tasks]);
+  }, [convertedTasks]);
   
   return (
     <div className="space-y-6">
