@@ -1,6 +1,5 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { User } from '@/types';
 
 // Helper function to validate user has organization
 export const validateUserOrganization = (user: { id: string; organization_id?: string } | null): user is { id: string; organization_id: string } => {
