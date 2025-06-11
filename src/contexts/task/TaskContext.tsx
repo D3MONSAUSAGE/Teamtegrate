@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Task, DailyScore, TaskStatus, TaskComment, ProjectStatus } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
@@ -335,5 +336,3 @@ export const useTask = (): TaskContextType => {
 };
 
 export default TaskProvider;
-
-}
