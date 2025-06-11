@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import TaskDialogHeader from './task/form/TaskDialogHeader';
 import TaskFormTabs from './task/form/TaskFormTabs';
 import TaskFormActions from './task/form/TaskFormActions';
+import { toast } from '@/components/ui/sonner';
 
 interface CreateTaskDialogEnhancedProps {
   open: boolean;
@@ -32,7 +33,7 @@ const CreateTaskDialogEnhanced: React.FC<CreateTaskDialogEnhancedProps> = ({
   const { addTask, updateTask, projects } = useTask();
   const isEditMode = !!editingTask;
   const isMobile = useIsMobile();
-  const { users, isLoading: loadingUsers } = useUsers();
+  const { users, isLoading: loadingUsers, error: usersError } = useUsers();
   const [multiAssignMode, setMultiAssignMode] = useState(false);
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   
@@ -60,6 +61,14 @@ const CreateTaskDialogEnhanced: React.FC<CreateTaskDialogEnhancedProps> = ({
     }
   }, [editingTask]);
 
+  // Handle users loading error
+  React.useEffect(() => {
+    if (usersError) {
+      console.error('Error loading users:', usersError);
+      toast.error('Failed to load team members');
+    }
+  }, [usersError]);
+
   const handleUserAssignment = (userId: string) => {
     console.log('Assigning user:', userId);
     
@@ -70,7 +79,9 @@ const CreateTaskDialogEnhanced: React.FC<CreateTaskDialogEnhancedProps> = ({
       return;
     }
     
-    const selectedUser = users.find(user => user.id === userId);
+    // Ensure users array exists and is valid before finding user
+    const safeUsers = Array.isArray(users) ? users : [];
+    const selectedUser = safeUsers.find(user => user && user.id === userId);
     
     if (selectedUser) {
       setSelectedMember(userId);
@@ -80,12 +91,22 @@ const CreateTaskDialogEnhanced: React.FC<CreateTaskDialogEnhancedProps> = ({
   };
 
   const handleMembersChange = (memberIds: string[]) => {
-    setSelectedMembers(memberIds);
+    console.log('handleMembersChange called with:', memberIds);
+    
+    // Ensure memberIds is always an array
+    const safeMemberIds = Array.isArray(memberIds) ? memberIds : [];
+    setSelectedMembers(safeMemberIds);
     
     // Update form values for multi-assignment
-    const selectedUsers = users.filter(user => memberIds.includes(user.id));
-    setValue('assignedToIds', memberIds);
+    const safeUsers = Array.isArray(users) ? users : [];
+    const selectedUsers = safeUsers.filter(user => user && safeMemberIds.includes(user.id));
+    setValue('assignedToIds', safeMemberIds);
     setValue('assignedToNames', selectedUsers.map(user => user.name || user.email));
+  };
+
+  const handleMembersError = () => {
+    console.error('Error in TaskMultiAssigneeSelect component');
+    toast.error('Error managing team member selection');
   };
 
   const onSubmit = (data: any) => {
@@ -102,7 +123,9 @@ const CreateTaskDialogEnhanced: React.FC<CreateTaskDialogEnhancedProps> = ({
       assignedToId: multiAssignMode ? undefined : (selectedMember === "unassigned" ? undefined : selectedMember),
       assignedToName: multiAssignMode ? undefined : data.assignedToName,
       assignedToIds: multiAssignMode ? selectedMembers : undefined,
-      assignedToNames: multiAssignMode ? users.filter(u => selectedMembers.includes(u.id)).map(u => u.name || u.email) : undefined
+      assignedToNames: multiAssignMode ? 
+        (Array.isArray(users) ? users.filter(u => selectedMembers.includes(u.id)).map(u => u.name || u.email) : []) : 
+        undefined
     };
 
     if (isEditMode && editingTask) {
@@ -155,6 +178,9 @@ const CreateTaskDialogEnhanced: React.FC<CreateTaskDialogEnhancedProps> = ({
     return Math.round((completed / total) * 100);
   };
 
+  // Ensure users is always an array to prevent crashes
+  const safeUsers = Array.isArray(users) ? users : [];
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={cn(
@@ -188,7 +214,7 @@ const CreateTaskDialogEnhanced: React.FC<CreateTaskDialogEnhancedProps> = ({
               multiAssignMode={multiAssignMode}
               selectedMembers={selectedMembers}
               onMembersChange={handleMembersChange}
-              users={users}
+              users={safeUsers}
               loadingUsers={loadingUsers}
               handleUserAssignment={handleUserAssignment}
             />

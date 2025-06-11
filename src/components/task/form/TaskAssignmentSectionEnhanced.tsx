@@ -10,6 +10,8 @@ import AssignedMemberCard from './assignment/AssignedMemberCard';
 import UserSearchDropdown from './assignment/UserSearchDropdown';
 import AssignmentSummary from './assignment/AssignmentSummary';
 import { getUserInitials, getUserStatus, getStatusColor } from './assignment/utils';
+import TaskMultiAssigneeSelect from '../TaskMultiAssigneeSelect';
+import { toast } from '@/components/ui/sonner';
 
 interface TaskAssignmentSectionEnhancedProps {
   selectedMember: string;
@@ -70,6 +72,11 @@ const TaskAssignmentSectionEnhanced: React.FC<TaskAssignmentSectionEnhancedProps
     }
   };
 
+  const handleMultiAssignError = () => {
+    console.error('Error in multi-assignment component');
+    toast.error('Error managing team assignments');
+  };
+
   if (isLoading) {
     return (
       <Card className="border-2 border-border/30 shadow-sm">
@@ -114,38 +121,15 @@ const TaskAssignmentSectionEnhanced: React.FC<TaskAssignmentSectionEnhancedProps
           </Badge>
         </div>
 
-        {/* Selected Members Display */}
-        {selectedUsers.length > 0 && (
-          <div className="space-y-3">
-            <Label className="text-sm text-muted-foreground">Assigned Members</Label>
-            <div className="space-y-2">
-              {selectedUsers.map((user) => (
-                <AssignedMemberCard
-                  key={user.id}
-                  user={user}
-                  onRemove={removeUser}
-                  getUserInitials={getUserInitials}
-                  getUserStatus={getUserStatus}
-                  getStatusColor={getStatusColor}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Add Member Section */}
+        {/* Multi-assignee selector with error handling */}
         <div className="space-y-3">
-          <Label className="text-sm text-muted-foreground">Add Team Members</Label>
-          <UserSearchDropdown
-            open={open}
-            onOpenChange={setOpen}
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            availableUsers={availableUsers}
-            onSelectUser={handleSelectUser}
-            getUserInitials={getUserInitials}
-            getUserStatus={getUserStatus}
-            getStatusColor={getStatusColor}
+          <Label className="text-sm text-muted-foreground">Select Team Members</Label>
+          <TaskMultiAssigneeSelect
+            selectedMembers={safeSelectedMembers}
+            onMembersChange={safeOnMembersChange}
+            users={safeUsers}
+            isLoading={isLoading}
+            onError={handleMultiAssignError}
           />
         </div>
 

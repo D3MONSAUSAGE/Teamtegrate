@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Check, ChevronsUpDown, X } from "lucide-react";
+import { Check, ChevronsUpDown, X, Users, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AppUser } from '@/types';
 
@@ -32,7 +32,7 @@ const TaskMultiAssigneeSelect: React.FC<TaskMultiAssigneeSelectProps> = ({
     users: users 
   });
 
-  // Ensure all props are safe to use
+  // Ensure all props are safe to use with proper defaults
   const safeSelectedMembers = Array.isArray(selectedMembers) ? selectedMembers : [];
   const safeUsers = Array.isArray(users) ? users.filter(user => user && user.id && user.name) : [];
   const safeOnMembersChange = typeof onMembersChange === 'function' ? onMembersChange : () => {};
@@ -77,16 +77,18 @@ const TaskMultiAssigneeSelect: React.FC<TaskMultiAssigneeSelectProps> = ({
           className="w-full justify-between"
           disabled={true}
         >
-          Loading team members...
+          <div className="flex items-center gap-2">
+            <Clock className="h-4 w-4 animate-spin" />
+            Loading team members...
+          </div>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </div>
     );
   }
 
-  // Enhanced validation - don't render Command if data is not properly loaded
-  // This is the key fix - we wait until users is definitely loaded and valid
-  if (!users || !Array.isArray(users) || users.length === 0 || !users.every(user => user && user.id && user.name)) {
+  // Enhanced validation - wait until users is properly loaded
+  if (!Array.isArray(users) || users.length === 0 || !users.every(user => user && user.id && user.name)) {
     console.log('TaskMultiAssigneeSelect - Data not ready, showing fallback');
     return (
       <div className="space-y-2">
@@ -95,7 +97,10 @@ const TaskMultiAssigneeSelect: React.FC<TaskMultiAssigneeSelectProps> = ({
           className="w-full justify-between"
           disabled={true}
         >
-          No team members available
+          <div className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            No team members available
+          </div>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </div>
@@ -126,7 +131,12 @@ const TaskMultiAssigneeSelect: React.FC<TaskMultiAssigneeSelectProps> = ({
           <PopoverContent className="w-full p-0">
             <Command>
               <CommandInput placeholder="Search team members..." />
-              <CommandEmpty>No team members found.</CommandEmpty>
+              <CommandEmpty>
+                <div className="flex flex-col items-center gap-2 py-4">
+                  <Users className="h-8 w-8 text-muted-foreground" />
+                  <span>No team members found</span>
+                </div>
+              </CommandEmpty>
               <CommandGroup>
                 {safeUsers.map((user) => (
                   <CommandItem
