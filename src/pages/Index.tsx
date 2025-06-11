@@ -13,6 +13,7 @@ const Index = () => {
 
   // Show loading only briefly during auth initialization
   if (loading) {
+    console.log('Index: Showing loading state');
     return (
       <div className="h-screen flex items-center justify-center bg-background">
         <div className="text-center">
@@ -25,13 +26,31 @@ const Index = () => {
 
   // If user is authenticated, redirect to dashboard
   if (isAuthenticated && user) {
-    console.log('User is authenticated, redirecting to dashboard');
+    console.log('Index: User is authenticated, redirecting to dashboard');
     return <Navigate to="/dashboard" replace />;
   }
 
   // Show marketing landing page for non-authenticated users
-  console.log('Showing landing page for non-authenticated user');
-  return <LandingPage />;
+  console.log('Index: Showing landing page for non-authenticated user');
+  try {
+    return <LandingPage />;
+  } catch (error) {
+    console.error('Error rendering LandingPage:', error);
+    return (
+      <div className="h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2">Something went wrong</h2>
+          <p className="text-muted-foreground mb-4">Failed to load the landing page</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+          >
+            Reload Page
+          </button>
+        </div>
+      </div>
+    );
+  }
 };
 
 export default Index;
