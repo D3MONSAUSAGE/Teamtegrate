@@ -1,116 +1,12 @@
+
 import { Project, User, ProjectStatus } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { v4 as uuidv4 } from 'uuid';
 import { playSuccessSound, playErrorSound } from '@/utils/sounds';
 
-export const fetchProjects = async (
-  user: { id: string },
-  setProjects: React.Dispatch<React.SetStateAction<Project[]>>
-): Promise<void> => {
-  try {
-    if (!user) {
-      console.log('No user found, skipping projects fetch');
-      setProjects([]);
-      return;
-    }
-
-    console.log('TaskContext: Fetching projects for user:', user.id);
-    
-    // Fetch ALL projects from database
-    const { data: allProjects, error: allProjectsError } = await supabase
-      .from('projects')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (allProjectsError) {
-      console.error('Error fetching all projects:', allProjectsError);
-      throw allProjectsError;
-    }
-    
-    console.log(`TaskContext: Successfully fetched ${allProjects?.length || 0} total projects`);
-    
-    // Log all projects for debugging
-    allProjects?.forEach(project => {
-      console.log(`TaskContext DB Project: ${project.id}, "${project.title}", Manager: ${project.manager_id}`);
-    });
-    
-    // Filter client-side for projects relevant to this user
-    const userProjects = allProjects?.filter(project => {
-      const isManager = project.manager_id === user.id;
-      const isTeamMember = Array.isArray(project.team_members) && 
-                          project.team_members.includes(user.id);
-      
-      const hasAccess = isManager || isTeamMember;
-      
-      if (hasAccess) {
-        console.log(`TaskContext: ✓ Including project ${project.id}: "${project.title}" - User is ${isManager ? 'manager' : 'team member'}`);
-      }
-      
-      return hasAccess;
-    }) || [];
-    
-    console.log(`TaskContext: After filtering, found ${userProjects.length} projects for user ${user.id}`);
-    processProjectData(userProjects, user, setProjects);
-  } catch (error) {
-    console.error('TaskContext: Error in fetchProjects:', error);
-    toast.error('Failed to load projects');
-    setProjects([]);
-  }
-};
-
-// Helper function to process project data
-const processProjectData = (
-  data: any[] | null,
-  user: { id: string },
-  setProjects: React.Dispatch<React.SetStateAction<Project[]>>
-) => {
-  if (!data || data.length === 0) {
-    console.log('TaskContext: No projects found in database');
-    setProjects([]);
-    return;
-  }
-  
-  // Log received projects for debugging
-  data.forEach(project => {
-    console.log(`TaskContext: Processing project: ${project.id}, "${project.title}", Manager: ${project.manager_id}`);
-  });
-
-  const formattedProjects: Project[] = data.map(project => {
-    // Explicitly ensure status and is_completed are synchronized
-    let status = project.status || 'To Do';
-    let isCompleted = project.is_completed || false;
-    
-    // Always enforce consistency between status and is_completed
-    if (status === 'Completed') {
-      isCompleted = true;
-    } else if (isCompleted) {
-      status = 'Completed';
-    }
-    
-    return {
-      id: project.id,
-      title: project.title || '',
-      description: project.description || '',
-      startDate: project.start_date ? new Date(project.start_date) : new Date(),
-      endDate: project.end_date ? new Date(project.end_date) : new Date(),
-      managerId: project.manager_id || user.id,
-      createdAt: project.created_at ? new Date(project.created_at) : new Date(),
-      updatedAt: project.updated_at ? new Date(project.updated_at) : new Date(),
-      tasks: [],
-      teamMembers: project.team_members || [],
-      budget: project.budget || 0,
-      is_completed: isCompleted,
-      budgetSpent: project.budget_spent || 0,
-      status: status as ProjectStatus,
-      tasks_count: project.tasks_count || 0,
-      tags: project.tags || []
-    };
-  });
-
-  console.log('TaskContext: Final formatted projects:', formattedProjects.map(p => `${p.id} - "${p.title}"`));
-  setProjects(formattedProjects);
-};
+// Remove fetchProjects function - now handled by useProjects hook
+// This eliminates duplicate project fetching logic
 
 export const addProject = async (
   project: Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'tasks'>,

@@ -3,17 +3,50 @@ import { useState, useEffect, useCallback } from 'react';
 import { Project } from '@/types';
 import { toast } from '@/components/ui/sonner';
 import { useAuth } from '@/contexts/AuthContext';
-import { useTask } from '@/contexts/task';
-import { fetchAllProjects, fetchTeamMemberships } from './projects/projectFetcher';
-import { filterUserProjects } from './projects/projectAccessFilter';
-import { processProjectData } from './projects/projectDataProcessor';
+import { supabase } from '@/integrations/supabase/client';
+
+// Unified project access checker
+const checkProjectAccess = (project: any, userId: string, teamMemberships: string[]): boolean => {
+  console.log(`🔍 Checking access for project: ${project.id} - "${project.title}"`);
+  console.log(`👤 User ID: ${userId} (type: ${typeof userId})`);
+  console.log(`👔 Manager ID: ${project.manager_id} (type: ${typeof project.manager_id})`);
+  console.log(`👥 Team Members Array:`, project.team_members);
+  console.log(`🏢 Team Memberships from table:`, teamMemberships);
+
+  // Check 1: Is user the manager?
+  const isManager = String(project.manager_id) === String(userId);
+  console.log(`✅ Is Manager: ${isManager}`);
+  
+  // Check 2: Is user in team_members array?
+  let isTeamMemberFromArray = false;
+  if (Array.isArray(project.team_members)) {
+    isTeamMemberFromArray = project.team_members.some(memberId => 
+      String(memberId) === String(userId)
+    );
+  }
+  console.log(`✅ Is Team Member (from array): ${isTeamMemberFromArray}`);
+  
+  // Check 3: Is user in project_team_members table?
+  const isTeamMemberFromTable = teamMemberships.includes(project.id);
+  console.log(`✅ Is Team Member (from table): ${isTeamMemberFromTable}`);
+  
+  const hasAccess = isManager || isTeamMemberFromArray || isTeamMemberFromTable;
+  console.log(`🎯 Final Access Decision: ${hasAccess}`);
+  
+  if (hasAccess) {
+    console.log(`✅ GRANTED: User has access to project "${project.title}" - ${isManager ? 'Manager' : 'Team Member'}`);
+  } else {
+    console.log(`❌ DENIED: User does NOT have access to project "${project.title}"`);
+  }
+  
+  return hasAccess;
+};
 
 export const useProjects = () => {
   const { user } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const { tasks } = useTask();
 
   const fetchProjects = useCallback(async () => {
     try {
@@ -21,49 +54,97 @@ export const useProjects = () => {
       setError(null);
       
       if (!user) {
-        console.log('No user found, skipping project fetch');
+        console.log('❌ No user found, skipping project fetch');
         setProjects([]);
         setIsLoading(false);
         return;
       }
       
-      console.log('Fetching projects for user:', user.id);
+      console.log('🚀 Fetching projects for user:', user.id);
       
-      // Fetch all projects and team memberships
-      const [allProjects, projectsUserIsTeamMemberOf] = await Promise.all([
-        fetchAllProjects(),
-        fetchTeamMemberships(user.id)
+      // Fetch all projects and team memberships in parallel
+      const [allProjectsResult, teamMembershipsResult] = await Promise.all([
+        supabase
+          .from('projects')
+          .select('*')
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('project_team_members')
+          .select('project_id')
+          .eq('user_id', user.id)
       ]);
       
-      console.log(`Found ${allProjects.length} total projects in database`);
-      console.log(`User is team member of: ${projectsUserIsTeamMemberOf}`);
+      if (allProjectsResult.error) {
+        console.error('❌ Error fetching projects:', allProjectsResult.error);
+        throw allProjectsResult.error;
+      }
       
-      // Filter projects where user has access (now async)
-      const userProjects = await filterUserProjects(allProjects, user.id, projectsUserIsTeamMemberOf);
+      if (teamMembershipsResult.error) {
+        console.warn('⚠️ Error fetching team memberships:', teamMembershipsResult.error);
+      }
       
-      console.log(`After filtering, found ${userProjects.length} accessible projects for user ${user.id}`);
+      const allProjects = allProjectsResult.data || [];
+      const teamMemberships = teamMembershipsResult.data?.map(tm => tm.project_id) || [];
       
-      // Process and format project data
-      const formattedProjects = processProjectData(userProjects, tasks);
+      console.log(`📊 Found ${allProjects.length} total projects in database`);
+      console.log(`🏢 User is team member of: ${teamMemberships.length} projects via table`);
+      
+      // Filter projects where user has access
+      const accessibleProjects = allProjects.filter(project => 
+        checkProjectAccess(project, user.id, teamMemberships)
+      );
+      
+      console.log(`✅ After filtering, found ${accessibleProjects.length} accessible projects for user ${user.id}`);
+      
+      // Process and format project data with tasks count
+      const formattedProjects: Project[] = accessibleProjects.map(project => {
+        // Calculate project status based on completion
+        let status = project.status || 'To Do';
+        let isCompleted = project.is_completed || false;
+        
+        // Ensure consistency between status and is_completed
+        if (status === 'Completed') {
+          isCompleted = true;
+        } else if (isCompleted) {
+          status = 'Completed';
+        }
+        
+        return {
+          id: project.id,
+          title: project.title || '',
+          description: project.description || '',
+          startDate: project.start_date ? new Date(project.start_date) : new Date(),
+          endDate: project.end_date ? new Date(project.end_date) : new Date(),
+          managerId: project.manager_id || '',
+          createdAt: project.created_at ? new Date(project.created_at) : new Date(),
+          updatedAt: project.updated_at ? new Date(project.updated_at) : new Date(),
+          tasks: [], // Tasks will be loaded separately in TaskContext
+          teamMembers: project.team_members || [],
+          budget: project.budget || 0,
+          budgetSpent: project.budget_spent || 0,
+          is_completed: isCompleted,
+          status: status as Project['status'],
+          tasks_count: project.tasks_count || 0,
+          tags: project.tags || []
+        };
+      });
+      
+      console.log('🎯 Final projects being set:', formattedProjects.map(p => `${p.id} - "${p.title}"`));
       setProjects(formattedProjects);
       
     } catch (error) {
-      console.error('Error fetching projects:', error);
+      console.error('❌ Error fetching projects:', error);
       setError(error instanceof Error ? error : new Error('Unknown error'));
       setProjects([]);
+      toast.error('Failed to load projects');
     } finally {
       setIsLoading(false);
     }
-  }, [user, tasks]);
+  }, [user]);
 
   useEffect(() => {
-    if (user) {
-      fetchProjects();
-    } else {
-      setProjects([]);
-      setIsLoading(false);
-    }
-  }, [user, fetchProjects]);
+    fetchProjects();
+  }, [fetchProjects]);
 
   return {
     projects,

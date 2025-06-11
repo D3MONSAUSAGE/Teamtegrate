@@ -1,5 +1,5 @@
 
-import { User, Task, Project, ProjectStatus } from '@/types';
+import { User, Task } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 
@@ -14,17 +14,22 @@ export const fetchUserTasks = async (
   }
 
   try {
-    // Fetch tasks from supabase with the updated filtering
+    console.log('🚀 Fetching tasks for user:', user.id);
+    
+    // Fetch tasks with improved filtering logic
+    // Include tasks where user is creator, assigned, or has project access
     const { data: taskData, error } = await supabase
       .from('tasks')
       .select('*')
-      .or(`user_id.eq.${user.id},assigned_to_id.eq.${user.id},project_id.in.(select id from projects where manager_id=${user.id} or team_members.cs.{${user.id}})`);
+      .or(`user_id.eq.${user.id},assigned_to_id.eq.${user.id},assigned_to_ids.cs.{${user.id}}`);
 
     if (error) {
-      console.error('Error fetching tasks:', error);
+      console.error('❌ Error fetching tasks:', error);
       toast.error('Failed to load tasks');
       return;
     }
+
+    console.log(`📊 Fetched ${taskData.length} tasks from database`);
 
     const parseDate = (dateStr: string | null): Date => {
       if (!dateStr) return new Date();
@@ -48,7 +53,7 @@ export const fetchUserTasks = async (
         .in('id', uniqueUserIds);
 
       if (userError) {
-        console.error('Error fetching user data for task assignments:', userError);
+        console.error('❌ Error fetching user data for task assignments:', userError);
       } else if (userData) {
         userData.forEach(user => {
           userMap.set(user.id, user.name || user.email);
@@ -56,7 +61,7 @@ export const fetchUserTasks = async (
       }
     }
 
-    // Map tasks with their comments and assigned user names
+    // Map tasks with their assigned user names
     const tasks: Task[] = taskData.map((task) => {
       // Get the assigned user name from our map
       const assignedUserName = task.assigned_to_id ? userMap.get(task.assigned_to_id) : undefined;
@@ -80,55 +85,13 @@ export const fetchUserTasks = async (
       };
     });
 
+    console.log(`✅ Final task count being set: ${tasks.length}`);
     setTasks(tasks);
   } catch (error) {
-    console.error('Error in fetchTasks:', error);
+    console.error('❌ Error in fetchTasks:', error);
     toast.error('Failed to load tasks');
   }
 };
 
-// Fetch projects for a user
-export const fetchUserProjects = async (
-  user: User | null,
-  setProjects: React.Dispatch<React.SetStateAction<Project[]>>
-) => {
-  if (!user) {
-    setProjects([]);
-    return;
-  }
-
-  try {
-    const { data, error } = await supabase
-      .from('projects')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('Error fetching projects:', error);
-      toast.error('Failed to load projects');
-      return;
-    }
-
-    const formattedProjects: Project[] = data.map(project => ({
-      id: project.id,
-      title: project.title || '',
-      description: project.description || '',
-      startDate: project.start_date ? new Date(project.start_date) : new Date(),
-      endDate: project.end_date ? new Date(project.end_date) : new Date(),
-      managerId: project.manager_id || user.id,
-      createdAt: project.created_at ? new Date(project.created_at) : new Date(),
-      updatedAt: project.updated_at ? new Date(project.updated_at) : new Date(),
-      tasks: [],
-      teamMembers: [],
-      budget: project.budget || 0,
-      is_completed: project.is_completed || false,
-      status: (project.status || 'To Do') as ProjectStatus,
-      tasks_count: project.tasks_count || 0
-    }));
-
-    setProjects(formattedProjects);
-  } catch (error) {
-    console.error('Error in fetchProjects:', error);
-    toast.error('Failed to load projects');
-  }
-};
+// Remove fetchUserProjects function - now handled by useProjects hook
+// This eliminates duplicate project fetching logic and ensures consistency

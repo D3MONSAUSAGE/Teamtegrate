@@ -1,13 +1,15 @@
 
 import { useMemo } from 'react';
 import { useTask } from '@/contexts/task';
+import { useProjects } from '@/hooks/useProjects';
 import { useProjectAccess } from './hooks/useProjectAccess';
 import { useProjectTasksFilters } from './hooks/useProjectTasksFilters';
 import { useProjectTasksActions } from './hooks/useProjectTasksActions';
 import { useProjectTeamMembers } from '@/hooks/useProjectTeamMembers';
 
 export const useProjectTasksView = (projectId: string | null) => {
-  const { projects, tasks, updateTaskStatus } = useTask();
+  const { tasks, updateTaskStatus } = useTask();
+  const { projects } = useProjects(); // Use unified projects from useProjects
 
   // Get project tasks
   const projectTasks = useMemo(() => {
@@ -15,8 +17,8 @@ export const useProjectTasksView = (projectId: string | null) => {
     return tasks.filter(task => task.projectId === projectId);
   }, [tasks, projectId]);
 
-  // Use the separated hooks
-  const { project, isLoading, loadError } = useProjectAccess(projectId, projects, tasks);
+  // Use the separated hooks with projects from useProjects
+  const { project, isLoading, loadError } = useProjectAccess(projectId, projects);
   
   const {
     searchQuery,
