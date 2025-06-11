@@ -11,22 +11,22 @@ import { AppUser } from '@/types';
 
 export interface TaskMultiAssigneeSelectProps {
   selectedMembers: string[];
-  onSelect: (userId: string) => void;
-  onRemove: (userId: string) => void;
+  onMembersChange: (memberIds: string[]) => void;
   users: AppUser[];
   isLoading?: boolean;
   placeholder?: string;
   emptyMessage?: string;
+  onError?: () => void;
 }
 
 const TaskMultiAssigneeSelect: React.FC<TaskMultiAssigneeSelectProps> = ({
   selectedMembers = [],
-  onSelect,
-  onRemove,
+  onMembersChange,
   users = [],
   isLoading = false,
   placeholder = "Select team members...",
-  emptyMessage = "No team members found"
+  emptyMessage = "No team members found",
+  onError
 }) => {
   const [open, setOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
@@ -45,14 +45,31 @@ const TaskMultiAssigneeSelect: React.FC<TaskMultiAssigneeSelectProps> = ({
   );
 
   const handleSelect = (userId: string) => {
-    if (!userId || typeof onSelect !== 'function') return;
-    onSelect(userId);
-    setSearchValue("");
+    if (!userId || typeof onMembersChange !== 'function') return;
+    
+    try {
+      if (safeSelectedMembers.includes(userId)) {
+        onMembersChange(safeSelectedMembers.filter(id => id !== userId));
+      } else {
+        onMembersChange([...safeSelectedMembers, userId]);
+      }
+      setSearchValue("");
+      setOpen(false);
+    } catch (error) {
+      console.error('Error selecting user:', error);
+      if (onError) onError();
+    }
   };
 
   const handleRemove = (userId: string) => {
-    if (!userId || typeof onRemove !== 'function') return;
-    onRemove(userId);
+    if (!userId || typeof onMembersChange !== 'function') return;
+    
+    try {
+      onMembersChange(safeSelectedMembers.filter(id => id !== userId));
+    } catch (error) {
+      console.error('Error removing user:', error);
+      if (onError) onError();
+    }
   };
 
   const getUserInitials = (name: string) => {
