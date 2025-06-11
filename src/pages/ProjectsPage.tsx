@@ -24,7 +24,15 @@ const ProjectsPage = () => {
     managerId: project.managerId,
     organizationId: project.organizationId || user?.organizationId || '',
     createdAt: project.createdAt.toISOString(),
-    updatedAt: project.updatedAt.toISOString()
+    updatedAt: project.updatedAt.toISOString(),
+    startDate: project.startDate,
+    endDate: project.endDate,
+    teamMemberIds: project.teamMemberIds || [],
+    budget: project.budget,
+    budgetSpent: project.budgetSpent || 0,
+    isCompleted: project.isCompleted,
+    tasksCount: project.tasksCount,
+    tags: project.tags || []
   }));
 
   const filteredProjects = flatProjects.filter(project =>

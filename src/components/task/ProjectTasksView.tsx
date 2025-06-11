@@ -69,6 +69,15 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
     );
   }
 
+  // Create a wrapper function to convert the event to a string
+  const handleSearchQueryChange = (query: string) => {
+    // handleSearchChange expects a ChangeEvent, so we need to create a mock event
+    const mockEvent = {
+      target: { value: query }
+    } as React.ChangeEvent<HTMLInputElement>;
+    handleSearchChange(mockEvent);
+  };
+
   return (
     <>
       <ProjectTasksContent
@@ -81,7 +90,7 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
         isLoadingTeamMembers={isLoadingTeamMembers}
         searchQuery={searchQuery}
         sortBy={sortBy}
-        onSearchChange={handleSearchChange}
+        onSearchChange={handleSearchQueryChange}
         onSortByChange={onSortByChange}
         onRefresh={handleManualRefresh}
         isRefreshing={isRefreshing}
