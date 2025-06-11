@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useProjects } from '@/hooks/useProjects';
 import { useAuth } from '@/contexts/AuthContext';
@@ -8,7 +7,6 @@ import { Plus, Search, Loader2, Sparkles, FolderKanban, Zap } from 'lucide-react
 import ProjectCard from '@/components/project-card';
 import CreateProjectDialog from '@/components/CreateProjectDialog';
 import { useNavigate } from 'react-router-dom';
-import { FlatProject } from '@/types/flat';
 
 const ProjectsPage = () => {
   const { user } = useAuth();
@@ -17,8 +15,8 @@ const ProjectsPage = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const navigate = useNavigate();
 
-  // Convert Projects to FlatProjects for compatibility
-  const flatProjects: FlatProject[] = projects.map(project => ({
+  // Convert Projects to FlatProjects for compatibility with ProjectCard
+  const flatProjects = projects.map(project => ({
     id: project.id,
     title: project.title,
     description: project.description,
