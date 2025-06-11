@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useProjects } from '@/hooks/useProjects';
 import { useAuth } from '@/contexts/AuthContext';
@@ -114,7 +115,7 @@ const ProjectsPage = () => {
               <Search className="h-5 w-5" />
             </div>
             <Input
-              placeholder="Search your creative projects..."
+              placeholder="Search your projects..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-14 h-14 rounded-2xl border-2 border-border/50 bg-background/60 backdrop-blur-sm focus:border-primary/60 focus:bg-background/80 transition-all duration-300 text-lg font-medium shadow-inner hover:shadow-lg"
