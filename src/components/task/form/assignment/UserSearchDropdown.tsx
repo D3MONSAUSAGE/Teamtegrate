@@ -1,98 +1,99 @@
 
-import React from 'react';
+import React, { useState } from 'react';
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, ChevronsUpDown, Users, UserCheck } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { AppUser } from '@/types';
+import { User } from '@/types';
+import { Search, Plus } from 'lucide-react';
 
 interface UserSearchDropdownProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  searchTerm: string;
-  onSearchChange: (value: string) => void;
-  availableUsers: AppUser[];
-  onSelectUser: (userId: string) => void;
-  getUserInitials: (name: string) => string;
-  getUserStatus: (userId: string) => string;
-  getStatusColor: (status: string) => string;
+  users: User[];
+  excludeUserIds?: string[];
+  onSelectUser: (user: User) => void;
+  placeholder?: string;
 }
 
 const UserSearchDropdown: React.FC<UserSearchDropdownProps> = ({
-  open,
-  onOpenChange,
-  searchTerm,
-  onSearchChange,
-  availableUsers,
+  users,
+  excludeUserIds = [],
   onSelectUser,
-  getUserInitials,
-  getUserStatus,
-  getStatusColor
+  placeholder = "Search for team members..."
 }) => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isOpen, setIsOpen] = useState(false);
+
+  const filteredUsers = users.filter(user => {
+    if (excludeUserIds.includes(user.id)) return false;
+    
+    const searchLower = searchQuery.toLowerCase();
+    const name = user.name || user.email;
+    return name.toLowerCase().includes(searchLower) || 
+           user.email.toLowerCase().includes(searchLower);
+  });
+
+  const handleSelectUser = (user: User) => {
+    onSelectUser(user);
+    setSearchQuery('');
+    setIsOpen(false);
+  };
+
   return (
-    <Popover open={open} onOpenChange={onOpenChange}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className="w-full justify-between border-2 hover:border-primary/40 transition-colors"
-        >
-          <div className="flex items-center gap-2">
-            <Search className="h-4 w-4 text-muted-foreground" />
-            <span>Search and add team members...</span>
-          </div>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-full p-0 bg-background/95 backdrop-blur-xl border-2">
-        <Command>
-          <CommandInput 
-            placeholder="Search team members..." 
-            value={searchTerm}
-            onValueChange={onSearchChange}
-          />
-          <CommandEmpty>
-            <div className="flex flex-col items-center gap-2 py-4">
-              <Users className="h-8 w-8 text-muted-foreground" />
-              <span>No team members found</span>
-            </div>
-          </CommandEmpty>
-          <CommandGroup className="max-h-60 overflow-y-auto">
-            {availableUsers.map((user) => {
-              const status = getUserStatus(user.id);
-              return (
-                <CommandItem
-                  key={user.id}
-                  onSelect={() => onSelectUser(user.id)}
-                  className="flex items-center gap-3 p-3 cursor-pointer"
-                >
-                  <div className="relative">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={user.avatar_url} />
-                      <AvatarFallback className="text-xs bg-gradient-to-r from-blue-500 to-purple-500 text-white">
-                        {getUserInitials(user.name)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className={cn(
-                      "absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background",
-                      getStatusColor(status)
-                    )} />
+    <div className="relative">
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+        <Input
+          placeholder={placeholder}
+          value={searchQuery}
+          onChange={(e) => {
+            setSearchQuery(e.target.value);
+            setIsOpen(e.target.value.length > 0);
+          }}
+          onFocus={() => setIsOpen(searchQuery.length > 0)}
+          onBlur={() => setTimeout(() => setIsOpen(false), 200)}
+          className="pl-10"
+        />
+      </div>
+
+      {isOpen && filteredUsers.length > 0 && (
+        <Card className="absolute top-full left-0 right-0 z-50 mt-1 max-h-60 overflow-y-auto">
+          <CardContent className="p-2">
+            {filteredUsers.map((user) => (
+              <Button
+                key={user.id}
+                variant="ghost"
+                className="w-full justify-start h-auto p-2"
+                onClick={() => handleSelectUser(user)}
+              >
+                <div className="flex items-center gap-3 w-full">
+                  <Avatar className="h-6 w-6">
+                    <AvatarImage src={user.avatar_url || undefined} />
+                    <AvatarFallback className="text-xs">
+                      {(user.name || user.email).substring(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 text-left">
+                    <p className="text-sm font-medium">{user.name || user.email}</p>
+                    <p className="text-xs text-muted-foreground">{user.email}</p>
                   </div>
-                  <div className="flex-1">
-                    <div className="font-medium text-sm">{user.name}</div>
-                    <div className="text-xs text-muted-foreground capitalize">{status}</div>
-                  </div>
-                  <UserCheck className="h-4 w-4 text-green-600" />
-                </CommandItem>
-              );
-            })}
-          </CommandGroup>
-        </Command>
-      </PopoverContent>
-    </Popover>
+                  <Plus className="h-4 w-4 text-muted-foreground" />
+                </div>
+              </Button>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {isOpen && filteredUsers.length === 0 && searchQuery && (
+        <Card className="absolute top-full left-0 right-0 z-50 mt-1">
+          <CardContent className="p-4 text-center">
+            <p className="text-sm text-muted-foreground">
+              No users found matching "{searchQuery}"
+            </p>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 };
 

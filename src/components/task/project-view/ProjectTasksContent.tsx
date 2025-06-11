@@ -5,94 +5,122 @@ import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
 import ProjectOverview from './ProjectOverview';
 import ProjectTasksFilters from './ProjectTasksFilters';
-import ProjectTeamMembersSection from './ProjectTeamMembersSection';
-import TaskTabs from '../TaskTabs';
+import ProjectTasksGrid from './ProjectTasksGrid';
+import CreateTaskDialogWithAI from '@/components/CreateTaskDialogWithAI';
 
 interface ProjectTasksContentProps {
   project: Project;
-  progress: number;
+  searchQuery: string;
+  sortBy: string;
   todoTasks: Task[];
   inProgressTasks: Task[];
   completedTasks: Task[];
+  progress: number;
   teamMembers: User[];
   isLoadingTeamMembers: boolean;
-  searchQuery: string;
-  sortBy: string;
-  onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onSortByChange: (value: string) => void;
-  onRefresh: () => Promise<void>;
+  teamMembersError: string | null;
   isRefreshing: boolean;
-  onEditTask: (task: Task) => void;
-  onCreateTask: () => void;
-  onTaskStatusChange: (taskId: string, status: TaskStatus) => void;
+  isCreateTaskOpen: boolean;
+  editingTask: Task | null;
+  setIsCreateTaskOpen: (open: boolean) => void;
+  handleSearchChange: (query: string) => void;
+  handleEditTask: (task: Task) => void;
+  handleCreateTask: () => void;
+  handleManualRefresh: () => void;
+  handleTaskStatusChange: (taskId: string, status: TaskStatus) => void;
+  onSortByChange: (sortBy: string) => void;
+  handleTaskDialogComplete: () => void;
 }
 
 const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
   project,
-  progress,
+  searchQuery,
+  sortBy,
   todoTasks,
   inProgressTasks,
   completedTasks,
+  progress,
   teamMembers,
   isLoadingTeamMembers,
-  searchQuery,
-  sortBy,
-  onSearchChange,
-  onSortByChange,
-  onRefresh,
+  teamMembersError,
   isRefreshing,
-  onEditTask,
-  onCreateTask,
-  onTaskStatusChange,
+  isCreateTaskOpen,
+  editingTask,
+  setIsCreateTaskOpen,
+  handleSearchChange,
+  handleEditTask,
+  handleCreateTask,
+  handleManualRefresh,
+  handleTaskStatusChange,
+  onSortByChange,
+  handleTaskDialogComplete
 }) => {
+  const allTasks = [...todoTasks, ...inProgressTasks, ...completedTasks];
+
   return (
-    <div className="p-4 md:p-6 space-y-6">
-      <div className="mb-6">
-        <ProjectOverview
-          project={project}
-          progress={progress}
-          todoTasksLength={todoTasks.length}
-          inProgressTasksLength={inProgressTasks.length}
-          completedTasksLength={completedTasks.length}
-          onCreateTask={onCreateTask}
-        />
+    <div className="space-y-6">
+      {/* Project Overview */}
+      <ProjectOverview
+        project={project}
+        tasks={allTasks}
+        teamMembers={teamMembers}
+        progress={progress}
+      />
+
+      {/* Header Actions */}
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">Project Tasks</h2>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleManualRefresh}
+            disabled={isRefreshing}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+          <Button onClick={handleCreateTask}>
+            Add Task
+          </Button>
+        </div>
       </div>
 
-      {/* Team Members Section */}
-      <ProjectTeamMembersSection
-        teamMembers={teamMembers}
-        isLoading={isLoadingTeamMembers}
+      {/* Filters */}
+      <ProjectTasksFilters
+        searchQuery={searchQuery}
+        sortBy={sortBy}
+        onSearchChange={handleSearchChange}
+        onSortByChange={onSortByChange}
       />
-      
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex-1">
-          <ProjectTasksFilters
-            searchQuery={searchQuery}
-            onSearchChange={onSearchChange}
-            sortBy={sortBy}
-            onSortByChange={onSortByChange}
-          />
+
+      {/* Team Members Error */}
+      {teamMembersError && (
+        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <p className="text-sm text-yellow-800">
+            Warning: Could not load team member details. {teamMembersError}
+          </p>
         </div>
-        
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={onRefresh}
-          disabled={isRefreshing}
-          className="ml-2 whitespace-nowrap"
-        >
-          <RefreshCw className={`mr-1 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-          {isRefreshing ? "Refreshing..." : "Refresh"}
-        </Button>
-      </div>
-      
-      <TaskTabs
+      )}
+
+      {/* Tasks Grid */}
+      <ProjectTasksGrid
         todoTasks={todoTasks}
         inProgressTasks={inProgressTasks}
         completedTasks={completedTasks}
-        onEdit={onEditTask}
-        onNewTask={onCreateTask}
-        onStatusChange={onTaskStatusChange}
+        onEditTask={handleEditTask}
+        onStatusChange={handleTaskStatusChange}
+        teamMembers={teamMembers}
+        isLoadingTeamMembers={isLoadingTeamMembers}
+      />
+
+      {/* Create/Edit Task Dialog */}
+      <CreateTaskDialogWithAI
+        open={isCreateTaskOpen}
+        onOpenChange={setIsCreateTaskOpen}
+        editingTask={editingTask || undefined}
+        currentProjectId={project.id}
+        onTaskComplete={handleTaskDialogComplete}
       />
     </div>
   );

@@ -3,10 +3,11 @@ import React from "react";
 import { MessageCircle } from "lucide-react";
 import TaskCommentsList from "@/components/TaskCommentsList";
 import TaskCommentForm from "@/components/TaskCommentForm";
+import { TaskComment } from '@/types';
 
 interface TaskDetailCommentsProps {
   taskId: string;
-  comments?: { id: string; userId: string; userName: string; text: string; createdAt: Date; }[];
+  comments?: TaskComment[];
 }
 
 const TaskDetailComments: React.FC<TaskDetailCommentsProps> = ({

@@ -76,7 +76,7 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
         endDate: new Date(data.endDate),
         managerId: user.id,
         budget: data.budget, // This can now be undefined
-        teamMembers: teamMemberIds,
+        teamMemberIds: teamMemberIds,
         status: 'To Do',
         tasks_count: 0,
         is_completed: false

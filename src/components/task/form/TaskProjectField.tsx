@@ -29,8 +29,8 @@ export const TaskProjectField: React.FC<TaskProjectFieldProps> = ({
     if (!user) return false;
     
     const isManager = project.managerId === user.id;
-    const isTeamMember = Array.isArray(project.teamMembers) && 
-      project.teamMembers.includes(user.id);
+    const isTeamMember = Array.isArray(project.teamMemberIds) && 
+      project.teamMemberIds.includes(user.id);
     
     return isManager || isTeamMember;
   });

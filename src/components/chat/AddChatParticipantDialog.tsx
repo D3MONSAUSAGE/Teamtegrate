@@ -1,155 +1,205 @@
 
-import React, { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import React, { useState, useEffect } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { UserPlus } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Search, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/components/ui/sonner';
+import { useAuth } from '@/contexts/AuthContext';
+
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  avatar_url?: string;
+}
 
 interface AddChatParticipantDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  isOpen: boolean;
+  onClose: () => void;
   roomId: string;
-  onAdded?: () => void;
+  existingParticipants: string[];
+  onParticipantsAdded: () => void;
 }
 
 const AddChatParticipantDialog: React.FC<AddChatParticipantDialogProps> = ({
-  open,
-  onOpenChange,
+  isOpen,
+  onClose,
   roomId,
-  onAdded,
+  existingParticipants,
+  onParticipantsAdded
 }) => {
-  const [search, setSearch] = useState("");
-  const [addingId, setAddingId] = useState<string | null>(null);
-  const { user: currentUser } = useAuth();
-  const isMobile = useIsMobile();
+  const { user } = useAuth();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [availableUsers, setAvailableUsers] = useState<User[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
 
-  // Fetch users not already in the room, optionally filtered by search
-  const { data: availableUsers = [], isLoading } = useQuery({
-    queryKey: ["search-users", roomId, search],
-    queryFn: async () => {
-      // Get user IDs already in room
-      const { data: participants } = await supabase
-        .from("chat_room_participants")
-        .select("user_id")
-        .eq("room_id", roomId);
-      const participantIds = participants?.map(p => p.user_id);
-
-      // Fetch users (excluding members already in the room)
-      let query = supabase
-        .from("users")
-        .select("id, name, email")
-        .order("name");
-      if (search.trim()) {
-        query = query.ilike("name", `%${search.trim()}%`);
-      }
-      const { data: users, error } = await query;
-      if (error) throw error;
-      return users.filter((u) => !participantIds?.includes(u.id));
-    },
-    enabled: open,
-  });
-
-  const handleAddParticipant = async (userId: string) => {
-    if (!currentUser?.organization_id) {
-      toast.error("Organization not found");
-      return;
+  useEffect(() => {
+    if (isOpen && user?.organizationId) {
+      fetchAvailableUsers();
     }
+  }, [isOpen, user]);
 
-    setAddingId(userId);
+  const fetchAvailableUsers = async () => {
+    if (!user?.organizationId) return;
+
+    setIsLoading(true);
     try {
-      // Get current user & room details for notifications
-      const { data: roomData } = await supabase
-        .from("chat_rooms")
-        .select("name")
-        .eq("id", roomId)
-        .single();
+      // Fetch users from the same organization who aren't already participants
+      const { data, error } = await supabase
+        .from('users')
+        .select('id, name, email, avatar_url')
+        .eq('organization_id', user.organizationId)
+        .not('id', 'in', `(${existingParticipants.join(',')})`);
 
-      // Add user to room
-      const { error } = await supabase.from("chat_room_participants").insert({
+      if (error) throw error;
+
+      setAvailableUsers(data || []);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      toast.error('Failed to load users');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const filteredUsers = availableUsers.filter(user =>
+    user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.email.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const handleUserToggle = (userId: string) => {
+    setSelectedUsers(prev =>
+      prev.includes(userId)
+        ? prev.filter(id => id !== userId)
+        : [...prev, userId]
+    );
+  };
+
+  const handleAddParticipants = async () => {
+    if (selectedUsers.length === 0) return;
+
+    setIsAdding(true);
+    try {
+      // Add participants to the chat room
+      const participantData = selectedUsers.map(userId => ({
         room_id: roomId,
         user_id: userId,
-        added_by: currentUser?.id,
-      });
+        added_by: user?.id,
+      }));
+
+      const { error } = await supabase
+        .from('chat_room_participants')
+        .insert(participantData);
 
       if (error) throw error;
 
-      // Create system message in the chat to notify about the new participant
-      const addedUser = availableUsers.find(user => user.id === userId);
-      if (addedUser) {
-        await supabase.from("chat_messages").insert({
-          room_id: roomId,
-          user_id: currentUser?.id || userId,
-          content: `${addedUser.name} was added to the chat by ${currentUser?.name || "Admin"}`,
-          type: "system",
-          organization_id: currentUser.organization_id
-        });
-
-        // Insert a notification to the notifications table
-        await supabase.from("notifications").insert({
-          user_id: userId,
-          title: "Chat Invitation",
-          content: `You were added to "${roomData?.name || "a chat"}"`,
-          type: "chat_invitation",
-          read: false,
-          organization_id: currentUser.organization_id
-        });
-      }
-
-      toast.success("Added to chat!");
-      onAdded?.();
-      onOpenChange(false);
-    } catch (error: any) {
-      toast.error("Failed to add user: " + error.message);
+      toast.success(`Added ${selectedUsers.length} participant(s) to the chat`);
+      onParticipantsAdded();
+      onClose();
+      setSelectedUsers([]);
+      setSearchQuery('');
+    } catch (error) {
+      console.error('Error adding participants:', error);
+      toast.error('Failed to add participants');
     } finally {
-      setAddingId(null);
+      setIsAdding(false);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={isMobile ? "w-[95%] max-w-md p-4" : "max-w-md"}>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Add Member to Chat</DialogTitle>
+          <DialogTitle>Add Participants</DialogTitle>
+          <DialogDescription>
+            Select users from your organization to add to this chat room.
+          </DialogDescription>
         </DialogHeader>
-        <Input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by name"
-          className="mb-4"
-        />
-        <div className="space-y-2 max-h-60 md:max-h-72 overflow-y-auto">
-          {isLoading ? (
-            <div className="flex justify-center py-4">
-              <div className="animate-spin h-6 w-6 border-2 border-primary rounded-full border-t-transparent"></div>
-            </div>
-          ) : availableUsers.length === 0 ? (
-            <div className="text-sm text-muted-foreground px-2 py-4 text-center">
-              No users found.
-            </div>
-          ) : (
-            availableUsers.map((user) => (
-              <div key={user.id} className="flex items-center justify-between border-b pb-1">
-                <div className={isMobile ? "max-w-[70%]" : ""}>
-                  <span className="font-medium truncate block">{user.name}</span>
-                  <span className="ml-0 text-xs text-muted-foreground truncate block">{user.email}</span>
-                </div>
-                <Button
-                  size="sm"
-                  disabled={!!addingId}
-                  onClick={() => handleAddParticipant(user.id)}
-                  className="gap-1"
-                >
-                  <UserPlus className="h-4 w-4" /> Add
-                </Button>
+
+        <div className="space-y-4">
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input
+              placeholder="Search users..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+
+          {/* User List */}
+          <ScrollArea className="h-80">
+            {isLoading ? (
+              <div className="flex items-center justify-center py-4">
+                <Loader2 className="h-6 w-6 animate-spin" />
+                <span className="ml-2">Loading users...</span>
               </div>
-            ))
-          )}
+            ) : filteredUsers.length === 0 ? (
+              <div className="text-center py-4 text-muted-foreground">
+                {searchQuery ? 'No users found matching your search' : 'No available users to add'}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {filteredUsers.map((user) => (
+                  <div
+                    key={user.id}
+                    className="flex items-center space-x-3 p-2 rounded-lg hover:bg-muted cursor-pointer"
+                    onClick={() => handleUserToggle(user.id)}
+                  >
+                    <Checkbox
+                      checked={selectedUsers.includes(user.id)}
+                      onChange={() => handleUserToggle(user.id)}
+                    />
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={user.avatar_url || undefined} />
+                      <AvatarFallback>
+                        {user.name.substring(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{user.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </ScrollArea>
         </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleAddParticipants}
+            disabled={selectedUsers.length === 0 || isAdding}
+          >
+            {isAdding ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Adding...
+              </>
+            ) : (
+              `Add ${selectedUsers.length} Participant${selectedUsers.length !== 1 ? 's' : ''}`
+            )}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

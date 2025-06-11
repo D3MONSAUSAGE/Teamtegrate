@@ -18,7 +18,7 @@ const InviteCodeGenerator: React.FC = () => {
   const [maxUses, setMaxUses] = useState<string>('');
 
   const handleGenerateCode = async () => {
-    if (!user?.organization_id) {
+    if (!user?.organizationId) {
       toast.error('Organization not found');
       return;
     }
@@ -26,7 +26,7 @@ const InviteCodeGenerator: React.FC = () => {
     setGenerating(true);
     try {
       const result = await generateInviteCode(
-        user.organization_id,
+        user.organizationId,
         parseInt(expiryDays),
         maxUses ? parseInt(maxUses) : undefined
       );

@@ -1,133 +1,72 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { User } from '@/types';
+import { Users, UserCheck } from 'lucide-react';
 import TaskAssigneeSelect from './TaskAssigneeSelect';
-import TaskMultiAssigneeSelect from './TaskMultiAssigneeSelect';
-import TaskMultiAssigneeFallback from './TaskMultiAssigneeFallback';
-import TaskAssignmentErrorBoundary from './TaskAssignmentErrorBoundary';
-import { AppUser } from '@/types';
 
 interface TaskAssignmentSectionProps {
   selectedMember: string;
-  selectedMembers?: string[];
   onAssign: (userId: string) => void;
-  onMembersChange?: (memberIds: string[]) => void;
-  users: AppUser[];
-  isLoading: boolean;
-  multiSelect?: boolean;
+  users: User[];
+  isLoading?: boolean;
 }
 
 const TaskAssignmentSection: React.FC<TaskAssignmentSectionProps> = ({
   selectedMember,
-  selectedMembers = [],
   onAssign,
-  onMembersChange,
   users,
-  isLoading,
-  multiSelect = false
+  isLoading = false
 }) => {
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const [currentMode, setCurrentMode] = useState(multiSelect);
-  const [useFallback, setUseFallback] = useState(false);
-
-  console.log('TaskAssignmentSection - render:', { 
-    multiSelect, 
-    isLoading, 
-    usersLength: users?.length,
-    isTransitioning,
-    currentMode,
-    useFallback
-  });
-
-  // Enhanced data validation at parent level
-  const isDataReady = !isLoading && 
-                      Array.isArray(users) && 
-                      users.length > 0 && 
-                      users.every(user => user && user.id && user.name);
-
-  // Handle mode transitions with delay
-  useEffect(() => {
-    if (multiSelect !== currentMode) {
-      console.log('TaskAssignmentSection - Mode change detected, starting transition');
-      setIsTransitioning(true);
-      
-      // Add transition delay to ensure clean unmounting
-      const timer = setTimeout(() => {
-        setCurrentMode(multiSelect);
-        setIsTransitioning(false);
-        console.log('TaskAssignmentSection - Transition complete');
-      }, 150);
-
-      return () => clearTimeout(timer);
-    }
-  }, [multiSelect, currentMode]);
-
-  const handleFallback = () => {
-    console.log('TaskAssignmentSection - Switching to fallback component');
-    setUseFallback(true);
-  };
-
-  // Don't render assignment components during transition or if data isn't ready
-  if (isTransitioning || !isDataReady) {
-    console.log('TaskAssignmentSection - Showing loading state');
+  if (isLoading) {
     return (
-      <div>
-        <Label htmlFor="assignee">Assign To</Label>
-        <div className="mt-2 p-3 border border-gray-200 rounded-md bg-gray-50">
-          <span className="text-sm text-gray-500">
-            {isTransitioning ? 'Switching mode...' : 'Loading team members...'}
-          </span>
-        </div>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Assignment
+          </CardTitle>
+          <CardDescription>Loading team members...</CardDescription>
+        </CardHeader>
+      </Card>
     );
   }
-  
+
+  const selectedUser = users.find(user => user.id === selectedMember);
+
   return (
-    <div>
-      <Label htmlFor="assignee">Assign To</Label>
-      <TaskAssignmentErrorBoundary fallback={
-        <div className="space-y-2">
-          <div className="text-sm text-red-600 p-2 border border-red-200 rounded">
-            Component error. Using simple fallback.
-          </div>
-          <TaskMultiAssigneeFallback
-            selectedMembers={selectedMembers}
-            onMembersChange={onMembersChange || (() => {})}
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Users className="h-5 w-5" />
+          Assignment
+        </CardTitle>
+        <CardDescription>
+          Assign this task to a team member
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div>
+          <Label>Assigned To</Label>
+          <TaskAssigneeSelect
             users={users}
-            isLoading={false}
+            selectedUser={selectedMember}
+            onUserSelect={onAssign}
+            placeholder="Select team member"
           />
         </div>
-      }>
-        {currentMode && onMembersChange ? (
-          useFallback ? (
-            <TaskMultiAssigneeFallback
-              key="fallback-multi"
-              selectedMembers={selectedMembers}
-              onMembersChange={onMembersChange}
-              users={users}
-              isLoading={isLoading}
-            />
-          ) : (
-            <TaskMultiAssigneeSelect
-              key="cmdk-multi"
-              selectedMembers={selectedMembers}
-              onMembersChange={onMembersChange}
-              users={users}
-              isLoading={isLoading}
-              onError={handleFallback}
-            />
-          )
-        ) : (
-          <TaskAssigneeSelect
-            key="single"
-            selectedMember={selectedMember}
-            onAssign={onAssign}
-            users={users}
-            isLoading={isLoading}
-          />
+        
+        {selectedUser && (
+          <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+            <UserCheck className="h-4 w-4 text-green-600" />
+            <span className="text-sm font-medium text-green-800 dark:text-green-200">
+              Assigned to {selectedUser.name || selectedUser.email}
+            </span>
+          </div>
         )}
-      </TaskAssignmentErrorBoundary>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 

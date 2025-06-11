@@ -1,27 +1,50 @@
 
-import { User as SupabaseUser } from '@supabase/supabase-js';
 import { User, UserRole } from '@/types';
+import { supabase } from '@/integrations/supabase/client';
 
-export const createBasicUserFromSession = (sessionUser: SupabaseUser): User => {
-  return {
-    id: sessionUser.id,
-    email: sessionUser.email || '',
-    name: sessionUser.user_metadata.name || sessionUser.email?.split('@')[0] || '',
-    role: (sessionUser.user_metadata.role as UserRole) || 'user',
-    organization_id: '', // Will be filled from database
-    createdAt: new Date(sessionUser.created_at || Date.now()),
-    avatar_url: sessionUser.user_metadata.avatar_url,
-    timezone: sessionUser.user_metadata.timezone
+export const createUserProfile = async (authUser: any, organizationId: string): Promise<User> => {
+  const userData: User = {
+    id: authUser.id,
+    email: authUser.email,
+    role: 'user' as UserRole,
+    organizationId: organizationId,
+    name: authUser.user_metadata?.name || authUser.email,
+    timezone: 'UTC',
+    createdAt: new Date(),
+    avatar_url: authUser.user_metadata?.avatar_url
   };
+
+  // Insert into users table
+  const { error } = await supabase
+    .from('users')
+    .insert({
+      id: userData.id,
+      email: userData.email,
+      role: userData.role,
+      organization_id: userData.organizationId,
+      name: userData.name,
+      timezone: userData.timezone,
+      avatar_url: userData.avatar_url
+    });
+
+  if (error) {
+    throw new Error(`Failed to create user profile: ${error.message}`);
+  }
+
+  return userData;
 };
 
-export const setupAuthTimeout = (loading: boolean, setLoading: (loading: boolean) => void, timeoutMs: number = 3000) => {
-  const timeout = setTimeout(() => {
-    if (loading) {
-      console.warn('Auth initialization timeout, setting loading to false');
-      setLoading(false);
-    }
-  }, timeoutMs);
+export const getUserRole = (user: any): UserRole => {
+  return user?.role || 'user';
+};
 
-  return timeout;
+export const hasPermission = (userRole: UserRole, requiredRole: UserRole): boolean => {
+  const roleHierarchy = {
+    'user': 1,
+    'manager': 2,
+    'admin': 3,
+    'superadmin': 4
+  };
+
+  return roleHierarchy[userRole] >= roleHierarchy[requiredRole];
 };

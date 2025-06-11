@@ -2,20 +2,48 @@
 import React from 'react';
 import { useTask } from '@/contexts/task';
 import { format } from 'date-fns';
-import { getTasksCompletionByDate } from '@/contexts/task/taskMetrics';
-import { TaskStatus, TaskPriority } from '@/types';
+import { Task, TaskStatus, TaskPriority } from '@/types';
 import { 
   TaskStatusDistribution, 
   TaskPriorityDistribution, 
   TaskCompletionTrend 
 } from './task/TaskCharts';
-import { flatTasksToTasks } from '@/utils/typeConversions';
+
+// Simple completion trend calculation
+const getTasksCompletionByDate = (tasks: Task[], days: number) => {
+  const result = [];
+  const today = new Date();
+  
+  for (let i = days - 1; i >= 0; i--) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - i);
+    date.setHours(0, 0, 0, 0);
+    
+    const nextDate = new Date(date);
+    nextDate.setDate(nextDate.getDate() + 1);
+    
+    const completed = tasks.filter(task => {
+      if (task.status !== 'Completed' || !task.completedAt) return false;
+      const completedDate = new Date(task.completedAt);
+      return completedDate >= date && completedDate < nextDate;
+    }).length;
+    
+    const total = tasks.filter(task => {
+      const createdDate = new Date(task.createdAt);
+      return createdDate <= nextDate;
+    }).length;
+    
+    result.push({ date, completed, total });
+  }
+  
+  return result;
+};
 
 const TaskReports: React.FC = () => {
   const { tasks } = useTask();
   
-  // Convert FlatTasks to Tasks for compatibility with chart components
-  const convertedTasks = flatTasksToTasks(tasks);
+  // Use tasks directly - they're already Task[]
+  const taskList = tasks as Task[];
   
   // Task status distribution data
   const statusCounts = React.useMemo(() => {
@@ -25,7 +53,7 @@ const TaskReports: React.FC = () => {
       'Completed': 0
     };
     
-    tasks.forEach(task => {
+    taskList.forEach(task => {
       counts[task.status]++;
     });
     
@@ -33,7 +61,7 @@ const TaskReports: React.FC = () => {
       name: status,
       value: count
     }));
-  }, [tasks]);
+  }, [taskList]);
   
   // Task priority distribution data
   const priorityCounts = React.useMemo(() => {
@@ -43,7 +71,7 @@ const TaskReports: React.FC = () => {
       'High': 0
     };
     
-    tasks.forEach(task => {
+    taskList.forEach(task => {
       counts[task.priority]++;
     });
     
@@ -51,17 +79,17 @@ const TaskReports: React.FC = () => {
       name: priority,
       value: count
     }));
-  }, [tasks]);
+  }, [taskList]);
   
   // Task completion trend (last 14 days)
   const completionTrend = React.useMemo(() => {
-    const data = getTasksCompletionByDate(convertedTasks, 14);
+    const data = getTasksCompletionByDate(taskList, 14);
     return data.map(item => ({
       date: format(item.date, 'MMM dd'),
       completed: item.completed,
       total: item.total
     }));
-  }, [convertedTasks]);
+  }, [taskList]);
   
   return (
     <div className="space-y-6">

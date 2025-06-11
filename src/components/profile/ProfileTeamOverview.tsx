@@ -2,128 +2,80 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Users, Crown, FolderKanban } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
-import useTeamMembers from '@/hooks/useTeamMembers';
-import { useProjects } from '@/hooks/useProjects';
+import { Users, FolderKanban, Calendar } from 'lucide-react';
+import { Project } from '@/types';
+import { format } from 'date-fns';
 
-const ProfileTeamOverview = () => {
-  const { user } = useAuth();
-  const { teamMembersPerformance, managerPerformance } = useTeamMembers();
-  const { projects } = useProjects();
+interface ProfileTeamOverviewProps {
+  projects: Project[];
+}
 
-  if (!user) return null;
-
-  // Get user's projects
-  const userProjects = projects.filter(project => 
-    project.managerId === user.id || 
-    project.teamMembers?.includes(user.id)
-  ).slice(0, 3); // Show only first 3 projects
+const ProfileTeamOverview: React.FC<ProfileTeamOverviewProps> = ({ projects }) => {
+  // Calculate team stats
+  const totalProjects = projects.length;
+  const completedProjects = projects.filter(p => p.status === 'Completed').length;
+  const activeProjects = projects.filter(p => p.status === 'In Progress').length;
+  
+  // Get unique team members across all projects
+  const allTeamMembers = new Set<string>();
+  projects.forEach(project => {
+    project.teamMemberIds.forEach(memberId => {
+      allTeamMembers.add(memberId);
+    });
+  });
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {/* Team Members (if user is a manager) */}
-      {user.role === 'manager' && teamMembersPerformance.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Your Team ({teamMembersPerformance.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {teamMembersPerformance.slice(0, 4).map((member) => (
-                <div key={member.id} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback className="text-xs">
-                        {member.name.substring(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="text-sm font-medium">{member.name}</p>
-                      <p className="text-xs text-muted-foreground">{member.email}</p>
-                    </div>
-                  </div>
-                  <Badge variant={member.completionRate >= 80 ? "default" : "secondary"}>
-                    {member.completionRate}%
-                  </Badge>
-                </div>
-              ))}
-              {teamMembersPerformance.length > 4 && (
-                <p className="text-xs text-muted-foreground text-center">
-                  +{teamMembersPerformance.length - 4} more team members
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Manager Performance (if user is not a manager) */}
-      {user.role !== 'manager' && managerPerformance && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Crown className="h-5 w-5" />
-              Your Manager
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Avatar className="h-10 w-10">
-                  <AvatarFallback>
-                    {managerPerformance.name.substring(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="font-medium">{managerPerformance.name}</p>
-                  <p className="text-sm text-muted-foreground">{managerPerformance.email}</p>
-                  <Badge variant="outline" className="text-xs mt-1">Manager</Badge>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="text-sm font-medium">{managerPerformance.completionRate}%</p>
-                <p className="text-xs text-muted-foreground">Completion Rate</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Active Projects */}
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FolderKanban className="h-5 w-5" />
-            Active Projects ({userProjects.length})
-          </CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Total Projects</CardTitle>
+          <FolderKanban className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            {userProjects.length > 0 ? (
-              userProjects.map((project) => (
-                <div key={project.id} className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium">{project.title}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {project.managerId === user.id ? 'Managing' : 'Team Member'}
-                    </p>
-                  </div>
-                  <Badge variant={
-                    project.status === 'Completed' ? 'default' : 
-                    project.status === 'In Progress' ? 'secondary' : 'outline'
-                  }>
-                    {project.status}
-                  </Badge>
+          <div className="text-2xl font-bold">{totalProjects}</div>
+          <div className="flex gap-2 mt-2">
+            <Badge variant="secondary" className="text-xs">
+              {activeProjects} Active
+            </Badge>
+            <Badge variant="outline" className="text-xs">
+              {completedProjects} Completed
+            </Badge>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Team Members</CardTitle>
+          <Users className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{allTeamMembers.size}</div>
+          <p className="text-xs text-muted-foreground mt-2">
+            Across all projects
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Recent Activity</CardTitle>
+          <Calendar className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-sm">
+            {projects.length > 0 ? (
+              <>
+                <div className="font-medium">
+                  {projects[0].title}
                 </div>
-              ))
+                <p className="text-xs text-muted-foreground">
+                  Updated {format(projects[0].updatedAt, 'MMM d, yyyy')}
+                </p>
+              </>
             ) : (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                No active projects
+              <p className="text-xs text-muted-foreground">
+                No recent activity
               </p>
             )}
           </div>

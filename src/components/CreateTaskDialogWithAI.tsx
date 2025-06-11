@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { FlatTask } from '@/types/flat';
+import { Task } from '@/types';
 import { useTask } from '@/contexts/task';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -16,7 +16,7 @@ import { useUsers } from '@/hooks/useUsers';
 interface CreateTaskDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  editingTask?: FlatTask;
+  editingTask?: Task;
   currentProjectId?: string;
   onTaskComplete?: () => void;
 }
@@ -81,8 +81,8 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
   const onSubmit = (data: any) => {
     console.log('Form submission data:', data);
     
-    if (!user?.organization_id) {
-      console.error('User organization_id is required');
+    if (!user?.organizationId) {
+      console.error('User organizationId is required');
       return;
     }
     
@@ -98,10 +98,10 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
         assignedToId: selectedMember === "unassigned" ? undefined : selectedMember,
         assignedToName: data.assignedToName,
         cost: Number(data.cost) || 0,
-        organizationId: user.organization_id
+        organizationId: user.organizationId
       });
     } else {
-      const newTask: Omit<FlatTask, 'id' | 'createdAt' | 'updatedAt'> = {
+      const newTask: Omit<Task, 'id' | 'createdAt' | 'updatedAt'> = {
         title: data.title,
         description: data.description || '',
         priority: data.priority,
@@ -114,7 +114,7 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
         assignedToIds: selectedMember && selectedMember !== "unassigned" ? [selectedMember] : [],
         assignedToNames: data.assignedToName ? [data.assignedToName] : [],
         cost: Number(data.cost) || 0,
-        organizationId: user.organization_id
+        organizationId: user.organizationId
       };
       addTask(newTask);
     }

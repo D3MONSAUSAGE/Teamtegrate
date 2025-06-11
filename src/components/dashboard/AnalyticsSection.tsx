@@ -1,82 +1,81 @@
 
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useTask } from '@/contexts/task';
-import ProjectProgressChart from './analytics/ProjectProgressChart';
-import TeamPerformanceChart from './analytics/TeamPerformanceChart';
-import CompletionRateChart from './analytics/CompletionRateChart';
-import { flatTasksToTasks } from '@/utils/typeConversions';
+import { Task } from '@/types';
+import { BarChart3, TrendingUp, Users, Target } from 'lucide-react';
 
-const AnalyticsSection = () => {
-  const { projects, tasks } = useTask();
+interface AnalyticsSectionProps {
+  tasks: Task[];
+}
 
-  const completedTasksCount = tasks.filter(task => task.status === 'Completed').length;
-  const totalTasksCount = tasks.length;
-  const completionRate = totalTasksCount > 0 ? Math.round((completedTasksCount / totalTasksCount) * 100) : 0;
+const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ tasks }) => {
+  // Calculate metrics directly from tasks
+  const totalTasks = tasks.length;
+  const completedTasks = tasks.filter(task => task.status === 'Completed').length;
+  const inProgressTasks = tasks.filter(task => task.status === 'In Progress').length;
+  const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
-  // Convert FlatTasks to Tasks for compatibility with chart components
-  const convertedTasks = flatTasksToTasks(tasks);
+  // Calculate this week's completed tasks
+  const oneWeekAgo = new Date();
+  oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+  
+  const thisWeekCompleted = tasks.filter(task => {
+    if (task.status !== 'Completed' || !task.completedAt) return false;
+    const completedDate = new Date(task.completedAt);
+    return completedDate >= oneWeekAgo;
+  }).length;
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Projects</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{projects.length}</div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Tasks</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalTasksCount}</div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completion Rate</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{completionRate}%</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Project Progress</CardTitle>
-            <CardDescription>Task completion status across projects</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ProjectProgressChart projects={projects} />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Team Performance</CardTitle>
-            <CardDescription>Task assignment and completion metrics</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <TeamPerformanceChart tasks={convertedTasks} />
-          </CardContent>
-        </Card>
-      </div>
-
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       <Card>
-        <CardHeader>
-          <CardTitle>Completion Trends</CardTitle>
-          <CardDescription>Task completion rate over time</CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Total Tasks</CardTitle>
+          <BarChart3 className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <CompletionRateChart tasks={convertedTasks} />
+          <div className="text-2xl font-bold">{totalTasks}</div>
+          <p className="text-xs text-muted-foreground">
+            +{inProgressTasks} in progress
+          </p>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Completed</CardTitle>
+          <Target className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{completedTasks}</div>
+          <p className="text-xs text-muted-foreground">
+            {completionRate}% completion rate
+          </p>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">This Week</CardTitle>
+          <TrendingUp className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{thisWeekCompleted}</div>
+          <p className="text-xs text-muted-foreground">
+            Tasks completed
+          </p>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">In Progress</CardTitle>
+          <Users className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{inProgressTasks}</div>
+          <p className="text-xs text-muted-foreground">
+            Active tasks
+          </p>
         </CardContent>
       </Card>
     </div>

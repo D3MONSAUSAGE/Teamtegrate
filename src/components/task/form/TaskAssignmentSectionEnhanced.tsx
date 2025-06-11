@@ -1,203 +1,123 @@
 
-import React, { useState } from 'react';
-import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
+import React from 'react';
 import { Badge } from "@/components/ui/badge";
-import { Users, User, Clock, AlertTriangle } from "lucide-react";
-import { AppUser } from '@/types';
-import TaskAssigneeSelect from './TaskAssigneeSelect';
-import AssignedMemberCard from './assignment/AssignedMemberCard';
-import UserSearchDropdown from './assignment/UserSearchDropdown';
-import AssignmentSummary from './assignment/AssignmentSummary';
-import { getUserInitials, getUserStatus, getStatusColor } from './assignment/utils';
-import TaskMultiAssigneeSelect from './TaskMultiAssigneeSelect';
-import { toast } from '@/components/ui/sonner';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { User } from '@/types';
+import { Users, X, Plus } from 'lucide-react';
 
 interface TaskAssignmentSectionEnhancedProps {
-  selectedMember: string;
-  selectedMembers?: string[];
+  assignedUsers: string[];
   onAssign: (userId: string) => void;
-  onMembersChange?: (memberIds: string[]) => void;
-  users: AppUser[];
-  isLoading: boolean;
-  multiSelect?: boolean;
+  onUnassign: (userId: string) => void;
+  users: User[];
+  isLoading?: boolean;
 }
 
 const TaskAssignmentSectionEnhanced: React.FC<TaskAssignmentSectionEnhancedProps> = ({
-  selectedMember,
-  selectedMembers = [],
+  assignedUsers,
   onAssign,
-  onMembersChange,
+  onUnassign,
   users,
-  isLoading,
-  multiSelect = false
+  isLoading = false
 }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [open, setOpen] = useState(false);
+  const availableUsers = users.filter(user => !assignedUsers.includes(user.id));
+  const selectedUsers = users.filter(user => assignedUsers.includes(user.id));
 
-  console.log('TaskAssignmentSectionEnhanced - render:', { 
-    multiSelect, 
-    isLoading, 
-    usersLength: users?.length,
-    selectedMembersLength: selectedMembers?.length,
-    usersIsArray: Array.isArray(users),
-    selectedMembersIsArray: Array.isArray(selectedMembers)
-  });
-
-  // Enhanced runtime safety checks
-  const isValidArray = (arr: any): arr is any[] => {
-    return Array.isArray(arr) && arr !== null && arr !== undefined;
-  };
-
-  const isValidUser = (user: any): user is AppUser => {
-    return user && 
-           typeof user === 'object' && 
-           typeof user.id === 'string' && 
-           typeof user.name === 'string' && 
-           user.id.length > 0;
-  };
-
-  // Safe data operations with comprehensive validation
-  const safeSelectedMembers = isValidArray(selectedMembers) ? selectedMembers.filter(id => typeof id === 'string' && id.length > 0) : [];
-  const safeUsers = isValidArray(users) ? users.filter(isValidUser) : [];
-  const safeOnMembersChange = typeof onMembersChange === 'function' ? onMembersChange : () => {
-    console.error('TaskAssignmentSectionEnhanced: onMembersChange is not a function');
-    toast.error('Error: Assignment function not available');
-  };
-
-  // Data readiness validation
-  const isDataReady = !isLoading && isValidArray(users);
-  const hasValidUsers = safeUsers.length > 0;
-
-  const selectedUsers = hasValidUsers ? safeUsers.filter(user => safeSelectedMembers.includes(user.id)) : [];
-  const availableUsers = hasValidUsers ? safeUsers.filter(user => 
-    !safeSelectedMembers.includes(user.id) && 
-    user.name.toLowerCase().includes(searchTerm.toLowerCase())
-  ) : [];
-
-  const handleSelectUser = (userId: string) => {
-    if (!userId || typeof userId !== 'string') {
-      console.error('Invalid userId in handleSelectUser:', userId);
-      return;
-    }
-
-    try {
-      if (multiSelect && typeof onMembersChange === 'function') {
-        if (safeSelectedMembers.includes(userId)) {
-          safeOnMembersChange(safeSelectedMembers.filter(id => id !== userId));
-        } else {
-          safeOnMembersChange([...safeSelectedMembers, userId]);
-        }
-      } else if (typeof onAssign === 'function') {
-        onAssign(userId);
-      }
-      setOpen(false);
-      setSearchTerm('');
-    } catch (error) {
-      console.error('Error in handleSelectUser:', error);
-      toast.error('Error selecting team member');
-    }
-  };
-
-  const removeUser = (userId: string) => {
-    if (!userId || typeof userId !== 'string') {
-      console.error('Invalid userId in removeUser:', userId);
-      return;
-    }
-
-    try {
-      if (multiSelect && typeof onMembersChange === 'function') {
-        safeOnMembersChange(safeSelectedMembers.filter(id => id !== userId));
-      }
-    } catch (error) {
-      console.error('Error in removeUser:', error);
-      toast.error('Error removing team member');
-    }
-  };
-
-  const handleMultiAssignError = () => {
-    console.error('Error in multi-assignment component');
-    toast.error('Error managing team assignments');
-  };
-
-  // Loading state
   if (isLoading) {
     return (
-      <Card className="border-2 border-border/30 shadow-sm">
-        <CardContent className="p-4 space-y-3">
-          <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-primary animate-spin" />
-            <Label className="font-medium">Loading team members...</Label>
-          </div>
-          <div className="animate-pulse bg-muted rounded-md h-10 w-full"></div>
-        </CardContent>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Assignment
+          </CardTitle>
+          <CardDescription>Loading team members...</CardDescription>
+        </CardHeader>
       </Card>
     );
   }
 
-  // Data not ready state
-  if (!isDataReady) {
-    return (
-      <Card className="border-2 border-destructive/30 shadow-sm">
-        <CardContent className="p-4 space-y-3">
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 text-destructive" />
-            <Label className="font-medium text-destructive">Team data not available</Label>
-          </div>
-          <div className="text-sm text-muted-foreground">
-            Unable to load team members. Please try refreshing the page.
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // Single assignment mode
-  if (!multiSelect) {
-    return (
-      <Card className="border-2 border-border/30 shadow-sm">
-        <CardContent className="p-4 space-y-3">
-          <div className="flex items-center gap-2">
-            <User className="h-4 w-4 text-primary" />
-            <Label className="font-medium">Assign To</Label>
-          </div>
-          <TaskAssigneeSelect 
-            selectedMember={selectedMember}
-            onAssign={onAssign}
-            users={safeUsers}
-            isLoading={isLoading}
-          />
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // Multi-assignment mode with enhanced data validation
   return (
-    <Card className="border-2 border-border/30 shadow-sm">
-      <CardContent className="p-4 space-y-4">
-        <div className="flex items-center gap-2">
-          <Users className="h-4 w-4 text-primary" />
-          <Label className="font-medium">Team Assignment</Label>
-          <Badge variant="outline" className="ml-auto">
-            {safeSelectedMembers.length} member{safeSelectedMembers.length !== 1 ? 's' : ''}
-          </Badge>
-        </div>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Users className="h-5 w-5" />
+          Assignment
+        </CardTitle>
+        <CardDescription>
+          Assign this task to one or more team members
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Currently Assigned */}
+        {selectedUsers.length > 0 && (
+          <div>
+            <h4 className="text-sm font-medium mb-2">Assigned Members</h4>
+            <div className="flex flex-wrap gap-2">
+              {selectedUsers.map((user) => (
+                <Badge
+                  key={user.id}
+                  variant="secondary"
+                  className="flex items-center gap-2 pr-1"
+                >
+                  <Avatar className="h-4 w-4">
+                    <AvatarImage src={user.avatar_url || undefined} />
+                    <AvatarFallback className="text-xs">
+                      {(user.name || user.email).substring(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-xs">{user.name || user.email}</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-4 w-4 p-0 hover:bg-destructive hover:text-destructive-foreground"
+                    onClick={() => onUnassign(user.id)}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
 
-        {/* Multi-assignee selector with enhanced safety */}
-        <div className="space-y-3">
-          <Label className="text-sm text-muted-foreground">Select Team Members</Label>
-          <TaskMultiAssigneeSelect
-            selectedMembers={safeSelectedMembers}
-            onMembersChange={safeOnMembersChange}
-            users={safeUsers}
-            isLoading={isLoading}
-            onError={handleMultiAssignError}
-          />
-        </div>
+        {/* Available Members */}
+        {availableUsers.length > 0 && (
+          <div>
+            <h4 className="text-sm font-medium mb-2">Available Members</h4>
+            <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto">
+              {availableUsers.map((user) => (
+                <div
+                  key={user.id}
+                  className="flex items-center justify-between p-2 rounded-lg border hover:bg-muted cursor-pointer"
+                  onClick={() => onAssign(user.id)}
+                >
+                  <div className="flex items-center gap-2">
+                    <Avatar className="h-6 w-6">
+                      <AvatarImage src={user.avatar_url || undefined} />
+                      <AvatarFallback className="text-xs">
+                        {(user.name || user.email).substring(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="text-sm">{user.name || user.email}</span>
+                  </div>
+                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                    <Plus className="h-3 w-3" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
-        {/* Assignment Summary */}
-        <AssignmentSummary selectedMembersCount={safeSelectedMembers.length} />
+        {assignedUsers.length === 0 && (
+          <div className="text-center py-4 text-muted-foreground">
+            <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
+            <p className="text-sm">No members assigned</p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

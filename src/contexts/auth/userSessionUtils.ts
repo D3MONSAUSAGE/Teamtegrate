@@ -1,80 +1,70 @@
 
 import { Session } from '@supabase/supabase-js';
-import { User, UserRole } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
+import { User, UserRole } from '@/types';
 
-export const createUserFromSession = async (session: Session): Promise<User> => {
-  try {
-    // First try to get the most up-to-date role and organization from the database
-    const { data: dbUser, error } = await supabase
-      .from('users')
-      .select('role, organization_id, name, timezone, avatar_url')
-      .eq('id', session.user.id)
-      .single();
+let debugMode = false;
 
-    const dbRole = dbUser?.role as UserRole;
-    const dbOrgId = dbUser?.organization_id;
-    const metaRole = session.user.user_metadata.role as UserRole;
-    
-    // Use database role if available, otherwise fall back to metadata
-    const currentRole = dbRole || metaRole || 'user';
+export const setAuthDebugMode = (enabled: boolean) => {
+  debugMode = enabled;
+};
 
-    // If the roles don't match, update the auth metadata
-    if (dbRole && dbRole !== metaRole) {
-      console.log(`Role mismatch detected. DB: ${dbRole}, Meta: ${metaRole}. Updating metadata.`);
-      try {
-        await supabase.auth.updateUser({
-          data: { role: dbRole }
-        });
-      } catch (error) {
-        console.warn('Failed to update user metadata:', error);
-      }
-    }
-
-    return {
-      id: session.user.id,
-      email: session.user.email || '',
-      name: dbUser?.name || session.user.user_metadata.name || session.user.email?.split('@')[0] || '',
-      role: currentRole,
-      organization_id: dbOrgId || '',
-      createdAt: new Date(session.user.created_at),
-      avatar_url: dbUser?.avatar_url || session.user.user_metadata.avatar_url,
-      timezone: dbUser?.timezone || session.user.user_metadata.timezone
-    };
-  } catch (error) {
-    console.error('Error creating user from session:', error);
-    // Return basic user info if database call fails
-    return {
-      id: session.user.id,
-      email: session.user.email || '',
-      name: session.user.user_metadata.name || session.user.email?.split('@')[0] || '',
-      role: (session.user.user_metadata.role as UserRole) || 'user',
-      organization_id: '',
-      createdAt: new Date(session.user.created_at),
-      avatar_url: session.user.user_metadata.avatar_url,
-      timezone: session.user.user_metadata.timezone
-    };
+const log = (...args: any[]) => {
+  if (debugMode) {
+    console.log('[AuthDebug]', ...args);
   }
 };
 
-export const refreshUserSession = async (): Promise<{ session: Session | null; user: User | null }> => {
+export const extractUserDataFromSession = async (session: Session): Promise<User | null> => {
   try {
-    const { data: { session: newSession }, error } = await supabase.auth.refreshSession();
+    log('Extracting user data from session for user:', session.user.id);
     
+    // Get user profile from our users table
+    const { data: userProfile, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', session.user.id)
+      .maybeSingle();
+
     if (error) {
-      console.error('Error refreshing session:', error);
-      return { session: null, user: null };
+      console.error('Error fetching user profile:', error);
+      return null;
     }
 
-    if (newSession) {
-      const userData = await createUserFromSession(newSession);
-      console.log('Session refreshed successfully, updated role:', userData.role);
-      return { session: newSession, user: userData };
+    if (!userProfile) {
+      log('No user profile found, creating basic user object');
+      // Fallback to session data if no profile exists
+      return {
+        id: session.user.id,
+        email: session.user.email || '',
+        role: 'user' as UserRole,
+        organizationId: session.user.user_metadata?.organization_id || '',
+        name: session.user.user_metadata?.name || session.user.email || '',
+        timezone: session.user.user_metadata?.timezone || 'UTC',
+        createdAt: new Date(session.user.created_at),
+        avatar_url: session.user.user_metadata?.avatar_url
+      };
     }
 
-    return { session: null, user: null };
+    log('User profile found:', userProfile);
+
+    // Convert to our User type
+    const userData: User = {
+      id: userProfile.id,
+      email: userProfile.email,
+      role: userProfile.role as UserRole,
+      organizationId: userProfile.organization_id,
+      name: userProfile.name,
+      timezone: userProfile.timezone || 'UTC',
+      createdAt: new Date(userProfile.created_at),
+      avatar_url: userProfile.avatar_url
+    };
+
+    log('Extracted user data:', userData);
+    return userData;
+
   } catch (error) {
-    console.error('Error refreshing user session:', error);
-    return { session: null, user: null };
+    console.error('Error extracting user data from session:', error);
+    return null;
   }
 };

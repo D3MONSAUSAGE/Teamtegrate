@@ -1,150 +1,178 @@
 
 import React from 'react';
-import { Project } from '@/types';
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { X, Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Progress } from "@/components/ui/progress";
+import { Project } from '@/types';
+import { Calendar, Users, Target, DollarSign } from 'lucide-react';
+import { format, isAfter } from 'date-fns';
 
 interface ProjectSelectorProps {
   projects: Project[];
-  selectedProjectIds: string[];
-  onProjectToggle: (projectId: string) => void;
-  onRemoveProject: (projectId: string) => void;
-  onClearAll: () => void;
-  maxProjects?: number;
+  selectedProject: string | null;
+  onProjectSelect: (projectId: string) => void;
 }
 
 const ProjectSelector: React.FC<ProjectSelectorProps> = ({
   projects,
-  selectedProjectIds,
-  onProjectToggle,
-  onRemoveProject,
-  onClearAll,
-  maxProjects = 5
+  selectedProject,
+  onProjectSelect
 }) => {
-  const [searchTerm, setSearchTerm] = React.useState('');
-  const [isOpen, setIsOpen] = React.useState(false);
+  const project = selectedProject ? projects.find(p => p.id === selectedProject) : null;
   
-  const filteredProjects = projects.filter(project =>
-    project.title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-  
-  const selectedProjects = projects.filter(p => selectedProjectIds.includes(p.id));
-  
-  const getCompletionRate = (project: Project) => {
-    const totalTasks = project.tasks.length;
-    const completedTasks = project.tasks.filter(task => task.status === 'Completed').length;
-    return totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+  // Calculate project progress based on status
+  const calculateProgress = (project: Project) => {
+    switch (project.status) {
+      case 'Completed':
+        return 100;
+      case 'In Progress':
+        return 50; // Default progress for in-progress projects
+      default:
+        return 0;
+    }
   };
-  
-  const isAtMaxLimit = selectedProjectIds.length >= maxProjects;
-  
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'Completed':
+        return 'bg-green-500';
+      case 'In Progress':
+        return 'bg-blue-500';
+      default:
+        return 'bg-yellow-500';
+    }
+  };
+
   return (
-    <div className="space-y-3">
-      {/* Selected Projects Display */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">Tracking:</span>
-          <Badge variant="secondary">
-            {selectedProjectIds.length}/{maxProjects} projects
-          </Badge>
-        </div>
-        {selectedProjects.length > 0 && (
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={onClearAll}
-          >
-            Clear All
-          </Button>
-        )}
-      </div>
-      
-      {selectedProjects.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {selectedProjects.map(project => (
-            <div 
-              key={project.id}
-              className="flex items-center gap-2 bg-primary/10 text-primary px-3 py-1 rounded-full text-sm"
-            >
-              <span className="font-medium">{project.title}</span>
-              <span className="text-xs opacity-70">({getCompletionRate(project)}%)</span>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-4 w-4 p-0 hover:bg-destructive hover:text-destructive-foreground rounded-full"
-                onClick={() => onRemoveProject(project.id)}
-              >
-                <X className="h-3 w-3" />
-              </Button>
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>Select Project</CardTitle>
+          <CardDescription>
+            Choose a project to view detailed reports and analytics
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Select value={selectedProject || ""} onValueChange={onProjectSelect}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select a project to analyze" />
+            </SelectTrigger>
+            <SelectContent>
+              {projects.map((project) => (
+                <SelectItem key={project.id} value={project.id}>
+                  <div className="flex items-center gap-2">
+                    <div className={`w-2 h-2 rounded-full ${getStatusColor(project.status)}`} />
+                    <span>{project.title}</span>
+                    <Badge variant="outline" className="ml-auto">
+                      {project.tasks_count} tasks
+                    </Badge>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </CardContent>
+      </Card>
+
+      {project && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Target className="h-5 w-5" />
+              {project.title}
+            </CardTitle>
+            <CardDescription>
+              {project.description || 'No description provided'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Project Status and Progress */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Status</span>
+                <Badge className={`${getStatusColor(project.status)} text-white`}>
+                  {project.status}
+                </Badge>
+              </div>
+              <Progress value={calculateProgress(project)} className="h-2" />
+              <p className="text-xs text-muted-foreground">
+                {calculateProgress(project)}% complete
+              </p>
             </div>
-          ))}
-        </div>
-      )}
-      
-      {/* Project Selection Collapsible */}
-      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-        <CollapsibleTrigger asChild>
-          <Button variant="outline" className="w-full justify-between">
-            {selectedProjects.length === 0 ? 'Select Projects to Track' : 'Modify Project Selection'}
-            <Search className="h-4 w-4" />
-          </Button>
-        </CollapsibleTrigger>
-        <CollapsibleContent className="space-y-3 mt-3">
-          {/* Search Input */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search projects..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          
-          {/* Project List */}
-          <div className="max-h-48 overflow-y-auto space-y-2 border rounded-md p-2">
-            {filteredProjects.map(project => {
-              const isSelected = selectedProjectIds.includes(project.id);
-              const completionRate = getCompletionRate(project);
-              const canSelect = isSelected || !isAtMaxLimit;
-              
-              return (
-                <div 
-                  key={project.id}
-                  className={`flex items-center space-x-3 p-2 border rounded transition-colors ${
-                    isSelected ? 'bg-primary/5 border-primary/20' : 'hover:bg-muted/50'
-                  } ${!canSelect ? 'opacity-50' : ''}`}
-                >
-                  <Checkbox
-                    checked={isSelected}
-                    onCheckedChange={() => canSelect && onProjectToggle(project.id)}
-                    disabled={!canSelect}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium truncate text-sm">{project.title}</span>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <span className="font-medium">{completionRate}%</span>
-                        <span>({project.tasks.length} tasks)</span>
-                      </div>
-                    </div>
+
+            {/* Project Metrics Grid */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-1 text-muted-foreground">
+                  <Target className="h-3 w-3" />
+                  <span className="text-xs">Tasks</span>
+                </div>
+                <p className="text-sm font-medium">{project.tasks_count}</p>
+              </div>
+
+              <div className="space-y-1">
+                <div className="flex items-center gap-1 text-muted-foreground">
+                  <Users className="h-3 w-3" />
+                  <span className="text-xs">Team</span>
+                </div>
+                <p className="text-sm font-medium">{project.teamMemberIds.length}</p>
+              </div>
+
+              <div className="space-y-1">
+                <div className="flex items-center gap-1 text-muted-foreground">
+                  <Calendar className="h-3 w-3" />
+                  <span className="text-xs">Start Date</span>
+                </div>
+                <p className="text-sm font-medium">
+                  {format(new Date(project.startDate), 'MMM d, yyyy')}
+                </p>
+              </div>
+
+              <div className="space-y-1">
+                <div className="flex items-center gap-1 text-muted-foreground">
+                  <Calendar className="h-3 w-3" />
+                  <span className="text-xs">End Date</span>
+                </div>
+                <p className="text-sm font-medium">
+                  {format(new Date(project.endDate), 'MMM d, yyyy')}
+                </p>
+                {isAfter(new Date(), new Date(project.endDate)) && project.status !== 'Completed' && (
+                  <Badge variant="destructive" className="text-xs">
+                    Overdue
+                  </Badge>
+                )}
+              </div>
+            </div>
+
+            {/* Budget Information */}
+            {project.budget > 0 && (
+              <div className="space-y-2 pt-2 border-t">
+                <div className="flex items-center gap-1 text-muted-foreground">
+                  <DollarSign className="h-3 w-3" />
+                  <span className="text-xs">Budget</span>
+                </div>
+                <div className="space-y-1">
+                  <div className="flex justify-between text-sm">
+                    <span>Allocated:</span>
+                    <span className="font-medium">${project.budget.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Spent:</span>
+                    <span className="font-medium">${project.budgetSpent.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Remaining:</span>
+                    <span className="font-medium text-green-600">
+                      ${(project.budget - project.budgetSpent).toLocaleString()}
+                    </span>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-          
-          {isAtMaxLimit && (
-            <p className="text-xs text-muted-foreground text-center py-1">
-              Maximum of {maxProjects} projects can be tracked at once.
-            </p>
-          )}
-        </CollapsibleContent>
-      </Collapsible>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

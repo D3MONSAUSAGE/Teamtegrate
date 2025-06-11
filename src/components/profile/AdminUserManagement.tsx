@@ -38,7 +38,7 @@ const AdminUserManagement = () => {
     }
 
     // Additional organization check - ensure both users are in the same organization
-    if (userToDelete.organization_id !== currentUser.organization_id) {
+    if (userToDelete.organizationId !== currentUser.organizationId) {
       toast.error("You can only delete users within your organization");
       return;
     }
@@ -103,7 +103,7 @@ const AdminUserManagement = () => {
   const canDeleteUser = (targetUser: any) => {
     if (targetUser.id === currentUser?.id) return false;
     // Additional organization check
-    if (targetUser.organization_id !== currentUser?.organization_id) return false;
+    if (targetUser.organizationId !== currentUser?.organizationId) return false;
     return currentUser?.role === 'superadmin';
   };
 

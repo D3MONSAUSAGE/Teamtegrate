@@ -1,99 +1,135 @@
 
-import React from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { useChatPermissions } from '@/hooks/use-chat-permissions';
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from 'sonner';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useForm } from "react-hook-form";
+import { Label } from "@/components/ui/label";
+import { Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/components/ui/sonner';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface CreateRoomDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  isOpen: boolean;
+  onClose: () => void;
+  onRoomCreated: () => void;
 }
 
-interface FormData {
-  name: string;
-}
-
-const CreateRoomDialog: React.FC<CreateRoomDialogProps> = ({ open, onOpenChange }) => {
+const CreateRoomDialog: React.FC<CreateRoomDialogProps> = ({
+  isOpen,
+  onClose,
+  onRoomCreated
+}) => {
   const { user } = useAuth();
-  const { canCreateRooms } = useChatPermissions();
-  const { register, handleSubmit, reset } = useForm<FormData>();
+  const [roomName, setRoomName] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
 
-  // Don't render if user can't create rooms
-  if (!canCreateRooms()) {
-    return null;
-  }
-
-  const onSubmit = async (data: FormData) => {
-    if (!user || !user.organization_id) {
-      toast.error("Organization not found");
+  const handleCreateRoom = async () => {
+    if (!roomName.trim()) {
+      toast.error('Please enter a room name');
       return;
     }
 
+    if (!user?.organizationId) {
+      toast.error('Organization context required');
+      return;
+    }
+
+    setIsCreating(true);
     try {
-      const { data: roomData, error } = await supabase
+      // Create the chat room
+      const { data: room, error: roomError } = await supabase
         .from('chat_rooms')
         .insert({
-          name: data.name,
+          name: roomName.trim(),
           created_by: user.id,
-          organization_id: user.organization_id,
+          organization_id: user.organizationId,
         })
         .select()
         .single();
 
-      if (error) {
-        throw error;
-      }
+      if (roomError) throw roomError;
 
-      // Add the room creator as a participant
+      // Add the creator as a participant
       const { error: participantError } = await supabase
         .from('chat_room_participants')
         .insert({
-          room_id: roomData.id,
+          room_id: room.id,
           user_id: user.id,
           added_by: user.id,
         });
 
-      if (participantError) {
-        console.error('Error adding creator as participant:', participantError);
-        // Don't throw error here as room was created successfully
-      }
+      if (participantError) throw participantError;
 
-      toast.success('Chat room created successfully');
-      reset();
-      onOpenChange(false);
+      toast.success('Chat room created successfully!');
+      onRoomCreated();
+      onClose();
+      setRoomName('');
     } catch (error) {
       console.error('Error creating room:', error);
       toast.error('Failed to create chat room');
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  const handleClose = () => {
+    if (!isCreating) {
+      onClose();
+      setRoomName('');
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Create New Chat Room</DialogTitle>
+          <DialogTitle>Create Chat Room</DialogTitle>
+          <DialogDescription>
+            Create a new chat room for your team to collaborate.
+          </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+
+        <div className="space-y-4 py-4">
           <div>
+            <Label htmlFor="roomName">Room Name</Label>
             <Input
-              {...register('name', { required: true })}
-              placeholder="Enter room name"
+              id="roomName"
+              placeholder="Enter room name..."
+              value={roomName}
+              onChange={(e) => setRoomName(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter' && !isCreating) {
+                  handleCreateRoom();
+                }
+              }}
+              disabled={isCreating}
             />
           </div>
-          <Button type="submit" className="w-full">
-            Create Room
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={handleClose} disabled={isCreating}>
+            Cancel
           </Button>
-        </form>
+          <Button onClick={handleCreateRoom} disabled={!roomName.trim() || isCreating}>
+            {isCreating ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Creating...
+              </>
+            ) : (
+              'Create Room'
+            )}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

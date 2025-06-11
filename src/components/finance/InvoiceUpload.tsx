@@ -98,7 +98,7 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
       return;
     }
 
-    if (!user || !user.organization_id) {
+    if (!user || !user.organizationId) {
       toast({
         title: "Error",
         description: 'You must be logged in and belong to an organization to upload invoices',
@@ -111,7 +111,7 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
 
     try {
       console.log('Starting invoice upload process...');
-      console.log('User:', user.id, 'Organization:', user.organization_id);
+      console.log('User:', user.id, 'Organization:', user.organizationId);
       console.log('File:', selectedFile.name, selectedFile.size);
 
       // Create file path with user ID and timestamp
@@ -136,12 +136,12 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
 
       console.log('File uploaded successfully:', storageData);
 
-      // Insert invoice metadata into database with organization_id
+      // Insert invoice metadata into database with organizationId
       const { error: dbError } = await supabase
         .from('invoices')
         .insert({
           user_id: user.id,
-          organization_id: user.organization_id, // Add the required organization_id
+          organization_id: user.organizationId, // Use organizationId instead of organization_id
           invoice_number: data.invoiceNumber,
           branch: data.branch,
           uploader_name: data.uploaderName,

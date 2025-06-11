@@ -15,14 +15,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, AlertTriangle, Shield, Users, MessageSquare, Building2, ClipboardList } from 'lucide-react';
-import { AppUser } from '@/types';
+import { User } from '@/types';
 import { useUserDeletionCheck } from '@/hooks/useUserDeletionCheck';
 
 interface EnhancedUserDeleteDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (reason: string) => void;
-  user: AppUser | null;
+  user: User | null;
   isDeleting: boolean;
 }
 
