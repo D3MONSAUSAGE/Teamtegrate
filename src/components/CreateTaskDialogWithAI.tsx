@@ -1,3 +1,4 @@
+
 import React, { useCallback, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Task } from '@/types';
@@ -33,11 +34,11 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
   const isEditMode = !!editingTask;
   const isMobile = useIsMobile();
   const { users, isLoading: loadingUsers } = useUsers();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Use our custom hook for form management
   const {
     form,
-    handleSubmit,
     register,
     errors, 
     reset,
@@ -78,7 +79,7 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
     }
   };
 
-  const handleSubmit = useCallback(async (taskData: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const onSubmit = useCallback(async (data: any) => {
     if (!user?.organizationId) {
       toast.error('Organization context required');
       return;
@@ -88,9 +89,9 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
       setIsSubmitting(true);
       
       const finalTaskData = {
-        ...taskData,
+        ...data,
         userId: user.id,
-        organizationId: user.organizationId // Changed from organization_id
+        organizationId: user.organizationId
       };
 
       if (editingTask) {
@@ -128,7 +129,7 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
         </DialogHeader>
         
         <Form {...form}>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <Tabs defaultValue="details" className="w-full">
               <TabsList className="mb-4">
                 <TabsTrigger value="details">Task Details</TabsTrigger>
@@ -170,8 +171,8 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
               >
                 Cancel
               </Button>
-              <Button type="submit" className="bg-green-500 hover:bg-green-600">
-                {isEditMode ? 'Update Task' : 'Create Task'}
+              <Button type="submit" className="bg-green-500 hover:bg-green-600" disabled={isSubmitting}>
+                {isSubmitting ? 'Saving...' : (isEditMode ? 'Update Task' : 'Create Task')}
               </Button>
             </div>
           </form>
@@ -182,5 +183,3 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
 };
 
 export default CreateTaskDialogWithAI;
-
-</edits_to_apply>

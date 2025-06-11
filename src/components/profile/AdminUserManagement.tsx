@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { User, UserRole } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
@@ -66,7 +67,7 @@ const AdminUserManagement: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [user?.organizationId, user.id]);
+  }, [user?.organizationId, user?.id]);
 
   useEffect(() => {
     fetchUsers();
@@ -181,7 +182,7 @@ const AdminUserManagement: React.FC = () => {
               id="role"
               className="w-full p-2 border rounded-md"
               value={newUserRole}
-              onChange={(e) => setNewUserRole(e.target.value' as UserRole')}
+              onChange={(e) => setNewUserRole(e.target.value as UserRole)}
             >
               <option value="user">User</option>
               <option value="manager">Manager</option>
