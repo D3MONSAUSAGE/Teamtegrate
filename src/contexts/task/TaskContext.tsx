@@ -77,22 +77,21 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (!user?.organization_id) return;
     
     try {
-      // Explicit column selection to avoid deep type inference
+      // Explicit column selection to avoid deep type inference - cast immediately
       const projectsQuery = await supabase
         .from('projects')
-        .select('id, title, description, start_date, end_date, manager_id, created_at, updated_at, team_members, budget, budget_spent, is_completed, status, tasks_count, tags')
-        .eq('organization_id', user.organization_id);
+        .select('id, title, description, start_date, end_date, manager_id, created_at, updated_at, team_members, budget, budget_spent, is_completed, status, tasks_count, tags');
 
-      // Cast to avoid type inference issues
-      const projectsResponse = projectsQuery as unknown as { data: RawProject[] | null, error: any };
+      // Immediate cast to simple type to avoid inference
+      const projectsResult = projectsQuery as { data: any[] | null, error: any };
 
-      if (projectsResponse.error) throw projectsResponse.error;
+      if (projectsResult.error) throw projectsResult.error;
 
       // Manual transformation with explicit types
       const transformedProjects: SimpleProject[] = [];
       
-      if (projectsResponse.data) {
-        for (const dbProject of projectsResponse.data) {
+      if (projectsResult.data) {
+        for (const dbProject of projectsResult.data) {
           // Explicit status validation
           let projectStatus: 'To Do' | 'In Progress' | 'Completed' = 'To Do';
           if (dbProject.status === 'To Do' || dbProject.status === 'In Progress' || dbProject.status === 'Completed') {
