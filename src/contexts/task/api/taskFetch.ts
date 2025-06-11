@@ -28,8 +28,8 @@ export const fetchTasks = async (
       return;
     }
     
-    // Fetch tasks from database with explicit organization filtering - use explicit type for data
-    const { data: taskData, error } = await supabase
+    // Fetch tasks from database with explicit organization filtering
+    const { data: rawTaskData, error } = await supabase
       .from('tasks')
       .select('*')
       .eq('organization_id', user.organization_id);
@@ -40,10 +40,10 @@ export const fetchTasks = async (
       return;
     }
 
-    console.log(`Fetched ${taskData.length} tasks from database`);
+    console.log(`Fetched ${rawTaskData?.length || 0} tasks from database`);
     
-    // Fetch comments for all tasks with organization filtering - use explicit type for data
-    const { data: commentData, error: commentError } = await supabase
+    // Fetch comments for all tasks with organization filtering
+    const { data: rawCommentData, error: commentError } = await supabase
       .from('comments')
       .select('*')
       .eq('organization_id', user.organization_id);
@@ -52,22 +52,22 @@ export const fetchTasks = async (
       console.error('Error fetching comments:', commentError);
     }
 
-    // Transform database format to application format manually to avoid deep type instantiation
+    // Transform database format to application format with explicit typing
     const transformedTasks: Task[] = [];
     
-    if (taskData) {
-      for (const dbTask of taskData) {
-        // Validate and set priority - explicit string checks
+    if (rawTaskData) {
+      for (const dbTask of rawTaskData) {
+        // Validate and set priority with explicit string checks
         const taskPriority = ['Low', 'Medium', 'High'].includes(String(dbTask.priority)) 
           ? String(dbTask.priority) as 'Low' | 'Medium' | 'High'
           : 'Medium' as const;
         
-        // Validate and set status - explicit string checks
+        // Validate and set status with explicit string checks
         const taskStatus = ['To Do', 'In Progress', 'Completed'].includes(String(dbTask.status))
           ? String(dbTask.status) as 'To Do' | 'In Progress' | 'Completed'
           : 'To Do' as const;
 
-        // Build task object explicitly with manual transformations
+        // Build task object with explicit type annotations
         const task: Task = {
           id: String(dbTask.id || ''),
           userId: String(dbTask.user_id || user.id),
@@ -88,7 +88,7 @@ export const fetchTasks = async (
             ? dbTask.assigned_to_names.map(String) 
             : [],
           tags: [],
-          comments: commentData ? commentData
+          comments: rawCommentData ? rawCommentData
             .filter((comment) => comment.task_id === dbTask.id)
             .map((comment) => ({
               id: String(comment.id),

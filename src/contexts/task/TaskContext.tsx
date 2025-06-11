@@ -55,14 +55,14 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     setIsLoading(true);
     try {
-      // Create simple user object explicitly to avoid deep type instantiation
-      const simpleUser: SimpleUser = {
+      // Create simple user object with explicit typing
+      const simpleUserData: SimpleUser = {
         id: user.id,
-        email: user.email,
-        role: user.role,
+        email: user.email || '',
+        role: user.role || 'user',
         organization_id: user.organization_id
       };
-      await fetchTasks(simpleUser, setTasks);
+      await fetchTasks(simpleUserData, setTasks);
     } catch (error) {
       console.error('Error refreshing tasks:', error);
     } finally {
@@ -74,35 +74,44 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (!user?.organization_id) return;
     
     try {
-      const { data, error } = await supabase
+      // Use explicit typing to avoid deep type instantiation
+      const { data: projectsData, error } = await supabase
         .from('projects')
         .select('*')
         .eq('organization_id', user.organization_id);
 
       if (error) throw error;
 
-      // Transform to SimpleProject manually to avoid deep type instantiation
-      const transformedProjects: SimpleProject[] = (data || []).map((dbProject): SimpleProject => ({
-        id: String(dbProject.id || ''),
-        title: String(dbProject.title || ''),
-        description: dbProject.description ? String(dbProject.description) : undefined,
-        startDate: new Date(dbProject.start_date || Date.now()),
-        endDate: new Date(dbProject.end_date || Date.now()),
-        managerId: String(dbProject.manager_id || ''),
-        budget: Number(dbProject.budget) || 0,
-        budgetSpent: Number(dbProject.budget_spent) || 0,
-        createdAt: new Date(dbProject.created_at || Date.now()),
-        updatedAt: new Date(dbProject.updated_at || Date.now()),
-        tasks: tasks.filter(task => task.projectId === dbProject.id),
-        teamMembers: Array.isArray(dbProject.team_members) ? dbProject.team_members.map(String) : [],
-        is_completed: Boolean(dbProject.is_completed),
-        status: (['To Do', 'In Progress', 'Completed'].includes(dbProject.status) 
-          ? dbProject.status 
-          : 'To Do') as 'To Do' | 'In Progress' | 'Completed',
-        tasks_count: Number(dbProject.tasks_count) || 0,
-        tags: Array.isArray(dbProject.tags) ? dbProject.tags.map(String) : [],
-        organizationId: user.organization_id
-      }));
+      // Transform to SimpleProject manually with explicit typing
+      const transformedProjects: SimpleProject[] = [];
+      
+      if (projectsData) {
+        for (const dbProject of projectsData) {
+          const simpleProject: SimpleProject = {
+            id: String(dbProject.id || ''),
+            title: String(dbProject.title || ''),
+            description: dbProject.description ? String(dbProject.description) : undefined,
+            startDate: new Date(dbProject.start_date || Date.now()),
+            endDate: new Date(dbProject.end_date || Date.now()),
+            managerId: String(dbProject.manager_id || ''),
+            budget: Number(dbProject.budget) || 0,
+            budgetSpent: Number(dbProject.budget_spent) || 0,
+            createdAt: new Date(dbProject.created_at || Date.now()),
+            updatedAt: new Date(dbProject.updated_at || Date.now()),
+            tasks: tasks.filter(task => task.projectId === dbProject.id),
+            teamMembers: Array.isArray(dbProject.team_members) ? dbProject.team_members.map(String) : [],
+            is_completed: Boolean(dbProject.is_completed),
+            status: (['To Do', 'In Progress', 'Completed'].includes(dbProject.status) 
+              ? dbProject.status 
+              : 'To Do') as 'To Do' | 'In Progress' | 'Completed',
+            tasks_count: Number(dbProject.tasks_count) || 0,
+            tags: Array.isArray(dbProject.tags) ? dbProject.tags.map(String) : [],
+            organizationId: user.organization_id
+          };
+          
+          transformedProjects.push(simpleProject);
+        }
+      }
 
       setProjects(transformedProjects);
     } catch (error) {
