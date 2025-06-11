@@ -99,27 +99,30 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (error) throw error;
 
       // Simple transformation without complex type instantiation
-      const transformedProjects: SimpleProject[] = data.map((dbProject: any) => ({
-        id: dbProject.id,
-        title: dbProject.title || '',
-        description: dbProject.description || '',
-        startDate: new Date(dbProject.start_date || Date.now()),
-        endDate: new Date(dbProject.end_date || Date.now()),
-        managerId: dbProject.manager_id || '',
-        budget: Number(dbProject.budget) || 0,
-        budgetSpent: Number(dbProject.budget_spent) || 0,
-        createdAt: new Date(dbProject.created_at || Date.now()),
-        updatedAt: new Date(dbProject.updated_at || Date.now()),
-        tasks: tasks.filter(task => task.projectId === dbProject.id),
-        teamMembers: Array.isArray(dbProject.team_members) ? dbProject.team_members : [],
-        is_completed: Boolean(dbProject.is_completed),
-        status: (dbProject.status === 'To Do' || dbProject.status === 'In Progress' || dbProject.status === 'Completed') 
-          ? dbProject.status as ProjectStatus
-          : 'To Do' as ProjectStatus,
-        tasks_count: Number(dbProject.tasks_count) || 0,
-        tags: Array.isArray(dbProject.tags) ? dbProject.tags : [],
-        organizationId: user.organization_id
-      }));
+      const transformedProjects: SimpleProject[] = (data || []).map((dbProject: any) => {
+        const projectData: SimpleProject = {
+          id: dbProject.id || '',
+          title: dbProject.title || '',
+          description: dbProject.description || '',
+          startDate: new Date(dbProject.start_date || Date.now()),
+          endDate: new Date(dbProject.end_date || Date.now()),
+          managerId: dbProject.manager_id || '',
+          budget: Number(dbProject.budget) || 0,
+          budgetSpent: Number(dbProject.budget_spent) || 0,
+          createdAt: new Date(dbProject.created_at || Date.now()),
+          updatedAt: new Date(dbProject.updated_at || Date.now()),
+          tasks: tasks.filter(task => task.projectId === dbProject.id),
+          teamMembers: Array.isArray(dbProject.team_members) ? dbProject.team_members : [],
+          is_completed: Boolean(dbProject.is_completed),
+          status: (dbProject.status === 'To Do' || dbProject.status === 'In Progress' || dbProject.status === 'Completed') 
+            ? dbProject.status as ProjectStatus
+            : 'To Do' as ProjectStatus,
+          tasks_count: Number(dbProject.tasks_count) || 0,
+          tags: Array.isArray(dbProject.tags) ? dbProject.tags : [],
+          organizationId: user.organization_id
+        };
+        return projectData;
+      });
 
       setProjects(transformedProjects);
     } catch (error) {

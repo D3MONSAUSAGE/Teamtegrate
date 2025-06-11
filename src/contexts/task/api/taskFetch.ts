@@ -8,7 +8,7 @@ const parseDate = (dateStr: string | null): Date => {
   return new Date(dateStr);
 };
 
-// Simple user interface
+// Simple user interface to avoid deep type instantiation
 interface SimpleUser {
   id: string;
   organization_id?: string;
@@ -57,9 +57,9 @@ export const fetchTasks = async (
       console.error('Error fetching comments:', commentError);
     }
 
-    // Transform database format to application format with simple type casting
-    const transformedTasks: Task[] = taskData.map((dbTask: any) => {
-      // Use simple type guards instead of complex type instantiation
+    // Transform database format to application format with explicit type handling
+    const transformedTasks: Task[] = (taskData || []).map((dbTask: any) => {
+      // Use explicit type checking instead of complex type guards
       const taskPriority = ['Low', 'Medium', 'High'].includes(dbTask.priority) 
         ? dbTask.priority 
         : 'Medium';
@@ -68,8 +68,9 @@ export const fetchTasks = async (
         ? dbTask.status
         : 'To Do';
 
-      return {
-        id: dbTask.id,
+      // Build task object with explicit typing
+      const task: Task = {
+        id: dbTask.id || '',
         userId: dbTask.user_id || user.id,
         projectId: dbTask.project_id || undefined,
         title: dbTask.title || '',
@@ -81,8 +82,8 @@ export const fetchTasks = async (
         updatedAt: parseDate(dbTask.updated_at),
         assignedToId: dbTask.assigned_to_id || undefined,
         assignedToName: dbTask.assigned_to_names?.[0] || undefined,
-        assignedToIds: dbTask.assigned_to_ids || [],
-        assignedToNames: dbTask.assigned_to_names || [],
+        assignedToIds: Array.isArray(dbTask.assigned_to_ids) ? dbTask.assigned_to_ids : [],
+        assignedToNames: Array.isArray(dbTask.assigned_to_names) ? dbTask.assigned_to_names : [],
         tags: [],
         comments: (commentData || [])
           .filter((comment: any) => comment.task_id === dbTask.id)
@@ -95,6 +96,8 @@ export const fetchTasks = async (
           })),
         cost: Number(dbTask.cost) || 0,
       };
+
+      return task;
     });
 
     setTasks(transformedTasks);
