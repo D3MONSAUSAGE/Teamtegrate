@@ -5,14 +5,15 @@ import { supabase } from '@/integrations/supabase/client';
 
 export const createUserFromSession = async (session: Session): Promise<User> => {
   try {
-    // First try to get the most up-to-date role from the database
+    // First try to get the most up-to-date role and organization from the database
     const { data: dbUser, error } = await supabase
       .from('users')
-      .select('role')
+      .select('role, organization_id')
       .eq('id', session.user.id)
       .single();
 
     const dbRole = dbUser?.role as UserRole;
+    const dbOrgId = dbUser?.organization_id;
     const metaRole = session.user.user_metadata.role as UserRole;
     
     // Use database role if available, otherwise fall back to metadata
@@ -36,6 +37,7 @@ export const createUserFromSession = async (session: Session): Promise<User> => 
       name: session.user.user_metadata.name || session.user.email?.split('@')[0] || '',
       role: currentRole,
       createdAt: new Date(session.user.created_at),
+      organization_id: dbOrgId,
     };
   } catch (error) {
     console.error('Error creating user from session:', error);

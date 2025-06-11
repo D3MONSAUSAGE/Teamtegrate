@@ -8,9 +8,11 @@ import { useQuery } from '@tanstack/react-query';
 export const useUsers = () => {
   const fetchUsers = async (): Promise<AppUser[]> => {
     console.log('Fetching users from Supabase...');
+    
+    // The RLS policies will automatically filter users to only show those in the same organization
     const { data, error } = await supabase
       .from('users')
-      .select('id, name, email, role, avatar_url')
+      .select('id, name, email, role, avatar_url, organization_id')
       .order('name');
     
     if (error) {
@@ -18,7 +20,7 @@ export const useUsers = () => {
       throw new Error(error.message);
     }
     
-    console.log(`Successfully loaded ${data?.length || 0} users`);
+    console.log(`Successfully loaded ${data?.length || 0} users from same organization`);
     
     // Ensure role is properly typed
     return data?.map(user => ({
@@ -39,7 +41,7 @@ export const useUsers = () => {
     meta: {
       onError: (err: Error) => {
         console.error('Error in useUsers hook:', err);
-        toast.error('Failed to load users');
+        toast.error('Failed to load users from your organization');
       }
     }
   });

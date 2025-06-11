@@ -8,7 +8,7 @@ export const createBasicUserFromSession = (sessionUser: SupabaseUser): AppUser =
     email: sessionUser.email || '',
     name: sessionUser.user_metadata.name || sessionUser.email?.split('@')[0] || '',
     role: (sessionUser.user_metadata.role as UserRole) || 'user',
-    createdAt: new Date(sessionUser.created_at),
+    // Don't include organization_id here as it requires a database call
   };
 };
 

@@ -951,6 +951,7 @@ export type Database = {
           email: string
           id: string
           name: string
+          organization_id: string
           role: string
           timezone: string | null
         }
@@ -960,6 +961,7 @@ export type Database = {
           email: string
           id: string
           name: string
+          organization_id: string
           role: string
           timezone?: string | null
         }
@@ -969,10 +971,19 @@ export type Database = {
           email?: string
           id?: string
           name?: string
+          organization_id?: string
           role?: string
           timezone?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "users_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

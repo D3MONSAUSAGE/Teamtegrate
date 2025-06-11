@@ -74,10 +74,10 @@ Deno.serve(async (req) => {
 
     console.log('Attempting to update user:', targetUserId, 'to role:', newRole);
 
-    // Get the requesting user's role from the database
+    // Get the requesting user's role and organization from the database using service role
     const { data: requestingUserData, error: userError } = await supabaseAdmin
       .from('users')
-      .select('role')
+      .select('role, organization_id')
       .eq('id', user.id)
       .single();
 
@@ -87,12 +87,14 @@ Deno.serve(async (req) => {
     }
 
     const requestingUserRole = requestingUserData.role;
+    const requestingUserOrgId = requestingUserData.organization_id;
     console.log('Requesting user role from DB:', requestingUserRole);
+    console.log('Requesting user organization:', requestingUserOrgId);
 
-    // Get the target user's current role
+    // Get the target user's current role and organization using service role
     const { data: targetUserData, error: targetError } = await supabaseAdmin
       .from('users')
-      .select('role, name, email')
+      .select('role, name, email, organization_id')
       .eq('id', targetUserId)
       .single();
 
@@ -102,16 +104,24 @@ Deno.serve(async (req) => {
     }
 
     const currentTargetRole = targetUserData.role;
+    const targetUserOrgId = targetUserData.organization_id;
     console.log('Target user current role:', currentTargetRole);
+    console.log('Target user organization:', targetUserOrgId);
 
-    // Permission validation
+    // Organization isolation check - users can only manage users within their organization
+    if (requestingUserOrgId !== targetUserOrgId) {
+      console.error('Organization mismatch - requesting user org:', requestingUserOrgId, 'target user org:', targetUserOrgId);
+      throw new Error('Permission denied - users can only manage users within their organization');
+    }
+
+    // Permission validation within the same organization
     const canUpdate = (() => {
-      // Superadmin can update everyone except themselves
+      // Superadmin can update everyone except themselves within their organization
       if (requestingUserRole === 'superadmin' && targetUserId !== user.id) {
         return true;
       }
       
-      // Admin can update managers and users (but not superadmins or other admins)
+      // Admin can update managers and users (but not superadmins or other admins) within their organization
       if (requestingUserRole === 'admin' && 
           ['manager', 'user'].includes(currentTargetRole) && 
           targetUserId !== user.id) {
@@ -150,7 +160,7 @@ Deno.serve(async (req) => {
 
     console.log('Auth metadata updated successfully');
 
-    // Update in users table
+    // Update in users table using service role
     const { error: dbUpdateError } = await supabaseAdmin
       .from('users')
       .update({ role: newRole })
@@ -164,7 +174,7 @@ Deno.serve(async (req) => {
     console.log('Database updated successfully');
 
     // Log the successful role change
-    console.log(`Role change successful: User ${targetUserData.name} (${targetUserData.email}) changed from ${currentTargetRole} to ${newRole} by ${user.id}`);
+    console.log(`Role change successful: User ${targetUserData.name} (${targetUserData.email}) changed from ${currentTargetRole} to ${newRole} by ${user.id} within organization ${requestingUserOrgId}`);
 
     return new Response(
       JSON.stringify({ 

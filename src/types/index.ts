@@ -1,3 +1,4 @@
+
 export type UserRole = 'superadmin' | 'admin' | 'manager' | 'user';
 
 export interface User {
@@ -7,6 +8,7 @@ export interface User {
   role: UserRole;
   createdAt: Date;
   avatar_url?: string;
+  organization_id?: string;
 }
 
 export interface AppUser {
@@ -15,6 +17,7 @@ export interface AppUser {
   email: string;
   role: UserRole;
   avatar_url?: string;
+  organization_id?: string;
 }
 
 export type TaskPriority = 'Low' | 'Medium' | 'High';
@@ -96,6 +99,13 @@ export interface TeamMemberPerformance {
   completedTasks: number;
   completionRate: number;
   projects: number;
+}
+
+export interface Organization {
+  id: string;
+  name: string;
+  created_by: string;
+  created_at: Date;
 }
 
 // Role hierarchy utility functions - use these from @/contexts/auth/roleUtils instead

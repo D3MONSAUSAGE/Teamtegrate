@@ -37,6 +37,12 @@ const AdminUserManagement = () => {
       return;
     }
 
+    // Additional organization check - ensure both users are in the same organization
+    if (userToDelete.organization_id !== currentUser.organization_id) {
+      toast.error("You can only delete users within your organization");
+      return;
+    }
+
     setDeletingUser(userToDelete.id);
     try {
       console.log('Calling delete-user function with:', { 
@@ -96,10 +102,12 @@ const AdminUserManagement = () => {
 
   const canDeleteUser = (targetUser: any) => {
     if (targetUser.id === currentUser?.id) return false;
+    // Additional organization check
+    if (targetUser.organization_id !== currentUser?.organization_id) return false;
     return currentUser?.role === 'superadmin';
   };
 
-  // Filter users based on search query
+  // Filter users based on search query (users are already filtered by organization via RLS)
   const filteredUsers = users.filter(user => 
     user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -113,7 +121,7 @@ const AdminUserManagement = () => {
         <CardContent>
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <span className="ml-2">Loading users...</span>
+            <span className="ml-2">Loading users from your organization...</span>
           </div>
         </CardContent>
       </Card>
@@ -129,7 +137,7 @@ const AdminUserManagement = () => {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
-                placeholder="Search users by name, email, or role..."
+                placeholder="Search users in your organization by name, email, or role..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
