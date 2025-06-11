@@ -1,6 +1,8 @@
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { useTask } from '@/contexts/task';
+import { useProjects } from '@/hooks/useProjects';
 import { useAuth } from '@/contexts/AuthContext';
 import { Task, Project } from '@/types';
 import { Plus, Sparkles, TrendingUp, Calendar } from 'lucide-react';
@@ -17,7 +19,8 @@ import TimeTracking from '@/components/dashboard/TimeTracking';
 
 const DashboardPage = () => {
   const { user } = useAuth();
-  const { tasks, projects, dailyScore, refreshProjects } = useTask();
+  const { tasks, dailyScore } = useTask();
+  const { projects, isLoading: projectsLoading, refreshProjects } = useProjects();
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
@@ -114,7 +117,7 @@ const DashboardPage = () => {
                     <div className="text-xs text-muted-foreground">Upcoming</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-amber-600">{projects.length}</div>
+                    <div className="text-2xl font-bold text-amber-600">{projectsLoading ? '...' : projects.length}</div>
                     <div className="text-xs text-muted-foreground">Projects</div>
                   </div>
                 </div>
