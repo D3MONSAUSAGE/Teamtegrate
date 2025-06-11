@@ -899,6 +899,51 @@ export type Database = {
         }
         Relationships: []
       }
+      user_deletion_audit: {
+        Row: {
+          affected_resources: Json
+          deleted_by_user_email: string
+          deleted_by_user_id: string
+          deleted_user_email: string
+          deleted_user_id: string
+          deleted_user_name: string
+          deleted_user_role: string
+          deletion_reason: string | null
+          deletion_timestamp: string
+          id: string
+          ip_address: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          affected_resources?: Json
+          deleted_by_user_email: string
+          deleted_by_user_id: string
+          deleted_user_email: string
+          deleted_user_id: string
+          deleted_user_name: string
+          deleted_user_role: string
+          deletion_reason?: string | null
+          deletion_timestamp?: string
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          affected_resources?: Json
+          deleted_by_user_email?: string
+          deleted_by_user_id?: string
+          deleted_user_email?: string
+          deleted_user_id?: string
+          deleted_user_name?: string
+          deleted_user_role?: string
+          deletion_reason?: string | null
+          deletion_timestamp?: string
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           avatar_url: string | null
@@ -987,12 +1032,20 @@ export type Database = {
           updated_at: string | null
         }[]
       }
+      get_user_deletion_impact: {
+        Args: { target_user_id: string }
+        Returns: Json
+      }
       get_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
       }
       is_admin_or_superadmin: {
         Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_sole_admin_anywhere: {
+        Args: { target_user_id: string }
         Returns: boolean
       }
       send_reminders: {

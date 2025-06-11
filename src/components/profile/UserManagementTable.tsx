@@ -17,7 +17,7 @@ interface UserManagementTableProps {
   currentUserRole?: string;
   canDeleteUser: (user: AppUser) => boolean;
   deletingUser: string | null;
-  onDeleteClick: (userId: string) => void;
+  onDeleteClick: (user: AppUser) => void;
   onEditClick: (user: AppUser) => void;
   onRoleChanged: () => void;
 }
@@ -66,7 +66,7 @@ const UserManagementTable: React.FC<UserManagementTableProps> = ({
               currentUserRole={currentUserRole}
               canDeleteUser={canDeleteUser(user)}
               isDeleting={deletingUser === user.id}
-              onDeleteClick={() => onDeleteClick(user.id)}
+              onDeleteClick={() => onDeleteClick(user)}
               onEditClick={() => onEditClick(user)}
               onRoleChanged={onRoleChanged}
             />

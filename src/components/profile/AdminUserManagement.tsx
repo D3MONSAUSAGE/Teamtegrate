@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,13 +10,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { AppUser } from '@/types';
 import UserManagementHeader from './UserManagementHeader';
 import UserManagementTable from './UserManagementTable';
-import UserDeleteDialog from './UserDeleteDialog';
+import EnhancedUserDeleteDialog from './EnhancedUserDeleteDialog';
 import EditUserDialog from './EditUserDialog';
 
 const AdminUserManagement = () => {
   const { users, isLoading, refetchUsers } = useUsers();
   const { user: currentUser } = useAuth();
-  const [userToDelete, setUserToDelete] = useState<string | null>(null);
+  const [userToDelete, setUserToDelete] = useState<AppUser | null>(null);
   const [userToEdit, setUserToEdit] = useState<AppUser | null>(null);
   const [deletingUser, setDeletingUser] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -25,25 +26,29 @@ const AdminUserManagement = () => {
     return null;
   }
 
-  const handleDeleteUser = async (userId: string) => {
-    if (!currentUser || currentUser.role !== 'superadmin') {
+  const handleDeleteUser = async (deletionReason: string) => {
+    if (!userToDelete || !currentUser || currentUser.role !== 'superadmin') {
       toast.error("Unauthorized to perform this action");
       return;
     }
 
-    if (userId === currentUser.id) {
+    if (userToDelete.id === currentUser.id) {
       toast.error("You cannot delete your own account");
       return;
     }
 
-    setDeletingUser(userId);
+    setDeletingUser(userToDelete.id);
     try {
-      console.log('Calling delete-user function with:', { targetUserId: userId });
+      console.log('Calling delete-user function with:', { 
+        targetUserId: userToDelete.id,
+        deletionReason 
+      });
 
       // Call the edge function to delete the user
       const { data, error } = await supabase.functions.invoke('delete-user', {
         body: {
-          targetUserId: userId
+          targetUserId: userToDelete.id,
+          deletionReason
         }
       });
 
@@ -59,6 +64,17 @@ const AdminUserManagement = () => {
 
       console.log('User deletion successful:', data);
       toast.success(data?.message || 'User deleted successfully');
+      
+      // Show impact summary if available
+      if (data?.impactSummary) {
+        const impact = data.impactSummary;
+        console.log('Deletion impact:', impact);
+        
+        if (impact.tasks_assigned > 0 || impact.projects_managed > 0) {
+          toast.info(`Cleanup completed: ${impact.tasks_assigned} tasks unassigned, ${impact.projects_managed} projects affected`);
+        }
+      }
+      
       refetchUsers();
     } catch (error) {
       console.error("Error deleting user:", error);
@@ -72,6 +88,10 @@ const AdminUserManagement = () => {
 
   const handleEditUser = (user: AppUser) => {
     setUserToEdit(user);
+  };
+
+  const handleDeleteClick = (user: AppUser) => {
+    setUserToDelete(user);
   };
 
   const canDeleteUser = (targetUser: any) => {
@@ -122,17 +142,19 @@ const AdminUserManagement = () => {
             currentUserRole={currentUser?.role}
             canDeleteUser={canDeleteUser}
             deletingUser={deletingUser}
-            onDeleteClick={setUserToDelete}
+            onDeleteClick={handleDeleteClick}
             onEditClick={handleEditUser}
             onRoleChanged={refetchUsers}
           />
         </CardContent>
       </Card>
 
-      <UserDeleteDialog
+      <EnhancedUserDeleteDialog
         isOpen={!!userToDelete}
         onClose={() => setUserToDelete(null)}
-        onConfirm={() => userToDelete && handleDeleteUser(userToDelete)}
+        onConfirm={handleDeleteUser}
+        user={userToDelete}
+        isDeleting={!!deletingUser}
       />
 
       {userToEdit && (

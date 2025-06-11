@@ -1,3 +1,4 @@
+
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
@@ -7,6 +8,7 @@ const corsHeaders = {
 
 interface DeleteUserRequest {
   targetUserId: string;
+  deletionReason?: string;
 }
 
 Deno.serve(async (req) => {
@@ -21,6 +23,12 @@ Deno.serve(async (req) => {
     if (!authHeader) {
       throw new Error('No authorization header');
     }
+
+    // Get client info for audit logging
+    const userAgent = req.headers.get('User-Agent') || 'Unknown';
+    const forwardedFor = req.headers.get('X-Forwarded-For');
+    const realIP = req.headers.get('X-Real-IP');
+    const ipAddress = forwardedFor?.split(',')[0] || realIP || 'Unknown';
 
     // Create Supabase client with service role key for admin operations
     const supabaseAdmin = createClient(
@@ -49,7 +57,7 @@ Deno.serve(async (req) => {
     console.log('Delete request from user:', user.id);
 
     // Parse request body
-    const { targetUserId }: DeleteUserRequest = await req.json();
+    const { targetUserId, deletionReason }: DeleteUserRequest = await req.json();
 
     if (!targetUserId) {
       throw new Error('Missing targetUserId');
@@ -60,7 +68,7 @@ Deno.serve(async (req) => {
     // Get the requesting user's role from the database
     const { data: requestingUserData, error: userError } = await supabaseAdmin
       .from('users')
-      .select('role')
+      .select('role, email, name')
       .eq('id', user.id)
       .single();
 
@@ -85,18 +93,112 @@ Deno.serve(async (req) => {
     }
 
     // Get target user info before deletion for logging
-    const { data: targetUserData } = await supabaseAdmin
+    const { data: targetUserData, error: targetUserError } = await supabaseAdmin
       .from('users')
       .select('name, email, role')
       .eq('id', targetUserId)
       .single();
 
+    if (targetUserError || !targetUserData) {
+      console.error('Target user not found:', targetUserError);
+      throw new Error('Target user not found');
+    }
+
     console.log('Target user to delete:', targetUserData);
 
-    // Start comprehensive cleanup process
-    console.log('Starting user deletion process...');
+    // Get deletion impact analysis
+    const { data: impactData, error: impactError } = await supabaseAdmin
+      .rpc('get_user_deletion_impact', { target_user_id: targetUserId });
 
-    // 1. Remove user from all project teams
+    if (impactError) {
+      console.error('Error getting deletion impact:', impactError);
+      throw new Error('Could not analyze deletion impact');
+    }
+
+    console.log('Deletion impact analysis:', impactData);
+
+    // Check if user is sole admin - prevent deletion if true
+    if (impactData.is_sole_admin) {
+      console.error('Cannot delete sole admin - requires admin transfer first');
+      throw new Error('Cannot delete the only admin. Please assign another admin first.');
+    }
+
+    // Start comprehensive cleanup process
+    console.log('Starting comprehensive user deletion process...');
+
+    // 1. Remove user from all chat room participations
+    const { error: chatParticipantError } = await supabaseAdmin
+      .from('chat_room_participants')
+      .delete()
+      .eq('user_id', targetUserId);
+
+    if (chatParticipantError) {
+      console.error('Error removing user from chat rooms:', chatParticipantError);
+    } else {
+      console.log('Removed user from all chat rooms');
+    }
+
+    // 2. Delete user's chat messages
+    const { error: chatMessagesError } = await supabaseAdmin
+      .from('chat_messages')
+      .delete()
+      .eq('user_id', targetUserId);
+
+    if (chatMessagesError) {
+      console.error('Error deleting chat messages:', chatMessagesError);
+    } else {
+      console.log('Deleted user chat messages');
+    }
+
+    // 3. Delete user's journal entries
+    const { error: journalError } = await supabaseAdmin
+      .from('journal_entries')
+      .delete()
+      .eq('user_id', targetUserId);
+
+    if (journalError) {
+      console.error('Error deleting journal entries:', journalError);
+    } else {
+      console.log('Deleted user journal entries');
+    }
+
+    // 4. Delete user's time entries
+    const { error: timeEntriesError } = await supabaseAdmin
+      .from('time_entries')
+      .delete()
+      .eq('user_id', targetUserId);
+
+    if (timeEntriesError) {
+      console.error('Error deleting time entries:', timeEntriesError);
+    } else {
+      console.log('Deleted user time entries');
+    }
+
+    // 5. Delete user's notifications
+    const { error: notificationsError } = await supabaseAdmin
+      .from('notifications')
+      .delete()
+      .eq('user_id', targetUserId);
+
+    if (notificationsError) {
+      console.error('Error deleting notifications:', notificationsError);
+    } else {
+      console.log('Deleted user notifications');
+    }
+
+    // 6. Remove user from shared folders
+    const { error: sharedFoldersError } = await supabaseAdmin
+      .from('shared_folders')
+      .delete()
+      .or(`owner_id.eq.${targetUserId},shared_with_user_id.eq.${targetUserId}`);
+
+    if (sharedFoldersError) {
+      console.error('Error removing from shared folders:', sharedFoldersError);
+    } else {
+      console.log('Removed user from shared folders');
+    }
+
+    // 7. Remove user from all project teams
     const { error: teamRemovalError } = await supabaseAdmin
       .from('project_team_members')
       .delete()
@@ -104,12 +206,11 @@ Deno.serve(async (req) => {
 
     if (teamRemovalError) {
       console.error('Error removing user from teams:', teamRemovalError);
-      // Continue with deletion even if this fails
     } else {
       console.log('Removed user from all project teams');
     }
 
-    // 2. Remove user from team_members table
+    // 8. Remove user from team_members table
     const { error: teamMemberRemovalError } = await supabaseAdmin
       .from('team_members')
       .delete()
@@ -117,10 +218,9 @@ Deno.serve(async (req) => {
 
     if (teamMemberRemovalError) {
       console.error('Error removing from team_members:', teamMemberRemovalError);
-      // Continue with deletion even if this fails
     }
 
-    // 3. Handle tasks assigned to the user - reassign to null or delete based on your business logic
+    // 9. Unassign user from all tasks
     const { error: taskUpdateError } = await supabaseAdmin
       .from('tasks')
       .update({ 
@@ -132,12 +232,11 @@ Deno.serve(async (req) => {
 
     if (taskUpdateError) {
       console.error('Error updating tasks:', taskUpdateError);
-      // Continue with deletion even if this fails
     } else {
       console.log('Updated tasks assigned to user');
     }
 
-    // 4. Handle project_tasks assigned to the user
+    // 10. Unassign user from project tasks
     const { error: projectTaskUpdateError } = await supabaseAdmin
       .from('project_tasks')
       .update({ 
@@ -149,12 +248,11 @@ Deno.serve(async (req) => {
 
     if (projectTaskUpdateError) {
       console.error('Error updating project tasks:', projectTaskUpdateError);
-      // Continue with deletion even if this fails
     } else {
       console.log('Updated project tasks assigned to user');
     }
 
-    // 5. Delete all documents belonging to the user
+    // 11. Delete all documents belonging to the user
     const { error: documentsDeleteError } = await supabaseAdmin
       .from('documents')
       .delete()
@@ -162,12 +260,46 @@ Deno.serve(async (req) => {
 
     if (documentsDeleteError) {
       console.error('Error deleting user documents:', documentsDeleteError);
-      // Continue with deletion even if this fails
     } else {
       console.log('Deleted all user documents');
     }
 
-    // 6. Delete from custom users table
+    // 12. Delete comments by the user
+    const { error: commentsDeleteError } = await supabaseAdmin
+      .from('comments')
+      .delete()
+      .eq('user_id', targetUserId);
+
+    if (commentsDeleteError) {
+      console.error('Error deleting user comments:', commentsDeleteError);
+    } else {
+      console.log('Deleted user comments');
+    }
+
+    // 13. Create audit log entry
+    const { error: auditError } = await supabaseAdmin
+      .from('user_deletion_audit')
+      .insert({
+        deleted_user_id: targetUserId,
+        deleted_user_email: targetUserData.email,
+        deleted_user_name: targetUserData.name,
+        deleted_user_role: targetUserData.role,
+        deleted_by_user_id: user.id,
+        deleted_by_user_email: requestingUserData.email,
+        affected_resources: impactData,
+        deletion_reason: deletionReason || 'No reason provided',
+        ip_address: ipAddress,
+        user_agent: userAgent
+      });
+
+    if (auditError) {
+      console.error('Error creating audit log:', auditError);
+      // Don't fail the deletion for audit log errors
+    } else {
+      console.log('Created audit log entry');
+    }
+
+    // 14. Delete from custom users table
     const { error: dbDeleteError } = await supabaseAdmin
       .from('users')
       .delete()
@@ -180,7 +312,7 @@ Deno.serve(async (req) => {
 
     console.log('Deleted user from custom users table');
 
-    // 7. Finally, delete from auth.users using admin client
+    // 15. Finally, delete from auth.users using admin client
     const { error: authDeleteError } = await supabaseAdmin.auth.admin.deleteUser(
       targetUserId
     );
@@ -193,7 +325,7 @@ Deno.serve(async (req) => {
     console.log('Deleted user from auth system');
 
     // Log the successful deletion for audit purposes
-    console.log(`User deletion successful: ${targetUserData?.name} (${targetUserData?.email}) deleted by ${user.id}`);
+    console.log(`User deletion successful: ${targetUserData?.name} (${targetUserData?.email}) deleted by ${requestingUserData.email}`);
 
     return new Response(
       JSON.stringify({ 
@@ -203,7 +335,8 @@ Deno.serve(async (req) => {
           name: targetUserData?.name,
           email: targetUserData?.email,
           role: targetUserData?.role
-        }
+        },
+        impactSummary: impactData
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
