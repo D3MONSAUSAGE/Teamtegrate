@@ -6,6 +6,19 @@ import { Session } from '@supabase/supabase-js';
 import { createUserFromSession } from './userSessionUtils';
 import { User } from '@/types';
 
+// Type definitions for invite code responses
+interface InviteValidationResult {
+  success: boolean;
+  error?: string;
+  organization_id?: string;
+}
+
+interface InviteGenerationResult {
+  success: boolean;
+  inviteCode?: string;
+  error?: string;
+}
+
 export const login = async (email: string, password: string): Promise<void> => {
   const { error } = await supabase.auth.signInWithPassword({
     email,
@@ -148,7 +161,7 @@ export const handleAuthStateChange = async (session: Session | null): Promise<Us
 };
 
 // Helper function to validate invite code
-export const validateInviteCode = async (inviteCode: string): Promise<{success: boolean; error?: string; organizationId?: string}> => {
+export const validateInviteCode = async (inviteCode: string): Promise<InviteValidationResult> => {
   try {
     const { data, error } = await supabase.rpc('validate_and_use_invite_code', {
       code: inviteCode
@@ -159,11 +172,14 @@ export const validateInviteCode = async (inviteCode: string): Promise<{success: 
       return { success: false, error: error.message };
     }
 
-    if (!data.success) {
-      return { success: false, error: data.error };
+    // Type-safe handling of the JSON response
+    const result = data as any;
+    
+    if (!result.success) {
+      return { success: false, error: result.error };
     }
 
-    return { success: true, organizationId: data.organization_id };
+    return { success: true, organization_id: result.organization_id };
   } catch (error) {
     console.error('Error in validateInviteCode:', error);
     return { success: false, error: 'Failed to validate invite code' };
@@ -171,7 +187,7 @@ export const validateInviteCode = async (inviteCode: string): Promise<{success: 
 };
 
 // Helper function to generate invite code (for superadmins)
-export const generateInviteCode = async (organizationId: string, expiryDays: number = 7, maxUses?: number): Promise<{success: boolean; inviteCode?: string; error?: string}> => {
+export const generateInviteCode = async (organizationId: string, expiryDays: number = 7, maxUses?: number): Promise<InviteGenerationResult> => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
@@ -190,7 +206,7 @@ export const generateInviteCode = async (organizationId: string, expiryDays: num
       return { success: false, error: error.message };
     }
 
-    return { success: true, inviteCode: data };
+    return { success: true, inviteCode: data as string };
   } catch (error) {
     console.error('Error in generateInviteCode:', error);
     return { success: false, error: 'Failed to generate invite code' };
