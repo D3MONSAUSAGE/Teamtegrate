@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Task, Project, DailyScore, TaskStatus, TaskComment } from '@/types';
+import { Task, DailyScore, TaskStatus, TaskComment } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { fetchTasks } from './api/taskFetch';
 import { addTask } from './api/taskCreate';
@@ -10,12 +10,33 @@ import { addProject } from './api/projects';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 
+// Simple project interface to avoid deep instantiation
+interface SimpleProject {
+  id: string;
+  title: string;
+  description?: string;
+  startDate: Date;
+  endDate: Date;
+  managerId: string;
+  budget: number;
+  budgetSpent?: number;
+  createdAt: Date;
+  updatedAt: Date;
+  tasks: Task[];
+  teamMembers: string[];
+  is_completed: boolean;
+  status: string;
+  tasks_count: number;
+  tags?: string[];
+  organizationId?: string;
+}
+
 interface TaskContextType {
   tasks: Task[];
-  projects: Project[];
+  projects: SimpleProject[];
   dailyScore: DailyScore;
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
-  setProjects: React.Dispatch<React.SetStateAction<Project[]>>;
+  setProjects: React.Dispatch<React.SetStateAction<SimpleProject[]>>;
   setDailyScore: React.Dispatch<React.SetStateAction<DailyScore>>;
   refreshTasks: () => Promise<void>;
   isLoading: boolean;
@@ -25,8 +46,8 @@ interface TaskContextType {
   deleteTask: (taskId: string) => Promise<void>;
   assignTaskToProject: (taskId: string, projectId: string) => Promise<void>;
   assignTaskToUser: (taskId: string, userId: string, userName: string) => Promise<void>;
-  addProject: (project: Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'tasks'>) => Promise<Project | null>;
-  updateProject: (projectId: string, updates: Partial<Project>) => Promise<void>;
+  addProject: (project: Omit<SimpleProject, 'id' | 'createdAt' | 'updatedAt' | 'tasks'>) => Promise<SimpleProject | null>;
+  updateProject: (projectId: string, updates: Partial<SimpleProject>) => Promise<void>;
   deleteProject: (projectId: string) => Promise<void>;
   refreshProjects: () => Promise<void>;
   addCommentToTask: (taskId: string, comment: { userId: string; userName: string; text: string }) => Promise<void>;
@@ -37,7 +58,7 @@ const TaskContext = createContext<TaskContextType | undefined>(undefined);
 export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user, loading: authLoading } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [projects, setProjects] = useState<SimpleProject[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [dailyScore, setDailyScore] = useState<DailyScore>({
     completedTasks: 0,
@@ -78,7 +99,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (error) throw error;
 
       // Simple transformation without complex type instantiation
-      const transformedProjects: Project[] = data.map((dbProject: any) => ({
+      const transformedProjects: SimpleProject[] = data.map((dbProject: any) => ({
         id: dbProject.id,
         title: dbProject.title || '',
         description: dbProject.description || '',
@@ -141,7 +162,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     await assignTaskToUser(taskId, userId, userName, userData, tasks, setTasks, projects, setProjects);
   };
 
-  const handleAddProject = async (project: Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'tasks'>) => {
+  const handleAddProject = async (project: Omit<SimpleProject, 'id' | 'createdAt' | 'updatedAt' | 'tasks'>) => {
     if (!user) return null;
     const userData = { id: user.id, organization_id: user.organization_id };
     const newProject = await addProject(project, userData);
@@ -151,7 +172,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return newProject;
   };
 
-  const handleUpdateProject = async (projectId: string, updates: Partial<Project>) => {
+  const handleUpdateProject = async (projectId: string, updates: Partial<SimpleProject>) => {
     if (!user?.organization_id) return;
 
     try {
@@ -300,3 +321,5 @@ export const useTask = (): TaskContextType => {
   }
   return context;
 };
+
+export default TaskProvider;
