@@ -30,6 +30,7 @@ export interface TaskComment {
   userName: string;
   text: string;
   createdAt: Date;
+  organizationId?: string;
 }
 
 export type Comment = TaskComment;
@@ -55,6 +56,7 @@ export interface Task {
   tags?: string[];
   comments?: TaskComment[];
   cost?: number;
+  organizationId?: string;
 }
 
 export type ProjectStatus = 'To Do' | 'In Progress' | 'Completed';
@@ -76,6 +78,7 @@ export interface Project {
   status: ProjectStatus;
   tasks_count: number;
   tags?: string[];
+  organizationId?: string;
 }
 
 export interface DailyScore {
@@ -91,6 +94,7 @@ export interface TeamMember {
   email: string;
   role: string;
   managerId: string;
+  organizationId?: string;
 }
 
 export interface TeamMemberPerformance {
@@ -99,6 +103,7 @@ export interface TeamMemberPerformance {
   completedTasks: number;
   completionRate: number;
   projects: number;
+  organizationId?: string;
 }
 
 export interface Organization {
@@ -106,6 +111,75 @@ export interface Organization {
   name: string;
   created_by: string;
   created_at: Date;
+}
+
+export interface ChatRoom {
+  id: string;
+  name: string;
+  created_by: string;
+  created_at: Date;
+  organizationId?: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  room_id: string;
+  user_id: string;
+  content: string;
+  type: 'text' | 'file' | 'image';
+  created_at: Date;
+  parent_id?: string;
+  organizationId?: string;
+}
+
+export interface Notification {
+  id: string;
+  user_id: string;
+  title: string;
+  content?: string;
+  type: string;
+  read: boolean;
+  created_at: Date;
+  task_id?: string;
+  event_id?: string;
+  organizationId?: string;
+}
+
+export interface Document {
+  id: string;
+  title: string;
+  description?: string;
+  file_path: string;
+  file_type: string;
+  size_bytes: number;
+  user_id: string;
+  folder?: string;
+  storage_id: string;
+  created_at: Date;
+  organizationId?: string;
+}
+
+export interface Event {
+  id: string;
+  title: string;
+  description?: string;
+  start_date: Date;
+  end_date: Date;
+  user_id: string;
+  created_at: Date;
+  updated_at: Date;
+  organizationId?: string;
+}
+
+export interface TimeEntry {
+  id: string;
+  user_id: string;
+  clock_in: Date;
+  clock_out?: Date;
+  duration_minutes?: number;
+  notes?: string;
+  created_at: Date;
+  organizationId?: string;
 }
 
 // Role hierarchy utility functions - use these from @/contexts/auth/roleUtils instead

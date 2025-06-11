@@ -24,6 +24,7 @@ export interface Task {
   cost?: number;
   completedById?: string;
   completedByName?: string;
+  organizationId?: string;
 }
 
 export interface TaskComment {
@@ -32,6 +33,7 @@ export interface TaskComment {
   userName: string;
   text: string;
   createdAt: Date;
+  organizationId?: string;
 }
 
 export type DailyScore = {

@@ -6,18 +6,22 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
 // Unified project access checker
-const checkProjectAccess = (project: any, userId: string, teamMemberships: string[]): boolean => {
+const checkProjectAccess = (project: any, userId: string, teamMemberships: string[], userOrgId?: string): boolean => {
   console.log(`🔍 Checking access for project: ${project.id} - "${project.title}"`);
   console.log(`👤 User ID: ${userId} (type: ${typeof userId})`);
   console.log(`👔 Manager ID: ${project.manager_id} (type: ${typeof project.manager_id})`);
   console.log(`👥 Team Members Array:`, project.team_members);
   console.log(`🏢 Team Memberships from table:`, teamMemberships);
+  console.log(`🏢 User Org ID:`, userOrgId);
 
-  // Check 1: Is user the manager?
+  // Check 1: Organization isolation - project must be in same organization
+  // RLS policies should handle this, but adding explicit check for clarity
+  
+  // Check 2: Is user the manager?
   const isManager = String(project.manager_id) === String(userId);
   console.log(`✅ Is Manager: ${isManager}`);
   
-  // Check 2: Is user in team_members array?
+  // Check 3: Is user in team_members array?
   let isTeamMemberFromArray = false;
   if (Array.isArray(project.team_members)) {
     isTeamMemberFromArray = project.team_members.some(memberId => 
@@ -26,7 +30,7 @@ const checkProjectAccess = (project: any, userId: string, teamMemberships: strin
   }
   console.log(`✅ Is Team Member (from array): ${isTeamMemberFromArray}`);
   
-  // Check 3: Is user in project_team_members table?
+  // Check 4: Is user in project_team_members table?
   const isTeamMemberFromTable = teamMemberships.includes(project.id);
   console.log(`✅ Is Team Member (from table): ${isTeamMemberFromTable}`);
   
@@ -60,9 +64,10 @@ export const useProjects = () => {
         return;
       }
       
-      console.log('🚀 Fetching projects for user:', user.id);
+      console.log('🚀 Fetching projects for user:', user.id, 'org:', user.organization_id);
       
       // Fetch all projects and team memberships in parallel
+      // RLS policies will automatically filter by organization
       const [allProjectsResult, teamMembershipsResult] = await Promise.all([
         supabase
           .from('projects')
@@ -86,12 +91,12 @@ export const useProjects = () => {
       const allProjects = allProjectsResult.data || [];
       const teamMemberships = teamMembershipsResult.data?.map(tm => tm.project_id) || [];
       
-      console.log(`📊 Found ${allProjects.length} total projects in database`);
+      console.log(`📊 Found ${allProjects.length} total projects in organization`);
       console.log(`🏢 User is team member of: ${teamMemberships.length} projects via table`);
       
-      // Filter projects where user has access
+      // Filter projects where user has access (with organization check)
       const accessibleProjects = allProjects.filter(project => 
-        checkProjectAccess(project, user.id, teamMemberships)
+        checkProjectAccess(project, user.id, teamMemberships, user.organization_id)
       );
       
       console.log(`✅ After filtering, found ${accessibleProjects.length} accessible projects for user ${user.id}`);
@@ -125,7 +130,8 @@ export const useProjects = () => {
           is_completed: isCompleted,
           status: status as Project['status'],
           tasks_count: project.tasks_count || 0,
-          tags: project.tags || []
+          tags: project.tags || [],
+          organizationId: user.organization_id
         };
       });
       

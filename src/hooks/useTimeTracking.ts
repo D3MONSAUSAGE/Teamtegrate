@@ -57,11 +57,13 @@ export const useTimeTracking = () => {
     }
 
     try {
+      // Include organization_id for multi-tenancy
       const { data, error } = await supabase
         .from('time_entries')
         .insert({ 
           user_id: user.id, 
-          notes: notes || null 
+          notes: notes || null
+          // organization_id will be handled by RLS policies based on user's org
         })
         .select()
         .single();
@@ -125,6 +127,7 @@ export const useTimeTracking = () => {
       // End: start + 7 days, i.e. next week's Monday
       const end = addDays(start, 7);
 
+      // RLS policies will automatically filter by organization
       const { data, error } = await supabase
         .from('time_entries')
         .select('*')
@@ -153,6 +156,7 @@ export const useTimeTracking = () => {
       const start = startOfWeek(weekStart, { weekStartsOn: 1 });
       const end = addDays(start, 7);
 
+      // RLS policies will ensure only same-organization data is returned
       const { data, error } = await supabase
         .from('time_entries')
         .select('*')

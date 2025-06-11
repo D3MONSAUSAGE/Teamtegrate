@@ -9,13 +9,13 @@ const parseDate = (dateStr: string | null): Date => {
 };
 
 export const fetchTasks = async (
-  user: { id: string },
+  user: { id: string, organization_id?: string },
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>
 ): Promise<void> => {
   try {
-    console.log('Fetching tasks for user:', user.id);
+    console.log('Fetching tasks for user:', user.id, 'org:', user.organization_id);
     
-    // Fetch tasks from database
+    // Fetch tasks from database - RLS policies will handle organization filtering
     const { data: taskData, error } = await supabase
       .from('tasks')
       .select('*')
@@ -29,7 +29,7 @@ export const fetchTasks = async (
 
     console.log(`Fetched ${taskData.length} tasks from database`);
     
-    // Fetch comments for all tasks
+    // Fetch comments for all tasks - RLS will filter by organization
     const { data: commentData, error: commentError } = await supabase
       .from('comments')
       .select('*');
@@ -57,7 +57,7 @@ export const fetchTasks = async (
     const uniqueUserIds = Array.from(assignedUserIds);
     console.log(`Found ${uniqueUserIds.length} unique assigned users`);
     
-    // Fetch user details for assigned users
+    // Fetch user details for assigned users - RLS will filter by organization
     let userMap = new Map();
     if (uniqueUserIds.length > 0) {
       const { data: userData, error: userError } = await supabase
@@ -86,7 +86,8 @@ export const fetchTasks = async (
               userId: comment.user_id,
               userName: comment.user_id, // Will update this later
               text: comment.content,
-              createdAt: parseDate(comment.created_at)
+              createdAt: parseDate(comment.created_at),
+              organizationId: user.organization_id
             }))
         : [];
 
@@ -116,11 +117,12 @@ export const fetchTasks = async (
         assignedToIds: task.assigned_to_ids || [],
         assignedToNames: task.assigned_to_names || assignedUserNames,
         comments: taskComments,
-        cost: task.cost || 0
+        cost: task.cost || 0,
+        organizationId: user.organization_id
       };
     });
 
-    // Resolve user names for comments
+    // Resolve user names for comments - RLS will filter by organization
     if (commentData && commentData.length > 0) {
       const commentUserIds = [...new Set(commentData.map(comment => comment.user_id))];
       

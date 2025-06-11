@@ -1,6 +1,6 @@
 
 import { User as SupabaseUser } from '@supabase/supabase-js';
-import { User as AppUser, UserRole } from '@/types';
+import { AppUser, UserRole } from '@/types';
 
 export const createBasicUserFromSession = (sessionUser: SupabaseUser): AppUser => {
   return {

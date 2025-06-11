@@ -39,11 +39,11 @@ interface TaskContextType {
   dailyScore: DailyScore;
   isLoading: boolean;
   refreshProjects: () => Promise<void>;
-  addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'organizationId'>) => void;
   updateTask: (taskId: string, updates: Partial<Task>) => void;
   updateTaskStatus: (taskId: string, status: TaskStatus) => void;
   deleteTask: (taskId: string) => void;
-  addProject: (project: Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'tasks'>) => Promise<Project | null>;
+  addProject: (project: Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'tasks' | 'organizationId'>) => Promise<Project | null>;
   updateProject: (projectId: string, updates: Partial<Project>) => void;
   deleteProject: (projectId: string) => void;
   assignTaskToProject: (taskId: string, projectId: string) => void;
@@ -115,12 +115,14 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
 
-      console.log('TaskProvider: Loading tasks for authenticated user:', user.id);
+      console.log('TaskProvider: Loading tasks for authenticated user:', user.id, 'org:', user.organization_id);
       setIsLoading(true);
       
       try {
         // Only load tasks - projects are handled by useProjects hook
-        await fetchUserTasks(user, setTasks).catch(error => {
+        // Pass user with organization_id for proper filtering
+        const userWithOrg = { ...user, organization_id: user.organization_id };
+        await fetchUserTasks(userWithOrg, setTasks).catch(error => {
           console.error("Error loading tasks:", error);
           toast.error("Failed to load tasks");
         });
@@ -148,16 +150,20 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     dailyScore,
     isLoading,
     refreshProjects,
-    addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => 
-      addTask(task, user, tasks, setTasks, projects, setProjects),
+    addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'organizationId'>) => {
+      const taskWithOrg = { ...task, organizationId: user?.organization_id };
+      return addTask(taskWithOrg, user, tasks, setTasks, projects, setProjects);
+    },
     updateTask: (taskId: string, updates: Partial<Task>) => 
       updateTask(taskId, updates, user, tasks, setTasks, projects, setProjects),
     updateTaskStatus: (taskId: string, status: TaskStatus) => 
       updateTaskStatus(taskId, status, user, tasks, setTasks, projects, setProjects, setDailyScore),
     deleteTask: (taskId: string) => 
       deleteTask(taskId, user, setTasks, projects, setProjects),
-    addProject: (project: Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'tasks'>) => 
-      addProject(project, user, setProjects),
+    addProject: (project: Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'tasks' | 'organizationId'>) => {
+      const projectWithOrg = { ...project, organizationId: user?.organization_id };
+      return addProject(projectWithOrg, user, setProjects);
+    },
     updateProject: (projectId: string, updates: Partial<Project>) => 
       updateProject(projectId, updates, user, setProjects),
     deleteProject: (projectId: string) => 
@@ -166,8 +172,10 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       assignTaskToProject(taskId, projectId, user, tasks, setTasks, projects, setProjects),
     assignTaskToUser: (taskId: string, userId: string, userName: string) => 
       assignTaskToUser(taskId, userId, userName, user, tasks, setTasks, projects, setProjects),
-    addCommentToTask: (taskId: string, comment: { userId: string; userName: string; text: string }) =>
-      addCommentToTask(taskId, comment, tasks, setTasks, projects, setProjects),
+    addCommentToTask: (taskId: string, comment: { userId: string; userName: string; text: string }) => {
+      const commentWithOrg = { ...comment, organizationId: user?.organization_id };
+      return addCommentToTask(taskId, commentWithOrg, tasks, setTasks, projects, setProjects);
+    },
     addTagToTask: (taskId: string, tag: string) =>
       addTagToTask(taskId, tag, tasks, setTasks, projects, setProjects),
     removeTagFromTask: (taskId: string, tag: string) =>
