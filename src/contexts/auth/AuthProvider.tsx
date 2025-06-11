@@ -30,12 +30,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     refreshUserSession
   } = useAuthSession();
 
+  // Convert AppUser to User for useAuthOperations (ensuring createdAt is present)
+  const userForOperations: User | null = user ? {
+    ...user,
+    createdAt: user.createdAt || new Date()
+  } : null;
+
   const {
     login,
     signup,
     logout,
     updateUserProfile
-  } = useAuthOperations(session, user, setSession, setUser, setLoading);
+  } = useAuthOperations(session, userForOperations, setSession, setUser, setLoading);
 
   // Initialize auth - simplified for faster loading
   useEffect(() => {
