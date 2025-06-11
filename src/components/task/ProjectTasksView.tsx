@@ -22,6 +22,9 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
     inProgressTasks,
     completedTasks,
     progress,
+    teamMembers,
+    isLoadingTeamMembers,
+    teamMembersError,
     isRefreshing,
     isCreateTaskOpen,
     editingTask,
@@ -45,9 +48,12 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
       editingTask,
       todoTasksCount: todoTasks.length,
       inProgressTasksCount: inProgressTasks.length,
-      completedTasksCount: completedTasks.length
+      completedTasksCount: completedTasks.length,
+      teamMembersCount: teamMembers.length,
+      isLoadingTeamMembers,
+      teamMembersError
     });
-  }, [projectId, isLoading, loadError, project, editingTask, todoTasks, inProgressTasks, completedTasks]);
+  }, [projectId, isLoading, loadError, project, editingTask, todoTasks, inProgressTasks, completedTasks, teamMembers, isLoadingTeamMembers, teamMembersError]);
 
   if (isLoading) {
     return <ProjectTasksLoading />;
@@ -71,6 +77,8 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
         todoTasks={todoTasks}
         inProgressTasks={inProgressTasks}
         completedTasks={completedTasks}
+        teamMembers={teamMembers}
+        isLoadingTeamMembers={isLoadingTeamMembers}
         searchQuery={searchQuery}
         sortBy={sortBy}
         onSearchChange={handleSearchChange}

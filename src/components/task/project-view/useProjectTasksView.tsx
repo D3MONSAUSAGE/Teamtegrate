@@ -4,6 +4,7 @@ import { useTask } from '@/contexts/task';
 import { useProjectAccess } from './hooks/useProjectAccess';
 import { useProjectTasksFilters } from './hooks/useProjectTasksFilters';
 import { useProjectTasksActions } from './hooks/useProjectTasksActions';
+import { useProjectTeamMembers } from '@/hooks/useProjectTeamMembers';
 
 export const useProjectTasksView = (projectId: string | null) => {
   const { projects, tasks, updateTaskStatus } = useTask();
@@ -27,6 +28,9 @@ export const useProjectTasksView = (projectId: string | null) => {
     handleSearchChange,
     onSortByChange
   } = useProjectTasksFilters(projectTasks);
+
+  // Fetch team members for the project
+  const { teamMembers, isLoading: isLoadingTeamMembers, error: teamMembersError } = useProjectTeamMembers(projectId);
 
   // Wrap updateTaskStatus to ensure it returns a Promise
   const wrappedUpdateTaskStatus = async (taskId: string, status: any): Promise<void> => {
@@ -55,6 +59,9 @@ export const useProjectTasksView = (projectId: string | null) => {
     inProgressTasks,
     completedTasks,
     progress,
+    teamMembers,
+    isLoadingTeamMembers,
+    teamMembersError,
     isRefreshing,
     isCreateTaskOpen,
     editingTask,

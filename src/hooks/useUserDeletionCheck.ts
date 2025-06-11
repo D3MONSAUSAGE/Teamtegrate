@@ -45,7 +45,9 @@ export const useUserDeletionCheck = (user: AppUser | null): UseDeletionCheckResu
           return;
         }
 
-        setImpact(data);
+        // Type cast the JSON response to our DeletionImpact interface
+        const typedImpact = data as DeletionImpact;
+        setImpact(typedImpact);
       } catch (err) {
         console.error('Error in deletion check:', err);
         setError('Failed to check deletion requirements');

@@ -1,10 +1,11 @@
 
 import React from 'react';
-import { Project, Task, TaskStatus } from '@/types';
+import { Project, Task, TaskStatus, User } from '@/types';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
 import ProjectOverview from './ProjectOverview';
 import ProjectTasksFilters from './ProjectTasksFilters';
+import ProjectTeamMembersSection from './ProjectTeamMembersSection';
 import TaskTabs from '../TaskTabs';
 
 interface ProjectTasksContentProps {
@@ -13,6 +14,8 @@ interface ProjectTasksContentProps {
   todoTasks: Task[];
   inProgressTasks: Task[];
   completedTasks: Task[];
+  teamMembers: User[];
+  isLoadingTeamMembers: boolean;
   searchQuery: string;
   sortBy: string;
   onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -30,6 +33,8 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
   todoTasks,
   inProgressTasks,
   completedTasks,
+  teamMembers,
+  isLoadingTeamMembers,
   searchQuery,
   sortBy,
   onSearchChange,
@@ -41,7 +46,7 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
   onTaskStatusChange,
 }) => {
   return (
-    <div className="p-4 md:p-6">
+    <div className="p-4 md:p-6 space-y-6">
       <div className="mb-6">
         <ProjectOverview
           project={project}
@@ -52,6 +57,12 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
           onCreateTask={onCreateTask}
         />
       </div>
+
+      {/* Team Members Section */}
+      <ProjectTeamMembersSection
+        teamMembers={teamMembers}
+        isLoading={isLoadingTeamMembers}
+      />
       
       <div className="flex justify-between items-center mb-4">
         <div className="flex-1">
