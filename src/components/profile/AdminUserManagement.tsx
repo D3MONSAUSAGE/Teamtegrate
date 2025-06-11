@@ -170,7 +170,10 @@ const AdminUserManagement = () => {
           isOpen={!!userToEdit}
           onClose={() => setUserToEdit(null)}
           onUserUpdated={refetchUsers}
-          user={userToEdit}
+          user={{
+            ...userToEdit,
+            name: userToEdit.name || userToEdit.email || 'User'
+          }}
         />
       )}
     </>

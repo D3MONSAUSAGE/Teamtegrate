@@ -8,17 +8,17 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Users } from 'lucide-react';
-import { AppUser, UserRole } from '@/types';
+import { User, UserRole } from '@/types';
 import UserTableRow from './UserTableRow';
 
 interface UserManagementTableProps {
-  users: AppUser[];
+  users: User[];
   currentUserId?: string;
   currentUserRole?: string;
-  canDeleteUser: (user: AppUser) => boolean;
+  canDeleteUser: (user: User) => boolean;
   deletingUser: string | null;
-  onDeleteClick: (user: AppUser) => void;
-  onEditClick: (user: AppUser) => void;
+  onDeleteClick: (user: User) => void;
+  onEditClick: (user: User) => void;
   onRoleChanged: () => void;
 }
 
@@ -61,7 +61,13 @@ const UserManagementTable: React.FC<UserManagementTableProps> = ({
           {sortedUsers.map((user) => (
             <UserTableRow
               key={user.id}
-              user={user}
+              user={{
+                id: user.id,
+                name: user.name || user.email || 'User',
+                email: user.email,
+                role: user.role,
+                avatar_url: user.avatar_url
+              }}
               currentUserId={currentUserId}
               currentUserRole={currentUserRole}
               canDeleteUser={canDeleteUser(user)}

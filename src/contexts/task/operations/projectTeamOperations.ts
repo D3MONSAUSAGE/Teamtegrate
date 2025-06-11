@@ -33,10 +33,10 @@ export const fetchProjectTeamMembers = async (
     const userIds = teamMemberData.map(member => member.user_id);
     console.log('User IDs to fetch:', userIds);
     
-    // Fetch user details
+    // Fetch user details including organization_id
     const { data: userData, error: userError } = await supabase
       .from('users')
-      .select('id, name, email, avatar_url, role')
+      .select('id, name, email, avatar_url, role, organization_id')
       .in('id', userIds);
       
     if (userError) {
@@ -49,9 +49,10 @@ export const fetchProjectTeamMembers = async (
     // Map the database structure to our User type
     return (userData || []).map(user => ({
       id: user.id,
-      name: user.name,
+      name: user.name || user.email || 'User',
       email: user.email,
       role: user.role as User['role'],
+      organization_id: user.organization_id,
       createdAt: new Date(), // Add a default createdAt value since it's required but not in our query
       avatar_url: user.avatar_url
     }));

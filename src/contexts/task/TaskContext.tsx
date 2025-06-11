@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Task, DailyScore, TaskStatus, TaskComment, ProjectStatus } from '@/types';
 import { SimpleProject, SimpleTask, SimpleDailyScore, SimpleUser } from '@/types/simplified';
@@ -56,7 +55,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     setIsLoading(true);
     try {
-      // Convert to SimpleUser to avoid deep instantiation
+      // Create simple user object explicitly to avoid deep type instantiation
       const simpleUser: SimpleUser = {
         id: user.id,
         email: user.email,
