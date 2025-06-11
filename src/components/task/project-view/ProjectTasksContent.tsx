@@ -23,7 +23,7 @@ interface ProjectTasksContentProps {
   isCreateTaskOpen: boolean;
   editingTask: Task | null;
   setIsCreateTaskOpen: (open: boolean) => void;
-  handleSearchChange: (query: string) => void;
+  handleSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleEditTask: (task: Task) => void;
   handleCreateTask: () => void;
   handleManualRefresh: () => void;

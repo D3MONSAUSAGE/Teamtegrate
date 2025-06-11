@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Task, Project } from '@/types'; // Removed @/types/flat import
+import { Task, Project } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/components/ui/sonner';
 
@@ -16,6 +16,8 @@ interface TaskContextType {
   updateProject: (id: string, updates: Partial<Project>) => Promise<void>;
   refreshTasks: () => Promise<void>;
   refreshProjects: () => Promise<void>;
+  assignTaskToUser: (taskId: string, userId: string, userName: string) => Promise<void>;
+  addCommentToTask: (taskId: string, content: string) => Promise<void>;
   isLoading: boolean;
 }
 
@@ -217,6 +219,35 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await updateTask(id, { status });
   };
 
+  const assignTaskToUser = async (taskId: string, userId: string, userName: string) => {
+    await updateTask(taskId, { assignedToId: userId, assignedToName: userName });
+  };
+
+  const addCommentToTask = async (taskId: string, content: string) => {
+    if (!user?.organizationId) {
+      toast.error('Organization context required');
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('comments')
+        .insert({
+          task_id: taskId,
+          content: content,
+          user_id: user.id,
+          organization_id: user.organizationId
+        });
+
+      if (error) throw error;
+
+      toast.success('Comment added successfully');
+    } catch (error) {
+      console.error('Error adding comment:', error);
+      toast.error('Failed to add comment');
+    }
+  };
+
   const deleteProject = async (id: string) => {
     try {
       const { error } = await supabase
@@ -273,6 +304,8 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       updateProject,
       refreshTasks: fetchTasks,
       refreshProjects: fetchProjects,
+      assignTaskToUser,
+      addCommentToTask,
       isLoading
     }}>
       {children}

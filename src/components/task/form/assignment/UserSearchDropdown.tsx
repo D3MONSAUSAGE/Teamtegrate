@@ -1,99 +1,51 @@
-import React, { useState } from 'react';
+
+import React from 'react';
 import { User } from '@/types';
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "@/components/ui/command";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Users } from 'lucide-react';
-import { Skeleton } from "@/components/ui/skeleton";
 
 interface UserSearchDropdownProps {
-  users: User[];
-  onSelect: (userId: string) => void;
-  assignedUsers: string[];
-  isLoading?: boolean;
+  searchTerm: string;
+  setSearchTerm: (term: string) => void;
+  filteredUsers: User[];
+  onSelectUser: (user: User) => void;
 }
 
 const UserSearchDropdown: React.FC<UserSearchDropdownProps> = ({
-  users,
-  onSelect,
-  assignedUsers,
-  isLoading = false
+  searchTerm,
+  setSearchTerm,
+  filteredUsers,
+  onSelectUser
 }) => {
-  const [open, setOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-
-  const filteredUsers = React.useMemo(() => {
-    const query = searchQuery.toLowerCase();
-    return users.filter(user =>
-      (user.name?.toLowerCase().includes(query) || user.email.toLowerCase().includes(query)) &&
-      !assignedUsers.includes(user.id)
-    );
-  }, [users, searchQuery, assignedUsers]);
-
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <div className="relative">
-          <Input
-            placeholder="Search users..."
-            value={searchQuery}
-            onValueChange={setSearchQuery}
-            className="w-full"
-          />
-          <Users className="absolute top-2.5 right-2 h-4 w-4 text-muted-foreground pointer-events-none" />
+    <div className="space-y-2">
+      <Input
+        placeholder="Search users..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        className="w-full"
+      />
+      
+      {searchTerm && (
+        <div className="max-h-48 overflow-y-auto border rounded-md">
+          {filteredUsers.length > 0 ? (
+            filteredUsers.map((user) => (
+              <div
+                key={user.id}
+                className="p-2 hover:bg-muted cursor-pointer border-b last:border-b-0"
+                onClick={() => onSelectUser(user)}
+              >
+                <div className="font-medium">{user.name}</div>
+                <div className="text-sm text-muted-foreground">{user.email}</div>
+              </div>
+            ))
+          ) : (
+            <div className="p-2 text-muted-foreground text-center">
+              No users found
+            </div>
+          )}
         </div>
-      </PopoverTrigger>
-      <PopoverContent className="w-[200px] p-0">
-        <Command>
-          <CommandInput placeholder="Search users..." />
-          <CommandList>
-            <ScrollArea className="h-64">
-              <CommandGroup heading="Users">
-                {isLoading ? (
-                  <>
-                    <CommandItem className="justify-center">
-                      <Skeleton className="h-4 w-[80%]" />
-                    </CommandItem>
-                    <CommandItem className="justify-center">
-                      <Skeleton className="h-4 w-[80%]" />
-                    </CommandItem>
-                    <CommandItem className="justify-center">
-                      <Skeleton className="h-4 w-[80%]" />
-                    </CommandItem>
-                  </>
-                ) : filteredUsers.length > 0 ? (
-                  filteredUsers.map((user) => (
-                    <CommandItem
-                      key={user.id}
-                      value={user.name || user.email}
-                      onSelect={() => {
-                        onSelect(user.id);
-                        setOpen(false);
-                        setSearchQuery("");
-                      }}
-                    >
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-5 w-5">
-                          <AvatarImage src={user.avatar_url || undefined} />
-                          <AvatarFallback className="text-xs">
-                            {(user.name || user.email).substring(0, 2).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span>{user.name || user.email}</span>
-                      </div>
-                    </CommandItem>
-                  ))
-                ) : (
-                  <CommandEmpty>No users found.</CommandEmpty>
-                )}
-              </CommandGroup>
-            </ScrollArea>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+      )}
+    </div>
   );
 };
 

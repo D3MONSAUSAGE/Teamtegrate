@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -22,7 +23,7 @@ import {
 import { cn } from "@/lib/utils"
 import { format } from "date-fns"
 import { CalendarIcon } from "lucide-react"
-import { useToast } from "@/components/ui/use-toast"
+import { toast } from '@/components/ui/sonner';
 import { MultiSelect } from './MultiSelect';
 import { useAuth } from '@/contexts/AuthContext';
 import { Project } from '@/types';
@@ -61,9 +62,8 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
-  const { toast } = useToast();
   const { user } = useAuth();
-  const { addTask, updateTask, deleteTask, updateTaskStatus, deleteProject, updateProject, projects, refreshTasks, refreshProjects, isLoading } = useTask();
+  const { refreshProjects } = useTask();
 
   const addProject = async (projectData: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>) => {
     if (!user?.organizationId) {
@@ -101,15 +101,15 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
         description: data.description,
         startDate: new Date(data.startDate),
         endDate: new Date(data.endDate),
-        managerId: user.id,
+        managerId: user?.id || '',
         budget: Number(data.budget) || 0,
         budgetSpent: 0,
-        teamMemberIds: selectedMembers, // Changed from teamMembers to teamMemberIds
+        teamMemberIds: selectedMembers,
         is_completed: false,
         status: 'To Do',
         tasks_count: 0,
         tags: [],
-        organizationId: user.organizationId
+        organizationId: user?.organizationId || ''
       };
 
       await addProject(projectData);

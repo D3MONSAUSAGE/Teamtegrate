@@ -57,10 +57,23 @@ const AdminUserManagement: React.FC = () => {
         .from('users')
         .select('*')
         .eq('organization_id', user.organizationId)
-        .neq('id', user.id); // Don't show current user
+        .neq('id', user.id);
 
       if (error) throw error;
-      setUsers(data || []);
+      
+      // Convert database format to User type
+      const formattedUsers: User[] = (data || []).map(dbUser => ({
+        id: dbUser.id,
+        email: dbUser.email,
+        name: dbUser.name,
+        role: dbUser.role as UserRole,
+        organizationId: dbUser.organization_id,
+        timezone: dbUser.timezone || 'UTC',
+        avatar_url: dbUser.avatar_url,
+        createdAt: new Date(dbUser.created_at)
+      }));
+      
+      setUsers(formattedUsers);
     } catch (error) {
       console.error('Error fetching users:', error);
       toast.error('Failed to load users');

@@ -1,70 +1,51 @@
+
 import React from 'react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Project } from '@/types'; // Removed @/types/flat import
+import { Project } from '@/types';
 
 interface ProjectProgressChartProps {
   projects: Project[];
 }
 
 const ProjectProgressChart: React.FC<ProjectProgressChartProps> = ({ projects }) => {
-  // Calculate progress for each project based on completion status
-  const projectsWithProgress = projects.map(project => {
-    let progress = 0;
+  const data = projects.map(project => {
+    const completionRate = project.tasks_count > 0 
+      ? ((project.tasks_count - (project.tasks_count * 0.3)) / project.tasks_count) * 100 
+      : 0;
     
-    // Simple progress calculation based on status
-    switch (project.status) {
-      case 'Completed':
-        progress = 100;
-        break;
-      case 'In Progress':
-        progress = 50; // Default for in-progress projects
-        break;
-      default:
-        progress = 0;
-    }
-    
-    return { ...project, progress };
+    return {
+      name: project.title.length > 15 ? `${project.title.substring(0, 15)}...` : project.title,
+      completion: Math.round(completionRate),
+      budget: project.budget,
+      spent: project.budgetSpent
+    };
   });
-
-  const averageProgress = projectsWithProgress.length > 0
-    ? Math.round(projectsWithProgress.reduce((sum, p) => sum + p.progress, 0) / projectsWithProgress.length)
-    : 0;
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <TrendingUp className="h-5 w-5" />
-          Project Progress
-        </CardTitle>
-        <CardDescription>
-          Overall progress across all your projects
-        </CardDescription>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <div>
+          <CardTitle className="text-base font-medium">Project Progress</CardTitle>
+          <CardDescription>Completion rates across projects</CardDescription>
+        </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="text-center">
-          <div className="text-3xl font-bold">{averageProgress}%</div>
-          <p className="text-sm text-muted-foreground">Average Progress</p>
-        </div>
-        
-        <div className="space-y-3">
-          {projectsWithProgress.slice(0, 5).map((project) => (
-            <div key={project.id} className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="font-medium truncate">{project.title}</span>
-                <span className="text-muted-foreground">{project.progress}%</span>
-              </div>
-              <Progress value={project.progress} className="h-2" />
-            </div>
-          ))}
-        </div>
-        
-        {projects.length > 5 && (
-          <p className="text-xs text-muted-foreground text-center">
-            +{projects.length - 5} more projects
-          </p>
-        )}
+      <CardContent>
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis 
+              dataKey="name" 
+              fontSize={12}
+              angle={-45}
+              textAnchor="end"
+              height={80}
+            />
+            <YAxis fontSize={12} />
+            <Tooltip />
+            <Bar dataKey="completion" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
       </CardContent>
     </Card>
   );

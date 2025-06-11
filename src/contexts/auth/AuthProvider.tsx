@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,8 +12,12 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  isAuthenticated: boolean;
   signIn: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
+  logout: () => Promise<void>;
+  signup: (email: string) => Promise<void>;
+  refreshUserSession: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -76,7 +81,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         id: organizationId,
         name: `${authUser.email}'s Organization`,
         created_by: authUser.id,
-        created_at: new Date()
+        created_at: new Date().toISOString()
       });
 
     if (orgError) {
@@ -84,18 +89,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     // Create user profile
-    const userData: User = {
-      id: authUser.id,
-      email: authUser.email || '',
-      role: 'admin',
-      organizationId: organizationId,
-      name: authUser.user_metadata?.name || authUser.email || '',
-      timezone: 'UTC',
-      createdAt: new Date(),
-      avatar_url: authUser.user_metadata?.avatar_url
-    };
-
-    // Insert into users table
     try {
       await createUserProfile(authUser, organizationId);
     } catch (error: any) {
@@ -135,12 +128,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const refreshUserSession = async (): Promise<void> => {
+    try {
+      const { data, error } = await supabase.auth.refreshSession();
+      if (error) throw error;
+      if (data.session) {
+        const userData = await extractUserDataFromSession(data.session);
+        setUser(userData);
+        setSession(data.session);
+      }
+    } catch (err: any) {
+      console.error("Error refreshing session:", err);
+    }
+  };
+
   const value: AuthContextType = {
     user,
     session,
     loading,
+    isAuthenticated: !!user && !!session,
     signIn,
-    signOut
+    signOut,
+    logout: signOut,
+    signup: signIn,
+    refreshUserSession
   };
 
   return (
