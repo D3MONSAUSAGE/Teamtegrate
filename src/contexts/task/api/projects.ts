@@ -1,93 +1,49 @@
-import { Project, User, ProjectStatus } from '@/types';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/components/ui/sonner';
-import { v4 as uuidv4 } from 'uuid';
-import { playSuccessSound, playErrorSound } from '@/utils/sounds';
-import { addOrgIdToInsert, validateUserOrganization } from '@/utils/organizationHelpers';
+import { Project } from '@/types';
 
-export const addProject = async (
-  project: Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'tasks'>,
-  user: { id: string; organization_id?: string }
-): Promise<Project | null> => {
-  try {
-    if (!validateUserOrganization(user)) {
-      return null;
-    }
-    
-    // generate unique ID and prepare project data
-    const projectId = uuidv4();
-    const now = new Date();
-    const nowISO = now.toISOString();
-    
-    let status = project.status || 'To Do';
-    let isCompleted = project.is_completed || false;
-    
-    if (status === 'Completed') {
-      isCompleted = true;
-    } else if (isCompleted) {
-      status = 'Completed';
-    }
-    
-    console.log('Creating project with organization_id:', user.organization_id);
-    
-    const projectData = {
-      id: projectId,
-      title: project.title,
-      description: project.description,
-      start_date: project.startDate.toISOString(),
-      end_date: project.endDate.toISOString(),
-      manager_id: user.id,
-      budget: project.budget || 0,
-      is_completed: isCompleted,
-      created_at: nowISO,
-      updated_at: nowISO,
-      team_members: project.teamMembers || [],
-      status: status,
-      tasks_count: 0,
-      tags: project.tags || []
-    };
+export const createProject = async (projectData: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>): Promise<Project> => {
+  // Mock implementation - replace with actual API call
+  const newProject: Project = {
+    id: Date.now().toString(),
+    title: projectData.title,
+    description: projectData.description,
+    status: projectData.status,
+    startDate: projectData.startDate,
+    endDate: projectData.endDate,
+    managerId: projectData.managerId,
+    teamMemberIds: projectData.teamMemberIds || [],
+    budget: projectData.budget,
+    budgetSpent: 0,
+    isCompleted: false,
+    tags: projectData.tags || [],
+    tasksCount: 0,
+    organizationId: projectData.organizationId,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  };
 
-    const insertData = addOrgIdToInsert(projectData, user);
-    
-    const { error } = await supabase
-      .from('projects')
-      .insert(insertData);
+  return newProject;
+};
 
-    if (error) {
-      console.error('Error adding project:', error);
-      toast.error('Failed to create project');
-      playErrorSound();
-      return null;
-    }
+export const updateProject = async (projectId: string, updates: Partial<Project>): Promise<Project> => {
+  // Mock implementation - replace with actual API call
+  const updatedProject: Project = {
+    id: projectId,
+    title: updates.title || '',
+    description: updates.description,
+    status: updates.status || 'To Do',
+    startDate: updates.startDate || new Date(),
+    endDate: updates.endDate || new Date(),
+    managerId: updates.managerId || '',
+    teamMemberIds: updates.teamMemberIds || [],
+    budget: updates.budget,
+    budgetSpent: updates.budgetSpent || 0,
+    isCompleted: updates.isCompleted || false,
+    tags: updates.tags || [],
+    tasksCount: updates.tasksCount || 0,
+    organizationId: updates.organizationId || '',
+    createdAt: updates.createdAt || new Date(),
+    updatedAt: new Date()
+  };
 
-    // create new project object and return
-    const newProject: Project = {
-      id: projectId,
-      title: project.title,
-      description: project.description,
-      startDate: project.startDate,
-      endDate: project.endDate,
-      managerId: user.id,
-      budget: project.budget !== undefined ? project.budget : 0,
-      createdAt: now,
-      updatedAt: now,
-      tasks: [],
-      teamMembers: project.teamMembers || [],
-      is_completed: isCompleted,
-      budgetSpent: 0,
-      status: status as ProjectStatus,
-      tasks_count: 0,
-      tags: project.tags || []
-    };
-
-    console.log('New project created:', newProject);
-    toast.success('Project created successfully');
-    playSuccessSound();
-    return newProject;
-  } catch (error) {
-    console.error('Error in addProject:', error);
-    toast.error('Failed to create project');
-    playErrorSound();
-    return null;
-  }
+  return updatedProject;
 };

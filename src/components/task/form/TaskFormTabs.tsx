@@ -6,6 +6,9 @@ import TaskFormFieldsWithAI from '../TaskFormFieldsWithAI';
 import TaskAssignmentSection from './TaskAssignmentSection';
 
 export interface TaskFormTabsProps {
+  register: any;
+  errors: any;
+  setValue: any;
   projects: Project[];
   editingTask?: Task;
   currentProjectId?: string;
@@ -24,6 +27,9 @@ export interface TaskFormTabsProps {
 }
 
 const TaskFormTabs: React.FC<TaskFormTabsProps> = ({
+  register,
+  errors,
+  setValue,
   projects,
   editingTask,
   currentProjectId,
@@ -49,6 +55,9 @@ const TaskFormTabs: React.FC<TaskFormTabsProps> = ({
       
       <TabsContent value="details" className="space-y-4">
         <TaskFormFieldsWithAI
+          register={register}
+          errors={errors}
+          setValue={setValue}
           projects={projects}
           editingTask={editingTask}
           currentProjectId={currentProjectId}

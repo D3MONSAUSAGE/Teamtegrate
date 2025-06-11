@@ -1,102 +1,86 @@
 
-import { Task, User } from '@/types';
+import { Task, User, Project } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
-import { playSuccessSound, playErrorSound } from '@/utils/sounds';
-import { v4 as uuidv4 } from 'uuid';
-import { Project } from '@/types';
 
 export const addTask = async (
-  task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>,
-  user: User | null,
-  tasks: Task[],
+  taskData: any,
+  user: User,
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>,
   projects: Project[],
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
-) => {
+): Promise<void> => {
   try {
-    if (!user || !user.organization_id) {
-      toast.error('You must be logged in and belong to an organization to create tasks');
+    if (!user?.organizationId) {
+      toast.error('Organization context required');
       return;
     }
 
-    const now = new Date();
-    const taskId = uuidv4();
-
-    const taskToInsert = {
-      id: taskId,
-      user_id: user.id,
-      project_id: task.projectId || null,
-      title: task.title,
-      description: task.description,
-      deadline: task.deadline.toISOString(),
-      priority: task.priority,
-      status: task.status,
-      created_at: now.toISOString(),
-      updated_at: now.toISOString(),
-      assigned_to_id: task.assignedToId || null,
-      assigned_to_ids: task.assignedToIds || [],
-      assigned_to_names: task.assignedToNames || [],
-      cost: task.cost || 0,
-      organization_id: user.organization_id // Add the required organization_id
-    };
-
-    const { data, error } = await supabase
+    const taskId = `task_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    const { error } = await supabase
       .from('tasks')
-      .insert(taskToInsert)
-      .select('*')
-      .single();
+      .insert([{
+        id: taskId,
+        title: taskData.title,
+        description: taskData.description,
+        priority: taskData.priority,
+        status: 'To Do',
+        deadline: new Date(taskData.deadline).toISOString(),
+        user_id: user.id,
+        project_id: taskData.projectId === "none" ? null : taskData.projectId,
+        assigned_to_id: taskData.assignedToId || null,
+        assigned_to_ids: taskData.assignedToIds || [],
+        assigned_to_names: taskData.assignedToNames || [],
+        cost: taskData.cost || 0,
+        organization_id: user.organizationId
+      }]);
 
     if (error) {
-      console.error('Error adding task:', error);
-      playErrorSound();
+      console.error('Error creating task:', error);
       toast.error('Failed to create task');
       return;
     }
 
-    if (data) {
-      const newTask: Task = {
-        id: data.id,
-        userId: data.user_id || user.id,
-        projectId: data.project_id || undefined,
-        title: data.title || '',
-        description: data.description || '',
-        deadline: new Date(data.deadline || now),
-        priority: (data.priority as Task['priority']) || 'Medium',
-        status: (data.status as Task['status']) || 'To Do',
-        createdAt: new Date(data.created_at || now),
-        updatedAt: new Date(data.updated_at || now),
-        assignedToId: data.assigned_to_id || undefined,
-        assignedToName: task.assignedToName,
-        assignedToIds: data.assigned_to_ids || [],
-        assignedToNames: data.assigned_to_names || [],
-        tags: [],
-        comments: [],
-        cost: data.cost || 0,
-      };
+    const newTask: Task = {
+      id: taskId,
+      userId: user.id,
+      projectId: taskData.projectId === "none" ? undefined : taskData.projectId,
+      title: taskData.title,
+      description: taskData.description,
+      deadline: new Date(taskData.deadline),
+      priority: taskData.priority,
+      status: 'To Do',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      assignedToId: taskData.assignedToId,
+      assignedToName: taskData.assignedToName,
+      assignedToIds: taskData.assignedToIds,
+      assignedToNames: taskData.assignedToNames,
+      comments: [],
+      cost: taskData.cost || 0,
+      organizationId: user.organizationId
+    };
 
-      setTasks(prevTasks => [...prevTasks, newTask]);
-      
-      if (newTask.projectId) {
-        setProjects(prevProjects => 
-          prevProjects.map(project => {
-            if (project.id === newTask.projectId) {
-              return {
-                ...project,
-                tasks: [...project.tasks, newTask]
-              };
-            }
-            return project;
-          })
+    setTasks(prev => [newTask, ...prev]);
+
+    // Update project tasks count if task is assigned to a project
+    if (newTask.projectId) {
+      const project = projects.find(p => p.id === newTask.projectId);
+      if (project) {
+        setProjects(prevProjects =>
+          prevProjects.map(p =>
+            p.id === newTask.projectId
+              ? { ...p, tasksCount: p.tasksCount + 1 }
+              : p
+          )
         );
       }
-      
-      playSuccessSound();
-      toast.success('Task created successfully!');
     }
+
+    toast.success('Task created successfully!');
   } catch (error) {
-    console.error('Error in addTask:', error);
-    playErrorSound();
+    console.error('Error adding task:', error);
     toast.error('Failed to create task');
   }
 };
