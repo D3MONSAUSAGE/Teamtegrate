@@ -8,14 +8,14 @@ const parseDate = (dateStr: string | null): Date => {
   return new Date(dateStr);
 };
 
-// Simple interface to avoid deep type instantiation
-interface UserData {
+// Simple user interface
+interface SimpleUser {
   id: string;
   organization_id?: string;
 }
 
 export const fetchTasks = async (
-  user: UserData,
+  user: SimpleUser,
   setTasks: (tasks: Task[]) => void
 ): Promise<void> => {
   try {
@@ -57,15 +57,16 @@ export const fetchTasks = async (
       console.error('Error fetching comments:', commentError);
     }
 
-    // Transform database format to application format with explicit typing
-    const transformedTasks: Task[] = taskData.map((dbTask) => {
-      const taskPriority = (dbTask.priority === 'Low' || dbTask.priority === 'Medium' || dbTask.priority === 'High') 
+    // Transform database format to application format with simple type casting
+    const transformedTasks: Task[] = taskData.map((dbTask: any) => {
+      // Use simple type guards instead of complex type instantiation
+      const taskPriority = ['Low', 'Medium', 'High'].includes(dbTask.priority) 
         ? dbTask.priority 
-        : 'Medium' as const;
+        : 'Medium';
       
-      const taskStatus = (dbTask.status === 'To Do' || dbTask.status === 'In Progress' || dbTask.status === 'Completed')
+      const taskStatus = ['To Do', 'In Progress', 'Completed'].includes(dbTask.status)
         ? dbTask.status
-        : 'To Do' as const;
+        : 'To Do';
 
       return {
         id: dbTask.id,
@@ -74,8 +75,8 @@ export const fetchTasks = async (
         title: dbTask.title || '',
         description: dbTask.description || '',
         deadline: parseDate(dbTask.deadline),
-        priority: taskPriority,
-        status: taskStatus,
+        priority: taskPriority as any,
+        status: taskStatus as any,
         createdAt: parseDate(dbTask.created_at),
         updatedAt: parseDate(dbTask.updated_at),
         assignedToId: dbTask.assigned_to_id || undefined,
@@ -84,8 +85,8 @@ export const fetchTasks = async (
         assignedToNames: dbTask.assigned_to_names || [],
         tags: [],
         comments: (commentData || [])
-          .filter(comment => comment.task_id === dbTask.id)
-          .map(comment => ({
+          .filter((comment: any) => comment.task_id === dbTask.id)
+          .map((comment: any) => ({
             id: comment.id,
             userId: comment.user_id,
             userName: 'User',

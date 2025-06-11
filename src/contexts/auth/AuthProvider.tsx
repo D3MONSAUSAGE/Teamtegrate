@@ -122,11 +122,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Simple role comparison function to avoid type issues
+  // Simple role comparison function
   const canManageUserRole = (userRole: UserRole | undefined, targetRole: UserRole): boolean => {
     if (!userRole) return false;
     
-    const roleHierarchy = {
+    const roleHierarchy: Record<UserRole, number> = {
       'superadmin': 4,
       'admin': 3,
       'manager': 2,
