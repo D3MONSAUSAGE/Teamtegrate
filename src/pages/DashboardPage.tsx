@@ -30,7 +30,7 @@ const DashboardPage = () => {
   // Convert FlatTasks to Tasks for compatibility
   const convertedTasks = flatTasksToTasks(tasks);
   
-  // Convert SimpleProjects to FlatProjects for components that expect FlatProject
+  // Convert Projects to FlatProjects for components that expect FlatProject
   const flatProjects = projects.map(project => ({
     id: project.id,
     title: project.title,
@@ -40,14 +40,14 @@ const DashboardPage = () => {
     managerId: project.managerId,
     createdAt: project.createdAt,
     updatedAt: project.updatedAt,
-    teamMemberIds: project.teamMembers || [],
+    teamMemberIds: project.teamMemberIds || [],
     budget: project.budget,
     budgetSpent: project.budgetSpent || 0,
-    is_completed: project.is_completed,
+    isCompleted: project.isCompleted,
     status: project.status,
-    tasks_count: project.tasks_count,
+    tasksCount: project.tasksCount,
     tags: project.tags || [],
-    organizationId: project.organizationId || user?.organization_id || ''
+    organizationId: project.organizationId || user?.organizationId || ''
   }));
   
   const today = new Date();
@@ -94,8 +94,25 @@ const DashboardPage = () => {
   };
 
   const handleCreateTaskForProject = (project: any) => {
-    // Convert FlatProject to Project for compatibility
-    const convertedProject = flatProjectsToProjects([project], tasks)[0];
+    // Convert to Project for compatibility
+    const convertedProject: Project = {
+      id: project.id,
+      title: project.title,
+      description: project.description,
+      startDate: project.startDate,
+      endDate: project.endDate,
+      managerId: project.managerId,
+      createdAt: project.createdAt,
+      updatedAt: project.updatedAt,
+      teamMemberIds: project.teamMemberIds,
+      budget: project.budget,
+      budgetSpent: project.budgetSpent,
+      isCompleted: project.isCompleted,
+      status: project.status,
+      tasksCount: project.tasksCount,
+      tags: project.tags,
+      organizationId: project.organizationId
+    };
     handleCreateTask(convertedProject);
   };
   

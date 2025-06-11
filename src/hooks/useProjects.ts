@@ -73,6 +73,7 @@ export function useProjects() {
     projects: mappedProjects,
     isLoading,
     error,
-    refetch: fetchProjects
+    refetch: fetchProjects,
+    refreshProjects: fetchProjects // Add alias for compatibility
   };
 }

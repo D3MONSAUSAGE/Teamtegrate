@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useProjects } from '@/hooks/useProjects';
 import { useAuth } from '@/contexts/AuthContext';
@@ -16,24 +17,16 @@ const ProjectsPage = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const navigate = useNavigate();
 
-  // Convert SimpleProjects to FlatProjects for compatibility
+  // Convert Projects to FlatProjects for compatibility
   const flatProjects: FlatProject[] = projects.map(project => ({
     id: project.id,
     title: project.title,
     description: project.description,
-    startDate: project.startDate,
-    endDate: project.endDate,
-    managerId: project.managerId,
-    createdAt: project.createdAt,
-    updatedAt: project.updatedAt,
-    teamMemberIds: project.teamMembers || [],
-    budget: project.budget,
-    budgetSpent: project.budgetSpent || 0,
-    is_completed: project.is_completed,
     status: project.status,
-    tasks_count: project.tasks_count,
-    tags: project.tags || [],
-    organizationId: project.organizationId || user?.organization_id || ''
+    managerId: project.managerId,
+    organizationId: project.organizationId || user?.organizationId || '',
+    createdAt: project.createdAt.toISOString(),
+    updatedAt: project.updatedAt.toISOString()
   }));
 
   const filteredProjects = flatProjects.filter(project =>
@@ -227,7 +220,6 @@ const ProjectsPage = () => {
       <CreateProjectDialog
         open={isCreateDialogOpen}
         onOpenChange={setIsCreateDialogOpen}
-        onSuccess={refreshProjects}
       />
     </div>
   );

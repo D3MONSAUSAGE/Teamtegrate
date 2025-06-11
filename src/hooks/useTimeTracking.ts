@@ -1,8 +1,10 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { startOfWeek, addDays } from 'date-fns';
+import { TimeEntry } from '@/types';
 
 // Accept an optional "weekStart" param to fetch entries for a specific week.
 export function useTimeTracking() {
@@ -104,7 +106,7 @@ export function useTimeTracking() {
         return;
       }
 
-      setCurrentEntry({ isClocked: false });
+      setCurrentEntry(null);
       toast.success('Clocked out successfully');
     } catch (error) {
       console.error('Error in clockOut:', error);
