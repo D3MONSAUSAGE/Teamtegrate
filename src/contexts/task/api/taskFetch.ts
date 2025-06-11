@@ -15,11 +15,11 @@ export const fetchTasks = async (
   try {
     console.log('Fetching tasks for user:', user.id);
     
-    // Enhanced query to include project-accessible tasks
+    // Fetch tasks from database
     const { data: taskData, error } = await supabase
       .from('tasks')
       .select('*')
-      .or(`user_id.eq.${user.id},assigned_to_id.eq.${user.id},assigned_to_ids.cs.{${user.id}},project_id.in.(select id from projects where manager_id=${user.id} or team_members.cs.{${user.id}} or id.in.(select project_id from project_team_members where user_id=${user.id}))`);
+      .or(`user_id.eq.${user.id},assigned_to_id.eq.${user.id},assigned_to_ids.cs.{${user.id}},project_id.in.(select id from projects where manager_id=${user.id} or team_members.cs.{${user.id}})`);
 
     if (error) {
       console.error('Error fetching tasks:', error);
@@ -40,13 +40,15 @@ export const fetchTasks = async (
       console.log(`Fetched ${commentData?.length || 0} comments from database`);
     }
 
-    // Get all unique user IDs that are assigned to tasks
+    // Get all unique user IDs that are assigned to tasks (both single and multiple)
     const assignedUserIds = new Set<string>();
     
     taskData.forEach(task => {
+      // Add single assigned user
       if (task.assigned_to_id) {
         assignedUserIds.add(task.assigned_to_id);
       }
+      // Add multiple assigned users
       if (task.assigned_to_ids && Array.isArray(task.assigned_to_ids)) {
         task.assigned_to_ids.forEach(id => assignedUserIds.add(id));
       }

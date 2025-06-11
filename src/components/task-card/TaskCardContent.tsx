@@ -44,9 +44,11 @@ const TaskCardContent: React.FC<TaskCardContentProps> = ({
         />
         
         <TaskCardFooter
-          task={task}
+          status={task.status}
+          isOverdue={isOverdue}
+          commentCount={commentCount}
           onStatusChange={handleStatusChange}
-          showProjectInfo={false}
+          onShowComments={onShowComments}
         />
       </div>
     </div>

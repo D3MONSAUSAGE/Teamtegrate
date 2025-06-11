@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { Task, Project, TaskStatus, TaskPriority, DailyScore, TeamMemberPerformance } from '@/types';
 import { useAuth } from '../AuthContext';
@@ -106,7 +107,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Enhanced data loading with proper task-project visibility
+  // Load data only when auth is fully ready
   useEffect(() => {
     if (!authReady) {
       console.log('TaskProvider: Waiting for auth to be ready...');
@@ -126,16 +127,13 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(true);
       
       try {
-        // Load projects first, then tasks - this ensures proper access checking
+        // Load projects and tasks with proper error handling
         await Promise.allSettled([
           fetchUserProjects(user, setProjects).catch(error => {
             console.error("Error loading projects:", error);
             toast.error("Failed to load projects");
           }),
-          // Use the enhanced fetchTasks from taskFetch.ts
-          import('./api/taskFetch').then(({ fetchTasks }) => 
-            fetchTasks(user, setTasks)
-          ).catch(error => {
+          fetchUserTasks(user, setTasks).catch(error => {
             console.error("Error loading tasks:", error);
             toast.error("Failed to load tasks");
           })
