@@ -28,36 +28,36 @@ export const fetchTasks = async (
       return;
     }
     
-    // Use explicit any type to avoid deep inference
-    const tasksQuery = await supabase
+    // Use any type to avoid deep inference
+    const tasksResponse: any = await supabase
       .from('tasks')
       .select('*')
       .eq('organization_id', user.organization_id);
 
-    if (tasksQuery.error) {
-      console.error('Error fetching tasks:', tasksQuery.error);
+    if (tasksResponse.error) {
+      console.error('Error fetching tasks:', tasksResponse.error);
       toast.error('Failed to load tasks');
       return;
     }
 
-    console.log(`Fetched ${tasksQuery.data?.length || 0} tasks from database`);
+    console.log(`Fetched ${tasksResponse.data?.length || 0} tasks from database`);
     
-    // Use explicit any type to avoid deep inference
-    const commentsQuery = await supabase
+    // Use any type to avoid deep inference
+    const commentsResponse: any = await supabase
       .from('comments')
       .select('*')
       .eq('organization_id', user.organization_id);
 
-    if (commentsQuery.error) {
-      console.error('Error fetching comments:', commentsQuery.error);
+    if (commentsResponse.error) {
+      console.error('Error fetching comments:', commentsResponse.error);
     }
 
     // Manual transformation with explicit any types
     const transformedTasks: Task[] = [];
     
-    if (tasksQuery.data) {
+    if (tasksResponse.data) {
       // Use explicit any[] to prevent deep type inference
-      const rawTasks: any[] = tasksQuery.data;
+      const rawTasks: any[] = tasksResponse.data;
       
       for (const dbTask of rawTasks) {
         // Explicit type checks and assignments
@@ -92,7 +92,7 @@ export const fetchTasks = async (
             ? dbTask.assigned_to_names.map((name: any) => String(name)) 
             : [],
           tags: [],
-          comments: commentsQuery.data ? commentsQuery.data
+          comments: commentsResponse.data ? commentsResponse.data
             .filter((comment: any) => comment.task_id === dbTask.id)
             .map((comment: any) => ({
               id: String(comment.id),

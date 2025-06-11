@@ -77,20 +77,20 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (!user?.organization_id) return;
     
     try {
-      // Use explicit any type to avoid deep inference
-      const projectsQuery = await supabase
+      // Use any type to avoid deep inference
+      const projectsResponse: any = await supabase
         .from('projects')
         .select('*')
         .eq('organization_id', user.organization_id);
 
-      if (projectsQuery.error) throw projectsQuery.error;
+      if (projectsResponse.error) throw projectsResponse.error;
 
       // Manual transformation with explicit types
       const transformedProjects: SimpleProject[] = [];
       
-      if (projectsQuery.data) {
+      if (projectsResponse.data) {
         // Use explicit any[] to prevent deep type inference
-        const rawProjects: any[] = projectsQuery.data;
+        const rawProjects: any[] = projectsResponse.data;
         
         for (const dbProject of rawProjects) {
           // Explicit status validation
@@ -195,13 +195,13 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (updates.is_completed !== undefined) updateData.is_completed = updates.is_completed;
       if (updates.budget !== undefined) updateData.budget = updates.budget;
 
-      const { error } = await supabase
+      const response: any = await supabase
         .from('projects')
         .update(updateData)
         .eq('id', projectId)
         .eq('organization_id', user.organization_id);
 
-      if (error) throw error;
+      if (response.error) throw response.error;
 
       setProjects(prev => prev.map(project => 
         project.id === projectId ? { ...project, ...updates } : project
@@ -218,13 +218,13 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (!user?.organization_id) return;
 
     try {
-      const { error } = await supabase
+      const response: any = await supabase
         .from('projects')
         .delete()
         .eq('id', projectId)
         .eq('organization_id', user.organization_id);
 
-      if (error) throw error;
+      if (response.error) throw response.error;
 
       setProjects(prev => prev.filter(project => project.id !== projectId));
       toast.success('Project deleted successfully');
@@ -238,7 +238,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (!user?.organization_id) return;
 
     try {
-      const { data, error } = await supabase
+      const response: any = await supabase
         .from('comments')
         .insert({
           task_id: taskId,
@@ -249,14 +249,14 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         .select()
         .single();
 
-      if (error) throw error;
+      if (response.error) throw response.error;
 
       const newComment: TaskComment = {
-        id: data.id,
+        id: response.data.id,
         userId: comment.userId,
         userName: comment.userName,
         text: comment.text,
-        createdAt: new Date(data.created_at)
+        createdAt: new Date(response.data.created_at)
       };
 
       setTasks(prev => prev.map(task => 
