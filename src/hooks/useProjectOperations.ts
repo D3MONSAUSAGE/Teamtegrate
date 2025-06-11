@@ -11,8 +11,8 @@ export const useProjectOperations = () => {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
-  const createProject = async (project: Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'tasks'>) => {
-    if (!user || !user.organization_id) {
+  const createProject = async (project: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>) => {
+    if (!user || !user.organizationId) {
       toast.error('You must be logged in and belong to an organization to create a project');
       playErrorSound();
       return null;
@@ -26,7 +26,7 @@ export const useProjectOperations = () => {
       const nowISO = now.toISOString();
 
       // Prepare budget value - handle undefined or null case
-      const budget = project.budget ?? 0; // Use nullish coalescing to default to 0 if undefined or null
+      const budget = project.budget ?? 0;
 
       console.log('Creating project with data:', {
         id: projectId,
@@ -39,10 +39,10 @@ export const useProjectOperations = () => {
         is_completed: false,
         created_at: nowISO,
         updated_at: nowISO,
-        team_members: project.teamMembers || [],
+        team_members: project.teamMemberIds || [],
         status: project.status || 'To Do',
         tasks_count: 0,
-        organization_id: user.organization_id
+        organization_id: user.organizationId
       });
 
       const { error } = await supabase
@@ -54,14 +54,14 @@ export const useProjectOperations = () => {
           start_date: project.startDate.toISOString(),
           end_date: project.endDate.toISOString(),
           manager_id: user.id,
-          budget: budget, // Using the prepared value
+          budget: budget,
           is_completed: false,
           created_at: nowISO,
           updated_at: nowISO,
-          team_members: project.teamMembers || [],
+          team_members: project.teamMemberIds || [],
           status: project.status || 'To Do',
           tasks_count: 0,
-          organization_id: user.organization_id
+          organization_id: user.organizationId
         });
 
       if (error) {
@@ -79,16 +79,16 @@ export const useProjectOperations = () => {
         startDate: project.startDate,
         endDate: project.endDate,
         managerId: user.id,
-        budget: budget, // Using the prepared value
+        budget: budget,
         createdAt: now,
         updatedAt: now,
-        tasks: [],
-        teamMembers: project.teamMembers || [],
-        is_completed: false,
+        teamMemberIds: project.teamMemberIds || [],
+        isCompleted: false,
         budgetSpent: 0,
         status: project.status as ProjectStatus,
-        tasks_count: 0,
-        tags: []
+        tasksCount: 0,
+        tags: [],
+        organizationId: user.organizationId
       };
 
       console.log('Project created successfully:', newProject);

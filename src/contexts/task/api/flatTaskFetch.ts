@@ -46,7 +46,7 @@ export const fetchFlatTasks = async (
       return {
         id: String(dbTask.id),
         title: String(dbTask.title || ''),
-        description: String(dbTask.description || ''), // Ensure it's always a string
+        description: String(dbTask.description || ''),
         deadline: dbTask.deadline ? new Date(dbTask.deadline) : new Date(),
         priority: dbTask.priority as 'High' | 'Medium' | 'Low',
         status: taskStatus,

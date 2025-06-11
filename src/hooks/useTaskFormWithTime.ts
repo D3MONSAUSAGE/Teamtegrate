@@ -65,7 +65,7 @@ export const useTaskFormWithTime = (
 
   // Submit handler
   const handleFormSubmit = async (data: TaskFormValues) => {
-    if (!user || !user.organization_id) return;
+    if (!user || !user.organizationId) return;
     
     // Combine date and time into a single Date object
     let deadline: Date;
@@ -103,7 +103,7 @@ export const useTaskFormWithTime = (
           status: 'To Do' as const,
           userId: user.id,
           projectId: data.projectId === "none" ? undefined : data.projectId,
-          organizationId: user.organization_id,
+          organizationId: user.organizationId,
           assignedToIds: selectedMember && selectedMember !== "unassigned" ? [selectedMember] : [],
           assignedToNames: data.assignedToName ? [data.assignedToName] : [],
         });

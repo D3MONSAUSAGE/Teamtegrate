@@ -65,9 +65,9 @@ export interface Project {
   teamMemberIds: string[]; // Unified naming - use teamMemberIds consistently
   budget: number;
   budgetSpent: number; // Made required, defaulting to 0
-  is_completed: boolean;
+  isCompleted: boolean; // Changed from is_completed to isCompleted
   status: ProjectStatus;
-  tasks_count: number;
+  tasksCount: number; // Changed from tasks_count to tasksCount
   tags: string[]; // Made required, defaulting to empty array
   organizationId: string; // Made required
 }
@@ -195,3 +195,12 @@ export const getRoleDisplayName = (role: UserRole): string => {
       return 'Unknown';
   }
 };
+
+// Task Card Props interface
+export interface TaskCardProps {
+  task: Task;
+  onEdit: () => void;
+  onDelete: () => void;
+  onStatusChange: (status: TaskStatus) => void;
+  showProjectInfo?: boolean;
+}

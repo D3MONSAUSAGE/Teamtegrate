@@ -18,18 +18,13 @@ interface ProjectTasksContentProps {
   progress: number;
   teamMembers: User[];
   isLoadingTeamMembers: boolean;
-  teamMembersError: string | null;
-  isRefreshing: boolean;
-  isCreateTaskOpen: boolean;
-  editingTask: Task | null;
-  setIsCreateTaskOpen: (open: boolean) => void;
-  handleSearchChange: (query: string) => void;
-  handleEditTask: (task: Task) => void;
-  handleCreateTask: () => void;
-  handleManualRefresh: () => void;
-  handleTaskStatusChange: (taskId: string, status: TaskStatus) => void;
+  onSearchChange: (query: string) => void;
   onSortByChange: (sortBy: string) => void;
-  handleTaskDialogComplete: () => void;
+  onCreateTask: () => void;
+  onEditTask: (task: Task) => void;
+  onTaskStatusChange: (taskId: string, status: TaskStatus) => void;
+  onRefresh: () => void;
+  isRefreshing: boolean;
 }
 
 const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
@@ -42,18 +37,13 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
   progress,
   teamMembers,
   isLoadingTeamMembers,
-  teamMembersError,
-  isRefreshing,
-  isCreateTaskOpen,
-  editingTask,
-  setIsCreateTaskOpen,
-  handleSearchChange,
-  handleEditTask,
-  handleCreateTask,
-  handleManualRefresh,
-  handleTaskStatusChange,
+  onSearchChange,
   onSortByChange,
-  handleTaskDialogComplete
+  onCreateTask,
+  onEditTask,
+  onTaskStatusChange,
+  onRefresh,
+  isRefreshing
 }) => {
   const allTasks = [...todoTasks, ...inProgressTasks, ...completedTasks];
 
@@ -74,13 +64,13 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
           <Button
             variant="outline"
             size="sm"
-            onClick={handleManualRefresh}
+            onClick={onRefresh}
             disabled={isRefreshing}
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
-          <Button onClick={handleCreateTask}>
+          <Button onClick={onCreateTask}>
             Add Task
           </Button>
         </div>
@@ -90,37 +80,19 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
       <ProjectTasksFilters
         searchQuery={searchQuery}
         sortBy={sortBy}
-        onSearchChange={(e) => handleSearchChange(e.target.value)}
+        onSearchChange={(e) => onSearchChange(e.target.value)}
         onSortByChange={onSortByChange}
       />
-
-      {/* Team Members Error */}
-      {teamMembersError && (
-        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <p className="text-sm text-yellow-800">
-            Warning: Could not load team member details. {teamMembersError}
-          </p>
-        </div>
-      )}
 
       {/* Tasks Grid */}
       <ProjectTasksGrid
         todoTasks={todoTasks}
         inProgressTasks={inProgressTasks}
         completedTasks={completedTasks}
-        onEditTask={handleEditTask}
-        onStatusChange={handleTaskStatusChange}
+        onEditTask={onEditTask}
+        onStatusChange={onTaskStatusChange}
         teamMembers={teamMembers}
         isLoadingTeamMembers={isLoadingTeamMembers}
-      />
-
-      {/* Create/Edit Task Dialog */}
-      <CreateTaskDialogWithAI
-        open={isCreateTaskOpen}
-        onOpenChange={setIsCreateTaskOpen}
-        editingTask={editingTask || undefined}
-        currentProjectId={project.id}
-        onTaskComplete={handleTaskDialogComplete}
       />
     </div>
   );

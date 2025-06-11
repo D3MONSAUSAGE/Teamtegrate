@@ -15,7 +15,8 @@ export const createProject = async (projectData: Omit<Project, 'id' | 'createdAt
     teamMemberIds: projectData.teamMemberIds || [],
     budget: projectData.budget,
     budgetSpent: 0,
-    tasksCount: 0, // Fix property name
+    tasksCount: 0,
+    isCompleted: false,
     tags: projectData.tags || [],
     organizationId: projectData.organizationId,
     createdAt: new Date(),
@@ -36,9 +37,10 @@ export const updateProject = async (projectId: string, updates: Partial<Project>
     endDate: updates.endDate || new Date(),
     managerId: updates.managerId || '',
     teamMemberIds: updates.teamMemberIds || [],
-    budget: updates.budget,
+    budget: updates.budget || 0,
     budgetSpent: updates.budgetSpent || 0,
-    tasksCount: updates.tasksCount || 0, // Fix property name
+    tasksCount: updates.tasksCount || 0,
+    isCompleted: updates.isCompleted || false,
     tags: updates.tags || [],
     organizationId: updates.organizationId || '',
     createdAt: updates.createdAt || new Date(),

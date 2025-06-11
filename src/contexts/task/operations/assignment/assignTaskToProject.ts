@@ -57,7 +57,7 @@ export const assignTaskToProject = async (
       return t;
     }));
 
-    // Update project task counts only (no tasks array manipulation)
+    // Update project task counts only
     setProjects(prevProjects => {
       return prevProjects.map(project => {
         // If this was the old project, decrease task count

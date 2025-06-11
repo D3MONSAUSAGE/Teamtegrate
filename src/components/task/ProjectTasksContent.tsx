@@ -11,7 +11,7 @@ export interface ProjectTasksContentProps {
   searchQuery: string;
   sortBy: string;
   filterBy: string;
-  onSearchChange: (query: string) => void; // Add missing prop
+  onSearchChange: (query: string) => void;
   onSortChange: (sort: string) => void;
   onFilterChange: (filter: string) => void;
   onCreateTask: () => void;
@@ -30,7 +30,7 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
   searchQuery,
   sortBy,
   filterBy,
-  onSearchChange, // Now properly typed
+  onSearchChange,
   onSortChange,
   onFilterChange,
   onCreateTask,

@@ -28,11 +28,11 @@ export const mapAppUserToDb = (appUser: User): any => ({
 // Project property fixes
 export const fixProjectProperties = (project: any): Project => ({
   ...project,
-  teamMemberIds: project.teamMembers || project.teamMemberIds || [],
+  teamMemberIds: project.teamMembers || project.team_members || project.teamMemberIds || [],
   tasksCount: project.tasks_count || project.tasksCount || 0,
   isCompleted: project.is_completed || project.isCompleted || false,
-  // Remove non-existent tasks property
-  tasks: undefined
+  budgetSpent: project.budget_spent || project.budgetSpent || 0,
+  organizationId: project.organization_id || project.organizationId
 });
 
 // Add missing organizationId to objects

@@ -53,7 +53,8 @@ export const addProject = async (
       teamMemberIds: projectData.teamMemberIds || [],
       budget: projectData.budget,
       budgetSpent: 0,
-      tasksCount: 0, // Fix property name
+      tasksCount: 0,
+      isCompleted: false,
       tags: projectData.tags || [],
       organizationId: getUserOrganizationId(user),
       createdAt: new Date(),

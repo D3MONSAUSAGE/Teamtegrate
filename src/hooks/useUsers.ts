@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { User, UserRole } from '@/types';
 import { toast } from '@/components/ui/sonner';
 import { useQuery } from '@tanstack/react-query';
+import { mapDbUserToApp } from '@/utils/typeCompatibility';
 
 export const useUsers = () => {
   const fetchUsers = async (): Promise<User[]> => {
@@ -22,13 +23,8 @@ export const useUsers = () => {
     
     console.log(`Successfully loaded ${data?.length || 0} users from same organization`);
     
-    // Ensure role is properly typed and createdAt is transformed
-    return data?.map(user => ({
-      ...user,
-      role: user.role as UserRole,
-      createdAt: new Date(user.created_at),
-      name: user.name || user.email || 'Unknown User' // Provide fallback for name
-    })) as User[] || [];
+    // Transform to User type using mapping utility
+    return data?.map(dbUser => mapDbUserToApp(dbUser)) as User[] || [];
   };
 
   const { 

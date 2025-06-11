@@ -6,14 +6,17 @@ export interface FlatTask {
   description?: string;
   status: string;
   priority: string;
-  deadline: string; // Keep as string to match current usage
+  deadline: Date; // Changed from string to Date
   userId: string;
   projectId?: string;
   assignedToId?: string;
   assignedToName?: string;
-  createdAt: string;
-  updatedAt: string;
+  assignedToIds?: string[];
+  assignedToNames?: string[];
+  createdAt: Date;
+  updatedAt: Date;
   organizationId: string;
+  cost?: number;
 }
 
 export interface FlatProject {

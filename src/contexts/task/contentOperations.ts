@@ -4,7 +4,7 @@ import { Task, Project, TaskComment } from '@/types';
 
 export const addCommentToTask = (
   taskId: string,
-  comment: { userId: string; userName: string; text: string },
+  comment: { userId: string; userName: string; text: string; organizationId: string },
   tasks: Task[],
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>,
   projects: Project[],
@@ -18,6 +18,7 @@ export const addCommentToTask = (
         userName: comment.userName,
         text: comment.text,
         createdAt: new Date(),
+        organizationId: comment.organizationId
       };
       return { ...task, comments: [...(task.comments || []), newComment] };
     }
