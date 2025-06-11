@@ -15,7 +15,7 @@ interface SimpleUser {
 
 export const fetchTasks = async (
   user: SimpleUser,
-  setTasks: React.Dispatch<React.SetStateAction<Task[]>>
+  setTasks: (tasks: Task[]) => void
 ): Promise<void> => {
   try {
     console.log('Fetching tasks for user:', user?.id, 'org:', user?.organization_id);

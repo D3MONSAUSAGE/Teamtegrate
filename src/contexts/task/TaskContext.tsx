@@ -1,6 +1,5 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Task, Project, DailyScore, TaskStatus, TaskComment } from '@/types';
+import { Task, Project, DailyScore, TaskStatus, TaskComment, ProjectStatus } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { fetchTasks } from './api/taskFetch';
 import { addTask } from './api/taskCreate';
@@ -10,6 +9,11 @@ import { assignTaskToProject, assignTaskToUser } from './api/taskAssignment';
 import { addProject } from './api/projects';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
+
+interface SimpleUser {
+  id: string;
+  organization_id?: string;
+}
 
 interface TaskContextType {
   tasks: Task[];
@@ -55,7 +59,11 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     setIsLoading(true);
     try {
-      await fetchTasks(user, setTasks);
+      const simpleUser: SimpleUser = {
+        id: user.id,
+        organization_id: user.organization_id
+      };
+      await fetchTasks(simpleUser, setTasks);
     } catch (error) {
       console.error('Error refreshing tasks:', error);
     } finally {
@@ -88,9 +96,10 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         tasks: tasks.filter(task => task.projectId === project.id),
         teamMembers: project.team_members || [],
         is_completed: project.is_completed,
-        status: project.status,
+        status: (project.status as ProjectStatus) || 'To Do',
         tasks_count: project.tasks_count || 0,
-        tags: project.tags || []
+        tags: project.tags || [],
+        organizationId: project.organization_id
       }));
 
       setProjects(transformedProjects);
@@ -101,12 +110,14 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const handleAddTask = async (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
     if (!user) return;
-    await addTask(task, user, tasks, setTasks, projects, setProjects);
+    const simpleUser: SimpleUser = { id: user.id, organization_id: user.organization_id };
+    await addTask(task, simpleUser, tasks, setTasks, projects, setProjects);
   };
 
   const handleUpdateTask = async (taskId: string, updates: Partial<Task>) => {
     if (!user) return;
-    await updateTask(taskId, updates, user, tasks, setTasks, projects, setProjects);
+    const simpleUser: SimpleUser = { id: user.id, organization_id: user.organization_id };
+    await updateTask(taskId, updates, simpleUser, tasks, setTasks, projects, setProjects);
   };
 
   const handleUpdateTaskStatus = async (taskId: string, status: TaskStatus) => {
@@ -116,22 +127,26 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const handleDeleteTask = async (taskId: string) => {
     if (!user) return;
-    await deleteTask(taskId, user, tasks, setTasks, projects, setProjects);
+    const simpleUser: SimpleUser = { id: user.id, organization_id: user.organization_id };
+    await deleteTask(taskId, simpleUser, tasks, setTasks, projects, setProjects);
   };
 
   const handleAssignTaskToProject = async (taskId: string, projectId: string) => {
     if (!user) return;
-    await assignTaskToProject(taskId, projectId, user, tasks, setTasks, projects, setProjects);
+    const simpleUser: SimpleUser = { id: user.id, organization_id: user.organization_id };
+    await assignTaskToProject(taskId, projectId, simpleUser, tasks, setTasks, projects, setProjects);
   };
 
   const handleAssignTaskToUser = async (taskId: string, userId: string, userName: string) => {
     if (!user) return;
-    await assignTaskToUser(taskId, userId, userName, user, tasks, setTasks, projects, setProjects);
+    const simpleUser: SimpleUser = { id: user.id, organization_id: user.organization_id };
+    await assignTaskToUser(taskId, userId, userName, simpleUser, tasks, setTasks, projects, setProjects);
   };
 
   const handleAddProject = async (project: Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'tasks'>) => {
     if (!user) return null;
-    const newProject = await addProject(project, user);
+    const simpleUser: SimpleUser = { id: user.id, organization_id: user.organization_id };
+    const newProject = await addProject(project, simpleUser);
     if (newProject) {
       setProjects(prev => [...prev, newProject]);
     }

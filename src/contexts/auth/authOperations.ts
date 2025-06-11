@@ -131,28 +131,34 @@ export const updateUserProfile = async (data: { name?: string }) => {
   }
 };
 
-export const generateInviteCode = async (organizationId: string, expiryDays: number = 7) => {
+export const generateInviteCode = async (
+  organizationId: string, 
+  expiryDays: number = 7, 
+  maxUses?: number
+): Promise<{ success: boolean; inviteCode?: string; error?: string }> => {
   try {
     const { data, error } = await supabase.rpc('generate_invite_code', {
       org_id: organizationId,
       created_by_id: (await supabase.auth.getUser()).data.user?.id,
-      expires_days: expiryDays
+      expires_days: expiryDays,
+      max_uses_param: maxUses || null
     });
 
     if (error) {
       console.error('Error generating invite code:', error);
-      toast.error('Failed to generate invite code');
-      throw error;
+      return { success: false, error: 'Failed to generate invite code' };
     }
 
-    return data;
+    return { success: true, inviteCode: data };
   } catch (error) {
     console.error('Error in generateInviteCode:', error);
-    throw error;
+    return { success: false, error: 'Failed to generate invite code' };
   }
 };
 
-export const validateInviteCode = async (inviteCode: string) => {
+export const validateInviteCode = async (
+  inviteCode: string
+): Promise<{ success: boolean; error?: string }> => {
   try {
     const { data, error } = await supabase.rpc('validate_and_use_invite_code', {
       code: inviteCode
@@ -160,12 +166,16 @@ export const validateInviteCode = async (inviteCode: string) => {
 
     if (error) {
       console.error('Error validating invite code:', error);
-      throw error;
+      return { success: false, error: error.message };
     }
 
-    return data;
+    if (data && typeof data === 'object' && 'success' in data) {
+      return data as { success: boolean; error?: string };
+    }
+
+    return { success: true };
   } catch (error) {
     console.error('Error in validateInviteCode:', error);
-    throw error;
+    return { success: false, error: 'Failed to validate invite code' };
   }
 };

@@ -47,7 +47,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         role: userData.role as UserRole,
         organization_id: userData.organization_id,
         avatar_url: userData.avatar_url,
-        timezone: userData.timezone
+        timezone: userData.timezone,
+        createdAt: new Date(userData.created_at)
       };
     } catch (error) {
       console.error('Error in fetchUserProfile:', error);
