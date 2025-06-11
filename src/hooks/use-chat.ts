@@ -22,7 +22,7 @@ export function useChat(roomId: string, userId?: string) {
   
   const { sendTypingStatus, typingTimeout } = useChatSubscription(roomId, userId, setTypingUsers, setMessages);
   const { uploadFiles } = useChatFileUpload();
-  const { sendMessage: sendMessageToSupabase, isSending } = useChatSendMessage(roomId, userId);
+  const { sendMessage: sendMessageToSupabase, sending } = useChatSendMessage(roomId, userId);
   
   // Reset state when room changes
   useEffect(() => {
@@ -117,7 +117,7 @@ export function useChat(roomId: string, userId?: string) {
     replyTo,
     setReplyTo,
     typingUsers,
-    isSending,
+    isSending: sending,
     hasMoreMessages,
     loadMoreMessages: fetchMoreMessages
   };

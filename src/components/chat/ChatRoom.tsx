@@ -29,14 +29,11 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, onRoomDeleted }) => {
   const { isParticipant, isLoading: checkingAccess } = useChatParticipantCheck(room.id);
   
   const {
-    room: roomData,
-    participants,
+    rooms,
     loading: roomLoading,
-    hasAccess,
-    addParticipant,
-    removeParticipant,
+    createRoom,
     refetch
-  } = useChatRoom(room.id);
+  } = useChatRoom(user);
 
   const {
     messages,
@@ -72,7 +69,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, onRoomDeleted }) => {
   const handleLeaveChat = async () => {
     // Implementation for leaving chat
     if (user && room.created_by !== user.id) {
-      await removeParticipant(user.id);
+      // await removeParticipant(user.id);
       onBack?.();
     }
   };
@@ -99,7 +96,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, onRoomDeleted }) => {
   }
 
   // Show access denied if user is not a participant
-  if (!isParticipant || !hasAccess) {
+  if (!isParticipant) {
     return <ChatRoomAccessDenied roomName={room.name} onBack={onBack} />;
   }
 

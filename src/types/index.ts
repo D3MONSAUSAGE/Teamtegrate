@@ -196,11 +196,11 @@ export const getRoleDisplayName = (role: UserRole): string => {
   }
 };
 
-// Task Card Props interface
+// Task Card Props interface - Fixed to include onDelete
 export interface TaskCardProps {
   task: Task;
   onEdit: () => void;
-  onDelete: () => void;
+  onDelete: () => void; // Added missing prop
   onStatusChange: (status: TaskStatus) => void;
   showProjectInfo?: boolean;
 }

@@ -29,7 +29,7 @@ export function useChatSending(
   const [newMessage, setNewMessage] = useState("");
   const [fileUploads, setFileUploads] = useState<FileUpload[]>([]);
   const [replyTo, setReplyTo] = useState<Message | null>(null);
-  const { sendMessage: sendMessageToSupabase, isSending } = useChatSendMessage(roomId, userId);
+  const { sendMessage: sendMessageToSupabase, sending } = useChatSendMessage(roomId, userId);
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,7 +66,7 @@ export function useChatSending(
     setFileUploads,
     replyTo,
     setReplyTo,
-    isSending,
+    isSending: sending,
     sendMessage,
   };
 }

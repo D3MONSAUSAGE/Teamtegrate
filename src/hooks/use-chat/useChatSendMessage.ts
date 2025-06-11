@@ -4,19 +4,12 @@ import { User } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 
-interface SendMessageParams {
-  roomId: string;
-  content: string;
-  type?: 'text' | 'file' | 'image';
-  parentId?: string;
-}
-
-export const useChatSendMessage = (user: User | null) => {
+export const useChatSendMessage = (roomId: string, userId: string | undefined) => {
   const [sending, setSending] = useState(false);
 
-  const sendMessage = async ({ roomId, content, type = 'text', parentId }: SendMessageParams) => {
-    if (!user?.organizationId) {
-      toast.error('User organization required');
+  const sendMessage = async (content: string, parentId?: string, attachments?: any[]) => {
+    if (!userId) {
+      toast.error('User ID required');
       return;
     }
 
@@ -26,11 +19,11 @@ export const useChatSendMessage = (user: User | null) => {
         .from('chat_messages')
         .insert([{
           room_id: roomId,
-          user_id: user.id,
+          user_id: userId,
           content,
-          type,
+          type: 'text',
           parent_id: parentId,
-          organization_id: user.organizationId
+          organization_id: '' // Will be set by trigger
         }])
         .select()
         .single();
