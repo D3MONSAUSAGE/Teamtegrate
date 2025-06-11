@@ -9,12 +9,16 @@ export const fetchUserTasks = async (
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>
 ): Promise<void> => {
   try {
+    // Validate and cast role to proper type
+    const validRoles = ['user', 'manager', 'admin', 'superadmin'] as const;
+    const userRole = validRoles.includes(user.role as any) ? user.role as 'user' | 'manager' | 'admin' | 'superadmin' : 'user';
+    
     // Create a complete SimpleUser object
     const simpleUser: SimpleUser = {
       id: user.id,
       organization_id: user.organization_id || '',
       email: user.email || '',
-      role: user.role || 'user'
+      role: userRole
     };
     
     await fetchTasks(simpleUser, setTasks);

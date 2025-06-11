@@ -43,7 +43,7 @@ export const fetchTasks = async (
     console.log(`Fetched ${rawTaskData?.length || 0} tasks from database`);
     
     // Fetch comments for all tasks with organization filtering
-    const {data: rawCommentData, error: commentError } = await supabase
+    const { data: rawCommentData, error: commentError } = await supabase
       .from('comments')
       .select('*')
       .eq('organization_id', user.organization_id);
@@ -56,7 +56,10 @@ export const fetchTasks = async (
     const transformedTasks: Task[] = [];
     
     if (rawTaskData) {
-      for (const dbTask of rawTaskData) {
+      // Use explicit any type and manual mapping to avoid deep type inference
+      const dbTasks: any[] = rawTaskData;
+      
+      for (const dbTask of dbTasks) {
         // Validate and set priority with explicit string checks
         const taskPriority = ['Low', 'Medium', 'High'].includes(String(dbTask.priority)) 
           ? String(dbTask.priority) as 'Low' | 'Medium' | 'High'
@@ -82,15 +85,15 @@ export const fetchTasks = async (
           assignedToId: dbTask.assigned_to_id ? String(dbTask.assigned_to_id) : undefined,
           assignedToName: dbTask.assigned_to_names?.[0] ? String(dbTask.assigned_to_names[0]) : undefined,
           assignedToIds: Array.isArray(dbTask.assigned_to_ids) 
-            ? dbTask.assigned_to_ids.map(String) 
+            ? dbTask.assigned_to_ids.map((id: any) => String(id)) 
             : [],
           assignedToNames: Array.isArray(dbTask.assigned_to_names) 
-            ? dbTask.assigned_to_names.map(String) 
+            ? dbTask.assigned_to_names.map((name: any) => String(name)) 
             : [],
           tags: [],
           comments: rawCommentData ? rawCommentData
-            .filter((comment) => comment.task_id === dbTask.id)
-            .map((comment) => ({
+            .filter((comment: any) => comment.task_id === dbTask.id)
+            .map((comment: any) => ({
               id: String(comment.id),
               userId: String(comment.user_id),
               userName: 'User',

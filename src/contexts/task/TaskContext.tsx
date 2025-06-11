@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Task, DailyScore, TaskStatus, TaskComment, ProjectStatus } from '@/types';
 import { SimpleProject, SimpleTask, SimpleDailyScore, SimpleUser } from '@/types/simplified';
@@ -55,11 +56,14 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     setIsLoading(true);
     try {
-      // Create simple user object with explicit typing
+      // Create simple user object with explicit typing to avoid deep type instantiation
+      const validRoles = ['user', 'manager', 'admin', 'superadmin'] as const;
+      const userRole = validRoles.includes(user.role as any) ? user.role as 'user' | 'manager' | 'admin' | 'superadmin' : 'user';
+      
       const simpleUserData: SimpleUser = {
         id: user.id,
         email: user.email || '',
-        role: user.role || 'user',
+        role: userRole,
         organization_id: user.organization_id
       };
       await fetchTasks(simpleUserData, setTasks);
@@ -82,28 +86,45 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       if (error) throw error;
 
-      // Transform to SimpleProject manually with explicit typing
+      // Transform to SimpleProject manually with explicit typing to avoid deep inference
       const transformedProjects: SimpleProject[] = [];
       
       if (projectsData) {
-        for (const dbProject of projectsData) {
+        // Use explicit any type and manual mapping
+        const dbProjects: any[] = projectsData;
+        
+        for (const dbProject of dbProjects) {
+          // Calculate project status based on completion - explicit type checking
+          let status = String(dbProject.status || 'To Do');
+          let isCompleted = Boolean(dbProject.is_completed);
+          
+          // Ensure consistency between status and is_completed
+          if (status === 'Completed') {
+            isCompleted = true;
+          } else if (isCompleted) {
+            status = 'Completed';
+          }
+          
+          // Validate status value
+          const validStatus = ['To Do', 'In Progress', 'Completed'].includes(status) 
+            ? status as 'To Do' | 'In Progress' | 'Completed'
+            : 'To Do' as const;
+          
           const simpleProject: SimpleProject = {
-            id: String(dbProject.id || ''),
+            id: String(dbProject.id),
             title: String(dbProject.title || ''),
             description: dbProject.description ? String(dbProject.description) : undefined,
-            startDate: new Date(dbProject.start_date || Date.now()),
-            endDate: new Date(dbProject.end_date || Date.now()),
+            startDate: dbProject.start_date ? new Date(dbProject.start_date) : new Date(),
+            endDate: dbProject.end_date ? new Date(dbProject.end_date) : new Date(),
             managerId: String(dbProject.manager_id || ''),
-            budget: Number(dbProject.budget) || 0,
-            budgetSpent: Number(dbProject.budget_spent) || 0,
-            createdAt: new Date(dbProject.created_at || Date.now()),
-            updatedAt: new Date(dbProject.updated_at || Date.now()),
+            createdAt: dbProject.created_at ? new Date(dbProject.created_at) : new Date(),
+            updatedAt: dbProject.updated_at ? new Date(dbProject.updated_at) : new Date(),
             tasks: tasks.filter(task => task.projectId === dbProject.id),
             teamMembers: Array.isArray(dbProject.team_members) ? dbProject.team_members.map(String) : [],
-            is_completed: Boolean(dbProject.is_completed),
-            status: (['To Do', 'In Progress', 'Completed'].includes(dbProject.status) 
-              ? dbProject.status 
-              : 'To Do') as 'To Do' | 'In Progress' | 'Completed',
+            budget: Number(dbProject.budget) || 0,
+            budgetSpent: Number(dbProject.budget_spent) || 0,
+            is_completed: isCompleted,
+            status: validStatus,
             tasks_count: Number(dbProject.tasks_count) || 0,
             tags: Array.isArray(dbProject.tags) ? dbProject.tags.map(String) : [],
             organizationId: user.organization_id
