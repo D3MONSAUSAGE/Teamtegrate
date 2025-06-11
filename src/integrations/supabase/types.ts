@@ -495,7 +495,7 @@ export type Database = {
           id: string
           invoice_date: string
           invoice_number: string
-          organization_id: string | null
+          organization_id: string
           updated_at: string
           uploader_name: string
           user_id: string
@@ -510,7 +510,7 @@ export type Database = {
           id?: string
           invoice_date: string
           invoice_number: string
-          organization_id?: string | null
+          organization_id: string
           updated_at?: string
           uploader_name: string
           user_id: string
@@ -525,7 +525,7 @@ export type Database = {
           id?: string
           invoice_date?: string
           invoice_number?: string
-          organization_id?: string | null
+          organization_id?: string
           updated_at?: string
           uploader_name?: string
           user_id?: string
@@ -808,6 +808,7 @@ export type Database = {
           id: string
           is_completed: boolean | null
           manager_id: string | null
+          organization_id: string
           start_date: string | null
           status: string | null
           tags: string[] | null
@@ -825,6 +826,7 @@ export type Database = {
           id: string
           is_completed?: boolean | null
           manager_id?: string | null
+          organization_id: string
           start_date?: string | null
           status?: string | null
           tags?: string[] | null
@@ -842,6 +844,7 @@ export type Database = {
           id?: string
           is_completed?: boolean | null
           manager_id?: string | null
+          organization_id?: string
           start_date?: string | null
           status?: string | null
           tags?: string[] | null
@@ -850,7 +853,15 @@ export type Database = {
           title?: string | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "projects_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       shared_folders: {
         Row: {
@@ -902,6 +913,7 @@ export type Database = {
           deadline: string | null
           description: string | null
           id: string
+          organization_id: string
           priority: string | null
           project_id: string | null
           status: string | null
@@ -919,6 +931,7 @@ export type Database = {
           deadline?: string | null
           description?: string | null
           id: string
+          organization_id: string
           priority?: string | null
           project_id?: string | null
           status?: string | null
@@ -936,6 +949,7 @@ export type Database = {
           deadline?: string | null
           description?: string | null
           id?: string
+          organization_id?: string
           priority?: string | null
           project_id?: string | null
           status?: string | null
@@ -943,7 +957,15 @@ export type Database = {
           updated_at?: string | null
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "tasks_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       team_members: {
         Row: {
@@ -1141,6 +1163,7 @@ export type Database = {
           id: string
           is_completed: boolean | null
           manager_id: string | null
+          organization_id: string
           start_date: string | null
           status: string | null
           tags: string[] | null

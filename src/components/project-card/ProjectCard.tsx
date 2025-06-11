@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { Card } from "@/components/ui/card";
-import { Project } from '@/types';
+import { FlatProject } from '@/types/flat';
 import ProjectCardHeader from './ProjectCardHeader';
 import ProjectCardContent from './ProjectCardContent';
 import ProjectDeleteDialog from './ProjectDeleteDialog';
@@ -10,7 +10,7 @@ import { toast } from '@/components/ui/sonner';
 import EditProjectDialog from '../project/EditProjectDialog';
 
 interface ProjectCardProps {
-  project: Project;
+  project: FlatProject;
   onViewTasks?: () => void;
   onCreateTask?: () => void;
   onDeleted?: () => void;

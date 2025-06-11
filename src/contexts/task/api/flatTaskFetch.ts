@@ -1,69 +1,76 @@
 
-import { FlatTask, FlatUser, RawTaskRow, RawCommentRow } from '@/types/flat';
-import { mapRawTaskToFlat, mapRawCommentToFlat } from '@/utils/dataMappers';
-import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { FlatTask, FlatUser } from '@/types/flat';
+import { TaskStatus } from '@/types';
 
 export const fetchFlatTasks = async (
   user: FlatUser,
-  setTasks: (tasks: FlatTask[]) => void
-): Promise<void> => {
+  setTasks: React.Dispatch<React.SetStateAction<FlatTask[]>>
+) => {
   try {
-    console.log('Fetching flat tasks for user:', user?.id, 'org:', user?.organization_id);
-    
-    if (!user) {
-      console.error('User is required for this operation');
-      toast.error('User must belong to an organization to view tasks');
-      return;
-    }
+    console.log('🔄 Fetching tasks for user:', user.id, 'in organization:', user.organization_id);
     
     if (!user.organization_id) {
-      console.error('User must belong to an organization');
-      toast.error('User must belong to an organization to view tasks');
+      console.error('❌ User has no organization_id, cannot fetch tasks');
+      setTasks([]);
       return;
     }
-    
-    // Explicit column selection to avoid deep type inference
-    const tasksQuery = await supabase
+
+    // Fetch tasks with organization filtering - RLS will handle access control
+    const { data: tasksData, error: tasksError } = await supabase
       .from('tasks')
-      .select('id, user_id, project_id, title, description, deadline, priority, status, created_at, updated_at, assigned_to_id, assigned_to_ids, assigned_to_names, cost');
+      .select('*')
+      .order('created_at', { ascending: false });
 
-    // Cast to avoid type inference issues
-    const tasksResponse = tasksQuery as any;
+    if (tasksError) {
+      console.error('❌ Error fetching tasks:', tasksError);
+      throw tasksError;
+    }
 
-    if (tasksResponse.error) {
-      console.error('Error fetching tasks:', tasksResponse.error);
-      toast.error('Failed to load tasks');
+    if (!tasksData) {
+      console.log('📝 No tasks found for organization');
+      setTasks([]);
       return;
     }
 
-    console.log(`Fetched ${tasksResponse.data?.length || 0} tasks from database`);
-    
-    // Fetch comments with explicit column selection
-    const commentsQuery = await supabase
-      .from('comments')
-      .select('id, user_id, task_id, content, created_at');
+    console.log(`📊 Found ${tasksData.length} tasks for organization`);
 
-    const commentsResponse = commentsQuery as any;
-
-    if (commentsResponse.error) {
-      console.error('Error fetching comments:', commentsResponse.error);
-    }
-
-    // Manual transformation with explicit types
-    const transformedTasks: FlatTask[] = [];
-    
-    if (tasksResponse.data) {
-      for (const dbTask of tasksResponse.data) {
-        const task = mapRawTaskToFlat(dbTask as RawTaskRow);
-        transformedTasks.push(task);
+    // Transform database tasks to FlatTask format
+    const flatTasks: FlatTask[] = tasksData.map(dbTask => {
+      // Ensure status is properly typed
+      let taskStatus: TaskStatus = 'To Do';
+      if (['To Do', 'In Progress', 'Pending', 'Completed'].includes(dbTask.status)) {
+        taskStatus = dbTask.status as TaskStatus;
       }
-    }
 
-    setTasks(transformedTasks);
-    console.log(`Successfully processed ${transformedTasks.length} flat tasks`);
+      return {
+        id: String(dbTask.id),
+        title: String(dbTask.title || ''),
+        description: dbTask.description ? String(dbTask.description) : undefined,
+        deadline: dbTask.deadline ? new Date(dbTask.deadline) : new Date(),
+        priority: dbTask.priority as 'High' | 'Medium' | 'Low',
+        status: taskStatus,
+        userId: String(dbTask.user_id || ''),
+        projectId: dbTask.project_id ? String(dbTask.project_id) : undefined,
+        createdAt: dbTask.created_at ? new Date(dbTask.created_at) : new Date(),
+        updatedAt: dbTask.updated_at ? new Date(dbTask.updated_at) : new Date(),
+        assignedToId: dbTask.assigned_to_id ? String(dbTask.assigned_to_id) : undefined,
+        assignedToName: Array.isArray(dbTask.assigned_to_names) && dbTask.assigned_to_names.length > 0 
+          ? String(dbTask.assigned_to_names[0]) 
+          : undefined,
+        assignedToIds: Array.isArray(dbTask.assigned_to_ids) ? dbTask.assigned_to_ids.map(String) : [],
+        assignedToNames: Array.isArray(dbTask.assigned_to_names) ? dbTask.assigned_to_names.map(String) : [],
+        cost: Number(dbTask.cost) || 0,
+        organizationId: String(dbTask.organization_id)
+      };
+    });
+
+    console.log(`✅ Successfully transformed ${flatTasks.length} tasks`);
+    setTasks(flatTasks);
+
   } catch (error) {
-    console.error('Error in fetchFlatTasks:', error);
-    toast.error('Failed to load tasks');
+    console.error('❌ Error in fetchFlatTasks:', error);
+    setTasks([]);
+    throw error;
   }
 };

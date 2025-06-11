@@ -1,103 +1,89 @@
 
 import React from 'react';
-import { Task, Project, TaskStatus } from '@/types';
-import CompletionRateChart from './analytics/CompletionRateChart';
-import TeamPerformanceChart from './analytics/TeamPerformanceChart';
-import ProjectProgressChart from './analytics/ProjectProgressChart';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useTask } from '@/contexts/task';
+import ProjectProgressChart from './analytics/ProjectProgressChart';
+import TeamPerformanceChart from './analytics/TeamPerformanceChart';
+import CompletionRateChart from './analytics/CompletionRateChart';
 
-interface AnalyticsSectionProps {
-  tasks: Task[];
-  projects: Project[];
-}
+const AnalyticsSection = () => {
+  const { projects, tasks } = useTask();
 
-const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ tasks, projects }) => {
-  const isMobile = useIsMobile();
-  
+  // Convert FlatProject[] to compatible format for charts
+  const chartProjects = projects.map(project => ({
+    ...project,
+    // Ensure compatibility with existing chart components
+    teamMembers: project.teamMemberIds || [],
+    tasks: tasks.filter(task => task.projectId === project.id)
+  }));
+
+  const completedTasksCount = tasks.filter(task => task.status === 'Completed').length;
+  const totalTasksCount = tasks.length;
+  const completionRate = totalTasksCount > 0 ? Math.round((completedTasksCount / totalTasksCount) * 100) : 0;
+
   return (
-    <section className="mt-2">
-      <h2 className="text-lg font-semibold mb-4">Analytics & Performance</h2>
-      
-      {isMobile ? (
-        <Tabs defaultValue="completion">
-          <TabsList className="grid grid-cols-3 mb-4">
-            <TabsTrigger value="completion">Completion</TabsTrigger>
-            <TabsTrigger value="team">Team</TabsTrigger>
-            <TabsTrigger value="projects">Projects</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="completion">
-            <Card className="border shadow-sm">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-md">Task Completion Rate</CardTitle>
-                <CardDescription>Your task completion trends over time</CardDescription>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <CompletionRateChart tasks={tasks} />
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="team">
-            <Card className="border shadow-sm">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-md">Team Performance</CardTitle>
-                <CardDescription>Task completion by team members</CardDescription>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <TeamPerformanceChart tasks={tasks} />
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="projects">
-            <Card className="border shadow-sm">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-md">Project Progress</CardTitle>
-                <CardDescription>Status of tasks across projects</CardDescription>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <ProjectProgressChart projects={projects} />
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <Card className="border shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-md">Task Completion Rate</CardTitle>
-              <CardDescription>Your task completion trends over time</CardDescription>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <CompletionRateChart tasks={tasks} />
-            </CardContent>
-          </Card>
-          
-          <Card className="border shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-md">Team Performance</CardTitle>
-              <CardDescription>Task completion by team members</CardDescription>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <TeamPerformanceChart tasks={tasks} />
-            </CardContent>
-          </Card>
-          
-          <Card className="border shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-md">Project Progress</CardTitle>
-              <CardDescription>Status of tasks across projects</CardDescription>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <ProjectProgressChart projects={projects} />
-            </CardContent>
-          </Card>
-        </div>
-      )}
-    </section>
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Projects</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{projects.length}</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Tasks</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalTasksCount}</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Completion Rate</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{completionRate}%</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Project Progress</CardTitle>
+            <CardDescription>Task completion status across projects</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ProjectProgressChart projects={projects} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Team Performance</CardTitle>
+            <CardDescription>Task assignment and completion metrics</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <TeamPerformanceChart />
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Completion Trends</CardTitle>
+          <CardDescription>Task completion rate over time</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <CompletionRateChart projects={projects} />
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
