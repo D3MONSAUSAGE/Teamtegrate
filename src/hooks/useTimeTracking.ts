@@ -1,92 +1,91 @@
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { startOfWeek, addDays } from 'date-fns';
 
 // Accept an optional "weekStart" param to fetch entries for a specific week.
-export const useTimeTracking = () => {
+export function useTimeTracking() {
   const { user } = useAuth();
-  const [currentEntry, setCurrentEntry] = useState<{
-    id?: string;
-    clock_in?: Date;
-    isClocked: boolean;
-  }>({ isClocked: false });
+  const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
+  const [currentEntry, setCurrentEntry] = useState<TimeEntry | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    if (!user) return;
-    const fetchCurrentEntry = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('time_entries')
-          .select('*')
-          .eq('user_id', user.id)
-          .is('clock_out', null)
-          .maybeSingle();
+  const fetchTimeEntries = useCallback(async () => {
+    if (!user?.organizationId) return;
 
-        if (error) {
-          console.error('Error fetching current time entry:', error);
-          return;
-        }
-
-        if (data) {
-          setCurrentEntry({ 
-            id: data.id, 
-            clock_in: new Date(data.clock_in), 
-            isClocked: true 
-          });
-        }
-      } catch (error) {
-        console.error('Error in fetchCurrentEntry:', error);
-      }
-    };
-
-    fetchCurrentEntry();
-  }, [user]);
-
-  const clockIn = async (notes?: string) => {
-    if (!user || !user.organization_id) {
-      toast.error('You must be logged in to clock in');
-      return;
-    }
-
-    if (currentEntry.isClocked) {
-      toast.error('You are already clocked in');
-      return;
-    }
-
+    setIsLoading(true);
     try {
-      // Include organization_id for multi-tenancy
       const { data, error } = await supabase
         .from('time_entries')
-        .insert({ 
-          user_id: user.id, 
-          notes: notes || null,
-          organization_id: user.organization_id
-        })
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('organization_id', user.organizationId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const entries: TimeEntry[] = (data || []).map(entry => ({
+        id: entry.id,
+        user_id: entry.user_id,
+        clock_in: new Date(entry.clock_in),
+        clock_out: entry.clock_out ? new Date(entry.clock_out) : undefined,
+        duration_minutes: entry.duration_minutes,
+        notes: entry.notes,
+        created_at: new Date(entry.created_at),
+        organizationId: entry.organization_id
+      }));
+
+      setTimeEntries(entries);
+      
+      // Find current active entry
+      const activeEntry = entries.find(entry => !entry.clock_out);
+      setCurrentEntry(activeEntry || null);
+    } catch (error) {
+      console.error('Error fetching time entries:', error);
+      toast.error('Failed to load time entries');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user?.id, user?.organizationId]);
+
+  const clockIn = async (notes?: string) => {
+    if (!user?.organizationId) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('time_entries')
+        .insert([{
+          user_id: user.id,
+          organization_id: user.organizationId,
+          notes: notes || null
+        }])
         .select()
         .single();
 
-      if (error) {
-        toast.error('Failed to clock in', { description: error.message });
-        return;
-      }
+      if (error) throw error;
 
-      setCurrentEntry({ 
-        id: data.id, 
-        clock_in: new Date(data.clock_in), 
-        isClocked: true 
-      });
+      const newEntry: TimeEntry = {
+        id: data.id,
+        user_id: data.user_id,
+        clock_in: new Date(data.clock_in),
+        duration_minutes: data.duration_minutes,
+        notes: data.notes,
+        created_at: new Date(data.created_at),
+        organizationId: data.organization_id
+      };
+
+      setCurrentEntry(newEntry);
+      setTimeEntries(prev => [newEntry, ...prev]);
       toast.success('Clocked in successfully');
     } catch (error) {
-      console.error('Error in clockIn:', error);
-      toast.error('An unexpected error occurred');
+      console.error('Error clocking in:', error);
+      toast.error('Failed to clock in');
     }
   };
 
   const clockOut = async (notes?: string) => {
-    if (!currentEntry.id) {
+    if (!currentEntry?.id) {
       toast.error('No active clock-in found');
       return;
     }
@@ -178,6 +177,7 @@ export const useTimeTracking = () => {
   };
 
   return {
+    timeEntries,
     currentEntry,
     clockIn,
     clockOut,

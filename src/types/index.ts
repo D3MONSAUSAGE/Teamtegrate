@@ -1,4 +1,3 @@
-
 export type UserRole = 'superadmin' | 'admin' | 'manager' | 'user';
 
 export interface User {
@@ -200,7 +199,7 @@ export const getRoleDisplayName = (role: UserRole): string => {
 export interface TaskCardProps {
   task: Task;
   onEdit: () => void;
-  onDelete: () => void; // Added missing prop
+  onDelete: () => void;
   onStatusChange: (status: TaskStatus) => void;
   showProjectInfo?: boolean;
 }

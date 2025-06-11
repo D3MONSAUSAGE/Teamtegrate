@@ -1,4 +1,3 @@
-
 import { FlatTask, FlatProject, FlatComment, RawTaskRow, RawProjectRow, RawCommentRow } from '@/types/flat';
 
 const parseDate = (dateStr: string | null | undefined): Date => {
@@ -53,19 +52,11 @@ export const mapRawProjectToFlat = (rawProject: RawProjectRow): FlatProject => {
     id: String(rawProject.id),
     title: String(rawProject.title || ''),
     description: rawProject.description ? String(rawProject.description) : undefined,
-    startDate: parseDate(rawProject.start_date),
-    endDate: parseDate(rawProject.end_date),
-    managerId: String(rawProject.manager_id || ''),
-    createdAt: parseDate(rawProject.created_at),
-    updatedAt: parseDate(rawProject.updated_at),
-    teamMemberIds: Array.isArray(rawProject.team_members) ? rawProject.team_members.map(String) : [],
-    budget: Number(rawProject.budget) || 0,
-    budgetSpent: Number(rawProject.budget_spent) || 0,
-    is_completed: Boolean(rawProject.is_completed),
     status: projectStatus,
-    tasks_count: Number(rawProject.tasks_count) || 0,
-    tags: Array.isArray(rawProject.tags) ? rawProject.tags.map(String) : [],
+    managerId: String(rawProject.manager_id || ''),
     organizationId: String(rawProject.organization_id || ''),
+    createdAt: rawProject.created_at || new Date().toISOString(),
+    updatedAt: rawProject.updated_at || new Date().toISOString(),
   };
 };
 
