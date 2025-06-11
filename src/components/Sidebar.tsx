@@ -48,6 +48,13 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
 
   const isCollapsed = !isMobile && state === 'collapsed';
 
+  // Create a safe user object for the sidebar footer
+  const sidebarUser = {
+    name: user.name || user.email || 'User',
+    email: user.email,
+    role: user.role
+  };
+
   return (
     <ShadcnSidebar 
       className="glass-sidebar border-r border-sidebar-border/60 backdrop-blur-xl no-scrollbar overflow-hidden transition-all duration-300"
@@ -76,7 +83,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
       
       <ShadcnSidebarFooter className="border-t border-sidebar-border/30 bg-gradient-to-t from-sidebar-background/80 to-transparent">
         <SidebarFooter 
-          user={user} 
+          user={sidebarUser} 
           isCollapsed={isCollapsed}
         />
       </ShadcnSidebarFooter>

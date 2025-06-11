@@ -1,12 +1,10 @@
-
 // Simplified interfaces for context layers to avoid deep type instantiation
 
 export interface SimpleUser {
   id: string;
   email: string;
-  name?: string;
   role: string;
-  organization_id?: string;
+  organization_id: string;
 }
 
 export interface SimpleTask {

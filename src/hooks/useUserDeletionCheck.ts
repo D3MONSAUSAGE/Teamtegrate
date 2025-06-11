@@ -1,7 +1,6 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { AppUser } from '@/types';
+import { User } from '@/types';
 
 interface DeletionImpact {
   tasks_assigned: number;
@@ -20,7 +19,7 @@ interface UseDeletionCheckResult {
   warnings: string[];
 }
 
-export const useUserDeletionCheck = (user: AppUser | null): UseDeletionCheckResult => {
+export const useUserDeletionCheck = (user: User | null): UseDeletionCheckResult => {
   const [impact, setImpact] = useState<DeletionImpact | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

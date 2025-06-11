@@ -11,6 +11,9 @@ export interface User {
   avatar_url?: string;
 }
 
+// Alias for backward compatibility
+export type AppUser = User;
+
 export type TaskPriority = 'Low' | 'Medium' | 'High';
 
 export type TaskStatus = 'To Do' | 'In Progress' | 'Completed';

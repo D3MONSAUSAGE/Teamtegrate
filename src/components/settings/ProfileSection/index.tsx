@@ -10,7 +10,7 @@ import { User } from "lucide-react";
 
 const ProfileSection = () => {
   const { user } = useAuth();
-  const [name, setName] = useState<string>(user?.name || "");
+  const [name, setName] = useState<string>(user?.name || user?.email || "");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -82,13 +82,21 @@ const ProfileSection = () => {
       <CardContent className="space-y-6 bg-white/50 dark:bg-[#1f2133]/70 rounded-b-lg p-6">
         <div className="flex flex-col md:flex-row md:items-start gap-8 animate-fade-in">
           <ProfileAvatar 
-            user={user} 
+            user={{ 
+              id: user.id, 
+              name: user.name || user.email || 'User'
+            }} 
             setAvatarUrl={setAvatarUrl} 
             avatarUrl={avatarUrl} 
           />
           
           <ProfileInfoForm
-            user={user}
+            user={{
+              id: user.id,
+              name: user.name || user.email || 'User',
+              email: user.email,
+              role: user.role
+            }}
             name={name}
             setName={setName}
             onSave={handleSave}

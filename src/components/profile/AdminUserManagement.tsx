@@ -7,7 +7,7 @@ import { useUsers } from '@/hooks/useUsers';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { useAuth } from '@/contexts/AuthContext';
-import { AppUser } from '@/types';
+import { User } from '@/types';
 import UserManagementHeader from './UserManagementHeader';
 import UserManagementTable from './UserManagementTable';
 import EnhancedUserDeleteDialog from './EnhancedUserDeleteDialog';
@@ -16,8 +16,8 @@ import EditUserDialog from './EditUserDialog';
 const AdminUserManagement = () => {
   const { users, isLoading, refetchUsers } = useUsers();
   const { user: currentUser } = useAuth();
-  const [userToDelete, setUserToDelete] = useState<AppUser | null>(null);
-  const [userToEdit, setUserToEdit] = useState<AppUser | null>(null);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [userToEdit, setUserToEdit] = useState<User | null>(null);
   const [deletingUser, setDeletingUser] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -92,11 +92,11 @@ const AdminUserManagement = () => {
     }
   };
 
-  const handleEditUser = (user: AppUser) => {
+  const handleEditUser = (user: User) => {
     setUserToEdit(user);
   };
 
-  const handleDeleteClick = (user: AppUser) => {
+  const handleDeleteClick = (user: User) => {
     setUserToDelete(user);
   };
 
@@ -109,7 +109,7 @@ const AdminUserManagement = () => {
 
   // Filter users based on search query (users are already filtered by organization via RLS)
   const filteredUsers = users.filter(user => 
-    user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (user.name || user.email).toLowerCase().includes(searchQuery.toLowerCase()) ||
     user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
     user.role.toLowerCase().includes(searchQuery.toLowerCase())
   );

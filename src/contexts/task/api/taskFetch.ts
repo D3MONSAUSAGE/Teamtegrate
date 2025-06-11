@@ -1,5 +1,5 @@
-
 import { Task } from '@/types';
+import { SimpleUser } from '@/types/simplified';
 import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -8,14 +8,8 @@ const parseDate = (dateStr: string | null): Date => {
   return new Date(dateStr);
 };
 
-// Simple user interface to avoid deep instantiation
-interface SimpleUserContext {
-  id: string;
-  organization_id?: string;
-}
-
 export const fetchTasks = async (
-  user: SimpleUserContext,
+  user: SimpleUser,
   setTasks: (tasks: Task[]) => void
 ): Promise<void> => {
   try {

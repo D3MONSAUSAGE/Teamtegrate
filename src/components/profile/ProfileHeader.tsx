@@ -18,7 +18,7 @@ const ProfileHeader = () => {
   console.log("ProfileHeader rendering");
   const { user, refreshUserSession } = useAuth();
   const navigate = useNavigate();
-  const [name, setName] = useState<string>(user?.name || "");
+  const [name, setName] = useState<string>(user?.name || user?.email || "");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -140,7 +140,10 @@ const ProfileHeader = () => {
           <div className="flex flex-col lg:flex-row lg:items-start gap-8 flex-1">
             <div className="flex flex-col items-center lg:items-start">
               <ProfileAvatar 
-                user={user} 
+                user={{ 
+                  id: user.id, 
+                  name: user.name || user.email || 'User'
+                }} 
                 setAvatarUrl={setAvatarUrl} 
                 avatarUrl={avatarUrl} 
               />
@@ -170,7 +173,12 @@ const ProfileHeader = () => {
             
             <div className="flex-1 min-w-0">
               <ProfileInfoForm
-                user={user}
+                user={{
+                  id: user.id,
+                  name: user.name || user.email || 'User',
+                  email: user.email,
+                  role: user.role
+                }}
                 name={name}
                 setName={setName}
                 onSave={handleSave}

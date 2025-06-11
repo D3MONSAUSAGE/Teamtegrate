@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Task, DailyScore, TaskStatus, TaskComment, ProjectStatus } from '@/types';
-import { SimpleProject, SimpleTask, SimpleDailyScore } from '@/types/simplified';
+import { SimpleProject, SimpleTask, SimpleDailyScore, SimpleUser } from '@/types/simplified';
 import { useAuth } from '@/contexts/AuthContext';
 import { fetchTasks } from './api/taskFetch';
 import { addTask } from './api/taskCreate';
@@ -56,11 +56,14 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     setIsLoading(true);
     try {
-      const userData = {
+      // Convert to SimpleUser to avoid deep instantiation
+      const simpleUser: SimpleUser = {
         id: user.id,
+        email: user.email,
+        role: user.role,
         organization_id: user.organization_id
       };
-      await fetchTasks(userData, setTasks);
+      await fetchTasks(simpleUser, setTasks);
     } catch (error) {
       console.error('Error refreshing tasks:', error);
     } finally {
