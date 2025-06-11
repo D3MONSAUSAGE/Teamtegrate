@@ -158,7 +158,7 @@ const CreateTaskDialogEnhanced: React.FC<CreateTaskDialogEnhancedProps> = ({
       assignedToName: multiAssignMode ? undefined : data.assignedToName,
       assignedToIds: multiAssignMode ? selectedMembers : undefined,
       assignedToNames: multiAssignMode ? 
-        (Array.isArray(users) ? users.filter(u => selectedMembers.includes(u.id)).map(u => u.name || u.email) : []) : 
+        (safeUsers.filter(u => selectedMembers.includes(u.id)).map(u => u.name || u.email)) : 
         undefined
     };
 
@@ -211,9 +211,6 @@ const CreateTaskDialogEnhanced: React.FC<CreateTaskDialogEnhancedProps> = ({
     
     return Math.round((completed / total) * 100);
   };
-
-  // Ensure users is always an array to prevent crashes
-  const safeUsers = Array.isArray(users) ? users : [];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
