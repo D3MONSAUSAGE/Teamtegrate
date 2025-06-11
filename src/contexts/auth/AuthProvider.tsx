@@ -22,7 +22,7 @@ export const useAuth = () => {
 const toFullUser = (appUser: AppUser): User => {
   return {
     ...appUser,
-    createdAt: appUser.createdAt || new Date()
+    createdAt: appUser.createdAt ?? new Date()
   };
 };
 
