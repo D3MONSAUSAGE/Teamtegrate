@@ -1,6 +1,6 @@
 
 import { Task } from '@/types';
-import { SimpleUser } from '@/types/simplified';
+import { SimpleUser, RawTask, RawComment } from '@/types/simplified';
 import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -28,11 +28,14 @@ export const fetchTasks = async (
       return;
     }
     
-    // Use any type to avoid deep inference
-    const tasksResponse: any = await supabase
+    // Explicit column selection to avoid deep type inference
+    const tasksQuery = await supabase
       .from('tasks')
-      .select('*')
+      .select('id, user_id, project_id, title, description, deadline, priority, status, created_at, updated_at, assigned_to_id, assigned_to_ids, assigned_to_names, cost')
       .eq('organization_id', user.organization_id);
+
+    // Cast to avoid type inference issues
+    const tasksResponse = tasksQuery as unknown as { data: RawTask[] | null, error: any };
 
     if (tasksResponse.error) {
       console.error('Error fetching tasks:', tasksResponse.error);
@@ -42,25 +45,24 @@ export const fetchTasks = async (
 
     console.log(`Fetched ${tasksResponse.data?.length || 0} tasks from database`);
     
-    // Use any type to avoid deep inference
-    const commentsResponse: any = await supabase
+    // Fetch comments with explicit column selection
+    const commentsQuery = await supabase
       .from('comments')
-      .select('*')
+      .select('id, user_id, task_id, content, created_at')
       .eq('organization_id', user.organization_id);
+
+    const commentsResponse = commentsQuery as unknown as { data: RawComment[] | null, error: any };
 
     if (commentsResponse.error) {
       console.error('Error fetching comments:', commentsResponse.error);
     }
 
-    // Manual transformation with explicit any types
+    // Manual transformation with explicit types
     const transformedTasks: Task[] = [];
     
     if (tasksResponse.data) {
-      // Use explicit any[] to prevent deep type inference
-      const rawTasks: any[] = tasksResponse.data;
-      
-      for (const dbTask of rawTasks) {
-        // Explicit type checks and assignments
+      for (const dbTask of tasksResponse.data) {
+        // Explicit type validation
         let taskPriority: 'Low' | 'Medium' | 'High' = 'Medium';
         if (dbTask.priority === 'Low' || dbTask.priority === 'Medium' || dbTask.priority === 'High') {
           taskPriority = dbTask.priority;
@@ -93,8 +95,8 @@ export const fetchTasks = async (
             : [],
           tags: [],
           comments: commentsResponse.data ? commentsResponse.data
-            .filter((comment: any) => comment.task_id === dbTask.id)
-            .map((comment: any) => ({
+            .filter((comment: RawComment) => comment.task_id === dbTask.id)
+            .map((comment: RawComment) => ({
               id: String(comment.id),
               userId: String(comment.user_id),
               userName: 'User',

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Task, DailyScore, TaskStatus, TaskComment, ProjectStatus } from '@/types';
-import { SimpleProject, SimpleTask, SimpleDailyScore, SimpleUser } from '@/types/simplified';
+import { SimpleProject, SimpleTask, SimpleDailyScore, SimpleUser, RawProject } from '@/types/simplified';
 import { useAuth } from '@/contexts/AuthContext';
 import { fetchTasks } from './api/taskFetch';
 import { addTask } from './api/taskCreate';
@@ -77,11 +77,14 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (!user?.organization_id) return;
     
     try {
-      // Use any type to avoid deep inference
-      const projectsResponse: any = await supabase
+      // Explicit column selection to avoid deep type inference
+      const projectsQuery = await supabase
         .from('projects')
-        .select('*')
+        .select('id, title, description, start_date, end_date, manager_id, created_at, updated_at, team_members, budget, budget_spent, is_completed, status, tasks_count, tags')
         .eq('organization_id', user.organization_id);
+
+      // Cast to avoid type inference issues
+      const projectsResponse = projectsQuery as unknown as { data: RawProject[] | null, error: any };
 
       if (projectsResponse.error) throw projectsResponse.error;
 
@@ -89,10 +92,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const transformedProjects: SimpleProject[] = [];
       
       if (projectsResponse.data) {
-        // Use explicit any[] to prevent deep type inference
-        const rawProjects: any[] = projectsResponse.data;
-        
-        for (const dbProject of rawProjects) {
+        for (const dbProject of projectsResponse.data) {
           // Explicit status validation
           let projectStatus: 'To Do' | 'In Progress' | 'Completed' = 'To Do';
           if (dbProject.status === 'To Do' || dbProject.status === 'In Progress' || dbProject.status === 'Completed') {
@@ -188,20 +188,22 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (!user?.organization_id) return;
 
     try {
-      const updateData: any = {};
+      const updateData: Record<string, any> = {};
       if (updates.title) updateData.title = updates.title;
       if (updates.description !== undefined) updateData.description = updates.description;
       if (updates.status) updateData.status = updates.status;
       if (updates.is_completed !== undefined) updateData.is_completed = updates.is_completed;
       if (updates.budget !== undefined) updateData.budget = updates.budget;
 
-      const response: any = await supabase
+      const response = await supabase
         .from('projects')
         .update(updateData)
         .eq('id', projectId)
         .eq('organization_id', user.organization_id);
 
-      if (response.error) throw response.error;
+      const updateResponse = response as unknown as { error: any };
+
+      if (updateResponse.error) throw updateResponse.error;
 
       setProjects(prev => prev.map(project => 
         project.id === projectId ? { ...project, ...updates } : project
@@ -218,13 +220,15 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (!user?.organization_id) return;
 
     try {
-      const response: any = await supabase
+      const response = await supabase
         .from('projects')
         .delete()
         .eq('id', projectId)
         .eq('organization_id', user.organization_id);
 
-      if (response.error) throw response.error;
+      const deleteResponse = response as unknown as { error: any };
+
+      if (deleteResponse.error) throw deleteResponse.error;
 
       setProjects(prev => prev.filter(project => project.id !== projectId));
       toast.success('Project deleted successfully');
@@ -238,7 +242,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (!user?.organization_id) return;
 
     try {
-      const response: any = await supabase
+      const response = await supabase
         .from('comments')
         .insert({
           task_id: taskId,
@@ -249,14 +253,16 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         .select()
         .single();
 
-      if (response.error) throw response.error;
+      const commentResponse = response as unknown as { data: any, error: any };
+
+      if (commentResponse.error) throw commentResponse.error;
 
       const newComment: TaskComment = {
-        id: response.data.id,
+        id: commentResponse.data.id,
         userId: comment.userId,
         userName: comment.userName,
         text: comment.text,
-        createdAt: new Date(response.data.created_at)
+        createdAt: new Date(commentResponse.data.created_at)
       };
 
       setTasks(prev => prev.map(task => 

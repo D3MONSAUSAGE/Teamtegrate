@@ -59,3 +59,47 @@ export interface SimpleDailyScore {
   percentage: number;
   date: Date;
 }
+
+// Simple raw database types to avoid complex inference
+export interface RawTask {
+  id: string;
+  user_id: string;
+  project_id?: string;
+  title: string;
+  description?: string;
+  deadline?: string;
+  priority?: string;
+  status?: string;
+  created_at?: string;
+  updated_at?: string;
+  assigned_to_id?: string;
+  assigned_to_ids?: string[];
+  assigned_to_names?: string[];
+  cost?: number;
+}
+
+export interface RawProject {
+  id: string;
+  title: string;
+  description?: string;
+  start_date?: string;
+  end_date?: string;
+  manager_id: string;
+  budget?: number;
+  budget_spent?: number;
+  created_at?: string;
+  updated_at?: string;
+  team_members?: string[];
+  is_completed?: boolean;
+  status?: string;
+  tasks_count?: number;
+  tags?: string[];
+}
+
+export interface RawComment {
+  id: string;
+  user_id: string;
+  task_id: string;
+  content: string;
+  created_at: string;
+}
