@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { AppUser, UserRole } from '@/types';
+import { User, UserRole } from '@/types';
 import { AuthContextType } from './types';
 import { createBasicUserFromSession, setupAuthTimeout } from './utils/authHelpers';
 import { useAuthOperations } from './hooks/useAuthOperations';
@@ -10,7 +10,7 @@ import { useAuthOperations } from './hooks/useAuthOperations';
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<AppUser | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
@@ -22,7 +22,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [loading]);
 
   // Fetch full user profile from database
-  const fetchUserProfile = async (userId: string): Promise<AppUser | null> => {
+  const fetchUserProfile = async (userId: string): Promise<User | null> => {
     try {
       console.log('Fetching user profile for:', userId);
       
@@ -44,7 +44,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         email: userData.email,
         name: userData.name,
         role: userData.role as UserRole,
-        organization_id: userData.organization_id,
+        organization_id: userData.organization_id || '',
         avatar_url: userData.avatar_url,
         timezone: userData.timezone,
         createdAt: new Date(userData.created_at)

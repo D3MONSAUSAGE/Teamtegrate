@@ -8,7 +8,7 @@ export const createUserFromSession = async (session: Session): Promise<User> => 
     // First try to get the most up-to-date role and organization from the database
     const { data: dbUser, error } = await supabase
       .from('users')
-      .select('role, organization_id')
+      .select('role, organization_id, name, timezone, avatar_url')
       .eq('id', session.user.id)
       .single();
 
@@ -34,10 +34,12 @@ export const createUserFromSession = async (session: Session): Promise<User> => 
     return {
       id: session.user.id,
       email: session.user.email || '',
-      name: session.user.user_metadata.name || session.user.email?.split('@')[0] || '',
+      name: dbUser?.name || session.user.user_metadata.name || session.user.email?.split('@')[0] || '',
       role: currentRole,
+      organization_id: dbOrgId || '',
       createdAt: new Date(session.user.created_at),
-      organization_id: dbOrgId,
+      avatar_url: dbUser?.avatar_url || session.user.user_metadata.avatar_url,
+      timezone: dbUser?.timezone || session.user.user_metadata.timezone
     };
   } catch (error) {
     console.error('Error creating user from session:', error);
@@ -47,7 +49,10 @@ export const createUserFromSession = async (session: Session): Promise<User> => 
       email: session.user.email || '',
       name: session.user.user_metadata.name || session.user.email?.split('@')[0] || '',
       role: (session.user.user_metadata.role as UserRole) || 'user',
+      organization_id: '',
       createdAt: new Date(session.user.created_at),
+      avatar_url: session.user.user_metadata.avatar_url,
+      timezone: session.user.user_metadata.timezone
     };
   }
 };

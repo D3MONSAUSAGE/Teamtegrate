@@ -2,13 +2,13 @@
 import { useState } from 'react';
 import { login as authLogin, signup as authSignup, logout as authLogout, updateUserProfile as updateProfile } from '../authOperations';
 import { User as SupabaseUser, Session } from '@supabase/supabase-js';
-import { User as AppUser, UserRole } from '@/types';
+import { User, UserRole } from '@/types';
 
 export const useAuthOperations = (
   session: Session | null,
-  user: AppUser | null,
+  user: User | null,
   setSession: (session: Session | null) => void,
-  setUser: (user: AppUser | null) => void,
+  setUser: (user: User | null) => void,
   setLoading: (loading: boolean) => void
 ) => {
   const login = async (email: string, password: string) => {

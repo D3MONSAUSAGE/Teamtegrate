@@ -8,14 +8,14 @@ const parseDate = (dateStr: string | null): Date => {
   return new Date(dateStr);
 };
 
-// Minimal user interface to avoid deep instantiation
-interface UserContext {
+// Simple user interface to avoid deep instantiation
+interface SimpleUserContext {
   id: string;
   organization_id?: string;
 }
 
 export const fetchTasks = async (
-  user: UserContext,
+  user: SimpleUserContext,
   setTasks: (tasks: Task[]) => void
 ): Promise<void> => {
   try {

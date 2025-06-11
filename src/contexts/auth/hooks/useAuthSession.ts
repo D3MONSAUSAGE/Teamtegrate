@@ -1,12 +1,12 @@
 
 import { useEffect, useState } from 'react';
 import { User as SupabaseUser, Session } from '@supabase/supabase-js';
-import { AppUser } from '@/types';
+import { User } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { createUserFromSession, refreshUserSession as refreshSession } from '../userSessionUtils';
 
 export const useAuthSession = () => {
-  const [user, setUser] = useState<AppUser | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -16,17 +16,8 @@ export const useAuthSession = () => {
       if (session?.user && forceCreate) {
         console.log('Creating user data for:', session.user.id);
         const userData = await createUserFromSession(session);
-        // Convert User to AppUser by excluding createdAt
-        const appUser: AppUser = {
-          id: userData.id,
-          name: userData.name,
-          email: userData.email,
-          role: userData.role,
-          avatar_url: userData.avatar_url,
-          organization_id: userData.organization_id
-        };
-        setUser(appUser);
-        console.log('User data created successfully:', appUser.id, appUser.role);
+        setUser(userData);
+        console.log('User data created successfully:', userData.id, userData.role);
       } else if (!session) {
         setUser(null);
         console.log('No session, clearing user data');
@@ -43,16 +34,7 @@ export const useAuthSession = () => {
       const { session: newSession, user: userData } = await refreshSession();
       if (newSession && userData) {
         setSession(newSession);
-        // Convert User to AppUser
-        const appUser: AppUser = {
-          id: userData.id,
-          name: userData.name,
-          email: userData.email,
-          role: userData.role,
-          avatar_url: userData.avatar_url,
-          organization_id: userData.organization_id
-        };
-        setUser(appUser);
+        setUser(userData);
       }
     } catch (error) {
       console.error('Error refreshing session:', error);

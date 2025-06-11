@@ -1,12 +1,19 @@
+
 import { Task } from '@/types';
 import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
 import { addOrgIdToInsert, validateUserOrganization } from '@/utils/organizationHelpers';
 
+// Simple user interface to avoid deep instantiation
+interface SimpleUserContext {
+  id: string;
+  organization_id?: string;
+}
+
 export const addTask = async (
   task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>,
-  user: { id: string; organization_id?: string },
+  user: SimpleUserContext,
   tasks: Task[],
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>,
   projects: any[],

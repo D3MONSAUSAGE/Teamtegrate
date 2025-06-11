@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Task, DailyScore, TaskStatus, TaskComment, ProjectStatus } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
@@ -11,8 +10,8 @@ import { addProject } from './api/projects';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 
-// Basic project interface to avoid complex type instantiation
-interface BasicProject {
+// Simple project interface to avoid complex type instantiation
+interface SimpleProject {
   id: string;
   title: string;
   description?: string;
@@ -34,10 +33,10 @@ interface BasicProject {
 
 interface TaskContextType {
   tasks: Task[];
-  projects: BasicProject[];
+  projects: SimpleProject[];
   dailyScore: DailyScore;
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
-  setProjects: React.Dispatch<React.SetStateAction<BasicProject[]>>;
+  setProjects: React.Dispatch<React.SetStateAction<SimpleProject[]>>;
   setDailyScore: React.Dispatch<React.SetStateAction<DailyScore>>;
   refreshTasks: () => Promise<void>;
   isLoading: boolean;
@@ -47,8 +46,8 @@ interface TaskContextType {
   deleteTask: (taskId: string) => Promise<void>;
   assignTaskToProject: (taskId: string, projectId: string) => Promise<void>;
   assignTaskToUser: (taskId: string, userId: string, userName: string) => Promise<void>;
-  addProject: (project: Omit<BasicProject, 'id' | 'createdAt' | 'updatedAt' | 'tasks'>) => Promise<BasicProject | null>;
-  updateProject: (projectId: string, updates: Partial<BasicProject>) => Promise<void>;
+  addProject: (project: Omit<SimpleProject, 'id' | 'createdAt' | 'updatedAt' | 'tasks'>) => Promise<SimpleProject | null>;
+  updateProject: (projectId: string, updates: Partial<SimpleProject>) => Promise<void>;
   deleteProject: (projectId: string) => Promise<void>;
   refreshProjects: () => Promise<void>;
   addCommentToTask: (taskId: string, comment: { userId: string; userName: string; text: string }) => Promise<void>;
@@ -59,7 +58,7 @@ const TaskContext = createContext<TaskContextType | undefined>(undefined);
 export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user, loading: authLoading } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [projects, setProjects] = useState<BasicProject[]>([]);
+  const [projects, setProjects] = useState<SimpleProject[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [dailyScore, setDailyScore] = useState<DailyScore>({
     completedTasks: 0,
@@ -100,7 +99,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (error) throw error;
 
       // Basic transformation to avoid deep type instantiation
-      const transformedProjects = (data || []).map((dbProject): BasicProject => ({
+      const transformedProjects = (data || []).map((dbProject): SimpleProject => ({
         id: dbProject.id || '',
         title: dbProject.title || '',
         description: dbProject.description || '',
@@ -163,7 +162,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     await assignTaskToUser(taskId, userId, userName, userData, tasks, setTasks, projects, setProjects);
   };
 
-  const handleAddProject = async (project: Omit<BasicProject, 'id' | 'createdAt' | 'updatedAt' | 'tasks'>) => {
+  const handleAddProject = async (project: Omit<SimpleProject, 'id' | 'createdAt' | 'updatedAt' | 'tasks'>) => {
     if (!user) return null;
     const userData = { id: user.id, organization_id: user.organization_id };
     
@@ -175,17 +174,17 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     const newProject = await addProject(projectForApi, userData);
     if (newProject) {
-      // Convert the returned project to BasicProject format
-      const basicProject: BasicProject = {
+      // Convert the returned project to SimpleProject format
+      const simpleProject: SimpleProject = {
         ...newProject,
         tasks: []
       };
-      setProjects(prev => [...prev, basicProject]);
+      setProjects(prev => [...prev, simpleProject]);
     }
-    return newProject as BasicProject;
+    return newProject as SimpleProject;
   };
 
-  const handleUpdateProject = async (projectId: string, updates: Partial<BasicProject>) => {
+  const handleUpdateProject = async (projectId: string, updates: Partial<SimpleProject>) => {
     if (!user?.organization_id) return;
 
     try {
@@ -336,3 +335,5 @@ export const useTask = (): TaskContextType => {
 };
 
 export default TaskProvider;
+
+</edits_to_apply>

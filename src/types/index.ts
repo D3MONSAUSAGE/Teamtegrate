@@ -1,25 +1,14 @@
-
 export type UserRole = 'superadmin' | 'admin' | 'manager' | 'user';
 
 export interface User {
   id: string;
   email: string;
-  name: string;
   role: UserRole;
+  organization_id: string;
+  name?: string;
+  timezone?: string;
   createdAt: Date;
   avatar_url?: string;
-  organization_id?: string;
-}
-
-export interface AppUser {
-  id: string;
-  name: string;
-  email: string;
-  role: UserRole;
-  avatar_url?: string;
-  organization_id?: string;
-  timezone?: string;
-  createdAt?: Date; // Make this optional to match User interface
 }
 
 export type TaskPriority = 'Low' | 'Medium' | 'High';
