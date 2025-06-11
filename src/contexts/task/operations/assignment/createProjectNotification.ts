@@ -7,7 +7,8 @@ import { supabase } from '@/integrations/supabase/client';
 export const createProjectTeamAdditionNotification = async (
   userId: string,
   projectTitle: string,
-  adderName: string
+  adderName: string,
+  organizationId: string
 ): Promise<void> => {
   try {
     const notificationContent = `You've been added to project: ${projectTitle} by ${adderName}`;
@@ -16,7 +17,8 @@ export const createProjectTeamAdditionNotification = async (
       user_id: userId,
       title: 'Added to Project Team',
       content: notificationContent,
-      type: 'project_team_addition'
+      type: 'project_team_addition',
+      organization_id: organizationId
     });
     
     console.log('Project team addition notification created for user:', userId);

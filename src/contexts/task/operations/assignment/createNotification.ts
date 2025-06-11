@@ -7,7 +7,8 @@ import { supabase } from '@/integrations/supabase/client';
 export const createTaskAssignmentNotification = async (
   userId: string,
   taskTitle: string,
-  isSelfAssigned: boolean
+  isSelfAssigned: boolean,
+  organizationId: string
 ): Promise<void> => {
   try {
     const notificationType = isSelfAssigned ? 'Task Self-Assigned' : 'Task Assigned';
@@ -19,7 +20,8 @@ export const createTaskAssignmentNotification = async (
       user_id: userId,
       title: notificationType,
       content: notificationContent,
-      type: 'task_assignment'
+      type: 'task_assignment',
+      organization_id: organizationId
     });
     
     console.log(`${isSelfAssigned ? 'Self-assignment' : 'Task assignment'} notification created for user:`, userId);
@@ -35,7 +37,8 @@ export const createTaskAssignmentNotification = async (
 export const createMultipleTaskAssignmentNotifications = async (
   userIds: string[],
   taskTitle: string,
-  currentUserId: string
+  currentUserId: string,
+  organizationId: string
 ): Promise<void> => {
   try {
     const notifications = userIds.map(userId => ({
@@ -44,7 +47,8 @@ export const createMultipleTaskAssignmentNotifications = async (
       content: userId === currentUserId 
         ? `You assigned yourself to task: ${taskTitle}`
         : `You've been assigned to task: ${taskTitle}`,
-      type: 'task_assignment'
+      type: 'task_assignment',
+      organization_id: organizationId
     }));
 
     await supabase.from('notifications').insert(notifications);

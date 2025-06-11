@@ -21,7 +21,7 @@ export const assignTaskToUser = async (
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
 ) => {
   try {
-    if (!user) return;
+    if (!user || !user.organization_id) return;
 
     const now = new Date();
     
@@ -57,7 +57,7 @@ export const assignTaskToUser = async (
     // Create notification for the assigned user
     if (userId) {
       const isSelfAssigned = (userId === user.id);
-      await createTaskAssignmentNotification(userId, task.title, isSelfAssigned);
+      await createTaskAssignmentNotification(userId, task.title, isSelfAssigned, user.organization_id);
     }
     
     // Update the state in both tasks array and projects array

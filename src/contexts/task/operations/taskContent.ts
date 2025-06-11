@@ -1,5 +1,3 @@
-
-
 import { Task, Project, TaskComment, TaskStatus } from '@/types';
 import { toast } from '@/components/ui/sonner';
 import { playSuccessSound, playErrorSound } from '@/utils/sounds';
@@ -8,7 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 export const addCommentToTask = async (
   taskId: string,
-  comment: { userId: string; userName: string; text: string },
+  comment: { userId: string; userName: string; text: string; organizationId?: string },
   tasks: Task[],
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>,
   projects: Project[],
@@ -22,6 +20,7 @@ export const addCommentToTask = async (
       userName: comment.userName,
       text: comment.text,
       createdAt: now,
+      organizationId: comment.organizationId
     };
 
     // Find the task to get its project ID
@@ -38,7 +37,8 @@ export const addCommentToTask = async (
         project_id: projectId,
         content: comment.text,
         created_at: now.toISOString(),
-        updated_at: now.toISOString()
+        updated_at: now.toISOString(),
+        organization_id: comment.organizationId || ''
       });
 
     if (error) {
