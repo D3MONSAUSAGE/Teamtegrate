@@ -952,6 +952,7 @@ export type Database = {
           id: string
           name: string
           role: string
+          timezone: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -960,6 +961,7 @@ export type Database = {
           id: string
           name: string
           role: string
+          timezone?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -968,6 +970,7 @@ export type Database = {
           id?: string
           name?: string
           role?: string
+          timezone?: string | null
         }
         Relationships: []
       }
@@ -1049,6 +1052,10 @@ export type Database = {
         Returns: boolean
       }
       send_reminders: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      send_timezone_aware_reminders: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }

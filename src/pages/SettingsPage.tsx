@@ -1,42 +1,36 @@
 
-import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Separator } from "@/components/ui/separator";
-import SettingsLayout from '@/components/settings/SettingsLayout';
-import AppSettingsSection from '@/components/settings/AppSettingsSection';
-import AccountSettingsSection from '@/components/settings/AccountSettingsSection';
+import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { Navigate } from 'react-router-dom';
+import SettingsLayout from '@/components/settings/SettingsLayout';
+import ProfileSection from '@/components/settings/ProfileSection';
+import AccountSettingsSection from '@/components/settings/AccountSettingsSection';
+import AppSettingsSection from '@/components/settings/AppSettingsSection';
+import NotificationSettings from '@/components/settings/NotificationSettings';
 
 const SettingsPage = () => {
-  const navigate = useNavigate();
-  const { isAuthenticated, loading } = useAuth();
-  
-  useEffect(() => {
-    // Redirect if not authenticated
-    if (!loading && !isAuthenticated) {
-      navigate('/login');
-    }
-  }, [isAuthenticated, loading, navigate]);
-  
-  const handleCancel = () => {
-    navigate('/dashboard');
-  };
-  
-  if (loading) {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
   }
-  
-  if (!isAuthenticated) {
-    return null; // Will be redirected by the useEffect
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
   }
-  
+
   return (
-    <SettingsLayout onCancel={handleCancel}>
-      <AppSettingsSection />
-      
-      <Separator />
-      
-      <AccountSettingsSection />
+    <SettingsLayout>
+      <div className="space-y-8">
+        <ProfileSection />
+        <NotificationSettings />
+        <AccountSettingsSection />
+        <AppSettingsSection />
+      </div>
     </SettingsLayout>
   );
 };

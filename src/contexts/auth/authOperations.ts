@@ -1,7 +1,9 @@
-
 import { UserRole } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
+import { Session } from '@supabase/supabase-js';
+import { createUserFromSession } from './userSessionUtils';
+import { User } from '@/types';
 
 export const login = async (email: string, password: string): Promise<void> => {
   const { error } = await supabase.auth.signInWithPassword({
@@ -67,4 +69,54 @@ export const updateUserProfile = async (data: { name?: string }): Promise<void> 
     console.error('Error updating profile:', error);
     throw error;
   }
+};
+
+export const initializeUserTimezone = async (userId: string): Promise<void> => {
+  try {
+    // Check if user already has a timezone set
+    const { data: existingUser, error: fetchError } = await supabase
+      .from('users')
+      .select('timezone')
+      .eq('id', userId)
+      .single();
+
+    if (fetchError) {
+      console.error('Error checking user timezone:', fetchError);
+      return;
+    }
+
+    // If timezone is not set, detect and set it
+    if (!existingUser.timezone || existingUser.timezone === 'UTC') {
+      try {
+        const detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        
+        const { error: updateError } = await supabase
+          .from('users')
+          .update({ timezone: detectedTimezone })
+          .eq('id', userId);
+
+        if (updateError) {
+          console.error('Error setting initial timezone:', updateError);
+        } else {
+          console.log(`Set initial timezone for user ${userId}: ${detectedTimezone}`);
+        }
+      } catch (timezoneError) {
+        console.warn('Could not detect timezone, keeping UTC default:', timezoneError);
+      }
+    }
+  } catch (error) {
+    console.error('Error in initializeUserTimezone:', error);
+  }
+};
+
+export const handleAuthStateChange = async (session: Session | null): Promise<User | null> => {
+  if (session) {
+    const userData = await createUserFromSession(session);
+    
+    // Initialize timezone for new or existing users
+    await initializeUserTimezone(session.user.id);
+    
+    return userData;
+  }
+  return null;
 };
