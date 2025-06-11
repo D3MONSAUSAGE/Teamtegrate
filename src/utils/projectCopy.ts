@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { v4 as uuidv4 } from 'uuid';
 
-export const createSheltonLawProject = async (userId: string) => {
+export const createSheltonLawProject = async (userId: string, organizationId: string) => {
   try {
     const projectId = uuidv4();
     const now = new Date();
@@ -26,7 +26,8 @@ export const createSheltonLawProject = async (userId: string) => {
         team_members: [userId],
         status: 'In Progress',
         tasks_count: 0,
-        tags: ['legal', 'case-management']
+        tags: ['legal', 'case-management'],
+        organization_id: organizationId
       });
 
     if (projectError) {
@@ -219,7 +220,8 @@ export const createSheltonLawProject = async (userId: string) => {
       deadline: new Date(task.deadline).toISOString(),
       created_at: nowISO,
       updated_at: nowISO,
-      cost: 0
+      cost: 0,
+      organization_id: organizationId
     }));
 
     const { error: tasksError } = await supabase

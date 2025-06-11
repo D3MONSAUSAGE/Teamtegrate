@@ -8,6 +8,7 @@ import { Plus, Search, Loader2, Sparkles, FolderKanban, Zap } from 'lucide-react
 import ProjectCard from '@/components/project-card';
 import CreateProjectDialog from '@/components/CreateProjectDialog';
 import { useNavigate } from 'react-router-dom';
+import { flatProjectsToProjects } from '@/utils/typeConversions';
 
 const ProjectsPage = () => {
   const { user } = useAuth();
@@ -16,7 +17,14 @@ const ProjectsPage = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const navigate = useNavigate();
 
-  const filteredProjects = projects.filter(project =>
+  // Convert SimpleProjects to FlatProjects for compatibility
+  const flatProjects = projects.map(project => ({
+    ...project,
+    teamMemberIds: project.teamMembers || [],
+    organizationId: user?.organization_id || ''
+  }));
+
+  const filteredProjects = flatProjects.filter(project =>
     project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     project.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );

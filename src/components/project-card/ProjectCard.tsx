@@ -8,6 +8,7 @@ import ProjectDeleteDialog from './ProjectDeleteDialog';
 import { useTask } from '@/contexts/task';
 import { toast } from '@/components/ui/sonner';
 import EditProjectDialog from '../project/EditProjectDialog';
+import { flatProjectToProject } from '@/utils/typeConversions';
 
 interface ProjectCardProps {
   project: FlatProject;
@@ -44,6 +45,9 @@ const ProjectCard = ({ project, onViewTasks, onCreateTask, onDeleted }: ProjectC
     toast.success("Project updated successfully");
   };
 
+  // Convert FlatProject to Project for components that expect Project type
+  const convertedProject = flatProjectToProject(project);
+
   return (
     <>
       <Card className="overflow-hidden">
@@ -71,7 +75,7 @@ const ProjectCard = ({ project, onViewTasks, onCreateTask, onDeleted }: ProjectC
       <EditProjectDialog 
         open={showEditDialog}
         onOpenChange={setShowEditDialog}
-        project={project}
+        project={convertedProject}
         onSuccess={handleEditSuccess}
       />
     </>

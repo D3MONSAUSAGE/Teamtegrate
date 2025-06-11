@@ -16,6 +16,7 @@ import TeamManagement from '@/components/dashboard/TeamManagement';
 import { useIsMobile } from '@/hooks/use-mobile';
 import AnalyticsSection from '@/components/dashboard/AnalyticsSection';
 import TimeTracking from '@/components/dashboard/TimeTracking';
+import { flatTasksToTasks, flatProjectsToProjects } from '@/utils/typeConversions';
 
 const DashboardPage = () => {
   const { user } = useAuth();
@@ -26,12 +27,16 @@ const DashboardPage = () => {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const isMobile = useIsMobile();
   
+  // Convert FlatTasks to Tasks for compatibility
+  const convertedTasks = flatTasksToTasks(tasks);
+  const convertedProjects = flatProjectsToProjects(projects, tasks);
+  
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
   
-  const todaysTasks = tasks.filter((task) => {
+  const todaysTasks = convertedTasks.filter((task) => {
     const taskDate = new Date(task.deadline);
     taskDate.setHours(0, 0, 0, 0);
     return taskDate.getTime() === today.getTime();
@@ -40,13 +45,13 @@ const DashboardPage = () => {
   const nextWeek = new Date(today);
   nextWeek.setDate(nextWeek.getDate() + 7);
   
-  const upcomingTasks = tasks.filter((task) => {
+  const upcomingTasks = convertedTasks.filter((task) => {
     const taskDate = new Date(task.deadline);
     taskDate.setHours(0, 0, 0, 0);
     return taskDate > today && taskDate <= nextWeek;
   }).sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime());
   
-  const recentProjects = projects.slice(0, 3);
+  const recentProjects = convertedProjects.slice(0, 3);
   
   const handleEditTask = (task: Task) => {
     setEditingTask(task);
@@ -117,7 +122,7 @@ const DashboardPage = () => {
                     <div className="text-xs text-muted-foreground">Upcoming</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-amber-600">{projectsLoading ? '...' : projects.length}</div>
+                    <div className="text-2xl font-bold text-amber-600">{projectsLoading ? '...' : convertedProjects.length}</div>
                     <div className="text-xs text-muted-foreground">Projects</div>
                   </div>
                 </div>
@@ -170,10 +175,7 @@ const DashboardPage = () => {
               </h2>
             </div>
             <div className="p-6">
-              <AnalyticsSection 
-                tasks={tasks} 
-                projects={projects}
-              />
+              <AnalyticsSection />
             </div>
           </div>
         </div>
