@@ -29,7 +29,7 @@ export const addOrgIdToInsert = <T extends Record<string, any>>(
   };
 };
 
-// Helper function for organization-scoped selects - specific implementations
+// Helper function for organization-scoped selects
 export const getOrgScopedTasksQuery = (user: { id: string; organization_id?: string } | null) => {
   validateUserOrganization(user);
   
@@ -72,25 +72,5 @@ export const getOrgScopedChatMessagesQuery = (user: { id: string; organization_i
   return supabase
     .from('chat_messages')
     .select('*')
-    .eq('organization_id', user.organization_id);
-};
-
-// Helper function for organization-scoped updates
-export const getOrgScopedTaskUpdate = (user: { id: string; organization_id?: string } | null) => {
-  validateUserOrganization(user);
-  
-  return supabase
-    .from('tasks')
-    .update({})
-    .eq('organization_id', user.organization_id);
-};
-
-// Helper function for organization-scoped deletes
-export const getOrgScopedTaskDelete = (user: { id: string; organization_id?: string } | null) => {
-  validateUserOrganization(user);
-  
-  return supabase
-    .from('tasks')
-    .delete()
     .eq('organization_id', user.organization_id);
 };

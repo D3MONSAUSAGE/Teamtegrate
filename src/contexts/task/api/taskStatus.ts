@@ -38,7 +38,7 @@ export const updateTaskStatus = async (
     
     if (status === 'Completed') {
       completedById = user.id;
-      completedByName = user.name || task.assignedToName;
+      completedByName = user.name || task.assignedToName || 'User';
     }
 
     const { error } = await supabase
@@ -65,7 +65,7 @@ export const updateTaskStatus = async (
           status: status, 
           completedAt: status === 'Completed' ? now : undefined,
           completedById: status === 'Completed' ? user.id : undefined,
-          completedByName: status === 'Completed' ? (user.name || t.assignedToName) : undefined
+          completedByName: status === 'Completed' ? (user.name || t.assignedToName || 'User') : undefined
         } : t
       )
     );
@@ -80,7 +80,7 @@ export const updateTaskStatus = async (
             status: status, 
             completedAt: status === 'Completed' ? now : undefined,
             completedById: status === 'Completed' ? user.id : undefined,
-            completedByName: status === 'Completed' ? (user.name || t.assignedToName) : undefined
+            completedByName: status === 'Completed' ? (user.name || t.assignedToName || 'User') : undefined
           } : t
         ),
       }))
