@@ -63,10 +63,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (currentSession) {
             // Create a basic user object without database calls
             const basicUser = createBasicUserFromSession(currentSession.user);
-            // Ensure createdAt is set for AppUser compatibility - provide default value
+            // Ensure createdAt is always set for AppUser compatibility
             const userWithCreatedAt: AppUser = {
               ...basicUser,
-              createdAt: basicUser.createdAt || new Date()
+              createdAt: basicUser.createdAt || new Date(currentSession.user.created_at)
             };
             setUser(userWithCreatedAt);
           }
@@ -112,10 +112,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         // Create basic user object immediately
         const basicUser = createBasicUserFromSession(session.user);
-        // Ensure createdAt is set for AppUser compatibility - provide default value
+        // Ensure createdAt is always set for AppUser compatibility
         const userWithCreatedAt: AppUser = {
           ...basicUser,
-          createdAt: basicUser.createdAt || new Date()
+          createdAt: basicUser.createdAt || new Date(session.user.created_at)
         };
         setUser(userWithCreatedAt);
         setLoading(false);
@@ -123,8 +123,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Only create database user record after successful login (not during initialization)
         if (event === 'SIGNED_IN') {
           setTimeout(() => {
-            // Pass session directly without type conversion
-            handleUserCreation(session, true);
+            // Convert AppUser to User for handleUserCreation by ensuring createdAt is a Date
+            const userForCreation: User = {
+              ...userWithCreatedAt,
+              createdAt: userWithCreatedAt.createdAt || new Date(session.user.created_at)
+            };
+            handleUserCreation(session, userForCreation);
           }, 100);
         }
       }
