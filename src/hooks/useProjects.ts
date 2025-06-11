@@ -1,6 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Project } from '@/types';
+import { SimpleProject } from '@/types/simplified';
 import { toast } from '@/components/ui/sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -48,7 +49,7 @@ const checkProjectAccess = (project: any, userId: string, teamMemberships: strin
 
 export const useProjects = () => {
   const { user } = useAuth();
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [projects, setProjects] = useState<SimpleProject[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
@@ -101,11 +102,11 @@ export const useProjects = () => {
       
       console.log(`✅ After filtering, found ${accessibleProjects.length} accessible projects for user ${user.id}`);
       
-      // Process and format project data with tasks count
-      const formattedProjects: Project[] = accessibleProjects.map(project => {
-        // Calculate project status based on completion
-        let status = project.status || 'To Do';
-        let isCompleted = project.is_completed || false;
+      // Transform to SimpleProject manually to avoid deep type instantiation
+      const formattedProjects: SimpleProject[] = accessibleProjects.map(project => {
+        // Calculate project status based on completion - explicit type checking
+        let status = String(project.status || 'To Do');
+        let isCompleted = Boolean(project.is_completed);
         
         // Ensure consistency between status and is_completed
         if (status === 'Completed') {
@@ -114,23 +115,28 @@ export const useProjects = () => {
           status = 'Completed';
         }
         
+        // Validate status value
+        const validStatus = ['To Do', 'In Progress', 'Completed'].includes(status) 
+          ? status as 'To Do' | 'In Progress' | 'Completed'
+          : 'To Do' as const;
+        
         return {
-          id: project.id,
-          title: project.title || '',
-          description: project.description || '',
+          id: String(project.id),
+          title: String(project.title || ''),
+          description: project.description ? String(project.description) : undefined,
           startDate: project.start_date ? new Date(project.start_date) : new Date(),
           endDate: project.end_date ? new Date(project.end_date) : new Date(),
-          managerId: project.manager_id || '',
+          managerId: String(project.manager_id || ''),
           createdAt: project.created_at ? new Date(project.created_at) : new Date(),
           updatedAt: project.updated_at ? new Date(project.updated_at) : new Date(),
           tasks: [], // Tasks will be loaded separately in TaskContext
-          teamMembers: project.team_members || [],
-          budget: project.budget || 0,
-          budgetSpent: project.budget_spent || 0,
+          teamMembers: Array.isArray(project.team_members) ? project.team_members.map(String) : [],
+          budget: Number(project.budget) || 0,
+          budgetSpent: Number(project.budget_spent) || 0,
           is_completed: isCompleted,
-          status: status as Project['status'],
-          tasks_count: project.tasks_count || 0,
-          tags: project.tags || [],
+          status: validStatus,
+          tasks_count: Number(project.tasks_count) || 0,
+          tags: Array.isArray(project.tags) ? project.tags.map(String) : [],
           organizationId: user.organization_id
         };
       });

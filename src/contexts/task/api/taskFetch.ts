@@ -57,42 +57,46 @@ export const fetchTasks = async (
       console.error('Error fetching comments:', commentError);
     }
 
-    // Transform database format to application format
+    // Transform database format to application format manually to avoid deep type instantiation
     const transformedTasks: Task[] = (taskData || []).map((dbTask) => {
-      // Validate and set priority
-      const taskPriority = ['Low', 'Medium', 'High'].includes(dbTask.priority) 
-        ? dbTask.priority 
-        : 'Medium';
+      // Validate and set priority - explicit string checks
+      const taskPriority = ['Low', 'Medium', 'High'].includes(String(dbTask.priority)) 
+        ? String(dbTask.priority) as 'Low' | 'Medium' | 'High'
+        : 'Medium' as const;
       
-      // Validate and set status
-      const taskStatus = ['To Do', 'In Progress', 'Completed'].includes(dbTask.status)
-        ? dbTask.status
-        : 'To Do';
+      // Validate and set status - explicit string checks
+      const taskStatus = ['To Do', 'In Progress', 'Completed'].includes(String(dbTask.status))
+        ? String(dbTask.status) as 'To Do' | 'In Progress' | 'Completed'
+        : 'To Do' as const;
 
-      // Build task object explicitly
+      // Build task object explicitly with manual transformations
       const task: Task = {
-        id: dbTask.id || '',
-        userId: dbTask.user_id || user.id,
-        projectId: dbTask.project_id || undefined,
-        title: dbTask.title || '',
-        description: dbTask.description || '',
+        id: String(dbTask.id || ''),
+        userId: String(dbTask.user_id || user.id),
+        projectId: dbTask.project_id ? String(dbTask.project_id) : undefined,
+        title: String(dbTask.title || ''),
+        description: String(dbTask.description || ''),
         deadline: parseDate(dbTask.deadline),
-        priority: taskPriority as 'Low' | 'Medium' | 'High',
-        status: taskStatus as 'To Do' | 'In Progress' | 'Completed',
+        priority: taskPriority,
+        status: taskStatus,
         createdAt: parseDate(dbTask.created_at),
         updatedAt: parseDate(dbTask.updated_at),
-        assignedToId: dbTask.assigned_to_id || undefined,
-        assignedToName: dbTask.assigned_to_names?.[0] || undefined,
-        assignedToIds: Array.isArray(dbTask.assigned_to_ids) ? dbTask.assigned_to_ids : [],
-        assignedToNames: Array.isArray(dbTask.assigned_to_names) ? dbTask.assigned_to_names : [],
+        assignedToId: dbTask.assigned_to_id ? String(dbTask.assigned_to_id) : undefined,
+        assignedToName: dbTask.assigned_to_names?.[0] ? String(dbTask.assigned_to_names[0]) : undefined,
+        assignedToIds: Array.isArray(dbTask.assigned_to_ids) 
+          ? dbTask.assigned_to_ids.map(String) 
+          : [],
+        assignedToNames: Array.isArray(dbTask.assigned_to_names) 
+          ? dbTask.assigned_to_names.map(String) 
+          : [],
         tags: [],
         comments: (commentData || [])
           .filter((comment) => comment.task_id === dbTask.id)
           .map((comment) => ({
-            id: comment.id,
-            userId: comment.user_id,
+            id: String(comment.id),
+            userId: String(comment.user_id),
             userName: 'User',
-            text: comment.content,
+            text: String(comment.content),
             createdAt: parseDate(comment.created_at),
           })),
         cost: Number(dbTask.cost) || 0,

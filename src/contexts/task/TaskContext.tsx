@@ -1,5 +1,7 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Task, DailyScore, TaskStatus, TaskComment, ProjectStatus } from '@/types';
+import { SimpleProject, SimpleTask, SimpleDailyScore } from '@/types/simplified';
 import { useAuth } from '@/contexts/AuthContext';
 import { fetchTasks } from './api/taskFetch';
 import { addTask } from './api/taskCreate';
@@ -10,34 +12,13 @@ import { addProject } from './api/projects';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 
-// Simple project interface to avoid complex type instantiation
-interface SimpleProject {
-  id: string;
-  title: string;
-  description?: string;
-  startDate: Date;
-  endDate: Date;
-  managerId: string;
-  budget: number;
-  budgetSpent?: number;
-  createdAt: Date;
-  updatedAt: Date;
-  tasks: Task[];
-  teamMembers: string[];
-  is_completed: boolean;
-  status: ProjectStatus;
-  tasks_count: number;
-  tags?: string[];
-  organizationId?: string;
-}
-
 interface TaskContextType {
   tasks: Task[];
   projects: SimpleProject[];
-  dailyScore: DailyScore;
+  dailyScore: SimpleDailyScore;
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
   setProjects: React.Dispatch<React.SetStateAction<SimpleProject[]>>;
-  setDailyScore: React.Dispatch<React.SetStateAction<DailyScore>>;
+  setDailyScore: React.Dispatch<React.SetStateAction<SimpleDailyScore>>;
   refreshTasks: () => Promise<void>;
   isLoading: boolean;
   addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
@@ -60,7 +41,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [tasks, setTasks] = useState<Task[]>([]);
   const [projects, setProjects] = useState<SimpleProject[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [dailyScore, setDailyScore] = useState<DailyScore>({
+  const [dailyScore, setDailyScore] = useState<SimpleDailyScore>({
     completedTasks: 0,
     totalTasks: 0,
     percentage: 0,
@@ -98,26 +79,26 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       if (error) throw error;
 
-      // Basic transformation to avoid deep type instantiation
-      const transformedProjects = (data || []).map((dbProject): SimpleProject => ({
-        id: dbProject.id || '',
-        title: dbProject.title || '',
-        description: dbProject.description || '',
+      // Transform to SimpleProject manually to avoid deep type instantiation
+      const transformedProjects: SimpleProject[] = (data || []).map((dbProject): SimpleProject => ({
+        id: String(dbProject.id || ''),
+        title: String(dbProject.title || ''),
+        description: dbProject.description ? String(dbProject.description) : undefined,
         startDate: new Date(dbProject.start_date || Date.now()),
         endDate: new Date(dbProject.end_date || Date.now()),
-        managerId: dbProject.manager_id || '',
+        managerId: String(dbProject.manager_id || ''),
         budget: Number(dbProject.budget) || 0,
         budgetSpent: Number(dbProject.budget_spent) || 0,
         createdAt: new Date(dbProject.created_at || Date.now()),
         updatedAt: new Date(dbProject.updated_at || Date.now()),
         tasks: tasks.filter(task => task.projectId === dbProject.id),
-        teamMembers: Array.isArray(dbProject.team_members) ? dbProject.team_members : [],
+        teamMembers: Array.isArray(dbProject.team_members) ? dbProject.team_members.map(String) : [],
         is_completed: Boolean(dbProject.is_completed),
         status: (['To Do', 'In Progress', 'Completed'].includes(dbProject.status) 
           ? dbProject.status 
-          : 'To Do') as ProjectStatus,
+          : 'To Do') as 'To Do' | 'In Progress' | 'Completed',
         tasks_count: Number(dbProject.tasks_count) || 0,
-        tags: Array.isArray(dbProject.tags) ? dbProject.tags : [],
+        tags: Array.isArray(dbProject.tags) ? dbProject.tags.map(String) : [],
         organizationId: user.organization_id
       }));
 
@@ -166,7 +147,6 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (!user) return null;
     const userData = { id: user.id, organization_id: user.organization_id };
     
-    // Convert to compatible format for API
     const projectForApi = {
       ...project,
       status: project.status as ProjectStatus
@@ -174,7 +154,6 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     const newProject = await addProject(projectForApi, userData);
     if (newProject) {
-      // Convert the returned project to SimpleProject format
       const simpleProject: SimpleProject = {
         ...newProject,
         tasks: []
@@ -335,5 +314,3 @@ export const useTask = (): TaskContextType => {
 };
 
 export default TaskProvider;
-
-</edits_to_apply>
