@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,15 +17,14 @@ import { toast } from '@/components/ui/sonner';
 import { UserRole } from '@/types';
 import { ArrowLeft } from 'lucide-react';
 import BrandLogo from '@/components/shared/BrandLogo';
+import MultiTenantSignupForm from '@/components/auth/MultiTenantSignupForm';
 
 const LoginPage = () => {
   const [searchParams] = useSearchParams();
   const [isLogin, setIsLogin] = useState(!searchParams.get('signup'));
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
-  const role: UserRole = 'user';
-  const { login, signup, isAuthenticated, loading } = useAuth();
+  const { login, isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
   
   // Redirect if already logged in
@@ -44,21 +44,52 @@ const LoginPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!isLogin) {
+      // This shouldn't happen as signup is handled by MultiTenantSignupForm
+      return;
+    }
+    
     try {
-      if (isLogin) {
-        await login(email, password);
-        toast.success('Welcome back!');
-      } else {
-        if (!name.trim()) {
-          toast.error('Please enter your name');
-          return;
-        }
-        await signup(email, password, name, role);
-      }
+      await login(email, password);
+      toast.success('Welcome back!');
     } catch (error) {
       console.error('Authentication error:', error);
     }
   };
+
+  const handleBackToLogin = () => {
+    setIsLogin(true);
+  };
+  
+  if (!isLogin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
+        <div className="w-full max-w-md">
+          {/* Back to landing page link */}
+          <div className="mb-6">
+            <Link to="/" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to home
+            </Link>
+          </div>
+
+          <MultiTenantSignupForm onBack={handleBackToLogin} />
+
+          {/* Additional marketing copy for signup */}
+          <div className="mt-6 text-center">
+            <p className="text-sm text-muted-foreground mb-2">
+              Join thousands of teams already using TeamTegrate
+            </p>
+            <div className="flex justify-center space-x-4 text-xs text-muted-foreground">
+              <span>✓ Free 14-day trial</span>
+              <span>✓ No credit card required</span>
+              <span>✓ Setup in minutes</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
@@ -76,31 +107,13 @@ const LoginPage = () => {
             <div className="flex justify-center mb-2">
               <BrandLogo size="md" />
             </div>
-            <CardTitle className="text-2xl font-bold">
-              {isLogin ? 'Welcome Back' : 'Join TeamTegrate'}
-            </CardTitle>
+            <CardTitle className="text-2xl font-bold">Welcome Back</CardTitle>
             <CardDescription>
-              {isLogin 
-                ? 'Sign in to access your team workspace' 
-                : 'Create your account and start collaborating'
-              }
+              Sign in to access your team workspace
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              {!isLogin && (
-                <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
-                  <Input
-                    id="name"
-                    placeholder="Enter your full name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                  />
-                </div>
-              )}
-              
               <div className="space-y-2">
                 <Label htmlFor="email">Email Address</Label>
                 <Input
@@ -123,57 +136,24 @@ const LoginPage = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
-                {!isLogin && (
-                  <p className="text-xs text-muted-foreground">
-                    Password should be at least 6 characters long
-                  </p>
-                )}
               </div>
 
               <Button type="submit" className="w-full" disabled={loading}>
-                {isLogin 
-                  ? (loading ? 'Signing in...' : 'Sign In') 
-                  : (loading ? 'Creating account...' : 'Create Account')
-                }
+                {loading ? 'Signing in...' : 'Sign In'}
               </Button>
             </form>
-
-            {!isLogin && (
-              <div className="mt-4 p-3 bg-muted rounded-md">
-                <p className="text-xs text-muted-foreground text-center">
-                  By creating an account, you agree to our Terms of Service and Privacy Policy
-                </p>
-              </div>
-            )}
           </CardContent>
           <CardFooter>
             <Button
               variant="link"
               className="w-full"
-              onClick={() => setIsLogin(!isLogin)}
+              onClick={() => setIsLogin(false)}
               disabled={loading}
             >
-              {isLogin 
-                ? "Don't have an account? Sign up for free" 
-                : "Already have an account? Sign in"
-              }
+              Don't have an account? Sign up for free
             </Button>
           </CardFooter>
         </Card>
-
-        {/* Additional marketing copy for signup */}
-        {!isLogin && (
-          <div className="mt-6 text-center">
-            <p className="text-sm text-muted-foreground mb-2">
-              Join thousands of teams already using TeamTegrate
-            </p>
-            <div className="flex justify-center space-x-4 text-xs text-muted-foreground">
-              <span>✓ Free 14-day trial</span>
-              <span>✓ No credit card required</span>
-              <span>✓ Setup in minutes</span>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

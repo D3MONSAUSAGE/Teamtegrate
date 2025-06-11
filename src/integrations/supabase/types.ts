@@ -631,6 +631,57 @@ export type Database = {
           },
         ]
       }
+      organization_invites: {
+        Row: {
+          created_at: string
+          created_by: string
+          current_uses: number
+          expires_at: string
+          id: string
+          invite_code: string
+          is_active: boolean
+          max_uses: number | null
+          organization_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          current_uses?: number
+          expires_at?: string
+          id?: string
+          invite_code: string
+          is_active?: boolean
+          max_uses?: number | null
+          organization_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          current_uses?: number
+          expires_at?: string
+          id?: string
+          invite_code?: string
+          is_active?: boolean
+          max_uses?: number | null
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_invites_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_invites_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           created_at: string
@@ -1070,6 +1121,15 @@ export type Database = {
         }
         Returns: Json
       }
+      generate_invite_code: {
+        Args: {
+          org_id: string
+          created_by_id: string
+          expires_days?: number
+          max_uses_param?: number
+        }
+        Returns: string
+      }
       get_all_projects: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -1156,6 +1216,10 @@ export type Database = {
       user_participates_in_room: {
         Args: { room_id: string }
         Returns: boolean
+      }
+      validate_and_use_invite_code: {
+        Args: { code: string }
+        Returns: Json
       }
     }
     Enums: {

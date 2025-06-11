@@ -1,3 +1,4 @@
+
 import { UserRole } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
@@ -18,15 +19,40 @@ export const login = async (email: string, password: string): Promise<void> => {
   }
 };
 
-export const signup = async (email: string, password: string, name: string, role: UserRole): Promise<void> => {
+export const signup = async (
+  email: string, 
+  password: string, 
+  name: string, 
+  role: UserRole,
+  organizationData?: {
+    type: 'create' | 'join';
+    organizationName?: string;
+    inviteCode?: string;
+  }
+): Promise<void> => {
+  const signupData: any = {
+    name,
+    role,
+  };
+
+  // Handle organization creation or joining
+  if (organizationData) {
+    if (organizationData.type === 'create' && organizationData.organizationName) {
+      // User is creating a new organization - they become superadmin
+      signupData.role = 'superadmin';
+      signupData.organizationName = organizationData.organizationName;
+    } else if (organizationData.type === 'join' && organizationData.inviteCode) {
+      // User is joining via invite code - they become user
+      signupData.role = 'user';
+      signupData.invite_code = organizationData.inviteCode;
+    }
+  }
+
   const { error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      data: {
-        name,
-        role,
-      },
+      data: signupData,
       emailRedirectTo: window.location.origin + '/dashboard',
     }
   });
@@ -119,4 +145,54 @@ export const handleAuthStateChange = async (session: Session | null): Promise<Us
     return userData;
   }
   return null;
+};
+
+// Helper function to validate invite code
+export const validateInviteCode = async (inviteCode: string): Promise<{success: boolean; error?: string; organizationId?: string}> => {
+  try {
+    const { data, error } = await supabase.rpc('validate_and_use_invite_code', {
+      code: inviteCode
+    });
+
+    if (error) {
+      console.error('Error validating invite code:', error);
+      return { success: false, error: error.message };
+    }
+
+    if (!data.success) {
+      return { success: false, error: data.error };
+    }
+
+    return { success: true, organizationId: data.organization_id };
+  } catch (error) {
+    console.error('Error in validateInviteCode:', error);
+    return { success: false, error: 'Failed to validate invite code' };
+  }
+};
+
+// Helper function to generate invite code (for superadmins)
+export const generateInviteCode = async (organizationId: string, expiryDays: number = 7, maxUses?: number): Promise<{success: boolean; inviteCode?: string; error?: string}> => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { success: false, error: 'User not authenticated' };
+    }
+
+    const { data, error } = await supabase.rpc('generate_invite_code', {
+      org_id: organizationId,
+      created_by_id: user.id,
+      expires_days: expiryDays,
+      max_uses_param: maxUses || null
+    });
+
+    if (error) {
+      console.error('Error generating invite code:', error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, inviteCode: data };
+  } catch (error) {
+    console.error('Error in generateInviteCode:', error);
+    return { success: false, error: 'Failed to generate invite code' };
+  }
 };

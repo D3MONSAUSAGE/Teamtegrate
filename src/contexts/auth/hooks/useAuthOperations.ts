@@ -21,10 +21,20 @@ export const useAuthOperations = (
     }
   };
 
-  const signup = async (email: string, password: string, name: string, role: UserRole) => {
+  const signup = async (
+    email: string, 
+    password: string, 
+    name: string, 
+    role: UserRole,
+    organizationData?: {
+      type: 'create' | 'join';
+      organizationName?: string;
+      inviteCode?: string;
+    }
+  ) => {
     setLoading(true);
     try {
-      await authSignup(email, password, name, role);
+      await authSignup(email, password, name, role, organizationData);
     } catch (error) {
       setLoading(false);
       throw error;

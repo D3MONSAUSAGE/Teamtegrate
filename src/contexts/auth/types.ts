@@ -7,7 +7,17 @@ export interface AuthContextType {
   loading: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, name: string, role: UserRole) => Promise<void>;
+  signup: (
+    email: string, 
+    password: string, 
+    name: string, 
+    role: UserRole,
+    organizationData?: {
+      type: 'create' | 'join';
+      organizationName?: string;
+      inviteCode?: string;
+    }
+  ) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
   updateUserProfile: (data: { name?: string }) => Promise<void>;
