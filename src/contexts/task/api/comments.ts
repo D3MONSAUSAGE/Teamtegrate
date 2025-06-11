@@ -1,22 +1,36 @@
+
 import { TaskComment } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from '@/components/ui/sonner';
 import { Task, Project } from '@/types';
+import { supabase } from '@/integrations/supabase/client';
+import { addOrgIdToInsert, validateUserOrganization } from '@/utils/organizationHelpers';
 
-export const fetchTaskComments = async (taskId: string): Promise<TaskComment[] | null> => {
+export const fetchTaskComments = async (
+  taskId: string,
+  user: { id: string; organization_id?: string }
+): Promise<TaskComment[] | null> => {
   try {
-    // In a real app, you would have a comments table. For now, we'll simulate it.
-    // This would be replaced with actual API call to fetch comments from a database
-    // For example:
-    // const { data, error } = await supabase
-    //   .from('comments')
-    //   .select('*')
-    //   .eq('task_id', taskId);
+    validateUserOrganization(user);
+
+    const { data, error } = await supabase
+      .from('comments')
+      .select('*')
+      .eq('task_id', taskId)
+      .eq('organization_id', user.organization_id);
     
-    // Since we don't have a comments table, we'll return an empty array
-    // In a real implementation, this would contain actual comments from the database
-    return [];
-    
+    if (error) {
+      console.error('Error fetching comments:', error);
+      return null;
+    }
+
+    return (data || []).map(comment => ({
+      id: comment.id,
+      userId: comment.user_id,
+      userName: 'User', // Will be populated from user data
+      text: comment.content,
+      createdAt: new Date(comment.created_at)
+    }));
   } catch (error) {
     console.error('Error fetching comments for task:', error);
     return null;
@@ -26,12 +40,13 @@ export const fetchTaskComments = async (taskId: string): Promise<TaskComment[] |
 export const addCommentToTask = async (
   taskId: string,
   comment: { userId: string; userName: string; text: string },
+  user: { id: string; organization_id?: string },
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>,
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
 ) => {
   try {
-    // In a real app, you would insert the comment into a database
-    // For now, we'll just update the local state
+    validateUserOrganization(user);
+
     const newComment: TaskComment = {
       id: uuidv4(),
       userId: comment.userId,
@@ -39,6 +54,28 @@ export const addCommentToTask = async (
       text: comment.text,
       createdAt: new Date()
     };
+    
+    // Insert comment into database with organization_id
+    const commentData = {
+      id: newComment.id,
+      user_id: comment.userId,
+      task_id: taskId,
+      content: comment.text,
+      created_at: newComment.createdAt.toISOString(),
+      updated_at: newComment.createdAt.toISOString()
+    };
+
+    const insertData = addOrgIdToInsert(commentData, user);
+
+    const { error } = await supabase
+      .from('comments')
+      .insert(insertData);
+
+    if (error) {
+      console.error('Error adding comment:', error);
+      toast.error('Failed to add comment');
+      return null;
+    }
     
     // Update tasks state
     setTasks(prevTasks => prevTasks.map(task => {

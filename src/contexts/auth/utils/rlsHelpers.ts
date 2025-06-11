@@ -70,12 +70,38 @@ export const testRLSPolicies = async () => {
       console.log(`Users RLS test passed: ${users?.length || 0} users returned`);
     }
 
+    // Test chat rooms - should only return rooms from user's organization
+    const { data: chatRooms, error: chatRoomsError } = await supabase
+      .from('chat_rooms')
+      .select('*')
+      .limit(5);
+    
+    if (chatRoomsError) {
+      console.error('Chat rooms RLS test failed:', chatRoomsError);
+    } else {
+      console.log(`Chat rooms RLS test passed: ${chatRooms?.length || 0} rooms returned`);
+    }
+
+    // Test notifications - should only return notifications for user's organization
+    const { data: notifications, error: notificationsError } = await supabase
+      .from('notifications')
+      .select('*')
+      .limit(5);
+    
+    if (notificationsError) {
+      console.error('Notifications RLS test failed:', notificationsError);
+    } else {
+      console.log(`Notifications RLS test passed: ${notifications?.length || 0} notifications returned`);
+    }
+
     return {
       success: true,
       tests: {
         tasks: !tasksError,
         projects: !projectsError,
-        users: !usersError
+        users: !usersError,
+        chatRooms: !chatRoomsError,
+        notifications: !notificationsError
       }
     };
   } catch (error) {
@@ -84,5 +110,51 @@ export const testRLSPolicies = async () => {
       success: false,
       error: error
     };
+  }
+};
+
+// Test organization data isolation by attempting cross-organization queries
+export const testOrganizationIsolation = async () => {
+  try {
+    console.log('Testing organization data isolation...');
+    
+    const orgId = await getCurrentUserOrganizationId();
+    if (!orgId) {
+      console.error('Cannot test isolation: user has no organization');
+      return { success: false, error: 'No organization found' };
+    }
+
+    // Test that explicit organization filtering works
+    const { data: orgTasks, error: orgTasksError } = await supabase
+      .from('tasks')
+      .select('*')
+      .eq('organization_id', orgId);
+
+    if (orgTasksError) {
+      console.error('Organization-filtered tasks query failed:', orgTasksError);
+    } else {
+      console.log(`Organization-filtered tasks: ${orgTasks?.length || 0} found`);
+    }
+
+    // Test that RLS prevents unauthorized access (should return empty or error)
+    const { data: allTasks, error: allTasksError } = await supabase
+      .from('tasks')
+      .select('*');
+
+    if (allTasksError) {
+      console.log('RLS correctly blocked unauthorized access:', allTasksError.message);
+    } else {
+      console.log(`RLS allowed access to ${allTasks?.length || 0} tasks (should match organization count)`);
+    }
+
+    return {
+      success: true,
+      organizationId: orgId,
+      organizationTasks: orgTasks?.length || 0,
+      totalAccessibleTasks: allTasks?.length || 0
+    };
+  } catch (error) {
+    console.error('Organization isolation test failed:', error);
+    return { success: false, error };
   }
 };

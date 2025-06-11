@@ -2,11 +2,12 @@
 import { Task } from '@/types';
 import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { validateUserOrganization } from '@/utils/organizationHelpers';
 
 export const updateTaskStatus = async (
   taskId: string,
   status: Task['status'],
-  user: { id: string, name?: string },
+  user: { id: string, name?: string, organization_id?: string },
   tasks: Task[],
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>,
   projects: any[],
@@ -19,6 +20,8 @@ export const updateTaskStatus = async (
   }>>
 ): Promise<void> => {
   try {
+    validateUserOrganization(user);
+    
     const task = tasks.find((t) => t.id === taskId);
     if (!task) {
       console.error('Task not found');
@@ -43,7 +46,8 @@ export const updateTaskStatus = async (
         completed_at: status === 'Completed' ? now.toISOString() : null,
         completed_by_id: completedById,
       })
-      .eq('id', taskId);
+      .eq('id', taskId)
+      .eq('organization_id', user.organization_id);
 
     if (error) {
       console.error('Error updating task status:', error);

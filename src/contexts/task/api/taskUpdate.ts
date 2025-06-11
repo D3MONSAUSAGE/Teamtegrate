@@ -2,17 +2,20 @@
 import { Task } from '@/types';
 import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { validateUserOrganization } from '@/utils/organizationHelpers';
 
 export const updateTask = async (
   taskId: string,
   updates: Partial<Task>,
-  user: { id: string },
+  user: { id: string; organization_id?: string },
   tasks: Task[],
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>,
   projects: any[],
   setProjects: React.Dispatch<React.SetStateAction<any[]>>
 ): Promise<void> => {
   try {
+    validateUserOrganization(user);
+    
     // Find the existing task to merge with updates
     const existingTask = tasks.find((task) => task.id === taskId);
     if (!existingTask) {
@@ -53,11 +56,12 @@ export const updateTask = async (
       }
     }
 
-    // Send update to Supabase
+    // Send update to Supabase with organization validation
     const { error } = await supabase
       .from('tasks')
       .update(updatePayload)
-      .eq('id', taskId);
+      .eq('id', taskId)
+      .eq('organization_id', user.organization_id);
 
     if (error) {
       console.error('Error updating task:', error);

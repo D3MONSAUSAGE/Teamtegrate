@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { ChatAttachment } from "./useChatFileUpload";
 import { createChatMessageNotification } from "@/contexts/task/operations/assignment/createChatNotification";
 import { useAuth } from "@/contexts/AuthContext";
+import { validateUserOrganization, addOrgIdToInsert } from "@/utils/organizationHelpers";
 
 export function useChatSendMessage(roomId: string, userId: string | undefined) {
   const [isSending, setIsSending] = useState(false);
@@ -15,27 +16,35 @@ export function useChatSendMessage(roomId: string, userId: string | undefined) {
     parentId: string | undefined,
     attachments: ChatAttachment[] = []
   ) => {
-    if ((!content.trim() && attachments.length === 0) || !userId || !user?.organization_id) {
+    if ((!content.trim() && attachments.length === 0) || !userId || !user) {
+      return;
+    }
+
+    try {
+      validateUserOrganization(user);
+    } catch (error) {
+      toast.error('User must belong to an organization to send messages');
       return;
     }
 
     setIsSending(true);
 
     try {
-      // Create message payload
+      // Create message payload with organization_id
       const messagePayload = {
         room_id: roomId,
         user_id: userId,
         content: content.trim() || 'Shared attachments',
         type: 'text' as const,
         parent_id: parentId || null,
-        organization_id: user.organization_id,
       };
+
+      const insertData = addOrgIdToInsert(messagePayload, user);
 
       // Insert message and get the result
       const { error: messageError, data: messageData } = await supabase
         .from('chat_messages')
-        .insert(messagePayload)
+        .insert(insertData)
         .select()
         .single();
 
@@ -63,12 +72,14 @@ export function useChatSendMessage(roomId: string, userId: string | undefined) {
         .from('chat_rooms')
         .select('name')
         .eq('id', roomId)
+        .eq('organization_id', user.organization_id)
         .single();
 
       const { data: userData } = await supabase
         .from('users')
         .select('name')
         .eq('id', userId)
+        .eq('organization_id', user.organization_id)
         .single();
 
       // Create notifications for other participants

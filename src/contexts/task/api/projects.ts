@@ -4,15 +4,15 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { v4 as uuidv4 } from 'uuid';
 import { playSuccessSound, playErrorSound } from '@/utils/sounds';
-
-// Remove fetchProjects function - now handled by useProjects hook
-// This eliminates duplicate project fetching logic
+import { addOrgIdToInsert, validateUserOrganization } from '@/utils/organizationHelpers';
 
 export const addProject = async (
   project: Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'tasks'>,
-  user: { id: string }
+  user: { id: string; organization_id?: string }
 ): Promise<Project | null> => {
   try {
+    validateUserOrganization(user);
+    
     // Generate a unique ID for the project
     const projectId = uuidv4();
     const now = new Date();
@@ -29,7 +29,9 @@ export const addProject = async (
       status = 'Completed';
     }
     
-    console.log('Creating project:', {
+    console.log('Creating project with organization_id:', user.organization_id);
+    
+    const projectData = {
       id: projectId,
       title: project.title,
       description: project.description,
@@ -38,29 +40,19 @@ export const addProject = async (
       manager_id: user.id,
       budget: project.budget || 0,
       is_completed: isCompleted,
+      created_at: nowISO,
+      updated_at: nowISO,
+      team_members: project.teamMembers || [],
       status: status,
       tasks_count: 0,
       tags: project.tags || []
-    });
+    };
+
+    const insertData = addOrgIdToInsert(projectData, user);
     
     const { error } = await supabase
       .from('projects')
-      .insert({
-        id: projectId,
-        title: project.title,
-        description: project.description,
-        start_date: project.startDate.toISOString(),
-        end_date: project.endDate.toISOString(),
-        manager_id: user.id,
-        budget: project.budget !== undefined ? project.budget : 0,
-        is_completed: isCompleted,
-        created_at: nowISO,
-        updated_at: nowISO,
-        team_members: project.teamMembers || [],
-        status: status,
-        tasks_count: 0,
-        tags: project.tags || []
-      });
+      .insert(insertData);
 
     if (error) {
       console.error('Error adding project:', error);
