@@ -55,6 +55,11 @@ const AddChatParticipantDialog: React.FC<AddChatParticipantDialogProps> = ({
   });
 
   const handleAddParticipant = async (userId: string) => {
+    if (!currentUser?.organization_id) {
+      toast.error("Organization not found");
+      return;
+    }
+
     setAddingId(userId);
     try {
       // Get current user & room details for notifications
@@ -80,7 +85,8 @@ const AddChatParticipantDialog: React.FC<AddChatParticipantDialogProps> = ({
           room_id: roomId,
           user_id: currentUser?.id || userId,
           content: `${addedUser.name} was added to the chat by ${currentUser?.name || "Admin"}`,
-          type: "system"
+          type: "system",
+          organization_id: currentUser.organization_id
         });
 
         // Insert a notification to the notifications table
@@ -89,7 +95,8 @@ const AddChatParticipantDialog: React.FC<AddChatParticipantDialogProps> = ({
           title: "Chat Invitation",
           content: `You were added to "${roomData?.name || "a chat"}"`,
           type: "chat_invitation",
-          read: false
+          read: false,
+          organization_id: currentUser.organization_id
         });
       }
 

@@ -113,6 +113,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Only create database user record after successful login (not during initialization)
         if (event === 'SIGNED_IN') {
           setTimeout(() => {
+            // Convert AppUser to User for handleUserCreation by adding createdAt
+            const userWithCreatedAt = {
+              ...basicUser,
+              createdAt: new Date()
+            };
             handleUserCreation(session, true);
           }, 100);
         }

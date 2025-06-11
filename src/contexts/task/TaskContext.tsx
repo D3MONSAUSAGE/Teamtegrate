@@ -143,6 +143,17 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [tasks, user, isAuthenticated, authReady]);
 
+  // Convert AppUser to User for task operations by adding createdAt
+  const getUserForOperations = () => {
+    if (!user) return null;
+    return {
+      ...user,
+      createdAt: new Date() // Add missing createdAt field
+    };
+  };
+
+  const userForOps = getUserForOperations();
+
   const value = {
     tasks,
     projects, // Keep for backward compatibility, but components should use useProjects
@@ -151,32 +162,32 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     refreshProjects,
     addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'organizationId'>) => {
       const taskWithOrg = { ...task, organizationId: user?.organization_id };
-      return addTask(taskWithOrg, user, tasks, setTasks, projects, setProjects);
+      return addTask(taskWithOrg, userForOps, tasks, setTasks, projects, setProjects);
     },
     updateTask: (taskId: string, updates: Partial<Task>) => {
-      return updateTask(taskId, updates, user, tasks, setTasks, projects, setProjects);
+      return updateTask(taskId, updates, userForOps, tasks, setTasks, projects, setProjects);
     },
     updateTaskStatus: (taskId: string, status: TaskStatus) => {
-      return updateTaskStatus(taskId, status, user, tasks, setTasks, projects, setProjects, setDailyScore);
+      return updateTaskStatus(taskId, status, userForOps, tasks, setTasks, projects, setProjects, setDailyScore);
     },
     deleteTask: (taskId: string) => {
-      return deleteTask(taskId, user, setTasks, projects, setProjects);
+      return deleteTask(taskId, userForOps, setTasks, projects, setProjects);
     },
     addProject: (project: Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'tasks' | 'organizationId'>) => {
       const projectWithOrg = { ...project, organizationId: user?.organization_id };
-      return addProject(projectWithOrg, user, setProjects);
+      return addProject(projectWithOrg, userForOps, setProjects);
     },
     updateProject: (projectId: string, updates: Partial<Project>) => {
-      return updateProject(projectId, updates, user, setProjects);
+      return updateProject(projectId, updates, userForOps, setProjects);
     },
     deleteProject: (projectId: string) => {
-      return deleteProject(projectId, user, tasks, setTasks, setProjects);
+      return deleteProject(projectId, userForOps, tasks, setTasks, setProjects);
     },
     assignTaskToProject: (taskId: string, projectId: string) => {
-      return assignTaskToProject(taskId, projectId, user, tasks, setTasks, projects, setProjects);
+      return assignTaskToProject(taskId, projectId, userForOps, tasks, setTasks, projects, setProjects);
     },
     assignTaskToUser: (taskId: string, userId: string, userName: string) => {
-      return assignTaskToUser(taskId, userId, userName, user, tasks, setTasks, projects, setProjects);
+      return assignTaskToUser(taskId, userId, userName, userForOps, tasks, setTasks, projects, setProjects);
     },
     addCommentToTask: (taskId: string, comment: { userId: string; userName: string; text: string }) => {
       const commentWithOrg = { ...comment, organizationId: user?.organization_id };

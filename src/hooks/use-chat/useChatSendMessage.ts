@@ -4,16 +4,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ChatAttachment } from "./useChatFileUpload";
 import { createChatMessageNotification } from "@/contexts/task/operations/assignment/createChatNotification";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function useChatSendMessage(roomId: string, userId: string | undefined) {
   const [isSending, setIsSending] = useState(false);
+  const { user } = useAuth();
 
   const sendMessage = async (
     content: string,
     parentId: string | undefined,
     attachments: ChatAttachment[] = []
   ) => {
-    if ((!content.trim() && attachments.length === 0) || !userId) {
+    if ((!content.trim() && attachments.length === 0) || !userId || !user?.organization_id) {
       return;
     }
 
@@ -27,6 +29,7 @@ export function useChatSendMessage(roomId: string, userId: string | undefined) {
         content: content.trim() || 'Shared attachments',
         type: 'text' as const,
         parent_id: parentId || null,
+        organization_id: user.organization_id,
       };
 
       // Insert message and get the result

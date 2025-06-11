@@ -25,7 +25,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
       const file = acceptedFiles[0];
       if (!file) return;
 
-      if (!user || !user.id) {
+      if (!user || !user.id || !user.organization_id) {
         toast({
           title: "Error",
           description: "You must be logged in to upload documents",
@@ -65,6 +65,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
           user_id: user.id,
           storage_id: storageData.id || filePath,
           folder: folder || null,
+          organization_id: user.organization_id,
         });
 
         if (dbError) {

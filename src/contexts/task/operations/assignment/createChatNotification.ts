@@ -12,6 +12,18 @@ export const createChatMessageNotification = async (
   messageContent: string
 ): Promise<void> => {
   try {
+    // Get sender's organization
+    const { data: senderData, error: senderError } = await supabase
+      .from('users')
+      .select('organization_id')
+      .eq('id', senderId)
+      .single();
+
+    if (senderError || !senderData?.organization_id) {
+      console.error('Error fetching sender organization:', senderError);
+      return;
+    }
+
     // Get all participants in the room except the sender
     const { data: participants, error: participantsError } = await supabase
       .from('chat_room_participants')
@@ -34,7 +46,8 @@ export const createChatMessageNotification = async (
       user_id: participant.user_id,
       title: `New message in ${roomName}`,
       content: `${senderName}: ${messageContent.length > 50 ? messageContent.substring(0, 50) + '...' : messageContent}`,
-      type: 'chat_message'
+      type: 'chat_message',
+      organization_id: senderData.organization_id
     }));
 
     const { error: notificationError } = await supabase

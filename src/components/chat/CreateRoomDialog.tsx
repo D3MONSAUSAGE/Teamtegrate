@@ -34,7 +34,10 @@ const CreateRoomDialog: React.FC<CreateRoomDialogProps> = ({ open, onOpenChange 
   }
 
   const onSubmit = async (data: FormData) => {
-    if (!user) return;
+    if (!user || !user.organization_id) {
+      toast.error("Organization not found");
+      return;
+    }
 
     try {
       const { data: roomData, error } = await supabase
@@ -42,6 +45,7 @@ const CreateRoomDialog: React.FC<CreateRoomDialogProps> = ({ open, onOpenChange 
         .insert({
           name: data.name,
           created_by: user.id,
+          organization_id: user.organization_id,
         })
         .select()
         .single();
