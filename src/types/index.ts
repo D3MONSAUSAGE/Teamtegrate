@@ -195,14 +195,3 @@ export const getRoleDisplayName = (role: UserRole): string => {
       return 'Unknown';
   }
 };
-
-// Task Card Props interface - Updated to include onDelete and proper typing
-export interface TaskCardProps {
-  task: Task;
-  onEdit?: (task: Task) => void;
-  onDelete?: () => void;
-  onStatusChange?: (status: TaskStatus) => void;
-  onAssign?: (task: Task) => void;
-  onClick?: () => void;
-  showProjectInfo?: boolean;
-}

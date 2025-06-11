@@ -1,5 +1,6 @@
+
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Project } from '@/types';
+import { Project, ProjectStatus } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/components/ui/sonner';
@@ -32,19 +33,19 @@ export function useProjects() {
           id: project.id,
           title: project.title,
           description: project.description,
-          startDate: new Date(project.startDate),
-          endDate: new Date(project.endDate),
-          managerId: project.managerId,
-          createdAt: new Date(project.createdAt),
-          updatedAt: new Date(project.updatedAt),
-          teamMemberIds: project.teamMemberIds,
+          startDate: new Date(project.start_date),
+          endDate: new Date(project.end_date),
+          managerId: project.manager_id,
+          createdAt: new Date(project.created_at),
+          updatedAt: new Date(project.updated_at),
+          teamMemberIds: project.team_members || [],
           budget: project.budget,
-          budgetSpent: project.budgetSpent,
-          isCompleted: project.isCompleted,
-          status: project.status,
-          tasksCount: project.tasksCount,
-          tags: project.tags,
-          organizationId: project.organizationId
+          budgetSpent: project.budget_spent || 0,
+          isCompleted: project.is_completed || false,
+          status: (project.status as ProjectStatus) || 'To Do',
+          tasksCount: project.tasks_count || 0,
+          tags: project.tags || [],
+          organizationId: project.organization_id
         }));
         setFetchedProjects(convertedProjects);
       }

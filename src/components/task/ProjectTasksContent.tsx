@@ -65,10 +65,6 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
     }
   });
 
-  const handleStatusChange = async (taskId: string, status: TaskStatus) => {
-    await onTaskStatusChange(taskId, status);
-  };
-
   return (
     <div className="space-y-6">
       {/* Task Creation Button */}
@@ -94,9 +90,9 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
             <TaskCard
               key={task.id}
               task={task}
-              onEdit={() => onEditTask(task)}
+              onEdit={onEditTask}
               onDelete={() => onDeleteTask(task.id)}
-              onStatusChange={(status) => handleStatusChange(task.id, status)}
+              onStatusChange={onTaskStatusChange}
               showProjectInfo={false}
             />
           ))

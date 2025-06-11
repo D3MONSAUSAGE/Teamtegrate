@@ -13,7 +13,9 @@ interface TaskCardProps {
   onEdit?: (task: Task) => void;
   onAssign?: (task: Task) => void;
   onStatusChange?: (taskId: string, status: TaskStatus) => void;
+  onDelete?: () => void;
   onClick?: () => void;
+  showProjectInfo?: boolean;
 }
 
 const TaskCard: React.FC<TaskCardProps> = ({
@@ -21,7 +23,9 @@ const TaskCard: React.FC<TaskCardProps> = ({
   onEdit,
   onAssign,
   onStatusChange,
+  onDelete,
   onClick,
+  showProjectInfo = false,
 }) => {
   const {
     showDrawer,
@@ -47,6 +51,14 @@ const TaskCard: React.FC<TaskCardProps> = ({
       onStatusChange(task.id, status);
     } else {
       internalHandleStatusChange(status);
+    }
+  };
+
+  const handleDelete = () => {
+    if (onDelete) {
+      onDelete();
+    } else {
+      handleDeleteTask(task.id);
     }
   };
 
@@ -116,7 +128,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
               onEdit={onEdit}
               onAssign={onAssign}
               onStatusChange={handleStatusChange}
-              onDelete={handleDeleteTask}
+              onDelete={handleDelete}
               onShowComments={() => setShowDrawer(true)}
             />
           </div>
