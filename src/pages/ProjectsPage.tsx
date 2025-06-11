@@ -1,10 +1,9 @@
-
 import React, { useState } from 'react';
 import { useProjects } from '@/hooks/useProjects';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, Loader2, Sparkles, FolderKanban, Zap, Target } from 'lucide-react';
+import { Plus, Search, Loader2, Sparkles, FolderKanban, Zap } from 'lucide-react';
 import ProjectCard from '@/components/project-card';
 import CreateProjectDialog from '@/components/CreateProjectDialog';
 import { useNavigate } from 'react-router-dom';
@@ -93,22 +92,6 @@ const ProjectsPage = () => {
                   <Zap className="h-6 w-6 text-accent animate-bounce" style={{ animationDelay: '0.5s' }} />
                 </div>
                 <div className="absolute -bottom-2 left-0 w-full h-1 bg-gradient-to-r from-primary/50 via-accent/30 to-transparent rounded-full" />
-              </div>
-            </div>
-            <div className="space-y-3">
-              <p className="text-muted-foreground text-xl font-semibold max-w-2xl leading-relaxed">
-                Transform ideas into reality with <span className="text-primary font-bold">style</span> and <span className="text-accent font-bold">efficiency</span>
-              </p>
-              <div className="flex items-center gap-4 text-sm text-muted-foreground/80">
-                <div className="flex items-center gap-2">
-                  <Target className="h-4 w-4 text-primary" />
-                  <span>Organized Workflow</span>
-                </div>
-                <div className="w-1 h-1 rounded-full bg-muted-foreground/40" />
-                <div className="flex items-center gap-2">
-                  <FolderKanban className="h-4 w-4 text-accent" />
-                  <span>Visual Management</span>
-                </div>
               </div>
             </div>
           </div>
