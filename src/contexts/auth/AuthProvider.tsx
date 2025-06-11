@@ -134,7 +134,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('Cleaning up auth listener');
       subscription.unsubscribe();
     };
-  }, []);
+  }, [handleUserCreation]);
 
   const value = {
     user,
