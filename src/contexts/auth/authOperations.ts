@@ -1,219 +1,132 @@
 
-import { UserRole } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
-import { Session } from '@supabase/supabase-js';
-import { createUserFromSession } from './userSessionUtils';
-import { User } from '@/types';
+import { UserRole } from '@/types';
 
-// Type definitions for invite code responses
-interface InviteValidationResult {
-  success: boolean;
-  error?: string;
-  organization_id?: string;
-}
+export const login = async (email: string, password: string) => {
+  try {
+    console.log('Attempting login for:', email);
+    
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-interface InviteGenerationResult {
-  success: boolean;
-  inviteCode?: string;
-  error?: string;
-}
+    if (error) {
+      console.error('Login error:', error);
+      toast.error(error.message);
+      throw error;
+    }
 
-export const login = async (email: string, password: string): Promise<void> => {
-  const { error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
-
-  if (error) {
-    console.error('Error logging in:', error);
-    toast.error(error.message || 'Error logging in');
+    console.log('Login successful for:', email);
+    return data;
+  } catch (error) {
+    console.error('Login failed:', error);
     throw error;
   }
 };
 
 export const signup = async (
-  email: string, 
-  password: string, 
-  name: string, 
+  email: string,
+  password: string,
+  name: string,
   role: UserRole,
   organizationData?: {
     type: 'create' | 'join';
     organizationName?: string;
     inviteCode?: string;
   }
-): Promise<void> => {
-  const signupData: any = {
-    name,
-  };
-
-  // Handle organization creation or joining
-  if (organizationData) {
-    if (organizationData.type === 'create' && organizationData.organizationName) {
-      // User is creating a new organization - they become superadmin
-      signupData.role = 'superadmin';
-      signupData.organizationName = organizationData.organizationName;
-    } else if (organizationData.type === 'join' && organizationData.inviteCode) {
-      // User is joining via invite code - validate first
-      const validation = await validateInviteCode(organizationData.inviteCode);
-      if (!validation.success) {
-        throw new Error(validation.error || 'Invalid invite code');
-      }
-      signupData.invite_code = organizationData.inviteCode;
-    }
-  } else {
-    // Default role if no organization data
-    signupData.role = role;
-  }
-
-  const { error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: signupData,
-      emailRedirectTo: window.location.origin + '/dashboard',
-    }
-  });
-
-  if (error) {
-    console.error('Error signing up:', error);
-    toast.error(error.message || 'Error creating account');
-    throw error;
-  }
-  
-  toast.success('Account created successfully! Please check your email for verification.');
-};
-
-export const logout = async (hasSession: boolean): Promise<void> => {
-  if (!hasSession) {
-    console.log('No active session found, clearing local state only');
-    return;
-  }
-  
-  const { error } = await supabase.auth.signOut();
-  if (error) {
-    console.error('Error logging out:', error);
-    toast.error('Error logging out. Your local session has been cleared.');
-    throw error;
-  }
-};
-
-export const updateUserProfile = async (data: { name?: string }): Promise<void> => {
-  const { data: { session: currentSession } } = await supabase.auth.getSession();
-  
-  if (!currentSession) {
-    throw new Error('No active session found. Please log in again.');
-  }
-
-  const { error } = await supabase.auth.updateUser({
-    data: data
-  });
-
-  if (error) {
-    console.error('Error updating profile:', error);
-    throw error;
-  }
-};
-
-export const initializeUserTimezone = async (userId: string): Promise<void> => {
+) => {
   try {
-    // Check if user already has a timezone set
-    const { data: existingUser, error: fetchError } = await supabase
+    console.log('Attempting signup for:', email, 'with role:', role);
+    
+    const redirectUrl = `${window.location.origin}/`;
+    
+    const metadata: Record<string, any> = {
+      name,
+      role,
+    };
+
+    // Add organization data to metadata
+    if (organizationData?.type === 'create' && organizationData.organizationName) {
+      metadata.organizationName = organizationData.organizationName;
+      metadata.organizationType = 'create';
+    } else if (organizationData?.type === 'join' && organizationData.inviteCode) {
+      metadata.invite_code = organizationData.inviteCode;
+      metadata.organizationType = 'join';
+    }
+
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: redirectUrl,
+        data: metadata
+      }
+    });
+
+    if (error) {
+      console.error('Signup error:', error);
+      toast.error(error.message);
+      throw error;
+    }
+
+    console.log('Signup successful for:', email);
+    toast.success('Account created successfully!');
+    return data;
+  } catch (error) {
+    console.error('Signup failed:', error);
+    throw error;
+  }
+};
+
+export const logout = async (hasSession: boolean) => {
+  try {
+    console.log('Attempting logout, has session:', hasSession);
+    
+    const { error } = await supabase.auth.signOut();
+    
+    if (error) {
+      console.error('Logout error:', error);
+      toast.error('Error signing out');
+      throw error;
+    }
+
+    console.log('Logout successful');
+    toast.success('Signed out successfully');
+  } catch (error) {
+    console.error('Logout failed:', error);
+    throw error;
+  }
+};
+
+export const updateUserProfile = async (data: { name?: string }) => {
+  try {
+    const { error } = await supabase.auth.updateUser({
+      data
+    });
+
+    if (error) {
+      console.error('Profile update error:', error);
+      toast.error('Failed to update profile');
+      throw error;
+    }
+
+    // Also update the users table
+    const { error: dbError } = await supabase
       .from('users')
-      .select('timezone')
-      .eq('id', userId)
-      .single();
+      .update({ name: data.name })
+      .eq('id', (await supabase.auth.getUser()).data.user?.id);
 
-    if (fetchError) {
-      console.error('Error checking user timezone:', fetchError);
-      return;
+    if (dbError) {
+      console.error('Database profile update error:', dbError);
+      toast.error('Failed to update profile in database');
+      throw dbError;
     }
 
-    // If timezone is not set, detect and set it
-    if (!existingUser.timezone || existingUser.timezone === 'UTC') {
-      try {
-        const detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        
-        const { error: updateError } = await supabase
-          .from('users')
-          .update({ timezone: detectedTimezone })
-          .eq('id', userId);
-
-        if (updateError) {
-          console.error('Error setting initial timezone:', updateError);
-        } else {
-          console.log(`Set initial timezone for user ${userId}: ${detectedTimezone}`);
-        }
-      } catch (timezoneError) {
-        console.warn('Could not detect timezone, keeping UTC default:', timezoneError);
-      }
-    }
+    toast.success('Profile updated successfully');
   } catch (error) {
-    console.error('Error in initializeUserTimezone:', error);
-  }
-};
-
-export const handleAuthStateChange = async (session: Session | null): Promise<User | null> => {
-  if (session) {
-    const userData = await createUserFromSession(session);
-    
-    // Initialize timezone for new or existing users
-    await initializeUserTimezone(session.user.id);
-    
-    return userData;
-  }
-  return null;
-};
-
-// Helper function to validate invite code
-export const validateInviteCode = async (inviteCode: string): Promise<InviteValidationResult> => {
-  try {
-    const { data, error } = await supabase.rpc('validate_and_use_invite_code', {
-      code: inviteCode
-    });
-
-    if (error) {
-      console.error('Error validating invite code:', error);
-      return { success: false, error: error.message };
-    }
-
-    // Type-safe handling of the JSON response
-    const result = data as any;
-    
-    if (!result.success) {
-      return { success: false, error: result.error };
-    }
-
-    return { success: true, organization_id: result.organization_id };
-  } catch (error) {
-    console.error('Error in validateInviteCode:', error);
-    return { success: false, error: 'Failed to validate invite code' };
-  }
-};
-
-// Helper function to generate invite code (for superadmins)
-export const generateInviteCode = async (organizationId: string, expiryDays: number = 7, maxUses?: number): Promise<InviteGenerationResult> => {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return { success: false, error: 'User not authenticated' };
-    }
-
-    const { data, error } = await supabase.rpc('generate_invite_code', {
-      org_id: organizationId,
-      created_by_id: user.id,
-      expires_days: expiryDays,
-      max_uses_param: maxUses || null
-    });
-
-    if (error) {
-      console.error('Error generating invite code:', error);
-      return { success: false, error: error.message };
-    }
-
-    return { success: true, inviteCode: data as string };
-  } catch (error) {
-    console.error('Error in generateInviteCode:', error);
-    return { success: false, error: 'Failed to generate invite code' };
+    console.error('Profile update failed:', error);
+    throw error;
   }
 };

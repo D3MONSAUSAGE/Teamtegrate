@@ -1,160 +1,146 @@
 
-import React, { createContext, useContext, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { AppUser, UserRole } from '@/types';
 import { AuthContextType } from './types';
-import { AppUser, UserRole, User } from '@/types';
-import { hasRoleAccess, canManageUser } from './roleUtils';
-import { useAuthSession } from './hooks/useAuthSession';
-import { useAuthOperations } from './hooks/useAuthOperations';
 import { createBasicUserFromSession, setupAuthTimeout } from './utils/authHelpers';
+import { useAuthOperations } from './hooks/useAuthOperations';
+import { hasRoleAccess, canManageUser } from './roleUtils';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
-
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const {
-    user,
-    session,
-    loading,
-    setUser,
-    setSession,
-    setLoading,
-    handleUserCreation,
-    refreshUserSession
-  } = useAuthSession();
+  const [user, setUser] = useState<AppUser | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Convert AppUser to User for useAuthOperations (ensuring createdAt is present)
-  const userForOperations: User | null = user ? {
-    ...user,
-    createdAt: user.createdAt || new Date()
-  } : null;
-
-  const {
-    login,
-    signup,
-    logout,
-    updateUserProfile
-  } = useAuthOperations(session, userForOperations, setSession, setUser, setLoading);
-
-  // Initialize auth - simplified for faster loading
+  // Set up auth timeout
   useEffect(() => {
-    let mounted = true;
-    let initTimeout: NodeJS.Timeout;
-    
-    const initializeAuth = async () => {
-      console.log('Initializing auth...');
-      setLoading(true);
+    const timeout = setupAuthTimeout(loading, setLoading);
+    return () => clearTimeout(timeout);
+  }, [loading]);
+
+  // Fetch full user profile from database
+  const fetchUserProfile = async (userId: string): Promise<AppUser | null> => {
+    try {
+      console.log('Fetching user profile for:', userId);
       
-      try {
-        // Get current session
-        const { data: { session: currentSession }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error('Error getting initial session:', error);
-        }
-        
-        console.log('Initial session:', currentSession?.user?.id || 'no session');
-        
-        if (mounted) {
-          setSession(currentSession);
-          // For landing page, we don't need to create user data immediately
-          // Only set basic session state and let the app decide when to load user data
-          if (currentSession) {
-            // Create a basic user object without database calls
-            const basicUser = createBasicUserFromSession(currentSession.user);
-            // Ensure createdAt is always set for AppUser compatibility
-            const userWithCreatedAt: AppUser = {
-              ...basicUser,
-              createdAt: basicUser.createdAt || new Date(currentSession.user.created_at)
-            };
-            setUser(userWithCreatedAt);
-          }
-          setLoading(false);
-        }
-      } catch (error) {
-        console.error('Error in auth initialization:', error);
-        if (mounted) {
-          setSession(null);
-          setUser(null);
-          setLoading(false);
-        }
+      const { data: userData, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching user profile:', error);
+        return null;
       }
-    };
 
-    // Set timeout to prevent infinite loading
-    initTimeout = setupAuthTimeout(loading, setLoading);
+      console.log('User profile fetched:', userData);
+      
+      return {
+        id: userData.id,
+        email: userData.email,
+        name: userData.name,
+        role: userData.role as UserRole,
+        organization_id: userData.organization_id,
+        avatar_url: userData.avatar_url,
+        timezone: userData.timezone
+      };
+    } catch (error) {
+      console.error('Error in fetchUserProfile:', error);
+      return null;
+    }
+  };
 
-    initializeAuth();
-    
-    return () => {
-      mounted = false;
-      if (initTimeout) clearTimeout(initTimeout);
-    };
-  }, []);
-
-  // Set up auth state listener
+  // Auth state change handler
   useEffect(() => {
-    console.log('Setting up auth listener...');
+    console.log('Setting up auth state listener');
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.id);
-        
-        if (event === 'SIGNED_OUT' || !session) {
-          setSession(null);
-          setUser(null);
-          setLoading(false);
-          return;
-        }
+        console.log('Auth state changed:', event, 'Session:', !!session);
         
         setSession(session);
         
-        // Create basic user object immediately
-        const basicUser = createBasicUserFromSession(session.user);
-        // Ensure createdAt is always set for AppUser compatibility
-        const userWithCreatedAt: AppUser = {
-          ...basicUser,
-          createdAt: basicUser.createdAt || new Date(session.user.created_at)
-        };
-        setUser(userWithCreatedAt);
-        setLoading(false);
-        
-        // Only create database user record after successful login (not during initialization)
-        if (event === 'SIGNED_IN') {
-          setTimeout(() => {
-            // Call handleUserCreation with session and boolean flag
-            handleUserCreation(session, true);
-          }, 100);
+        if (session?.user) {
+          // Fetch complete user profile from database
+          const fullUser = await fetchUserProfile(session.user.id);
+          if (fullUser) {
+            setUser(fullUser);
+            console.log('Full user profile loaded:', fullUser);
+          } else {
+            // Fallback to basic user if profile fetch fails
+            const basicUser = createBasicUserFromSession(session.user);
+            setUser(basicUser);
+            console.warn('Using basic user profile, organization_id missing');
+          }
+        } else {
+          setUser(null);
         }
+        
+        setLoading(false);
+        setIsLoading(false);
       }
     );
 
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial session check:', !!session);
+      if (session) {
+        setSession(session);
+        // Auth state change will handle user profile fetching
+      } else {
+        setLoading(false);
+        setIsLoading(false);
+      }
+    });
+
     return () => {
-      console.log('Cleaning up auth listener');
+      console.log('Cleaning up auth subscription');
       subscription.unsubscribe();
     };
-  }, [handleUserCreation]);
+  }, []);
 
-  const value = {
+  const refreshUserSession = async () => {
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error) throw error;
+      
+      if (session?.user) {
+        const fullUser = await fetchUserProfile(session.user.id);
+        if (fullUser) {
+          setUser(fullUser);
+          setSession(session);
+        }
+      }
+    } catch (error) {
+      console.error('Error refreshing user session:', error);
+    }
+  };
+
+  const authOperations = useAuthOperations(session, user, setSession, setUser, setLoading);
+
+  const value: AuthContextType = {
     user,
-    loading,
-    isLoading: loading,
-    login,
-    signup,
-    logout,
-    updateUserProfile,
-    isAuthenticated: !!user && !!session,
-    hasRoleAccess: (requiredRole: UserRole) => hasRoleAccess(user?.role as UserRole, requiredRole),
-    canManageUser: (targetRole: UserRole) => canManageUser(user?.role as UserRole, targetRole),
+    loading: isLoading,
+    isLoading,
+    isAuthenticated: !!session && !!user,
+    hasRoleAccess: (requiredRole: UserRole) => hasRoleAccess(user?.role, requiredRole),
+    canManageUser: (targetRole: UserRole) => canManageUser(user?.role, targetRole),
     refreshUserSession,
+    ...authOperations,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
+
+export const useAuth = (): AuthContextType => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };

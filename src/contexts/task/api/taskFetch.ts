@@ -3,40 +3,26 @@ import { Task } from '@/types';
 import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
 
-// Simple type definition to avoid type instantiation issues
-type UserWithOrg = {
-  id: string;
-  organization_id?: string;
-} | null;
-
 const parseDate = (dateStr: string | null): Date => {
   if (!dateStr) return new Date();
   return new Date(dateStr);
 };
 
-// Inline validation function to avoid complex type inference
-const isValidUser = (user: UserWithOrg): user is { id: string; organization_id: string } => {
-  if (!user) {
-    console.error('User is required for this operation');
-    return false;
-  }
-  
-  if (!user.organization_id) {
-    console.error('User must belong to an organization');
-    return false;
-  }
-  
-  return true;
-};
-
 export const fetchTasks = async (
-  user: UserWithOrg,
+  user: any,
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>
 ): Promise<void> => {
   try {
     console.log('Fetching tasks for user:', user?.id, 'org:', user?.organization_id);
     
-    if (!isValidUser(user)) {
+    if (!user) {
+      console.error('User is required for this operation');
+      toast.error('User must belong to an organization to view tasks');
+      return;
+    }
+    
+    if (!user.organization_id) {
+      console.error('User must belong to an organization');
       toast.error('User must belong to an organization to view tasks');
       return;
     }

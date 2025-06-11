@@ -1,84 +1,27 @@
 
-import React, { createContext, useState, useContext, useEffect } from 'react';
-import { Task, Project, TaskStatus, TaskPriority, DailyScore, TeamMemberPerformance } from '@/types';
-import { useAuth } from '../AuthContext';
-import { fetchUserTasks } from './taskApi';
-import { calculateDailyScore } from './taskMetrics';
-import { toast } from '@/components/ui/sonner';
-import { 
-  addTask, 
-  updateTask, 
-  updateTaskStatus, 
-  deleteTask, 
-  assignTaskToProject, 
-  assignTaskToUser,
-  addProject, 
-  updateProject, 
-  deleteProject,
-  addTeamMemberToProject,
-  removeTeamMemberFromProject
-} from './operations';
-import { 
-  addCommentToTask,
-  addTagToTask, 
-  removeTagFromTask 
-} from './contentOperations';
-import { 
-  getTasksWithTag, 
-  getProjectsWithTag, 
-  getTasksByStatus, 
-  getTasksByPriority, 
-  getTasksByDate, 
-  getOverdueTasks 
-} from './taskFilters';
-import { fetchTeamPerformance, fetchTeamMemberPerformance } from './api';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { Task, Project, DailyScore } from '@/types';
+import { useAuth } from '@/contexts/AuthContext';
+import { fetchTasks } from './api/taskFetch';
 
 interface TaskContextType {
   tasks: Task[];
   projects: Project[];
   dailyScore: DailyScore;
+  setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
+  setProjects: React.Dispatch<React.SetStateAction<Project[]>>;
+  setDailyScore: React.Dispatch<React.SetStateAction<DailyScore>>;
+  refreshTasks: () => Promise<void>;
   isLoading: boolean;
-  refreshProjects: () => Promise<void>;
-  addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'organizationId'>) => void;
-  updateTask: (taskId: string, updates: Partial<Task>) => void;
-  updateTaskStatus: (taskId: string, status: TaskStatus) => void;
-  deleteTask: (taskId: string) => void;
-  addProject: (project: Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'tasks' | 'organizationId'>) => Promise<Project | null>;
-  updateProject: (projectId: string, updates: Partial<Project>) => void;
-  deleteProject: (projectId: string) => void;
-  assignTaskToProject: (taskId: string, projectId: string) => void;
-  assignTaskToUser: (taskId: string, userId: string, userName: string) => void;
-  addCommentToTask: (taskId: string, comment: { userId: string; userName: string; text: string }) => void;
-  addTagToTask: (taskId: string, tag: string) => void;
-  removeTagFromTask: (taskId: string, tag: string) => void;
-  addTeamMemberToProject: (projectId: string, userId: string) => void;
-  removeTeamMemberFromProject: (projectId: string, userId: string) => void;
-  getTasksWithTag: (tag: string) => Task[];
-  getProjectsWithTag: (tag: string) => Project[];
-  getTasksByStatus: (status: TaskStatus) => Task[];
-  getTasksByPriority: (priority: TaskPriority) => Task[];
-  getTasksByDate: (date: Date) => Task[];
-  getOverdueTasks: () => Task[];
-  fetchTeamPerformance: () => Promise<TeamMemberPerformance[]>;
-  fetchTeamMemberPerformance: (userId: string) => Promise<TeamMemberPerformance | null>;
 }
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
 
-export const useTask = () => {
-  const context = useContext(TaskContext);
-  if (!context) {
-    throw new Error('useTask must be used within a TaskProvider');
-  }
-  return context;
-};
-
-export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, isAuthenticated, loading: authLoading } = useAuth();
+export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const { user, loading: authLoading } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [authReady, setAuthReady] = useState(false);
   const [dailyScore, setDailyScore] = useState<DailyScore>({
     completedTasks: 0,
     totalTasks: 0,
@@ -86,130 +29,69 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     date: new Date(),
   });
 
-  // Wait for auth to be ready before doing anything
-  useEffect(() => {
-    if (!authLoading) {
-      setAuthReady(true);
-    }
-  }, [authLoading]);
-
-  const refreshProjects = async () => {
-    // Projects are now handled by useProjects hook, so this is a no-op
-    // Components should use useProjects directly instead
-    console.log('refreshProjects called - projects are now managed by useProjects hook');
-  };
-
-  // Load data only when auth is fully ready
-  useEffect(() => {
-    if (!authReady) {
-      console.log('TaskProvider: Waiting for auth to be ready...');
+  const refreshTasks = async () => {
+    if (!user || !user.organization_id) {
+      console.log('User or organization not ready for task fetch');
       return;
     }
 
-    const loadData = async () => {
-      if (!user || !isAuthenticated) {
-        console.log('TaskProvider: No authenticated user, clearing data');
-        setProjects([]);
-        setTasks([]);
+    setIsLoading(true);
+    try {
+      await fetchTasks(user, setTasks);
+    } catch (error) {
+      console.error('Error refreshing tasks:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const initializeTasks = async () => {
+      console.log('TaskProvider: Auth loading:', authLoading, 'User:', !!user, 'Org ID:', user?.organization_id);
+      
+      // Wait for auth to complete and user to have organization_id
+      if (authLoading) {
+        console.log('TaskProvider: Still loading auth, waiting...');
+        return;
+      }
+
+      if (!user) {
+        console.log('TaskProvider: No user, setting loading to false');
         setIsLoading(false);
         return;
       }
 
-      console.log('TaskProvider: Loading tasks for authenticated user:', user.id, 'org:', user.organization_id);
-      setIsLoading(true);
-      
-      try {
-        // Only load tasks - projects are handled by useProjects hook
-        // Pass user with organization_id for proper filtering
-        await fetchUserTasks(user, setTasks).catch(error => {
-          console.error("Error loading tasks:", error);
-          toast.error("Failed to load tasks");
-        });
-      } catch (error) {
-        console.error("TaskProvider: Critical error loading data:", error);
-      } finally {
+      if (!user.organization_id) {
+        console.log('TaskProvider: User has no organization_id, cannot fetch tasks');
         setIsLoading(false);
+        return;
       }
+
+      console.log('TaskProvider: Ready to fetch tasks for user:', user.id);
+      await refreshTasks();
     };
-    
-    loadData();
-  }, [user, isAuthenticated, authReady]);
 
-  // Calculate daily score when tasks change
-  useEffect(() => {
-    if (authReady && user && isAuthenticated) {
-      const score = calculateDailyScore(tasks);
-      setDailyScore(score);
-    }
-  }, [tasks, user, isAuthenticated, authReady]);
+    initializeTasks();
+  }, [user, authLoading]);
 
-  // Convert AppUser to User for task operations by adding createdAt
-  const getUserForOperations = () => {
-    if (!user) return null;
-    return {
-      ...user,
-      createdAt: new Date() // Add missing createdAt field
-    };
-  };
-
-  const userForOps = getUserForOperations();
-
-  const value = {
+  const value: TaskContextType = {
     tasks,
-    projects, // Keep for backward compatibility, but components should use useProjects
+    projects,
     dailyScore,
+    setTasks,
+    setProjects,
+    setDailyScore,
+    refreshTasks,
     isLoading,
-    refreshProjects,
-    addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'organizationId'>) => {
-      const taskWithOrg = { ...task, organizationId: user?.organization_id };
-      return addTask(taskWithOrg, userForOps, tasks, setTasks, projects, setProjects);
-    },
-    updateTask: (taskId: string, updates: Partial<Task>) => {
-      return updateTask(taskId, updates, userForOps, tasks, setTasks, projects, setProjects);
-    },
-    updateTaskStatus: (taskId: string, status: TaskStatus) => {
-      return updateTaskStatus(taskId, status, userForOps, tasks, setTasks, projects, setProjects, setDailyScore);
-    },
-    deleteTask: (taskId: string) => {
-      return deleteTask(taskId, userForOps, setTasks, projects, setProjects);
-    },
-    addProject: (project: Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'tasks' | 'organizationId'>) => {
-      const projectWithOrg = { ...project, organizationId: user?.organization_id };
-      return addProject(projectWithOrg, userForOps, setProjects);
-    },
-    updateProject: (projectId: string, updates: Partial<Project>) => {
-      return updateProject(projectId, updates, userForOps, setProjects);
-    },
-    deleteProject: (projectId: string) => {
-      return deleteProject(projectId, userForOps, tasks, setTasks, setProjects);
-    },
-    assignTaskToProject: (taskId: string, projectId: string) => {
-      return assignTaskToProject(taskId, projectId, userForOps, tasks, setTasks, projects, setProjects);
-    },
-    assignTaskToUser: (taskId: string, userId: string, userName: string) => {
-      return assignTaskToUser(taskId, userId, userName, userForOps, tasks, setTasks, projects, setProjects);
-    },
-    addCommentToTask: (taskId: string, comment: { userId: string; userName: string; text: string }) => {
-      const commentWithOrg = { ...comment, organizationId: user?.organization_id };
-      return addCommentToTask(taskId, commentWithOrg, tasks, setTasks, projects, setProjects);
-    },
-    addTagToTask: (taskId: string, tag: string) =>
-      addTagToTask(taskId, tag, tasks, setTasks, projects, setProjects),
-    removeTagFromTask: (taskId: string, tag: string) =>
-      removeTagFromTask(taskId, tag, tasks, setTasks, projects, setProjects),
-    addTeamMemberToProject: (projectId: string, userId: string) =>
-      addTeamMemberToProject(projectId, userId, projects, setProjects),
-    removeTeamMemberFromProject: (projectId: string, userId: string) =>
-      removeTeamMemberFromProject(projectId, userId, projects, setProjects),
-    getTasksWithTag: (tag: string) => getTasksWithTag(tag, tasks),
-    getProjectsWithTag: (tag: string) => getProjectsWithTag(tag, projects),
-    getTasksByStatus: (status: TaskStatus) => getTasksByStatus(status, tasks),
-    getTasksByPriority: (priority: TaskPriority) => getTasksByPriority(priority, tasks),
-    getTasksByDate: (date: Date) => getTasksByDate(date, tasks),
-    getOverdueTasks: () => getOverdueTasks(tasks),
-    fetchTeamPerformance,
-    fetchTeamMemberPerformance
   };
 
   return <TaskContext.Provider value={value}>{children}</TaskContext.Provider>;
+};
+
+export const useTask = (): TaskContextType => {
+  const context = useContext(TaskContext);
+  if (context === undefined) {
+    throw new Error('useTask must be used within a TaskProvider');
+  }
+  return context;
 };
