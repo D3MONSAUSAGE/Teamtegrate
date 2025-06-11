@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { AuthContextType } from './types';
-import { AppUser, UserRole } from '@/types';
+import { AppUser, UserRole, User } from '@/types';
 import { hasRoleAccess, canManageUser } from './roleUtils';
 import { useAuthSession } from './hooks/useAuthSession';
 import { useAuthOperations } from './hooks/useAuthOperations';
@@ -16,6 +16,14 @@ export const useAuth = () => {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
+};
+
+// Helper function to convert AppUser to User
+const toFullUser = (appUser: AppUser): User => {
+  return {
+    ...appUser,
+    createdAt: appUser.createdAt || new Date()
+  };
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -123,7 +131,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Only create database user record after successful login (not during initialization)
         if (event === 'SIGNED_IN') {
           setTimeout(() => {
-            handleUserCreation(session, true);
+            // Convert AppUser to User for the function call
+            handleUserCreation(session, toFullUser(userWithCreatedAt));
           }, 100);
         }
       }
