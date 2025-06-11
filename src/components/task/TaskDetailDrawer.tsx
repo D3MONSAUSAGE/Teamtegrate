@@ -1,73 +1,62 @@
 
-import React from "react";
-import { Task } from "@/types";
+import React from 'react';
 import {
-  Drawer,
-  DrawerContent,
-  DrawerFooter,
-  DrawerClose,
-} from "@/components/ui/drawer";
-import TaskDetailHeader from "./TaskDetailHeader";
-import TaskDetailMeta from "./TaskDetailMeta";
-import TaskDetailComments from "./TaskDetailComments";
-import { useTaskDetailHelpers } from "./hooks/useTaskDetailHelpers";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
+import { Task } from '@/types';
+import TaskDetailHeader from './TaskDetailHeader';
+import TaskDetailMeta from './TaskDetailMeta';
+import TaskDetailComments from './TaskDetailComments';
+import { useTaskPermissions } from '@/hooks/useTaskPermissions';
+import { Badge } from '@/components/ui/badge';
+import { getAccessReasonText } from '@/utils/taskPermissions';
 
 interface TaskDetailDrawerProps {
-  task: Task | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  task: Task | null;
 }
 
 const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
-  task,
   open,
   onOpenChange,
+  task
 }) => {
-  if (!task) return null;
-  
-  const {
-    getStatusColor,
-    getPriorityColor,
-    isOverdue,
-    formatDate,
-    formatTime,
-    getAssignedToName
-  } = useTaskDetailHelpers(task);
+  const permissions = task ? useTaskPermissions(task) : null;
+
+  if (!task || !permissions?.canView) {
+    return null;
+  }
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent>
-        <div className="mx-auto w-full max-w-md">
-          <TaskDetailHeader
-            title={task.title}
-            status={task.status}
-            description={task.description}
-            getStatusColor={getStatusColor}
-          />
-          <TaskDetailMeta
-            deadline={task.deadline}
-            status={task.status}
-            priority={task.priority}
-            assignedTo={getAssignedToName()}
-            isOverdue={isOverdue}
-            getPriorityColor={getPriorityColor}
-            formatDate={formatDate}
-            formatTime={formatTime}
-          />
-          <TaskDetailComments
-            taskId={task.id}
-            comments={task.comments}
-          />
-          <DrawerFooter>
-            <DrawerClose asChild>
-              <button className="w-full bg-gray-100 py-2 rounded text-sm font-medium">
-                Close
-              </button>
-            </DrawerClose>
-          </DrawerFooter>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
+        <SheetHeader className="space-y-4 pb-6 border-b">
+          <div className="flex items-center justify-between">
+            <SheetTitle className="text-2xl font-bold text-primary">
+              Task Details
+            </SheetTitle>
+            {permissions.accessReason !== 'creator' && permissions.accessReason !== 'assigned' && (
+              <Badge variant="secondary">
+                {getAccessReasonText(permissions.accessReason)}
+              </Badge>
+            )}
+          </div>
+        </SheetHeader>
+        
+        <div className="space-y-8 py-6">
+          <TaskDetailHeader task={task} />
+          <TaskDetailMeta task={task} />
+          
+          {permissions.canComment && (
+            <TaskDetailComments task={task} />
+          )}
         </div>
-      </DrawerContent>
-    </Drawer>
+      </SheetContent>
+    </Sheet>
   );
 };
 

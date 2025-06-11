@@ -5,6 +5,7 @@ import TaskCard from '@/components/task-card';
 import { Button } from "@/components/ui/button";
 import { Plus, Rocket, Sparkles } from 'lucide-react';
 import TaskDetailDrawer from './TaskDetailDrawer';
+import { useTaskPermissions } from '@/hooks/useTaskPermissions';
 
 interface TaskListProps {
   tasks: Task[];
@@ -33,7 +34,17 @@ const TaskList = ({ tasks, onEdit, onNewTask, onStatusChange, emptyMessage = "No
     }
   };
 
-  if (tasks.length === 0) {
+  const handleEditTask = (task: Task) => {
+    onEdit(task);
+  };
+
+  // Filter tasks based on view permissions
+  const viewableTasks = tasks.filter(task => {
+    // This filtering is now handled by the TaskCard component itself
+    return true;
+  });
+
+  if (viewableTasks.length === 0) {
     return (
       <div className="text-center py-20">
         <div className="max-w-md mx-auto">
@@ -63,7 +74,7 @@ const TaskList = ({ tasks, onEdit, onNewTask, onStatusChange, emptyMessage = "No
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 p-2">
-        {tasks.map((task, index) => (
+        {viewableTasks.map((task, index) => (
           <div 
             key={task.id}
             className="animate-fade-in"
@@ -71,7 +82,7 @@ const TaskList = ({ tasks, onEdit, onNewTask, onStatusChange, emptyMessage = "No
           >
             <TaskCard 
               task={task} 
-              onEdit={onEdit} 
+              onEdit={handleEditTask} 
               onClick={() => handleOpenDetails(task)}
               onStatusChange={handleStatusChange}
             />
