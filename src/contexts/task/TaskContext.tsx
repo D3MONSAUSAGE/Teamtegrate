@@ -33,6 +33,12 @@ import {
 } from './taskFilters';
 import { fetchTeamPerformance, fetchTeamMemberPerformance } from './api';
 
+// Helper function to convert AppUser to User-like object when needed
+const createUserForOperations = (appUser: any) => ({
+  ...appUser,
+  createdAt: new Date() // Add a default createdAt for compatibility
+});
+
 interface TaskContextType {
   tasks: Task[];
   projects: Project[];
@@ -152,26 +158,42 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     refreshProjects,
     addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'organizationId'>) => {
       const taskWithOrg = { ...task, organizationId: user?.organization_id };
-      return addTask(taskWithOrg, user, tasks, setTasks, projects, setProjects);
+      const userForOps = user ? createUserForOperations(user) : null;
+      return addTask(taskWithOrg, userForOps, tasks, setTasks, projects, setProjects);
     },
-    updateTask: (taskId: string, updates: Partial<Task>) => 
-      updateTask(taskId, updates, user, tasks, setTasks, projects, setProjects),
-    updateTaskStatus: (taskId: string, status: TaskStatus) => 
-      updateTaskStatus(taskId, status, user, tasks, setTasks, projects, setProjects, setDailyScore),
-    deleteTask: (taskId: string) => 
-      deleteTask(taskId, user, setTasks, projects, setProjects),
+    updateTask: (taskId: string, updates: Partial<Task>) => {
+      const userForOps = user ? createUserForOperations(user) : null;
+      return updateTask(taskId, updates, userForOps, tasks, setTasks, projects, setProjects);
+    },
+    updateTaskStatus: (taskId: string, status: TaskStatus) => {
+      const userForOps = user ? createUserForOperations(user) : null;
+      return updateTaskStatus(taskId, status, userForOps, tasks, setTasks, projects, setProjects, setDailyScore);
+    },
+    deleteTask: (taskId: string) => {
+      const userForOps = user ? createUserForOperations(user) : null;
+      return deleteTask(taskId, userForOps, setTasks, projects, setProjects);
+    },
     addProject: (project: Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'tasks' | 'organizationId'>) => {
       const projectWithOrg = { ...project, organizationId: user?.organization_id };
-      return addProject(projectWithOrg, user, setProjects);
+      const userForOps = user ? createUserForOperations(user) : null;
+      return addProject(projectWithOrg, userForOps, setProjects);
     },
-    updateProject: (projectId: string, updates: Partial<Project>) => 
-      updateProject(projectId, updates, user, setProjects),
-    deleteProject: (projectId: string) => 
-      deleteProject(projectId, user, tasks, setTasks, setProjects),
-    assignTaskToProject: (taskId: string, projectId: string) => 
-      assignTaskToProject(taskId, projectId, user, tasks, setTasks, projects, setProjects),
-    assignTaskToUser: (taskId: string, userId: string, userName: string) => 
-      assignTaskToUser(taskId, userId, userName, user, tasks, setTasks, projects, setProjects),
+    updateProject: (projectId: string, updates: Partial<Project>) => {
+      const userForOps = user ? createUserForOperations(user) : null;
+      return updateProject(projectId, updates, userForOps, setProjects);
+    },
+    deleteProject: (projectId: string) => {
+      const userForOps = user ? createUserForOperations(user) : null;
+      return deleteProject(projectId, userForOps, tasks, setTasks, setProjects);
+    },
+    assignTaskToProject: (taskId: string, projectId: string) => {
+      const userForOps = user ? createUserForOperations(user) : null;
+      return assignTaskToProject(taskId, projectId, userForOps, tasks, setTasks, projects, setProjects);
+    },
+    assignTaskToUser: (taskId: string, userId: string, userName: string) => {
+      const userForOps = user ? createUserForOperations(user) : null;
+      return assignTaskToUser(taskId, userId, userName, userForOps, tasks, setTasks, projects, setProjects);
+    },
     addCommentToTask: (taskId: string, comment: { userId: string; userName: string; text: string }) => {
       const commentWithOrg = { ...comment, organizationId: user?.organization_id };
       return addCommentToTask(taskId, commentWithOrg, tasks, setTasks, projects, setProjects);

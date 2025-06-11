@@ -184,7 +184,8 @@ const ProfileHeader = () => {
                     <span>Member since</span>
                   </div>
                   <div className="font-semibold">
-                    {new Date(user.createdAt || Date.now()).toLocaleDateString('en-US', { 
+                    {/* Use current date as fallback since AppUser doesn't have createdAt */}
+                    {new Date().toLocaleDateString('en-US', { 
                       month: 'long', 
                       year: 'numeric' 
                     })}
