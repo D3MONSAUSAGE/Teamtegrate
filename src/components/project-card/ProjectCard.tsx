@@ -52,13 +52,13 @@ const ProjectCard = ({ project, onViewTasks, onCreateTask, onDeleted }: ProjectC
     <>
       <Card className="overflow-hidden">
         <ProjectCardHeader 
-          project={project} 
+          project={convertedProject} 
           onDeleteClick={() => setShowDeleteDialog(true)}
           onEditClick={() => setShowEditDialog(true)}
           isDeleting={isDeleting} 
         />
         <ProjectCardContent 
-          project={project}
+          project={convertedProject}
           onViewTasks={onViewTasks}
           onCreateTask={onCreateTask}
         />
