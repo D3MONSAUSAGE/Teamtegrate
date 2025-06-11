@@ -1,21 +1,32 @@
 
 import { ProjectAccessInfo } from './types';
+import { supabase } from '@/integrations/supabase/client';
 
-export const checkProjectAccess = (project: any, userId: string, projectsUserIsTeamMemberOf: string[]): ProjectAccessInfo => {
-  const isManager = project.manager_id === userId;
+export const checkProjectAccess = async (project: any, userId: string, projectsUserIsTeamMemberOf: string[]): Promise<ProjectAccessInfo> => {
+  console.log(`Checking access for project: ${project.id} - "${project.title}"`);
+  console.log(`User ID: ${userId}`);
+  console.log(`Manager ID: ${project.manager_id}`);
+  console.log(`Team Members Array: ${JSON.stringify(project.team_members)}`);
+
+  // Check 1: Is user the manager?
+  const isManager = String(project.manager_id) === String(userId);
+  console.log(`Is Manager: ${isManager}`);
   
-  // Check team membership from project.team_members array with string comparison
+  // Check 2: Is user in team_members array?
   let isTeamMemberFromArray = false;
   if (Array.isArray(project.team_members)) {
     isTeamMemberFromArray = project.team_members.some(memberId => 
       String(memberId) === String(userId)
     );
   }
+  console.log(`Is Team Member (from array): ${isTeamMemberFromArray}`);
   
-  // Check team membership from project_team_members table
+  // Check 3: Is user in project_team_members table?
   const isTeamMemberFromTable = projectsUserIsTeamMemberOf.includes(project.id);
+  console.log(`Is Team Member (from table): ${isTeamMemberFromTable}`);
   
   const hasAccess = isManager || isTeamMemberFromArray || isTeamMemberFromTable;
+  console.log(`Final Access Decision: ${hasAccess}`);
   
   return {
     isManager,
@@ -42,10 +53,21 @@ export const logProjectAccess = (project: any, userId: string, accessInfo: Proje
   }
 };
 
-export const filterUserProjects = (allProjects: any[], userId: string, projectsUserIsTeamMemberOf: string[]): any[] => {
-  return allProjects?.filter(project => {
-    const accessInfo = checkProjectAccess(project, userId, projectsUserIsTeamMemberOf);
+export const filterUserProjects = async (allProjects: any[], userId: string, projectsUserIsTeamMemberOf: string[]): Promise<any[]> => {
+  if (!allProjects || allProjects.length === 0) {
+    return [];
+  }
+
+  const accessibleProjects = [];
+  
+  for (const project of allProjects) {
+    const accessInfo = await checkProjectAccess(project, userId, projectsUserIsTeamMemberOf);
     logProjectAccess(project, userId, accessInfo);
-    return accessInfo.hasAccess;
-  }) || [];
+    
+    if (accessInfo.hasAccess) {
+      accessibleProjects.push(project);
+    }
+  }
+  
+  return accessibleProjects;
 };

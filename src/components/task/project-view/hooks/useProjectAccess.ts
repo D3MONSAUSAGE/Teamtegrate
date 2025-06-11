@@ -13,6 +13,49 @@ export const useProjectAccess = (projectId: string | null, projects: Project[], 
   // Find the project - first try from context, then fallback
   const project = projects.find(p => p.id === projectId) || fallbackProject;
 
+  // Check if user has access to a project
+  const checkUserAccess = useCallback(async (projectData: any): Promise<boolean> => {
+    if (!user?.id) return false;
+
+    console.log('Checking access for project:', projectData.title || projectData.id);
+    console.log('User ID:', user.id);
+    console.log('Manager ID:', projectData.manager_id);
+    console.log('Team Members Array:', projectData.team_members);
+
+    // Check 1: Is user the manager?
+    const isManager = String(projectData.manager_id) === String(user.id);
+    console.log('Is Manager:', isManager);
+
+    // Check 2: Is user in team_members array?
+    let isTeamMemberFromArray = false;
+    if (Array.isArray(projectData.team_members)) {
+      isTeamMemberFromArray = projectData.team_members.some(memberId => 
+        String(memberId) === String(user.id)
+      );
+    }
+    console.log('Is Team Member (from array):', isTeamMemberFromArray);
+
+    // Check 3: Is user in project_team_members table?
+    const { data: teamMemberData, error: teamError } = await supabase
+      .from('project_team_members')
+      .select('*')
+      .eq('project_id', projectData.id)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (teamError) {
+      console.error('Error checking team membership:', teamError);
+    }
+
+    const isTeamMemberFromTable = !!teamMemberData;
+    console.log('Is Team Member (from table):', isTeamMemberFromTable);
+
+    const hasAccess = isManager || isTeamMemberFromArray || isTeamMemberFromTable;
+    console.log('Final Access Decision:', hasAccess);
+
+    return hasAccess;
+  }, [user?.id]);
+
   // Fetch project directly from database as fallback
   const fetchProjectDirectly = useCallback(async (id: string) => {
     try {
@@ -36,33 +79,8 @@ export const useProjectAccess = (projectId: string | null, projects: Project[], 
 
       console.log('Found project in database:', projectData);
 
-      // Check if user has access - they could be manager or team member
-      const isManager = projectData.manager_id === user?.id;
-      
-      // Check team membership from project_team_members table
-      const { data: teamMemberData } = await supabase
-        .from('project_team_members')
-        .select('*')
-        .eq('project_id', id)
-        .eq('user_id', user?.id || '')
-        .single();
-      
-      const isTeamMemberFromTable = !!teamMemberData;
-      
-      // Check team membership from team_members array  
-      const isTeamMemberFromArray = Array.isArray(projectData.team_members) && 
-        projectData.team_members.some(memberId => String(memberId) === String(user?.id));
-
-      const hasAccess = isManager || isTeamMemberFromTable || isTeamMemberFromArray;
-      
-      console.log('Direct access check results:', {
-        projectTitle: projectData.title,
-        userId: user?.id,
-        isManager,
-        isTeamMemberFromTable,
-        isTeamMemberFromArray,
-        hasAccess
-      });
+      // Check if user has access
+      const hasAccess = await checkUserAccess(projectData);
 
       if (!hasAccess) {
         console.log('User does not have access to project');
@@ -97,7 +115,7 @@ export const useProjectAccess = (projectId: string | null, projects: Project[], 
       console.error('Error in fetchProjectDirectly:', error);
       return null;
     }
-  }, [user?.id, tasks, projectId]);
+  }, [user?.id, tasks, projectId, checkUserAccess]);
 
   // Check if project exists and user has access
   useEffect(() => {
@@ -131,23 +149,17 @@ export const useProjectAccess = (projectId: string | null, projects: Project[], 
       if (contextProject) {
         console.log('Found project in context:', contextProject.title);
         
-        // Check access for context project
-        const isManager = contextProject.managerId === user.id;
-        const isTeamMemberFromArray = contextProject.teamMembers?.some(memberId => 
-          String(memberId) === String(user.id)
-        );
+        // Check access for context project using same logic
+        const contextProjectData = {
+          id: contextProject.id,
+          title: contextProject.title,
+          manager_id: contextProject.managerId,
+          team_members: contextProject.teamMembers
+        };
+
+        const hasAccess = await checkUserAccess(contextProjectData);
         
-        // Also check team membership from database table
-        const { data: teamMemberData } = await supabase
-          .from('project_team_members')
-          .select('*')
-          .eq('project_id', projectId)
-          .eq('user_id', user.id)
-          .single();
-        
-        const isTeamMemberFromTable = !!teamMemberData;
-        
-        if (isManager || isTeamMemberFromArray || isTeamMemberFromTable) {
+        if (hasAccess) {
           console.log('User has access to context project');
           setIsLoading(false);
           return;
@@ -176,7 +188,7 @@ export const useProjectAccess = (projectId: string | null, projects: Project[], 
     };
 
     checkProjectAccess();
-  }, [projectId, user, projects, fetchProjectDirectly]);
+  }, [projectId, user, projects, fetchProjectDirectly, checkUserAccess]);
 
   return {
     project,

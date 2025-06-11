@@ -35,38 +35,11 @@ export const useProjects = () => {
         fetchTeamMemberships(user.id)
       ]);
       
-      // Log detailed access information for each project
-      allProjects.forEach(project => {
-        console.log(`DB Project: ${project.id}, "${project.title}"`);
-        console.log(`  Manager: ${project.manager_id}`);
-        console.log(`  Team Members Array: ${JSON.stringify(project.team_members)}`);
-        console.log(`  User ID: ${user.id} (type: ${typeof user.id})`);
-        
-        // Check if user is manager
-        const isManager = project.manager_id === user.id;
-        console.log(`  Is Manager: ${isManager}`);
-        
-        // Check team membership from both sources
-        let isTeamMemberFromArray = false;
-        if (Array.isArray(project.team_members)) {
-          isTeamMemberFromArray = project.team_members.some(memberId => {
-            const memberIdStr = String(memberId);
-            const userIdStr = String(user.id);
-            console.log(`    Comparing team member ${memberIdStr} with user ${userIdStr}: ${memberIdStr === userIdStr}`);
-            return memberIdStr === userIdStr;
-          });
-        }
-        console.log(`  Is Team Member (from array): ${isTeamMemberFromArray}`);
-        
-        const isTeamMemberFromTable = projectsUserIsTeamMemberOf.includes(project.id);
-        console.log(`  Is Team Member (from table): ${isTeamMemberFromTable}`);
-        
-        const hasAccess = isManager || isTeamMemberFromArray || isTeamMemberFromTable;
-        console.log(`  Final Access Decision: ${hasAccess}`);
-      });
+      console.log(`Found ${allProjects.length} total projects in database`);
+      console.log(`User is team member of: ${projectsUserIsTeamMemberOf}`);
       
-      // Filter projects where user has access
-      const userProjects = filterUserProjects(allProjects, user.id, projectsUserIsTeamMemberOf);
+      // Filter projects where user has access (now async)
+      const userProjects = await filterUserProjects(allProjects, user.id, projectsUserIsTeamMemberOf);
       
       console.log(`After filtering, found ${userProjects.length} accessible projects for user ${user.id}`);
       
