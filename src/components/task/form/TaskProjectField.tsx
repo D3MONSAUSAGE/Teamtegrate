@@ -30,7 +30,7 @@ export const TaskProjectField: React.FC<TaskProjectFieldProps> = ({
     
     const isManager = project.managerId === user.id;
     const isTeamMember = Array.isArray(project.teamMemberIds) && 
-      project.teamMemberIds.includes(user.id);
+      project.teamMemberIds.includes(user.id); // Changed from teamMembers to teamMemberIds
     
     return isManager || isTeamMember;
   });

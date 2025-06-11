@@ -1,9 +1,7 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Project } from '@/types';
-import { TrendingUp } from 'lucide-react';
+import { Project } from '@/types'; // Removed @/types/flat import
 
 interface ProjectProgressChartProps {
   projects: Project[];

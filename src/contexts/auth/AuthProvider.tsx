@@ -1,132 +1,151 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User as SupabaseUser } from '@supabase/supabase-js';
+import React, { createContext, useState, useEffect, useContext } from 'react';
+import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { createUserProfile } from './utils/authHelpers';
 import { User } from '@/types';
-import { extractUserDataFromSession, setAuthDebugMode } from './userSessionUtils';
-
-interface AuthProviderProps {
-  children: React.ReactNode;
-}
+import { useLocation, useNavigate } from 'react-router-dom';
+import { extractUserDataFromSession } from './userSessionUtils';
+import { toast } from '@/components/ui/sonner';
 
 interface AuthContextType {
   user: User | null;
+  session: Session | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, name?: string) => Promise<void>;
+  signIn: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
-  refreshUserSession: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
-    // Enable debug mode for auth operations
-    setAuthDebugMode(true);
-    
-    // Get initial session
-    const getInitialSession = async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error('Error getting session:', error);
-          setLoading(false);
-          return;
-        }
-
-        if (session?.user) {
-          const userData = await extractUserDataFromSession(session);
-          setUser(userData);
-        }
-      } catch (error) {
-        console.error('Error in getInitialSession:', error);
-      } finally {
-        setLoading(false);
-      }
+    const loadSession = async () => {
+      const currentSession = supabase.auth.getSession();
+      setSession((await currentSession).data.session);
+      
+      const userData = (await currentSession).data.session
+        ? await extractUserDataFromSession((await currentSession).data.session!)
+        : null;
+      setUser(userData);
+      setLoading(false);
     };
 
-    getInitialSession();
+    loadSession();
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event, session?.user?.id);
-      
-      if (session?.user) {
-        const userData = await extractUserDataFromSession(session);
+    supabase.auth.onAuthStateChange(async (event, currentSession) => {
+      setSession(currentSession);
+
+      if (currentSession) {
+        const userData = await extractUserDataFromSession(currentSession);
         setUser(userData);
       } else {
         setUser(null);
       }
-      setLoading(false);
-    });
 
-    return () => {
-      subscription.unsubscribe();
+      if (event === 'SIGNED_IN') {
+        const intendedRoute = localStorage.getItem('intendedRoute') || '/dashboard';
+        localStorage.removeItem('intendedRoute');
+        navigate(intendedRoute, { replace: true });
+      } else if (event === 'SIGNED_OUT') {
+        navigate('/login', { replace: true });
+      }
+    });
+  }, [navigate]);
+
+  const createOrganizationForUser = async (authUser: any): Promise<string> => {
+    const organizationId = crypto.randomUUID();
+
+    // Insert into organizations table
+    const { error: orgError } = await supabase
+      .from('organizations')
+      .insert({
+        id: organizationId,
+        name: `${authUser.email}'s Organization`,
+        created_by: authUser.id,
+        created_at: new Date()
+      });
+
+    if (orgError) {
+      throw new Error(`Failed to create organization: ${orgError.message}`);
+    }
+
+    // Create user profile
+    const userData: User = {
+      id: authUser.id,
+      email: authUser.email || '',
+      role: 'admin',
+      organizationId: organizationId,
+      name: authUser.user_metadata?.name || authUser.email || '',
+      timezone: 'UTC',
+      createdAt: new Date(),
+      avatar_url: authUser.user_metadata?.avatar_url
     };
-  }, []);
 
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) throw error;
-  };
-
-  const signUp = async (email: string, password: string, name?: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { name }
-      }
-    });
-    if (error) throw error;
-  };
-
-  const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
-    setUser(null);
-  };
-
-  const refreshUserSession = async () => {
+    // Insert into users table
     try {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      
-      if (error) {
-        console.error('Error refreshing session:', error);
-        return;
-      }
+      await createUserProfile(authUser, organizationId);
+    } catch (error: any) {
+      console.error("Error creating user profile:", error);
+      throw new Error(`Failed to create user profile: ${error.message}`);
+    }
 
-      if (session?.user) {
-        const userData = await extractUserDataFromSession(session);
-        setUser(userData);
-      }
-    } catch (error) {
-      console.error('Error in refreshUserSession:', error);
+    return organizationId;
+  };
+
+  const signIn = async (email: string): Promise<void> => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase.auth.signInWithOtp({ email });
+      if (error) throw error;
+      toast.success(`Check your email (${email}) for the magic link to sign in.`);
+    } catch (err: any) {
+      console.error("Error signing in:", err);
+      toast.error(`Failed to sign in: ${err.message}`);
+    } finally {
+      setLoading(false);
     }
   };
 
+  const signOut = async (): Promise<void> => {
+    try {
+      setLoading(true);
+      await supabase.auth.signOut();
+      setUser(null);
+      setSession(null);
+      navigate('/login', { replace: true });
+    } catch (err: any) {
+      console.error("Error signing out:", err);
+      toast.error(`Failed to sign out: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const value: AuthContextType = {
+    user,
+    session,
+    loading,
+    signIn,
+    signOut
+  };
+
   return (
-    <AuthContext.Provider value={{
-      user,
-      loading,
-      signIn,
-      signUp,
-      signOut,
-      refreshUserSession
-    }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
-};
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
 };

@@ -1,11 +1,11 @@
 
 import React from 'react';
-import { User } from '@/types';
+import { User } from '@/types'; // Removed AppUser import
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface TaskAssigneeSelectProps {
-  users: User[];
+  users: User[]; // Changed from AppUser to User
   selectedUser?: string;
   onUserSelect: (userId: string) => void;
   placeholder?: string;

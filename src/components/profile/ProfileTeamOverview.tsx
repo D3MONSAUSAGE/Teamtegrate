@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,9 +7,10 @@ import { format } from 'date-fns';
 
 interface ProfileTeamOverviewProps {
   projects: Project[];
+  user: any;
 }
 
-const ProfileTeamOverview: React.FC<ProfileTeamOverviewProps> = ({ projects }) => {
+const ProfileTeamOverview: React.FC<ProfileTeamOverviewProps> = ({ projects, user }) => {
   // Calculate team stats
   const totalProjects = projects.length;
   const completedProjects = projects.filter(p => p.status === 'Completed').length;
@@ -23,6 +23,14 @@ const ProfileTeamOverview: React.FC<ProfileTeamOverviewProps> = ({ projects }) =
       allTeamMembers.add(memberId);
     });
   });
+
+  const managedProjects = projects.filter(project => 
+    project.managerId === user.id
+  );
+
+  const participatingProjects = projects.filter(project => 
+    project.teamMemberIds.includes(user.id) && project.managerId !== user.id // Changed from teamMembers to teamMemberIds
+  );
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

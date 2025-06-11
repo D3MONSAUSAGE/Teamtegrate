@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   AlertDialog,
@@ -17,21 +16,22 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, AlertTriangle, Shield, Users, MessageSquare, Building2, ClipboardList } from 'lucide-react';
 import { User } from '@/types';
 import { useUserDeletionCheck } from '@/hooks/useUserDeletionCheck';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/components/ui/sonner';
 
 interface EnhancedUserDeleteDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onConfirm: (reason: string) => void;
-  user: User | null;
-  isDeleting: boolean;
+  user: User; // Changed from AppUser to User
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onUserDeleted: () => void;
 }
 
 const EnhancedUserDeleteDialog: React.FC<EnhancedUserDeleteDialogProps> = ({ 
-  isOpen, 
-  onClose, 
-  onConfirm,
   user,
-  isDeleting
+  open,
+  onOpenChange,
+  onUserDeleted
 }) => {
   const [confirmText, setConfirmText] = useState('');
   const [deletionReason, setDeletionReason] = useState('');
@@ -45,7 +45,7 @@ const EnhancedUserDeleteDialog: React.FC<EnhancedUserDeleteDialogProps> = ({
 
   const handleConfirm = () => {
     if (canProceed) {
-      onConfirm(deletionReason);
+      onUserDeleted();
     }
   };
 
@@ -61,7 +61,7 @@ const EnhancedUserDeleteDialog: React.FC<EnhancedUserDeleteDialogProps> = ({
   };
 
   return (
-    <AlertDialog open={isOpen} onOpenChange={onClose}>
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2">

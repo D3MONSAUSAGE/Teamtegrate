@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +15,8 @@ const InviteCodeGenerator: React.FC = () => {
   const [generating, setGenerating] = useState(false);
   const [expiryDays, setExpiryDays] = useState<string>('7');
   const [maxUses, setMaxUses] = useState<string>('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [inviteCodes, setInviteCodes] = useState([]);
 
   const handleGenerateCode = async () => {
     if (!user?.organizationId) {

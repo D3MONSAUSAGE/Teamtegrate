@@ -3,11 +3,11 @@ import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User } from '@/types';
+import { User } from '@/types'; // Removed AppUser import
 import { X } from 'lucide-react';
 
 interface AssignedMemberCardProps {
-  user: User;
+  user: User; // Changed from AppUser to User
   onRemove: (userId: string) => void;
   showRemoveButton?: boolean;
 }

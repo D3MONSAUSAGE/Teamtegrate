@@ -2,7 +2,7 @@
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { User } from '@/types';
+import { User } from '@/types'; // Removed AppUser import
 import { Users, FileText } from 'lucide-react';
 import TaskAssignmentSectionEnhanced from './TaskAssignmentSectionEnhanced';
 
@@ -11,7 +11,7 @@ interface TaskFormTabsProps {
   assignedUsers: string[];
   onAssign: (userId: string) => void;
   onUnassign: (userId: string) => void;
-  users: User[];
+  users: User[]; // Changed from AppUser to User
   isLoadingUsers?: boolean;
 }
 

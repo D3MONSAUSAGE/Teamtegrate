@@ -1,67 +1,55 @@
-
 import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { User } from '@/types';
-import { Users } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
+import { X } from 'lucide-react';
 
 interface TaskMultiAssigneeFallbackProps {
-  assignedUserIds: string[];
+  assignedUsers: string[];
+  onUnassign: (userId: string) => void;
   users: User[];
+  isLoading?: boolean;
 }
 
 const TaskMultiAssigneeFallback: React.FC<TaskMultiAssigneeFallbackProps> = ({
-  assignedUserIds,
-  users
+  assignedUsers,
+  onUnassign,
+  users,
+  isLoading = false
 }) => {
-  const assignedUsers = users.filter(user => assignedUserIds.includes(user.id));
-
-  if (assignedUsers.length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Assignment
-          </CardTitle>
-          <CardDescription>No users assigned to this task</CardDescription>
-        </CardHeader>
-      </Card>
-    );
-  }
+  const assignedUsersData = users.filter(user => assignedUsers.includes(user.id));
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Users className="h-5 w-5" />
-          Assignment
-        </CardTitle>
-        <CardDescription>
-          {assignedUsers.length} {assignedUsers.length === 1 ? 'user' : 'users'} assigned
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="flex flex-wrap gap-2">
-          {assignedUsers.map((user) => (
-            <Badge
-              key={user.id}
-              variant="secondary"
-              className="flex items-center gap-2"
-            >
-              <Avatar className="h-4 w-4">
-                <AvatarImage src={user.avatar_url || undefined} />
-                <AvatarFallback className="text-xs">
-                  {(user.name || user.email).substring(0, 2).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <span className="text-xs">{user.name || user.email}</span>
-            </Badge>
-          ))}
+    <div className="border rounded-md p-2 bg-secondary text-secondary-foreground">
+      <ScrollArea className="h-24 w-full rounded-md">
+        <div className="flex flex-wrap gap-2 p-2">
+          {isLoading ? (
+            <div>Loading assignees...</div>
+          ) : assignedUsersData.length > 0 ? (
+            assignedUsersData.map((user) => (
+              <div key={user.id} className="flex items-center space-x-2 border rounded-full px-3 py-1 text-sm">
+                <Avatar className="h-5 w-5">
+                  <AvatarImage src={user.avatar_url || undefined} alt={user.name || user.email} />
+                  <AvatarFallback>{(user.name || user.email).substring(0, 2).toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <span>{user.name || user.email}</span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onUnassign(user.id)}
+                  className="hover:bg-accent hover:text-accent-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ))
+          ) : (
+            <div>No assignees selected.</div>
+          )}
         </div>
-      </CardContent>
-    </Card>
+      </ScrollArea>
+    </div>
   );
 };
 

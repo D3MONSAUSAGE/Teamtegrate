@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +31,9 @@ const ProjectOverview: React.FC<ProjectOverviewProps> = ({
   const endDate = new Date(project.endDate);
   const daysRemaining = differenceInDays(endDate, today);
   const isOverdue = isAfter(today, endDate);
+
+  // Calculate team size - using teamMemberIds length plus manager
+  const teamSize = (project.teamMemberIds?.length || 0) + 1; // Changed from teamMembers to teamMemberIds
 
   // Get status color
   const getStatusColor = (status: string) => {

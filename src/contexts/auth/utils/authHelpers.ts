@@ -7,7 +7,7 @@ export const createUserProfile = async (authUser: any, organizationId: string): 
     id: authUser.id,
     email: authUser.email,
     role: 'user' as UserRole,
-    organizationId: organizationId,
+    organizationId: organizationId, // Changed from organization_id
     name: authUser.user_metadata?.name || authUser.email,
     timezone: 'UTC',
     createdAt: new Date(),

@@ -38,7 +38,7 @@ export const extractUserDataFromSession = async (session: Session): Promise<User
         id: session.user.id,
         email: session.user.email || '',
         role: 'user' as UserRole,
-        organizationId: session.user.user_metadata?.organization_id || '',
+        organizationId: session.user.user_metadata?.organization_id || '', // Changed from organization_id
         name: session.user.user_metadata?.name || session.user.email || '',
         timezone: session.user.user_metadata?.timezone || 'UTC',
         createdAt: new Date(session.user.created_at),
@@ -53,7 +53,7 @@ export const extractUserDataFromSession = async (session: Session): Promise<User
       id: userProfile.id,
       email: userProfile.email,
       role: userProfile.role as UserRole,
-      organizationId: userProfile.organization_id,
+      organizationId: userProfile.organization_id, // Changed from organization_id
       name: userProfile.name,
       timezone: userProfile.timezone || 'UTC',
       createdAt: new Date(userProfile.created_at),

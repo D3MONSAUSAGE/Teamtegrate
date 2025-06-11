@@ -1,182 +1,270 @@
-
-import React, { useState } from 'react';
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Loader2, Search } from 'lucide-react';
-import { useUsers } from '@/hooks/useUsers';
+import React, { useState, useEffect, useCallback } from 'react';
+import { User, UserRole } from '@/types';
+import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
-import { useAuth } from '@/contexts/AuthContext';
-import { User } from '@/types';
-import UserManagementHeader from './UserManagementHeader';
-import UserManagementTable from './UserManagementTable';
-import EnhancedUserDeleteDialog from './EnhancedUserDeleteDialog';
-import EditUserDialog from './EditUserDialog';
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { MoreVertical, Copy, Edit, Trash } from 'lucide-react';
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
-const AdminUserManagement = () => {
-  const { users, isLoading, refetchUsers } = useUsers();
-  const { user: currentUser } = useAuth();
+const AdminUserManagement: React.FC = () => {
+  const { user } = useAuth();
+  const [users, setUsers] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isCreating, setIsCreating] = useState(false);
+  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserRole, setNewUserRole] = useState<UserRole>('user');
+  const [isDeleting, setIsDeleting] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
-  const [userToEdit, setUserToEdit] = useState<User | null>(null);
-  const [deletingUser, setDeletingUser] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
 
-  // Only show for superadmin
-  if (!currentUser || currentUser.role !== 'superadmin') {
-    return null;
-  }
+  const fetchUsers = useCallback(async () => {
+    if (!user?.organizationId) return;
 
-  const handleDeleteUser = async (deletionReason: string) => {
-    if (!userToDelete || !currentUser || currentUser.role !== 'superadmin') {
-      toast.error("Unauthorized to perform this action");
-      return;
-    }
-
-    if (userToDelete.id === currentUser.id) {
-      toast.error("You cannot delete your own account");
-      return;
-    }
-
-    // Additional organization check - ensure both users are in the same organization
-    if (userToDelete.organizationId !== currentUser.organizationId) {
-      toast.error("You can only delete users within your organization");
-      return;
-    }
-
-    setDeletingUser(userToDelete.id);
     try {
-      console.log('Calling delete-user function with:', { 
-        targetUserId: userToDelete.id,
-        deletionReason 
-      });
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('organization_id', user.organizationId)
+        .neq('id', user.id); // Don't show current user
 
-      // Call the edge function to delete the user
-      const { data, error } = await supabase.functions.invoke('delete-user', {
-        body: {
-          targetUserId: userToDelete.id,
-          deletionReason
-        }
-      });
-
-      if (error) {
-        console.error('Edge function error:', error);
-        throw new Error(error.message || 'Failed to delete user');
-      }
-
-      if (data?.error) {
-        console.error('Edge function returned error:', data.error);
-        throw new Error(data.error);
-      }
-
-      console.log('User deletion successful:', data);
-      toast.success(data?.message || 'User deleted successfully');
-      
-      // Show impact summary if available
-      if (data?.impactSummary) {
-        const impact = data.impactSummary;
-        console.log('Deletion impact:', impact);
-        
-        if (impact.tasks_assigned > 0 || impact.projects_managed > 0) {
-          toast.info(`Cleanup completed: ${impact.tasks_assigned} tasks unassigned, ${impact.projects_managed} projects affected`);
-        }
-      }
-      
-      refetchUsers();
+      if (error) throw error;
+      setUsers(data || []);
     } catch (error) {
-      console.error("Error deleting user:", error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to delete user';
-      toast.error(errorMessage);
+      console.error('Error fetching users:', error);
+      toast.error('Failed to load users');
     } finally {
-      setDeletingUser(null);
-      setUserToDelete(null);
+      setIsLoading(false);
+    }
+  }, [user?.organizationId, user.id]);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+
+  const handleCreateUser = async () => {
+    if (!user?.organizationId) return;
+
+    try {
+      setIsCreating(true);
+
+      // Create a new user in Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email: newUserEmail,
+        password: 'defaultpassword', // You might want to generate a random password
+        user_metadata: {
+          organization_id: user.organizationId,
+          role: newUserRole
+        }
+      });
+
+      if (authError) throw authError;
+
+      // Create a new user profile in the users table
+      const newUserId = authData.user?.id;
+      if (newUserId) {
+        const { error: profileError } = await supabase
+          .from('users')
+          .insert({
+            id: newUserId,
+            email: newUserEmail,
+            role: newUserRole,
+            organization_id: user.organizationId,
+            name: newUserEmail, // Default name
+            timezone: 'UTC',
+            avatar_url: null
+          });
+
+        if (profileError) throw profileError;
+      }
+
+      setNewUserEmail('');
+      setNewUserRole('user');
+      await fetchUsers(); // Refresh the list
+      toast.success('User created successfully');
+    } catch (error) {
+      console.error('Error creating user:', error);
+      toast.error('Failed to create user');
+    } finally {
+      setIsCreating(false);
     }
   };
 
-  const handleEditUser = (user: User) => {
-    setUserToEdit(user);
+  const handleDeleteUser = async (userToDelete: User) => {
+    if (!user?.organizationId) return;
+
+    try {
+      setIsDeleting(true);
+
+      // Delete user from Supabase Auth
+      const { error: authError } = await supabase.auth.admin.deleteUser(userToDelete.id);
+      if (authError) throw authError;
+
+      // Optionally, delete user from the users table (if not already cascade deleted)
+      const { error: profileError } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', userToDelete.id);
+
+      if (profileError) console.error('Error deleting user profile:', profileError);
+
+      setUserToDelete(null);
+      await fetchUsers(); // Refresh the list
+      toast.success('User deleted successfully');
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      toast.error('Failed to delete user');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
-  const handleDeleteClick = (user: User) => {
+  const handleOpenDeleteDialog = (user: User) => {
     setUserToDelete(user);
   };
 
-  const canDeleteUser = (targetUser: any) => {
-    if (targetUser.id === currentUser?.id) return false;
-    // Additional organization check
-    if (targetUser.organizationId !== currentUser?.organizationId) return false;
-    return currentUser?.role === 'superadmin';
+  const handleCloseDeleteDialog = () => {
+    setUserToDelete(null);
   };
 
-  // Filter users based on search query (users are already filtered by organization via RLS)
-  const filteredUsers = users.filter(user => 
-    (user.name || user.email).toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.role.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  if (isLoading) {
-    return (
-      <Card>
-        <UserManagementHeader userCount={0} />
-        <CardContent>
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <span className="ml-2">Loading users from your organization...</span>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
-    <>
-      <Card>
-        <UserManagementHeader userCount={filteredUsers.length} />
-        <CardContent>
-          <div className="mb-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                placeholder="Search users in your organization by name, email, or role..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
+    <div>
+      <h2 className="text-2xl font-bold mb-4">User Management</h2>
+
+      {/* Create User Section */}
+      <div className="mb-6 p-4 border rounded-md">
+        <h3 className="text-lg font-semibold mb-2">Create New User</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <Label htmlFor="email">Email</Label>
+            <Input
+              type="email"
+              id="email"
+              placeholder="Email address"
+              value={newUserEmail}
+              onChange={(e) => setNewUserEmail(e.target.value)}
+            />
           </div>
-          <UserManagementTable
-            users={filteredUsers}
-            currentUserId={currentUser?.id}
-            currentUserRole={currentUser?.role}
-            canDeleteUser={canDeleteUser}
-            deletingUser={deletingUser}
-            onDeleteClick={handleDeleteClick}
-            onEditClick={handleEditUser}
-            onRoleChanged={refetchUsers}
-          />
-        </CardContent>
-      </Card>
+          <div>
+            <Label htmlFor="role">Role</Label>
+            <select
+              id="role"
+              className="w-full p-2 border rounded-md"
+              value={newUserRole}
+              onChange={(e) => setNewUserRole(e.target.value' as UserRole')}
+            >
+              <option value="user">User</option>
+              <option value="manager">Manager</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+          <div>
+            <Button onClick={handleCreateUser} disabled={isCreating}>
+              {isCreating ? 'Creating...' : 'Create User'}
+            </Button>
+          </div>
+        </div>
+      </div>
 
-      <EnhancedUserDeleteDialog
-        isOpen={!!userToDelete}
-        onClose={() => setUserToDelete(null)}
-        onConfirm={handleDeleteUser}
-        user={userToDelete}
-        isDeleting={!!deletingUser}
-      />
-
-      {userToEdit && (
-        <EditUserDialog
-          isOpen={!!userToEdit}
-          onClose={() => setUserToEdit(null)}
-          onUserUpdated={refetchUsers}
-          user={{
-            ...userToEdit,
-            name: userToEdit.name || userToEdit.email || 'User'
-          }}
-        />
+      {/* User List Table */}
+      {isLoading ? (
+        <p>Loading users...</p>
+      ) : (
+        <Table>
+          <TableCaption>A list of users in your organization.</TableCaption>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[100px]">ID</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Role</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {users.map((user) => (
+              <TableRow key={user.id}>
+                <TableCell className="font-medium">{user.id}</TableCell>
+                <TableCell>{user.email}</TableCell>
+                <TableCell>{user.role}</TableCell>
+                <TableCell className="text-right">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="h-8 w-8 p-0">
+                        <span className="sr-only">Open menu</span>
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                      <DropdownMenuItem onClick={() => navigator.clipboard.writeText(user.id)}>
+                        <Copy className="mr-2 h-4 w-4" /> Copy ID
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => handleOpenDeleteDialog(user)} className="text-red-500">
+                        <Trash className="mr-2 h-4 w-4" /> Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       )}
-    </>
+
+      {/* Delete User Confirmation Dialog */}
+      <AlertDialog open={userToDelete !== null} onOpenChange={handleCloseDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the user from the system.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCloseDeleteDialog}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              if (userToDelete) {
+                handleDeleteUser(userToDelete);
+                handleCloseDeleteDialog();
+              }
+            }} disabled={isDeleting}>
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
   );
 };
 

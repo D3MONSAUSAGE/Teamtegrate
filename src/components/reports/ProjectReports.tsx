@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useTask } from '@/contexts/task';
 import { Project } from '@/types';
@@ -9,7 +8,7 @@ const ProjectReports: React.FC = () => {
   
   // Use projects directly without conversion
   const projectList = projects as Project[];
-  
+
   // Project status distribution data
   const statusCounts = React.useMemo(() => {
     const counts: Record<string, number> = {

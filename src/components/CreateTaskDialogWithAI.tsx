@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Task } from '@/types';
 import { useTask } from '@/contexts/task';
@@ -12,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TaskFormFieldsWithAI from './task/TaskFormFieldsWithAI';
 import TaskAssignmentSection from '@/components/task/form/TaskAssignmentSection';
 import { useUsers } from '@/hooks/useUsers';
+import { toast } from '@/components/ui/sonner';
 
 interface CreateTaskDialogProps {
   open: boolean;
@@ -78,55 +78,38 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
     }
   };
 
-  const onSubmit = (data: any) => {
-    console.log('Form submission data:', data);
-    
+  const handleSubmit = useCallback(async (taskData: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
     if (!user?.organizationId) {
-      console.error('User organizationId is required');
+      toast.error('Organization context required');
       return;
     }
-    
-    // Handle the case where deadline might come as string or Date
-    const deadlineDate = typeof data.deadline === 'string' 
-      ? new Date(data.deadline)
-      : data.deadline;
 
-    if (isEditMode && editingTask) {
-      updateTask(editingTask.id, {
-        ...data,
-        deadline: deadlineDate,
-        assignedToId: selectedMember === "unassigned" ? undefined : selectedMember,
-        assignedToName: data.assignedToName,
-        cost: Number(data.cost) || 0,
-        organizationId: user.organizationId
-      });
-    } else {
-      const newTask: Omit<Task, 'id' | 'createdAt' | 'updatedAt'> = {
-        title: data.title,
-        description: data.description || '',
-        priority: data.priority,
-        deadline: deadlineDate,
-        status: 'To Do',
-        userId: user?.id || '',
-        projectId: data.projectId === "none" ? undefined : data.projectId,
-        assignedToId: selectedMember === "unassigned" ? undefined : selectedMember,
-        assignedToName: data.assignedToName,
-        assignedToIds: selectedMember && selectedMember !== "unassigned" ? [selectedMember] : [],
-        assignedToNames: data.assignedToName ? [data.assignedToName] : [],
-        cost: Number(data.cost) || 0,
-        organizationId: user.organizationId
+    try {
+      setIsSubmitting(true);
+      
+      const finalTaskData = {
+        ...taskData,
+        userId: user.id,
+        organizationId: user.organizationId // Changed from organization_id
       };
-      addTask(newTask);
+
+      if (editingTask) {
+        await updateTask(editingTask.id, finalTaskData);
+        toast.success('Task updated successfully');
+      } else {
+        await addTask(finalTaskData);
+        toast.success('Task created successfully');
+      }
+      
+      onOpenChange(false);
+      onTaskComplete?.();
+    } catch (error) {
+      console.error('Error saving task:', error);
+      toast.error(`Failed to ${editingTask ? 'update' : 'create'} task`);
+    } finally {
+      setIsSubmitting(false);
     }
-    onOpenChange(false);
-    reset();
-    setSelectedMember(undefined);
-    
-    // Call the onTaskComplete callback if provided
-    if (onTaskComplete) {
-      onTaskComplete();
-    }
-  };
+  }, [user?.organizationId, editingTask, updateTask, addTask, onOpenChange, onTaskComplete, user?.id]);
 
   const handleCancel = () => {
     onOpenChange(false);
@@ -145,7 +128,7 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
         </DialogHeader>
         
         <Form {...form}>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <Tabs defaultValue="details" className="w-full">
               <TabsList className="mb-4">
                 <TabsTrigger value="details">Task Details</TabsTrigger>
@@ -199,3 +182,5 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
 };
 
 export default CreateTaskDialogWithAI;
+
+</edits_to_apply>
