@@ -55,11 +55,11 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     setIsLoading(true);
     try {
-      const simpleUser = {
+      const userData = {
         id: user.id,
         organization_id: user.organization_id
       };
-      await fetchTasks(simpleUser, setTasks);
+      await fetchTasks(userData, setTasks);
     } catch (error) {
       console.error('Error refreshing tasks:', error);
     } finally {
@@ -78,7 +78,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       if (error) throw error;
 
-      const transformedProjects: Project[] = data.map((project: any) => ({
+      const transformedProjects = data.map((project: any) => ({
         id: project.id,
         title: project.title,
         description: project.description,
@@ -106,14 +106,14 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const handleAddTask = async (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
     if (!user) return;
-    const simpleUser = { id: user.id, organization_id: user.organization_id };
-    await addTask(task, simpleUser, tasks, setTasks, projects, setProjects);
+    const userData = { id: user.id, organization_id: user.organization_id };
+    await addTask(task, userData, tasks, setTasks, projects, setProjects);
   };
 
   const handleUpdateTask = async (taskId: string, updates: Partial<Task>) => {
     if (!user) return;
-    const simpleUser = { id: user.id, organization_id: user.organization_id };
-    await updateTask(taskId, updates, simpleUser, tasks, setTasks, projects, setProjects);
+    const userData = { id: user.id, organization_id: user.organization_id };
+    await updateTask(taskId, updates, userData, tasks, setTasks, projects, setProjects);
   };
 
   const handleUpdateTaskStatus = async (taskId: string, status: TaskStatus) => {
@@ -123,26 +123,26 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const handleDeleteTask = async (taskId: string) => {
     if (!user) return;
-    const simpleUser = { id: user.id, organization_id: user.organization_id };
-    await deleteTask(taskId, simpleUser, tasks, setTasks, projects, setProjects);
+    const userData = { id: user.id, organization_id: user.organization_id };
+    await deleteTask(taskId, userData, tasks, setTasks, projects, setProjects);
   };
 
   const handleAssignTaskToProject = async (taskId: string, projectId: string) => {
     if (!user) return;
-    const simpleUser = { id: user.id, organization_id: user.organization_id };
-    await assignTaskToProject(taskId, projectId, simpleUser, tasks, setTasks, projects, setProjects);
+    const userData = { id: user.id, organization_id: user.organization_id };
+    await assignTaskToProject(taskId, projectId, userData, tasks, setTasks, projects, setProjects);
   };
 
   const handleAssignTaskToUser = async (taskId: string, userId: string, userName: string) => {
     if (!user) return;
-    const simpleUser = { id: user.id, organization_id: user.organization_id };
-    await assignTaskToUser(taskId, userId, userName, simpleUser, tasks, setTasks, projects, setProjects);
+    const userData = { id: user.id, organization_id: user.organization_id };
+    await assignTaskToUser(taskId, userId, userName, userData, tasks, setTasks, projects, setProjects);
   };
 
   const handleAddProject = async (project: Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'tasks'>) => {
     if (!user) return null;
-    const simpleUser = { id: user.id, organization_id: user.organization_id };
-    const newProject = await addProject(project, simpleUser);
+    const userData = { id: user.id, organization_id: user.organization_id };
+    const newProject = await addProject(project, userData);
     if (newProject) {
       setProjects(prev => [...prev, newProject]);
     }
