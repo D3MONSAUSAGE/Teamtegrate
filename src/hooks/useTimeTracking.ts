@@ -4,13 +4,29 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { startOfWeek, addDays } from 'date-fns';
-import { TimeEntry } from '@/types';
+
+export interface TimeEntry {
+  id: string;
+  user_id: string;
+  clock_in: Date;
+  clock_out?: Date;
+  duration_minutes?: number;
+  notes?: string;
+  created_at: Date;
+  organizationId: string;
+}
+
+export interface CurrentEntryState {
+  isClocked: boolean;
+  clock_in?: Date;
+  id?: string;
+}
 
 // Accept an optional "weekStart" param to fetch entries for a specific week.
 export function useTimeTracking() {
   const { user } = useAuth();
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
-  const [currentEntry, setCurrentEntry] = useState<TimeEntry | null>(null);
+  const [currentEntry, setCurrentEntry] = useState<CurrentEntryState>({ isClocked: false });
   const [isLoading, setIsLoading] = useState(false);
 
   const fetchTimeEntries = useCallback(async () => {
@@ -42,7 +58,15 @@ export function useTimeTracking() {
       
       // Find current active entry
       const activeEntry = entries.find(entry => !entry.clock_out);
-      setCurrentEntry(activeEntry || null);
+      if (activeEntry) {
+        setCurrentEntry({
+          isClocked: true,
+          clock_in: activeEntry.clock_in,
+          id: activeEntry.id
+        });
+      } else {
+        setCurrentEntry({ isClocked: false });
+      }
     } catch (error) {
       console.error('Error fetching time entries:', error);
       toast.error('Failed to load time entries');
@@ -77,7 +101,11 @@ export function useTimeTracking() {
         organizationId: data.organization_id
       };
 
-      setCurrentEntry(newEntry);
+      setCurrentEntry({
+        isClocked: true,
+        clock_in: newEntry.clock_in,
+        id: newEntry.id
+      });
       setTimeEntries(prev => [newEntry, ...prev]);
       toast.success('Clocked in successfully');
     } catch (error) {
@@ -106,7 +134,7 @@ export function useTimeTracking() {
         return;
       }
 
-      setCurrentEntry(null);
+      setCurrentEntry({ isClocked: false });
       toast.success('Clocked out successfully');
     } catch (error) {
       console.error('Error in clockOut:', error);

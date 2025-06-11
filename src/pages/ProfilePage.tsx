@@ -2,6 +2,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useProjects } from '@/hooks/useProjects';
 import ProfileHeader from '@/components/profile/ProfileHeader';
 import ProfileStats from '@/components/profile/ProfileStats';
 import ProfileActivity from '@/components/profile/ProfileActivity';
@@ -12,6 +13,7 @@ import AdminUserManagement from '@/components/profile/AdminUserManagement';
 const ProfilePage = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated, loading } = useAuth();
+  const { projects } = useProjects();
 
   if (loading) {
     return (
@@ -42,7 +44,7 @@ const ProfilePage = () => {
         <AdminUserManagement />
         
         {/* Team & Project Overview */}
-        <ProfileTeamOverview />
+        <ProfileTeamOverview projects={projects} user={user} />
         
         {/* Recent Activity Feed */}
         <ProfileActivity />
