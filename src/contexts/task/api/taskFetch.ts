@@ -1,21 +1,42 @@
+
 import { Task } from '@/types';
 import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { validateUserOrganization } from '@/utils/organizationHelpers';
+
+// Simple type definition to avoid type instantiation issues
+type UserWithOrg = {
+  id: string;
+  organization_id?: string;
+} | null;
 
 const parseDate = (dateStr: string | null): Date => {
   if (!dateStr) return new Date();
   return new Date(dateStr);
 };
 
+// Inline validation function to avoid complex type inference
+const isValidUser = (user: UserWithOrg): user is { id: string; organization_id: string } => {
+  if (!user) {
+    console.error('User is required for this operation');
+    return false;
+  }
+  
+  if (!user.organization_id) {
+    console.error('User must belong to an organization');
+    return false;
+  }
+  
+  return true;
+};
+
 export const fetchTasks = async (
-  user: { id: string; organization_id?: string } | null,
+  user: UserWithOrg,
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>
 ): Promise<void> => {
   try {
     console.log('Fetching tasks for user:', user?.id, 'org:', user?.organization_id);
     
-    if (!validateUserOrganization(user)) {
+    if (!isValidUser(user)) {
       toast.error('User must belong to an organization to view tasks');
       return;
     }
@@ -24,7 +45,7 @@ export const fetchTasks = async (
     const { data: taskData, error } = await supabase
       .from('tasks')
       .select('*')
-      .eq('organization_id', user!.organization_id);
+      .eq('organization_id', user.organization_id);
 
     if (error) {
       console.error('Error fetching tasks:', error);
@@ -38,7 +59,7 @@ export const fetchTasks = async (
     const { data: commentData, error: commentError } = await supabase
       .from('comments')
       .select('*')
-      .eq('organization_id', user!.organization_id);
+      .eq('organization_id', user.organization_id);
 
     if (commentError) {
       console.error('Error fetching comments:', commentError);
@@ -47,7 +68,7 @@ export const fetchTasks = async (
     // Transform database format to application format
     const transformedTasks: Task[] = taskData.map((dbTask) => ({
       id: dbTask.id,
-      userId: dbTask.user_id || user!.id,
+      userId: dbTask.user_id || user.id,
       projectId: dbTask.project_id || undefined,
       title: dbTask.title || '',
       description: dbTask.description || '',
