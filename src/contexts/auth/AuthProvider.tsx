@@ -121,7 +121,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Simple role comparison function - using direct role comparison instead of external utility
+  // Simple role comparison function
   const canManageUserRole = (userRole: UserRole | undefined, targetRole: UserRole): boolean => {
     if (!userRole) return false;
     
