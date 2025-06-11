@@ -53,6 +53,31 @@ const CreateTaskDialogEnhanced: React.FC<CreateTaskDialogEnhancedProps> = ({
     handleTimeChange
   } = useTaskFormWithAI(editingTask, currentProjectId);
 
+  // Enhanced data validation
+  const isValidArray = (arr: any): arr is any[] => {
+    return Array.isArray(arr) && arr !== null && arr !== undefined;
+  };
+
+  const isValidUser = (user: any): user is any => {
+    return user && 
+           typeof user === 'object' && 
+           typeof user.id === 'string' && 
+           typeof user.name === 'string';
+  };
+
+  // Safe users array with comprehensive validation
+  const safeUsers = isValidArray(users) ? users.filter(isValidUser) : [];
+  const safeSelectedMembers = isValidArray(selectedMembers) ? selectedMembers.filter(id => typeof id === 'string' && id.length > 0) : [];
+
+  console.log('CreateTaskDialogEnhanced - data validation:', {
+    usersOriginal: users?.length || 'invalid',
+    usersFiltered: safeUsers.length,
+    selectedMembersOriginal: selectedMembers?.length || 'invalid',
+    selectedMembersFiltered: safeSelectedMembers.length,
+    loadingUsers,
+    usersError: !!usersError
+  });
+
   // Initialize multi-assign mode and selected members for editing
   React.useEffect(() => {
     if (editingTask && editingTask.assignedToIds && editingTask.assignedToIds.length > 1) {
@@ -72,6 +97,11 @@ const CreateTaskDialogEnhanced: React.FC<CreateTaskDialogEnhancedProps> = ({
   const handleUserAssignment = (userId: string) => {
     console.log('Assigning user:', userId);
     
+    if (!userId || typeof userId !== 'string') {
+      console.error('Invalid userId in handleUserAssignment:', userId);
+      return;
+    }
+    
     if (userId === "unassigned") {
       setSelectedMember(undefined);
       setValue('assignedToId', undefined);
@@ -79,28 +109,32 @@ const CreateTaskDialogEnhanced: React.FC<CreateTaskDialogEnhancedProps> = ({
       return;
     }
     
-    // Ensure users array exists and is valid before finding user
-    const safeUsers = Array.isArray(users) ? users : [];
     const selectedUser = safeUsers.find(user => user && user.id === userId);
     
     if (selectedUser) {
       setSelectedMember(userId);
       setValue('assignedToId', userId);
       setValue('assignedToName', selectedUser.name || selectedUser.email);
+    } else {
+      console.error('User not found in safeUsers array:', userId);
     }
   };
 
   const handleMembersChange = (memberIds: string[]) => {
     console.log('handleMembersChange called with:', memberIds);
     
-    // Ensure memberIds is always an array
-    const safeMemberIds = Array.isArray(memberIds) ? memberIds : [];
-    setSelectedMembers(safeMemberIds);
+    // Enhanced validation for memberIds
+    if (!isValidArray(memberIds)) {
+      console.error('Invalid memberIds passed to handleMembersChange:', memberIds);
+      return;
+    }
+    
+    const validMemberIds = memberIds.filter(id => typeof id === 'string' && id.length > 0);
+    setSelectedMembers(validMemberIds);
     
     // Update form values for multi-assignment
-    const safeUsers = Array.isArray(users) ? users : [];
-    const selectedUsers = safeUsers.filter(user => user && safeMemberIds.includes(user.id));
-    setValue('assignedToIds', safeMemberIds);
+    const selectedUsers = safeUsers.filter(user => user && validMemberIds.includes(user.id));
+    setValue('assignedToIds', validMemberIds);
     setValue('assignedToNames', selectedUsers.map(user => user.name || user.email));
   };
 
@@ -212,7 +246,7 @@ const CreateTaskDialogEnhanced: React.FC<CreateTaskDialogEnhancedProps> = ({
               onDateChange={handleDateChange}
               onTimeChange={handleTimeChange}
               multiAssignMode={multiAssignMode}
-              selectedMembers={selectedMembers}
+              selectedMembers={safeSelectedMembers}
               onMembersChange={handleMembersChange}
               users={safeUsers}
               loadingUsers={loadingUsers}

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Check, ChevronsUpDown, X, Users, Search } from "lucide-react";
+import { Check, ChevronsUpDown, X, Users, Search, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AppUser } from '@/types';
 
@@ -31,51 +31,38 @@ const TaskMultiAssigneeSelect: React.FC<TaskMultiAssigneeSelectProps> = ({
   const [open, setOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
 
-  // Ensure safe array operations
-  const safeSelectedMembers = Array.isArray(selectedMembers) ? selectedMembers : [];
-  const safeUsers = Array.isArray(users) ? users.filter(user => user && user.id && user.name) : [];
+  // Enhanced runtime safety checks
+  const isValidArray = (arr: any): arr is any[] => {
+    return Array.isArray(arr) && arr !== null && arr !== undefined;
+  };
+
+  const isValidUser = (user: any): user is AppUser => {
+    return user && 
+           typeof user === 'object' && 
+           typeof user.id === 'string' && 
+           typeof user.name === 'string' && 
+           user.id.length > 0 && 
+           user.name.length > 0;
+  };
+
+  // Runtime data validation
+  console.log('TaskMultiAssigneeSelect render:', { 
+    selectedMembers: isValidArray(selectedMembers) ? selectedMembers.length : 'INVALID',
+    users: isValidArray(users) ? users.length : 'INVALID',
+    isLoading 
+  });
+
+  // Comprehensive data safety
+  const safeSelectedMembers = isValidArray(selectedMembers) ? selectedMembers.filter(id => typeof id === 'string' && id.length > 0) : [];
+  const safeUsers = isValidArray(users) ? users.filter(isValidUser) : [];
+  const safeOnMembersChange = typeof onMembersChange === 'function' ? onMembersChange : () => {
+    console.error('TaskMultiAssigneeSelect: onMembersChange is not a function');
+  };
+
+  // Data readiness check - prevent rendering if critical data is invalid
+  const isDataReady = !isLoading && isValidArray(users) && isValidArray(selectedMembers);
   
-  // Get selected users for display
-  const selectedUsers = safeUsers.filter(user => safeSelectedMembers.includes(user.id));
-  
-  // Filter available users based on search and selection
-  const availableUsers = safeUsers.filter(user => 
-    !safeSelectedMembers.includes(user.id) && 
-    user.name.toLowerCase().includes(searchValue.toLowerCase())
-  );
-
-  const handleSelect = (userId: string) => {
-    if (!userId || typeof onMembersChange !== 'function') return;
-    
-    try {
-      if (safeSelectedMembers.includes(userId)) {
-        onMembersChange(safeSelectedMembers.filter(id => id !== userId));
-      } else {
-        onMembersChange([...safeSelectedMembers, userId]);
-      }
-      setSearchValue("");
-      setOpen(false);
-    } catch (error) {
-      console.error('Error selecting user:', error);
-      if (onError) onError();
-    }
-  };
-
-  const handleRemove = (userId: string) => {
-    if (!userId || typeof onMembersChange !== 'function') return;
-    
-    try {
-      onMembersChange(safeSelectedMembers.filter(id => id !== userId));
-    } catch (error) {
-      console.error('Error removing user:', error);
-      if (onError) onError();
-    }
-  };
-
-  const getUserInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-  };
-
+  // Early return for loading state
   if (isLoading) {
     return (
       <div className="space-y-2">
@@ -93,6 +80,72 @@ const TaskMultiAssigneeSelect: React.FC<TaskMultiAssigneeSelectProps> = ({
       </div>
     );
   }
+
+  // Early return for invalid data
+  if (!isDataReady) {
+    console.warn('TaskMultiAssigneeSelect: Invalid data detected', { users, selectedMembers });
+    return (
+      <div className="space-y-2">
+        <Button
+          variant="outline"
+          className="w-full justify-between border-destructive/50"
+          disabled={true}
+        >
+          <div className="flex items-center gap-2 text-destructive">
+            <AlertCircle className="h-4 w-4" />
+            Data not ready
+          </div>
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </div>
+    );
+  }
+
+  // Safe data operations after validation
+  const selectedUsers = safeUsers.filter(user => safeSelectedMembers.includes(user.id));
+  const availableUsers = safeUsers.filter(user => 
+    !safeSelectedMembers.includes(user.id) && 
+    user.name.toLowerCase().includes(searchValue.toLowerCase())
+  );
+
+  const handleSelect = (userId: string) => {
+    if (!userId || typeof userId !== 'string' || userId.length === 0) {
+      console.error('Invalid userId in handleSelect:', userId);
+      return;
+    }
+    
+    try {
+      if (safeSelectedMembers.includes(userId)) {
+        safeOnMembersChange(safeSelectedMembers.filter(id => id !== userId));
+      } else {
+        safeOnMembersChange([...safeSelectedMembers, userId]);
+      }
+      setSearchValue("");
+      setOpen(false);
+    } catch (error) {
+      console.error('Error selecting user:', error);
+      if (onError) onError();
+    }
+  };
+
+  const handleRemove = (userId: string) => {
+    if (!userId || typeof userId !== 'string' || userId.length === 0) {
+      console.error('Invalid userId in handleRemove:', userId);
+      return;
+    }
+    
+    try {
+      safeOnMembersChange(safeSelectedMembers.filter(id => id !== userId));
+    } catch (error) {
+      console.error('Error removing user:', error);
+      if (onError) onError();
+    }
+  };
+
+  const getUserInitials = (name: string) => {
+    if (!name || typeof name !== 'string') return 'UN';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
 
   return (
     <div className="space-y-3">
@@ -130,33 +183,35 @@ const TaskMultiAssigneeSelect: React.FC<TaskMultiAssigneeSelectProps> = ({
                 <span className="text-sm text-muted-foreground">{emptyMessage}</span>
               </div>
             </CommandEmpty>
-            <CommandGroup className="max-h-60 overflow-y-auto">
-              {availableUsers.map((user) => (
-                <CommandItem
-                  key={user.id}
-                  onSelect={() => handleSelect(user.id)}
-                  className="flex items-center gap-3 p-3 cursor-pointer hover:bg-accent/50"
-                >
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={user.avatar_url} />
-                    <AvatarFallback className="text-xs bg-gradient-to-r from-green-500/20 to-blue-500/20 text-foreground border">
-                      {getUserInitials(user.name)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <div className="font-medium text-sm">{user.name}</div>
-                    <div className="text-xs text-muted-foreground">{user.email}</div>
-                  </div>
-                  <Check className="h-4 w-4 text-green-600" />
-                </CommandItem>
-              ))}
-            </CommandGroup>
+            {isValidArray(availableUsers) && availableUsers.length > 0 && (
+              <CommandGroup className="max-h-60 overflow-y-auto">
+                {availableUsers.map((user) => (
+                  <CommandItem
+                    key={user.id}
+                    onSelect={() => handleSelect(user.id)}
+                    className="flex items-center gap-3 p-3 cursor-pointer hover:bg-accent/50"
+                  >
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={user.avatar_url} />
+                      <AvatarFallback className="text-xs bg-gradient-to-r from-green-500/20 to-blue-500/20 text-foreground border">
+                        {getUserInitials(user.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <div className="font-medium text-sm">{user.name}</div>
+                      <div className="text-xs text-muted-foreground">{user.email}</div>
+                    </div>
+                    <Check className="h-4 w-4 text-green-600" />
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
           </Command>
         </PopoverContent>
       </Popover>
       
       {/* Selected Members Display */}
-      {selectedUsers.length > 0 && (
+      {isValidArray(selectedUsers) && selectedUsers.length > 0 && (
         <div className="space-y-2">
           <div className="text-xs text-muted-foreground font-medium">
             Selected Team Members ({selectedUsers.length})

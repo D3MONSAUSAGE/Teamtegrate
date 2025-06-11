@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, User, Clock } from "lucide-react";
+import { Users, User, Clock, AlertTriangle } from "lucide-react";
 import { AppUser } from '@/types';
 import TaskAssigneeSelect from './TaskAssigneeSelect';
 import AssignedMemberCard from './assignment/AssignedMemberCard';
@@ -39,36 +39,79 @@ const TaskAssignmentSectionEnhanced: React.FC<TaskAssignmentSectionEnhancedProps
     multiSelect, 
     isLoading, 
     usersLength: users?.length,
-    selectedMembersLength: selectedMembers?.length
+    selectedMembersLength: selectedMembers?.length,
+    usersIsArray: Array.isArray(users),
+    selectedMembersIsArray: Array.isArray(selectedMembers)
   });
 
-  const safeSelectedMembers = Array.isArray(selectedMembers) ? selectedMembers : [];
-  const safeUsers = Array.isArray(users) ? users.filter(user => user && user.id && user.name) : [];
-  const safeOnMembersChange = typeof onMembersChange === 'function' ? onMembersChange : () => {};
-  
-  const selectedUsers = safeUsers.filter(user => safeSelectedMembers.includes(user.id));
-  const availableUsers = safeUsers.filter(user => 
+  // Enhanced runtime safety checks
+  const isValidArray = (arr: any): arr is any[] => {
+    return Array.isArray(arr) && arr !== null && arr !== undefined;
+  };
+
+  const isValidUser = (user: any): user is AppUser => {
+    return user && 
+           typeof user === 'object' && 
+           typeof user.id === 'string' && 
+           typeof user.name === 'string' && 
+           user.id.length > 0;
+  };
+
+  // Safe data operations with comprehensive validation
+  const safeSelectedMembers = isValidArray(selectedMembers) ? selectedMembers.filter(id => typeof id === 'string' && id.length > 0) : [];
+  const safeUsers = isValidArray(users) ? users.filter(isValidUser) : [];
+  const safeOnMembersChange = typeof onMembersChange === 'function' ? onMembersChange : () => {
+    console.error('TaskAssignmentSectionEnhanced: onMembersChange is not a function');
+    toast.error('Error: Assignment function not available');
+  };
+
+  // Data readiness validation
+  const isDataReady = !isLoading && isValidArray(users);
+  const hasValidUsers = safeUsers.length > 0;
+
+  const selectedUsers = hasValidUsers ? safeUsers.filter(user => safeSelectedMembers.includes(user.id)) : [];
+  const availableUsers = hasValidUsers ? safeUsers.filter(user => 
     !safeSelectedMembers.includes(user.id) && 
     user.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  ) : [];
 
   const handleSelectUser = (userId: string) => {
-    if (multiSelect && onMembersChange) {
-      if (safeSelectedMembers.includes(userId)) {
-        safeOnMembersChange(safeSelectedMembers.filter(id => id !== userId));
-      } else {
-        safeOnMembersChange([...safeSelectedMembers, userId]);
-      }
-    } else {
-      onAssign(userId);
+    if (!userId || typeof userId !== 'string') {
+      console.error('Invalid userId in handleSelectUser:', userId);
+      return;
     }
-    setOpen(false);
-    setSearchTerm('');
+
+    try {
+      if (multiSelect && typeof onMembersChange === 'function') {
+        if (safeSelectedMembers.includes(userId)) {
+          safeOnMembersChange(safeSelectedMembers.filter(id => id !== userId));
+        } else {
+          safeOnMembersChange([...safeSelectedMembers, userId]);
+        }
+      } else if (typeof onAssign === 'function') {
+        onAssign(userId);
+      }
+      setOpen(false);
+      setSearchTerm('');
+    } catch (error) {
+      console.error('Error in handleSelectUser:', error);
+      toast.error('Error selecting team member');
+    }
   };
 
   const removeUser = (userId: string) => {
-    if (multiSelect && onMembersChange) {
-      safeOnMembersChange(safeSelectedMembers.filter(id => id !== userId));
+    if (!userId || typeof userId !== 'string') {
+      console.error('Invalid userId in removeUser:', userId);
+      return;
+    }
+
+    try {
+      if (multiSelect && typeof onMembersChange === 'function') {
+        safeOnMembersChange(safeSelectedMembers.filter(id => id !== userId));
+      }
+    } catch (error) {
+      console.error('Error in removeUser:', error);
+      toast.error('Error removing team member');
     }
   };
 
@@ -77,6 +120,7 @@ const TaskAssignmentSectionEnhanced: React.FC<TaskAssignmentSectionEnhancedProps
     toast.error('Error managing team assignments');
   };
 
+  // Loading state
   if (isLoading) {
     return (
       <Card className="border-2 border-border/30 shadow-sm">
@@ -91,6 +135,24 @@ const TaskAssignmentSectionEnhanced: React.FC<TaskAssignmentSectionEnhancedProps
     );
   }
 
+  // Data not ready state
+  if (!isDataReady) {
+    return (
+      <Card className="border-2 border-destructive/30 shadow-sm">
+        <CardContent className="p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-destructive" />
+            <Label className="font-medium text-destructive">Team data not available</Label>
+          </div>
+          <div className="text-sm text-muted-foreground">
+            Unable to load team members. Please try refreshing the page.
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Single assignment mode
   if (!multiSelect) {
     return (
       <Card className="border-2 border-border/30 shadow-sm">
@@ -102,7 +164,7 @@ const TaskAssignmentSectionEnhanced: React.FC<TaskAssignmentSectionEnhancedProps
           <TaskAssigneeSelect 
             selectedMember={selectedMember}
             onAssign={onAssign}
-            users={users}
+            users={safeUsers}
             isLoading={isLoading}
           />
         </CardContent>
@@ -110,6 +172,7 @@ const TaskAssignmentSectionEnhanced: React.FC<TaskAssignmentSectionEnhancedProps
     );
   }
 
+  // Multi-assignment mode with enhanced data validation
   return (
     <Card className="border-2 border-border/30 shadow-sm">
       <CardContent className="p-4 space-y-4">
@@ -121,7 +184,7 @@ const TaskAssignmentSectionEnhanced: React.FC<TaskAssignmentSectionEnhancedProps
           </Badge>
         </div>
 
-        {/* Multi-assignee selector with error handling */}
+        {/* Multi-assignee selector with enhanced safety */}
         <div className="space-y-3">
           <Label className="text-sm text-muted-foreground">Select Team Members</Label>
           <TaskMultiAssigneeSelect
