@@ -8,8 +8,14 @@ const parseDate = (dateStr: string | null): Date => {
   return new Date(dateStr);
 };
 
+// Simple interface to avoid deep type instantiation
+interface UserData {
+  id: string;
+  organization_id?: string;
+}
+
 export const fetchTasks = async (
-  user: { id: string; organization_id?: string },
+  user: UserData,
   setTasks: (tasks: Task[]) => void
 ): Promise<void> => {
   try {
@@ -51,34 +57,44 @@ export const fetchTasks = async (
       console.error('Error fetching comments:', commentError);
     }
 
-    // Transform database format to application format
-    const transformedTasks: Task[] = taskData.map((dbTask) => ({
-      id: dbTask.id,
-      userId: dbTask.user_id || user.id,
-      projectId: dbTask.project_id || undefined,
-      title: dbTask.title || '',
-      description: dbTask.description || '',
-      deadline: parseDate(dbTask.deadline),
-      priority: (dbTask.priority as Task['priority']) || 'Medium',
-      status: (dbTask.status as Task['status']) || 'To Do',
-      createdAt: parseDate(dbTask.created_at),
-      updatedAt: parseDate(dbTask.updated_at),
-      assignedToId: dbTask.assigned_to_id || undefined,
-      assignedToName: dbTask.assigned_to_names?.[0] || undefined,
-      assignedToIds: dbTask.assigned_to_ids || [],
-      assignedToNames: dbTask.assigned_to_names || [],
-      tags: [],
-      comments: (commentData || [])
-        .filter(comment => comment.task_id === dbTask.id)
-        .map(comment => ({
-          id: comment.id,
-          userId: comment.user_id,
-          userName: 'User',
-          text: comment.content,
-          createdAt: parseDate(comment.created_at),
-        })),
-      cost: Number(dbTask.cost) || 0,
-    }));
+    // Transform database format to application format with explicit typing
+    const transformedTasks: Task[] = taskData.map((dbTask) => {
+      const taskPriority = (dbTask.priority === 'Low' || dbTask.priority === 'Medium' || dbTask.priority === 'High') 
+        ? dbTask.priority 
+        : 'Medium' as const;
+      
+      const taskStatus = (dbTask.status === 'To Do' || dbTask.status === 'In Progress' || dbTask.status === 'Completed')
+        ? dbTask.status
+        : 'To Do' as const;
+
+      return {
+        id: dbTask.id,
+        userId: dbTask.user_id || user.id,
+        projectId: dbTask.project_id || undefined,
+        title: dbTask.title || '',
+        description: dbTask.description || '',
+        deadline: parseDate(dbTask.deadline),
+        priority: taskPriority,
+        status: taskStatus,
+        createdAt: parseDate(dbTask.created_at),
+        updatedAt: parseDate(dbTask.updated_at),
+        assignedToId: dbTask.assigned_to_id || undefined,
+        assignedToName: dbTask.assigned_to_names?.[0] || undefined,
+        assignedToIds: dbTask.assigned_to_ids || [],
+        assignedToNames: dbTask.assigned_to_names || [],
+        tags: [],
+        comments: (commentData || [])
+          .filter(comment => comment.task_id === dbTask.id)
+          .map(comment => ({
+            id: comment.id,
+            userId: comment.user_id,
+            userName: 'User',
+            text: comment.content,
+            createdAt: parseDate(comment.created_at),
+          })),
+        cost: Number(dbTask.cost) || 0,
+      };
+    });
 
     setTasks(transformedTasks);
     console.log(`Successfully processed ${transformedTasks.length} tasks`);

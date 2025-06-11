@@ -6,7 +6,7 @@ import { AppUser, UserRole } from '@/types';
 import { AuthContextType } from './types';
 import { createBasicUserFromSession, setupAuthTimeout } from './utils/authHelpers';
 import { useAuthOperations } from './hooks/useAuthOperations';
-import { hasRoleAccess, canManageUser } from './roleUtils';
+import { hasRoleAccess } from './roleUtils';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -122,6 +122,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Simple role comparison function to avoid type issues
+  const canManageUserRole = (userRole: UserRole | undefined, targetRole: UserRole): boolean => {
+    if (!userRole) return false;
+    
+    const roleHierarchy = {
+      'superadmin': 4,
+      'admin': 3,
+      'manager': 2,
+      'user': 1
+    };
+    
+    const userLevel = roleHierarchy[userRole] || 0;
+    const targetLevel = roleHierarchy[targetRole] || 0;
+    
+    return userLevel > targetLevel;
+  };
+
   const authOperations = useAuthOperations(session, user, setSession, setUser, setLoading);
 
   const value: AuthContextType = {
@@ -130,10 +147,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isLoading,
     isAuthenticated: !!session && !!user,
     hasRoleAccess: (requiredRole: UserRole) => hasRoleAccess(user?.role, requiredRole),
-    canManageUser: (targetRole: UserRole) => {
-      if (!user || !user.role) return false;
-      return canManageUser(user.role, targetRole);
-    },
+    canManageUser: (targetRole: UserRole) => canManageUserRole(user?.role, targetRole),
     refreshUserSession,
     ...authOperations,
   };

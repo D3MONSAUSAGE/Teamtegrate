@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Task, Project, DailyScore, TaskStatus, TaskComment, ProjectStatus } from '@/types';
+import { Task, Project, DailyScore, TaskStatus, TaskComment } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { fetchTasks } from './api/taskFetch';
 import { addTask } from './api/taskCreate';
@@ -10,6 +10,9 @@ import { assignTaskToProject, assignTaskToUser } from './api/taskAssignment';
 import { addProject } from './api/projects';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
+
+// Simple project status type to avoid deep instantiation
+type SimpleProjectStatus = 'To Do' | 'In Progress' | 'Completed';
 
 interface TaskContextType {
   tasks: Task[];
@@ -78,25 +81,33 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       if (error) throw error;
 
-      const transformedProjects = data.map((project: any) => ({
-        id: project.id,
-        title: project.title,
-        description: project.description,
-        startDate: new Date(project.start_date),
-        endDate: new Date(project.end_date),
-        managerId: project.manager_id,
-        budget: project.budget || 0,
-        budgetSpent: project.budget_spent || 0,
-        createdAt: new Date(project.created_at),
-        updatedAt: new Date(project.updated_at),
-        tasks: tasks.filter(task => task.projectId === project.id),
-        teamMembers: project.team_members || [],
-        is_completed: project.is_completed,
-        status: (project.status as ProjectStatus) || 'To Do',
-        tasks_count: project.tasks_count || 0,
-        tags: project.tags || [],
-        organizationId: user.organization_id
-      }));
+      // Use explicit typing to avoid deep instantiation
+      const transformedProjects = data.map((project) => {
+        const projectStatus: SimpleProjectStatus = 
+          project.status === 'To Do' ? 'To Do' :
+          project.status === 'In Progress' ? 'In Progress' :
+          'Completed';
+
+        return {
+          id: project.id,
+          title: project.title,
+          description: project.description,
+          startDate: new Date(project.start_date),
+          endDate: new Date(project.end_date),
+          managerId: project.manager_id,
+          budget: project.budget || 0,
+          budgetSpent: project.budget_spent || 0,
+          createdAt: new Date(project.created_at),
+          updatedAt: new Date(project.updated_at),
+          tasks: tasks.filter(task => task.projectId === project.id),
+          teamMembers: project.team_members || [],
+          is_completed: project.is_completed,
+          status: projectStatus,
+          tasks_count: project.tasks_count || 0,
+          tags: project.tags || [],
+          organizationId: user.organization_id
+        } as Project;
+      });
 
       setProjects(transformedProjects);
     } catch (error) {
