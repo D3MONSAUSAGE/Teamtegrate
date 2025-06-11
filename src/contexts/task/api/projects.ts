@@ -11,7 +11,9 @@ export const addProject = async (
   user: { id: string; organization_id?: string }
 ): Promise<Project | null> => {
   try {
-    validateUserOrganization(user);
+    if (!validateUserOrganization(user)) {
+      return null;
+    }
     
     // Generate a unique ID for the project
     const projectId = uuidv4();

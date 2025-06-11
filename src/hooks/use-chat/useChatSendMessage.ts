@@ -21,7 +21,10 @@ export function useChatSendMessage(roomId: string, userId: string | undefined) {
     }
 
     try {
-      validateUserOrganization(user);
+      if (!validateUserOrganization(user)) {
+        toast.error('User must belong to an organization to send messages');
+        return;
+      }
     } catch (error) {
       toast.error('User must belong to an organization to send messages');
       return;

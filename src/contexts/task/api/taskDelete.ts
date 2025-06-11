@@ -13,7 +13,9 @@ export const deleteTask = async (
   setProjects: React.Dispatch<React.SetStateAction<any[]>>
 ): Promise<void> => {
   try {
-    validateUserOrganization(user);
+    if (!validateUserOrganization(user)) {
+      return;
+    }
 
     const { error } = await supabase
       .from('tasks')

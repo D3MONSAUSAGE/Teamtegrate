@@ -20,7 +20,9 @@ export const updateTaskStatus = async (
   }>>
 ): Promise<void> => {
   try {
-    validateUserOrganization(user);
+    if (!validateUserOrganization(user)) {
+      return;
+    }
     
     const task = tasks.find((t) => t.id === taskId);
     if (!task) {

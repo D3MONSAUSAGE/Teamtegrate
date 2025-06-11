@@ -11,7 +11,9 @@ export const fetchTaskComments = async (
   user: { id: string; organization_id?: string }
 ): Promise<TaskComment[] | null> => {
   try {
-    validateUserOrganization(user);
+    if (!validateUserOrganization(user)) {
+      return null;
+    }
 
     const { data, error } = await supabase
       .from('comments')
@@ -45,7 +47,9 @@ export const addCommentToTask = async (
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
 ) => {
   try {
-    validateUserOrganization(user);
+    if (!validateUserOrganization(user)) {
+      return null;
+    }
 
     const newComment: TaskComment = {
       id: uuidv4(),

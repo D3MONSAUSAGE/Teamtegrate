@@ -14,7 +14,9 @@ export const addTask = async (
   setProjects: React.Dispatch<React.SetStateAction<any[]>>
 ): Promise<void> => {
   try {
-    validateUserOrganization(user);
+    if (!validateUserOrganization(user)) {
+      return;
+    }
     
     const now = new Date();
     const taskId = uuidv4();
@@ -45,7 +47,6 @@ export const addTask = async (
       created_at: now.toISOString(),
       updated_at: now.toISOString(),
       assigned_to_id: newTask.assignedToId || null,
-      assigned_to_name: newTask.assignedToName || null,
       assigned_to_ids: newTask.assignedToIds || [],
       assigned_to_names: newTask.assignedToNames || [],
       cost: newTask.cost || 0,

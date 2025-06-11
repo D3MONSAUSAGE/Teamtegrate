@@ -2,7 +2,7 @@
 import { Task } from '@/types';
 import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { getOrgScopedSelect } from '@/utils/organizationHelpers';
+import { validateUserOrganization } from '@/utils/organizationHelpers';
 
 const parseDate = (dateStr: string | null): Date => {
   if (!dateStr) return new Date();
@@ -16,7 +16,7 @@ export const fetchTasks = async (
   try {
     console.log('Fetching tasks for user:', user.id, 'org:', user.organization_id);
     
-    if (!user.organization_id) {
+    if (!validateUserOrganization(user)) {
       console.error('User missing organization_id');
       toast.error('User must belong to an organization to view tasks');
       return;
@@ -59,7 +59,7 @@ export const fetchTasks = async (
       createdAt: parseDate(dbTask.created_at),
       updatedAt: parseDate(dbTask.updated_at),
       assignedToId: dbTask.assigned_to_id || undefined,
-      assignedToName: dbTask.assigned_to_name || undefined,
+      assignedToName: dbTask.assigned_to_names?.[0] || undefined, // Use first name from array
       assignedToIds: dbTask.assigned_to_ids || [],
       assignedToNames: dbTask.assigned_to_names || [],
       tags: [],

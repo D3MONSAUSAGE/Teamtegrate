@@ -14,7 +14,9 @@ export const assignTaskToProject = async (
   setProjects: React.Dispatch<React.SetStateAction<any[]>>
 ): Promise<void> => {
   try {
-    validateUserOrganization(user);
+    if (!validateUserOrganization(user)) {
+      return;
+    }
 
     const { data, error } = await supabase
       .from('tasks')
@@ -67,11 +69,16 @@ export const assignTaskToUser = async (
   setProjects: React.Dispatch<React.SetStateAction<any[]>>
 ): Promise<void> => {
   try {
-    validateUserOrganization(user);
+    if (!validateUserOrganization(user)) {
+      return;
+    }
 
     const { data, error } = await supabase
       .from('tasks')
-      .update({ assigned_to_id: userId, assigned_to_name: userName })
+      .update({ 
+        assigned_to_id: userId, 
+        assigned_to_names: [userName]
+      })
       .eq('id', taskId)
       .eq('organization_id', user.organization_id)
       .select();

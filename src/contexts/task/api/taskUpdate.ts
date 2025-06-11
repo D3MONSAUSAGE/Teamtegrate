@@ -14,7 +14,9 @@ export const updateTask = async (
   setProjects: React.Dispatch<React.SetStateAction<any[]>>
 ): Promise<void> => {
   try {
-    validateUserOrganization(user);
+    if (!validateUserOrganization(user)) {
+      return;
+    }
     
     // Find the existing task to merge with updates
     const existingTask = tasks.find((task) => task.id === taskId);
@@ -39,7 +41,6 @@ export const updateTask = async (
       status: updatedTask.status,
       updated_at: now.toISOString(),
       assigned_to_id: updatedTask.assignedToId || null,
-      assigned_to_name: updatedTask.assignedToName || null,
       assigned_to_ids: updatedTask.assignedToIds || [],
       assigned_to_names: updatedTask.assignedToNames || [],
       cost: updatedTask.cost || 0,
