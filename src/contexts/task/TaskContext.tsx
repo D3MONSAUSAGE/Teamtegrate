@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Task, Project } from '@/types';
+import { Task, Project, TaskPriority, TaskStatus, ProjectStatus } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/components/ui/sonner';
 
@@ -50,7 +50,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw error;
       }
 
-      // Convert data to Task format
+      // Convert data to Task format with proper type casting
       const formattedTasks: Task[] = (data || []).map(task => ({
         id: task.id,
         userId: task.user_id || '',
@@ -58,8 +58,8 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         title: task.title || '',
         description: task.description || '',
         deadline: task.deadline ? new Date(task.deadline) : new Date(),
-        priority: task.priority || 'Medium',
-        status: task.status || 'To Do',
+        priority: (task.priority || 'Medium') as TaskPriority,
+        status: (task.status || 'To Do') as TaskStatus,
         createdAt: task.created_at ? new Date(task.created_at) : new Date(),
         updatedAt: task.updated_at ? new Date(task.updated_at) : new Date(),
         completedAt: task.completed_at ? new Date(task.completed_at) : undefined,
@@ -99,7 +99,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw error;
       }
 
-      // Convert data to Project format
+      // Convert data to Project format with proper type casting
       const formattedProjects: Project[] = (data || []).map(project => ({
         id: project.id,
         title: project.title || '',
@@ -113,7 +113,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         budget: Number(project.budget) || 0,
         budgetSpent: Number(project.budget_spent) || 0,
         is_completed: Boolean(project.is_completed),
-        status: project.status || 'To Do',
+        status: (project.status || 'To Do') as ProjectStatus,
         tasks_count: Number(project.tasks_count) || 0,
         tags: project.tags || [],
         organizationId: user.organizationId
@@ -140,9 +140,12 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
+      const taskId = crypto.randomUUID();
+      
       const { data, error } = await supabase
         .from('tasks')
         .insert({
+          id: taskId,
           title: taskData.title,
           description: taskData.description,
           priority: taskData.priority,

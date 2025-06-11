@@ -1,4 +1,3 @@
-
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { User, UserRole } from '@/types';
@@ -66,5 +65,26 @@ export const extractUserDataFromSession = async (session: Session): Promise<User
   } catch (error) {
     console.error('Error extracting user data from session:', error);
     return null;
+  }
+};
+
+export const createUserFromSession = async (session: Session): Promise<User | null> => {
+  return await extractUserDataFromSession(session);
+};
+
+export const refreshUserSession = async (): Promise<{ session: Session | null; user: User | null }> => {
+  try {
+    const { data, error } = await supabase.auth.refreshSession();
+    if (error) throw error;
+    
+    if (data.session) {
+      const userData = await extractUserDataFromSession(data.session);
+      return { session: data.session, user: userData };
+    }
+    
+    return { session: null, user: null };
+  } catch (error) {
+    console.error('Error refreshing session:', error);
+    return { session: null, user: null };
   }
 };

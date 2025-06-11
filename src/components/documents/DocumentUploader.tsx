@@ -1,10 +1,11 @@
+
 import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { FilePlus, Upload } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from '@/components/ui/sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -16,15 +17,6 @@ interface DocumentUploaderProps {
 const DocumentUploader: React.FC<DocumentUploaderProps> = ({ folder, onUploadComplete }) => {
   const [uploading, setUploading] = useState(false);
   const { user } = useAuth();
-  const { toast } = useToast();
-
-  const onDrop = useCallback(async (acceptedFiles: File[]) => {
-    if (acceptedFiles.length === 0) return;
-    const file = acceptedFiles[0];
-    await uploadFile(file);
-  }, [uploadFile]);
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
 
   const uploadFile = useCallback(async (file: File) => {
     if (!user?.organizationId) {
@@ -67,10 +59,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({ folder, onUploadCom
         throw dbError;
       }
 
-      toast({
-        title: "Upload complete",
-        description: `${file.name} uploaded successfully.`,
-      });
+      toast.success(`${file.name} uploaded successfully.`);
       onUploadComplete?.();
     } catch (error) {
       console.error('Upload error:', error);
@@ -79,6 +68,14 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({ folder, onUploadCom
       setUploading(false);
     }
   }, [user?.organizationId, folder, onUploadComplete, user?.id]);
+
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    if (acceptedFiles.length === 0) return;
+    const file = acceptedFiles[0];
+    await uploadFile(file);
+  }, [uploadFile]);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
 
   return (
     <div className="space-y-4">

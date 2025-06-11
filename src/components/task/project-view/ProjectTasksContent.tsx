@@ -23,7 +23,7 @@ interface ProjectTasksContentProps {
   isCreateTaskOpen: boolean;
   editingTask: Task | null;
   setIsCreateTaskOpen: (open: boolean) => void;
-  handleSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  handleSearchChange: (query: string) => void;
   handleEditTask: (task: Task) => void;
   handleCreateTask: () => void;
   handleManualRefresh: () => void;
@@ -90,7 +90,7 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
       <ProjectTasksFilters
         searchQuery={searchQuery}
         sortBy={sortBy}
-        onSearchChange={handleSearchChange}
+        onSearchChange={(e) => handleSearchChange(e.target.value)}
         onSortByChange={onSortByChange}
       />
 

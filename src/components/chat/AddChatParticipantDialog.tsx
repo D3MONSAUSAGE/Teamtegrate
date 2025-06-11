@@ -1,19 +1,20 @@
-import React, { useState, useCallback, useEffect } from 'react';
+
+import React, { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { User } from '@/types';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from '@/components/ui/sonner';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
-  DialogFooter,
 } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { useAuth } from '@/contexts/AuthContext';
-import { User } from '@/types';
-import { toast } from '@/components/ui/sonner';
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Loader2, UserPlus } from 'lucide-react';
 
 interface AddChatParticipantDialogProps {
   open: boolean;
@@ -30,90 +31,135 @@ const AddChatParticipantDialog: React.FC<AddChatParticipantDialogProps> = ({
 }) => {
   const { user } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [addingUser, setAddingUser] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
-
-  const fetchUsers = useCallback(async () => {
+  const fetchUsers = async () => {
     if (!user?.organizationId) return;
 
     try {
-      setIsLoading(true);
+      setLoading(true);
       const { data, error } = await supabase
         .from('users')
         .select('*')
-        .eq('organization_id', user.organizationId);
+        .eq('organization_id', user.organizationId)
+        .neq('id', user.id);
 
       if (error) throw error;
-      setUsers(data || []);
+
+      const formattedUsers: User[] = (data || []).map(u => ({
+        id: u.id,
+        email: u.email,
+        name: u.name,
+        role: u.role as any,
+        organizationId: u.organization_id,
+        timezone: u.timezone || 'UTC',
+        createdAt: new Date(u.created_at),
+        avatar_url: u.avatar_url
+      }));
+
+      setUsers(formattedUsers);
     } catch (error) {
       console.error('Error fetching users:', error);
+      toast.error('Failed to load users');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  }, [user?.organizationId]);
+  };
+
+  useEffect(() => {
+    if (open) {
+      fetchUsers();
+    }
+  }, [open, user?.organizationId]);
 
   const addParticipant = async (userId: string) => {
-    if (!user?.organizationId) return;
-
     try {
+      setAddingUser(userId);
       const { error } = await supabase
         .from('chat_room_participants')
         .insert({
           room_id: roomId,
           user_id: userId,
-          added_by: user.id,
-          organization_id: user.organizationId
+          added_by: user?.id
         });
 
       if (error) throw error;
 
+      toast.success('Participant added successfully');
       onParticipantAdded?.();
       onOpenChange(false);
-      toast.success('Participant added successfully');
     } catch (error) {
       console.error('Error adding participant:', error);
       toast.error('Failed to add participant');
+    } finally {
+      setAddingUser(null);
     }
   };
 
+  const filteredUsers = users.filter(u =>
+    u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    u.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Add Participant</DialogTitle>
           <DialogDescription>
-            Select a user to add to the chat room.
+            Add a team member to this chat room.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          {isLoading ? (
-            <div>Loading users...</div>
-          ) : (
-            users.map((user) => (
-              <div key={user.id} className="flex items-center space-x-3 py-2">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src={user.avatar_url || undefined} alt={user.name || user.email} />
-                  <AvatarFallback>{(user.name || user.email).substring(0, 2).toUpperCase()}</AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="text-sm font-medium leading-none">{user.name || user.email}</p>
-                  <p className="text-sm text-muted-foreground">{user.email}</p>
-                </div>
-                <Button variant="outline" size="sm" onClick={() => addParticipant(user.id)} className="ml-auto">
-                  Add
-                </Button>
+        
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="search">Search Users</Label>
+            <Input
+              id="search"
+              placeholder="Search by name or email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+
+          <div className="max-h-60 overflow-y-auto space-y-2">
+            {loading ? (
+              <div className="flex items-center justify-center py-4">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span className="ml-2">Loading users...</span>
               </div>
-            ))
-          )}
+            ) : filteredUsers.length === 0 ? (
+              <p className="text-center text-muted-foreground py-4">
+                No users found
+              </p>
+            ) : (
+              filteredUsers.map((u) => (
+                <div
+                  key={u.id}
+                  className="flex items-center justify-between p-3 border rounded-lg"
+                >
+                  <div>
+                    <p className="font-medium">{u.name}</p>
+                    <p className="text-sm text-muted-foreground">{u.email}</p>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={() => addParticipant(u.id)}
+                    disabled={addingUser === u.id}
+                  >
+                    {addingUser === u.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <UserPlus className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+              ))
+            )}
+          </div>
         </div>
-        <DialogFooter>
-          <Button type="button" onClick={() => onOpenChange(false)}>
-            Close
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

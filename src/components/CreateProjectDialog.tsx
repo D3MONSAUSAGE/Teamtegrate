@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,7 +23,7 @@ import { cn } from "@/lib/utils"
 import { format } from "date-fns"
 import { CalendarIcon } from "lucide-react"
 import { toast } from '@/components/ui/sonner';
-import { MultiSelect } from './MultiSelect';
+import MultiSelect from './MultiSelect';
 import { useAuth } from '@/contexts/AuthContext';
 import { Project } from '@/types';
 import { useTask } from '@/contexts/task';

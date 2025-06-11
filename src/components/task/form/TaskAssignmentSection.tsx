@@ -5,14 +5,14 @@ import { Label } from "@/components/ui/label";
 import TaskAssigneeSelect from './TaskAssigneeSelect';
 
 interface TaskAssignmentSectionProps {
-  selectedMember?: string;
+  selectedUser?: string;
   onAssign: (userId: string) => void;
   users: User[];
   isLoading: boolean;
 }
 
 const TaskAssignmentSection: React.FC<TaskAssignmentSectionProps> = ({
-  selectedMember = "unassigned",
+  selectedUser = "unassigned",
   onAssign,
   users,
   isLoading
@@ -23,7 +23,7 @@ const TaskAssignmentSection: React.FC<TaskAssignmentSectionProps> = ({
         <Label>Assignee</Label>
         <TaskAssigneeSelect 
           users={users}
-          selectedUser={selectedMember}
+          selectedUser={selectedUser}
           onUserSelect={onAssign}
           placeholder={isLoading ? "Loading users..." : "Select assignee"}
         />
