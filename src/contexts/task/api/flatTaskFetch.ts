@@ -39,7 +39,7 @@ export const fetchFlatTasks = async (
     const flatTasks: FlatTask[] = tasksData.map(dbTask => {
       // Ensure status is properly typed
       let taskStatus: TaskStatus = 'To Do';
-      if (['To Do', 'In Progress', 'Pending', 'Completed'].includes(dbTask.status)) {
+      if (['To Do', 'In Progress', 'Completed'].includes(dbTask.status)) {
         taskStatus = dbTask.status as TaskStatus;
       }
 

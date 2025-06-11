@@ -1,4 +1,3 @@
-
 // Flat types for use in context and state management
 // These avoid deep type instantiation issues while maintaining type safety
 
@@ -15,7 +14,7 @@ export interface FlatTask {
   description: string; // Made required to match Task type
   deadline: Date;
   priority: 'High' | 'Medium' | 'Low';
-  status: 'To Do' | 'In Progress' | 'Pending' | 'Completed';
+  status: 'To Do' | 'In Progress' | 'Completed';
   userId: string;
   projectId?: string;
   createdAt: Date;
@@ -65,7 +64,7 @@ export interface RawTaskRow {
   description?: string;
   deadline?: string;
   priority?: 'High' | 'Medium' | 'Low';
-  status?: 'To Do' | 'In Progress' | 'Pending' | 'Completed';
+  status?: 'To Do' | 'In Progress' | 'Completed';
   created_at?: string;
   updated_at?: string;
   assigned_to_id?: string;

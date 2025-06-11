@@ -22,7 +22,6 @@ const TaskReports: React.FC = () => {
     const counts: Record<TaskStatus, number> = {
       'To Do': 0,
       'In Progress': 0,
-      'Pending': 0,
       'Completed': 0
     };
     

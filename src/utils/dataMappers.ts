@@ -38,6 +38,7 @@ export const mapRawTaskToFlat = (rawTask: RawTaskRow, comments: FlatComment[] = 
       ? rawTask.assigned_to_names.map((name: any) => String(name)) 
       : [],
     cost: Number(rawTask.cost) || 0,
+    organizationId: String(rawTask.organization_id || ''),
   };
 };
 
@@ -64,6 +65,7 @@ export const mapRawProjectToFlat = (rawProject: RawProjectRow): FlatProject => {
     status: projectStatus,
     tasks_count: Number(rawProject.tasks_count) || 0,
     tags: Array.isArray(rawProject.tags) ? rawProject.tags.map(String) : [],
+    organizationId: String(rawProject.organization_id || ''),
   };
 };
 
