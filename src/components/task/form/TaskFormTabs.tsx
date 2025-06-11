@@ -1,57 +1,72 @@
 
 import React from 'react';
+import { Project, Task, User } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { User } from '@/types'; // Removed AppUser import
-import { Users, FileText } from 'lucide-react';
-import TaskAssignmentSectionEnhanced from './TaskAssignmentSectionEnhanced';
+import TaskFormFieldsWithAI from '../TaskFormFieldsWithAI';
+import TaskAssignmentSection from './TaskAssignmentSection';
 
-interface TaskFormTabsProps {
-  children: React.ReactNode;
-  assignedUsers: string[];
-  onAssign: (userId: string) => void;
-  onUnassign: (userId: string) => void;
-  users: User[]; // Changed from AppUser to User
-  isLoadingUsers?: boolean;
+export interface TaskFormTabsProps {
+  projects: Project[];
+  editingTask?: Task;
+  currentProjectId?: string;
+  selectedMember?: string;
+  setSelectedMember: (id: string | undefined) => void;
+  deadlineDate: Date | undefined;
+  timeInput: string;
+  onDateChange: (date: Date | undefined) => void;
+  onTimeChange: (time: string) => void;
+  multiAssignMode: boolean;
+  selectedMembers: string[];
+  onMembersChange: (memberIds: string[]) => void;
+  users: User[];
+  loadingUsers: boolean;
+  handleUserAssignment: (userId: string) => void;
 }
 
 const TaskFormTabs: React.FC<TaskFormTabsProps> = ({
-  children,
-  assignedUsers,
-  onAssign,
-  onUnassign,
+  projects,
+  editingTask,
+  currentProjectId,
+  selectedMember,
+  setSelectedMember,
+  deadlineDate,
+  timeInput,
+  onDateChange,
+  onTimeChange,
+  multiAssignMode,
+  selectedMembers,
+  onMembersChange,
   users,
-  isLoadingUsers = false
+  loadingUsers,
+  handleUserAssignment
 }) => {
   return (
     <Tabs defaultValue="details" className="w-full">
-      <TabsList className="grid w-full grid-cols-2">
-        <TabsTrigger value="details" className="flex items-center gap-2">
-          <FileText className="h-4 w-4" />
-          Details
-        </TabsTrigger>
-        <TabsTrigger value="assignment" className="flex items-center gap-2">
-          <Users className="h-4 w-4" />
-          Assignment
-          {assignedUsers.length > 0 && (
-            <Badge variant="secondary" className="ml-1">
-              {assignedUsers.length}
-            </Badge>
-          )}
-        </TabsTrigger>
+      <TabsList className="mb-4">
+        <TabsTrigger value="details">Task Details</TabsTrigger>
+        <TabsTrigger value="assignment">Assignment</TabsTrigger>
       </TabsList>
       
       <TabsContent value="details" className="space-y-4">
-        {children}
+        <TaskFormFieldsWithAI
+          projects={projects}
+          editingTask={editingTask}
+          currentProjectId={currentProjectId}
+          selectedMember={selectedMember}
+          setSelectedMember={setSelectedMember}
+          date={deadlineDate}
+          timeInput={timeInput}
+          onDateChange={onDateChange}
+          onTimeChange={onTimeChange}
+        />
       </TabsContent>
       
       <TabsContent value="assignment">
-        <TaskAssignmentSectionEnhanced
-          assignedUsers={assignedUsers}
-          onAssign={onAssign}
-          onUnassign={onUnassign}
+        <TaskAssignmentSection 
+          selectedUser={selectedMember || "unassigned"}
+          onAssign={handleUserAssignment}
           users={users}
-          isLoading={isLoadingUsers}
+          isLoading={loadingUsers}
         />
       </TabsContent>
     </Tabs>

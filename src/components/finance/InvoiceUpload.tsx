@@ -1,3 +1,4 @@
+
 import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,7 @@ import { CalendarIcon } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
 import { format } from 'date-fns';
-import { useToast } from "@/components/ui/use-toast"
+import { toast } from '@/components/ui/sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -19,34 +20,16 @@ interface InvoiceMetadata {
   branch: string;
 }
 
-const InvoiceUpload: React.FC = () => {
+interface InvoiceUploadProps {
+  onUploadSuccess?: () => void;
+}
+
+const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
   const [invoiceNumber, setInvoiceNumber] = useState('');
   const [invoiceDate, setInvoiceDate] = useState<Date | undefined>(undefined);
   const [branch, setBranch] = useState('');
   const [isUploading, setIsUploading] = useState(false);
-  const { toast } = useToast();
   const { user } = useAuth();
-
-  const onDrop = useCallback(async (acceptedFiles: File[]) => {
-    const file = acceptedFiles[0];
-    if (!file) return;
-
-    const metadata: InvoiceMetadata = {
-      invoiceNumber: invoiceNumber,
-      invoiceDate: invoiceDate ? invoiceDate.toISOString() : '',
-      branch: branch,
-    };
-
-    await uploadInvoice(file, metadata);
-  }, [invoiceNumber, invoiceDate, branch, uploadInvoice]);
-
-  const { getRootProps, getInputProps } = useDropzone({
-    onDrop,
-    multiple: false,
-    accept: {
-      'application/pdf': ['.pdf'],
-    },
-  });
 
   const uploadInvoice = useCallback(async (file: File, metadata: InvoiceMetadata) => {
     if (!user?.organizationId) {
@@ -91,13 +74,35 @@ const InvoiceUpload: React.FC = () => {
       }
 
       toast.success('Invoice uploaded successfully');
+      onUploadSuccess?.();
     } catch (error) {
       console.error('Upload error:', error);
       toast.error('Upload failed');
     } finally {
       setIsUploading(false);
     }
-  }, [user?.organizationId, user?.name, user?.email, user?.id]);
+  }, [user?.organizationId, user?.name, user?.email, user?.id, onUploadSuccess]);
+
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    const file = acceptedFiles[0];
+    if (!file) return;
+
+    const metadata: InvoiceMetadata = {
+      invoiceNumber: invoiceNumber,
+      invoiceDate: invoiceDate ? invoiceDate.toISOString() : '',
+      branch: branch,
+    };
+
+    await uploadInvoice(file, metadata);
+  }, [invoiceNumber, invoiceDate, branch, uploadInvoice]);
+
+  const { getRootProps, getInputProps } = useDropzone({
+    onDrop,
+    multiple: false,
+    accept: {
+      'application/pdf': ['.pdf'],
+    },
+  });
 
   return (
     <Card>

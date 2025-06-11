@@ -20,11 +20,7 @@ const TaskCommentForm: React.FC<TaskCommentFormProps> = ({ taskId }) => {
     
     if (!comment.trim() || !user) return;
     
-    addCommentToTask(taskId, {
-      userId: user.id,
-      userName: user.name || user.email,
-      text: comment
-    });
+    addCommentToTask(taskId, comment);
     
     setComment('');
   };
