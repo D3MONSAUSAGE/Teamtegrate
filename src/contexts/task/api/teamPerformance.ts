@@ -1,9 +1,10 @@
 
 import { TeamMemberPerformance } from '@/types';
+import { ensureTeamMemberPerformanceComplete } from '@/utils/typeCompatibility';
 
-export const fetchTeamPerformance = async (): Promise<TeamMemberPerformance[]> => {
+export const fetchTeamPerformance = async (organizationId: string = ''): Promise<TeamMemberPerformance[]> => {
   // Mock data for team performance
-  return [
+  const mockData = [
     {
       id: '1',
       name: 'John Doe',
@@ -19,15 +20,19 @@ export const fetchTeamPerformance = async (): Promise<TeamMemberPerformance[]> =
       projects: 2
     }
   ];
+
+  return mockData.map(item => ensureTeamMemberPerformanceComplete(item, organizationId));
 };
 
-export const fetchTeamMemberPerformance = async (userId: string): Promise<TeamMemberPerformance | null> => {
+export const fetchTeamMemberPerformance = async (userId: string, organizationId: string = ''): Promise<TeamMemberPerformance | null> => {
   // Mock data for individual team member performance
-  return {
+  const mockData = {
     id: userId,
     name: 'Team Member',
     completedTasks: 10,
     completionRate: 80,
     projects: 2
   };
+
+  return ensureTeamMemberPerformanceComplete(mockData, organizationId);
 };

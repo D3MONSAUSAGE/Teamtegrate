@@ -3,6 +3,7 @@ import { Task } from '@/types';
 import { SimpleUser, RawTask, RawComment } from '@/types/simplified';
 import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { ensureTaskCommentComplete } from '@/utils/typeCompatibility';
 
 const parseDate = (dateStr: string | null): Date => {
   if (!dateStr) return new Date();
@@ -94,14 +95,15 @@ export const fetchTasks = async (
           tags: [],
           comments: commentsResult.data ? commentsResult.data
             .filter((comment: any) => comment.task_id === dbTask.id)
-            .map((comment: any) => ({
+            .map((comment: any) => ensureTaskCommentComplete({
               id: String(comment.id),
               userId: String(comment.user_id),
               userName: 'User',
               text: String(comment.content),
               createdAt: parseDate(comment.created_at),
-            })) : [],
+            }, user.organization_id)) : [],
           cost: Number(dbTask.cost) || 0,
+          organizationId: user.organization_id
         };
 
         transformedTasks.push(task);

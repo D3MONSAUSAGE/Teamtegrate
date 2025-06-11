@@ -1,4 +1,6 @@
+
 import { Project } from '@/types';
+import { fixProjectProperties } from '@/utils/typeCompatibility';
 
 export const createProject = async (projectData: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>): Promise<Project> => {
   // Mock implementation - replace with actual API call
@@ -13,15 +15,14 @@ export const createProject = async (projectData: Omit<Project, 'id' | 'createdAt
     teamMemberIds: projectData.teamMemberIds || [],
     budget: projectData.budget,
     budgetSpent: 0,
-    isCompleted: false,
+    tasksCount: 0, // Fix property name
     tags: projectData.tags || [],
-    tasksCount: 0,
     organizationId: projectData.organizationId,
     createdAt: new Date(),
     updatedAt: new Date()
   };
 
-  return newProject;
+  return fixProjectProperties(newProject);
 };
 
 export const updateProject = async (projectId: string, updates: Partial<Project>): Promise<Project> => {
@@ -37,13 +38,12 @@ export const updateProject = async (projectId: string, updates: Partial<Project>
     teamMemberIds: updates.teamMemberIds || [],
     budget: updates.budget,
     budgetSpent: updates.budgetSpent || 0,
-    isCompleted: updates.isCompleted || false,
+    tasksCount: updates.tasksCount || 0, // Fix property name
     tags: updates.tags || [],
-    tasksCount: updates.tasksCount || 0,
     organizationId: updates.organizationId || '',
     createdAt: updates.createdAt || new Date(),
     updatedAt: new Date()
   };
 
-  return updatedProject;
+  return fixProjectProperties(updatedProject);
 };

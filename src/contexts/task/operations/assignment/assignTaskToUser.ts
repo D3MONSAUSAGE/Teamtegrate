@@ -6,6 +6,7 @@ import { playSuccessSound, playErrorSound } from '@/utils/sounds';
 import { fetchUserInfo } from './fetchUserInfo';
 import { createTaskAssignmentNotification } from './createNotification';
 import { updateTaskStates } from './updateTaskStates';
+import { getUserOrganizationId } from '@/utils/typeCompatibility';
 
 /**
  * Assign a task to a specific user
@@ -21,7 +22,7 @@ export const assignTaskToUser = async (
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
 ) => {
   try {
-    if (!user || !user.organization_id) return;
+    if (!user || !getUserOrganizationId(user)) return;
 
     const now = new Date();
     
@@ -57,7 +58,7 @@ export const assignTaskToUser = async (
     // Create notification for the assigned user
     if (userId) {
       const isSelfAssigned = (userId === user.id);
-      await createTaskAssignmentNotification(userId, task.title, isSelfAssigned, user.organization_id);
+      await createTaskAssignmentNotification(userId, task.title, isSelfAssigned, getUserOrganizationId(user));
     }
     
     // Update the state in both tasks array and projects array

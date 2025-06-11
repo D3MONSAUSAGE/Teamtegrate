@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { playSuccessSound, playErrorSound } from '@/utils/sounds';
 import { createProjectTeamAdditionNotification } from './assignment/createProjectNotification';
+import { safeProjectAccess } from '@/utils/typeCompatibility';
 
 export const addTeamMemberToProject = async (
   projectId: string,
@@ -80,11 +81,11 @@ export const addTeamMemberToProject = async (
 
     const updatedProjects = projects.map((p) => {
       if (p.id === projectId) {
-        const teamMembers = p.teamMembers || [];
-        if (!teamMembers.includes(userId)) {
+        const teamMemberIds = safeProjectAccess.getTeamMembers(p);
+        if (!teamMemberIds.includes(userId)) {
           return {
             ...p,
-            teamMembers: [...teamMembers, userId],
+            teamMemberIds: [...teamMemberIds, userId], // Use correct property name
             updatedAt: new Date()
           };
         }

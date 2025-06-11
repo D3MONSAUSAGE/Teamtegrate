@@ -2,62 +2,57 @@
 import { User } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
-import { playSuccessSound, playErrorSound } from '@/utils/sounds';
+import { mapDbUserToApp } from '@/utils/typeCompatibility';
 
-// Fetch Team Members for a Project
 export const fetchProjectTeamMembers = async (
-  projectId: string
-): Promise<User[]> => {
+  projectId: string,
+  organizationId: string,
+  setUsers: React.Dispatch<React.SetStateAction<User[]>>,
+  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>
+): Promise<void> => {
   try {
-    console.log('Fetching project team members for project:', projectId);
-    
-    // Query project_team_members to get user IDs
-    const { data: teamMemberData, error: teamMemberError } = await supabase
+    setIsLoading(true);
+
+    // Get team member IDs for the project
+    const { data: teamMembersData, error: teamError } = await supabase
       .from('project_team_members')
       .select('user_id')
       .eq('project_id', projectId);
-      
-    if (teamMemberError) {
-      console.error('Error fetching project team members:', teamMemberError);
-      return [];
+
+    if (teamError) {
+      console.error('Error fetching team members:', teamError);
+      toast.error('Failed to load team members');
+      return;
     }
-    
-    console.log('Team member data:', teamMemberData);
-    
-    if (!teamMemberData || teamMemberData.length === 0) {
-      console.log('No team members found for project:', projectId);
-      return [];
+
+    if (!teamMembersData || teamMembersData.length === 0) {
+      setUsers([]);
+      return;
     }
+
+    // Get user details for team members
+    const userIds = teamMembersData.map(tm => tm.user_id);
     
-    // Extract user IDs
-    const userIds = teamMemberData.map(member => member.user_id);
-    console.log('User IDs to fetch:', userIds);
-    
-    // Fetch user details including organization_id
-    const { data: userData, error: userError } = await supabase
+    const { data: usersData, error: usersError } = await supabase
       .from('users')
-      .select('id, name, email, avatar_url, role, organization_id')
-      .in('id', userIds);
-      
-    if (userError) {
-      console.error('Error fetching team member details:', userError);
-      return [];
+      .select('*')
+      .in('id', userIds)
+      .eq('organization_id', organizationId);
+
+    if (usersError) {
+      console.error('Error fetching users:', usersError);
+      toast.error('Failed to load user details');
+      return;
     }
-    
-    console.log('User data retrieved:', userData);
-    
-    // Map the database structure to our User type
-    return (userData || []).map(user => ({
-      id: user.id,
-      name: user.name || user.email || 'User',
-      email: user.email,
-      role: user.role as User['role'],
-      organization_id: user.organization_id,
-      createdAt: new Date(), // Add a default createdAt value since it's required but not in our query
-      avatar_url: user.avatar_url
-    }));
+
+    // Transform database users to app format
+    const transformedUsers = (usersData || []).map(dbUser => mapDbUserToApp(dbUser));
+
+    setUsers(transformedUsers);
   } catch (error) {
     console.error('Error in fetchProjectTeamMembers:', error);
-    return [];
+    toast.error('Failed to load team members');
+  } finally {
+    setIsLoading(false);
   }
 };

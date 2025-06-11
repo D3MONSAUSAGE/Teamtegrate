@@ -57,28 +57,23 @@ export const assignTaskToProject = async (
       return t;
     }));
 
-    // Now handle the project state updates - do this in a more predictable way
+    // Update project task counts only (no tasks array manipulation)
     setProjects(prevProjects => {
-      // Create a new array to avoid mutation
       return prevProjects.map(project => {
-        // If this is the old project and task was previously assigned to a project
+        // If this was the old project, decrease task count
         if (originalProjectId && project.id === originalProjectId) {
           return {
             ...project,
-            tasks: project.tasks.filter(t => t.id !== taskId)
+            tasksCount: Math.max(0, (project.tasksCount || 0) - 1)
           };
         }
         
-        // If this is the new project
+        // If this is the new project, increase task count
         if (project.id === projectId) {
-          // Check if the task is already in the project
-          const taskExists = project.tasks.some(t => t.id === taskId);
-          if (!taskExists) {
-            return {
-              ...project,
-              tasks: [...project.tasks, updatedTask]
-            };
-          }
+          return {
+            ...project,
+            tasksCount: (project.tasksCount || 0) + 1
+          };
         }
         
         return project;

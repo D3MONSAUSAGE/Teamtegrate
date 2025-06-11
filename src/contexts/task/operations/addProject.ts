@@ -2,6 +2,7 @@
 import { Project, User } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
+import { getUserOrganizationId, fixProjectProperties } from '@/utils/typeCompatibility';
 
 export const addProject = async (
   projectData: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>,
@@ -9,7 +10,7 @@ export const addProject = async (
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
 ): Promise<void> => {
   try {
-    if (!user?.organizationId) {
+    if (!getUserOrganizationId(user)) {
       toast.error('Organization context required');
       return;
     }
@@ -32,7 +33,7 @@ export const addProject = async (
         is_completed: false,
         tags: projectData.tags || [],
         tasks_count: 0,
-        organization_id: user.organizationId
+        organization_id: getUserOrganizationId(user)
       }]);
 
     if (error) {
@@ -52,15 +53,14 @@ export const addProject = async (
       teamMemberIds: projectData.teamMemberIds || [],
       budget: projectData.budget,
       budgetSpent: 0,
-      isCompleted: false,
+      tasksCount: 0, // Fix property name
       tags: projectData.tags || [],
-      tasksCount: 0,
-      organizationId: user.organizationId,
+      organizationId: getUserOrganizationId(user),
       createdAt: new Date(),
       updatedAt: new Date()
     };
 
-    setProjects(prev => [newProject, ...prev]);
+    setProjects(prev => [fixProjectProperties(newProject), ...prev]);
     toast.success('Project created successfully!');
   } catch (error) {
     console.error('Error adding project:', error);
