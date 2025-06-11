@@ -1,215 +1,209 @@
 
-import { useState, useRef, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { useChat } from '@/hooks/use-chat';
-import { useChatPermissions } from '@/hooks/use-chat-permissions';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
-interface ChatRoomData {
+interface ChatRoom {
   id: string;
   name: string;
   created_by: string;
+  created_at: string;
+  organization_id: string;
 }
 
-export function useChatRoom(room: ChatRoomData, onBack?: () => void, onRoomDeleted?: () => void) {
-  const { user, isAuthenticated } = useAuth();
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const isMobile = useIsMobile();
-  const { canDeleteRoom } = useChatPermissions();
-  
-  const {
-    messages,
-    newMessage,
-    setNewMessage,
-    fileUploads,
-    setFileUploads,
-    sendMessage,
-    replyTo,
-    setReplyTo,
-    isSending,
-    typingUsers,
-    isLoading,
-    hasMoreMessages,
-    loadMoreMessages
-  } = useChat(room.id, user?.id);
-
-  const [leaving, setLeaving] = useState(false);
-  const [autoScrollEnabled, setAutoScrollEnabled] = useState(true);
-  const [initialScrollDone, setInitialScrollDone] = useState(false);
-
-  // Check if current user is the creator of the room
-  const isCreator = user?.id === room.created_by;
-
-  const scrollToBottom = (behavior: ScrollBehavior = 'auto') => {
-    if (autoScrollEnabled) {
-      messagesEndRef.current?.scrollIntoView({ behavior });
-    }
+interface ChatParticipant {
+  id: string;
+  user_id: string;
+  room_id: string;
+  added_by: string;
+  created_at: string;
+  users?: {
+    name: string;
+    email: string;
   };
+}
 
-  const handleScroll = (event: React.UIEvent<HTMLDivElement>) => {
-    const { scrollTop } = event.currentTarget;
-    
-    if (scrollTop < 50 && hasMoreMessages) {
-      loadMoreMessages();
-    }
-    
-    const { scrollHeight, clientHeight } = event.currentTarget;
-    const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
-    setAutoScrollEnabled(isNearBottom);
-  };
+export function useChatRoom(roomId: string | undefined) {
+  const { user } = useAuth();
+  const [room, setRoom] = useState<ChatRoom | null>(null);
+  const [participants, setParticipants] = useState<ChatParticipant[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [hasAccess, setHasAccess] = useState(false);
 
   useEffect(() => {
-    if (messages.length > 0 && (autoScrollEnabled || !initialScrollDone)) {
-      requestAnimationFrame(() => {
-        scrollToBottom('smooth');
-        setInitialScrollDone(true);
-      });
-    }
-  }, [messages.length, autoScrollEnabled, initialScrollDone]);
-
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!isAuthenticated || !user) {
-      toast.error('You must be logged in to send messages');
+    if (!roomId || !user) {
+      setLoading(false);
       return;
     }
-    
-    try {
-      await sendMessage();
-    } catch (error: any) {
-      console.error('Error sending message:', error);
-      toast.error('Failed to send message');
-    }
-  };
 
-  const handleLeaveChat = async () => {
-    if (!user || !isAuthenticated) return;
-    setLeaving(true);
+    fetchRoomData();
+  }, [roomId, user]);
+
+  const fetchRoomData = async () => {
+    if (!roomId || !user) return;
 
     try {
-      // Remove user from participants
-      const { error: participantError } = await supabase
-        .from('chat_room_participants')
-        .delete()
-        .eq('room_id', room.id)
-        .eq('user_id', user.id);
+      // Fetch room details
+      const { data: roomData, error: roomError } = await supabase
+        .from('chat_rooms')
+        .select('*')
+        .eq('id', roomId)
+        .single();
 
-      if (participantError) {
-        console.error('Error removing participant:', participantError);
-        toast.error('Failed to leave the chat');
+      if (roomError) {
+        console.error('Error fetching room:', roomError);
+        setHasAccess(false);
+        setLoading(false);
         return;
       }
 
-      // Add system message about leaving
-      const { error: messageError } = await supabase
+      setRoom(roomData);
+
+      // Check if user has access to this room
+      const { data: participantData, error: participantError } = await supabase
+        .from('chat_room_participants')
+        .select('*')
+        .eq('room_id', roomId)
+        .eq('user_id', user.id)
+        .single();
+
+      const isParticipant = !participantError && participantData;
+      const isCreator = roomData.created_by === user.id;
+      const isAdmin = user.role === 'admin' || user.role === 'superadmin';
+
+      setHasAccess(isParticipant || isCreator || isAdmin);
+
+      if (isParticipant || isCreator || isAdmin) {
+        // Fetch all participants
+        const { data: allParticipants, error: allParticipantsError } = await supabase
+          .from('chat_room_participants')
+          .select(`
+            *,
+            users:user_id (
+              name,
+              email
+            )
+          `)
+          .eq('room_id', roomId);
+
+        if (allParticipantsError) {
+          console.error('Error fetching participants:', allParticipantsError);
+        } else {
+          setParticipants(allParticipants || []);
+        }
+      }
+    } catch (error) {
+      console.error('Error in fetchRoomData:', error);
+      setHasAccess(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const addSystemMessage = async (content: string) => {
+    if (!roomId || !user?.organization_id) return;
+
+    try {
+      const { error } = await supabase
         .from('chat_messages')
         .insert({
-          room_id: room.id,
+          room_id: roomId,
           user_id: user.id,
-          content: `${user.email} has left the chat.`,
-          type: 'system'
+          content,
+          type: 'system',
+          organization_id: user.organization_id
         });
 
-      if (messageError) {
-        console.error('Error adding leave message:', messageError);
-        // Don't throw error as the main action (leaving) succeeded
+      if (error) {
+        console.error('Error adding system message:', error);
       }
-
-      toast.success('Left chat room successfully');
-      if (onBack) onBack();
-    } catch (error: any) {
-      console.error('Error leaving chat:', error);
-      toast.error('Failed to leave the chat');
-    } finally {
-      setLeaving(false);
+    } catch (error) {
+      console.error('Error in addSystemMessage:', error);
     }
   };
-  
-  const handleDeleteRoom = async () => {
-    if (!user || !canDeleteRoom(room.created_by) || !isAuthenticated) {
-      toast.error('You do not have permission to delete this room');
-      return;
-    }
-    
+
+  const addParticipant = async (userId: string) => {
+    if (!roomId || !user) return;
+
     try {
-      // Delete all messages first
-      const { error: messagesError } = await supabase
-        .from('chat_messages')
-        .delete()
-        .eq('room_id', room.id);
-      
-      if (messagesError) {
-        console.error('Error deleting messages:', messagesError);
-        toast.error('Failed to delete chat messages');
+      const { error } = await supabase
+        .from('chat_room_participants')
+        .insert({
+          room_id: roomId,
+          user_id: userId,
+          added_by: user.id
+        });
+
+      if (error) {
+        console.error('Error adding participant:', error);
+        toast.error('Failed to add participant');
         return;
       }
-      
-      // Delete all participants
-      const { error: participantsError } = await supabase
+
+      // Add system message
+      const { data: addedUser } = await supabase
+        .from('users')
+        .select('name')
+        .eq('id', userId)
+        .single();
+
+      if (addedUser) {
+        await addSystemMessage(`${addedUser.name} was added to the chat`);
+      }
+
+      // Refresh participants
+      await fetchRoomData();
+      toast.success('Participant added successfully');
+    } catch (error) {
+      console.error('Error in addParticipant:', error);
+      toast.error('Failed to add participant');
+    }
+  };
+
+  const removeParticipant = async (userId: string) => {
+    if (!roomId || !user) return;
+
+    try {
+      const { error } = await supabase
         .from('chat_room_participants')
         .delete()
-        .eq('room_id', room.id);
-      
-      if (participantsError) {
-        console.error('Error deleting participants:', participantsError);
-        toast.error('Failed to delete chat participants');
-        return;
-      }
-      
-      // Delete the room
-      const { error: roomError } = await supabase
-        .from('chat_rooms')
-        .delete()
-        .eq('id', room.id);
-      
-      if (roomError) {
-        console.error('Error deleting room:', roomError);
-        toast.error('Failed to delete the chat room');
-        return;
-      }
-      
-      toast.success('Chat room deleted successfully');
-      
-      if (onRoomDeleted) onRoomDeleted();
-      else if (onBack) onBack();
-    } catch (error: any) {
-      console.error('Error deleting chat room:', error);
-      toast.error('Failed to delete the chat room');
-      throw error; // Re-throw to handle loading state in component
-    }
-  };
+        .eq('room_id', roomId)
+        .eq('user_id', userId);
 
-  const handleReplyClick = (message: any) => {
-    setReplyTo(message);
+      if (error) {
+        console.error('Error removing participant:', error);
+        toast.error('Failed to remove participant');
+        return;
+      }
+
+      // Add system message
+      const { data: removedUser } = await supabase
+        .from('users')
+        .select('name')
+        .eq('id', userId)
+        .single();
+
+      if (removedUser) {
+        await addSystemMessage(`${removedUser.name} was removed from the chat`);
+      }
+
+      // Refresh participants
+      await fetchRoomData();
+      toast.success('Participant removed successfully');
+    } catch (error) {
+      console.error('Error in removeParticipant:', error);
+      toast.error('Failed to remove participant');
+    }
   };
 
   return {
-    user,
-    messagesEndRef,
-    scrollAreaRef,
-    isMobile,
-    messages,
-    newMessage,
-    setNewMessage,
-    fileUploads,
-    setFileUploads,
-    replyTo,
-    setReplyTo,
-    isSending,
-    typingUsers,
-    isLoading,
-    hasMoreMessages,
-    loadMoreMessages,
-    leaving,
-    isCreator,
-    handleScroll,
-    handleSendMessage,
-    handleLeaveChat,
-    handleDeleteRoom,
-    handleReplyClick
+    room,
+    participants,
+    loading,
+    hasAccess,
+    addParticipant,
+    removeParticipant,
+    refetch: fetchRoomData
   };
 }

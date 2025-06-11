@@ -69,11 +69,12 @@ export const addTeamMemberToProject = async (
       .single();
 
     // Create notification for the added team member
-    if (currentUserData) {
+    if (currentUserData && project.organizationId) {
       await createProjectTeamAdditionNotification(
         userId,
         project.title,
-        currentUserData.name
+        currentUserData.name,
+        project.organizationId
       );
     }
 

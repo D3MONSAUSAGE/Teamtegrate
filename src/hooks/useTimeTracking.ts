@@ -46,7 +46,7 @@ export const useTimeTracking = () => {
   }, [user]);
 
   const clockIn = async (notes?: string) => {
-    if (!user) {
+    if (!user || !user.organization_id) {
       toast.error('You must be logged in to clock in');
       return;
     }
@@ -62,8 +62,8 @@ export const useTimeTracking = () => {
         .from('time_entries')
         .insert({ 
           user_id: user.id, 
-          notes: notes || null
-          // organization_id will be handled by RLS policies based on user's org
+          notes: notes || null,
+          organization_id: user.organization_id
         })
         .select()
         .single();

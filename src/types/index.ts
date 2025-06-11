@@ -1,4 +1,3 @@
-
 export type UserRole = 'superadmin' | 'admin' | 'manager' | 'user';
 
 export interface User {
@@ -18,6 +17,7 @@ export interface AppUser {
   role: UserRole;
   avatar_url?: string;
   organization_id?: string;
+  createdAt?: Date; // Make this optional to match User interface
 }
 
 export type TaskPriority = 'Low' | 'Medium' | 'High';
