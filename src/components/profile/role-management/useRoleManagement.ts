@@ -81,14 +81,34 @@ export const useRoleManagement = ({ targetUser, onRoleChanged }: UseRoleManageme
         }
       });
 
+      console.log('Edge function response:', { data, error });
+
       if (error) {
         console.error('Edge function error:', error);
-        throw new Error(error.message || 'Failed to update role');
+        
+        // Provide more specific error messages based on the error
+        let userMessage = 'Failed to update role';
+        if (error.message?.includes('Failed to fetch')) {
+          userMessage = 'Connection error. Please check your internet connection and try again.';
+        } else if (error.message?.includes('Unauthorized')) {
+          userMessage = 'You do not have permission to change this user\'s role.';
+        } else if (error.message?.includes('not found')) {
+          userMessage = 'User not found. They may have been deleted.';
+        } else if (error.message) {
+          userMessage = error.message;
+        }
+        
+        throw new Error(userMessage);
       }
 
       if (data?.error) {
         console.error('Edge function returned error:', data.error);
         throw new Error(data.error);
+      }
+
+      if (!data?.success) {
+        console.error('Edge function did not return success');
+        throw new Error('Role update failed - please try again');
       }
 
       console.log('Role update successful:', data);

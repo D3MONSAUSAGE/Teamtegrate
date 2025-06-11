@@ -18,42 +18,57 @@ Deno.serve(async (req) => {
   }
 
   try {
+    console.log('Update user role function called');
+    
+    // Validate environment variables
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
+
+    if (!supabaseUrl || !serviceRoleKey || !anonKey) {
+      console.error('Missing environment variables');
+      throw new Error('Server configuration error');
+    }
+
     // Get the authorization header
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
+      console.error('No authorization header provided');
       throw new Error('No authorization header');
     }
 
     // Create Supabase client with service role key for admin operations
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
 
     // Create regular client to verify the requesting user
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: authHeader },
-        },
-      }
-    );
+    const supabaseClient = createClient(supabaseUrl, anonKey, {
+      global: {
+        headers: { Authorization: authHeader },
+      },
+    });
 
     // Verify the requesting user
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
     if (authError || !user) {
       console.error('Auth error:', authError);
-      throw new Error('Unauthorized');
+      throw new Error('Unauthorized - invalid token');
     }
 
-    console.log('Request from user:', user.id, 'with role:', user.user_metadata?.role);
+    console.log('Request from user:', user.id);
 
     // Parse request body
-    const { targetUserId, newRole }: UpdateRoleRequest = await req.json();
+    let requestBody: UpdateRoleRequest;
+    try {
+      requestBody = await req.json();
+    } catch (error) {
+      console.error('Failed to parse request body:', error);
+      throw new Error('Invalid request body');
+    }
+
+    const { targetUserId, newRole } = requestBody;
 
     if (!targetUserId || !newRole) {
+      console.error('Missing required fields:', { targetUserId: !!targetUserId, newRole: !!newRole });
       throw new Error('Missing targetUserId or newRole');
     }
 
@@ -68,7 +83,7 @@ Deno.serve(async (req) => {
 
     if (userError || !requestingUserData) {
       console.error('Error fetching requesting user:', userError);
-      throw new Error('Could not verify requesting user');
+      throw new Error('Could not verify requesting user permissions');
     }
 
     const requestingUserRole = requestingUserData.role;
@@ -77,7 +92,7 @@ Deno.serve(async (req) => {
     // Get the target user's current role
     const { data: targetUserData, error: targetError } = await supabaseAdmin
       .from('users')
-      .select('role')
+      .select('role, name, email')
       .eq('id', targetUserId)
       .single();
 
@@ -108,13 +123,14 @@ Deno.serve(async (req) => {
 
     if (!canUpdate) {
       console.error('Permission denied for role update');
-      throw new Error('Permission denied');
+      throw new Error('Permission denied - insufficient privileges');
     }
 
     // Validate the new role
     const validRoles = ['user', 'manager', 'admin', 'superadmin'];
     if (!validRoles.includes(newRole)) {
-      throw new Error('Invalid role');
+      console.error('Invalid role provided:', newRole);
+      throw new Error('Invalid role specified');
     }
 
     console.log('Permission check passed, proceeding with role update');
@@ -129,7 +145,7 @@ Deno.serve(async (req) => {
 
     if (authUpdateError) {
       console.error('Auth update error:', authUpdateError);
-      throw new Error(`Failed to update auth metadata: ${authUpdateError.message}`);
+      throw new Error(`Failed to update authentication: ${authUpdateError.message}`);
     }
 
     console.log('Auth metadata updated successfully');
@@ -142,20 +158,24 @@ Deno.serve(async (req) => {
 
     if (dbUpdateError) {
       console.error('Database update error:', dbUpdateError);
-      throw new Error(`Failed to update user role in database: ${dbUpdateError.message}`);
+      throw new Error(`Failed to update user database: ${dbUpdateError.message}`);
     }
 
     console.log('Database updated successfully');
 
-    // Log the role change for audit purposes
-    console.log(`Role change successful: User ${targetUserId} changed from ${currentTargetRole} to ${newRole} by ${user.id}`);
+    // Log the successful role change
+    console.log(`Role change successful: User ${targetUserData.name} (${targetUserData.email}) changed from ${currentTargetRole} to ${newRole} by ${user.id}`);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         message: `Role updated to ${newRole} successfully`,
         previousRole: currentTargetRole,
-        newRole: newRole
+        newRole: newRole,
+        targetUser: {
+          name: targetUserData.name,
+          email: targetUserData.email
+        }
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -166,10 +186,13 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('Error in update-user-role function:', error);
     
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+    
     return new Response(
       JSON.stringify({ 
-        error: error.message || 'Internal server error',
-        success: false 
+        error: errorMessage,
+        success: false,
+        timestamp: new Date().toISOString()
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
