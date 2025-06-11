@@ -104,9 +104,9 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
         budget: Number(data.budget) || 0,
         budgetSpent: 0,
         teamMemberIds: selectedMembers,
-        is_completed: false,
+        isCompleted: false,
         status: 'To Do',
-        tasks_count: 0,
+        tasksCount: 0,
         tags: [],
         organizationId: user?.organizationId || ''
       };

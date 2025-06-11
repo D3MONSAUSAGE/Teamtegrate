@@ -30,14 +30,14 @@ export const updateProject = async (
     if (updates.budget !== undefined) updatedFields.budget = updates.budget;
     if (updates.tags !== undefined) updatedFields.tags = updates.tags;
     
-    // Handle status and is_completed together to ensure they are synchronized
-    if (updates.status !== undefined || updates.is_completed !== undefined) {
-      // If is_completed is explicitly set, use that value
-      if (updates.is_completed !== undefined) {
-        updatedFields.is_completed = updates.is_completed;
+    // Handle status and isCompleted together to ensure they are synchronized
+    if (updates.status !== undefined || updates.isCompleted !== undefined) {
+      // If isCompleted is explicitly set, use that value
+      if (updates.isCompleted !== undefined) {
+        updatedFields.is_completed = updates.isCompleted;
         
         // If marking as completed, ensure status is 'Completed'
-        if (updates.is_completed === true) {
+        if (updates.isCompleted === true) {
           updatedFields.status = 'Completed';
         } 
         // If marking as not completed and status isn't set, default to 'In Progress'
@@ -46,7 +46,7 @@ export const updateProject = async (
         }
       }
       
-      // If status is explicitly set, use that value and update is_completed accordingly
+      // If status is explicitly set, use that value and update isCompleted accordingly
       if (updates.status !== undefined) {
         updatedFields.status = updates.status;
         updatedFields.is_completed = updates.status === 'Completed';
@@ -68,7 +68,7 @@ export const updateProject = async (
     }
 
     // Handle team members updates
-    if (updates.teamMembers !== undefined) {
+    if (updates.teamMemberIds !== undefined) {
       try {
         const { data: currentMembers } = await supabase
           .from('project_team_members')
@@ -76,7 +76,7 @@ export const updateProject = async (
           .eq('project_id', projectId);
 
         const currentMemberIds = currentMembers ? currentMembers.map(m => m.user_id) : [];
-        const newMemberIds = updates.teamMembers || [];
+        const newMemberIds = updates.teamMemberIds || [];
 
         const membersToAdd = newMemberIds.filter(id => !currentMemberIds.includes(id));
         const membersToRemove = currentMemberIds.filter(id => !newMemberIds.includes(id));
@@ -115,16 +115,16 @@ export const updateProject = async (
       }
     }
 
-    // Update the local state with proper synchronization of status and is_completed
+    // Update the local state with proper synchronization of status and isCompleted
     setProjects(prevProjects => prevProjects.map(project => {
       if (project.id === projectId) {
         const updatedProject = { ...project, ...updates, updatedAt: now };
         
-        // Ensure status and is_completed are always in sync in local state
+        // Ensure status and isCompleted are always in sync in local state
         if (updatedFields.status === 'Completed') {
-          updatedProject.is_completed = true;
+          updatedProject.isCompleted = true;
         } else if (updatedFields.status) {
-          updatedProject.is_completed = false;
+          updatedProject.isCompleted = false;
         }
         
         if (updatedFields.is_completed === true) {

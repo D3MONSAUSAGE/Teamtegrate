@@ -29,10 +29,10 @@ export const removeTeamMemberFromProject = async (
     console.log('Team member removed successfully, updating local state');
 
     const updatedProjects = projects.map((project) => {
-      if (project.id === projectId && project.teamMembers) {
+      if (project.id === projectId && project.teamMemberIds) {
         return {
           ...project,
-          teamMembers: project.teamMembers.filter(id => id !== userId),
+          teamMemberIds: project.teamMemberIds.filter(id => id !== userId),
           updatedAt: new Date()
         };
       }

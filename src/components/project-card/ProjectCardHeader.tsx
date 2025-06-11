@@ -84,7 +84,7 @@ const ProjectCardHeader: React.FC<ProjectCardHeaderProps> = ({ project, onDelete
         </Badge>
         
         <Badge variant="outline" className="text-xs">
-          {project.tasks_count} {project.tasks_count === 1 ? 'task' : 'tasks'}
+          {project.tasksCount} {project.tasksCount === 1 ? 'task' : 'tasks'}
         </Badge>
         
         {timeInfo && timeInfo.overdue && (

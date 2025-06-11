@@ -21,15 +21,15 @@ const ProjectStatusSelect: React.FC<ProjectStatusSelectProps> = ({ project }) =>
 
   const handleStatusChange = async (newStatus: string) => {
     try {
-      // Explicitly set is_completed based on the status
+      // Explicitly set isCompleted based on the status
       const isCompleted = newStatus === 'Completed';
       
       console.log(`Updating project ${project.id} status to:`, newStatus);
-      console.log(`Setting is_completed to:`, isCompleted);
+      console.log(`Setting isCompleted to:`, isCompleted);
       
       await updateProject(project.id, { 
         status: newStatus as ProjectStatus,
-        is_completed: isCompleted
+        isCompleted: isCompleted
       });
       
       toast.success("Project status updated");

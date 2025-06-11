@@ -42,7 +42,7 @@ const ProjectCardContent: React.FC<ProjectCardContentProps> = ({ project, onView
           <Badge className={`${getStatusStyle(project.status)}`}>
             {project.status}
           </Badge>
-          <span className="text-xs text-gray-500">{project.tasks_count} tasks</span>
+          <span className="text-xs text-gray-500">{project.tasksCount} tasks</span>
         </div>
       </div>
 

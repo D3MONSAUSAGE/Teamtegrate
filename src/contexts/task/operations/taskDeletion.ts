@@ -52,25 +52,6 @@ export const deleteTask = async (
       console.log(`Removed task from local tasks. Before: ${prevTasks.length}, After: ${filteredTasks.length}`);
       return filteredTasks;
     });
-    
-    // Update local state - remove from projects
-    setProjects(prevProjects => {
-      const updatedProjects = prevProjects.map(project => {
-        const originalTaskCount = project.tasks.length;
-        const updatedTasks = project.tasks.filter(task => task.id !== taskId);
-        
-        if (originalTaskCount !== updatedTasks.length) {
-          console.log(`Removed task from project ${project.id}. Tasks: ${originalTaskCount} -> ${updatedTasks.length}`);
-        }
-        
-        return {
-          ...project,
-          tasks: updatedTasks
-        };
-      });
-      
-      return updatedProjects;
-    });
 
     toast.success('Task deleted successfully!');
   } catch (error) {

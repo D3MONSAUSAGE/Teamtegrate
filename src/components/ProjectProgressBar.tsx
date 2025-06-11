@@ -36,23 +36,23 @@ const ProjectProgressBar: React.FC<ProjectProgressBarProps> = ({ project }) => {
     const allTasksCompleted = completedTasks === totalTasks;
     
     console.log(`Project ${project.id} progress check: ${completedTasks}/${totalTasks} tasks completed (${progress}%)`);
-    console.log(`Current status: ${project.status}, All completed: ${allTasksCompleted}, Is completed flag: ${project.is_completed}`);
+    console.log(`Current status: ${project.status}, All completed: ${allTasksCompleted}, Is completed flag: ${project.isCompleted}`);
     
     // Make sure project status is consistent with task completion
     if (allTasksCompleted && project.status !== 'Completed') {
       console.log(`Auto-updating project ${project.id} to Completed status as all tasks are done`);
       updateProject(project.id, { 
         status: 'Completed' as ProjectStatus,
-        is_completed: true
+        isCompleted: true
       });
     } else if (!allTasksCompleted && project.status === 'Completed') {
       console.log(`Auto-updating project ${project.id} to In Progress status as not all tasks are done`);
       updateProject(project.id, { 
         status: 'In Progress' as ProjectStatus,
-        is_completed: false
+        isCompleted: false
       });
     }
-  }, [progress, project.id, project.status, project.is_completed, tasks, updateProject]);
+  }, [progress, project.id, project.status, project.isCompleted, tasks, updateProject]);
 
   return (
     <div className="space-y-1">

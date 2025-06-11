@@ -1,216 +1,72 @@
 
 import { useState, useEffect } from 'react';
+import { User } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { toast } from 'sonner';
 
 interface ChatRoom {
   id: string;
   name: string;
   created_by: string;
-  created_at: string;
-  organization_id: string;
+  created_at: Date;
+  organizationId: string;
 }
 
-interface ChatParticipant {
-  id: string;
-  user_id: string;
-  room_id: string;
-  added_by: string;
-  created_at: string;
-  users?: {
-    name: string;
-    email: string;
-  };
-}
+export const useChatRoom = (user: User | null) => {
+  const [rooms, setRooms] = useState<ChatRoom[]>([]);
+  const [loading, setLoading] = useState(false);
 
-export function useChatRoom(roomId: string | undefined) {
-  const { user } = useAuth();
-  const [room, setRoom] = useState<ChatRoom | null>(null);
-  const [participants, setParticipants] = useState<ChatParticipant[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [hasAccess, setHasAccess] = useState(false);
+  const fetchRooms = async () => {
+    if (!user?.organizationId) return;
 
-  useEffect(() => {
-    if (!roomId || !user) {
-      setLoading(false);
-      return;
-    }
-
-    fetchRoomData();
-  }, [roomId, user]);
-
-  const fetchRoomData = async () => {
-    if (!roomId || !user) return;
-
+    setLoading(true);
     try {
-      // Fetch room details
-      const { data: roomData, error: roomError } = await supabase
+      const { data, error } = await supabase
         .from('chat_rooms')
         .select('*')
-        .eq('id', roomId)
-        .single();
+        .eq('organization_id', user.organizationId);
 
-      if (roomError) {
-        console.error('Error fetching room:', roomError);
-        setHasAccess(false);
-        setLoading(false);
-        return;
-      }
-
-      setRoom(roomData);
-
-      // Check if user has access to this room
-      const { data: participantData, error: participantError } = await supabase
-        .from('chat_room_participants')
-        .select('*')
-        .eq('room_id', roomId)
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      const isParticipant = !participantError && participantData;
-      const isCreator = roomData.created_by === user.id;
-      const isAdmin = user.role === 'admin' || user.role === 'superadmin';
-
-      setHasAccess(Boolean(isParticipant || isCreator || isAdmin));
-
-      if (isParticipant || isCreator || isAdmin) {
-        // Fetch all participants with user data
-        const { data: allParticipants, error: allParticipantsError } = await supabase
-          .from('chat_room_participants')
-          .select(`
-            *,
-            users:user_id (
-              name,
-              email
-            )
-          `)
-          .eq('room_id', roomId);
-
-        if (allParticipantsError) {
-          console.error('Error fetching participants:', allParticipantsError);
-        } else {
-          // Transform the data to match our interface
-          const transformedParticipants = (allParticipants || []).map(participant => ({
-            ...participant,
-            users: Array.isArray(participant.users) && participant.users.length > 0 
-              ? participant.users[0] 
-              : participant.users || undefined
-          }));
-          setParticipants(transformedParticipants);
-        }
-      }
+      if (error) throw error;
+      setRooms(data || []);
     } catch (error) {
-      console.error('Error in fetchRoomData:', error);
-      setHasAccess(false);
+      console.error('Error fetching chat rooms:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const addSystemMessage = async (content: string) => {
-    if (!roomId || !user?.organization_id) return;
+  const createRoom = async (name: string) => {
+    if (!user?.organizationId) return;
 
     try {
-      const { error } = await supabase
-        .from('chat_messages')
-        .insert({
-          room_id: roomId,
-          user_id: user.id,
-          content,
-          type: 'system',
-          organization_id: user.organization_id
-        });
-
-      if (error) {
-        console.error('Error adding system message:', error);
-      }
-    } catch (error) {
-      console.error('Error in addSystemMessage:', error);
-    }
-  };
-
-  const addParticipant = async (userId: string) => {
-    if (!roomId || !user) return;
-
-    try {
-      const { error } = await supabase
-        .from('chat_room_participants')
-        .insert({
-          room_id: roomId,
-          user_id: userId,
-          added_by: user.id
-        });
-
-      if (error) {
-        console.error('Error adding participant:', error);
-        toast.error('Failed to add participant');
-        return;
-      }
-
-      // Add system message
-      const { data: addedUser } = await supabase
-        .from('users')
-        .select('name')
-        .eq('id', userId)
+      const { data, error } = await supabase
+        .from('chat_rooms')
+        .insert([{
+          name,
+          created_by: user.id,
+          organization_id: user.organizationId
+        }])
+        .select()
         .single();
 
-      if (addedUser) {
-        await addSystemMessage(`${addedUser.name} was added to the chat`);
-      }
-
-      // Refresh participants
-      await fetchRoomData();
-      toast.success('Participant added successfully');
+      if (error) throw error;
+      setRooms(prev => [...prev, data]);
+      return data;
     } catch (error) {
-      console.error('Error in addParticipant:', error);
-      toast.error('Failed to add participant');
+      console.error('Error creating chat room:', error);
+      throw error;
     }
   };
 
-  const removeParticipant = async (userId: string) => {
-    if (!roomId || !user) return;
-
-    try {
-      const { error } = await supabase
-        .from('chat_room_participants')
-        .delete()
-        .eq('room_id', roomId)
-        .eq('user_id', userId);
-
-      if (error) {
-        console.error('Error removing participant:', error);
-        toast.error('Failed to remove participant');
-        return;
-      }
-
-      // Add system message
-      const { data: removedUser } = await supabase
-        .from('users')
-        .select('name')
-        .eq('id', userId)
-        .single();
-
-      if (removedUser) {
-        await addSystemMessage(`${removedUser.name} was removed from the chat`);
-      }
-
-      // Refresh participants
-      await fetchRoomData();
-      toast.success('Participant removed successfully');
-    } catch (error) {
-      console.error('Error in removeParticipant:', error);
-      toast.error('Failed to remove participant');
+  useEffect(() => {
+    if (user) {
+      fetchRooms();
     }
-  };
+  }, [user]);
 
   return {
-    room,
-    participants,
+    rooms,
     loading,
-    hasAccess,
-    addParticipant,
-    removeParticipant,
-    refetch: fetchRoomData
+    createRoom,
+    refetch: fetchRooms
   };
-}
+};

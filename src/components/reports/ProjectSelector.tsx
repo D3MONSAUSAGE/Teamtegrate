@@ -64,7 +64,7 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
                     <div className={`w-2 h-2 rounded-full ${getStatusColor(project.status)}`} />
                     <span>{project.title}</span>
                     <Badge variant="outline" className="ml-auto">
-                      {project.tasks_count} tasks
+                      {project.tasksCount} tasks
                     </Badge>
                   </div>
                 </SelectItem>
@@ -107,7 +107,7 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
                   <Target className="h-3 w-3" />
                   <span className="text-xs">Tasks</span>
                 </div>
-                <p className="text-sm font-medium">{project.tasks_count}</p>
+                <p className="text-sm font-medium">{project.tasksCount}</p>
               </div>
 
               <div className="space-y-1">
