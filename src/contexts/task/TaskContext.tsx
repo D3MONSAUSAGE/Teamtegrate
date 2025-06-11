@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Task, DailyScore, TaskStatus, TaskComment, ProjectStatus } from '@/types';
 import { SimpleProject, SimpleTask, SimpleDailyScore, SimpleUser } from '@/types/simplified';
@@ -56,17 +55,17 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     setIsLoading(true);
     try {
-      // Create simple user object with explicit typing to avoid deep type instantiation
-      const validRoles = ['user', 'manager', 'admin', 'superadmin'] as const;
-      const userRole = validRoles.includes(user.role as any) ? user.role as 'user' | 'manager' | 'admin' | 'superadmin' : 'user';
-      
-      const simpleUserData: SimpleUser = {
+      // Create simple user object with explicit typing
+      const simpleUser: SimpleUser = {
         id: user.id,
         email: user.email || '',
-        role: userRole,
+        role: ['user', 'manager', 'admin', 'superadmin'].includes(user.role) 
+          ? user.role as 'user' | 'manager' | 'admin' | 'superadmin' 
+          : 'user',
         organization_id: user.organization_id
       };
-      await fetchTasks(simpleUserData, setTasks);
+      
+      await fetchTasks(simpleUser, setTasks);
     } catch (error) {
       console.error('Error refreshing tasks:', error);
     } finally {
@@ -78,37 +77,27 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (!user?.organization_id) return;
     
     try {
-      // Use explicit typing to avoid deep type instantiation
-      const { data: projectsData, error } = await supabase
+      // Use explicit any type to avoid deep inference
+      const projectsQuery = await supabase
         .from('projects')
         .select('*')
         .eq('organization_id', user.organization_id);
 
-      if (error) throw error;
+      if (projectsQuery.error) throw projectsQuery.error;
 
-      // Transform to SimpleProject manually with explicit typing to avoid deep inference
+      // Manual transformation with explicit types
       const transformedProjects: SimpleProject[] = [];
       
-      if (projectsData) {
-        // Use explicit any type and manual mapping
-        const dbProjects: any[] = projectsData;
+      if (projectsQuery.data) {
+        // Use explicit any[] to prevent deep type inference
+        const rawProjects: any[] = projectsQuery.data;
         
-        for (const dbProject of dbProjects) {
-          // Calculate project status based on completion - explicit type checking
-          let status = String(dbProject.status || 'To Do');
-          let isCompleted = Boolean(dbProject.is_completed);
-          
-          // Ensure consistency between status and is_completed
-          if (status === 'Completed') {
-            isCompleted = true;
-          } else if (isCompleted) {
-            status = 'Completed';
+        for (const dbProject of rawProjects) {
+          // Explicit status validation
+          let projectStatus: 'To Do' | 'In Progress' | 'Completed' = 'To Do';
+          if (dbProject.status === 'To Do' || dbProject.status === 'In Progress' || dbProject.status === 'Completed') {
+            projectStatus = dbProject.status;
           }
-          
-          // Validate status value
-          const validStatus = ['To Do', 'In Progress', 'Completed'].includes(status) 
-            ? status as 'To Do' | 'In Progress' | 'Completed'
-            : 'To Do' as const;
           
           const simpleProject: SimpleProject = {
             id: String(dbProject.id),
@@ -123,8 +112,8 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             teamMembers: Array.isArray(dbProject.team_members) ? dbProject.team_members.map(String) : [],
             budget: Number(dbProject.budget) || 0,
             budgetSpent: Number(dbProject.budget_spent) || 0,
-            is_completed: isCompleted,
-            status: validStatus,
+            is_completed: Boolean(dbProject.is_completed),
+            status: projectStatus,
             tasks_count: Number(dbProject.tasks_count) || 0,
             tags: Array.isArray(dbProject.tags) ? dbProject.tags.map(String) : [],
             organizationId: user.organization_id
@@ -140,7 +129,6 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  
   const handleAddTask = async (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
     if (!user) return;
     const userData = { id: user.id, organization_id: user.organization_id };

@@ -28,49 +28,50 @@ export const fetchTasks = async (
       return;
     }
     
-    // Fetch tasks from database with explicit organization filtering
-    const { data: rawTaskData, error } = await supabase
+    // Use explicit any type to avoid deep inference
+    const tasksQuery = await supabase
       .from('tasks')
       .select('*')
       .eq('organization_id', user.organization_id);
 
-    if (error) {
-      console.error('Error fetching tasks:', error);
+    if (tasksQuery.error) {
+      console.error('Error fetching tasks:', tasksQuery.error);
       toast.error('Failed to load tasks');
       return;
     }
 
-    console.log(`Fetched ${rawTaskData?.length || 0} tasks from database`);
+    console.log(`Fetched ${tasksQuery.data?.length || 0} tasks from database`);
     
-    // Fetch comments for all tasks with organization filtering
-    const { data: rawCommentData, error: commentError } = await supabase
+    // Use explicit any type to avoid deep inference
+    const commentsQuery = await supabase
       .from('comments')
       .select('*')
       .eq('organization_id', user.organization_id);
 
-    if (commentError) {
-      console.error('Error fetching comments:', commentError);
+    if (commentsQuery.error) {
+      console.error('Error fetching comments:', commentsQuery.error);
     }
 
-    // Transform database format to application format with explicit typing
+    // Manual transformation with explicit any types
     const transformedTasks: Task[] = [];
     
-    if (rawTaskData) {
-      // Use explicit any type and manual mapping to avoid deep type inference
-      const dbTasks: any[] = rawTaskData;
+    if (tasksQuery.data) {
+      // Use explicit any[] to prevent deep type inference
+      const rawTasks: any[] = tasksQuery.data;
       
-      for (const dbTask of dbTasks) {
-        // Validate and set priority with explicit string checks
-        const taskPriority = ['Low', 'Medium', 'High'].includes(String(dbTask.priority)) 
-          ? String(dbTask.priority) as 'Low' | 'Medium' | 'High'
-          : 'Medium' as const;
+      for (const dbTask of rawTasks) {
+        // Explicit type checks and assignments
+        let taskPriority: 'Low' | 'Medium' | 'High' = 'Medium';
+        if (dbTask.priority === 'Low' || dbTask.priority === 'Medium' || dbTask.priority === 'High') {
+          taskPriority = dbTask.priority;
+        }
         
-        // Validate and set status with explicit string checks
-        const taskStatus = ['To Do', 'In Progress', 'Completed'].includes(String(dbTask.status))
-          ? String(dbTask.status) as 'To Do' | 'In Progress' | 'Completed'
-          : 'To Do' as const;
+        let taskStatus: 'To Do' | 'In Progress' | 'Completed' = 'To Do';
+        if (dbTask.status === 'To Do' || dbTask.status === 'In Progress' || dbTask.status === 'Completed') {
+          taskStatus = dbTask.status;
+        }
 
-        // Build task object with explicit type annotations
+        // Build task with explicit type annotations
         const task: Task = {
           id: String(dbTask.id || ''),
           userId: String(dbTask.user_id || user.id),
@@ -91,7 +92,7 @@ export const fetchTasks = async (
             ? dbTask.assigned_to_names.map((name: any) => String(name)) 
             : [],
           tags: [],
-          comments: rawCommentData ? rawCommentData
+          comments: commentsQuery.data ? commentsQuery.data
             .filter((comment: any) => comment.task_id === dbTask.id)
             .map((comment: any) => ({
               id: String(comment.id),
