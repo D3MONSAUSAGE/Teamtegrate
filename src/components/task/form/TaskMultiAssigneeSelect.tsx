@@ -1,75 +1,65 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Check, ChevronsUpDown, X, Users, Clock } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Check, ChevronsUpDown, X, Users, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AppUser } from '@/types';
 
 export interface TaskMultiAssigneeSelectProps {
   selectedMembers: string[];
-  onMembersChange: (memberIds: string[]) => void;
+  onSelect: (userId: string) => void;
+  onRemove: (userId: string) => void;
   users: AppUser[];
-  isLoading: boolean;
-  onError?: () => void;
+  isLoading?: boolean;
+  placeholder?: string;
+  emptyMessage?: string;
 }
 
 const TaskMultiAssigneeSelect: React.FC<TaskMultiAssigneeSelectProps> = ({
   selectedMembers = [],
-  onMembersChange,
+  onSelect,
+  onRemove,
   users = [],
-  isLoading,
-  onError
+  isLoading = false,
+  placeholder = "Select team members...",
+  emptyMessage = "No team members found"
 }) => {
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
 
-  console.log('TaskMultiAssigneeSelect render:', { 
-    isLoading, 
-    usersLength: users?.length, 
-    selectedMembersLength: selectedMembers?.length,
-    users: users 
-  });
-
-  // Ensure all props are safe to use with proper defaults
+  // Ensure safe array operations
   const safeSelectedMembers = Array.isArray(selectedMembers) ? selectedMembers : [];
   const safeUsers = Array.isArray(users) ? users.filter(user => user && user.id && user.name) : [];
-  const safeOnMembersChange = typeof onMembersChange === 'function' ? onMembersChange : () => {};
   
+  // Get selected users for display
   const selectedUsers = safeUsers.filter(user => safeSelectedMembers.includes(user.id));
+  
+  // Filter available users based on search and selection
+  const availableUsers = safeUsers.filter(user => 
+    !safeSelectedMembers.includes(user.id) && 
+    user.name.toLowerCase().includes(searchValue.toLowerCase())
+  );
 
   const handleSelect = (userId: string) => {
-    console.log('TaskMultiAssigneeSelect - handleSelect called with:', userId);
-    if (!userId || typeof userId !== 'string') return;
-    
-    try {
-      if (safeSelectedMembers.includes(userId)) {
-        safeOnMembersChange(safeSelectedMembers.filter(id => id !== userId));
-      } else {
-        safeOnMembersChange([...safeSelectedMembers, userId]);
-      }
-    } catch (error) {
-      console.error('Error in handleSelect:', error);
-      onError?.();
-    }
+    if (!userId || typeof onSelect !== 'function') return;
+    onSelect(userId);
+    setSearchValue("");
   };
 
-  const removeUser = (userId: string) => {
-    console.log('TaskMultiAssigneeSelect - removeUser called with:', userId);
-    if (!userId || typeof userId !== 'string') return;
-    
-    try {
-      safeOnMembersChange(safeSelectedMembers.filter(id => id !== userId));
-    } catch (error) {
-      console.error('Error in removeUser:', error);
-      onError?.();
-    }
+  const handleRemove = (userId: string) => {
+    if (!userId || typeof onRemove !== 'function') return;
+    onRemove(userId);
   };
 
-  // Show loading state
+  const getUserInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
   if (isLoading) {
-    console.log('TaskMultiAssigneeSelect - Showing loading state');
     return (
       <div className="space-y-2">
         <Button
@@ -78,7 +68,7 @@ const TaskMultiAssigneeSelect: React.FC<TaskMultiAssigneeSelectProps> = ({
           disabled={true}
         >
           <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 animate-spin" />
+            <Search className="h-4 w-4 animate-pulse" />
             Loading team members...
           </div>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -87,111 +77,110 @@ const TaskMultiAssigneeSelect: React.FC<TaskMultiAssigneeSelectProps> = ({
     );
   }
 
-  // Enhanced validation - wait until users is properly loaded
-  if (!Array.isArray(users) || users.length === 0 || !users.every(user => user && user.id && user.name)) {
-    console.log('TaskMultiAssigneeSelect - Data not ready, showing fallback');
-    return (
-      <div className="space-y-2">
-        <Button
-          variant="outline"
-          className="w-full justify-between"
-          disabled={true}
-        >
-          <div className="flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            No team members available
+  return (
+    <div className="space-y-3">
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="w-full justify-between border-2 hover:border-primary/40 transition-colors bg-background/50"
+          >
+            <div className="flex items-center gap-2">
+              <Search className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm">
+                {safeSelectedMembers.length === 0 
+                  ? placeholder 
+                  : `${safeSelectedMembers.length} member${safeSelectedMembers.length !== 1 ? 's' : ''} selected`
+                }
+              </span>
+            </div>
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-full p-0 bg-background/95 backdrop-blur-xl border-2" align="start">
+          <Command>
+            <CommandInput 
+              placeholder="Search team members..." 
+              value={searchValue}
+              onValueChange={setSearchValue}
+              className="border-0"
+            />
+            <CommandEmpty>
+              <div className="flex flex-col items-center gap-2 py-6">
+                <Users className="h-8 w-8 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">{emptyMessage}</span>
+              </div>
+            </CommandEmpty>
+            <CommandGroup className="max-h-60 overflow-y-auto">
+              {availableUsers.map((user) => (
+                <CommandItem
+                  key={user.id}
+                  onSelect={() => handleSelect(user.id)}
+                  className="flex items-center gap-3 p-3 cursor-pointer hover:bg-accent/50"
+                >
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={user.avatar_url} />
+                    <AvatarFallback className="text-xs bg-gradient-to-r from-green-500/20 to-blue-500/20 text-foreground border">
+                      {getUserInitials(user.name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <div className="font-medium text-sm">{user.name}</div>
+                    <div className="text-xs text-muted-foreground">{user.email}</div>
+                  </div>
+                  <Check className="h-4 w-4 text-green-600" />
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </Command>
+        </PopoverContent>
+      </Popover>
+      
+      {/* Selected Members Display */}
+      {selectedUsers.length > 0 && (
+        <div className="space-y-2">
+          <div className="text-xs text-muted-foreground font-medium">
+            Selected Team Members ({selectedUsers.length})
           </div>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </div>
-    );
-  }
-
-  console.log('TaskMultiAssigneeSelect - Rendering full component with Command');
-
-  try {
-    return (
-      <div className="space-y-2">
-        <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              role="combobox"
-              aria-expanded={open}
-              className="w-full justify-between"
-              disabled={isLoading}
-            >
-              {safeSelectedMembers.length === 0 
-                ? "Select team members..." 
-                : `${safeSelectedMembers.length} member(s) selected`
-              }
-              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-full p-0">
-            <Command>
-              <CommandInput placeholder="Search team members..." />
-              <CommandEmpty>
-                <div className="flex flex-col items-center gap-2 py-4">
-                  <Users className="h-8 w-8 text-muted-foreground" />
-                  <span>No team members found</span>
-                </div>
-              </CommandEmpty>
-              <CommandGroup>
-                {safeUsers.map((user) => (
-                  <CommandItem
-                    key={user.id}
-                    onSelect={() => handleSelect(user.id)}
-                  >
-                    <Check
-                      className={cn(
-                        "mr-2 h-4 w-4",
-                        safeSelectedMembers.includes(user.id) ? "opacity-100" : "opacity-0"
-                      )}
-                    />
-                    {user.name}
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            </Command>
-          </PopoverContent>
-        </Popover>
-        
-        {selectedUsers.length > 0 && (
           <div className="flex flex-wrap gap-2">
             {selectedUsers.map((user) => (
-              <Badge key={user.id} variant="secondary" className="gap-1">
-                {user.name}
+              <Badge 
+                key={user.id} 
+                variant="secondary" 
+                className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-green-50/50 to-blue-50/50 border border-green-200/30 hover:bg-green-50/70 transition-colors"
+              >
+                <Avatar className="h-5 w-5">
+                  <AvatarImage src={user.avatar_url} />
+                  <AvatarFallback className="text-xs bg-gradient-to-r from-green-500/20 to-blue-500/20 text-foreground">
+                    {getUserInitials(user.name)}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="text-sm font-medium">{user.name}</span>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-auto p-0 w-4 h-4"
-                  onClick={() => removeUser(user.id)}
+                  className="h-4 w-4 p-0 hover:bg-red-100 hover:text-red-600 rounded-full"
+                  onClick={() => handleRemove(user.id)}
                 >
                   <X className="h-3 w-3" />
                 </Button>
               </Badge>
             ))}
           </div>
-        )}
-      </div>
-    );
-  } catch (error) {
-    console.error('Error rendering TaskMultiAssigneeSelect:', error);
-    onError?.();
-    return (
-      <div className="space-y-2">
-        <Button
-          variant="outline"
-          className="w-full justify-between"
-          disabled={true}
-        >
-          Error loading component
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </div>
-    );
-  }
+        </div>
+      )}
+      
+      {/* Empty State */}
+      {safeUsers.length === 0 && !isLoading && (
+        <div className="text-center py-6 text-muted-foreground">
+          <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
+          <p className="text-sm">No team members available</p>
+        </div>
+      )}
+    </div>
+  );
 };
 
 export default TaskMultiAssigneeSelect;
