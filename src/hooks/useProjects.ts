@@ -1,7 +1,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Project } from '@/types';
-import { SimpleProject } from '@/types/simplified';
 import { toast } from '@/components/ui/sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -49,7 +48,7 @@ const checkProjectAccess = (project: any, userId: string, teamMemberships: strin
 
 export const useProjects = () => {
   const { user } = useAuth();
-  const [projects, setProjects] = useState<SimpleProject[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
@@ -65,7 +64,7 @@ export const useProjects = () => {
         return;
       }
       
-      console.log('🚀 Fetching projects for user:', user.id, 'org:', user.organization_id);
+      console.log('🚀 Fetching projects for user:', user.id, 'org:', user.organizationId);
       
       // Fetch all projects and team memberships in parallel
       // RLS policies will automatically filter by organization
@@ -97,13 +96,13 @@ export const useProjects = () => {
       
       // Filter projects where user has access (with organization check)
       const accessibleProjects = allProjects.filter(project => 
-        checkProjectAccess(project, user.id, teamMemberships, user.organization_id)
+        checkProjectAccess(project, user.id, teamMemberships, user.organizationId)
       );
       
       console.log(`✅ After filtering, found ${accessibleProjects.length} accessible projects for user ${user.id}`);
       
-      // Transform to SimpleProject manually to avoid deep type instantiation
-      const formattedProjects: SimpleProject[] = accessibleProjects.map(project => {
+      // Transform to unified Project type
+      const formattedProjects: Project[] = accessibleProjects.map(project => {
         // Calculate project status based on completion - explicit type checking
         let status = String(project.status || 'To Do');
         let isCompleted = Boolean(project.is_completed);
@@ -129,15 +128,14 @@ export const useProjects = () => {
           managerId: String(project.manager_id || ''),
           createdAt: project.created_at ? new Date(project.created_at) : new Date(),
           updatedAt: project.updated_at ? new Date(project.updated_at) : new Date(),
-          tasks: [], // Tasks will be loaded separately in TaskContext
-          teamMembers: Array.isArray(project.team_members) ? project.team_members.map(String) : [],
+          teamMemberIds: Array.isArray(project.team_members) ? project.team_members.map(String) : [],
           budget: Number(project.budget) || 0,
           budgetSpent: Number(project.budget_spent) || 0,
           is_completed: isCompleted,
           status: validStatus,
           tasks_count: Number(project.tasks_count) || 0,
           tags: Array.isArray(project.tags) ? project.tags.map(String) : [],
-          organizationId: user.organization_id
+          organizationId: user.organizationId
         };
       });
       

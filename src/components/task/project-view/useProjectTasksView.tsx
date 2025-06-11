@@ -6,11 +6,11 @@ import { useProjectAccess } from './hooks/useProjectAccess';
 import { useProjectTasksFilters } from './hooks/useProjectTasksFilters';
 import { useProjectTasksActions } from './hooks/useProjectTasksActions';
 import { useProjectTeamMembers } from '@/hooks/useProjectTeamMembers';
-import { flatTasksToTasks } from '@/utils/typeConversions';
+import { Task } from '@/types';
 
 export const useProjectTasksView = (projectId: string | null) => {
   const { tasks, updateTaskStatus } = useTask();
-  const { projects } = useProjects(); // Use unified projects from useProjects
+  const { projects } = useProjects();
 
   // Get project tasks
   const projectTasks = useMemo(() => {
@@ -18,12 +18,12 @@ export const useProjectTasksView = (projectId: string | null) => {
     return tasks.filter(task => task.projectId === projectId);
   }, [tasks, projectId]);
 
-  // Convert FlatTasks to Tasks for compatibility
+  // Convert to Task[] if needed - but since we're using unified types, this should be direct
   const convertedProjectTasks = useMemo(() => {
-    return flatTasksToTasks(projectTasks);
+    return projectTasks as Task[];
   }, [projectTasks]);
 
-  // Use the separated hooks with projects from useProjects
+  // Use the separated hooks
   const { project, isLoading, loadError } = useProjectAccess(projectId, projects);
   
   const {

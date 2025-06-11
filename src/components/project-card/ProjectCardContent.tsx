@@ -49,15 +49,15 @@ const ProjectCardContent: React.FC<ProjectCardContentProps> = ({ project, onView
       {project.budget > 0 && (
         <ProjectBudgetInfo 
           budget={project.budget} 
-          budgetSpent={project.budgetSpent || 0} 
+          budgetSpent={project.budgetSpent} 
         />
       )}
 
       <div className="mt-2 mb-4 text-xs text-gray-500">
-        {project.teamMembers && project.teamMembers.length > 0 && (
+        {project.teamMemberIds && project.teamMemberIds.length > 0 && (
           <div className="flex items-center gap-1 mb-1">
             <Users className="h-3 w-3" /> 
-            <span>{project.teamMembers.length} team member{project.teamMembers.length !== 1 ? 's' : ''}</span>
+            <span>{project.teamMemberIds.length} team member{project.teamMemberIds.length !== 1 ? 's' : ''}</span>
           </div>
         )}
         

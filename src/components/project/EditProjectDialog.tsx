@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { FlatProject } from '@/types/flat';
+import { Project } from '@/types';
 import { ProjectDetailsSection } from './ProjectDetailsSection';
 import { TeamMembersSection } from './TeamMembersSection';
 import { toast } from '@/components/ui/sonner';
@@ -28,7 +28,7 @@ export type FormValues = z.infer<typeof projectFormSchema>;
 interface EditProjectDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  project: FlatProject;
+  project: Project;
   onSuccess?: () => void;
 }
 

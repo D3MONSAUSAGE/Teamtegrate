@@ -100,10 +100,10 @@ const ProjectCardHeader: React.FC<ProjectCardHeaderProps> = ({ project, onDelete
           </Badge>
         )}
         
-        {project.teamMembers && project.teamMembers.length > 0 && (
+        {project.teamMemberIds && project.teamMemberIds.length > 0 && (
           <Badge variant="outline" className="flex gap-1 items-center text-xs">
             <Users className="h-3 w-3" />
-            {project.teamMembers.length}
+            {project.teamMemberIds.length}
           </Badge>
         )}
       </div>

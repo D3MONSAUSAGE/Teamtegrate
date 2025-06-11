@@ -1,18 +1,16 @@
+
 export type UserRole = 'superadmin' | 'admin' | 'manager' | 'user';
 
 export interface User {
   id: string;
   email: string;
   role: UserRole;
-  organization_id: string;
+  organizationId: string; // Made required and consistent naming
   name?: string;
   timezone?: string;
   createdAt: Date;
   avatar_url?: string;
 }
-
-// Alias for backward compatibility
-export type AppUser = User;
 
 export type TaskPriority = 'Low' | 'Medium' | 'High';
 
@@ -24,7 +22,7 @@ export interface TaskComment {
   userName: string;
   text: string;
   createdAt: Date;
-  organizationId?: string;
+  organizationId: string; // Made required
 }
 
 export type Comment = TaskComment;
@@ -50,7 +48,7 @@ export interface Task {
   tags?: string[];
   comments?: TaskComment[];
   cost?: number;
-  organizationId?: string;
+  organizationId: string; // Made required
 }
 
 export type ProjectStatus = 'To Do' | 'In Progress' | 'Completed';
@@ -64,15 +62,14 @@ export interface Project {
   managerId: string;
   createdAt: Date;
   updatedAt: Date;
-  tasks: Task[];
-  teamMembers: string[];
+  teamMemberIds: string[]; // Unified naming - use teamMemberIds consistently
   budget: number;
-  budgetSpent?: number;
+  budgetSpent: number; // Made required, defaulting to 0
   is_completed: boolean;
   status: ProjectStatus;
   tasks_count: number;
-  tags?: string[];
-  organizationId?: string;
+  tags: string[]; // Made required, defaulting to empty array
+  organizationId: string; // Made required
 }
 
 export interface DailyScore {
@@ -88,7 +85,7 @@ export interface TeamMember {
   email: string;
   role: string;
   managerId: string;
-  organizationId?: string;
+  organizationId: string; // Made required
 }
 
 export interface TeamMemberPerformance {
@@ -97,7 +94,7 @@ export interface TeamMemberPerformance {
   completedTasks: number;
   completionRate: number;
   projects: number;
-  organizationId?: string;
+  organizationId: string; // Made required
 }
 
 export interface Organization {
@@ -112,7 +109,7 @@ export interface ChatRoom {
   name: string;
   created_by: string;
   created_at: Date;
-  organizationId?: string;
+  organizationId: string; // Made required
 }
 
 export interface ChatMessage {
@@ -123,7 +120,7 @@ export interface ChatMessage {
   type: 'text' | 'file' | 'image';
   created_at: Date;
   parent_id?: string;
-  organizationId?: string;
+  organizationId: string; // Made required
 }
 
 export interface Notification {
@@ -136,7 +133,7 @@ export interface Notification {
   created_at: Date;
   task_id?: string;
   event_id?: string;
-  organizationId?: string;
+  organizationId: string; // Made required
 }
 
 export interface Document {
@@ -150,7 +147,7 @@ export interface Document {
   folder?: string;
   storage_id: string;
   created_at: Date;
-  organizationId?: string;
+  organizationId: string; // Made required
 }
 
 export interface Event {
@@ -162,7 +159,7 @@ export interface Event {
   user_id: string;
   created_at: Date;
   updated_at: Date;
-  organizationId?: string;
+  organizationId: string; // Made required
 }
 
 export interface TimeEntry {
@@ -173,10 +170,10 @@ export interface TimeEntry {
   duration_minutes?: number;
   notes?: string;
   created_at: Date;
-  organizationId?: string;
+  organizationId: string; // Made required
 }
 
-// Role hierarchy utility functions - use these from @/contexts/auth/roleUtils instead
+// Role hierarchy utility functions
 export const ROLE_HIERARCHY: Record<UserRole, number> = {
   'superadmin': 4,
   'admin': 3,
