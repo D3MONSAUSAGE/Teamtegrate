@@ -114,6 +114,7 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          organization_id: string
           parent_id: string | null
           room_id: string
           type: Database["public"]["Enums"]["message_type"]
@@ -123,6 +124,7 @@ export type Database = {
           content: string
           created_at?: string
           id?: string
+          organization_id: string
           parent_id?: string | null
           room_id: string
           type?: Database["public"]["Enums"]["message_type"]
@@ -132,12 +134,20 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
+          organization_id?: string
           parent_id?: string | null
           room_id?: string
           type?: Database["public"]["Enums"]["message_type"]
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "chat_messages_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "chat_messages_parent_id_fkey"
             columns: ["parent_id"]
@@ -206,20 +216,31 @@ export type Database = {
           created_by: string
           id: string
           name: string
+          organization_id: string
         }
         Insert: {
           created_at?: string
           created_by: string
           id?: string
           name: string
+          organization_id: string
         }
         Update: {
           created_at?: string
           created_by?: string
           id?: string
           name?: string
+          organization_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "chat_rooms_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       checklist_templates: {
         Row: {
@@ -330,6 +351,7 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          organization_id: string
           project_id: string | null
           task_id: string | null
           updated_at: string
@@ -339,6 +361,7 @@ export type Database = {
           content: string
           created_at?: string
           id?: string
+          organization_id: string
           project_id?: string | null
           task_id?: string | null
           updated_at?: string
@@ -348,12 +371,20 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
+          organization_id?: string
           project_id?: string | null
           task_id?: string | null
           updated_at?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "comments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "comments_project_id_fkey"
             columns: ["project_id"]
@@ -378,6 +409,7 @@ export type Database = {
           file_type: string
           folder: string | null
           id: string
+          organization_id: string
           size_bytes: number
           storage_id: string
           title: string
@@ -390,6 +422,7 @@ export type Database = {
           file_type: string
           folder?: string | null
           id?: string
+          organization_id: string
           size_bytes: number
           storage_id: string
           title: string
@@ -402,12 +435,21 @@ export type Database = {
           file_type?: string
           folder?: string | null
           id?: string
+          organization_id?: string
           size_bytes?: number
           storage_id?: string
           title?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "documents_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       events: {
         Row: {
@@ -534,6 +576,7 @@ export type Database = {
           created_at: string
           event_id: string | null
           id: string
+          organization_id: string
           read: boolean
           task_id: string | null
           title: string
@@ -545,6 +588,7 @@ export type Database = {
           created_at?: string
           event_id?: string | null
           id?: string
+          organization_id: string
           read?: boolean
           task_id?: string | null
           title: string
@@ -556,6 +600,7 @@ export type Database = {
           created_at?: string
           event_id?: string | null
           id?: string
+          organization_id?: string
           read?: boolean
           task_id?: string | null
           title?: string
@@ -568,6 +613,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
@@ -877,6 +929,7 @@ export type Database = {
           duration_minutes: number | null
           id: string
           notes: string | null
+          organization_id: string
           user_id: string
         }
         Insert: {
@@ -886,6 +939,7 @@ export type Database = {
           duration_minutes?: number | null
           id?: string
           notes?: string | null
+          organization_id: string
           user_id: string
         }
         Update: {
@@ -895,9 +949,18 @@ export type Database = {
           duration_minutes?: number | null
           id?: string
           notes?: string | null
+          organization_id?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "time_entries_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_deletion_audit: {
         Row: {
