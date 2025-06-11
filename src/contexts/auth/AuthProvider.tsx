@@ -63,7 +63,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (currentSession) {
             // Create a basic user object without database calls
             const basicUser = createBasicUserFromSession(currentSession.user);
-            setUser(basicUser);
+            // Ensure createdAt is set for AppUser to User compatibility
+            const userWithCreatedAt = {
+              ...basicUser,
+              createdAt: basicUser.createdAt || new Date()
+            };
+            setUser(userWithCreatedAt);
           }
           setLoading(false);
         }
@@ -107,7 +112,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         // Create basic user object immediately
         const basicUser = createBasicUserFromSession(session.user);
-        setUser(basicUser);
+        // Ensure createdAt is set for AppUser to User compatibility
+        const userWithCreatedAt = {
+          ...basicUser,
+          createdAt: basicUser.createdAt || new Date()
+        };
+        setUser(userWithCreatedAt);
         setLoading(false);
         
         // Only create database user record after successful login (not during initialization)

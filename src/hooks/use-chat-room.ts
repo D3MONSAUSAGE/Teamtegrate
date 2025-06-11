@@ -66,16 +66,16 @@ export function useChatRoom(roomId: string | undefined) {
         .select('*')
         .eq('room_id', roomId)
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       const isParticipant = !participantError && participantData;
       const isCreator = roomData.created_by === user.id;
       const isAdmin = user.role === 'admin' || user.role === 'superadmin';
 
-      setHasAccess(isParticipant || isCreator || isAdmin);
+      setHasAccess(Boolean(isParticipant || isCreator || isAdmin));
 
       if (isParticipant || isCreator || isAdmin) {
-        // Fetch all participants
+        // Fetch all participants with user data
         const { data: allParticipants, error: allParticipantsError } = await supabase
           .from('chat_room_participants')
           .select(`
@@ -90,7 +90,14 @@ export function useChatRoom(roomId: string | undefined) {
         if (allParticipantsError) {
           console.error('Error fetching participants:', allParticipantsError);
         } else {
-          setParticipants(allParticipants || []);
+          // Transform the data to match our interface
+          const transformedParticipants = (allParticipants || []).map(participant => ({
+            ...participant,
+            users: Array.isArray(participant.users) && participant.users.length > 0 
+              ? participant.users[0] 
+              : participant.users || undefined
+          }));
+          setParticipants(transformedParticipants);
         }
       }
     } catch (error) {
