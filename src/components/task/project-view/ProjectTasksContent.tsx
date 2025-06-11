@@ -80,7 +80,7 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
       <ProjectTasksFilters
         searchQuery={searchQuery}
         sortBy={sortBy}
-        onSearchChange={(e) => onSearchChange(e.target.value)}
+        onSearchChange={onSearchChange}
         onSortByChange={onSortByChange}
       />
 

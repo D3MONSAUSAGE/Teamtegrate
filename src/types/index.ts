@@ -1,3 +1,4 @@
+
 export type UserRole = 'superadmin' | 'admin' | 'manager' | 'user';
 
 export interface User {
@@ -195,11 +196,13 @@ export const getRoleDisplayName = (role: UserRole): string => {
   }
 };
 
-// Task Card Props interface - Fixed to include onDelete
+// Task Card Props interface - Updated to include onDelete and proper typing
 export interface TaskCardProps {
   task: Task;
-  onEdit: () => void;
-  onDelete: () => void;
-  onStatusChange: (status: TaskStatus) => void;
+  onEdit?: (task: Task) => void;
+  onDelete?: () => void;
+  onStatusChange?: (status: TaskStatus) => void;
+  onAssign?: (task: Task) => void;
+  onClick?: () => void;
   showProjectInfo?: boolean;
 }
