@@ -45,7 +45,6 @@ export const signup = async (
 ): Promise<void> => {
   const signupData: any = {
     name,
-    role,
   };
 
   // Handle organization creation or joining
@@ -55,10 +54,16 @@ export const signup = async (
       signupData.role = 'superadmin';
       signupData.organizationName = organizationData.organizationName;
     } else if (organizationData.type === 'join' && organizationData.inviteCode) {
-      // User is joining via invite code - they become user
-      signupData.role = 'user';
+      // User is joining via invite code - validate first
+      const validation = await validateInviteCode(organizationData.inviteCode);
+      if (!validation.success) {
+        throw new Error(validation.error || 'Invalid invite code');
+      }
       signupData.invite_code = organizationData.inviteCode;
     }
+  } else {
+    // Default role if no organization data
+    signupData.role = role;
   }
 
   const { error } = await supabase.auth.signUp({

@@ -67,40 +67,27 @@ const MultiTenantSignupForm: React.FC<MultiTenantSignupFormProps> = ({ onBack })
     }
   };
 
+  // Enhanced validation logic
+  const isFormValid = () => {
+    const baseValid = formData.name.trim() && formData.email.trim() && formData.password.trim();
+    
+    if (signupType === 'create') {
+      return baseValid && formData.organizationName.trim();
+    } else {
+      return baseValid && formData.inviteCode.trim() && codeValidation?.isValid;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name.trim()) {
-      toast.error('Please enter your name');
-      return;
-    }
-    
-    if (!formData.email.trim()) {
-      toast.error('Please enter your email');
-      return;
-    }
-    
-    if (!formData.password.trim()) {
-      toast.error('Please enter a password');
-      return;
-    }
-
-    // Validate organization data based on signup type
-    if (signupType === 'create') {
-      if (!formData.organizationName.trim()) {
-        toast.error('Please enter an organization name');
-        return;
+    if (!isFormValid()) {
+      if (signupType === 'create') {
+        toast.error('Please fill in all required fields including organization name');
+      } else {
+        toast.error('Please fill in all fields and validate the invite code');
       }
-    } else {
-      if (!formData.inviteCode.trim()) {
-        toast.error('Please enter an invite code');
-        return;
-      }
-      
-      if (!codeValidation?.isValid) {
-        toast.error('Please validate the invite code first');
-        return;
-      }
+      return;
     }
 
     try {
@@ -111,15 +98,28 @@ const MultiTenantSignupForm: React.FC<MultiTenantSignupFormProps> = ({ onBack })
       };
 
       await signup(
-        formData.email,
+        formData.email.trim(),
         formData.password,
-        formData.name,
-        'user', // Will be overridden based on organization type
+        formData.name.trim(),
+        'user', // This will be overridden in the signup function based on organization type
         organizationData
       );
-    } catch (error) {
+
+      // Success message is shown in the signup function
+      // User will be redirected after email verification
+    } catch (error: any) {
       console.error('Signup error:', error);
-      // Error handling is done in the signup function
+      
+      // Show specific error messages
+      if (error.message.includes('invite')) {
+        toast.error('Invite code error: ' + error.message);
+      } else if (error.message.includes('email')) {
+        toast.error('Email error: ' + error.message);
+      } else if (error.message.includes('password')) {
+        toast.error('Password error: ' + error.message);
+      } else {
+        toast.error(error.message || 'Failed to create account. Please try again.');
+      }
     }
   };
 
@@ -137,7 +137,7 @@ const MultiTenantSignupForm: React.FC<MultiTenantSignupFormProps> = ({ onBack })
             {/* Personal Information */}
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
+                <Label htmlFor="name">Full Name *</Label>
                 <Input
                   id="name"
                   placeholder="Enter your full name"
@@ -148,7 +148,7 @@ const MultiTenantSignupForm: React.FC<MultiTenantSignupFormProps> = ({ onBack })
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
+                <Label htmlFor="email">Email Address *</Label>
                 <Input
                   id="email"
                   type="email"
@@ -160,7 +160,7 @@ const MultiTenantSignupForm: React.FC<MultiTenantSignupFormProps> = ({ onBack })
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">Password *</Label>
                 <Input
                   id="password"
                   type="password"
@@ -190,7 +190,7 @@ const MultiTenantSignupForm: React.FC<MultiTenantSignupFormProps> = ({ onBack })
               
               <TabsContent value="create" className="space-y-4 mt-4">
                 <div className="space-y-2">
-                  <Label htmlFor="organizationName">Organization Name</Label>
+                  <Label htmlFor="organizationName">Organization Name *</Label>
                   <Input
                     id="organizationName"
                     placeholder="Enter your organization name"
@@ -208,7 +208,7 @@ const MultiTenantSignupForm: React.FC<MultiTenantSignupFormProps> = ({ onBack })
               
               <TabsContent value="join" className="space-y-4 mt-4">
                 <div className="space-y-2">
-                  <Label htmlFor="inviteCode">Invite Code</Label>
+                  <Label htmlFor="inviteCode">Invite Code *</Label>
                   <div className="flex gap-2">
                     <Input
                       id="inviteCode"
@@ -252,7 +252,11 @@ const MultiTenantSignupForm: React.FC<MultiTenantSignupFormProps> = ({ onBack })
               >
                 Back
               </Button>
-              <Button type="submit" className="flex-1" disabled={loading}>
+              <Button 
+                type="submit" 
+                className="flex-1" 
+                disabled={loading || !isFormValid()}
+              >
                 {loading ? 'Creating Account...' : 'Create Account'}
               </Button>
             </div>
