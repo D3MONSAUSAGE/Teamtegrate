@@ -1,5 +1,6 @@
 
 import { Task } from '@/types';
+import { SimpleUser } from '@/types/simplified';
 import { toast } from '@/components/ui/sonner';
 import { fetchTasks } from './api/taskFetch';
 
@@ -9,7 +10,7 @@ export const fetchUserTasks = async (
 ): Promise<void> => {
   try {
     // Create a complete SimpleUser object
-    const simpleUser = {
+    const simpleUser: SimpleUser = {
       id: user.id,
       organization_id: user.organization_id || '',
       email: user.email || '',

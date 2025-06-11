@@ -119,6 +119,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  
   const handleAddTask = async (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
     if (!user) return;
     const userData = { id: user.id, organization_id: user.organization_id };

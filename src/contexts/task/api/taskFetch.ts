@@ -43,7 +43,7 @@ export const fetchTasks = async (
     console.log(`Fetched ${rawTaskData?.length || 0} tasks from database`);
     
     // Fetch comments for all tasks with organization filtering
-    const { data: rawCommentData, error: commentError } = await supabase
+    const {data: rawCommentData, error: commentError } = await supabase
       .from('comments')
       .select('*')
       .eq('organization_id', user.organization_id);

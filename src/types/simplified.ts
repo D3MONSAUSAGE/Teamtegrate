@@ -1,9 +1,10 @@
+
 // Simplified interfaces for context layers to avoid deep type instantiation
 
 export interface SimpleUser {
   id: string;
   email: string;
-  role: string;
+  role: 'user' | 'manager' | 'admin' | 'superadmin';
   organization_id: string;
 }
 
