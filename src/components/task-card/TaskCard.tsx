@@ -42,17 +42,29 @@ const TaskCard: React.FC<TaskCardProps> = ({
     }
   };
 
+  const handleClick = () => {
+    if (onClick) {
+      onClick(task);
+    }
+  };
+
   return (
     <Card className="group relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 glass-card border-2 border-border/40 hover:border-primary/30 bg-gradient-to-br from-card/95 via-card/90 to-card/85 backdrop-blur-xl">
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       
       <div className="relative z-10 p-6 space-y-4">
         <TaskCardHeader 
-          task={task} 
+          title={task.title}
+          priority={task.priority}
           onEdit={permissions.canEdit ? handleEdit : undefined}
         />
         
-        <TaskCardContent task={task} onClick={onClick} />
+        <TaskCardContent 
+          task={task}
+          handleStatusChange={handleStatusChange}
+          commentCount={task.comments?.length || 0}
+          onShowComments={handleClick}
+        />
         
         {/* Access reason badge */}
         {permissions.accessReason !== 'creator' && permissions.accessReason !== 'assigned' && (

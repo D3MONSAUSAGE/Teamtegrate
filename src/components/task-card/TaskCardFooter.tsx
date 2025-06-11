@@ -2,7 +2,7 @@
 import React from 'react';
 import { MessageCircle, CheckCircle, Clock, Play } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
-import { TaskStatus } from '@/types';
+import { TaskStatus, Task } from '@/types';
 import {
   Select,
   SelectContent,
@@ -13,19 +13,15 @@ import {
 import { cn } from '@/lib/utils';
 
 interface TaskCardFooterProps {
-  status: TaskStatus;
-  isOverdue: boolean;
-  commentCount: number;
-  onShowComments: () => void;
+  task: Task;
   onStatusChange?: (status: TaskStatus) => void;
+  showProjectInfo?: boolean;
 }
 
 const TaskCardFooter: React.FC<TaskCardFooterProps> = ({
-  status,
-  isOverdue,
-  commentCount,
-  onShowComments,
-  onStatusChange
+  task,
+  onStatusChange,
+  showProjectInfo
 }) => {
   const getStatusConfig = (status: TaskStatus) => {
     switch(status) {
@@ -56,8 +52,9 @@ const TaskCardFooter: React.FC<TaskCardFooterProps> = ({
     }
   };
 
-  const statusConfig = getStatusConfig(status);
+  const statusConfig = getStatusConfig(task.status);
   const StatusIcon = statusConfig.icon;
+  const commentCount = task.comments?.length || 0;
 
   const handleStatusChange = (newStatus: TaskStatus) => {
     if (onStatusChange) {
@@ -71,7 +68,7 @@ const TaskCardFooter: React.FC<TaskCardFooterProps> = ({
   return (
     <div className="flex items-center justify-between pt-2 gap-2">
       {/* Enhanced Status Selector - Reduced width */}
-      <Select value={status} onValueChange={handleStatusChange}>
+      <Select value={task.status} onValueChange={handleStatusChange}>
         <SelectTrigger className="w-[130px] h-10 border-2 border-border/40 bg-gradient-to-r from-background/90 to-background/70 backdrop-blur-sm rounded-xl hover:border-primary/40 transition-all duration-200 shadow-sm hover:shadow-md">
           <SelectValue>
             <Badge className={cn(
@@ -81,7 +78,7 @@ const TaskCardFooter: React.FC<TaskCardFooterProps> = ({
               statusConfig.shadowColor
             )}>
               <StatusIcon className="h-3 w-3 flex-shrink-0" />
-              <span className="truncate">{status}</span>
+              <span className="truncate">{task.status}</span>
             </Badge>
           </SelectValue>
         </SelectTrigger>
@@ -109,21 +106,15 @@ const TaskCardFooter: React.FC<TaskCardFooterProps> = ({
 
       {/* Enhanced Comments Button - Better spacing */}
       {commentCount > 0 && (
-        <button
-          onClick={onShowComments}
-          className={cn(
-            "flex items-center gap-2 px-3 py-2 rounded-xl backdrop-blur-sm flex-shrink-0",
-            "bg-gradient-to-r from-background/80 to-background/60",
-            "border border-border/40 shadow-sm",
-            "text-sm font-medium text-muted-foreground",
-            "hover:text-primary hover:bg-gradient-to-r hover:from-primary/5 hover:to-primary/10",
-            "hover:border-primary/30 hover:shadow-md hover:scale-105",
-            "transition-all duration-200"
-          )}
-        >
+        <div className={cn(
+          "flex items-center gap-2 px-3 py-2 rounded-xl backdrop-blur-sm flex-shrink-0",
+          "bg-gradient-to-r from-background/80 to-background/60",
+          "border border-border/40 shadow-sm",
+          "text-sm font-medium text-muted-foreground"
+        )}>
           <MessageCircle className="h-4 w-4 flex-shrink-0" />
           <span className="text-xs font-semibold">{commentCount}</span>
-        </button>
+        </div>
       )}
     </div>
   );

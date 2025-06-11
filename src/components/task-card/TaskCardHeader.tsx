@@ -3,14 +3,16 @@ import React from 'react';
 import { CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { AlertCircle, Clock, Zap, Star } from 'lucide-react';
+import { AlertCircle, Clock, Zap, Star, Edit } from 'lucide-react';
+import { Button } from "@/components/ui/button";
 
 interface TaskCardHeaderProps {
   title: string;
   priority: string;
+  onEdit?: () => void;
 }
 
-const TaskCardHeader: React.FC<TaskCardHeaderProps> = ({ title, priority }) => {
+const TaskCardHeader: React.FC<TaskCardHeaderProps> = ({ title, priority, onEdit }) => {
   const getPriorityConfig = (priority: string) => {
     switch(priority) {
       case 'Low': 
@@ -47,12 +49,24 @@ const TaskCardHeader: React.FC<TaskCardHeaderProps> = ({ title, priority }) => {
     <CardHeader className="p-6 pb-4 space-y-4 relative">
       <div className="flex items-start justify-between gap-4">
         {/* Title with better spacing to avoid ribbon overlap */}
-        <CardTitle className="text-lg font-bold leading-tight line-clamp-2 flex-1 min-w-0 text-foreground group-hover:text-primary/90 transition-colors duration-300 ml-8">
+        <CardTitle className="text-lg font-bold leading-tight line-clamp-2 flex-1 min-w-0 text-foreground group-hover:text-primary/90 transition-colors duration-300">
           {title}
         </CardTitle>
         
-        {/* Enhanced Floating Priority Badge - Positioned to avoid overlap */}
-        <div className="relative shrink-0 ml-2">
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Edit button */}
+          {onEdit && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onEdit}
+              className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+          )}
+          
+          {/* Enhanced Floating Priority Badge */}
           <Badge className={cn(
             "font-bold rounded-xl border-2 backdrop-blur-sm",
             "flex items-center gap-2 px-3 py-2 text-sm",
