@@ -1,4 +1,3 @@
-
 import { Task } from '@/types';
 import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,7 +20,7 @@ export const deleteTask = async (
       .from('tasks')
       .delete()
       .eq('id', taskId)
-      .eq('organization_id', user.organization_id);
+      .eq('organization_id', user.organization_id!);
 
     if (error) {
       console.error('Error deleting task:', error);

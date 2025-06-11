@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -20,12 +19,7 @@ export function useChatSendMessage(roomId: string, userId: string | undefined) {
       return;
     }
 
-    try {
-      if (!validateUserOrganization(user)) {
-        toast.error('User must belong to an organization to send messages');
-        return;
-      }
-    } catch (error) {
+    if (!validateUserOrganization(user)) {
       toast.error('User must belong to an organization to send messages');
       return;
     }
@@ -75,14 +69,14 @@ export function useChatSendMessage(roomId: string, userId: string | undefined) {
         .from('chat_rooms')
         .select('name')
         .eq('id', roomId)
-        .eq('organization_id', user.organization_id)
+        .eq('organization_id', user.organization_id!)
         .single();
 
       const { data: userData } = await supabase
         .from('users')
         .select('name')
         .eq('id', userId)
-        .eq('organization_id', user.organization_id)
+        .eq('organization_id', user.organization_id!)
         .single();
 
       // Create notifications for other participants

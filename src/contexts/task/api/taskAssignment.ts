@@ -1,4 +1,3 @@
-
 import { Task } from '@/types';
 import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -22,7 +21,7 @@ export const assignTaskToProject = async (
       .from('tasks')
       .update({ project_id: projectId })
       .eq('id', taskId)
-      .eq('organization_id', user.organization_id)
+      .eq('organization_id', user.organization_id!)
       .select();
 
     if (error) {
@@ -80,7 +79,7 @@ export const assignTaskToUser = async (
         assigned_to_names: [userName]
       })
       .eq('id', taskId)
-      .eq('organization_id', user.organization_id)
+      .eq('organization_id', user.organization_id!)
       .select();
 
     if (error) {

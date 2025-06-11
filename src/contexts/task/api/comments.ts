@@ -1,4 +1,3 @@
-
 import { TaskComment } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from '@/components/ui/sonner';
@@ -19,7 +18,7 @@ export const fetchTaskComments = async (
       .from('comments')
       .select('*')
       .eq('task_id', taskId)
-      .eq('organization_id', user.organization_id);
+      .eq('organization_id', user.organization_id!);
     
     if (error) {
       console.error('Error fetching comments:', error);

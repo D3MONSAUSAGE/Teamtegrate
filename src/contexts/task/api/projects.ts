@@ -1,4 +1,3 @@
-
 import { Project, User, ProjectStatus } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
@@ -15,16 +14,14 @@ export const addProject = async (
       return null;
     }
     
-    // Generate a unique ID for the project
+    // generate unique ID and prepare project data
     const projectId = uuidv4();
     const now = new Date();
     const nowISO = now.toISOString();
     
-    // Explicitly ensure status and is_completed are synchronized
     let status = project.status || 'To Do';
     let isCompleted = project.is_completed || false;
     
-    // Always enforce consistency
     if (status === 'Completed') {
       isCompleted = true;
     } else if (isCompleted) {
@@ -63,6 +60,7 @@ export const addProject = async (
       return null;
     }
 
+    // create new project object and return
     const newProject: Project = {
       id: projectId,
       title: project.title,

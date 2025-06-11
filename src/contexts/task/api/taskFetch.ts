@@ -1,4 +1,3 @@
-
 import { Task } from '@/types';
 import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -16,10 +15,7 @@ export const fetchTasks = async (
   try {
     console.log('Fetching tasks for user:', user?.id, 'org:', user?.organization_id);
     
-    validateUserOrganization(user);
-    
-    if (!user?.organization_id) {
-      console.error('User missing organization_id');
+    if (!validateUserOrganization(user)) {
       toast.error('User must belong to an organization to view tasks');
       return;
     }
@@ -28,7 +24,7 @@ export const fetchTasks = async (
     const { data: taskData, error } = await supabase
       .from('tasks')
       .select('*')
-      .eq('organization_id', user.organization_id);
+      .eq('organization_id', user!.organization_id);
 
     if (error) {
       console.error('Error fetching tasks:', error);
@@ -42,7 +38,7 @@ export const fetchTasks = async (
     const { data: commentData, error: commentError } = await supabase
       .from('comments')
       .select('*')
-      .eq('organization_id', user.organization_id);
+      .eq('organization_id', user!.organization_id);
 
     if (commentError) {
       console.error('Error fetching comments:', commentError);
@@ -51,7 +47,7 @@ export const fetchTasks = async (
     // Transform database format to application format
     const transformedTasks: Task[] = taskData.map((dbTask) => ({
       id: dbTask.id,
-      userId: dbTask.user_id || user.id,
+      userId: dbTask.user_id || user!.id,
       projectId: dbTask.project_id || undefined,
       title: dbTask.title || '',
       description: dbTask.description || '',
@@ -61,7 +57,7 @@ export const fetchTasks = async (
       createdAt: parseDate(dbTask.created_at),
       updatedAt: parseDate(dbTask.updated_at),
       assignedToId: dbTask.assigned_to_id || undefined,
-      assignedToName: dbTask.assigned_to_names?.[0] || undefined, // Use first name from array
+      assignedToName: dbTask.assigned_to_names?.[0] || undefined,
       assignedToIds: dbTask.assigned_to_ids || [],
       assignedToNames: dbTask.assigned_to_names || [],
       tags: [],
@@ -70,7 +66,7 @@ export const fetchTasks = async (
         .map(comment => ({
           id: comment.id,
           userId: comment.user_id,
-          userName: 'User', // Will be populated from user data
+          userName: 'User',
           text: comment.content,
           createdAt: parseDate(comment.created_at),
         })),

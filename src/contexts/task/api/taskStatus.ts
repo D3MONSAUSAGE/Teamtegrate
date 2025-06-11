@@ -1,4 +1,3 @@
-
 import { Task } from '@/types';
 import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -20,10 +19,7 @@ export const updateTaskStatus = async (
   }>>
 ): Promise<void> => {
   try {
-    validateUserOrganization(user);
-    
-    if (!user?.organization_id) {
-      console.error('User missing organization_id');
+    if (!validateUserOrganization(user)) {
       return;
     }
     
@@ -40,8 +36,8 @@ export const updateTaskStatus = async (
     let completedByName = undefined;
     
     if (status === 'Completed') {
-      completedById = user.id;
-      completedByName = user.name || task.assignedToName || 'User';
+      completedById = user!.id;
+      completedByName = user!.name || task.assignedToName || 'User';
     }
 
     const { error } = await supabase
@@ -52,7 +48,7 @@ export const updateTaskStatus = async (
         completed_by_id: completedById,
       })
       .eq('id', taskId)
-      .eq('organization_id', user.organization_id);
+      .eq('organization_id', user!.organization_id);
 
     if (error) {
       console.error('Error updating task status:', error);
@@ -67,8 +63,8 @@ export const updateTaskStatus = async (
           ...t, 
           status: status, 
           completedAt: status === 'Completed' ? now : undefined,
-          completedById: status === 'Completed' ? user.id : undefined,
-          completedByName: status === 'Completed' ? (user.name || t.assignedToName || 'User') : undefined
+          completedById: status === 'Completed' ? user!.id : undefined,
+          completedByName: status === 'Completed' ? (user!.name || t.assignedToName || 'User') : undefined
         } : t
       )
     );
@@ -82,8 +78,8 @@ export const updateTaskStatus = async (
             ...t, 
             status: status, 
             completedAt: status === 'Completed' ? now : undefined,
-            completedById: status === 'Completed' ? user.id : undefined,
-            completedByName: status === 'Completed' ? (user.name || t.assignedToName || 'User') : undefined
+            completedById: status === 'Completed' ? user!.id : undefined,
+            completedByName: status === 'Completed' ? (user!.name || t.assignedToName || 'User') : undefined
           } : t
         ),
       }))

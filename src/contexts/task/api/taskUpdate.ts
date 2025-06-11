@@ -1,4 +1,3 @@
-
 import { Task } from '@/types';
 import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -62,7 +61,7 @@ export const updateTask = async (
       .from('tasks')
       .update(updatePayload)
       .eq('id', taskId)
-      .eq('organization_id', user.organization_id);
+      .eq('organization_id', user.organization_id!);
 
     if (error) {
       console.error('Error updating task:', error);
