@@ -2,7 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 
 // Helper function to validate user has organization
-export const validateUserOrganization = (user: { id: string; organization_id?: string } | null): user is { id: string; organization_id: string } => {
+export const validateUserOrganization = (user: { id: string; organization_id?: string } | null): void => {
   if (!user) {
     throw new Error('User is required for this operation');
   }
@@ -10,8 +10,6 @@ export const validateUserOrganization = (user: { id: string; organization_id?: s
   if (!user.organization_id) {
     throw new Error('User must belong to an organization');
   }
-  
-  return true;
 };
 
 // Helper function to add organization_id to insert data

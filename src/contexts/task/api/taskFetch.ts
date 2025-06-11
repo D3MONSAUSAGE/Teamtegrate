@@ -10,13 +10,15 @@ const parseDate = (dateStr: string | null): Date => {
 };
 
 export const fetchTasks = async (
-  user: { id: string, organization_id?: string },
+  user: { id: string; organization_id?: string } | null,
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>
 ): Promise<void> => {
   try {
-    console.log('Fetching tasks for user:', user.id, 'org:', user.organization_id);
+    console.log('Fetching tasks for user:', user?.id, 'org:', user?.organization_id);
     
-    if (!validateUserOrganization(user)) {
+    validateUserOrganization(user);
+    
+    if (!user?.organization_id) {
       console.error('User missing organization_id');
       toast.error('User must belong to an organization to view tasks');
       return;

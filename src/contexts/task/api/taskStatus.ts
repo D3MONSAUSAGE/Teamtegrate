@@ -7,7 +7,7 @@ import { validateUserOrganization } from '@/utils/organizationHelpers';
 export const updateTaskStatus = async (
   taskId: string,
   status: Task['status'],
-  user: { id: string, name?: string, organization_id?: string },
+  user: { id: string; name?: string; organization_id?: string } | null,
   tasks: Task[],
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>,
   projects: any[],
@@ -20,7 +20,10 @@ export const updateTaskStatus = async (
   }>>
 ): Promise<void> => {
   try {
-    if (!validateUserOrganization(user)) {
+    validateUserOrganization(user);
+    
+    if (!user?.organization_id) {
+      console.error('User missing organization_id');
       return;
     }
     
