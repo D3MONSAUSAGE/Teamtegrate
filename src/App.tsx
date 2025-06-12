@@ -36,7 +36,7 @@ function App() {
           {/* Single global AuthProvider for entire app */}
           <AuthProvider>
             <Routes>
-              {/* Public routes - work within global AuthProvider */}
+              {/* Public routes - work within global AuthProvider but not protected */}
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<SimpleLoginPage />} />
               
