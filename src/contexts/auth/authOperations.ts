@@ -1,27 +1,58 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { UserRole } from '@/types';
 
 export const login = async (email: string, password: string) => {
   try {
-    console.log('Attempting login for:', email);
+    console.log('🔑 AuthOps: Attempting login for:', email);
     
-    const { data, error } = await supabase.auth.signInWithPassword({
+    // Add timeout to login operation
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('Login timeout')), 30000);
+    });
+
+    const loginPromise = supabase.auth.signInWithPassword({
       email,
       password,
     });
 
+    const { data, error } = await Promise.race([loginPromise, timeoutPromise]);
+
     if (error) {
-      console.error('Login error:', error);
-      toast.error(error.message);
+      console.error('❌ AuthOps: Login error:', error);
+      
+      // Provide specific error messages
+      if (error.message?.includes('Invalid login credentials')) {
+        toast.error('Invalid email or password. Please check your credentials and try again.');
+      } else if (error.message?.includes('Email not confirmed')) {
+        toast.error('Please confirm your email address before logging in.');
+      } else if (error.message?.includes('Too many requests')) {
+        toast.error('Too many login attempts. Please wait a few minutes and try again.');
+      } else {
+        toast.error(`Login failed: ${error.message}`);
+      }
       throw error;
     }
 
-    console.log('Login successful for:', email);
+    if (!data?.user) {
+      console.error('❌ AuthOps: No user data returned after login');
+      toast.error('Login failed: No user data received');
+      throw new Error('No user data returned');
+    }
+
+    console.log('✅ AuthOps: Login successful for:', email);
+    toast.success('Successfully logged in!');
     return data;
+    
   } catch (error) {
-    console.error('Login failed:', error);
+    console.error('❌ AuthOps: Login failed:', error);
+    
+    if (error instanceof Error) {
+      if (error.message === 'Login timeout') {
+        toast.error('Login request timed out. Please check your connection and try again.');
+      }
+    }
+    
     throw error;
   }
 };

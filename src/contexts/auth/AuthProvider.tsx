@@ -13,7 +13,7 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  console.log('🚀 AuthProvider: Initializing with DETAILED debugging');
+  console.log('🚀 AuthProvider: Initializing with improved error handling');
 
   const {
     user,
@@ -37,7 +37,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const isAuthenticated = !!user && !!session;
 
-  console.log('📊 AuthProvider: DETAILED current state:', {
+  console.log('📊 AuthProvider: Current state:', {
     loading,
     hasUser: !!user,
     isAuthenticated,
@@ -46,15 +46,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     organizationId: user?.organizationId,
     userRole: user?.role,
     sessionExists: !!session,
-    sessionUserId: session?.user?.id,
-    sessionUserEmail: session?.user?.email,
-    sessionExpiry: session?.expires_at ? new Date(session.expires_at * 1000) : 'N/A',
     sessionValid: session?.expires_at ? new Date(session.expires_at * 1000) > new Date() : false
   });
 
   // Enhanced debug logging for auth provider state changes
   React.useEffect(() => {
-    console.log('🔄 AuthProvider: DETAILED state change detected:', {
+    console.log('🔄 AuthProvider: State change detected:', {
       timestamp: new Date().toISOString(),
       loading,
       user: user ? {
@@ -68,47 +65,40 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         userId: session.user?.id,
         userEmail: session.user?.email,
         hasAccessToken: !!session.access_token,
-        accessTokenLength: session.access_token?.length || 0,
-        expiresAt: session.expires_at,
-        expiresAtDate: session.expires_at ? new Date(session.expires_at * 1000) : 'N/A',
         isValid: session.expires_at ? new Date(session.expires_at * 1000) > new Date() : false
       } : null,
-      isAuthenticated,
-      hasRoleAccess: typeof hasRoleAccess === 'function' ? 'FUNCTION' : hasRoleAccess,
-      canManageUser: typeof canManageUser === 'function' ? 'FUNCTION' : canManageUser
+      isAuthenticated
     });
   }, [loading, user, session, isAuthenticated]);
 
-  // Only test RLS policies when user is authenticated and we're sure auth is working
-  // Don't run this for public page visitors
+  // Simplified RLS testing - only run when user is fully authenticated and stable
   React.useEffect(() => {
-    if (isAuthenticated && user && user.organizationId) {
-      console.log('🔍 DETAILED RLS TESTING: User authenticated, testing policies...');
-      console.log('🔍 User details for RLS test:', {
-        userId: user.id,
-        email: user.email,
-        organizationId: user.organizationId,
-        role: user.role
-      });
-      
-      testRLSPolicies().then(result => {
-        if (result.success) {
-          console.log('✅ DETAILED RLS TEST SUCCESS:', result);
-        } else {
-          console.error('❌ DETAILED RLS TEST FAILURE:', result.error);
-        }
-      }).catch(error => {
-        console.error('❌ RLS test promise rejection:', error);
-      });
+    if (isAuthenticated && user && user.organizationId && !loading) {
+      // Add delay to ensure auth is stable
+      const testTimeout = setTimeout(() => {
+        console.log('🔍 RLS TESTING: User fully authenticated, testing policies...');
+        
+        testRLSPolicies().then(result => {
+          if (result.success) {
+            console.log('✅ RLS TEST SUCCESS:', result);
+          } else {
+            console.error('❌ RLS TEST FAILURE:', result.error);
+          }
+        }).catch(error => {
+          console.error('❌ RLS test promise rejection:', error);
+        });
+      }, 2000); // 2 second delay
+
+      return () => clearTimeout(testTimeout);
     } else {
-      console.log('🔍 RLS TESTING: Skipping - user not authenticated or missing data:', {
+      console.log('🔍 RLS TESTING: Skipping - conditions not met:', {
         isAuthenticated,
         hasUser: !!user,
         userOrgId: user?.organizationId,
-        reason: !isAuthenticated ? 'not authenticated' : !user ? 'no user' : 'no org id'
+        loading
       });
     }
-  }, [isAuthenticated, user?.id, user?.organizationId]);
+  }, [isAuthenticated, user?.id, user?.organizationId, loading]);
 
   const value: AuthContextType = {
     user,

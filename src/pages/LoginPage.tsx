@@ -15,7 +15,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { toast } from '@/components/ui/sonner';
 import { UserRole } from '@/types';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import BrandLogo from '@/components/shared/BrandLogo';
 import MultiTenantSignupForm from '@/components/auth/MultiTenantSignupForm';
 
@@ -24,13 +24,15 @@ const LoginPage = () => {
   const [isLogin, setIsLogin] = useState(!searchParams.get('signup'));
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false); // Local loading state
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loginAttempts, setLoginAttempts] = useState(0);
   const { login, isAuthenticated, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   
   // Redirect if already logged in
   useEffect(() => {
     if (isAuthenticated && !authLoading) {
+      console.log('✅ LoginPage: User already authenticated, redirecting to dashboard');
       navigate('/dashboard');
     }
   }, [isAuthenticated, authLoading, navigate]);
@@ -44,37 +46,76 @@ const LoginPage = () => {
 
   // Reset submitting state when auth loading changes
   useEffect(() => {
-    if (!authLoading) {
+    if (!authLoading && isSubmitting) {
+      console.log('🔄 LoginPage: Auth loading finished, resetting submit state');
       setIsSubmitting(false);
     }
-  }, [authLoading]);
+  }, [authLoading, isSubmitting]);
+
+  // Auto-reset login attempts after 5 minutes
+  useEffect(() => {
+    if (loginAttempts > 0) {
+      const resetTimer = setTimeout(() => {
+        setLoginAttempts(0);
+        console.log('🔄 LoginPage: Login attempts reset');
+      }, 5 * 60 * 1000); // 5 minutes
+
+      return () => clearTimeout(resetTimer);
+    }
+  }, [loginAttempts]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!isLogin) {
-      // This shouldn't happen as signup is handled by MultiTenantSignupForm
-      return;
+      return; // Signup handled by MultiTenantSignupForm
     }
 
     if (isSubmitting) {
-      return; // Prevent double submission
+      console.log('⚠️ LoginPage: Submit already in progress, ignoring');
+      return;
     }
-    
+
+    // Rate limiting check
+    if (loginAttempts >= 3) {
+      toast.error('Too many login attempts. Please wait 5 minutes before trying again.');
+      return;
+    }
+
+    console.log('🔑 LoginPage: Starting login process for:', email);
     setIsSubmitting(true);
+    setLoginAttempts(prev => prev + 1);
     
     try {
       await login(email, password);
-      // Don't show success toast here as it will be handled by auth context
+      // Reset attempts on successful login
+      setLoginAttempts(0);
+      console.log('✅ LoginPage: Login successful, auth context will handle redirect');
     } catch (error) {
-      console.error('Authentication error:', error);
-      setIsSubmitting(false); // Reset loading state on error
+      console.error('❌ LoginPage: Login failed:', error);
+      setIsSubmitting(false);
+      
+      // Additional client-side error handling
+      if (error instanceof Error) {
+        if (error.message?.includes('network')) {
+          toast.error('Network error. Please check your connection and try again.');
+        } else if (error.message?.includes('timeout')) {
+          toast.error('Request timed out. Please try again.');
+        }
+      }
     }
   };
 
   const handleBackToLogin = () => {
     setIsLogin(true);
-    setIsSubmitting(false); // Reset any loading state
+    setIsSubmitting(false);
+    setLoginAttempts(0);
+  };
+
+  const handleRetryLogin = () => {
+    setIsSubmitting(false);
+    setPassword(''); // Clear password for security
+    toast.info('Please try logging in again.');
   };
   
   if (!isLogin) {
@@ -156,13 +197,41 @@ const LoginPage = () => {
                 />
               </div>
 
+              {loginAttempts > 0 && (
+                <div className="text-sm text-muted-foreground text-center">
+                  Login attempts: {loginAttempts}/3
+                  {loginAttempts >= 3 && <div className="text-destructive">Please wait 5 minutes before trying again</div>}
+                </div>
+              )}
+
               <Button 
                 type="submit" 
                 className="w-full" 
-                disabled={isSubmitting || !email || !password}
+                disabled={isSubmitting || !email || !password || loginAttempts >= 3}
               >
-                {isSubmitting ? 'Signing in...' : 'Sign In'}
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Signing in...
+                  </>
+                ) : (
+                  'Sign In'
+                )}
               </Button>
+
+              {isSubmitting && (
+                <div className="text-center">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleRetryLogin}
+                    className="text-muted-foreground"
+                  >
+                    Having trouble? Click here to retry
+                  </Button>
+                </div>
+              )}
             </form>
           </CardContent>
           <CardFooter>

@@ -7,30 +7,29 @@ import LandingPage from './LandingPage';
 const Index = () => {
   const { user, loading, isAuthenticated } = useAuth();
 
-  console.log('Index page - Loading:', loading, 'User:', !!user, 'IsAuthenticated:', isAuthenticated);
+  console.log('🏠 Index page - Loading:', loading, 'User:', !!user, 'IsAuthenticated:', isAuthenticated);
 
-  // If auth is still loading, show landing page immediately for better UX
-  // Landing page should be publicly accessible regardless of auth state
+  // Show landing page immediately while auth is loading for better UX
   if (loading) {
-    console.log('Index: Auth loading, showing landing page');
+    console.log('🏠 Index: Auth loading, showing landing page with no auth required');
     return <LandingPage />;
   }
 
-  // If user is authenticated and has all required data, redirect to dashboard
+  // If user is fully authenticated with all required data, redirect to dashboard
   if (isAuthenticated && user && user.organizationId) {
-    console.log('Index: User is fully authenticated, redirecting to dashboard');
+    console.log('🏠 Index: User fully authenticated, redirecting to dashboard');
     return <Navigate to="/dashboard" replace />;
   }
 
-  // If user is authenticated but missing organization, still redirect to dashboard
-  // (the dashboard will handle the organization setup message)
+  // If user is authenticated but missing organization, redirect to dashboard anyway
+  // The dashboard will handle showing appropriate messages
   if (isAuthenticated && user) {
-    console.log('Index: User authenticated but missing org data, redirecting to dashboard');
+    console.log('🏠 Index: User authenticated but incomplete data, redirecting to dashboard');
     return <Navigate to="/dashboard" replace />;
   }
 
-  // For unauthenticated users, show landing page
-  console.log('Index: Showing landing page for public user');
+  // For unauthenticated users or auth errors, show landing page
+  console.log('🏠 Index: Showing landing page for unauthenticated/error state');
   return <LandingPage />;
 };
 

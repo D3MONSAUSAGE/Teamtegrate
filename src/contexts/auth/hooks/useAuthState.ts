@@ -13,8 +13,13 @@ export const useAuthState = () => {
 
   const fetchUserProfile = async (userId: string): Promise<AppUser | null> => {
     try {
-      console.log('🔍 AuthState: Fetching user profile for:', userId);
+      console.log('🔍 AuthState: Starting profile fetch for user:', userId);
       
+      // Add timeout to profile fetch (30 seconds)
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Profile fetch timeout')), 30000);
+      });
+
       // Debug: Check current auth state before profile fetch
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       const { data: { session: currentSession } } = await supabase.auth.getSession();
@@ -27,9 +32,11 @@ export const useAuthState = () => {
         accessTokenLength: currentSession?.access_token?.length || 0
       });
 
-      // Only test organization ID function if user is authenticated
+      // Test organization ID function with better error handling
       console.log('🔍 AuthState: Testing get_current_user_organization_id function...');
-      const { data: orgId, error: orgError } = await supabase.rpc('get_current_user_organization_id');
+      const orgIdPromise = supabase.rpc('get_current_user_organization_id');
+      const { data: orgId, error: orgError } = await Promise.race([orgIdPromise, timeoutPromise]);
+      
       console.log('🔍 AuthState: Organization ID function result:', {
         organizationId: orgId,
         error: orgError?.message,
@@ -37,39 +44,88 @@ export const useAuthState = () => {
         errorDetails: orgError
       });
 
-      // Test basic auth functions
-      console.log('🔍 AuthState: Testing basic auth recognition...');
-      const { data: authTestData, error: authTestError } = await supabase
+      // Test basic auth functions with timeout
+      console.log('🔍 AuthState: Testing direct users table access...');
+      const userQueryPromise = supabase
         .from('users')
-        .select('id, email, organization_id')
+        .select('id, email, organization_id, role, name')
         .eq('id', userId)
         .single();
+        
+      const { data: authTestData, error: authTestError } = await Promise.race([userQueryPromise, timeoutPromise]);
       
       console.log('🔍 AuthState: Direct users table query result:', {
         data: authTestData,
         error: authTestError?.message,
-        hasData: !!authTestData
+        hasData: !!authTestData,
+        errorCode: authTestError?.code,
+        errorDetails: authTestError?.details
       });
-      
-      const { data, error } = await supabase
+
+      // If basic query failed, provide detailed error info
+      if (authTestError) {
+        console.error('❌ AuthState: Direct user query failed:', {
+          message: authTestError.message,
+          details: authTestError.details,
+          hint: authTestError.hint,
+          code: authTestError.code
+        });
+        
+        // Check if it's an RLS issue
+        if (authTestError.code === 'PGRST116' || authTestError.message?.includes('row-level security')) {
+          console.error('❌ AuthState: RLS policy preventing user access');
+          toast.error('Authentication error: Unable to access user data');
+        } else if (authTestError.code === '42P01') {
+          console.error('❌ AuthState: Users table does not exist');
+          toast.error('Database error: User table not found');
+        } else {
+          console.error('❌ AuthState: Unknown database error');
+          toast.error('Database connection error. Please try again.');
+        }
+        return null;
+      }
+
+      // Get full user profile
+      const profilePromise = supabase
         .from('users')
         .select('*')
         .eq('id', userId)
         .single();
+        
+      const { data, error } = await Promise.race([profilePromise, timeoutPromise]);
 
       if (error) {
-        console.error('❌ AuthState: Error fetching user profile:', error);
-        console.log('❌ AuthState: Error details:', {
+        console.error('❌ AuthState: Error fetching full user profile:', error);
+        console.log('❌ AuthState: Profile fetch error details:', {
           message: error.message,
           details: error.details,
           hint: error.hint,
           code: error.code
         });
+        
+        // Use the basic data if available as fallback
+        if (authTestData) {
+          console.log('🔄 AuthState: Using fallback user data');
+          const fallbackUser: AppUser = {
+            id: authTestData.id,
+            email: authTestData.email,
+            name: authTestData.name || authTestData.email,
+            role: (authTestData.role as UserRole) || 'user',
+            organizationId: authTestData.organization_id || '',
+            timezone: 'UTC',
+            createdAt: new Date(),
+          };
+          setSessionHealthy(true);
+          return fallbackUser;
+        }
+        
+        toast.error('Failed to load user profile. Please try logging in again.');
         return null;
       }
 
       if (!data) {
         console.error('❌ AuthState: No user data returned');
+        toast.error('User profile not found. Please contact support.');
         return null;
       }
 
@@ -83,19 +139,42 @@ export const useAuthState = () => {
 
       setSessionHealthy(true);
 
-      return {
+      const userData: AppUser = {
         id: data.id,
         email: data.email,
-        name: data.name,
+        name: data.name || data.email,
         role: data.role as UserRole,
-        organizationId: data.organization_id,
+        organizationId: data.organization_id || '',
         avatar_url: data.avatar_url,
-        timezone: data.timezone,
+        timezone: data.timezone || 'UTC',
         createdAt: new Date(),
       };
+
+      // Warn if organization is missing
+      if (!userData.organizationId) {
+        console.warn('⚠️ AuthState: User has no organization ID');
+        toast.error('Your account needs to be associated with an organization. Please contact support.');
+      }
+
+      return userData;
+
     } catch (error) {
       console.error('❌ AuthState: Error in fetchUserProfile:', error);
       setSessionHealthy(false);
+      
+      if (error instanceof Error) {
+        if (error.message === 'Profile fetch timeout') {
+          console.error('❌ AuthState: Profile fetch timed out');
+          toast.error('Profile loading timed out. Please try again.');
+        } else {
+          console.error('❌ AuthState: Unexpected error:', error.message);
+          toast.error('An unexpected error occurred. Please try again.');
+        }
+      } else {
+        console.error('❌ AuthState: Unknown error type:', error);
+        toast.error('Authentication failed. Please try again.');
+      }
+      
       return null;
     }
   };
@@ -115,6 +194,7 @@ export const useAuthState = () => {
     } catch (error) {
       console.error('❌ AuthState: Error refreshing session:', error);
       setSessionHealthy(false);
+      toast.error('Failed to refresh session. Please log in again.');
     }
   };
 
@@ -122,18 +202,17 @@ export const useAuthState = () => {
     let isMounted = true;
     let authTimeout: NodeJS.Timeout;
     
-    console.log('🚀 AuthState: Setting up enhanced auth initialization with DETAILED debugging');
+    console.log('🚀 AuthState: Setting up simplified auth initialization');
     
-    // Set a timeout to prevent infinite loading (5 seconds for public pages)
+    // Reduced timeout for better UX (3 seconds for public pages)
     authTimeout = setTimeout(() => {
       if (isMounted && loading) {
         console.log('⏰ AuthState: Auth timeout reached, stopping loading state');
         setLoading(false);
-        // Don't show error toast for public pages
       }
-    }, 5000);
+    }, 3000);
 
-    // Set up auth state listener - this is the primary source of truth
+    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!isMounted) return;
@@ -159,13 +238,16 @@ export const useAuthState = () => {
             const userData = await fetchUserProfile(session.user.id);
             if (isMounted) {
               setUser(userData);
-              console.log('✅ AuthState: User profile loaded successfully:', userData);
+              if (userData) {
+                console.log('✅ AuthState: User profile loaded successfully');
+              } else {
+                console.log('❌ AuthState: Failed to load user profile');
+              }
             }
           } catch (error) {
             console.error('❌ AuthState: Error loading user profile:', error);
             if (isMounted) {
               setUser(null);
-              // Only show toast if user was trying to authenticate
               if (event === 'SIGNED_IN') {
                 toast.error('Failed to load user profile. Please try refreshing the page.');
               }
@@ -184,48 +266,43 @@ export const useAuthState = () => {
       }
     );
 
-    // Check for existing session only once, after setting up the listener
+    // Simplified initial session check
     const checkInitialSession = async () => {
       try {
-        console.log('🔍 AuthState: Initial session check...');
+        console.log('🔍 AuthState: Checking initial session...');
         
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
-          console.error('❌ AuthState: Error getting session:', error);
+          console.error('❌ AuthState: Error getting initial session:', error);
           if (isMounted) {
             setLoading(false);
-            // Don't show error for public page visitors
           }
           return;
         }
         
-        console.log('🔍 AuthState: Initial session check result:', {
+        console.log('🔍 AuthState: Initial session result:', {
           hasSession: !!session,
-          sessionUserId: session?.user?.id,
-          sessionUserEmail: session?.user?.email
+          sessionUserId: session?.user?.id
         });
         
-        if (session?.user && isMounted) {
-          console.log('📄 AuthState: Initial session found, will be processed by auth listener');
-          // The onAuthStateChange listener will handle this session
-        } else {
-          console.log('🏠 AuthState: No initial session found - showing public content');
-          if (isMounted) {
-            setLoading(false);
-          }
+        // If no session, stop loading immediately for public access
+        if (!session && isMounted) {
+          console.log('🏠 AuthState: No session found - enabling public access');
+          setLoading(false);
         }
+        // If session exists, the auth listener will handle it
+        
       } catch (error) {
         console.error('❌ AuthState: Error in checkInitialSession:', error);
         if (isMounted) {
           setLoading(false);
-          // Don't show error for public page visitors
         }
       }
     };
 
-    // Small delay to ensure the listener is set up before checking session
-    setTimeout(checkInitialSession, 100);
+    // Check session immediately
+    checkInitialSession();
 
     return () => {
       isMounted = false;
