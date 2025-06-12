@@ -19,15 +19,34 @@ export const testProjectsRLSPolicies = async () => {
       console.log(`✅ Projects RLS test passed: ${projects?.length || 0} projects returned`);
     }
 
+    // Get current user's organization for test project
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      console.error('No authenticated user found for testing');
+      return { success: false, error: 'No authenticated user' };
+    }
+
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('organization_id')
+      .eq('id', user.id)
+      .single();
+
+    if (userError || !userData?.organization_id) {
+      console.error('Failed to get user organization for testing:', userError);
+      return { success: false, error: userError || 'No organization found' };
+    }
+
     // Test project insertion - should automatically set organization_id
     const testProject = {
       id: `test-${Date.now()}`,
       title: 'RLS Test Project',
       description: 'Testing RLS policies',
       status: 'To Do',
-      manager_id: (await supabase.auth.getUser()).data.user?.id,
+      manager_id: user.id,
       start_date: new Date().toISOString(),
-      end_date: new Date(Date.now() + 86400000).toISOString() // Tomorrow
+      end_date: new Date(Date.now() + 86400000).toISOString(), // Tomorrow
+      organization_id: userData.organization_id // Add required organization_id
     };
 
     const { data: insertedProject, error: insertError } = await supabase
