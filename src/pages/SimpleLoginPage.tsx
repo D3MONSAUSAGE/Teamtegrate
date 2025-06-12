@@ -48,18 +48,6 @@ const SimpleLoginPage = () => {
       setIsLogin(false);
     }
   }, [searchParams]);
-
-  // Show loading screen while auth is initializing
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    );
-  }
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
