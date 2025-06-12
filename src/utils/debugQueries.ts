@@ -12,12 +12,12 @@ export const runDebugQueries = async () => {
   const { data: orgId, error: orgError } = await supabase.rpc('get_current_user_organization_id');
   console.log('🏢 Organization ID from function:', orgId, orgError);
   
-  // Test direct queries
+  // Test direct queries with proper table names
   const queries = [
-    { name: 'organizations', table: 'organizations' },
-    { name: 'users', table: 'users' },
-    { name: 'projects', table: 'projects' },
-    { name: 'tasks', table: 'tasks' }
+    { name: 'organizations', table: 'organizations' as const },
+    { name: 'users', table: 'users' as const },
+    { name: 'projects', table: 'projects' as const },
+    { name: 'tasks', table: 'tasks' as const }
   ];
   
   for (const query of queries) {

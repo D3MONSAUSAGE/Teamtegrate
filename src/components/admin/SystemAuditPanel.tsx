@@ -34,7 +34,7 @@ const SystemAuditPanel = () => {
       // 1. Authentication & Context Setup
       console.log('🔍 Starting System Audit...');
       
-      addResult('Authentication', 'info', 'Starting authentication audit...');
+      addResult('Authentication', 'warning', 'Starting authentication audit...');
       
       if (!isAuthenticated || !user) {
         addResult('Authentication', 'error', 'User not authenticated', { isAuthenticated, user });
@@ -58,7 +58,7 @@ const SystemAuditPanel = () => {
       }
 
       // 2. Direct database queries to verify data existence
-      addResult('Database Queries', 'info', 'Checking direct database access...');
+      addResult('Database Queries', 'warning', 'Checking direct database access...');
 
       // Get current user from auth.users
       const { data: authUser, error: authError } = await supabase.auth.getUser();
@@ -116,7 +116,7 @@ const SystemAuditPanel = () => {
         { orgsError, orgsData });
 
       // 3. Test RLS policies
-      addResult('RLS Testing', 'info', 'Testing RLS policies...');
+      addResult('RLS Testing', 'warning', 'Testing RLS policies...');
       
       try {
         const rlsTestResult = await testRLSPolicies();
@@ -138,14 +138,18 @@ const SystemAuditPanel = () => {
 
       // 4. Check for data in specific organization
       if (user.organizationId) {
-        addResult('Organization Data', 'info', 'Checking data in user organization...');
+        addResult('Organization Data', 'warning', 'Checking data in user organization...');
         
-        // Use raw SQL to bypass RLS and check actual data
-        const { data: rawProjectsData, error: rawProjectsError } = await supabase
-          .rpc('query_projects_raw', { org_id: user.organizationId });
+        // Check projects in user's organization by filtering directly
+        const { data: orgProjectsData, error: orgProjectsError } = await supabase
+          .from('projects')
+          .select('*')
+          .eq('organization_id', user.organizationId);
         
-        if (!rawProjectsError && rawProjectsData) {
-          addResult('Raw Projects Query', 'success', `Raw query found ${rawProjectsData.length} projects in organization`);
+        if (!orgProjectsError && orgProjectsData) {
+          addResult('Organization Projects', 'success', `Found ${orgProjectsData.length} projects in organization`);
+        } else {
+          addResult('Organization Projects', 'error', `Failed to query organization projects: ${orgProjectsError?.message}`);
         }
       }
 
