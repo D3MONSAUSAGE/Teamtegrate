@@ -12,10 +12,29 @@ export const useAuthOperations = (
   setLoading: (loading: boolean) => void
 ) => {
   const login = async (email: string, password: string) => {
+    console.log('🔑 useAuthOperations: Starting login process for:', email);
+    console.log('🔑 useAuthOperations: Current session before login:', {
+      hasSession: !!session,
+      sessionUserId: session?.user?.id,
+      sessionValid: session?.expires_at ? new Date(session.expires_at * 1000) > new Date() : false
+    });
+    
     setLoading(true);
     try {
-      await authLogin(email, password);
+      console.log('🔑 useAuthOperations: Calling authLogin...');
+      const result = await authLogin(email, password);
+      console.log('✅ useAuthOperations: Login successful, result:', {
+        hasUser: !!result.user,
+        hasSession: !!result.session,
+        userId: result.user?.id,
+        userEmail: result.user?.email
+      });
+      
+      // Don't set loading to false here - let the auth state change handle it
+      console.log('✅ useAuthOperations: Login completed, waiting for auth state change...');
+      
     } catch (error) {
+      console.error('❌ useAuthOperations: Login failed:', error);
       setLoading(false);
       throw error;
     }

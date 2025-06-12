@@ -4,30 +4,56 @@ import { UserRole } from '@/types';
 
 export const login = async (email: string, password: string) => {
   try {
-    console.log('🔑 AuthOps: Attempting login for:', email);
+    console.log('🔑 AuthOps: Starting login attempt for:', email);
+    console.log('🔑 AuthOps: Current Supabase client state check...');
     
-    // Add timeout to login operation
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new Error('Login timeout')), 30000);
+    // Check current session before login
+    const { data: { session: currentSession } } = await supabase.auth.getSession();
+    console.log('🔑 AuthOps: Current session before login:', {
+      hasSession: !!currentSession,
+      sessionUserId: currentSession?.user?.id,
+      sessionValid: currentSession?.expires_at ? new Date(currentSession.expires_at * 1000) > new Date() : false
     });
 
-    const loginPromise = supabase.auth.signInWithPassword({
-      email,
+    // Attempt login with detailed error handling
+    console.log('🔑 AuthOps: Calling supabase.auth.signInWithPassword...');
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: email.trim().toLowerCase(),
       password,
     });
 
-    const { data, error } = await Promise.race([loginPromise, timeoutPromise]);
+    console.log('🔑 AuthOps: signInWithPassword response:', {
+      hasData: !!data,
+      hasUser: !!data?.user,
+      hasSession: !!data?.session,
+      userId: data?.user?.id,
+      userEmail: data?.user?.email,
+      sessionAccessToken: data?.session?.access_token ? 'present' : 'missing',
+      sessionExpiresAt: data?.session?.expires_at,
+      error: error ? {
+        message: error.message,
+        status: error.status,
+        details: error
+      } : null
+    });
 
     if (error) {
-      console.error('❌ AuthOps: Login error:', error);
+      console.error('❌ AuthOps: Login error details:', {
+        message: error.message,
+        status: error.status,
+        name: error.name,
+        stack: error.stack
+      });
       
-      // Provide specific error messages
+      // Provide specific error messages based on error type
       if (error.message?.includes('Invalid login credentials')) {
         toast.error('Invalid email or password. Please check your credentials and try again.');
       } else if (error.message?.includes('Email not confirmed')) {
         toast.error('Please confirm your email address before logging in.');
       } else if (error.message?.includes('Too many requests')) {
         toast.error('Too many login attempts. Please wait a few minutes and try again.');
+      } else if (error.message?.includes('network') || error.message?.includes('fetch')) {
+        toast.error('Network error. Please check your connection and try again.');
       } else {
         toast.error(`Login failed: ${error.message}`);
       }
@@ -40,17 +66,48 @@ export const login = async (email: string, password: string) => {
       throw new Error('No user data returned');
     }
 
+    if (!data?.session) {
+      console.error('❌ AuthOps: No session data returned after login');
+      toast.error('Login failed: No session data received');
+      throw new Error('No session data returned');
+    }
+
+    // Verify session is valid
+    const sessionValid = data.session.expires_at ? new Date(data.session.expires_at * 1000) > new Date() : false;
+    console.log('✅ AuthOps: Session validation:', {
+      expiresAt: data.session.expires_at,
+      expiresAtDate: data.session.expires_at ? new Date(data.session.expires_at * 1000) : null,
+      currentDate: new Date(),
+      isValid: sessionValid
+    });
+
+    if (!sessionValid) {
+      console.error('❌ AuthOps: Session is already expired');
+      toast.error('Login failed: Session expired immediately');
+      throw new Error('Session expired immediately');
+    }
+
     console.log('✅ AuthOps: Login successful for:', email);
+    console.log('✅ AuthOps: User data:', {
+      id: data.user.id,
+      email: data.user.email,
+      emailConfirmed: data.user.email_confirmed_at,
+      lastSignIn: data.user.last_sign_in_at,
+      metadata: data.user.user_metadata
+    });
+    
     toast.success('Successfully logged in!');
     return data;
     
   } catch (error) {
-    console.error('❌ AuthOps: Login failed:', error);
+    console.error('❌ AuthOps: Login failed with error:', error);
     
     if (error instanceof Error) {
-      if (error.message === 'Login timeout') {
-        toast.error('Login request timed out. Please check your connection and try again.');
-      }
+      console.error('❌ AuthOps: Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      });
     }
     
     throw error;

@@ -29,6 +29,15 @@ const LoginPage = () => {
   const { login, isAuthenticated, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   
+  // Debug auth state
+  useEffect(() => {
+    console.log('🔍 LoginPage: Auth state debug:', {
+      isAuthenticated,
+      authLoading,
+      isSubmitting
+    });
+  }, [isAuthenticated, authLoading, isSubmitting]);
+  
   // Redirect if already logged in
   useEffect(() => {
     if (isAuthenticated && !authLoading) {
@@ -82,21 +91,39 @@ const LoginPage = () => {
       return;
     }
 
-    console.log('🔑 LoginPage: Starting login process for:', email);
+    console.log('🔑 LoginPage: Starting login process');
+    console.log('🔑 LoginPage: Form data:', {
+      email: email,
+      passwordLength: password.length,
+      emailValid: email.includes('@'),
+      formValid: email && password
+    });
+    
     setIsSubmitting(true);
     setLoginAttempts(prev => prev + 1);
     
     try {
+      console.log('🔑 LoginPage: Calling auth login...');
       await login(email, password);
+      
       // Reset attempts on successful login
       setLoginAttempts(0);
-      console.log('✅ LoginPage: Login successful, auth context will handle redirect');
+      console.log('✅ LoginPage: Login call completed successfully');
+      
+      // Don't manually reset isSubmitting here - let auth state change handle it
+      
     } catch (error) {
       console.error('❌ LoginPage: Login failed:', error);
       setIsSubmitting(false);
       
       // Additional client-side error handling
       if (error instanceof Error) {
+        console.error('❌ LoginPage: Error details:', {
+          name: error.name,
+          message: error.message,
+          stack: error.stack
+        });
+        
         if (error.message?.includes('network')) {
           toast.error('Network error. Please check your connection and try again.');
         } else if (error.message?.includes('timeout')) {
@@ -116,6 +143,12 @@ const LoginPage = () => {
     setIsSubmitting(false);
     setPassword(''); // Clear password for security
     toast.info('Please try logging in again.');
+  };
+
+  const handleTestLogin = () => {
+    setEmail('generalmanager@guanatostacos.com');
+    setPassword('12345678');
+    console.log('🧪 LoginPage: Test credentials populated');
   };
   
   if (!isLogin) {
@@ -195,6 +228,20 @@ const LoginPage = () => {
                   disabled={isSubmitting}
                   required
                 />
+              </div>
+
+              {/* Debug section for testing */}
+              <div className="text-center">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleTestLogin}
+                  disabled={isSubmitting}
+                  className="text-xs"
+                >
+                  Use Test Credentials
+                </Button>
               </div>
 
               {loginAttempts > 0 && (
