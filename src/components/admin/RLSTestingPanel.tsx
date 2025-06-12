@@ -31,6 +31,7 @@ const RLSTestingPanel: React.FC = () => {
     isolation?: TestResult;
     basicRLS?: TestResult;
     orgIsolation?: TestResult;
+    error?: TestResult;
   }>({});
 
   const runAllTests = async () => {
