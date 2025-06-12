@@ -13,7 +13,7 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  console.log('🚀 AuthProvider: Initializing');
+  console.log('🚀 AuthProvider: Initializing with DETAILED debugging');
 
   const {
     user,
@@ -37,50 +37,76 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const isAuthenticated = !!user && !!session;
 
-  console.log('📊 AuthProvider: Current state', {
+  console.log('📊 AuthProvider: DETAILED current state:', {
     loading,
     hasUser: !!user,
     isAuthenticated,
     userEmail: user?.email,
+    userId: user?.id,
     organizationId: user?.organizationId,
+    userRole: user?.role,
     sessionExists: !!session,
     sessionUserId: session?.user?.id,
-    sessionExpiry: session?.expires_at ? new Date(session.expires_at * 1000) : 'N/A'
+    sessionUserEmail: session?.user?.email,
+    sessionExpiry: session?.expires_at ? new Date(session.expires_at * 1000) : 'N/A',
+    sessionValid: session?.expires_at ? new Date(session.expires_at * 1000) > new Date() : false
   });
 
   // Enhanced debug logging for auth provider state changes
   React.useEffect(() => {
-    console.log('🔄 AuthProvider: State change detected:', {
+    console.log('🔄 AuthProvider: DETAILED state change detected:', {
       timestamp: new Date().toISOString(),
       loading,
       user: user ? {
         id: user.id,
         email: user.email,
         organizationId: user.organizationId,
-        role: user.role
+        role: user.role,
+        name: user.name
       } : null,
       session: session ? {
         userId: session.user?.id,
+        userEmail: session.user?.email,
         hasAccessToken: !!session.access_token,
-        expiresAt: session.expires_at
+        accessTokenLength: session.access_token?.length || 0,
+        expiresAt: session.expires_at,
+        expiresAtDate: session.expires_at ? new Date(session.expires_at * 1000) : 'N/A',
+        isValid: session.expires_at ? new Date(session.expires_at * 1000) > new Date() : false
       } : null,
-      isAuthenticated
+      isAuthenticated,
+      hasRoleAccess: typeof hasRoleAccess === 'function' ? 'FUNCTION' : hasRoleAccess,
+      canManageUser: typeof canManageUser === 'function' ? 'FUNCTION' : canManageUser
     });
   }, [loading, user, session, isAuthenticated]);
 
-  // Test RLS policies when user is authenticated
+  // Test RLS policies when user is authenticated with detailed logging
   React.useEffect(() => {
     if (isAuthenticated && user) {
-      console.log('🔍 User authenticated, testing RLS policies...');
+      console.log('🔍 DETAILED RLS TESTING: User authenticated, testing policies...');
+      console.log('🔍 User details for RLS test:', {
+        userId: user.id,
+        email: user.email,
+        organizationId: user.organizationId,
+        role: user.role
+      });
+      
       testRLSPolicies().then(result => {
         if (result.success) {
-          console.log('✅ RLS policies working correctly:', result);
+          console.log('✅ DETAILED RLS TEST SUCCESS:', result);
         } else {
-          console.error('❌ RLS policies have issues:', result.error);
+          console.error('❌ DETAILED RLS TEST FAILURE:', result.error);
         }
+      }).catch(error => {
+        console.error('❌ RLS test promise rejection:', error);
+      });
+    } else {
+      console.log('🔍 RLS TESTING: Skipping - user not authenticated or missing data:', {
+        isAuthenticated,
+        hasUser: !!user,
+        userOrgId: user?.organizationId
       });
     }
-  }, [isAuthenticated, user?.id]);
+  }, [isAuthenticated, user?.id, user?.organizationId]);
 
   const value: AuthContextType = {
     user,
