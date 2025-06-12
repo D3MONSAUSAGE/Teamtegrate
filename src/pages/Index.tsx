@@ -3,12 +3,18 @@ import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import LandingPage from './LandingPage';
-import { Loader2 } from 'lucide-react';
 
 const Index = () => {
   const { user, loading, isAuthenticated } = useAuth();
 
   console.log('Index page - Loading:', loading, 'User:', !!user, 'IsAuthenticated:', isAuthenticated);
+
+  // If auth is still loading, show landing page immediately for better UX
+  // Landing page should be publicly accessible regardless of auth state
+  if (loading) {
+    console.log('Index: Auth loading, showing landing page');
+    return <LandingPage />;
+  }
 
   // If user is authenticated and has all required data, redirect to dashboard
   if (isAuthenticated && user && user.organizationId) {
@@ -23,9 +29,8 @@ const Index = () => {
     return <Navigate to="/dashboard" replace />;
   }
 
-  // For all other cases (including loading), show landing page
-  // Landing page should be publicly accessible
-  console.log('Index: Showing landing page');
+  // For unauthenticated users, show landing page
+  console.log('Index: Showing landing page for public user');
   return <LandingPage />;
 };
 

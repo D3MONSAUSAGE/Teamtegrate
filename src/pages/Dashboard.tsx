@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
@@ -31,9 +30,9 @@ const Dashboard = () => {
       <div className="h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading dashboard...</p>
+          <p className="text-muted-foreground">Loading workspace...</p>
           <p className="text-xs text-muted-foreground mt-2">
-            Setting up your workspace...
+            Setting up your dashboard...
           </p>
         </div>
       </div>
