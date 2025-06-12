@@ -14,6 +14,9 @@ export const useAuthState = () => {
     try {
       console.log('🔍 AuthState: Fetching user profile for:', userId);
       
+      // Add a small delay to ensure auth session is fully established
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       const { data, error } = await supabase
         .from('users')
         .select('*')
@@ -68,12 +71,18 @@ export const useAuthState = () => {
       try {
         const userProfile = await fetchUserProfile(session.user.id);
         setUser(userProfile);
+        
+        if (userProfile) {
+          console.log('✅ AuthState: Auth state updated successfully');
+        } else {
+          console.error('❌ AuthState: Failed to fetch user profile');
+          setSessionHealthy(false);
+        }
       } catch (error) {
         console.error('❌ AuthState: Profile fetch failed:', error);
         setUser(null);
         setSessionHealthy(false);
       } finally {
-        // Always clear loading state after profile fetch attempt
         setLoading(false);
       }
     } else {
@@ -159,7 +168,7 @@ export const useAuthState = () => {
       }
     );
 
-    // Initialize auth with timeout fallback
+    // Initialize auth
     initializeAuth();
     
     // Fallback timeout to ensure loading never stays true indefinitely
@@ -168,7 +177,7 @@ export const useAuthState = () => {
         console.log('⚠️ AuthState: Initialization timeout reached, forcing loading to false');
         setLoading(false);
       }
-    }, 5000); // Reduced to 5 seconds
+    }, 5000);
 
     return () => {
       isMounted = false;

@@ -57,17 +57,17 @@ const LoginPage = () => {
     }
     
     // Prevent double submission
-    if (isSubmitting || loading) {
-      console.log('LoginPage: Preventing double submission', { isSubmitting, loading });
+    if (isSubmitting) {
+      console.log('LoginPage: Preventing double submission');
       return;
     }
     
     setIsSubmitting(true);
-    console.log('LoginPage: Starting login submission');
+    console.log('LoginPage: Starting login submission for:', email);
     
     try {
       await login(email, password);
-      console.log('LoginPage: Login successful');
+      console.log('LoginPage: Login successful, will redirect via useEffect');
       toast.success('Welcome back!');
       // Don't redirect here - let the useEffect handle it when isAuthenticated changes
     } catch (error) {
@@ -114,7 +114,7 @@ const LoginPage = () => {
     );
   }
   
-  // Calculate if form should be disabled - simplified logic
+  // Form is disabled only when actively submitting
   const isFormDisabled = isSubmitting;
   
   return (
