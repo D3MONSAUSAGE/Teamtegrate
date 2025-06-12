@@ -14,10 +14,13 @@ export const useAuthState = () => {
     try {
       console.log('🔍 AuthState: Fetching user profile for:', userId, `(attempt ${4 - retries})`);
       
-      // Check if auth.uid() is available before making the query
+      // Wait a moment for auth.uid() to be available after session creation
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Verify auth.uid() is available before querying
       const { data: { user: authUser } } = await supabase.auth.getUser();
       if (!authUser) {
-        console.log('⚠️ AuthState: No authenticated user found, retrying...');
+        console.log('⚠️ AuthState: No authenticated user found');
         if (retries > 0) {
           await new Promise(resolve => setTimeout(resolve, 500));
           return await fetchUserProfile(userId, retries - 1);
@@ -37,7 +40,7 @@ export const useAuthState = () => {
         
         // If it's an RLS error and we have retries left, wait and try again
         if (error.code === 'PGRST116' && retries > 0) {
-          console.log('🔄 AuthState: RLS error, retrying after session stabilizes...');
+          console.log('🔄 AuthState: RLS error, retrying after delay...');
           await new Promise(resolve => setTimeout(resolve, 1000));
           return await fetchUserProfile(userId, retries - 1);
         }
@@ -95,22 +98,19 @@ export const useAuthState = () => {
       
       try {
         const userProfile = await fetchUserProfile(session.user.id);
-        setUser(userProfile);
         
         if (userProfile) {
+          setUser(userProfile);
           console.log('✅ AuthState: Auth state updated successfully');
         } else {
           console.error('❌ AuthState: Failed to fetch user profile after retries');
           setSessionHealthy(false);
-          // Clear session if we can't fetch profile after all retries
-          setSession(null);
-          setUser(null);
+          // Don't clear session immediately, let session recovery handle it
         }
       } catch (error) {
         console.error('❌ AuthState: Profile fetch failed:', error);
         setUser(null);
         setSessionHealthy(false);
-        setSession(null);
       } finally {
         setLoading(false);
       }
@@ -126,10 +126,18 @@ export const useAuthState = () => {
   const refreshUserSession = async (): Promise<void> => {
     try {
       console.log('🔄 AuthState: Refreshing user session...');
+      setLoading(true);
       
-      const { data: { session: newSession } } = await supabase.auth.getSession();
+      const { data: { session: newSession }, error } = await supabase.auth.refreshSession();
+      
+      if (error) {
+        console.error('❌ AuthState: Error refreshing session:', error);
+        setSessionHealthy(false);
+        setLoading(false);
+        return;
+      }
+      
       await updateAuthState(newSession);
-      
       console.log('✅ AuthState: Session refresh complete');
     } catch (error) {
       console.error('❌ AuthState: Error refreshing session:', error);
@@ -206,7 +214,7 @@ export const useAuthState = () => {
         console.log('⚠️ AuthState: Initialization timeout reached, forcing loading to false');
         setLoading(false);
       }
-    }, 10000); // Increased timeout to 10 seconds
+    }, 15000); // Increased timeout to 15 seconds
 
     return () => {
       isMounted = false;

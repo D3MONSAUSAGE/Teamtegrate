@@ -58,7 +58,7 @@ const LoginPage = () => {
       const recoveryTimeout = setTimeout(async () => {
         console.log('⚠️ LoginPage: Login seems stuck, attempting session recovery...');
         await attemptSessionRecovery();
-      }, 8000); // Wait 8 seconds before attempting recovery
+      }, 10000); // Wait 10 seconds before attempting recovery
 
       return () => clearTimeout(recoveryTimeout);
     }
