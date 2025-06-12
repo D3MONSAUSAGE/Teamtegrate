@@ -3,9 +3,11 @@ import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, Users, Database, TestTube } from 'lucide-react';
+import { Shield, Users, Database, TestTube, FileText } from 'lucide-react';
 import AdminUserManagement from '../profile/AdminUserManagement';
 import RLSTestingPanel from './RLSTestingPanel';
+import DataAuditPanel from './components/DataAuditPanel';
+import DataMigrationStatus from './components/DataMigrationStatus';
 
 const AdminDashboard: React.FC = () => {
   const { user, hasRoleAccess } = useAuth();
@@ -36,7 +38,7 @@ const AdminDashboard: React.FC = () => {
       </div>
 
       <Tabs defaultValue="users" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="users" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
             User Management
@@ -47,7 +49,11 @@ const AdminDashboard: React.FC = () => {
           </TabsTrigger>
           <TabsTrigger value="database" className="flex items-center gap-2">
             <Database className="h-4 w-4" />
-            Database Health
+            Data Audit
+          </TabsTrigger>
+          <TabsTrigger value="migration" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            Migration Status
           </TabsTrigger>
           <TabsTrigger value="testing" className="flex items-center gap-2">
             <TestTube className="h-4 w-4" />
@@ -120,25 +126,11 @@ const AdminDashboard: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="database" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Database className="h-5 w-5" />
-                Database Health
-              </CardTitle>
-              <CardDescription>
-                Monitor database performance and organization data integrity
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="text-center text-gray-500 py-8">
-                  <Database className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                  <p>Database health monitoring coming soon...</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <DataAuditPanel />
+        </TabsContent>
+
+        <TabsContent value="migration" className="space-y-6">
+          <DataMigrationStatus />
         </TabsContent>
 
         <TabsContent value="testing" className="space-y-6">

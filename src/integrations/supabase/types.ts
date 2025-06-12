@@ -1169,6 +1169,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      audit_organization_data: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          table_name: string
+          records_without_org: number
+          orphaned_records: number
+        }[]
+      }
       create_get_all_projects_function: {
         Args: Record<PropertyKey, never>
         Returns: boolean
