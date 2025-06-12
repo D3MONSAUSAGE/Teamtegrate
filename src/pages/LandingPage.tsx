@@ -1,18 +1,29 @@
 
 import React, { useEffect } from 'react';
-import LandingNavigation from '@/components/landing/LandingNavigation';
-import HeroSection from '@/components/landing/HeroSection';
-import FeaturesSection from '@/components/landing/FeaturesSection';
-import BenefitsSection from '@/components/landing/BenefitsSection';
-import TestimonialsSection from '@/components/landing/TestimonialsSection';
-import CTASection from '@/components/landing/CTASection';
-import LandingFooter from '@/components/landing/LandingFooter';
 import { useMobileOptimization } from '@/hooks/useMobileOptimization';
+
+// Lazy load components for better performance
+const LandingNavigation = React.lazy(() => import('@/components/landing/LandingNavigation'));
+const HeroSection = React.lazy(() => import('@/components/landing/HeroSection'));
+const FeaturesSection = React.lazy(() => import('@/components/landing/FeaturesSection'));
+const BenefitsSection = React.lazy(() => import('@/components/landing/BenefitsSection'));
+const TestimonialsSection = React.lazy(() => import('@/components/landing/TestimonialsSection'));
+const CTASection = React.lazy(() => import('@/components/landing/CTASection'));
+const LandingFooter = React.lazy(() => import('@/components/landing/LandingFooter'));
+
+const LoadingSpinner = () => (
+  <div className="min-h-screen bg-background flex items-center justify-center">
+    <div className="text-center">
+      <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+      <p className="text-muted-foreground">Loading Teamtegrate...</p>
+    </div>
+  </div>
+);
 
 const LandingPage = () => {
   console.log('LandingPage: Starting to render');
   
-  const { isLoading, isOptimized } = useMobileOptimization({
+  const { isOptimized } = useMobileOptimization({
     enableReducedMotion: true,
     optimizeScrolling: true,
     enableTouchOptimization: true,
@@ -33,38 +44,46 @@ const LandingPage = () => {
     };
   }, []);
 
-  console.log('LandingPage: isLoading:', isLoading, 'isOptimized:', isOptimized);
-
-  if (isLoading) {
-    console.log('LandingPage: Showing loading state');
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading Teamtegrate...</p>
-        </div>
-      </div>
-    );
-  }
+  console.log('LandingPage: isOptimized:', isOptimized);
 
   console.log('LandingPage: Rendering main content');
   
   try {
     return (
       <div className={`min-h-screen bg-background overflow-x-hidden w-full ${isOptimized ? 'fade-in' : 'loading'}`}>
-        <LandingNavigation />
-        <HeroSection />
-        <div id="features">
-          <FeaturesSection />
-        </div>
-        <div id="benefits">
-          <BenefitsSection />
-        </div>
-        <div id="testimonials">
-          <TestimonialsSection />
-        </div>
-        <CTASection />
-        <LandingFooter />
+        <React.Suspense fallback={<div className="h-16 bg-background" />}>
+          <LandingNavigation />
+        </React.Suspense>
+        
+        <React.Suspense fallback={<LoadingSpinner />}>
+          <HeroSection />
+        </React.Suspense>
+        
+        <React.Suspense fallback={<div className="h-32 bg-muted animate-pulse" />}>
+          <div id="features">
+            <FeaturesSection />
+          </div>
+        </React.Suspense>
+        
+        <React.Suspense fallback={<div className="h-32 bg-background animate-pulse" />}>
+          <div id="benefits">
+            <BenefitsSection />
+          </div>
+        </React.Suspense>
+        
+        <React.Suspense fallback={<div className="h-32 bg-muted animate-pulse" />}>
+          <div id="testimonials">
+            <TestimonialsSection />
+          </div>
+        </React.Suspense>
+        
+        <React.Suspense fallback={<div className="h-32 bg-primary animate-pulse" />}>
+          <CTASection />
+        </React.Suspense>
+        
+        <React.Suspense fallback={<div className="h-16 bg-background" />}>
+          <LandingFooter />
+        </React.Suspense>
       </div>
     );
   } catch (error) {

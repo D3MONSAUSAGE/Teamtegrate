@@ -16,7 +16,7 @@ export function useMobileOptimization(options: MobileOptimizationOptions = {}) {
   } = options;
 
   const isMobile = useIsMobile();
-  const [isLoading, setIsLoading] = useState(true);
+  const [isOptimized, setIsOptimized] = useState(false);
 
   useEffect(() => {
     // Mobile-specific optimizations
@@ -37,7 +37,6 @@ export function useMobileOptimization(options: MobileOptimizationOptions = {}) {
 
       // Optimize scrolling performance
       if (optimizeScrolling) {
-        // Use setProperty to avoid TypeScript issues with webkit-specific properties
         document.body.style.setProperty('-webkit-overflow-scrolling', 'touch');
         document.body.style.setProperty('overscroll-behavior-y', 'none');
       }
@@ -84,17 +83,13 @@ export function useMobileOptimization(options: MobileOptimizationOptions = {}) {
   }, [enableReducedMotion]);
 
   useEffect(() => {
-    // Simulate loading completion
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 500);
-
-    return () => clearTimeout(timer);
+    // Immediate optimization for better performance
+    setIsOptimized(true);
   }, []);
 
   return {
     isMobile,
-    isLoading,
-    isOptimized: !isLoading
+    isLoading: false, // Remove artificial loading delay
+    isOptimized
   };
 }

@@ -76,12 +76,13 @@ export const useAuthState = () => {
         if (isMounted) {
           setSession(session);
 
+          // Only fetch user profile if we have a session
           if (session?.user) {
             console.log('AuthProvider: User found in session:', session.user.id);
             const userProfile = await fetchUserProfile(session.user.id);
             setUser(userProfile);
           } else {
-            console.log('AuthProvider: No user in session');
+            console.log('AuthProvider: No user in session - skipping profile fetch');
             setUser(null);
           }
           
@@ -97,7 +98,7 @@ export const useAuthState = () => {
 
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         if (!isMounted) return;
         
         console.log('AuthProvider: Auth state change:', event, !!session);
@@ -106,14 +107,20 @@ export const useAuthState = () => {
         
         if (session?.user) {
           console.log('AuthProvider: User authenticated:', session.user.id);
-          const userProfile = await fetchUserProfile(session.user.id);
-          setUser(userProfile);
+          // Defer profile fetch to avoid blocking auth state update
+          setTimeout(() => {
+            if (isMounted) {
+              fetchUserProfile(session.user.id).then(setUser);
+            }
+          }, 0);
         } else {
           console.log('AuthProvider: User signed out');
           setUser(null);
         }
         
-        setLoading(false);
+        if (event !== 'INITIAL_SESSION') {
+          setLoading(false);
+        }
       }
     );
 
