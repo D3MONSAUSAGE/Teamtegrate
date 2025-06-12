@@ -55,7 +55,7 @@ export const testRLSPolicies = async () => {
     if (projectsError) {
       console.error('Projects RLS test failed:', projectsError);
     } else {
-      console.log(`Projects RLS test passed: ${projects?.length || 0} projects returned`);
+      console.log(`✅ Projects RLS test passed: ${projects?.length || 0} projects returned`);
     }
 
     // Test users query - should only return users from user's organization
@@ -113,7 +113,7 @@ export const testRLSPolicies = async () => {
   }
 };
 
-// Test organization data isolation by attempting cross-organization queries
+// Test organization data isolation by verifying all data belongs to user's org
 export const testOrganizationIsolation = async () => {
   try {
     console.log('Testing organization data isolation...');
@@ -124,34 +124,26 @@ export const testOrganizationIsolation = async () => {
       return { success: false, error: 'No organization found' };
     }
 
-    // Test that explicit organization filtering works
-    const { data: orgTasks, error: orgTasksError } = await supabase
-      .from('tasks')
-      .select('*')
-      .eq('organization_id', orgId);
+    // Test that all returned projects belong to user's organization
+    const { data: allProjects, error: allProjectsError } = await supabase
+      .from('projects')
+      .select('organization_id');
 
-    if (orgTasksError) {
-      console.error('Organization-filtered tasks query failed:', orgTasksError);
+    if (allProjectsError) {
+      console.log('RLS correctly blocked or limited access:', allProjectsError.message);
     } else {
-      console.log(`Organization-filtered tasks: ${orgTasks?.length || 0} found`);
-    }
-
-    // Test that RLS prevents unauthorized access (should return empty or error)
-    const { data: allTasks, error: allTasksError } = await supabase
-      .from('tasks')
-      .select('*');
-
-    if (allTasksError) {
-      console.log('RLS correctly blocked unauthorized access:', allTasksError.message);
-    } else {
-      console.log(`RLS allowed access to ${allTasks?.length || 0} tasks (should match organization count)`);
+      const invalidProjects = allProjects?.filter(p => p.organization_id !== orgId) || [];
+      if (invalidProjects.length > 0) {
+        console.error('❌ Organization isolation breach in projects!', invalidProjects);
+        return { success: false, error: 'Organization isolation breach detected' };
+      }
+      console.log(`✅ Organization isolation verified: ${allProjects?.length || 0} projects all belong to user's org`);
     }
 
     return {
       success: true,
       organizationId: orgId,
-      organizationTasks: orgTasks?.length || 0,
-      totalAccessibleTasks: allTasks?.length || 0
+      totalAccessibleProjects: allProjects?.length || 0
     };
   } catch (error) {
     console.error('Organization isolation test failed:', error);

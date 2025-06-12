@@ -12,22 +12,30 @@ export function useProjects() {
   const [error, setError] = useState<Error | null>(null);
 
   const fetchProjects = useCallback(async () => {
-    if (!user?.organizationId) return;
+    if (!user?.organizationId) {
+      console.log('useProjects: No user or organizationId, skipping fetch');
+      return;
+    }
 
     setIsLoading(true);
     setError(null);
 
     try {
+      console.log('useProjects: Fetching projects for organization:', user.organizationId);
+      
+      // With new RLS policies, we can simply select all projects
+      // The policies will automatically filter by organization
       const { data, error } = await supabase
         .from('projects')
         .select('*')
-        .eq('organization_id', user.organizationId)
         .order('created_at', { ascending: false });
 
       if (error) {
+        console.error('useProjects: Error fetching projects:', error);
         setError(error);
         toast.error('Failed to load projects.');
       } else {
+        console.log('useProjects: Successfully fetched projects:', data?.length || 0);
         // Convert database format to app format
         const convertedProjects: Project[] = (data || []).map(project => ({
           id: project.id,
@@ -50,6 +58,7 @@ export function useProjects() {
         setFetchedProjects(convertedProjects);
       }
     } catch (err: any) {
+      console.error('useProjects: Unexpected error:', err);
       setError(err);
       toast.error('An unexpected error occurred while loading projects.');
     } finally {
