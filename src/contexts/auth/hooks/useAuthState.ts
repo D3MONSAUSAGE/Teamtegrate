@@ -15,6 +15,27 @@ export const useAuthState = () => {
     try {
       console.log('🔍 AuthState: Fetching user profile for:', userId);
       
+      // Debug: Check current auth state before profile fetch
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      
+      console.log('🔍 AuthState: Current auth state during profile fetch:', {
+        currentUserId: currentUser?.id,
+        currentUserEmail: currentUser?.email,
+        hasSession: !!currentSession,
+        sessionUserId: currentSession?.user?.id,
+        accessTokenLength: currentSession?.access_token?.length || 0
+      });
+
+      // Test organization ID function before fetching profile
+      console.log('🔍 AuthState: Testing get_current_user_organization_id function...');
+      const { data: orgId, error: orgError } = await supabase.rpc('get_current_user_organization_id');
+      console.log('🔍 AuthState: Organization ID function result:', {
+        organizationId: orgId,
+        error: orgError?.message,
+        hasError: !!orgError
+      });
+      
       const { data, error } = await supabase
         .from('users')
         .select('*')
@@ -23,6 +44,12 @@ export const useAuthState = () => {
 
       if (error) {
         console.error('❌ AuthState: Error fetching user profile:', error);
+        console.log('❌ AuthState: Error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
         return null;
       }
 
@@ -80,7 +107,7 @@ export const useAuthState = () => {
     let isMounted = true;
     let authTimeout: NodeJS.Timeout;
     
-    console.log('🚀 AuthState: Setting up simplified auth initialization');
+    console.log('🚀 AuthState: Setting up enhanced auth initialization with debugging');
     
     // Set a timeout to prevent infinite loading (10 seconds)
     authTimeout = setTimeout(() => {
@@ -102,6 +129,48 @@ export const useAuthState = () => {
           userId: session?.user?.id,
           userEmail: session?.user?.email
         });
+
+        // Enhanced debug logging for auth session
+        if (session) {
+          console.log('🔍 AuthState: Enhanced session debug:', {
+            accessToken: session.access_token ? 'EXISTS' : 'MISSING',
+            accessTokenLength: session.access_token?.length || 0,
+            refreshToken: session.refresh_token ? 'EXISTS' : 'MISSING',
+            expiresAt: session.expires_at,
+            expiresAtDate: session.expires_at ? new Date(session.expires_at * 1000) : 'N/A',
+            userMetadata: session.user?.user_metadata,
+            appMetadata: session.user?.app_metadata
+          });
+
+          // Test auth functions immediately
+          console.log('🧪 AuthState: Testing auth functions after state change...');
+          try {
+            const { data: { user: authUser } } = await supabase.auth.getUser();
+            const { data: { session: authSession } } = await supabase.auth.getSession();
+            
+            console.log('🧪 AuthState: Auth function results:', {
+              authUser: authUser ? {
+                id: authUser.id,
+                email: authUser.email,
+                hasMetadata: !!authUser.user_metadata
+              } : 'NULL',
+              authSession: authSession ? {
+                hasAccessToken: !!authSession.access_token,
+                userId: authSession.user?.id
+              } : 'NULL'
+            });
+
+            // Test organization ID function immediately
+            const { data: orgTestId, error: orgTestError } = await supabase.rpc('get_current_user_organization_id');
+            console.log('🧪 AuthState: Organization ID test after auth change:', {
+              organizationId: orgTestId,
+              error: orgTestError?.message,
+              hasError: !!orgTestError
+            });
+          } catch (testError) {
+            console.error('❌ AuthState: Auth function test failed:', testError);
+          }
+        }
         
         // Clear the timeout since we got an auth event
         if (authTimeout) {
@@ -143,6 +212,16 @@ export const useAuthState = () => {
     const checkInitialSession = async () => {
       try {
         console.log('🔍 AuthState: Checking for existing session...');
+        
+        // Debug: Check auth functions before getting session
+        console.log('🔍 AuthState: Testing auth functions during initialization...');
+        const { data: { user: initialUser } } = await supabase.auth.getUser();
+        console.log('🔍 AuthState: Initial auth.getUser() result:', {
+          hasUser: !!initialUser,
+          userId: initialUser?.id,
+          userEmail: initialUser?.email
+        });
+        
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -153,6 +232,13 @@ export const useAuthState = () => {
           }
           return;
         }
+        
+        console.log('🔍 AuthState: Initial session check result:', {
+          hasSession: !!session,
+          userId: session?.user?.id,
+          userEmail: session?.user?.email,
+          sessionMatches: session?.user?.id === initialUser?.id
+        });
         
         if (session?.user && isMounted) {
           console.log('📄 AuthState: Initial session found');

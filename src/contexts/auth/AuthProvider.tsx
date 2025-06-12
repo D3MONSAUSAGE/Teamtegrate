@@ -42,8 +42,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     hasUser: !!user,
     isAuthenticated,
     userEmail: user?.email,
-    organizationId: user?.organizationId
+    organizationId: user?.organizationId,
+    sessionExists: !!session,
+    sessionUserId: session?.user?.id,
+    sessionExpiry: session?.expires_at ? new Date(session.expires_at * 1000) : 'N/A'
   });
+
+  // Enhanced debug logging for auth provider state changes
+  React.useEffect(() => {
+    console.log('🔄 AuthProvider: State change detected:', {
+      timestamp: new Date().toISOString(),
+      loading,
+      user: user ? {
+        id: user.id,
+        email: user.email,
+        organizationId: user.organizationId,
+        role: user.role
+      } : null,
+      session: session ? {
+        userId: session.user?.id,
+        hasAccessToken: !!session.access_token,
+        expiresAt: session.expires_at
+      } : null,
+      isAuthenticated
+    });
+  }, [loading, user, session, isAuthenticated]);
 
   // Test RLS policies when user is authenticated
   React.useEffect(() => {
