@@ -199,6 +199,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   useEffect(() => {
     let isMounted = true;
+    let initializationTimeout: NodeJS.Timeout;
 
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -256,8 +257,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     getInitialSession();
 
+    // Failsafe timeout to ensure loading never stays true indefinitely
+    initializationTimeout = setTimeout(() => {
+      if (isMounted && loading) {
+        console.log('⚠️ Auth initialization timeout - forcing loading to false');
+        setLoading(false);
+      }
+    }, 5000); // 5 second timeout
+
     return () => {
       isMounted = false;
+      clearTimeout(initializationTimeout);
       subscription.unsubscribe();
     };
   }, []);

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,13 +25,21 @@ const SimpleLoginPage = () => {
   const { login, isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
   
+  // Detailed logging for debugging
+  const isFormValid = email.trim().length > 0 && password.length > 0;
+  const isFormDisabled = isSubmitting || !isFormValid; // Removed loading dependency
+  
   console.log('SimpleLoginPage: Auth state:', { 
     isAuthenticated, 
     authLoading: loading, 
     formSubmitting: isSubmitting,
     email: email,
     password: password.length > 0 ? '[HIDDEN]' : 'empty',
-    canSubmit: !isSubmitting && !loading && email.length > 0 && password.length > 0
+    emailValid: email.trim().length > 0,
+    passwordValid: password.length > 0,
+    isFormValid,
+    isFormDisabled,
+    buttonShouldBeEnabled: !isFormDisabled
   });
   
   // Redirect if already logged in
@@ -58,11 +65,12 @@ const SimpleLoginPage = () => {
     }
     
     if (isSubmitting) {
+      console.log('SimpleLoginPage: Already submitting, ignoring duplicate submit');
       return;
     }
 
     // Validate form fields
-    if (!email || !password) {
+    if (!email.trim() || !password) {
       console.log('SimpleLoginPage: Form validation failed - missing email or password');
       return;
     }
@@ -71,7 +79,7 @@ const SimpleLoginPage = () => {
     console.log('SimpleLoginPage: Starting login for:', email);
     
     try {
-      await login(email, password);
+      await login(email.trim(), password);
       console.log('SimpleLoginPage: Login successful');
     } catch (error) {
       console.error('SimpleLoginPage: Login failed:', error);
@@ -83,10 +91,6 @@ const SimpleLoginPage = () => {
   const handleBackToLogin = () => {
     setIsLogin(true);
   };
-
-  // Form is enabled when we have email, password, and not currently submitting
-  const isFormValid = email.length > 0 && password.length > 0;
-  const isFormDisabled = isSubmitting || loading || !isFormValid;
   
   // Show signup form
   if (!isLogin) {
