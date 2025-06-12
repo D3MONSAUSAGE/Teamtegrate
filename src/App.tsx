@@ -33,41 +33,38 @@ function App() {
       <TooltipProvider>
         <Toaster />
         <BrowserRouter>
-          <Routes>
-            {/* Public routes - no auth required */}
-            <Route path="/" element={<Index />} />
-            <Route path="/login" element={
-              <AuthProvider>
-                <SimpleLoginPage />
-              </AuthProvider>
-            } />
-            
-            {/* Protected routes - wrapped in single AuthProvider */}
-            <Route path="/dashboard" element={
-              <AuthProvider>
+          {/* Single global AuthProvider for entire app */}
+          <AuthProvider>
+            <Routes>
+              {/* Public routes - work within global AuthProvider */}
+              <Route path="/" element={<Index />} />
+              <Route path="/login" element={<SimpleLoginPage />} />
+              
+              {/* Protected routes - use same global AuthProvider */}
+              <Route path="/dashboard" element={
                 <ProtectedRoute>
                   <AppLayout />
                 </ProtectedRoute>
-              </AuthProvider>
-            }>
-              <Route index element={<DashboardPage />} />
-              <Route path="tasks" element={<TasksPage />} />
-              <Route path="projects" element={<ProjectsPage />} />
-              <Route path="projects/:projectId/tasks" element={<ProjectTasksPage />} />
-              <Route path="calendar" element={<CalendarPage />} />
-              <Route path="team" element={<TeamPage />} />
-              <Route path="chat" element={<ChatPage />} />
-              <Route path="notifications" element={<NotificationsPage />} />
-              <Route path="reports" element={<ReportsPage />} />
-              <Route path="time-tracking" element={<TimeTrackingPage />} />
-              <Route path="focus-zone" element={<FocusZonePage />} />
-              <Route path="documents" element={<DocumentsPage />} />
-              <Route path="finance" element={<FinancePage />} />
-              <Route path="notebook" element={<NotebookPage />} />
-              <Route path="profile" element={<ProfilePage />} />
-              <Route path="settings" element={<SettingsPage />} />
-            </Route>
-          </Routes>
+              }>
+                <Route index element={<DashboardPage />} />
+                <Route path="tasks" element={<TasksPage />} />
+                <Route path="projects" element={<ProjectsPage />} />
+                <Route path="projects/:projectId/tasks" element={<ProjectTasksPage />} />
+                <Route path="calendar" element={<CalendarPage />} />
+                <Route path="team" element={<TeamPage />} />
+                <Route path="chat" element={<ChatPage />} />
+                <Route path="notifications" element={<NotificationsPage />} />
+                <Route path="reports" element={<ReportsPage />} />
+                <Route path="time-tracking" element={<TimeTrackingPage />} />
+                <Route path="focus-zone" element={<FocusZonePage />} />
+                <Route path="documents" element={<DocumentsPage />} />
+                <Route path="finance" element={<FinancePage />} />
+                <Route path="notebook" element={<NotebookPage />} />
+                <Route path="profile" element={<ProfilePage />} />
+                <Route path="settings" element={<SettingsPage />} />
+              </Route>
+            </Routes>
+          </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>

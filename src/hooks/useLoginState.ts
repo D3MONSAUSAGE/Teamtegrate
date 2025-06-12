@@ -18,13 +18,13 @@ export const useLoginState = () => {
     isLogin
   });
 
-  // Only redirect if fully authenticated and not loading
+  // Redirect after successful authentication
   useEffect(() => {
-    if (isAuthenticated && !loading) {
-      console.log('useLoginState: User authenticated, redirecting to dashboard');
+    if (isAuthenticated && !loading && !isSubmitting) {
+      console.log('useLoginState: Authentication successful, redirecting to dashboard');
       navigate('/dashboard', { replace: true });
     }
-  }, [isAuthenticated, loading, navigate]);
+  }, [isAuthenticated, loading, isSubmitting, navigate]);
 
   // Handle signup parameter from URL
   useEffect(() => {
@@ -48,7 +48,8 @@ export const useLoginState = () => {
     
     try {
       await login(email.trim(), password);
-      console.log('useLoginState: Login successful');
+      console.log('useLoginState: Login call completed');
+      // Don't redirect here - let the useEffect handle it after auth state updates
     } catch (error) {
       console.error('useLoginState: Login failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Login failed. Please check your credentials.';
