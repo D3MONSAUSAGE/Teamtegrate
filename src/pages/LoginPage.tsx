@@ -24,15 +24,16 @@ const LoginPage = () => {
   const [isLogin, setIsLogin] = useState(!searchParams.get('signup'));
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { login, isAuthenticated, loading } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false); // Local loading state
+  const { login, isAuthenticated, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   
   // Redirect if already logged in
   useEffect(() => {
-    if (isAuthenticated && !loading) {
+    if (isAuthenticated && !authLoading) {
       navigate('/dashboard');
     }
-  }, [isAuthenticated, loading, navigate]);
+  }, [isAuthenticated, authLoading, navigate]);
 
   // Handle signup parameter from URL
   useEffect(() => {
@@ -40,6 +41,13 @@ const LoginPage = () => {
       setIsLogin(false);
     }
   }, [searchParams]);
+
+  // Reset submitting state when auth loading changes
+  useEffect(() => {
+    if (!authLoading) {
+      setIsSubmitting(false);
+    }
+  }, [authLoading]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,17 +56,25 @@ const LoginPage = () => {
       // This shouldn't happen as signup is handled by MultiTenantSignupForm
       return;
     }
+
+    if (isSubmitting) {
+      return; // Prevent double submission
+    }
+    
+    setIsSubmitting(true);
     
     try {
       await login(email, password);
-      toast.success('Welcome back!');
+      // Don't show success toast here as it will be handled by auth context
     } catch (error) {
       console.error('Authentication error:', error);
+      setIsSubmitting(false); // Reset loading state on error
     }
   };
 
   const handleBackToLogin = () => {
     setIsLogin(true);
+    setIsSubmitting(false); // Reset any loading state
   };
   
   if (!isLogin) {
@@ -122,6 +138,7 @@ const LoginPage = () => {
                   placeholder="Enter your email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  disabled={isSubmitting}
                   required
                 />
               </div>
@@ -134,12 +151,17 @@ const LoginPage = () => {
                   placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  disabled={isSubmitting}
                   required
                 />
               </div>
 
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? 'Signing in...' : 'Sign In'}
+              <Button 
+                type="submit" 
+                className="w-full" 
+                disabled={isSubmitting || !email || !password}
+              >
+                {isSubmitting ? 'Signing in...' : 'Sign In'}
               </Button>
             </form>
           </CardContent>
@@ -148,7 +170,7 @@ const LoginPage = () => {
               variant="link"
               className="w-full"
               onClick={() => setIsLogin(false)}
-              disabled={loading}
+              disabled={isSubmitting}
             >
               Don't have an account? Sign up for free
             </Button>
