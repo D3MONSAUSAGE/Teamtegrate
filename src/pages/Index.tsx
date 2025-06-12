@@ -10,14 +10,14 @@ const Index = () => {
 
   console.log('Index page - Loading:', loading, 'User:', !!user, 'IsAuthenticated:', isAuthenticated);
 
-  // Show loading only briefly during auth initialization
+  // Show loading only during auth initialization
   if (loading) {
     console.log('Index: Showing loading state');
     return (
       <div className="h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading...</p>
+          <p className="text-muted-foreground">Initializing...</p>
         </div>
       </div>
     );

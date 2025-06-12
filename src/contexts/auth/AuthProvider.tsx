@@ -5,7 +5,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { User as AppUser, UserRole } from '@/types';
 import { AuthContextType } from './types';
 import { useAuthOperations } from './hooks/useAuthOperations';
-import { useAuthSession } from './hooks/useAuthSession';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -15,6 +14,10 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   console.log('AuthProvider: Initializing');
+
+  const [user, setUser] = useState<AppUser | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const fetchUserProfile = async (userId: string): Promise<AppUser | null> => {
     try {
@@ -47,21 +50,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const [user, setUser] = useState<AppUser | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const refreshUser = async () => {
-    console.log('AuthProvider: Refreshing user');
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user) {
-      const userProfile = await fetchUserProfile(session.user.id);
-      setUser(userProfile);
-    } else {
-      setUser(null);
-    }
-  };
-
   const refreshUserSession = async (): Promise<void> => {
     try {
       const { data: { session: newSession } } = await supabase.auth.getSession();
@@ -78,10 +66,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     let isMounted = true;
     
-    console.log('AuthProvider: Setting up auth listener');
+    console.log('AuthProvider: Setting up auth initialization');
     
     const initializeAuth = async () => {
       try {
+        // Get initial session
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -116,8 +105,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     };
 
-    initializeAuth();
-
+    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!isMounted) return;
@@ -139,12 +127,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     );
 
+    // Initialize auth
+    initializeAuth();
+
     return () => {
       isMounted = false;
       console.log('AuthProvider: Cleaning up auth listener');
       subscription.unsubscribe();
     };
-  }, []);
+  }, []); // Empty dependency array - only run once
 
   // Get auth operations
   const {
@@ -155,7 +146,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   } = useAuthOperations(session, user, setSession, setUser, setLoading);
 
   const isAuthenticated = !!user && !!session;
-  const isLoading = loading;
 
   // Role-based access control helpers
   const hasRoleAccess = (requiredRole: UserRole): boolean => {
@@ -189,7 +179,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const value: AuthContextType = {
     user,
     loading,
-    isLoading,
+    isLoading: loading,
     login,
     signup,
     logout,
