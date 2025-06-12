@@ -14,8 +14,8 @@ interface AuthContextType {
   signup: (email: string, password: string, name: string, role: UserRole, organizationData?: any) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
-  hasRoleAccess: (requiredRole: UserRole) => boolean; // Add missing method
-  refreshUserSession: () => Promise<void>; // Add missing method
+  hasRoleAccess: (requiredRole: UserRole) => boolean;
+  refreshUserSession: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,9 +29,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchUserProfile = async (userId: string): Promise<AppUser | null> => {
+  const createFallbackUser = (session: Session): AppUser => {
+    const metadata = session.user.user_metadata || {};
+    return {
+      id: session.user.id,
+      email: session.user.email || '',
+      name: metadata.name || session.user.email || 'User',
+      role: (metadata.role as UserRole) || 'user',
+      organizationId: metadata.organization_id || null,
+      avatar_url: metadata.avatar_url || null,
+      timezone: metadata.timezone || null,
+      createdAt: new Date(session.user.created_at),
+    };
+  };
+
+  const fetchUserProfile = async (userId: string, retries = 2): Promise<AppUser | null> => {
     try {
-      console.log('🔍 Fetching user profile for:', userId);
+      console.log('🔍 Fetching user profile for:', userId, `(attempt ${3 - retries})`);
       
       const { data, error } = await supabase
         .from('users')
@@ -41,15 +55,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (error) {
         console.error('❌ Error fetching user profile:', error);
+        console.error('Error details:', { code: error.code, message: error.message, hint: error.hint });
+        
+        // Retry on certain errors
+        if ((error.code === 'PGRST116' || error.message.includes('JWT')) && retries > 0) {
+          console.log('🔄 Retrying profile fetch after delay...');
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          return await fetchUserProfile(userId, retries - 1);
+        }
+        
         return null;
       }
 
       if (!data) {
-        console.error('❌ No user data returned');
+        console.error('❌ No user data returned from database');
         return null;
       }
 
-      console.log('✅ User profile fetched successfully');
+      console.log('✅ User profile fetched successfully:', {
+        id: data.id,
+        email: data.email,
+        role: data.role,
+        organization_id: data.organization_id
+      });
 
       return {
         id: data.id,
@@ -62,7 +90,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         createdAt: new Date(),
       };
     } catch (error) {
-      console.error('❌ Error in fetchUserProfile:', error);
+      console.error('❌ Exception in fetchUserProfile:', error);
+      
+      if (retries > 0) {
+        console.log('🔄 Retrying profile fetch due to exception...');
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return await fetchUserProfile(userId, retries - 1);
+      }
+      
       return null;
     }
   };
@@ -96,8 +131,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       if (newSession?.user) {
         setSession(newSession);
+        
+        // Try to fetch profile, but use fallback if it fails
         const userProfile = await fetchUserProfile(newSession.user.id);
-        setUser(userProfile);
+        setUser(userProfile || createFallbackUser(newSession));
       }
       
       console.log('✅ Session refresh complete');
@@ -121,8 +158,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw error;
       }
 
-      console.log('✅ Login successful');
-      toast.success('Welcome back!');
+      if (data.session) {
+        console.log('✅ Login successful - session created');
+        // Session state will be updated by the auth state listener
+        toast.success('Welcome back!');
+      } else {
+        console.error('❌ Login succeeded but no session returned');
+        throw new Error('No session returned from login');
+      }
     } catch (error) {
       console.error('❌ Login failed:', error);
       throw error;
@@ -211,9 +254,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (session?.user) {
           setSession(session);
           
+          // Try to fetch the full user profile from database
           const userProfile = await fetchUserProfile(session.user.id);
+          
           if (isMounted) {
-            setUser(userProfile);
+            // Always set a user - either from database or fallback
+            setUser(userProfile || createFallbackUser(session));
             setLoading(false);
           }
         } else {
@@ -239,9 +285,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         if (session?.user && isMounted) {
           setSession(session);
+          
+          // Try to fetch profile, but use fallback if it fails
           const userProfile = await fetchUserProfile(session.user.id);
           if (isMounted) {
-            setUser(userProfile);
+            setUser(userProfile || createFallbackUser(session));
             setLoading(false);
           }
         } else if (isMounted) {
@@ -272,7 +320,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
   }, []);
 
-  const isAuthenticated = !!user && !!session;
+  // CRITICAL FIX: Authentication now depends on session, not just user profile
+  const isAuthenticated = !!session && !!session.user;
 
   const value: AuthContextType = {
     user,

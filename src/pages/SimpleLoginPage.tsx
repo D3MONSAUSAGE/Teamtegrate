@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,27 +23,27 @@ const SimpleLoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { login, isAuthenticated, loading } = useAuth();
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const { login, isAuthenticated, loading, session } = useAuth();
   const navigate = useNavigate();
   
-  // Detailed logging for debugging
+  // Form validation
   const isFormValid = email.trim().length > 0 && password.length > 0;
-  const isFormDisabled = isSubmitting || !isFormValid; // Removed loading dependency
+  const isFormDisabled = isSubmitting || !isFormValid;
   
   console.log('SimpleLoginPage: Auth state:', { 
     isAuthenticated, 
     authLoading: loading, 
     formSubmitting: isSubmitting,
+    hasSession: !!session,
     email: email,
     password: password.length > 0 ? '[HIDDEN]' : 'empty',
-    emailValid: email.trim().length > 0,
-    passwordValid: password.length > 0,
     isFormValid,
     isFormDisabled,
-    buttonShouldBeEnabled: !isFormDisabled
+    loginError
   });
   
-  // Redirect if already logged in
+  // Redirect if already logged in - now using session-based authentication
   useEffect(() => {
     if (isAuthenticated && !loading) {
       console.log('SimpleLoginPage: User authenticated, redirecting to dashboard');
@@ -72,17 +73,22 @@ const SimpleLoginPage = () => {
     // Validate form fields
     if (!email.trim() || !password) {
       console.log('SimpleLoginPage: Form validation failed - missing email or password');
+      setLoginError('Please enter both email and password');
       return;
     }
     
     setIsSubmitting(true);
+    setLoginError(null);
     console.log('SimpleLoginPage: Starting login for:', email);
     
     try {
       await login(email.trim(), password);
-      console.log('SimpleLoginPage: Login successful');
+      console.log('SimpleLoginPage: Login successful - waiting for redirect');
+      // Don't manually redirect here - let the useEffect handle it when isAuthenticated changes
     } catch (error) {
       console.error('SimpleLoginPage: Login failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Login failed. Please try again.';
+      setLoginError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -90,6 +96,7 @@ const SimpleLoginPage = () => {
 
   const handleBackToLogin = () => {
     setIsLogin(true);
+    setLoginError(null);
   };
   
   // Show signup form
@@ -143,6 +150,12 @@ const SimpleLoginPage = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
+              {loginError && (
+                <div className="bg-destructive/10 border border-destructive/20 text-destructive px-3 py-2 rounded-md text-sm">
+                  {loginError}
+                </div>
+              )}
+              
               <div className="space-y-2">
                 <Label htmlFor="email">Email Address</Label>
                 <Input
