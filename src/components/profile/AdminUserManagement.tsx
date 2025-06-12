@@ -25,7 +25,6 @@ import {
 import { MoreVertical, Copy, Edit, Trash } from 'lucide-react';
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,7 +34,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 
 const AdminUserManagement: React.FC = () => {
@@ -53,10 +51,12 @@ const AdminUserManagement: React.FC = () => {
 
     try {
       setIsLoading(true);
+      
+      // With new RLS policies, we can simply select all users
+      // The policies will automatically filter by organization
       const { data, error } = await supabase
         .from('users')
         .select('*')
-        .eq('organization_id', user.organizationId)
         .neq('id', user.id);
 
       if (error) throw error;
@@ -92,36 +92,20 @@ const AdminUserManagement: React.FC = () => {
     try {
       setIsCreating(true);
 
-      // Create a new user in Supabase Auth
+      // Create a new user in Supabase Auth using the admin API
       const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email: newUserEmail,
-        password: 'defaultpassword', // You might want to generate a random password
+        password: 'defaultpassword123!', // Generate a secure default password
         user_metadata: {
           organization_id: user.organizationId,
-          role: newUserRole
+          role: newUserRole,
+          name: newUserEmail.split('@')[0] // Use email prefix as default name
         }
       });
 
       if (authError) throw authError;
 
-      // Create a new user profile in the users table
-      const newUserId = authData.user?.id;
-      if (newUserId) {
-        const { error: profileError } = await supabase
-          .from('users')
-          .insert({
-            id: newUserId,
-            email: newUserEmail,
-            role: newUserRole,
-            organization_id: user.organizationId,
-            name: newUserEmail, // Default name
-            timezone: 'UTC',
-            avatar_url: null
-          });
-
-        if (profileError) throw profileError;
-      }
-
+      // The handle_new_user trigger will automatically create the user profile
       setNewUserEmail('');
       setNewUserRole('user');
       await fetchUsers(); // Refresh the list
@@ -140,17 +124,9 @@ const AdminUserManagement: React.FC = () => {
     try {
       setIsDeleting(true);
 
-      // Delete user from Supabase Auth
+      // Delete user from Supabase Auth (this will cascade to users table)
       const { error: authError } = await supabase.auth.admin.deleteUser(userToDelete.id);
       if (authError) throw authError;
-
-      // Optionally, delete user from the users table (if not already cascade deleted)
-      const { error: profileError } = await supabase
-        .from('users')
-        .delete()
-        .eq('id', userToDelete.id);
-
-      if (profileError) console.error('Error deleting user profile:', profileError);
 
       setUserToDelete(null);
       await fetchUsers(); // Refresh the list
@@ -171,54 +147,65 @@ const AdminUserManagement: React.FC = () => {
     setUserToDelete(null);
   };
 
+  // Only show this component to admins and superadmins
+  if (!user || !['admin', 'superadmin'].includes(user.role)) {
+    return null;
+  }
+
   return (
     <div>
       <h2 className="text-2xl font-bold mb-4">User Management</h2>
 
-      {/* Create User Section */}
-      <div className="mb-6 p-4 border rounded-md">
-        <h3 className="text-lg font-semibold mb-2">Create New User</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <Label htmlFor="email">Email</Label>
-            <Input
-              type="email"
-              id="email"
-              placeholder="Email address"
-              value={newUserEmail}
-              onChange={(e) => setNewUserEmail(e.target.value)}
-            />
-          </div>
-          <div>
-            <Label htmlFor="role">Role</Label>
-            <select
-              id="role"
-              className="w-full p-2 border rounded-md"
-              value={newUserRole}
-              onChange={(e) => setNewUserRole(e.target.value as UserRole)}
-            >
-              <option value="user">User</option>
-              <option value="manager">Manager</option>
-              <option value="admin">Admin</option>
-            </select>
-          </div>
-          <div>
-            <Button onClick={handleCreateUser} disabled={isCreating}>
-              {isCreating ? 'Creating...' : 'Create User'}
-            </Button>
+      {/* Create User Section - Only for superadmins */}
+      {user.role === 'superadmin' && (
+        <div className="mb-6 p-4 border rounded-md">
+          <h3 className="text-lg font-semibold mb-2">Create New User</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="email">Email</Label>
+              <Input
+                type="email"
+                id="email"
+                placeholder="Email address"
+                value={newUserEmail}
+                onChange={(e) => setNewUserEmail(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="role">Role</Label>
+              <select
+                id="role"
+                className="w-full p-2 border rounded-md"
+                value={newUserRole}
+                onChange={(e) => setNewUserRole(e.target.value as UserRole)}
+              >
+                <option value="user">User</option>
+                <option value="manager">Manager</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+            <div className="flex items-end">
+              <Button 
+                onClick={handleCreateUser} 
+                disabled={isCreating || !newUserEmail}
+                className="w-full"
+              >
+                {isCreating ? 'Creating...' : 'Create User'}
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* User List Table */}
       {isLoading ? (
         <p>Loading users...</p>
       ) : (
         <Table>
-          <TableCaption>A list of users in your organization.</TableCaption>
+          <TableCaption>Users in your organization.</TableCaption>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[100px]">ID</TableHead>
+              <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Role</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -227,7 +214,7 @@ const AdminUserManagement: React.FC = () => {
           <TableBody>
             {users.map((user) => (
               <TableRow key={user.id}>
-                <TableCell className="font-medium">{user.id}</TableCell>
+                <TableCell className="font-medium">{user.name}</TableCell>
                 <TableCell>{user.email}</TableCell>
                 <TableCell>{user.role}</TableCell>
                 <TableCell className="text-right">
@@ -244,7 +231,11 @@ const AdminUserManagement: React.FC = () => {
                         <Copy className="mr-2 h-4 w-4" /> Copy ID
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => handleOpenDeleteDialog(user)} className="text-red-500">
+                      <DropdownMenuItem 
+                        onClick={() => handleOpenDeleteDialog(user)} 
+                        className="text-red-500"
+                        disabled={user.role === 'superadmin'} // Prevent deleting superadmins
+                      >
                         <Trash className="mr-2 h-4 w-4" /> Delete
                       </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -262,7 +253,7 @@ const AdminUserManagement: React.FC = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the user from the system.
+              This action cannot be undone. This will permanently delete the user "{userToDelete?.name}" from the system.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

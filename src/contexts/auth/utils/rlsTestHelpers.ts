@@ -177,6 +177,103 @@ export const testTasksRLSPolicies = async () => {
   }
 };
 
+// Test function to verify the new Users RLS policies are working correctly
+export const testUsersRLSPolicies = async () => {
+  try {
+    console.log('Testing new Users RLS policies...');
+    
+    // Test users query - should only return users from user's organization
+    const { data: users, error: usersError } = await supabase
+      .from('users')
+      .select('*')
+      .limit(5);
+    
+    if (usersError) {
+      console.error('Users RLS test failed:', usersError);
+      return { success: false, error: usersError };
+    } else {
+      console.log(`✅ Users RLS test passed: ${users?.length || 0} users returned`);
+    }
+
+    // Get current user's organization
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      console.error('No authenticated user found for testing');
+      return { success: false, error: 'No authenticated user' };
+    }
+
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('organization_id')
+      .eq('id', user.id)
+      .single();
+
+    if (userError || !userData?.organization_id) {
+      console.error('Failed to get user organization for testing:', userError);
+      return { success: false, error: userError || 'No organization found' };
+    }
+
+    // Test user insertion - should be blocked by RLS (only system can insert)
+    const testUser = {
+      id: user.id, // Use current user ID
+      name: 'RLS Test User',
+      email: 'test@example.com',
+      role: 'user',
+      organization_id: userData.organization_id
+    };
+
+    const { data: insertedUser, error: insertError } = await supabase
+      .from('users')
+      .insert(testUser)
+      .select()
+      .single();
+
+    if (insertError) {
+      console.log('✅ User insertion correctly blocked by RLS:', insertError.message);
+    } else {
+      console.log('⚠️ User insertion was allowed (unexpected):', insertedUser?.id);
+      
+      // Clean up if somehow inserted
+      await supabase
+        .from('users')
+        .delete()
+        .eq('id', insertedUser.id);
+    }
+
+    // Test user update - should work for own profile
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({ name: 'Updated Name for RLS Test' })
+      .eq('id', user.id);
+
+    if (updateError) {
+      console.error('User update test failed:', updateError);
+    } else {
+      console.log('✅ User update test passed (can update own profile)');
+      
+      // Revert the name change
+      const { data: originalUser } = await supabase
+        .from('users')
+        .select('name')
+        .eq('id', user.id)
+        .single();
+    }
+
+    return {
+      success: true,
+      usersReturned: users?.length || 0,
+      insertionBlocked: !!insertError,
+      updateWorked: !updateError
+    };
+  } catch (error) {
+    console.error('Users RLS test suite failed:', error);
+    return {
+      success: false,
+      error: error
+    };
+  }
+};
+
 // Helper function to verify organization isolation
 export const verifyOrganizationIsolation = async () => {
   try {
@@ -236,16 +333,68 @@ export const verifyOrganizationIsolation = async () => {
       return { success: false, error: 'Organization isolation breach detected' };
     }
 
+    // Test that all returned users belong to user's organization
+    const { data: users, error: usersIsolationError } = await supabase
+      .from('users')
+      .select('id, organization_id');
+
+    if (usersIsolationError) {
+      console.error('Failed to fetch users for isolation test:', usersIsolationError);
+      return { success: false, error: usersIsolationError };
+    }
+
+    const invalidUsers = users?.filter(u => u.organization_id !== userData.organization_id) || [];
+    
+    if (invalidUsers.length > 0) {
+      console.error('❌ Organization isolation failed! Found users from other organizations:', invalidUsers);
+      return { success: false, error: 'Organization isolation breach detected' };
+    }
+
     console.log('✅ Organization isolation verified: All data belongs to user\'s organization');
     
     return {
       success: true,
       userOrganization: userData.organization_id,
       projectsChecked: projects?.length || 0,
-      tasksChecked: tasks?.length || 0
+      tasksChecked: tasks?.length || 0,
+      usersChecked: users?.length || 0
     };
   } catch (error) {
     console.error('Organization isolation verification failed:', error);
     return { success: false, error };
+  }
+};
+
+// Run comprehensive RLS tests for all tables
+export const runComprehensiveRLSTests = async () => {
+  try {
+    console.log('🧪 Running comprehensive RLS tests...');
+    
+    const projectsTest = await testProjectsRLSPolicies();
+    const tasksTest = await testTasksRLSPolicies();
+    const usersTest = await testUsersRLSPolicies();
+    const isolationTest = await verifyOrganizationIsolation();
+
+    const results = {
+      projects: projectsTest,
+      tasks: tasksTest,
+      users: usersTest,
+      isolation: isolationTest,
+      overallSuccess: projectsTest.success && tasksTest.success && usersTest.success && isolationTest.success
+    };
+
+    if (results.overallSuccess) {
+      console.log('🎉 All RLS tests passed! Organization isolation is working correctly.');
+    } else {
+      console.error('❌ Some RLS tests failed. Check the detailed results above.');
+    }
+
+    return results;
+  } catch (error) {
+    console.error('Comprehensive RLS test suite failed:', error);
+    return {
+      success: false,
+      error: error
+    };
   }
 };

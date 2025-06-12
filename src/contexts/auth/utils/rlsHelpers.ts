@@ -156,11 +156,28 @@ export const testOrganizationIsolation = async () => {
       console.log(`✅ Organization isolation verified: ${allTasks?.length || 0} tasks all belong to user's org`);
     }
 
+    // Test that all returned users belong to user's organization
+    const { data: allUsers, error: allUsersError } = await supabase
+      .from('users')
+      .select('organization_id');
+
+    if (allUsersError) {
+      console.log('RLS correctly blocked or limited access:', allUsersError.message);
+    } else {
+      const invalidUsers = allUsers?.filter(u => u.organization_id !== orgId) || [];
+      if (invalidUsers.length > 0) {
+        console.error('❌ Organization isolation breach in users!', invalidUsers);
+        return { success: false, error: 'Organization isolation breach detected' };
+      }
+      console.log(`✅ Organization isolation verified: ${allUsers?.length || 0} users all belong to user's org`);
+    }
+
     return {
       success: true,
       organizationId: orgId,
       totalAccessibleProjects: allProjects?.length || 0,
-      totalAccessibleTasks: allTasks?.length || 0
+      totalAccessibleTasks: allTasks?.length || 0,
+      totalAccessibleUsers: allUsers?.length || 0
     };
   } catch (error) {
     console.error('Organization isolation test failed:', error);
