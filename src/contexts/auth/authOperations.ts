@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { UserRole } from '@/types';
@@ -15,12 +16,26 @@ export const login = async (email: string, password: string) => {
       sessionValid: currentSession?.expires_at ? new Date(currentSession.expires_at * 1000) > new Date() : false
     });
 
-    // Attempt login with detailed error handling
+    // If already logged in as the same user, don't attempt new login
+    if (currentSession?.user?.email === email.trim().toLowerCase()) {
+      console.log('✅ AuthOps: User already logged in with same email, returning existing session');
+      toast.success('Already logged in!');
+      return { user: currentSession.user, session: currentSession };
+    }
+
+    // Attempt login with detailed error handling and timeout
     console.log('🔑 AuthOps: Calling supabase.auth.signInWithPassword...');
-    const { data, error } = await supabase.auth.signInWithPassword({
+    
+    const loginPromise = supabase.auth.signInWithPassword({
       email: email.trim().toLowerCase(),
       password,
     });
+    
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Login request timed out after 15 seconds')), 15000)
+    );
+    
+    const { data, error } = await Promise.race([loginPromise, timeoutPromise]) as any;
 
     console.log('🔑 AuthOps: signInWithPassword response:', {
       hasData: !!data,
@@ -54,6 +69,8 @@ export const login = async (email: string, password: string) => {
         toast.error('Too many login attempts. Please wait a few minutes and try again.');
       } else if (error.message?.includes('network') || error.message?.includes('fetch')) {
         toast.error('Network error. Please check your connection and try again.');
+      } else if (error.message?.includes('timeout')) {
+        toast.error('Login request timed out. Please try again.');
       } else {
         toast.error(`Login failed: ${error.message}`);
       }
@@ -87,6 +104,16 @@ export const login = async (email: string, password: string) => {
       throw new Error('Session expired immediately');
     }
 
+    // Test session persistence immediately after login
+    console.log('🧪 AuthOps: Testing session persistence...');
+    await new Promise(resolve => setTimeout(resolve, 100)); // Small delay
+    
+    const { data: { session: persistedSession } } = await supabase.auth.getSession();
+    console.log('🧪 AuthOps: Session persistence test:', {
+      sessionPersisted: !!persistedSession,
+      sessionMatches: persistedSession?.access_token === data.session.access_token
+    });
+
     console.log('✅ AuthOps: Login successful for:', email);
     console.log('✅ AuthOps: User data:', {
       id: data.user.id,
@@ -108,6 +135,10 @@ export const login = async (email: string, password: string) => {
         message: error.message,
         stack: error.stack
       });
+      
+      if (error.message.includes('timeout')) {
+        toast.error('Login request timed out. Please try again.');
+      }
     }
     
     throw error;

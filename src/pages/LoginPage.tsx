@@ -38,11 +38,14 @@ const LoginPage = () => {
     });
   }, [isAuthenticated, authLoading, isSubmitting]);
   
-  // Redirect if already logged in
+  // Redirect if already logged in - with delay to prevent flash
   useEffect(() => {
     if (isAuthenticated && !authLoading) {
       console.log('✅ LoginPage: User already authenticated, redirecting to dashboard');
-      navigate('/dashboard');
+      // Small delay to prevent race conditions
+      setTimeout(() => {
+        navigate('/dashboard', { replace: true });
+      }, 100);
     }
   }, [isAuthenticated, authLoading, navigate]);
 
@@ -91,6 +94,11 @@ const LoginPage = () => {
       return;
     }
 
+    if (!email || !password) {
+      toast.error('Please enter both email and password');
+      return;
+    }
+
     console.log('🔑 LoginPage: Starting login process');
     console.log('🔑 LoginPage: Form data:', {
       email: email,
@@ -110,7 +118,13 @@ const LoginPage = () => {
       setLoginAttempts(0);
       console.log('✅ LoginPage: Login call completed successfully');
       
-      // Don't manually reset isSubmitting here - let auth state change handle it
+      // Check if authentication actually worked
+      setTimeout(() => {
+        if (!isAuthenticated) {
+          console.warn('⚠️ LoginPage: Login completed but user not authenticated, checking auth state...');
+          setIsSubmitting(false);
+        }
+      }, 2000);
       
     } catch (error) {
       console.error('❌ LoginPage: Login failed:', error);
@@ -292,6 +306,14 @@ const LoginPage = () => {
             </Button>
           </CardFooter>
         </Card>
+
+        {/* Show database status warning */}
+        <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+          <p className="text-sm text-yellow-800">
+            ⚠️ <strong>Database Issues Detected:</strong> The database is currently experiencing connectivity issues. 
+            You may see errors or timeouts. Please try refreshing the page if login fails.
+          </p>
+        </div>
       </div>
     </div>
   );

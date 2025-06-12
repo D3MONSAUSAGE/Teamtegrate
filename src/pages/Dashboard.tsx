@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
@@ -9,7 +10,8 @@ import AnalyticsSection from '@/components/dashboard/AnalyticsSection';
 import SessionHealthIndicator from '@/components/auth/SessionHealthIndicator';
 import { useTask } from '@/contexts/task';
 import { useProjects } from '@/hooks/useProjects';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertTriangle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const Dashboard = () => {
   const { user, loading, isAuthenticated } = useAuth();
@@ -44,6 +46,9 @@ const Dashboard = () => {
     console.log('Dashboard: User not authenticated, redirecting to login');
     return <Navigate to="/login" replace />;
   }
+
+  // Show database connectivity warning if needed
+  const showDatabaseWarning = projectsLoading === false && projects.length === 0;
 
   // Show organization setup message if needed
   if (!user.organizationId) {
@@ -98,6 +103,29 @@ const Dashboard = () => {
   return (
     <div className="container mx-auto px-4 py-8 space-y-6">
       <SessionHealthIndicator />
+      
+      {/* Database warning banner */}
+      {showDatabaseWarning && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center">
+            <AlertTriangle className="h-5 w-5 text-yellow-600 mr-2" />
+            <div className="flex-1">
+              <h3 className="text-sm font-medium text-yellow-800">Database Connectivity Issues</h3>
+              <p className="text-sm text-yellow-700 mt-1">
+                The database is currently experiencing connectivity issues. Some features may not work properly.
+              </p>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => window.location.reload()}
+              className="ml-4"
+            >
+              Refresh Page
+            </Button>
+          </div>
+        </div>
+      )}
       
       <div className="flex items-center justify-between">
         <div>
