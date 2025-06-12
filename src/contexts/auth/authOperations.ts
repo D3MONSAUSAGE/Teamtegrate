@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { UserRole } from '@/types';
@@ -6,7 +5,6 @@ import { UserRole } from '@/types';
 export const login = async (email: string, password: string) => {
   try {
     console.log('🔑 AuthOps: Starting login attempt for:', email);
-    console.log('🔑 AuthOps: Current Supabase client state check...');
     
     // Check current session before login
     const { data: { session: currentSession } } = await supabase.auth.getSession();
@@ -23,7 +21,15 @@ export const login = async (email: string, password: string) => {
       return { user: currentSession.user, session: currentSession };
     }
 
-    // Attempt login with detailed error handling and timeout
+    // Clear any existing session first to prevent conflicts
+    if (currentSession) {
+      console.log('🧹 AuthOps: Clearing existing session before new login');
+      await supabase.auth.signOut();
+      // Wait a moment for cleanup
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+
+    // Attempt login with enhanced error handling
     console.log('🔑 AuthOps: Calling supabase.auth.signInWithPassword...');
     
     const loginPromise = supabase.auth.signInWithPassword({
@@ -32,7 +38,7 @@ export const login = async (email: string, password: string) => {
     });
     
     const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Login request timed out after 15 seconds')), 15000)
+      setTimeout(() => reject(new Error('Login request timed out after 20 seconds')), 20000)
     );
     
     const { data, error } = await Promise.race([loginPromise, timeoutPromise]) as any;
@@ -104,15 +110,22 @@ export const login = async (email: string, password: string) => {
       throw new Error('Session expired immediately');
     }
 
+    // Wait a moment for the session to be properly stored
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
     // Test session persistence immediately after login
     console.log('🧪 AuthOps: Testing session persistence...');
-    await new Promise(resolve => setTimeout(resolve, 100)); // Small delay
-    
     const { data: { session: persistedSession } } = await supabase.auth.getSession();
     console.log('🧪 AuthOps: Session persistence test:', {
       sessionPersisted: !!persistedSession,
       sessionMatches: persistedSession?.access_token === data.session.access_token
     });
+
+    if (!persistedSession || persistedSession.access_token !== data.session.access_token) {
+      console.error('❌ AuthOps: Session was not properly persisted');
+      toast.error('Login failed: Session could not be saved');
+      throw new Error('Session persistence failed');
+    }
 
     console.log('✅ AuthOps: Login successful for:', email);
     console.log('✅ AuthOps: User data:', {

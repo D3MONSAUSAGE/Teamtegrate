@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,14 +55,6 @@ const LoginPage = () => {
     }
   }, [searchParams]);
 
-  // Reset submitting state when auth loading changes
-  useEffect(() => {
-    if (!authLoading && isSubmitting) {
-      console.log('🔄 LoginPage: Auth loading finished, resetting submit state');
-      setIsSubmitting(false);
-    }
-  }, [authLoading, isSubmitting]);
-
   // Auto-reset login attempts after 5 minutes
   useEffect(() => {
     if (loginAttempts > 0) {
@@ -118,13 +109,7 @@ const LoginPage = () => {
       setLoginAttempts(0);
       console.log('✅ LoginPage: Login call completed successfully');
       
-      // Check if authentication actually worked
-      setTimeout(() => {
-        if (!isAuthenticated) {
-          console.warn('⚠️ LoginPage: Login completed but user not authenticated, checking auth state...');
-          setIsSubmitting(false);
-        }
-      }, 2000);
+      // Don't set isSubmitting to false immediately - let auth state handle redirect
       
     } catch (error) {
       console.error('❌ LoginPage: Login failed:', error);
@@ -164,6 +149,20 @@ const LoginPage = () => {
     setPassword('12345678');
     console.log('🧪 LoginPage: Test credentials populated');
   };
+
+  // Reset submitting state if auth completes
+  useEffect(() => {
+    if (!authLoading && isSubmitting) {
+      console.log('🔄 LoginPage: Auth loading finished, checking auth state...');
+      if (isAuthenticated) {
+        console.log('✅ LoginPage: User authenticated, keeping submitting state for redirect');
+        // Keep submitting state until redirect happens
+      } else {
+        console.log('❌ LoginPage: Auth completed but user not authenticated, resetting submit state');
+        setIsSubmitting(false);
+      }
+    }
+  }, [authLoading, isAuthenticated, isSubmitting]);
   
   if (!isLogin) {
     return (

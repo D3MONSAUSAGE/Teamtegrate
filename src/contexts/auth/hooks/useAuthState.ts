@@ -35,23 +35,49 @@ export const useAuthState = () => {
         return null;
       }
 
-      // Test direct users table access with timeout
+      // Test direct users table access with timeout and retry
       console.log('🔍 AuthState: Testing direct users table access...');
       
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Profile fetch timeout after 10 seconds')), 10000)
-      );
-      
-      const dbPromise = supabase
-        .from('users')
-        .select('*')
-        .eq('id', userId)
-        .single();
-        
-      const { data: userData, error: userError } = await Promise.race([
-        dbPromise,
-        timeoutPromise
-      ]) as any;
+      const fetchWithRetry = async (retries = 3): Promise<any> => {
+        for (let i = 0; i < retries; i++) {
+          try {
+            const timeoutPromise = new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Profile fetch timeout after 15 seconds')), 15000)
+            );
+            
+            const dbPromise = supabase
+              .from('users')
+              .select('*')
+              .eq('id', userId)
+              .single();
+              
+            const { data: userData, error: userError } = await Promise.race([
+              dbPromise,
+              timeoutPromise
+            ]) as any;
+
+            if (!userError) {
+              return { userData, userError: null };
+            }
+
+            console.warn(`⚠️ AuthState: Attempt ${i + 1} failed:`, userError.message);
+            
+            if (i < retries - 1) {
+              await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1))); // Exponential backoff
+            } else {
+              return { userData: null, userError };
+            }
+          } catch (error) {
+            console.warn(`⚠️ AuthState: Attempt ${i + 1} threw error:`, error);
+            if (i === retries - 1) {
+              return { userData: null, userError: error };
+            }
+            await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+          }
+        }
+      };
+
+      const { userData, userError } = await fetchWithRetry();
         
       console.log('🔍 AuthState: Users table query result:', {
         hasData: !!userData,
@@ -72,26 +98,58 @@ export const useAuthState = () => {
           code: userError.code
         });
         
-        // Handle specific database errors
+        // Handle specific database errors more gracefully
         if (userError.code === 'PGRST116' || userError.message?.includes('row-level security')) {
           console.error('❌ AuthState: RLS policy preventing user access');
-          toast.error('Authentication error: Unable to access user data due to security policies');
+          // Don't show error for RLS - this might be expected
         } else if (userError.code === '42P01') {
           console.error('❌ AuthState: Users table does not exist');
           toast.error('Database error: User table not found');
         } else if (userError.message?.includes('500') || userError.message?.includes('timeout')) {
           console.error('❌ AuthState: Database server error or timeout');
-          toast.error('Database temporarily unavailable. Please try again in a moment.');
+          // For 500 errors, create minimal user profile from auth data
+          console.log('🔧 AuthState: Creating minimal profile from auth data due to DB issues');
+          const authUser = currentUser;
+          if (authUser) {
+            const minimalUser: AppUser = {
+              id: authUser.id,
+              email: authUser.email || '',
+              name: authUser.user_metadata?.name || authUser.email || 'User',
+              role: (authUser.user_metadata?.role as UserRole) || 'user',
+              organizationId: authUser.user_metadata?.organization_id || '',
+              avatar_url: authUser.user_metadata?.avatar_url,
+              timezone: 'UTC',
+              createdAt: new Date(),
+            };
+            console.log('🔧 AuthState: Using minimal profile:', minimalUser);
+            setSessionHealthy(false); // Mark as unhealthy but functional
+            return minimalUser;
+          }
         } else {
           console.error('❌ AuthState: Unknown database error');
-          toast.error('Database connection error. Please try again.');
         }
         return null;
       }
 
       if (!userData) {
         console.error('❌ AuthState: No user data returned from database');
-        toast.error('User profile not found. Please contact support.');
+        // Create minimal profile from auth data as fallback
+        const authUser = currentUser;
+        if (authUser) {
+          const minimalUser: AppUser = {
+            id: authUser.id,
+            email: authUser.email || '',
+            name: authUser.user_metadata?.name || authUser.email || 'User',
+            role: (authUser.user_metadata?.role as UserRole) || 'user',
+            organizationId: authUser.user_metadata?.organization_id || '',
+            avatar_url: authUser.user_metadata?.avatar_url,
+            timezone: 'UTC',
+            createdAt: new Date(),
+          };
+          console.log('🔧 AuthState: Using fallback profile from auth metadata:', minimalUser);
+          setSessionHealthy(false);
+          return minimalUser;
+        }
         return null;
       }
 
@@ -116,26 +174,6 @@ export const useAuthState = () => {
         createdAt: new Date(),
       };
 
-      // Test organization function if organization exists - but don't fail if it doesn't work
-      if (userData.organization_id) {
-        try {
-          console.log('🔍 AuthState: Testing get_current_user_organization_id function...');
-          const { data: orgId, error: orgError } = await supabase.rpc('get_current_user_organization_id');
-          
-          console.log('🔍 AuthState: Organization ID function result:', {
-            organizationId: orgId,
-            expectedOrgId: userData.organization_id,
-            match: orgId === userData.organization_id,
-            error: orgError?.message
-          });
-        } catch (orgFuncError) {
-          console.warn('⚠️ AuthState: Organization function test failed but continuing:', orgFuncError);
-        }
-      } else {
-        console.warn('⚠️ AuthState: User has no organization ID');
-        // Don't show error for missing org - let dashboard handle it
-      }
-
       return appUser;
 
     } catch (error) {
@@ -148,17 +186,6 @@ export const useAuthState = () => {
           message: error.message,
           stack: error.stack
         });
-        
-        if (error.message.includes('timeout')) {
-          toast.error('Profile loading timed out. Please refresh the page.');
-        } else if (error.message.includes('500')) {
-          toast.error('Database temporarily unavailable. Please try again.');
-        } else {
-          toast.error(`Profile loading failed: ${error.message}`);
-        }
-      } else {
-        console.error('❌ AuthState: Unknown error type:', error);
-        toast.error('Authentication failed. Please try again.');
       }
       
       return null;
@@ -180,7 +207,6 @@ export const useAuthState = () => {
     } catch (error) {
       console.error('❌ AuthState: Error refreshing session:', error);
       setSessionHealthy(false);
-      toast.error('Failed to refresh session. Please log in again.');
     }
   };
 
@@ -208,10 +234,11 @@ export const useAuthState = () => {
           clearTimeout(authTimeout);
         }
         
-        // CRITICAL: Don't clear session if user already exists and this is just a recovery
+        // Store session immediately to prevent loss
+        setSession(session);
+        
         if (event === 'SIGNED_IN') {
-          console.log('👤 AuthState: User signed in event');
-          setSession(session);
+          console.log('👤 AuthState: User signed in, fetching profile...');
           
           if (session?.user) {
             try {
@@ -228,22 +255,19 @@ export const useAuthState = () => {
               console.error('❌ AuthState: Error loading user profile after sign in:', error);
               if (isMounted) {
                 setUser(null);
-                toast.error('Failed to load user profile. Please try refreshing the page.');
               }
             }
           }
         } else if (event === 'SIGNED_OUT') {
-          console.log('👋 AuthState: User signed out');
+          console.log('👋 AuthState: User signed out or no session');
           setSession(null);
           setUser(null);
           setSessionHealthy(null);
         } else if (event === 'TOKEN_REFRESHED') {
           console.log('🔄 AuthState: Token refreshed');
-          setSession(session);
           // Keep existing user data, don't refetch
         } else if (event === 'INITIAL_SESSION') {
           console.log('🔄 AuthState: Initial session check');
-          setSession(session);
           
           if (session?.user) {
             try {
@@ -278,7 +302,15 @@ export const useAuthState = () => {
             console.error('❌ AuthState: Error getting session on timeout:', error);
           } else if (session) {
             console.log('📄 AuthState: Found existing session on timeout check');
-            // This should trigger the auth state change listener
+            // Force session update
+            setSession(session);
+            if (session.user) {
+              fetchUserProfile(session.user.id).then(userData => {
+                if (isMounted) {
+                  setUser(userData);
+                }
+              });
+            }
           } else {
             console.log('🚫 AuthState: No session found on timeout check');
           }
@@ -288,7 +320,7 @@ export const useAuthState = () => {
           }
         });
       }
-    }, 8000); // Increased timeout to 8 seconds
+    }, 10000); // 10 second timeout
 
     // Initial session check
     const checkInitialSession = async () => {
@@ -312,7 +344,6 @@ export const useAuthState = () => {
         });
         
         // Don't manually set session here - let the auth listener handle it
-        // This prevents double processing and session conflicts
         
       } catch (error) {
         console.error('❌ AuthState: Error in checkInitialSession:', error);
