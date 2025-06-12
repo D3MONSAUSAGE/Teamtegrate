@@ -15,58 +15,70 @@ export const fetchTasks = async (
   setTasks: (tasks: Task[]) => void
 ): Promise<void> => {
   try {
-    console.log('Fetching tasks for user:', user?.id, 'org:', user?.organization_id);
+    console.log('📋 Fetching tasks for user:', {
+      userId: user?.id,
+      email: user?.email,
+      organizationId: user?.organization_id
+    });
     
     if (!user) {
-      console.error('User is required for this operation');
+      console.error('❌ User is required for this operation');
       toast.error('User must belong to an organization to view tasks');
       return;
     }
     
     if (!user.organization_id) {
-      console.error('User must belong to an organization');
+      console.error('❌ User must belong to an organization');
       toast.error('User must belong to an organization to view tasks');
       return;
     }
     
     // Test the RLS policy first
-    console.log('Testing RLS policy - fetching current user org ID...');
+    console.log('🔍 Testing RLS policy - fetching current user org ID...');
     const { data: orgTest, error: orgError } = await supabase.rpc('get_current_user_organization_id');
     if (orgError) {
-      console.error('RLS function test failed:', orgError);
+      console.error('❌ RLS function test failed:', orgError);
     } else {
-      console.log('Current user organization ID from RLS function:', orgTest);
+      console.log('✅ Current user organization ID from RLS function:', orgTest);
+      console.log('🔍 User context organization ID:', user.organization_id);
+      
+      if (orgTest !== user.organization_id) {
+        console.warn('⚠️ Mismatch between RLS function and user context organization IDs!');
+      }
     }
     
     // With new RLS policies, we can simply select all tasks
     // The policies will automatically filter by organization
-    console.log('Fetching tasks with new RLS policies...');
+    console.log('📋 Executing tasks query with RLS filtering...');
     const { data: tasksData, error: tasksError } = await supabase
       .from('tasks')
       .select('*')
       .order('created_at', { ascending: false });
 
     if (tasksError) {
-      console.error('Error fetching tasks:', tasksError);
+      console.error('❌ Error fetching tasks:', tasksError);
       toast.error('Failed to load tasks: ' + tasksError.message);
       return;
     }
 
-    console.log(`Successfully fetched ${tasksData?.length || 0} tasks from database`);
+    console.log(`✅ Successfully fetched ${tasksData?.length || 0} tasks from database`);
     
     if (!tasksData || tasksData.length === 0) {
-      console.log('No tasks found - this could be normal or indicate an RLS issue');
+      console.log('📋 No tasks found - this could be normal or indicate an RLS issue');
       setTasks([]);
       return;
     }
     
     // Fetch comments with explicit column selection
+    console.log('💬 Fetching comments...');
     const { data: commentsData, error: commentsError } = await supabase
       .from('comments')
       .select('id, user_id, task_id, content, created_at');
 
     if (commentsError) {
-      console.error('Error fetching comments:', commentsError);
+      console.error('❌ Error fetching comments:', commentsError);
+    } else {
+      console.log(`✅ Fetched ${commentsData?.length || 0} comments`);
     }
 
     // Manual transformation with explicit types
@@ -121,10 +133,16 @@ export const fetchTasks = async (
       transformedTasks.push(task);
     }
 
-    console.log(`Successfully processed ${transformedTasks.length} tasks`);
+    console.log(`✅ Successfully processed ${transformedTasks.length} tasks`);
+    console.log('📋 Sample tasks:', transformedTasks.slice(0, 3).map(t => ({
+      id: t.id,
+      title: t.title,
+      organizationId: t.organizationId
+    })));
+    
     setTasks(transformedTasks);
   } catch (error) {
-    console.error('Error in fetchTasks:', error);
+    console.error('❌ Error in fetchTasks:', error);
     toast.error('Failed to load tasks');
   }
 };

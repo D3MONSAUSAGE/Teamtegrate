@@ -13,7 +13,7 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  console.log('AuthProvider: Initializing');
+  console.log('🚀 AuthProvider: Initializing');
 
   const {
     user,
@@ -37,7 +37,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const isAuthenticated = !!user && !!session;
 
-  console.log('AuthProvider: Current state - loading:', loading, 'user:', !!user, 'isAuthenticated:', isAuthenticated);
+  console.log('📊 AuthProvider: Current state', {
+    loading,
+    hasUser: !!user,
+    isAuthenticated,
+    userEmail: user?.email,
+    organizationId: user?.organizationId
+  });
 
   // Test RLS policies when user is authenticated
   React.useEffect(() => {

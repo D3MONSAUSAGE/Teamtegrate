@@ -13,41 +13,59 @@ export const useProjects = () => {
 
   const fetchProjects = async () => {
     if (!user || !isAuthenticated) {
-      console.log('No authenticated user, skipping project fetch');
+      console.log('📋 No authenticated user, skipping project fetch');
       setIsLoading(false);
       setProjects([]);
       return;
     }
 
     try {
-      console.log('Fetching projects with new RLS policies for user:', user.id);
+      console.log('📋 Fetching projects for user:', {
+        userId: user.id,
+        email: user.email,
+        organizationId: user.organizationId
+      });
+      
       setIsLoading(true);
       setError(null);
       
       // Test the RLS policy first
       const { data: orgTest, error: orgError } = await supabase.rpc('get_current_user_organization_id');
       if (orgError) {
-        console.error('RLS function test failed:', orgError);
+        console.error('❌ RLS function test failed:', orgError);
       } else {
-        console.log('Current user organization ID from RLS function:', orgTest);
+        console.log('✅ Current user organization ID from RLS function:', orgTest);
+        console.log('🔍 User context organization ID:', user.organizationId);
+        
+        if (orgTest !== user.organizationId) {
+          console.warn('⚠️ Mismatch between RLS function and user context organization IDs!');
+        }
       }
 
       // With new RLS policies, simply select all projects
       // The RLS policy will automatically filter by organization
+      console.log('📋 Executing projects query with RLS filtering...');
       const { data, error: fetchError } = await supabase
         .from('projects')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (fetchError) {
-        console.error('Error fetching projects:', fetchError);
+        console.error('❌ Error fetching projects:', fetchError);
         throw fetchError;
       }
 
-      console.log(`Successfully fetched ${data?.length || 0} projects`);
+      console.log(`✅ Successfully fetched ${data?.length || 0} projects`);
 
       if (!data || data.length === 0) {
-        console.log('No projects found - this could be normal or indicate an RLS issue');
+        console.log('📋 No projects found - this could be normal or indicate an RLS issue');
+        
+        // Additional debugging - check if projects exist in the organization
+        if (user.organizationId) {
+          console.log('🔍 Debugging: Checking if projects exist in organization...');
+          // We can't do this query due to RLS, but we can check total org data
+        }
+        
         setProjects([]);
         return;
       }
@@ -72,9 +90,15 @@ export const useProjects = () => {
         organizationId: user.organizationId
       }));
 
+      console.log('📋 Transformed projects:', transformedProjects.map(p => ({
+        id: p.id,
+        title: p.title,
+        organizationId: p.organizationId
+      })));
+
       setProjects(transformedProjects);
     } catch (err: any) {
-      console.error('Error in fetchProjects:', err);
+      console.error('❌ Error in fetchProjects:', err);
       setError(err.message || 'Failed to fetch projects');
       toast.error('Failed to load projects: ' + (err.message || 'Unknown error'));
     } finally {

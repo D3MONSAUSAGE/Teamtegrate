@@ -11,7 +11,12 @@ export const useAuthState = () => {
 
   const fetchUserProfile = async (userId: string): Promise<AppUser | null> => {
     try {
-      console.log('AuthProvider: Fetching user profile for:', userId);
+      console.log('🔍 AuthState: Fetching user profile for:', userId);
+      
+      // First, test the RLS function directly
+      const { data: orgIdFromFunction, error: funcError } = await supabase.rpc('get_current_user_organization_id');
+      console.log('🔍 AuthState: RLS function result:', { orgIdFromFunction, funcError });
+      
       const { data, error } = await supabase
         .from('users')
         .select('*')
@@ -19,11 +24,29 @@ export const useAuthState = () => {
         .single();
 
       if (error) {
-        console.error('AuthProvider: Error fetching user profile:', error);
+        console.error('❌ AuthState: Error fetching user profile:', error);
         return null;
       }
 
-      console.log('AuthProvider: User profile fetched:', data);
+      console.log('✅ AuthState: User profile fetched:', {
+        id: data.id,
+        email: data.email,
+        role: data.role,
+        organization_id: data.organization_id,
+        name: data.name
+      });
+
+      // Verify organization exists
+      if (data.organization_id) {
+        const { data: orgData, error: orgError } = await supabase
+          .from('organizations')
+          .select('id, name')
+          .eq('id', data.organization_id)
+          .single();
+        
+        console.log('🏢 AuthState: Organization verification:', { orgData, orgError });
+      }
+
       return {
         id: data.id,
         email: data.email,
@@ -35,40 +58,48 @@ export const useAuthState = () => {
         createdAt: new Date(),
       };
     } catch (error) {
-      console.error('AuthProvider: Error in fetchUserProfile:', error);
+      console.error('❌ AuthState: Error in fetchUserProfile:', error);
       return null;
     }
   };
 
   const refreshUserSession = async (): Promise<void> => {
     try {
+      console.log('🔄 AuthState: Refreshing user session...');
       const { data: { session: newSession } } = await supabase.auth.getSession();
       if (newSession?.user) {
+        console.log('✅ AuthState: Session refreshed, fetching user data...');
         setSession(newSession);
         const userData = await fetchUserProfile(newSession.user.id);
         setUser(userData);
+        console.log('✅ AuthState: User data updated after refresh:', userData);
       }
     } catch (error) {
-      console.error('Error refreshing session:', error);
+      console.error('❌ AuthState: Error refreshing session:', error);
     }
   };
 
   useEffect(() => {
     let isMounted = true;
     
-    console.log('AuthProvider: Setting up auth initialization');
+    console.log('🚀 AuthState: Setting up auth initialization');
     
     const initializeAuth = async () => {
       try {
         // Get initial session without loading state for faster landing page
+        console.log('🔍 AuthState: Getting initial session...');
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
-          console.error('AuthProvider: Error getting session:', error);
+          console.error('❌ AuthState: Error getting session:', error);
           return;
         }
 
-        console.log('AuthProvider: Initial session:', !!session);
+        console.log('📄 AuthState: Initial session:', {
+          hasSession: !!session,
+          userId: session?.user?.id,
+          userEmail: session?.user?.email
+        });
         
         if (isMounted) {
           setSession(session);
@@ -76,20 +107,24 @@ export const useAuthState = () => {
           // Only set loading and fetch profile if we have a session
           if (session?.user) {
             setLoading(true);
-            console.log('AuthProvider: User found in session:', session.user.id);
+            console.log('👤 AuthState: User found in session, fetching profile...');
             const userProfile = await fetchUserProfile(session.user.id);
             if (isMounted) {
               setUser(userProfile);
               setLoading(false);
+              console.log('✅ AuthState: Auth initialization complete:', {
+                hasUser: !!userProfile,
+                organizationId: userProfile?.organizationId
+              });
             }
           } else {
-            console.log('AuthProvider: No session - landing page can show immediately');
+            console.log('🏠 AuthState: No session - landing page can show immediately');
             setUser(null);
             setLoading(false);
           }
         }
       } catch (error) {
-        console.error('AuthProvider: Error in initializeAuth:', error);
+        console.error('❌ AuthState: Error in initializeAuth:', error);
         if (isMounted) {
           setLoading(false);
         }
@@ -101,12 +136,17 @@ export const useAuthState = () => {
       (event, session) => {
         if (!isMounted) return;
         
-        console.log('AuthProvider: Auth state change:', event, !!session);
+        console.log('🔄 AuthState: Auth state change:', {
+          event,
+          hasSession: !!session,
+          userId: session?.user?.id,
+          userEmail: session?.user?.email
+        });
         
         setSession(session);
         
         if (session?.user) {
-          console.log('AuthProvider: User authenticated:', session.user.id);
+          console.log('👤 AuthState: User authenticated, fetching profile...');
           setLoading(true);
           // Fetch profile for authenticated users
           setTimeout(() => {
@@ -115,12 +155,16 @@ export const useAuthState = () => {
                 if (isMounted) {
                   setUser(userData);
                   setLoading(false);
+                  console.log('✅ AuthState: User profile loaded after auth change:', {
+                    hasUser: !!userData,
+                    organizationId: userData?.organizationId
+                  });
                 }
               });
             }
           }, 0);
         } else {
-          console.log('AuthProvider: User signed out');
+          console.log('👋 AuthState: User signed out');
           setUser(null);
           setLoading(false);
         }
@@ -132,7 +176,7 @@ export const useAuthState = () => {
 
     return () => {
       isMounted = false;
-      console.log('AuthProvider: Cleaning up auth listener');
+      console.log('🧹 AuthState: Cleaning up auth listener');
       subscription.unsubscribe();
     };
   }, []);
