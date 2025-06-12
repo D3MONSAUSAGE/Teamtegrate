@@ -6,7 +6,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom"
 import { AuthProvider } from "./contexts/SimpleAuthContext"
 import Index from "./pages/Index"
 import SimpleLoginPage from "./pages/SimpleLoginPage"
-import Dashboard from "./pages/Dashboard"
+import DashboardPage from "./pages/DashboardPage"
+import AppLayout from "./components/AppLayout"
 
 const queryClient = new QueryClient()
 
@@ -20,7 +21,7 @@ function App() {
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<SimpleLoginPage />} />
-              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/dashboard" element={<AppLayout><DashboardPage /></AppLayout>} />
             </Routes>
           </BrowserRouter>
         </TooltipProvider>
