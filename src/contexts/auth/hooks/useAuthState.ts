@@ -157,7 +157,7 @@ export const useAuthState = () => {
       }
     );
 
-    // Initialize auth
+    // Initialize auth immediately
     initializeAuth();
 
     return () => {
