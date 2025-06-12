@@ -29,9 +29,9 @@ export const useProjects = () => {
       setIsLoading(true);
       setError(null);
       
-      // With new RLS policies, simply select all projects
-      // The RLS policy will automatically filter by organization
-      console.log('📋 Executing projects query with RLS filtering...');
+      // With the new clean RLS policies, simply select all projects
+      // The org_isolation_projects_final policy will automatically filter by organization
+      console.log('📋 Executing projects query with clean RLS filtering...');
       const { data, error: fetchError } = await supabase
         .from('projects')
         .select('*')
@@ -42,7 +42,7 @@ export const useProjects = () => {
         throw fetchError;
       }
 
-      console.log(`✅ Successfully fetched ${data?.length || 0} projects`);
+      console.log(`✅ Successfully fetched ${data?.length || 0} projects with clean RLS`);
 
       if (!data || data.length === 0) {
         console.log('📋 No projects found');
@@ -70,7 +70,7 @@ export const useProjects = () => {
         organizationId: user.organizationId
       }));
 
-      console.log('📋 Transformed projects:', transformedProjects.map(p => ({
+      console.log('📋 Clean RLS projects processed:', transformedProjects.map(p => ({
         id: p.id,
         title: p.title,
         organizationId: p.organizationId
@@ -78,7 +78,7 @@ export const useProjects = () => {
 
       setProjects(transformedProjects);
     } catch (err: any) {
-      console.error('❌ Error in fetchProjects:', err);
+      console.error('❌ Error in fetchProjects with clean RLS:', err);
       setError(err.message || 'Failed to fetch projects');
       toast.error('Failed to load projects: ' + (err.message || 'Unknown error'));
     } finally {

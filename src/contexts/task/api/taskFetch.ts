@@ -15,7 +15,7 @@ export const fetchTasks = async (
   setTasks: (tasks: Task[]) => void
 ): Promise<void> => {
   try {
-    console.log('📋 Fetching tasks for user:', {
+    console.log('📋 Fetching tasks for user with clean RLS:', {
       userId: user?.id,
       email: user?.email,
       organizationId: user?.organization_id
@@ -33,21 +33,21 @@ export const fetchTasks = async (
       return;
     }
     
-    // With new RLS policies, we can simply select all tasks
-    // The policies will automatically filter by organization
-    console.log('📋 Executing tasks query with RLS filtering...');
+    // With the new clean RLS policies, we can simply select all tasks
+    // The org_isolation_tasks_final policy will automatically filter by organization
+    console.log('📋 Executing tasks query with clean RLS filtering...');
     const { data: tasksData, error: tasksError } = await supabase
       .from('tasks')
       .select('*')
       .order('created_at', { ascending: false });
 
     if (tasksError) {
-      console.error('❌ Error fetching tasks:', tasksError);
+      console.error('❌ Error fetching tasks with clean RLS:', tasksError);
       toast.error('Failed to load tasks: ' + tasksError.message);
       return;
     }
 
-    console.log(`✅ Successfully fetched ${tasksData?.length || 0} tasks from database`);
+    console.log(`✅ Successfully fetched ${tasksData?.length || 0} tasks with clean RLS policies`);
     
     if (!tasksData || tasksData.length === 0) {
       console.log('📋 No tasks found');
@@ -119,11 +119,11 @@ export const fetchTasks = async (
       transformedTasks.push(task);
     }
 
-    console.log(`✅ Successfully processed ${transformedTasks.length} tasks`);
+    console.log(`✅ Successfully processed ${transformedTasks.length} tasks with clean RLS`);
     
     setTasks(transformedTasks);
   } catch (error) {
-    console.error('❌ Error in fetchTasks:', error);
+    console.error('❌ Error in fetchTasks with clean RLS:', error);
     toast.error('Failed to load tasks');
   }
 };
