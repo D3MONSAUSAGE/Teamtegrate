@@ -18,7 +18,7 @@ export const useLoginState = () => {
     isLogin
   });
 
-  // Redirect if already logged in - only after loading is complete
+  // Redirect if already logged in - but only after loading is complete
   useEffect(() => {
     if (!loading && isAuthenticated) {
       console.log('useLoginState: User authenticated, redirecting to dashboard');
@@ -38,8 +38,19 @@ export const useLoginState = () => {
       return;
     }
 
-    if (!email.trim() || !password) {
-      setLoginError('Please enter both email and password');
+    // Simple validation - allow empty fields to show server error
+    if (!email.trim() && !password) {
+      setLoginError('Please enter your email and password');
+      return;
+    }
+
+    if (!email.trim()) {
+      setLoginError('Please enter your email address');
+      return;
+    }
+
+    if (!password) {
+      setLoginError('Please enter your password');
       return;
     }
     
@@ -50,9 +61,10 @@ export const useLoginState = () => {
     try {
       await login(email.trim(), password);
       console.log('useLoginState: Login successful');
+      // Navigation will happen via useEffect when isAuthenticated changes
     } catch (error) {
       console.error('useLoginState: Login failed:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Login failed. Please try again.';
+      const errorMessage = error instanceof Error ? error.message : 'Login failed. Please check your credentials.';
       setLoginError(errorMessage);
     } finally {
       setIsSubmitting(false);

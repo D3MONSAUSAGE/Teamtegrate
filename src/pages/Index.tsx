@@ -5,23 +5,27 @@ import { Navigate } from 'react-router-dom';
 import LandingPage from './LandingPage';
 
 const Index = () => {
-  const { user, loading, isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
 
   console.log('Index page - Auth state:', { 
     loading, 
-    hasUser: !!user, 
-    isAuthenticated,
-    userEmail: user?.email 
+    isAuthenticated
   });
 
+  // Show landing page while loading
+  if (loading) {
+    console.log('Index: Still loading auth state, showing landing page');
+    return <LandingPage />;
+  }
+
   // If user is authenticated, redirect to dashboard
-  if (isAuthenticated && user && !loading) {
+  if (isAuthenticated) {
     console.log('Index: User is authenticated, redirecting to dashboard');
     return <Navigate to="/dashboard" replace />;
   }
 
-  // For everyone else (including during loading), show landing page
-  console.log('Index: Showing landing page');
+  // For unauthenticated users, show landing page
+  console.log('Index: User not authenticated, showing landing page');
   return <LandingPage />;
 };
 

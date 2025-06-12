@@ -9,7 +9,7 @@ interface AuthContextType {
   user: AppUser | null;
   session: Session | null;
   loading: boolean;
-  isLoading: boolean; // Add compatibility prop
+  isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, name: string, role: UserRole, organizationData?: any) => Promise<void>;
   logout: () => Promise<void>;
@@ -49,12 +49,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return null;
       }
 
-      console.log('✅ User profile fetched successfully:', {
-        id: data.id,
-        email: data.email,
-        role: data.role,
-        organization_id: data.organization_id
-      });
+      console.log('✅ User profile fetched successfully');
 
       return {
         id: data.id,
@@ -99,11 +94,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return;
       }
       
+      setSession(newSession);
+      
       if (newSession?.user) {
-        setSession(newSession);
-        
         const userProfile = await fetchUserProfile(newSession.user.id);
         setUser(userProfile);
+      } else {
+        setUser(null);
       }
       
       console.log('✅ Session refresh complete');
@@ -123,19 +120,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (error) {
         console.error('❌ Login error:', error);
-        toast.error(error.message);
         throw error;
       }
 
-      if (data.session) {
-        console.log('✅ Login successful - session created');
-        toast.success('Welcome back!');
-      } else {
-        console.error('❌ Login succeeded but no session returned');
-        throw new Error('No session returned from login');
-      }
+      console.log('✅ Login successful');
+      toast.success('Welcome back!');
     } catch (error) {
       console.error('❌ Login failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Login failed. Please try again.';
+      toast.error(errorMessage);
       throw error;
     }
   };
@@ -176,7 +169,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (error) {
         console.error('❌ Signup error:', error);
-        toast.error(error.message);
         throw error;
       }
 
@@ -184,6 +176,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       toast.success('Account created successfully!');
     } catch (error) {
       console.error('❌ Signup failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Signup failed. Please try again.';
+      toast.error(errorMessage);
       throw error;
     }
   };
@@ -196,7 +190,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       if (error) {
         console.error('❌ Logout error:', error);
-        toast.error('Error signing out');
         throw error;
       }
 
@@ -204,6 +197,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       toast.success('Signed out successfully');
     } catch (error) {
       console.error('❌ Logout failed:', error);
+      toast.error('Error signing out');
       throw error;
     }
   };
@@ -211,12 +205,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     let isMounted = true;
 
-    // Initialize auth state
     const initializeAuth = async () => {
       try {
         console.log('🚀 Initializing auth...');
         
-        // Get initial session
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -229,17 +221,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           return;
         }
         
-        if (session?.user && isMounted) {
-          console.log('✅ Found existing session');
+        if (isMounted) {
           setSession(session);
           
-          const userProfile = await fetchUserProfile(session.user.id);
-          if (isMounted) {
-            setUser(userProfile);
+          if (session?.user) {
+            console.log('✅ Found existing session');
+            // Fetch user profile separately - don't block on it
+            fetchUserProfile(session.user.id).then((userProfile) => {
+              if (isMounted) {
+                setUser(userProfile);
+              }
+            });
           }
-        }
-        
-        if (isMounted) {
+          
           setLoading(false);
         }
       } catch (error) {
@@ -252,28 +246,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     };
 
-    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!isMounted) return;
 
         console.log('🔄 Auth state change:', event, !!session);
 
+        setSession(session);
+        
         if (session?.user) {
-          setSession(session);
-          
-          const userProfile = await fetchUserProfile(session.user.id);
-          if (isMounted) {
-            setUser(userProfile);
-          }
+          // Fetch user profile after session is set
+          fetchUserProfile(session.user.id).then((userProfile) => {
+            if (isMounted) {
+              setUser(userProfile);
+            }
+          });
         } else {
-          setSession(null);
           setUser(null);
         }
       }
     );
 
-    // Initialize
     initializeAuth();
 
     return () => {
@@ -282,8 +275,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
   }, []);
 
-  // Authentication status is based on both session and user
-  const isAuthenticated = !!session && !!user;
+  // Authentication is based on session only - don't wait for user profile
+  const isAuthenticated = !!session;
 
   const value: AuthContextType = {
     user,

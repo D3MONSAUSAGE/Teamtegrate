@@ -65,7 +65,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
       <Button 
         type="submit" 
         className="w-full" 
-        disabled={isSubmitting || !email.trim() || !password}
+        disabled={isSubmitting}
       >
         {isSubmitting ? (
           <>
