@@ -24,6 +24,7 @@ const LoginPage = () => {
   const [isLogin, setIsLogin] = useState(!searchParams.get('signup'));
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { login, isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
   
@@ -45,15 +46,23 @@ const LoginPage = () => {
     e.preventDefault();
     
     if (!isLogin) {
-      // This shouldn't happen as signup is handled by MultiTenantSignupForm
       return;
     }
+    
+    if (isSubmitting) {
+      return;
+    }
+    
+    setIsSubmitting(true);
     
     try {
       await login(email, password);
       toast.success('Welcome back!');
     } catch (error) {
       console.error('Authentication error:', error);
+      toast.error('Login failed. Please check your credentials.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -123,6 +132,7 @@ const LoginPage = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  disabled={isSubmitting}
                 />
               </div>
               
@@ -135,11 +145,12 @@ const LoginPage = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  disabled={isSubmitting}
                 />
               </div>
 
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? 'Signing in...' : 'Sign In'}
+              <Button type="submit" className="w-full" disabled={isSubmitting || loading}>
+                {isSubmitting ? 'Signing in...' : 'Sign In'}
               </Button>
             </form>
           </CardContent>
@@ -148,7 +159,7 @@ const LoginPage = () => {
               variant="link"
               className="w-full"
               onClick={() => setIsLogin(false)}
-              disabled={loading}
+              disabled={isSubmitting || loading}
             >
               Don't have an account? Sign up for free
             </Button>
