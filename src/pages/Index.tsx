@@ -10,23 +10,6 @@ const Index = () => {
 
   console.log('Index page - Loading:', loading, 'User:', !!user, 'IsAuthenticated:', isAuthenticated);
 
-  // Show loading only if we're actually in the process of checking auth
-  // and we haven't determined the auth state yet
-  if (loading) {
-    console.log('Index: Showing loading state during auth check');
-    return (
-      <div className="h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">Checking authentication...</p>
-          <p className="text-xs text-muted-foreground mt-2">
-            If this takes too long, please refresh the page
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   // If user is authenticated and has all required data, redirect to dashboard
   if (isAuthenticated && user && user.organizationId) {
     console.log('Index: User is fully authenticated, redirecting to dashboard');
@@ -40,7 +23,8 @@ const Index = () => {
     return <Navigate to="/dashboard" replace />;
   }
 
-  // For all other cases (no auth loading, unauthenticated), show landing page
+  // For all other cases (including loading), show landing page
+  // Landing page should be publicly accessible
   console.log('Index: Showing landing page');
   return <LandingPage />;
 };

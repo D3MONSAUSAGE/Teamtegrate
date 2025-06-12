@@ -79,9 +79,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     });
   }, [loading, user, session, isAuthenticated]);
 
-  // Test RLS policies when user is authenticated with detailed logging
+  // Only test RLS policies when user is authenticated and we're sure auth is working
+  // Don't run this for public page visitors
   React.useEffect(() => {
-    if (isAuthenticated && user) {
+    if (isAuthenticated && user && user.organizationId) {
       console.log('🔍 DETAILED RLS TESTING: User authenticated, testing policies...');
       console.log('🔍 User details for RLS test:', {
         userId: user.id,
@@ -103,7 +104,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log('🔍 RLS TESTING: Skipping - user not authenticated or missing data:', {
         isAuthenticated,
         hasUser: !!user,
-        userOrgId: user?.organizationId
+        userOrgId: user?.organizationId,
+        reason: !isAuthenticated ? 'not authenticated' : !user ? 'no user' : 'no org id'
       });
     }
   }, [isAuthenticated, user?.id, user?.organizationId]);
