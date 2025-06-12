@@ -2,7 +2,6 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
-import AppLayout from '@/components/AppLayout';
 import DailyTasksSection from '@/components/dashboard/DailyTasksSection';
 import TimeTracking from '@/components/dashboard/TimeTracking';
 import RecentProjects from '@/components/dashboard/RecentProjects';
@@ -44,18 +43,16 @@ const Dashboard = () => {
 
   if (!user.organizationId) {
     return (
-      <AppLayout>
-        <div className="container mx-auto px-4 py-8">
-          <SessionHealthIndicator />
-          <div className="text-center">
-            <h2 className="text-2xl font-bold mb-4">Organization Setup Required</h2>
-            <p className="text-muted-foreground">
-              Your account needs to be associated with an organization to access the dashboard.
-              Please contact your administrator or refresh the page.
-            </p>
-          </div>
+      <div className="container mx-auto px-4 py-8">
+        <SessionHealthIndicator />
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">Organization Setup Required</h2>
+          <p className="text-muted-foreground">
+            Your account needs to be associated with an organization to access the dashboard.
+            Please contact your administrator or refresh the page.
+          </p>
         </div>
-      </AppLayout>
+      </div>
     );
   }
 
@@ -94,51 +91,49 @@ const Dashboard = () => {
   };
 
   return (
-    <AppLayout>
-      <div className="container mx-auto px-4 py-8 space-y-6">
-        <SessionHealthIndicator />
-        
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">
-              Welcome back, {user.name || 'User'}!
-            </h1>
-            <p className="text-muted-foreground">
-              Here's what's happening with your projects today.
-            </p>
-          </div>
+    <div className="container mx-auto px-4 py-8 space-y-6">
+      <SessionHealthIndicator />
+      
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Welcome back, {user.name || 'User'}!
+          </h1>
+          <p className="text-muted-foreground">
+            Here's what's happening with your projects today.
+          </p>
         </div>
+      </div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          <div className="md:col-span-2 lg:col-span-2">
-            <DailyTasksSection 
-              tasks={todaysTasks}
-              onCreateTask={handleCreateTask}
-              onEditTask={handleEditTask}
-            />
-          </div>
-          <div>
-            <TimeTracking />
-          </div>
-        </div>
-
-        <div className="grid gap-6 md:grid-cols-2">
-          <RecentProjects 
-            projects={projects}
-            onViewTasks={handleViewTasks}
-            onCreateTask={handleCreateTaskForProject}
-            onRefresh={refreshProjects}
-          />
-          <UpcomingTasksSection 
-            tasks={upcomingTasks}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="md:col-span-2 lg:col-span-2">
+          <DailyTasksSection 
+            tasks={todaysTasks}
             onCreateTask={handleCreateTask}
             onEditTask={handleEditTask}
           />
         </div>
-
-        <AnalyticsSection />
+        <div>
+          <TimeTracking />
+        </div>
       </div>
-    </AppLayout>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        <RecentProjects 
+          projects={projects}
+          onViewTasks={handleViewTasks}
+          onCreateTask={handleCreateTaskForProject}
+          onRefresh={refreshProjects}
+        />
+        <UpcomingTasksSection 
+          tasks={upcomingTasks}
+          onCreateTask={handleCreateTask}
+          onEditTask={handleEditTask}
+        />
+      </div>
+
+      <AnalyticsSection />
+    </div>
   );
 };
 
