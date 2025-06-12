@@ -56,7 +56,7 @@ const AppLayout = () => {
   }
 
   // Redirect to login if not authenticated
-  if (!isAuthenticated || !user) {
+  if (!isAuthenticated) {
     console.log('AppLayout: Not authenticated, redirecting to login');
     return <Navigate to="/login" replace />;
   }

@@ -8,25 +8,7 @@ export const useLoginState = () => {
   const [isLogin, setIsLogin] = useState(!searchParams.get('signup'));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
-  
-  // Add error boundary for auth context
-  let authContext;
-  try {
-    authContext = useAuth();
-  } catch (error) {
-    console.error('Auth context not available:', error);
-    // Return fallback state when auth context is not available
-    return {
-      isLogin,
-      isSubmitting: false,
-      loginError: 'Authentication system not ready',
-      handleLogin: async () => {},
-      handleBackToLogin: () => setIsLogin(true),
-      handleSwitchToSignup: () => setIsLogin(false)
-    };
-  }
-  
-  const { login, isAuthenticated, loading } = authContext;
+  const { login, isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
 
   console.log('useLoginState: Auth state:', { 
