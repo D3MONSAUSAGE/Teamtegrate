@@ -1,14 +1,14 @@
 
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from '@/contexts/SimpleAuthContext';
+import { useAuth } from '@/contexts/SimpleAuthContext';
 import { Loader2 } from 'lucide-react';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
-const ProtectedRouteContent: React.FC<ProtectedRouteProps> = ({ children }) => {
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
 
   console.log('ProtectedRoute - Auth state:', { isAuthenticated, loading });
@@ -35,16 +35,6 @@ const ProtectedRouteContent: React.FC<ProtectedRouteProps> = ({ children }) => {
   }
 
   return <>{children}</>;
-};
-
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  return (
-    <AuthProvider>
-      <ProtectedRouteContent>
-        {children}
-      </ProtectedRouteContent>
-    </AuthProvider>
-  );
 };
 
 export default ProtectedRoute;

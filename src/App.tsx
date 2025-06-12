@@ -42,11 +42,13 @@ function App() {
               </AuthProvider>
             } />
             
-            {/* Protected routes - wrapped in ProtectedRoute */}
+            {/* Protected routes - wrapped in single AuthProvider */}
             <Route path="/dashboard" element={
-              <ProtectedRoute>
-                <AppLayout />
-              </ProtectedRoute>
+              <AuthProvider>
+                <ProtectedRoute>
+                  <AppLayout />
+                </ProtectedRoute>
+              </AuthProvider>
             }>
               <Route index element={<DashboardPage />} />
               <Route path="tasks" element={<TasksPage />} />
