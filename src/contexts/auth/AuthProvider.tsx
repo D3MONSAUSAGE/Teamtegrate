@@ -2,26 +2,10 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Session, AuthError } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-
-interface AuthUser {
-  id: string;
-  email: string;
-  name?: string;
-  role?: string;
-  organizationId?: string;
-  organization_id?: string;
-  avatar_url?: string;
-  timezone?: string;
-}
-
-interface AuthContextType {
-  user: AuthUser | null;
-  session: Session | null;
-  loading: boolean;
-  isAuthenticated: boolean;
-  signOut: () => Promise<void>;
-  refreshUser: () => Promise<void>;
-}
+import { User as AppUser, UserRole } from '@/types';
+import { AuthContextType } from './types';
+import { useAuthOperations } from './hooks/useAuthOperations';
+import { useAuthSession } from './hooks/useAuthSession';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -30,13 +14,20 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  const {
+    user,
+    session,
+    loading,
+    setUser,
+    setSession,
+    setLoading,
+    handleUserCreation,
+    refreshUserSession
+  } = useAuthSession();
 
   console.log('AuthProvider: Initializing');
 
-  const fetchUserProfile = async (userId: string): Promise<AuthUser | null> => {
+  const fetchUserProfile = async (userId: string): Promise<AppUser | null> => {
     try {
       console.log('AuthProvider: Fetching user profile for:', userId);
       const { data, error } = await supabase
@@ -55,11 +46,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         id: data.id,
         email: data.email,
         name: data.name,
-        role: data.role,
+        role: data.role as UserRole,
         organizationId: data.organization_id,
         organization_id: data.organization_id,
         avatar_url: data.avatar_url,
         timezone: data.timezone,
+        createdAt: new Date(), // Add required createdAt field
       };
     } catch (error) {
       console.error('AuthProvider: Error in fetchUserProfile:', error);
@@ -136,33 +128,63 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
   }, []);
 
-  const signOut = async () => {
-    console.log('AuthProvider: Signing out');
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error('AuthProvider: Error signing out:', error);
-        throw error;
-      }
-      setUser(null);
-      setSession(null);
-    } catch (error) {
-      console.error('AuthProvider: Error in signOut:', error);
-      throw error;
-    }
-  };
+  // Get auth operations
+  const {
+    login,
+    signup,
+    logout,
+    updateUserProfile
+  } = useAuthOperations(session, user, setSession, setUser, setLoading);
 
   const isAuthenticated = !!user && !!session;
+  const isLoading = loading; // Alias for compatibility
+
+  // Role-based access control helpers
+  const hasRoleAccess = (requiredRole: UserRole): boolean => {
+    if (!user) return false;
+    
+    const roleHierarchy: Record<UserRole, number> = {
+      'user': 1,
+      'manager': 2,
+      'admin': 3,
+      'superadmin': 4
+    };
+    
+    const userLevel = roleHierarchy[user.role];
+    const requiredLevel = roleHierarchy[requiredRole];
+    
+    return userLevel >= requiredLevel;
+  };
+
+  const canManageUser = (targetRole: UserRole): boolean => {
+    if (!user) return false;
+    
+    // Superadmins can manage anyone
+    if (user.role === 'superadmin') return true;
+    
+    // Admins can manage managers and users
+    if (user.role === 'admin' && ['manager', 'user'].includes(targetRole)) return true;
+    
+    // Managers can manage users
+    if (user.role === 'manager' && targetRole === 'user') return true;
+    
+    return false;
+  };
 
   console.log('AuthProvider: Current state - loading:', loading, 'user:', !!user, 'isAuthenticated:', isAuthenticated);
 
   const value: AuthContextType = {
     user,
-    session,
     loading,
+    isLoading,
+    login,
+    signup,
+    logout,
     isAuthenticated,
-    signOut,
-    refreshUser,
+    updateUserProfile,
+    hasRoleAccess,
+    canManageUser,
+    refreshUserSession
   };
 
   return (
