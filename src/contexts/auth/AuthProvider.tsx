@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Session, AuthError } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,17 +14,6 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const {
-    user,
-    session,
-    loading,
-    setUser,
-    setSession,
-    setLoading,
-    handleUserCreation,
-    refreshUserSession
-  } = useAuthSession();
-
   console.log('AuthProvider: Initializing');
 
   const fetchUserProfile = async (userId: string): Promise<AppUser | null> => {
@@ -46,16 +36,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         email: data.email,
         name: data.name,
         role: data.role as UserRole,
-        organizationId: data.organization_id, // Fixed: using camelCase organizationId
+        organizationId: data.organization_id,
         avatar_url: data.avatar_url,
         timezone: data.timezone,
-        createdAt: new Date(), // Add required createdAt field
+        createdAt: new Date(),
       };
     } catch (error) {
       console.error('AuthProvider: Error in fetchUserProfile:', error);
       return null;
     }
   };
+
+  const [user, setUser] = useState<AppUser | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const refreshUser = async () => {
     console.log('AuthProvider: Refreshing user');
@@ -68,7 +62,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const refreshUserSession = async (): Promise<void> => {
+    try {
+      const { data: { session: newSession } } = await supabase.auth.getSession();
+      if (newSession?.user) {
+        setSession(newSession);
+        const userData = await fetchUserProfile(newSession.user.id);
+        setUser(userData);
+      }
+    } catch (error) {
+      console.error('Error refreshing session:', error);
+    }
+  };
+
   useEffect(() => {
+    let isMounted = true;
+    
     console.log('AuthProvider: Setting up auth listener');
     
     const initializeAuth = async () => {
@@ -77,25 +86,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         if (error) {
           console.error('AuthProvider: Error getting session:', error);
-          setLoading(false);
+          if (isMounted) {
+            setLoading(false);
+          }
           return;
         }
 
         console.log('AuthProvider: Initial session:', !!session);
-        setSession(session);
+        
+        if (isMounted) {
+          setSession(session);
 
-        if (session?.user) {
-          console.log('AuthProvider: User found in session:', session.user.id);
-          const userProfile = await fetchUserProfile(session.user.id);
-          setUser(userProfile);
-        } else {
-          console.log('AuthProvider: No user in session');
-          setUser(null);
+          if (session?.user) {
+            console.log('AuthProvider: User found in session:', session.user.id);
+            const userProfile = await fetchUserProfile(session.user.id);
+            setUser(userProfile);
+          } else {
+            console.log('AuthProvider: No user in session');
+            setUser(null);
+          }
+          
+          setLoading(false);
         }
       } catch (error) {
         console.error('AuthProvider: Error in initializeAuth:', error);
-      } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
@@ -103,6 +120,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (!isMounted) return;
+        
         console.log('AuthProvider: Auth state change:', event, !!session);
         
         setSession(session);
@@ -121,6 +140,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     );
 
     return () => {
+      isMounted = false;
       console.log('AuthProvider: Cleaning up auth listener');
       subscription.unsubscribe();
     };
@@ -135,7 +155,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   } = useAuthOperations(session, user, setSession, setUser, setLoading);
 
   const isAuthenticated = !!user && !!session;
-  const isLoading = loading; // Alias for compatibility
+  const isLoading = loading;
 
   // Role-based access control helpers
   const hasRoleAccess = (requiredRole: UserRole): boolean => {
@@ -157,13 +177,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const canManageUser = (targetRole: UserRole): boolean => {
     if (!user) return false;
     
-    // Superadmins can manage anyone
     if (user.role === 'superadmin') return true;
-    
-    // Admins can manage managers and users
     if (user.role === 'admin' && ['manager', 'user'].includes(targetRole)) return true;
-    
-    // Managers can manage users
     if (user.role === 'manager' && targetRole === 'user') return true;
     
     return false;

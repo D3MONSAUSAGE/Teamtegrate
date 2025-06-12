@@ -9,7 +9,6 @@ const Index = () => {
   const { user, loading, isAuthenticated } = useAuth();
 
   console.log('Index page - Loading:', loading, 'User:', !!user, 'IsAuthenticated:', isAuthenticated);
-  console.log('Current URL:', window.location.href);
 
   // Show loading only briefly during auth initialization
   if (loading) {
@@ -32,25 +31,7 @@ const Index = () => {
 
   // Show marketing landing page for non-authenticated users
   console.log('Index: Showing landing page for non-authenticated user');
-  try {
-    return <LandingPage />;
-  } catch (error) {
-    console.error('Error rendering LandingPage:', error);
-    return (
-      <div className="h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold mb-2">Something went wrong</h2>
-          <p className="text-muted-foreground mb-4">Failed to load the landing page</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
-          >
-            Reload Page
-          </button>
-        </div>
-      </div>
-    );
-  }
+  return <LandingPage />;
 };
 
 export default Index;
