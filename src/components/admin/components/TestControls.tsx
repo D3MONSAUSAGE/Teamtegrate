@@ -40,40 +40,120 @@ const TestControls: React.FC<TestControlsProps> = ({
         </Button>
       </div>
 
-      {/* Individual Test Controls */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={() => onRunIndividualTest('projects')}
-          disabled={isRunning}
-        >
-          Test Projects
-        </Button>
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={() => onRunIndividualTest('tasks')}
-          disabled={isRunning}
-        >
-          Test Tasks
-        </Button>
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={() => onRunIndividualTest('users')}
-          disabled={isRunning}
-        >
-          Test Users
-        </Button>
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={() => onRunIndividualTest('isolation')}
-          disabled={isRunning}
-        >
-          Test Isolation
-        </Button>
+      {/* Core Tables */}
+      <div>
+        <h4 className="text-sm font-medium mb-2">Core Tables</h4>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => onRunIndividualTest('projects')}
+            disabled={isRunning}
+          >
+            Test Projects
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => onRunIndividualTest('tasks')}
+            disabled={isRunning}
+          >
+            Test Tasks
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => onRunIndividualTest('users')}
+            disabled={isRunning}
+          >
+            Test Users
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => onRunIndividualTest('comments')}
+            disabled={isRunning}
+          >
+            Test Comments
+          </Button>
+        </div>
+      </div>
+
+      {/* Communication Tables */}
+      <div>
+        <h4 className="text-sm font-medium mb-2">Communication</h4>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => onRunIndividualTest('chatRooms')}
+            disabled={isRunning}
+          >
+            Test Chat Rooms
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => onRunIndividualTest('chatMessages')}
+            disabled={isRunning}
+          >
+            Test Chat Messages
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => onRunIndividualTest('notifications')}
+            disabled={isRunning}
+          >
+            Test Notifications
+          </Button>
+        </div>
+      </div>
+
+      {/* Content & Time Tables */}
+      <div>
+        <h4 className="text-sm font-medium mb-2">Content & Time</h4>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => onRunIndividualTest('documents')}
+            disabled={isRunning}
+          >
+            Test Documents
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => onRunIndividualTest('events')}
+            disabled={isRunning}
+          >
+            Test Events
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => onRunIndividualTest('timeEntries')}
+            disabled={isRunning}
+          >
+            Test Time Entries
+          </Button>
+        </div>
+      </div>
+
+      {/* Organization Isolation */}
+      <div>
+        <h4 className="text-sm font-medium mb-2">Organization Security</h4>
+        <div className="grid grid-cols-1 gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => onRunIndividualTest('isolation')}
+            disabled={isRunning}
+          >
+            Test Organization Isolation
+          </Button>
+        </div>
       </div>
     </div>
   );

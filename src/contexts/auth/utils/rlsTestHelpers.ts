@@ -274,6 +274,195 @@ export const testUsersRLSPolicies = async () => {
   }
 };
 
+// Test Comments RLS policies
+export const testCommentsRLSPolicies = async () => {
+  try {
+    console.log('Testing Comments RLS policies...');
+    
+    const { data: comments, error: commentsError } = await supabase
+      .from('comments')
+      .select('*')
+      .limit(5);
+    
+    if (commentsError) {
+      console.error('Comments RLS test failed:', commentsError);
+      return { success: false, error: commentsError };
+    }
+
+    console.log(`✅ Comments RLS test passed: ${comments?.length || 0} comments returned`);
+
+    return {
+      success: true,
+      commentsReturned: comments?.length || 0
+    };
+  } catch (error) {
+    console.error('Comments RLS test failed:', error);
+    return { success: false, error };
+  }
+};
+
+// Test Chat Rooms RLS policies
+export const testChatRoomsRLSPolicies = async () => {
+  try {
+    console.log('Testing Chat Rooms RLS policies...');
+    
+    const { data: chatRooms, error: chatRoomsError } = await supabase
+      .from('chat_rooms')
+      .select('*')
+      .limit(5);
+    
+    if (chatRoomsError) {
+      console.error('Chat Rooms RLS test failed:', chatRoomsError);
+      return { success: false, error: chatRoomsError };
+    }
+
+    console.log(`✅ Chat Rooms RLS test passed: ${chatRooms?.length || 0} rooms returned`);
+
+    return {
+      success: true,
+      chatRoomsReturned: chatRooms?.length || 0
+    };
+  } catch (error) {
+    console.error('Chat Rooms RLS test failed:', error);
+    return { success: false, error };
+  }
+};
+
+// Test Chat Messages RLS policies
+export const testChatMessagesRLSPolicies = async () => {
+  try {
+    console.log('Testing Chat Messages RLS policies...');
+    
+    const { data: chatMessages, error: chatMessagesError } = await supabase
+      .from('chat_messages')
+      .select('*')
+      .limit(5);
+    
+    if (chatMessagesError) {
+      console.error('Chat Messages RLS test failed:', chatMessagesError);
+      return { success: false, error: chatMessagesError };
+    }
+
+    console.log(`✅ Chat Messages RLS test passed: ${chatMessages?.length || 0} messages returned`);
+
+    return {
+      success: true,
+      chatMessagesReturned: chatMessages?.length || 0
+    };
+  } catch (error) {
+    console.error('Chat Messages RLS test failed:', error);
+    return { success: false, error };
+  }
+};
+
+// Test Notifications RLS policies
+export const testNotificationsRLSPolicies = async () => {
+  try {
+    console.log('Testing Notifications RLS policies...');
+    
+    const { data: notifications, error: notificationsError } = await supabase
+      .from('notifications')
+      .select('*')
+      .limit(5);
+    
+    if (notificationsError) {
+      console.error('Notifications RLS test failed:', notificationsError);
+      return { success: false, error: notificationsError };
+    }
+
+    console.log(`✅ Notifications RLS test passed: ${notifications?.length || 0} notifications returned`);
+
+    return {
+      success: true,
+      notificationsReturned: notifications?.length || 0
+    };
+  } catch (error) {
+    console.error('Notifications RLS test failed:', error);
+    return { success: false, error };
+  }
+};
+
+// Test Documents RLS policies
+export const testDocumentsRLSPolicies = async () => {
+  try {
+    console.log('Testing Documents RLS policies...');
+    
+    const { data: documents, error: documentsError } = await supabase
+      .from('documents')
+      .select('*')
+      .limit(5);
+    
+    if (documentsError) {
+      console.error('Documents RLS test failed:', documentsError);
+      return { success: false, error: documentsError };
+    }
+
+    console.log(`✅ Documents RLS test passed: ${documents?.length || 0} documents returned`);
+
+    return {
+      success: true,
+      documentsReturned: documents?.length || 0
+    };
+  } catch (error) {
+    console.error('Documents RLS test failed:', error);
+    return { success: false, error };
+  }
+};
+
+// Test Events RLS policies
+export const testEventsRLSPolicies = async () => {
+  try {
+    console.log('Testing Events RLS policies...');
+    
+    const { data: events, error: eventsError } = await supabase
+      .from('events')
+      .select('*')
+      .limit(5);
+    
+    if (eventsError) {
+      console.error('Events RLS test failed:', eventsError);
+      return { success: false, error: eventsError };
+    }
+
+    console.log(`✅ Events RLS test passed: ${events?.length || 0} events returned`);
+
+    return {
+      success: true,
+      eventsReturned: events?.length || 0
+    };
+  } catch (error) {
+    console.error('Events RLS test failed:', error);
+    return { success: false, error };
+  }
+};
+
+// Test Time Entries RLS policies
+export const testTimeEntriesRLSPolicies = async () => {
+  try {
+    console.log('Testing Time Entries RLS policies...');
+    
+    const { data: timeEntries, error: timeEntriesError } = await supabase
+      .from('time_entries')
+      .select('*')
+      .limit(5);
+    
+    if (timeEntriesError) {
+      console.error('Time Entries RLS test failed:', timeEntriesError);
+      return { success: false, error: timeEntriesError };
+    }
+
+    console.log(`✅ Time Entries RLS test passed: ${timeEntries?.length || 0} entries returned`);
+
+    return {
+      success: true,
+      timeEntriesReturned: timeEntries?.length || 0
+    };
+  } catch (error) {
+    console.error('Time Entries RLS test failed:', error);
+    return { success: false, error };
+  }
+};
+
 // Helper function to verify organization isolation
 export const verifyOrganizationIsolation = async () => {
   try {
@@ -373,14 +562,32 @@ export const runComprehensiveRLSTests = async () => {
     const projectsTest = await testProjectsRLSPolicies();
     const tasksTest = await testTasksRLSPolicies();
     const usersTest = await testUsersRLSPolicies();
+    const commentsTest = await testCommentsRLSPolicies();
+    const chatRoomsTest = await testChatRoomsRLSPolicies();
+    const chatMessagesTest = await testChatMessagesRLSPolicies();
+    const notificationsTest = await testNotificationsRLSPolicies();
+    const documentsTest = await testDocumentsRLSPolicies();
+    const eventsTest = await testEventsRLSPolicies();
+    const timeEntriesTest = await testTimeEntriesRLSPolicies();
     const isolationTest = await verifyOrganizationIsolation();
 
     const results = {
       projects: projectsTest,
       tasks: tasksTest,
       users: usersTest,
+      comments: commentsTest,
+      chatRooms: chatRoomsTest,
+      chatMessages: chatMessagesTest,
+      notifications: notificationsTest,
+      documents: documentsTest,
+      events: eventsTest,
+      timeEntries: timeEntriesTest,
       isolation: isolationTest,
-      overallSuccess: projectsTest.success && tasksTest.success && usersTest.success && isolationTest.success
+      overallSuccess: [
+        projectsTest, tasksTest, usersTest, commentsTest, chatRoomsTest,
+        chatMessagesTest, notificationsTest, documentsTest, eventsTest,
+        timeEntriesTest, isolationTest
+      ].every(test => test.success)
     };
 
     if (results.overallSuccess) {

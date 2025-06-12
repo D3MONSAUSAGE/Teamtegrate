@@ -6,7 +6,14 @@ import {
   testProjectsRLSPolicies,
   testTasksRLSPolicies,
   testUsersRLSPolicies,
-  verifyOrganizationIsolation
+  verifyOrganizationIsolation,
+  testCommentsRLSPolicies,
+  testChatRoomsRLSPolicies,
+  testChatMessagesRLSPolicies,
+  testNotificationsRLSPolicies,
+  testDocumentsRLSPolicies,
+  testEventsRLSPolicies,
+  testTimeEntriesRLSPolicies
 } from '@/contexts/auth/utils/rlsTestHelpers';
 import { testRLSPolicies, testOrganizationIsolation } from '@/contexts/auth/utils/rlsHelpers';
 
@@ -60,6 +67,27 @@ export const useRLSTests = () => {
           break;
         case 'users':
           result = await testUsersRLSPolicies();
+          break;
+        case 'comments':
+          result = await testCommentsRLSPolicies();
+          break;
+        case 'chatRooms':
+          result = await testChatRoomsRLSPolicies();
+          break;
+        case 'chatMessages':
+          result = await testChatMessagesRLSPolicies();
+          break;
+        case 'notifications':
+          result = await testNotificationsRLSPolicies();
+          break;
+        case 'documents':
+          result = await testDocumentsRLSPolicies();
+          break;
+        case 'events':
+          result = await testEventsRLSPolicies();
+          break;
+        case 'timeEntries':
+          result = await testTimeEntriesRLSPolicies();
           break;
         case 'isolation':
           result = await verifyOrganizationIsolation();

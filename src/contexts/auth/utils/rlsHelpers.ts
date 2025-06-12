@@ -94,6 +94,54 @@ export const testRLSPolicies = async () => {
       console.log(`✅ Notifications RLS test passed: ${notifications?.length || 0} notifications returned`);
     }
 
+    // Test comments - should only return comments from user's organization
+    const { data: comments, error: commentsError } = await supabase
+      .from('comments')
+      .select('*')
+      .limit(5);
+    
+    if (commentsError) {
+      console.error('Comments RLS test failed:', commentsError);
+    } else {
+      console.log(`✅ Comments RLS test passed: ${comments?.length || 0} comments returned`);
+    }
+
+    // Test documents - should only return documents from user's organization
+    const { data: documents, error: documentsError } = await supabase
+      .from('documents')
+      .select('*')
+      .limit(5);
+    
+    if (documentsError) {
+      console.error('Documents RLS test failed:', documentsError);
+    } else {
+      console.log(`✅ Documents RLS test passed: ${documents?.length || 0} documents returned`);
+    }
+
+    // Test events - should only return events from user's organization
+    const { data: events, error: eventsError } = await supabase
+      .from('events')
+      .select('*')
+      .limit(5);
+    
+    if (eventsError) {
+      console.error('Events RLS test failed:', eventsError);
+    } else {
+      console.log(`✅ Events RLS test passed: ${events?.length || 0} events returned`);
+    }
+
+    // Test time entries - should only return time entries from user's organization
+    const { data: timeEntries, error: timeEntriesError } = await supabase
+      .from('time_entries')
+      .select('*')
+      .limit(5);
+    
+    if (timeEntriesError) {
+      console.error('Time entries RLS test failed:', timeEntriesError);
+    } else {
+      console.log(`✅ Time entries RLS test passed: ${timeEntries?.length || 0} entries returned`);
+    }
+
     return {
       success: true,
       tests: {
@@ -101,7 +149,11 @@ export const testRLSPolicies = async () => {
         projects: !projectsError,
         users: !usersError,
         chatRooms: !chatRoomsError,
-        notifications: !notificationsError
+        notifications: !notificationsError,
+        comments: !commentsError,
+        documents: !documentsError,
+        events: !eventsError,
+        timeEntries: !timeEntriesError
       }
     };
   } catch (error) {

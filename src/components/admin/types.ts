@@ -10,6 +10,13 @@ export interface TestResults {
   projects?: TestResult;
   tasks?: TestResult;
   users?: TestResult;
+  comments?: TestResult;
+  chatRooms?: TestResult;
+  chatMessages?: TestResult;
+  notifications?: TestResult;
+  documents?: TestResult;
+  events?: TestResult;
+  timeEntries?: TestResult;
   isolation?: TestResult;
   basicRLS?: TestResult;
   orgIsolation?: TestResult;
