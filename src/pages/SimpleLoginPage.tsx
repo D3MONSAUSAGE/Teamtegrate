@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/card";
 import { useAuth } from '@/contexts/SimpleAuthContext';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import BrandLogo from '@/components/shared/BrandLogo';
 import MultiTenantSignupForm from '@/components/auth/MultiTenantSignupForm';
 
@@ -24,18 +24,19 @@ const SimpleLoginPage = () => {
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
-  const { login, isAuthenticated, loading, session } = useAuth();
+  const { login, isAuthenticated, loading, session, user } = useAuth();
   const navigate = useNavigate();
   
   // Form validation
   const isFormValid = email.trim().length > 0 && password.length > 0;
-  const isFormDisabled = isSubmitting || !isFormValid;
+  const isFormDisabled = isSubmitting || !isFormValid || loading;
   
   console.log('SimpleLoginPage: Auth state:', { 
     isAuthenticated, 
     authLoading: loading, 
     formSubmitting: isSubmitting,
     hasSession: !!session,
+    hasUser: !!user,
     email: email,
     password: password.length > 0 ? '[HIDDEN]' : 'empty',
     isFormValid,
@@ -43,11 +44,11 @@ const SimpleLoginPage = () => {
     loginError
   });
   
-  // Redirect if already logged in - now using session-based authentication
+  // Redirect if already logged in - only after loading is complete
   useEffect(() => {
-    if (isAuthenticated && !loading) {
+    if (!loading && isAuthenticated) {
       console.log('SimpleLoginPage: User authenticated, redirecting to dashboard');
-      navigate('/dashboard');
+      navigate('/dashboard', { replace: true });
     }
   }, [isAuthenticated, loading, navigate]);
 
@@ -57,6 +58,18 @@ const SimpleLoginPage = () => {
       setIsLogin(false);
     }
   }, [searchParams]);
+
+  // Show loading screen while auth is initializing
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -189,7 +202,14 @@ const SimpleLoginPage = () => {
                 className="w-full" 
                 disabled={isFormDisabled}
               >
-                {isSubmitting ? 'Signing in...' : 'Sign In'}
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Signing in...
+                  </>
+                ) : (
+                  'Sign In'
+                )}
               </Button>
             </form>
           </CardContent>

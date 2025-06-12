@@ -28,6 +28,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<AppUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
 
   const createFallbackUser = (session: Session): AppUser => {
     const metadata = session.user.user_metadata || {};
@@ -55,7 +56,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (error) {
         console.error('❌ Error fetching user profile:', error);
-        console.error('Error details:', { code: error.code, message: error.message, hint: error.hint });
         
         // Retry on certain errors
         if ((error.code === 'PGRST116' || error.message.includes('JWT')) && retries > 0) {
@@ -242,12 +242,56 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   useEffect(() => {
     let isMounted = true;
-    let initializationTimeout: NodeJS.Timeout;
+
+    // Initialize auth state
+    const initializeAuth = async () => {
+      try {
+        console.log('🚀 Initializing auth...');
+        
+        // Get initial session
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('❌ Error getting session:', error);
+          if (isMounted) {
+            setSession(null);
+            setUser(null);
+            setLoading(false);
+            setInitialized(true);
+          }
+          return;
+        }
+        
+        if (session?.user && isMounted) {
+          console.log('✅ Found existing session');
+          setSession(session);
+          
+          // Try to fetch profile, but use fallback if it fails
+          const userProfile = await fetchUserProfile(session.user.id);
+          if (isMounted) {
+            setUser(userProfile || createFallbackUser(session));
+          }
+        }
+        
+        if (isMounted) {
+          setLoading(false);
+          setInitialized(true);
+        }
+      } catch (error) {
+        console.error('❌ Error in initializeAuth:', error);
+        if (isMounted) {
+          setSession(null);
+          setUser(null);
+          setLoading(false);
+          setInitialized(true);
+        }
+      }
+    };
 
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (!isMounted) return;
+        if (!isMounted || !initialized) return;
 
         console.log('🔄 Auth state change:', event, !!session);
 
@@ -260,74 +304,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           if (isMounted) {
             // Always set a user - either from database or fallback
             setUser(userProfile || createFallbackUser(session));
-            setLoading(false);
           }
         } else {
           setSession(null);
           setUser(null);
-          setLoading(false);
         }
       }
     );
 
-    // Get initial session
-    const getInitialSession = async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error('❌ Error getting session:', error);
-          if (isMounted) {
-            setLoading(false);
-          }
-          return;
-        }
-        
-        if (session?.user && isMounted) {
-          setSession(session);
-          
-          // Try to fetch profile, but use fallback if it fails
-          const userProfile = await fetchUserProfile(session.user.id);
-          if (isMounted) {
-            setUser(userProfile || createFallbackUser(session));
-            setLoading(false);
-          }
-        } else if (isMounted) {
-          setLoading(false);
-        }
-      } catch (error) {
-        console.error('❌ Error in getInitialSession:', error);
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    getInitialSession();
-
-    // Failsafe timeout to ensure loading never stays true indefinitely
-    initializationTimeout = setTimeout(() => {
-      if (isMounted && loading) {
-        console.log('⚠️ Auth initialization timeout - forcing loading to false');
-        setLoading(false);
-      }
-    }, 5000); // 5 second timeout
+    // Initialize
+    initializeAuth();
 
     return () => {
       isMounted = false;
-      clearTimeout(initializationTimeout);
       subscription.unsubscribe();
     };
   }, []);
 
-  // CRITICAL FIX: Authentication now depends on session, not just user profile
-  const isAuthenticated = !!session && !!session.user;
+  // Authentication status is now properly based on both session and user
+  const isAuthenticated = !!session && !!user && initialized;
 
   const value: AuthContextType = {
     user,
     session,
     loading,
-    isLoading: loading, // Add compatibility
+    isLoading: loading,
     login,
     signup,
     logout,
