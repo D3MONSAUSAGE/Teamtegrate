@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Outlet, Navigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/SimpleAuthContext';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 import ChatbotBubble from './chat/ChatbotBubble';

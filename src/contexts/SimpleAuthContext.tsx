@@ -28,25 +28,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<AppUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [initialized, setInitialized] = useState(false);
 
-  const createFallbackUser = (session: Session): AppUser => {
-    const metadata = session.user.user_metadata || {};
-    return {
-      id: session.user.id,
-      email: session.user.email || '',
-      name: metadata.name || session.user.email || 'User',
-      role: (metadata.role as UserRole) || 'user',
-      organizationId: metadata.organization_id || null,
-      avatar_url: metadata.avatar_url || null,
-      timezone: metadata.timezone || null,
-      createdAt: new Date(session.user.created_at),
-    };
-  };
-
-  const fetchUserProfile = async (userId: string, retries = 2): Promise<AppUser | null> => {
+  const fetchUserProfile = async (userId: string): Promise<AppUser | null> => {
     try {
-      console.log('🔍 Fetching user profile for:', userId, `(attempt ${3 - retries})`);
+      console.log('🔍 Fetching user profile for:', userId);
       
       const { data, error } = await supabase
         .from('users')
@@ -56,14 +41,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (error) {
         console.error('❌ Error fetching user profile:', error);
-        
-        // Retry on certain errors
-        if ((error.code === 'PGRST116' || error.message.includes('JWT')) && retries > 0) {
-          console.log('🔄 Retrying profile fetch after delay...');
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          return await fetchUserProfile(userId, retries - 1);
-        }
-        
         return null;
       }
 
@@ -91,13 +68,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       };
     } catch (error) {
       console.error('❌ Exception in fetchUserProfile:', error);
-      
-      if (retries > 0) {
-        console.log('🔄 Retrying profile fetch due to exception...');
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        return await fetchUserProfile(userId, retries - 1);
-      }
-      
       return null;
     }
   };
@@ -132,9 +102,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (newSession?.user) {
         setSession(newSession);
         
-        // Try to fetch profile, but use fallback if it fails
         const userProfile = await fetchUserProfile(newSession.user.id);
-        setUser(userProfile || createFallbackUser(newSession));
+        setUser(userProfile);
       }
       
       console.log('✅ Session refresh complete');
@@ -160,7 +129,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (data.session) {
         console.log('✅ Login successful - session created');
-        // Session state will be updated by the auth state listener
         toast.success('Welcome back!');
       } else {
         console.error('❌ Login succeeded but no session returned');
@@ -257,7 +225,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             setSession(null);
             setUser(null);
             setLoading(false);
-            setInitialized(true);
           }
           return;
         }
@@ -266,16 +233,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           console.log('✅ Found existing session');
           setSession(session);
           
-          // Try to fetch profile, but use fallback if it fails
           const userProfile = await fetchUserProfile(session.user.id);
           if (isMounted) {
-            setUser(userProfile || createFallbackUser(session));
+            setUser(userProfile);
           }
         }
         
         if (isMounted) {
           setLoading(false);
-          setInitialized(true);
         }
       } catch (error) {
         console.error('❌ Error in initializeAuth:', error);
@@ -283,7 +248,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setSession(null);
           setUser(null);
           setLoading(false);
-          setInitialized(true);
         }
       }
     };
@@ -291,19 +255,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (!isMounted || !initialized) return;
+        if (!isMounted) return;
 
         console.log('🔄 Auth state change:', event, !!session);
 
         if (session?.user) {
           setSession(session);
           
-          // Try to fetch the full user profile from database
           const userProfile = await fetchUserProfile(session.user.id);
-          
           if (isMounted) {
-            // Always set a user - either from database or fallback
-            setUser(userProfile || createFallbackUser(session));
+            setUser(userProfile);
           }
         } else {
           setSession(null);
@@ -321,8 +282,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
   }, []);
 
-  // Authentication status is now properly based on both session and user
-  const isAuthenticated = !!session && !!user && initialized;
+  // Authentication status is based on both session and user
+  const isAuthenticated = !!session && !!user;
 
   const value: AuthContextType = {
     user,

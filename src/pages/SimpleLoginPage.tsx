@@ -24,24 +24,14 @@ const SimpleLoginPage = () => {
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
-  const { login, isAuthenticated, loading, session, user } = useAuth();
+  const { login, isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
-  
-  // Form validation
-  const isFormValid = email.trim().length > 0 && password.length > 0;
-  const isFormDisabled = isSubmitting || !isFormValid || loading;
   
   console.log('SimpleLoginPage: Auth state:', { 
     isAuthenticated, 
     authLoading: loading, 
     formSubmitting: isSubmitting,
-    hasSession: !!session,
-    hasUser: !!user,
-    email: email,
-    password: password.length > 0 ? '[HIDDEN]' : 'empty',
-    isFormValid,
-    isFormDisabled,
-    loginError
+    isLogin
   });
   
   // Redirect if already logged in - only after loading is complete
@@ -79,13 +69,10 @@ const SimpleLoginPage = () => {
     }
     
     if (isSubmitting) {
-      console.log('SimpleLoginPage: Already submitting, ignoring duplicate submit');
       return;
     }
 
-    // Validate form fields
     if (!email.trim() || !password) {
-      console.log('SimpleLoginPage: Form validation failed - missing email or password');
       setLoginError('Please enter both email and password');
       return;
     }
@@ -96,8 +83,7 @@ const SimpleLoginPage = () => {
     
     try {
       await login(email.trim(), password);
-      console.log('SimpleLoginPage: Login successful - waiting for redirect');
-      // Don't manually redirect here - let the useEffect handle it when isAuthenticated changes
+      console.log('SimpleLoginPage: Login successful');
     } catch (error) {
       console.error('SimpleLoginPage: Login failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Login failed. Please try again.';
@@ -200,7 +186,7 @@ const SimpleLoginPage = () => {
               <Button 
                 type="submit" 
                 className="w-full" 
-                disabled={isFormDisabled}
+                disabled={isSubmitting || !email.trim() || !password}
               >
                 {isSubmitting ? (
                   <>
