@@ -7,7 +7,7 @@ import { User as AppUser, UserRole } from '@/types';
 export const useAuthState = () => {
   const [user, setUser] = useState<AppUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Start with false, only set to true when actually checking auth
 
   const fetchUserProfile = async (userId: string): Promise<AppUser | null> => {
     try {
@@ -60,14 +60,11 @@ export const useAuthState = () => {
     
     const initializeAuth = async () => {
       try {
-        // Get initial session
+        // Get initial session without loading state for faster landing page
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
           console.error('AuthProvider: Error getting session:', error);
-          if (isMounted) {
-            setLoading(false);
-          }
           return;
         }
 
@@ -76,17 +73,20 @@ export const useAuthState = () => {
         if (isMounted) {
           setSession(session);
 
-          // Only fetch user profile if we have a session
+          // Only set loading and fetch profile if we have a session
           if (session?.user) {
+            setLoading(true);
             console.log('AuthProvider: User found in session:', session.user.id);
             const userProfile = await fetchUserProfile(session.user.id);
-            setUser(userProfile);
+            if (isMounted) {
+              setUser(userProfile);
+              setLoading(false);
+            }
           } else {
-            console.log('AuthProvider: No user in session - skipping profile fetch');
+            console.log('AuthProvider: No session - landing page can show immediately');
             setUser(null);
+            setLoading(false);
           }
-          
-          setLoading(false);
         }
       } catch (error) {
         console.error('AuthProvider: Error in initializeAuth:', error);
@@ -107,18 +107,21 @@ export const useAuthState = () => {
         
         if (session?.user) {
           console.log('AuthProvider: User authenticated:', session.user.id);
-          // Defer profile fetch to avoid blocking auth state update
+          setLoading(true);
+          // Fetch profile for authenticated users
           setTimeout(() => {
             if (isMounted) {
-              fetchUserProfile(session.user.id).then(setUser);
+              fetchUserProfile(session.user.id).then(userData => {
+                if (isMounted) {
+                  setUser(userData);
+                  setLoading(false);
+                }
+              });
             }
           }, 0);
         } else {
           console.log('AuthProvider: User signed out');
           setUser(null);
-        }
-        
-        if (event !== 'INITIAL_SESSION') {
           setLoading(false);
         }
       }
@@ -132,7 +135,7 @@ export const useAuthState = () => {
       console.log('AuthProvider: Cleaning up auth listener');
       subscription.unsubscribe();
     };
-  }, []); // Empty dependency array - only run once
+  }, []);
 
   return {
     user,

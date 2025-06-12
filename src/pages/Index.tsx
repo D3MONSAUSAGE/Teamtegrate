@@ -10,9 +10,16 @@ const Index = () => {
 
   console.log('Index page - Loading:', loading, 'User:', !!user, 'IsAuthenticated:', isAuthenticated);
 
-  // Show loading only during initial auth check
-  if (loading) {
-    console.log('Index: Showing loading state');
+  // If user is already authenticated, redirect to dashboard immediately
+  if (isAuthenticated && user) {
+    console.log('Index: User is authenticated, redirecting to dashboard');
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  // Show loading only if we're in the middle of an authentication process
+  // (when there's a session being processed)
+  if (loading && user === undefined) {
+    console.log('Index: Showing loading state during auth process');
     return (
       <div className="h-screen flex items-center justify-center bg-background">
         <div className="text-center">
@@ -23,14 +30,8 @@ const Index = () => {
     );
   }
 
-  // If user is authenticated, redirect to dashboard
-  if (isAuthenticated && user) {
-    console.log('Index: User is authenticated, redirecting to dashboard');
-    return <Navigate to="/dashboard" replace />;
-  }
-
-  // Show marketing landing page for non-authenticated users immediately
-  console.log('Index: Showing landing page for non-authenticated user');
+  // For all other cases (unauthenticated users, or no loading), show landing page immediately
+  console.log('Index: Showing landing page');
   return <LandingPage />;
 };
 
