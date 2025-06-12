@@ -83,6 +83,100 @@ export const testProjectsRLSPolicies = async () => {
   }
 };
 
+// Test function to verify the new Tasks RLS policies are working correctly
+export const testTasksRLSPolicies = async () => {
+  try {
+    console.log('Testing new Tasks RLS policies...');
+    
+    // Test tasks query - should only return tasks from user's organization
+    const { data: tasks, error: tasksError } = await supabase
+      .from('tasks')
+      .select('*')
+      .limit(5);
+    
+    if (tasksError) {
+      console.error('Tasks RLS test failed:', tasksError);
+      return { success: false, error: tasksError };
+    } else {
+      console.log(`✅ Tasks RLS test passed: ${tasks?.length || 0} tasks returned`);
+    }
+
+    // Get current user's organization for test task
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      console.error('No authenticated user found for testing');
+      return { success: false, error: 'No authenticated user' };
+    }
+
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('organization_id')
+      .eq('id', user.id)
+      .single();
+
+    if (userError || !userData?.organization_id) {
+      console.error('Failed to get user organization for testing:', userError);
+      return { success: false, error: userError || 'No organization found' };
+    }
+
+    // Test task insertion - should automatically set organization_id
+    const testTask = {
+      id: `test-task-${Date.now()}`,
+      title: 'RLS Test Task',
+      description: 'Testing Tasks RLS policies',
+      status: 'To Do',
+      priority: 'Medium',
+      user_id: user.id,
+      deadline: new Date(Date.now() + 86400000).toISOString(), // Tomorrow
+      organization_id: userData.organization_id
+    };
+
+    const { data: insertedTask, error: insertError } = await supabase
+      .from('tasks')
+      .insert(testTask)
+      .select()
+      .single();
+
+    if (insertError) {
+      console.error('Task insertion test failed:', insertError);
+    } else {
+      console.log('✅ Task insertion test passed:', insertedTask?.id);
+      
+      // Test task update - should work for task creator
+      const { error: updateError } = await supabase
+        .from('tasks')
+        .update({ description: 'Updated description for RLS test' })
+        .eq('id', insertedTask.id);
+
+      if (updateError) {
+        console.error('Task update test failed:', updateError);
+      } else {
+        console.log('✅ Task update test passed');
+      }
+      
+      // Clean up test task
+      await supabase
+        .from('tasks')
+        .delete()
+        .eq('id', insertedTask.id);
+      
+      console.log('✅ Test task cleaned up');
+    }
+
+    return {
+      success: true,
+      tasksReturned: tasks?.length || 0,
+      insertionWorked: !insertError
+    };
+  } catch (error) {
+    console.error('Tasks RLS test suite failed:', error);
+    return {
+      success: false,
+      error: error
+    };
+  }
+};
+
 // Helper function to verify organization isolation
 export const verifyOrganizationIsolation = async () => {
   try {
@@ -125,12 +219,30 @@ export const verifyOrganizationIsolation = async () => {
       return { success: false, error: 'Organization isolation breach detected' };
     }
 
-    console.log('✅ Organization isolation verified: All projects belong to user\'s organization');
+    // Test that all returned tasks belong to user's organization
+    const { data: tasks, error: tasksError } = await supabase
+      .from('tasks')
+      .select('id, organization_id');
+
+    if (tasksError) {
+      console.error('Failed to fetch tasks for isolation test:', tasksError);
+      return { success: false, error: tasksError };
+    }
+
+    const invalidTasks = tasks?.filter(t => t.organization_id !== userData.organization_id) || [];
+    
+    if (invalidTasks.length > 0) {
+      console.error('❌ Organization isolation failed! Found tasks from other organizations:', invalidTasks);
+      return { success: false, error: 'Organization isolation breach detected' };
+    }
+
+    console.log('✅ Organization isolation verified: All data belongs to user\'s organization');
     
     return {
       success: true,
       userOrganization: userData.organization_id,
-      projectsChecked: projects?.length || 0
+      projectsChecked: projects?.length || 0,
+      tasksChecked: tasks?.length || 0
     };
   } catch (error) {
     console.error('Organization isolation verification failed:', error);

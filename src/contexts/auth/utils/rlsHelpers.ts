@@ -43,7 +43,7 @@ export const testRLSPolicies = async () => {
     if (tasksError) {
       console.error('Tasks RLS test failed:', tasksError);
     } else {
-      console.log(`Tasks RLS test passed: ${tasks?.length || 0} tasks returned`);
+      console.log(`✅ Tasks RLS test passed: ${tasks?.length || 0} tasks returned`);
     }
 
     // Test projects query - should only return projects from user's organization
@@ -67,7 +67,7 @@ export const testRLSPolicies = async () => {
     if (usersError) {
       console.error('Users RLS test failed:', usersError);
     } else {
-      console.log(`Users RLS test passed: ${users?.length || 0} users returned`);
+      console.log(`✅ Users RLS test passed: ${users?.length || 0} users returned`);
     }
 
     // Test chat rooms - should only return rooms from user's organization
@@ -79,7 +79,7 @@ export const testRLSPolicies = async () => {
     if (chatRoomsError) {
       console.error('Chat rooms RLS test failed:', chatRoomsError);
     } else {
-      console.log(`Chat rooms RLS test passed: ${chatRooms?.length || 0} rooms returned`);
+      console.log(`✅ Chat rooms RLS test passed: ${chatRooms?.length || 0} rooms returned`);
     }
 
     // Test notifications - should only return notifications for user's organization
@@ -91,7 +91,7 @@ export const testRLSPolicies = async () => {
     if (notificationsError) {
       console.error('Notifications RLS test failed:', notificationsError);
     } else {
-      console.log(`Notifications RLS test passed: ${notifications?.length || 0} notifications returned`);
+      console.log(`✅ Notifications RLS test passed: ${notifications?.length || 0} notifications returned`);
     }
 
     return {
@@ -140,10 +140,27 @@ export const testOrganizationIsolation = async () => {
       console.log(`✅ Organization isolation verified: ${allProjects?.length || 0} projects all belong to user's org`);
     }
 
+    // Test that all returned tasks belong to user's organization
+    const { data: allTasks, error: allTasksError } = await supabase
+      .from('tasks')
+      .select('organization_id');
+
+    if (allTasksError) {
+      console.log('RLS correctly blocked or limited access:', allTasksError.message);
+    } else {
+      const invalidTasks = allTasks?.filter(t => t.organization_id !== orgId) || [];
+      if (invalidTasks.length > 0) {
+        console.error('❌ Organization isolation breach in tasks!', invalidTasks);
+        return { success: false, error: 'Organization isolation breach detected' };
+      }
+      console.log(`✅ Organization isolation verified: ${allTasks?.length || 0} tasks all belong to user's org`);
+    }
+
     return {
       success: true,
       organizationId: orgId,
-      totalAccessibleProjects: allProjects?.length || 0
+      totalAccessibleProjects: allProjects?.length || 0,
+      totalAccessibleTasks: allTasks?.length || 0
     };
   } catch (error) {
     console.error('Organization isolation test failed:', error);

@@ -29,38 +29,35 @@ export const fetchTasks = async (
       return;
     }
     
-    // Explicit column selection to avoid deep type inference
-    const tasksQuery = await supabase
+    // With new RLS policies, we can simply select all tasks
+    // The policies will automatically filter by organization
+    const { data: tasksData, error: tasksError } = await supabase
       .from('tasks')
-      .select('id, user_id, project_id, title, description, deadline, priority, status, created_at, updated_at, assigned_to_id, assigned_to_ids, assigned_to_names, cost');
+      .select('*')
+      .order('created_at', { ascending: false });
 
-    // Immediate cast to avoid type inference issues
-    const tasksResult = tasksQuery as { data: any[] | null, error: any };
-
-    if (tasksResult.error) {
-      console.error('Error fetching tasks:', tasksResult.error);
+    if (tasksError) {
+      console.error('Error fetching tasks:', tasksError);
       toast.error('Failed to load tasks');
       return;
     }
 
-    console.log(`Fetched ${tasksResult.data?.length || 0} tasks from database`);
+    console.log(`Fetched ${tasksData?.length || 0} tasks from database`);
     
     // Fetch comments with explicit column selection
-    const commentsQuery = await supabase
+    const { data: commentsData, error: commentsError } = await supabase
       .from('comments')
       .select('id, user_id, task_id, content, created_at');
 
-    const commentsResult = commentsQuery as { data: any[] | null, error: any };
-
-    if (commentsResult.error) {
-      console.error('Error fetching comments:', commentsResult.error);
+    if (commentsError) {
+      console.error('Error fetching comments:', commentsError);
     }
 
     // Manual transformation with explicit types
     const transformedTasks: Task[] = [];
     
-    if (tasksResult.data) {
-      for (const dbTask of tasksResult.data) {
+    if (tasksData) {
+      for (const dbTask of tasksData) {
         // Explicit type validation
         let taskPriority: 'Low' | 'Medium' | 'High' = 'Medium';
         if (dbTask.priority === 'Low' || dbTask.priority === 'Medium' || dbTask.priority === 'High') {
@@ -93,7 +90,7 @@ export const fetchTasks = async (
             ? dbTask.assigned_to_names.map((name: any) => String(name)) 
             : [],
           tags: [],
-          comments: commentsResult.data ? commentsResult.data
+          comments: commentsData ? commentsData
             .filter((comment: any) => comment.task_id === dbTask.id)
             .map((comment: any) => ensureTaskCommentComplete({
               id: String(comment.id),
