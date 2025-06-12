@@ -8,9 +8,9 @@ export const performAuthenticationAudit = async (
   isAuthenticated: boolean,
   addResult: (section: string, status: 'success' | 'warning' | 'error', message: string, details?: any) => void
 ) => {
-  console.log('🔍 Starting System Audit with Clean RLS...');
+  console.log('🔍 Starting System Audit with NEW CLEAN RLS...');
   
-  addResult('Authentication', 'warning', 'Starting authentication audit with clean RLS policies...');
+  addResult('Authentication', 'warning', 'Starting authentication audit with new clean RLS policies...');
   
   if (!isAuthenticated || !user) {
     addResult('Authentication', 'error', 'User not authenticated', { isAuthenticated, user });
@@ -38,7 +38,7 @@ export const performAuthenticationAudit = async (
 export const performDatabaseAudit = async (
   addResult: (section: string, status: 'success' | 'warning' | 'error', message: string, details?: any) => void
 ) => {
-  addResult('Database Queries', 'warning', 'Testing clean RLS policies and data access...');
+  addResult('Database Queries', 'warning', 'Testing NEW CLEAN RLS policies and data access...');
 
   // Get current user from auth.users
   const { data: authUser, error: authError } = await supabase.auth.getUser();
@@ -48,7 +48,7 @@ export const performDatabaseAudit = async (
     addResult('Database Queries', 'success', 'Auth user retrieved successfully', authUser.user);
   }
 
-  // Test the RLS function directly - should now work without recursion
+  // Test the RLS function directly - should work perfectly with clean policies
   const { data: orgIdFromFunction, error: orgFuncError } = await supabase.rpc('get_current_user_organization_id');
   if (orgFuncError) {
     addResult('RLS Function', 'error', `get_current_user_organization_id failed: ${orgFuncError.message}`);
@@ -58,9 +58,9 @@ export const performDatabaseAudit = async (
 
   // Test direct table queries with new clean policies
   const tables = [
-    { name: 'Users Query (Clean RLS)', table: 'users' as const },
-    { name: 'Projects Query (Clean RLS)', table: 'projects' as const },
-    { name: 'Tasks Query (Clean RLS)', table: 'tasks' as const },
+    { name: 'Users Query (Clean Policy)', table: 'users' as const },
+    { name: 'Projects Query (Clean Policy)', table: 'projects' as const },
+    { name: 'Tasks Query (Clean Policy)', table: 'tasks' as const },
     { name: 'Organizations Query', table: 'organizations' as const }
   ];
 
@@ -75,7 +75,7 @@ export const performDatabaseAudit = async (
     if (error) {
       addResult(name, 'error', `${table} query failed: ${error.message}`, { error });
     } else {
-      addResult(name, 'success', `Found ${data?.length || 0} ${table} with clean RLS policies`, { 
+      addResult(name, 'success', `Found ${data?.length || 0} ${table} with NEW CLEAN RLS policies`, { 
         count: data?.length || 0,
         sampleData: data?.slice(0, 2) 
       });
@@ -90,12 +90,12 @@ export const performDatabaseAudit = async (
 export const performRLSAudit = async (
   addResult: (section: string, status: 'success' | 'warning' | 'error', message: string, details?: any) => void
 ) => {
-  addResult('RLS Testing', 'warning', 'Testing clean RLS policies (should work without recursion)...');
+  addResult('RLS Testing', 'warning', 'Testing NEW CLEAN RLS policies (emergency cleanup complete)...');
   
   try {
     const rlsTestResult = await testRLSPolicies();
     addResult('Clean RLS Policies', rlsTestResult.success ? 'success' : 'error',
-      rlsTestResult.success ? 'Clean RLS policies working correctly - no infinite recursion!' : `RLS test failed: ${rlsTestResult.error}`,
+      rlsTestResult.success ? 'NEW CLEAN RLS policies working perfectly after emergency cleanup!' : `RLS test failed: ${rlsTestResult.error}`,
       rlsTestResult);
   } catch (rlsError: any) {
     addResult('Clean RLS Policies', 'error', `RLS test failed: ${rlsError.message}`, rlsError);
@@ -104,7 +104,7 @@ export const performRLSAudit = async (
   try {
     const isolationTestResult = await testOrganizationIsolation();
     addResult('Organization Isolation', isolationTestResult.success ? 'success' : 'error',
-      isolationTestResult.success ? 'Organization isolation working with clean policies' : `Isolation test failed: ${isolationTestResult.error}`,
+      isolationTestResult.success ? 'Organization isolation working perfectly with NEW CLEAN policies' : `Isolation test failed: ${isolationTestResult.error}`,
       isolationTestResult);
   } catch (isolationError: any) {
     addResult('Organization Isolation', 'error', `Isolation test failed: ${isolationError.message}`, isolationError);
@@ -117,7 +117,7 @@ export const performOrganizationDataAudit = async (
 ) => {
   if (!user.organizationId) return;
 
-  addResult('Organization Data', 'warning', 'Checking specific organization data with clean RLS...');
+  addResult('Organization Data', 'warning', 'Checking specific organization data with NEW CLEAN RLS...');
   
   // Check projects in user's organization with enhanced logging
   const { data: orgProjectsData, error: orgProjectsError } = await supabase
@@ -127,7 +127,7 @@ export const performOrganizationDataAudit = async (
   
   if (!orgProjectsError && orgProjectsData) {
     addResult('Organization Projects', 'success', 
-      `Found ${orgProjectsData.length} projects in organization with clean RLS`,
+      `Found ${orgProjectsData.length} projects in organization with NEW CLEAN RLS`,
       { 
         count: orgProjectsData.length,
         projects: orgProjectsData.map(p => ({ id: p.id, title: p.title }))
@@ -146,7 +146,7 @@ export const performOrganizationDataAudit = async (
   
   if (!orgTasksError && orgTasksData) {
     addResult('Organization Tasks', 'success', 
-      `Found ${orgTasksData.length} tasks in organization with clean RLS`,
+      `Found ${orgTasksData.length} tasks in organization with NEW CLEAN RLS`,
       { 
         count: orgTasksData.length,
         tasks: orgTasksData.map(t => ({ id: t.id, title: t.title }))
@@ -165,7 +165,7 @@ export const performOrganizationDataAudit = async (
   
   if (!orgUsersError && orgUsersData) {
     addResult('Organization Users', 'success', 
-      `Found ${orgUsersData.length} users in organization with clean RLS`,
+      `Found ${orgUsersData.length} users in organization with NEW CLEAN RLS`,
       { 
         count: orgUsersData.length,
         users: orgUsersData.map(u => ({ id: u.id, name: u.name, email: u.email }))

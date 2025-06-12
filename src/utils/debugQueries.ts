@@ -2,22 +2,23 @@
 import { supabase } from '@/integrations/supabase/client';
 
 export const runDebugQueries = async () => {
-  console.log('🚀 Running debug queries with CLEAN RLS policies...');
+  console.log('🚀 Running debug queries with NEW CLEAN RLS policies...');
   
   // Test auth
   const { data: { user }, error: userError } = await supabase.auth.getUser();
   console.log('👤 Current user:', user?.email, userError);
   
-  // Test RLS function - should work without recursion now
+  // Test RLS function - should work perfectly now with clean policies
   const { data: orgId, error: orgError } = await supabase.rpc('get_current_user_organization_id');
   console.log('🏢 Organization ID from clean RLS function:', orgId, orgError);
   
-  // Test direct queries with clean RLS policies
+  // Test direct queries with new clean RLS policies
   const queries = [
     { name: 'organizations', table: 'organizations' as const },
-    { name: 'users', table: 'users' as const },
-    { name: 'projects', table: 'projects' as const },
-    { name: 'tasks', table: 'tasks' as const }
+    { name: 'users (clean policy)', table: 'users' as const },
+    { name: 'projects (clean policy)', table: 'projects' as const },
+    { name: 'tasks (clean policy)', table: 'tasks' as const },
+    { name: 'team_members (clean policy)', table: 'project_team_members' as const }
   ];
   
   for (const query of queries) {
@@ -72,7 +73,7 @@ export const runDebugQueries = async () => {
     });
   }
 
-  console.log('✅ Debug queries completed with clean RLS policies!');
+  console.log('✅ Debug queries completed with NEW CLEAN RLS policies!');
 };
 
 // Auto-run on import in development
