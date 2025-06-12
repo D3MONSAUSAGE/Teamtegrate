@@ -25,22 +25,28 @@ const Dashboard = () => {
     organizationId: user?.organizationId
   });
 
+  // Show loading only if auth is still being determined
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
           <p className="text-muted-foreground">Loading dashboard...</p>
+          <p className="text-xs text-muted-foreground mt-2">
+            Setting up your workspace...
+          </p>
         </div>
       </div>
     );
   }
 
+  // If not authenticated after loading is complete, redirect to login
   if (!isAuthenticated || !user) {
     console.log('Dashboard: User not authenticated, redirecting to login');
     return <Navigate to="/login" replace />;
   }
 
+  // Show organization setup message if needed
   if (!user.organizationId) {
     return (
       <div className="container mx-auto px-4 py-8">

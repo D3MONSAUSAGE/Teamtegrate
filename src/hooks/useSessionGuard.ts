@@ -60,10 +60,20 @@ export const useSessionGuard = (options: SessionGuardOptions = {}) => {
     }
   };
 
-  // Auto-check session health when user changes
+  // Only run session health check after auth is established and user is available
+  // Add a delay to prevent blocking the initial auth flow
   useEffect(() => {
     if (isAuthenticated && user) {
-      checkAndRecoverSession();
+      // Delay session health check to avoid interfering with initial auth
+      const healthCheckTimeout = setTimeout(() => {
+        console.log('🔍 SessionGuard: Starting delayed session health check...');
+        checkAndRecoverSession();
+      }, 2000); // 2 second delay
+
+      return () => clearTimeout(healthCheckTimeout);
+    } else {
+      // Reset session health when user is not authenticated
+      setIsSessionHealthy(null);
     }
   }, [user?.id, isAuthenticated]);
 
