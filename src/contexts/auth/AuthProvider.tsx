@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Session, AuthError } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -47,8 +46,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         email: data.email,
         name: data.name,
         role: data.role as UserRole,
-        organizationId: data.organization_id,
-        organization_id: data.organization_id,
+        organizationId: data.organization_id, // Fixed: using camelCase organizationId
         avatar_url: data.avatar_url,
         timezone: data.timezone,
         createdAt: new Date(), // Add required createdAt field
