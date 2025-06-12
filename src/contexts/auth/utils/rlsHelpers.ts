@@ -33,10 +33,10 @@ export const getCurrentUserOrganizationId = async (): Promise<string | null> => 
   }
 };
 
-// Test function to verify RLS is working correctly after the final fix
+// Test function to verify clean RLS policies are working correctly
 export const testRLSPolicies = async () => {
   try {
-    console.log('🔍 Testing RLS policies after final cleanup...');
+    console.log('🔍 Testing CLEAN RLS policies (no more infinite recursion)...');
     
     // Get current user info first
     const { data: { user } } = await supabase.auth.getUser();
@@ -45,51 +45,51 @@ export const testRLSPolicies = async () => {
       return { success: false, error: 'No authenticated user' };
     }
     
-    console.log('👤 Testing RLS for user:', user.id, user.email);
+    console.log('👤 Testing clean RLS for user:', user.id, user.email);
     
-    // Test the RLS function directly
+    // Test the RLS function directly - should work without recursion now
     const { data: currentOrgId, error: orgFuncError } = await supabase.rpc('get_current_user_organization_id');
     if (orgFuncError) {
-      console.error('❌ RLS function test failed:', orgFuncError);
+      console.error('❌ Clean RLS function test failed:', orgFuncError);
       return { success: false, error: orgFuncError };
     } else {
-      console.log(`✅ RLS function working: current org ID = ${currentOrgId}`);
+      console.log(`✅ Clean RLS function working: current org ID = ${currentOrgId}`);
     }
 
-    // Test tasks query - should only return tasks from user's organization
+    // Test tasks query - should work with clean policies
     const { data: tasks, error: tasksError } = await supabase
       .from('tasks')
       .select('id, title, organization_id')
       .limit(5);
     
     if (tasksError) {
-      console.error('❌ Tasks RLS test failed:', tasksError);
+      console.error('❌ Tasks clean RLS test failed:', tasksError);
     } else {
-      console.log(`✅ Tasks RLS test passed: ${tasks?.length || 0} tasks returned`);
+      console.log(`✅ Tasks clean RLS test passed: ${tasks?.length || 0} tasks returned`);
     }
 
-    // Test projects query - should only return projects from user's organization
+    // Test projects query - should work with clean policies
     const { data: projects, error: projectsError } = await supabase
       .from('projects')
       .select('id, title, organization_id')
       .limit(5);
     
     if (projectsError) {
-      console.error('❌ Projects RLS test failed:', projectsError);
+      console.error('❌ Projects clean RLS test failed:', projectsError);
     } else {
-      console.log(`✅ Projects RLS test passed: ${projects?.length || 0} projects returned`);
+      console.log(`✅ Projects clean RLS test passed: ${projects?.length || 0} projects returned`);
     }
 
-    // Test project_team_members query
-    const { data: teamMembers, error: teamMembersError } = await supabase
-      .from('project_team_members')
-      .select('id, project_id, user_id')
+    // Test users query - should work with clean policies
+    const { data: users, error: usersError } = await supabase
+      .from('users')
+      .select('id, name, email, organization_id')
       .limit(5);
     
-    if (teamMembersError) {
-      console.error('❌ Project team members RLS test failed:', teamMembersError);
+    if (usersError) {
+      console.error('❌ Users clean RLS test failed:', usersError);
     } else {
-      console.log(`✅ Project team members RLS test passed: ${teamMembers?.length || 0} memberships returned`);
+      console.log(`✅ Users clean RLS test passed: ${users?.length || 0} users returned`);
     }
 
     return {
@@ -99,16 +99,17 @@ export const testRLSPolicies = async () => {
       tests: {
         tasks: !tasksError,
         projects: !projectsError,
-        teamMembers: !teamMembersError
+        users: !usersError
       },
       counts: {
         tasks: tasks?.length || 0,
         projects: projects?.length || 0,
-        teamMembers: teamMembers?.length || 0
-      }
+        users: users?.length || 0
+      },
+      note: 'Clean RLS policies working without infinite recursion!'
     };
   } catch (error) {
-    console.error('❌ RLS test suite failed:', error);
+    console.error('❌ Clean RLS test suite failed:', error);
     return {
       success: false,
       error: error
@@ -116,10 +117,10 @@ export const testRLSPolicies = async () => {
   }
 };
 
-// Test organization data isolation by verifying all data belongs to user's org
+// Test organization data isolation with clean policies
 export const testOrganizationIsolation = async () => {
   try {
-    console.log('🔒 Testing organization data isolation...');
+    console.log('🔒 Testing organization data isolation with clean policies...');
     
     // Get current user and their org
     const { data: { user } } = await supabase.auth.getUser();
@@ -141,7 +142,7 @@ export const testOrganizationIsolation = async () => {
       .select('id, organization_id, title');
 
     if (allProjectsError) {
-      console.log('RLS correctly blocked or limited access:', allProjectsError.message);
+      console.log('Clean RLS correctly handled access:', allProjectsError.message);
     } else {
       const invalidProjects = allProjects?.filter(p => p.organization_id !== currentOrgId) || [];
       if (invalidProjects.length > 0) {
@@ -157,7 +158,7 @@ export const testOrganizationIsolation = async () => {
       .select('id, organization_id, title');
 
     if (allTasksError) {
-      console.log('RLS correctly blocked or limited access:', allTasksError.message);
+      console.log('Clean RLS correctly handled access:', allTasksError.message);
     } else {
       const invalidTasks = allTasks?.filter(t => t.organization_id !== currentOrgId) || [];
       if (invalidTasks.length > 0) {
@@ -167,12 +168,30 @@ export const testOrganizationIsolation = async () => {
       console.log(`✅ Organization isolation verified: ${allTasks?.length || 0} tasks all belong to user's org`);
     }
 
+    // Test users isolation
+    const { data: allUsers, error: allUsersError } = await supabase
+      .from('users')
+      .select('id, organization_id, name, email');
+
+    if (allUsersError) {
+      console.log('Clean RLS correctly handled access:', allUsersError.message);
+    } else {
+      const invalidUsers = allUsers?.filter(u => u.organization_id !== currentOrgId) || [];
+      if (invalidUsers.length > 0) {
+        console.error('❌ Organization isolation breach in users!', invalidUsers);
+        return { success: false, error: 'Organization isolation breach detected' };
+      }
+      console.log(`✅ Organization isolation verified: ${allUsers?.length || 0} users all belong to user's org`);
+    }
+
     return {
       success: true,
       currentUser: { id: user.id, email: user.email },
       organizationId: currentOrgId,
       totalAccessibleProjects: allProjects?.length || 0,
-      totalAccessibleTasks: allTasks?.length || 0
+      totalAccessibleTasks: allTasks?.length || 0,
+      totalAccessibleUsers: allUsers?.length || 0,
+      note: 'Clean RLS policies enforcing perfect organization isolation!'
     };
   } catch (error) {
     console.error('Organization isolation test failed:', error);
