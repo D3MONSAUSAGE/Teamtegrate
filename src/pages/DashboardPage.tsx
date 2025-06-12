@@ -5,7 +5,7 @@ import { useTask } from '@/contexts/task';
 import { useProjects } from '@/hooks/useProjects';
 import { useAuth } from '@/contexts/AuthContext';
 import { Task, Project } from '@/types';
-import { Plus, Sparkles, TrendingUp, Calendar, Settings } from 'lucide-react';
+import { Plus, Sparkles, TrendingUp, Calendar } from 'lucide-react';
 import CreateTaskDialogEnhanced from '@/components/CreateTaskDialogEnhanced';
 import { format } from 'date-fns';
 import TasksSummary from '@/components/dashboard/TasksSummary';
@@ -16,7 +16,6 @@ import TeamManagement from '@/components/dashboard/TeamManagement';
 import { useIsMobile } from '@/hooks/use-mobile';
 import AnalyticsSection from '@/components/dashboard/AnalyticsSection';
 import TimeTracking from '@/components/dashboard/TimeTracking';
-import SystemAuditPanel from '@/components/admin/SystemAuditPanel';
 import { flatTasksToTasks, flatProjectsToProjects } from '@/utils/typeConversions';
 
 const DashboardPage = () => {
@@ -26,7 +25,6 @@ const DashboardPage = () => {
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [showAuditPanel, setShowAuditPanel] = useState(false);
   const isMobile = useIsMobile();
   
   // Convert FlatTasks to Tasks for compatibility
@@ -117,10 +115,6 @@ const DashboardPage = () => {
     };
     handleCreateTask(convertedProject);
   };
-
-  // Show audit panel if no data is visible or if it's a superadmin/admin
-  const shouldShowAuditButton = user?.role === 'superadmin' || user?.role === 'admin' || 
-    (tasks.length === 0 && projects.length === 0);
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/10 to-background">
@@ -177,17 +171,6 @@ const DashboardPage = () => {
               </div>
               
               <div className="flex flex-col sm:flex-row gap-3">
-                {shouldShowAuditButton && (
-                  <Button 
-                    onClick={() => setShowAuditPanel(!showAuditPanel)}
-                    variant="outline"
-                    size={isMobile ? "default" : "lg"}
-                    className="group relative overflow-hidden"
-                  >
-                    <Settings className="h-5 w-5 mr-2" />
-                    {showAuditPanel ? 'Hide' : 'Show'} System Audit
-                  </Button>
-                )}
                 <Button 
                   onClick={() => handleCreateTask()} 
                   size={isMobile ? "default" : "lg"} 
@@ -201,13 +184,6 @@ const DashboardPage = () => {
             </div>
           </div>
         </div>
-
-        {/* System Audit Panel - Show if toggled or if no data */}
-        {showAuditPanel && (
-          <div className="animate-slide-up" style={{ animationDelay: '0.1s' }}>
-            <SystemAuditPanel />
-          </div>
-        )}
         
         {/* Enhanced Quick Stats Summary */}
         <div className="animate-slide-up" style={{ animationDelay: '0.1s' }}>

@@ -1,74 +1,97 @@
+import React from "react";
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider } from "./contexts/AuthContext";
+import { TaskProvider } from "./contexts/task";
+import ErrorBoundary from "./components/ErrorBoundary";
+import AppLayout from "./components/AppLayout";
+import LoginPage from "./pages/LoginPage";
+import DashboardPage from "./pages/DashboardPage";
+import TasksPage from "./pages/TasksPage";
+import ProjectsPage from "./pages/ProjectsPage";
+import TeamPage from "./pages/TeamPage";
+import SettingsPage from "./pages/SettingsPage";
+import ProfilePage from "./pages/ProfilePage";
+import ReportsPage from "./pages/ReportsPage";
+import TimeTrackingPage from "./pages/TimeTrackingPage";
+import NotFound from "./pages/NotFound";
+import Index from "./pages/Index";
+import AppEntry from "./pages/AppEntry";
+import DocumentsPage from "./pages/DocumentsPage";
+import FinancePage from "./pages/FinancePage";
+import ChatPage from "./pages/ChatPage";
+import NotebookPage from "./pages/NotebookPage";
+import ProjectTasksPage from "./pages/ProjectTasksPage";
+import CalendarPage from "./pages/CalendarPage";
+import NotificationsPage from "./pages/NotificationsPage";
+import FocusZonePage from "./pages/FocusZonePage";
 
-import { Toaster } from "@/components/ui/sonner"
-import { TooltipProvider } from "@/components/ui/tooltip"
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { BrowserRouter, Routes, Route } from "react-router-dom"
-import { AuthProvider } from '@/contexts/SimpleAuthContext'
-import Index from "./pages/Index"
-import SimpleLoginPage from "./pages/SimpleLoginPage"
-import DashboardPage from "./pages/DashboardPage"
-import TasksPage from "./pages/TasksPage"
-import ProjectsPage from "./pages/ProjectsPage"
-import CalendarPage from "./pages/CalendarPage"
-import TeamPage from "./pages/TeamPage"
-import ChatPage from "./pages/ChatPage"
-import NotificationsPage from "./pages/NotificationsPage"
-import ReportsPage from "./pages/ReportsPage"
-import TimeTrackingPage from "./pages/TimeTrackingPage"
-import FocusZonePage from "./pages/FocusZonePage"
-import DocumentsPage from "./pages/DocumentsPage"
-import FinancePage from "./pages/FinancePage"
-import NotebookPage from "./pages/NotebookPage"
-import ProfilePage from "./pages/ProfilePage"
-import SettingsPage from "./pages/SettingsPage"
-import ProjectTasksPage from "./pages/ProjectTasksPage"
-import AppLayout from "./components/AppLayout"
-import ProtectedRoute from "./components/ProtectedRoute"
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
-const queryClient = new QueryClient()
-
-function App() {
+const App: React.FC = () => {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <BrowserRouter>
-          {/* Single global AuthProvider for entire app */}
-          <AuthProvider>
-            <Routes>
-              {/* Public routes - work within global AuthProvider but not protected */}
-              <Route path="/" element={<Index />} />
-              <Route path="/login" element={<SimpleLoginPage />} />
-              
-              {/* Protected routes - use same global AuthProvider */}
-              <Route path="/dashboard" element={
-                <ProtectedRoute>
-                  <AppLayout />
-                </ProtectedRoute>
-              }>
-                <Route index element={<DashboardPage />} />
-                <Route path="tasks" element={<TasksPage />} />
-                <Route path="projects" element={<ProjectsPage />} />
-                <Route path="projects/:projectId/tasks" element={<ProjectTasksPage />} />
-                <Route path="calendar" element={<CalendarPage />} />
-                <Route path="team" element={<TeamPage />} />
-                <Route path="chat" element={<ChatPage />} />
-                <Route path="notifications" element={<NotificationsPage />} />
-                <Route path="reports" element={<ReportsPage />} />
-                <Route path="time-tracking" element={<TimeTrackingPage />} />
-                <Route path="focus-zone" element={<FocusZonePage />} />
-                <Route path="documents" element={<DocumentsPage />} />
-                <Route path="finance" element={<FinancePage />} />
-                <Route path="notebook" element={<NotebookPage />} />
-                <Route path="profile" element={<ProfilePage />} />
-                <Route path="settings" element={<SettingsPage />} />
-              </Route>
-            </Routes>
-          </AuthProvider>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
-  )
-}
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <ErrorBoundary>
+            <TaskProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <BrowserRouter>
+                  <Routes>
+                    {/* Public routes */}
+                    <Route path="/" element={<Index />} />
+                    <Route path="/login" element={<LoginPage />} />
+                    
+                    {/* Legacy route redirects */}
+                    <Route path="/auth/login" element={<Navigate to="/login" replace />} />
+                    
+                    {/* App entry point - handles auth check and redirect */}
+                    <Route path="/app" element={<AppEntry />} />
+                    
+                    {/* Protected dashboard routes */}
+                    <Route path="/dashboard" element={<AppLayout />}>
+                      <Route index element={<DashboardPage />} />
+                      <Route path="tasks" element={<TasksPage />} />
+                      <Route path="tasks/create" element={<TasksPage />} />
+                      <Route path="projects" element={<ProjectsPage />} />
+                      <Route path="projects/:projectId/tasks" element={<ProjectTasksPage />} />
+                      <Route path="calendar" element={<CalendarPage />} />
+                      <Route path="team" element={<TeamPage />} />
+                      <Route path="chat" element={<ChatPage />} />
+                      <Route path="notifications" element={<NotificationsPage />} />
+                      <Route path="reports" element={<ReportsPage />} />
+                      <Route path="settings" element={<SettingsPage />} />
+                      <Route path="profile" element={<ProfilePage />} />
+                      <Route path="time-tracking" element={<TimeTrackingPage />} />
+                      <Route path="focus-zone" element={<FocusZonePage />} />
+                      <Route path="documents" element={<DocumentsPage />} />
+                      <Route path="finance" element={<FinancePage />} />
+                      <Route path="notebook" element={<NotebookPage />} />
+                    </Route>
+                    
+                    {/* 404 fallback */}
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </BrowserRouter>
+              </TooltipProvider>
+            </TaskProvider>
+          </ErrorBoundary>
+        </AuthProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
+  );
+};
 
-export default App
+export default App;

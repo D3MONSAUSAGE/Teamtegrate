@@ -16,12 +16,11 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     autoRefreshToken: true,
     detectSessionInUrl: true,
     flowType: 'pkce',
-    debug: true // Enable debug to trace auth issues
+    debug: false // Disable debug to reduce noise
   },
   global: {
     headers: {
-      'x-application-name': 'teamtegrate',
-      'apikey': SUPABASE_PUBLISHABLE_KEY
+      'x-application-name': 'teamtegrate'
     }
   },
   db: {
@@ -34,106 +33,22 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
   }
 });
 
-// Enhanced session debugging with error handling and token verification
-supabase.auth.onAuthStateChange(async (event, session) => {
-  console.log('🔄 Auth state change:', event);
-  console.log('📊 Session status:', session ? 'EXISTS' : 'NULL');
-  
-  if (session) {
-    console.log('👤 User ID:', session.user?.id);
-    console.log('🔑 Access token length:', session.access_token?.length || 0);
-    console.log('⏰ Token expires at:', new Date(session.expires_at! * 1000));
-    console.log('🏢 Session user metadata:', session.user?.user_metadata);
-    
-    // Test if backend recognizes this session
-    try {
-      console.log('🧪 Testing backend session recognition...');
-      const { data: orgId, error } = await supabase.rpc('get_current_user_organization_id');
-      if (error) {
-        console.error('❌ Backend session test failed:', error);
-      } else {
-        console.log('✅ Backend recognizes session - Org ID:', orgId);
-      }
-    } catch (testError) {
-      console.error('❌ Session test error:', testError);
-    }
-  }
+// Enhanced session debugging with error handling
+supabase.auth.onAuthStateChange((event, session) => {
+  console.log('Auth state change:', event, 'Session:', session ? 'exists' : 'null');
   
   if (event === 'TOKEN_REFRESHED') {
-    console.log('✅ Token successfully refreshed');
+    console.log('Token successfully refreshed');
   }
   
   if (event === 'SIGNED_OUT') {
-    console.log('👋 User signed out, clearing local storage');
+    console.log('User signed out, clearing local storage');
     // Clear any cached data
     localStorage.removeItem('sb-zlfpiovyodiyecdueiig-auth-token');
-    // Clear any other potential auth remnants
-    Object.keys(localStorage).forEach(key => {
-      if (key.includes('supabase') || key.includes('auth')) {
-        localStorage.removeItem(key);
-      }
-    });
   }
   
-  if (event === 'SIGNED_IN') {
-    console.log('✅ User signed in successfully');
+  if (session) {
+    console.log('User ID:', session.user?.id);
+    console.log('Session expires at:', new Date(session.expires_at! * 1000));
   }
 });
-
-// Add session health check utility
-export const checkSessionHealth = async () => {
-  try {
-    console.log('🔍 Performing session health check...');
-    
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError) {
-      console.error('❌ Session retrieval error:', sessionError);
-      return { healthy: false, error: sessionError };
-    }
-    
-    if (!session) {
-      console.log('❌ No active session found');
-      return { healthy: false, error: 'No session' };
-    }
-    
-    console.log('✅ Session exists, testing backend recognition...');
-    const { data: orgId, error: orgError } = await supabase.rpc('get_current_user_organization_id');
-    
-    if (orgError) {
-      console.error('❌ Backend session recognition failed:', orgError);
-      return { healthy: false, error: orgError, session };
-    }
-    
-    console.log('✅ Session is healthy - Org ID:', orgId);
-    return { healthy: true, session, organizationId: orgId };
-  } catch (error) {
-    console.error('❌ Session health check failed:', error);
-    return { healthy: false, error };
-  }
-};
-
-// Add session recovery utility
-export const recoverSession = async () => {
-  try {
-    console.log('🔧 Attempting session recovery...');
-    
-    // Force refresh the session
-    const { data: { session }, error } = await supabase.auth.refreshSession();
-    
-    if (error) {
-      console.error('❌ Session refresh failed:', error);
-      return { recovered: false, error };
-    }
-    
-    if (session) {
-      console.log('✅ Session recovered successfully');
-      return { recovered: true, session };
-    }
-    
-    console.log('❌ No session to recover');
-    return { recovered: false, error: 'No session' };
-  } catch (error) {
-    console.error('❌ Session recovery failed:', error);
-    return { recovered: false, error };
-  }
-};

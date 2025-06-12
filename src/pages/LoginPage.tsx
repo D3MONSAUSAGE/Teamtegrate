@@ -14,33 +14,22 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { toast } from '@/components/ui/sonner';
+import { UserRole } from '@/types';
 import { ArrowLeft } from 'lucide-react';
 import BrandLogo from '@/components/shared/BrandLogo';
 import MultiTenantSignupForm from '@/components/auth/MultiTenantSignupForm';
-import { useSessionRecovery } from '@/contexts/auth/hooks/useSessionRecovery';
 
 const LoginPage = () => {
   const [searchParams] = useSearchParams();
   const [isLogin, setIsLogin] = useState(!searchParams.get('signup'));
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const { login, isAuthenticated, loading } = useAuth();
-  const { attemptSessionRecovery, isRecovering } = useSessionRecovery();
   const navigate = useNavigate();
-  
-  console.log('LoginPage: Auth state:', { 
-    isAuthenticated, 
-    authLoading: loading, 
-    formSubmitting: isSubmitting,
-    sessionRecovering: isRecovering,
-    canSubmit: !isSubmitting && !loading && !isRecovering
-  });
   
   // Redirect if already logged in
   useEffect(() => {
     if (isAuthenticated && !loading) {
-      console.log('LoginPage: User authenticated, redirecting to dashboard');
       navigate('/dashboard');
     }
   }, [isAuthenticated, loading, navigate]);
@@ -51,62 +40,27 @@ const LoginPage = () => {
       setIsLogin(false);
     }
   }, [searchParams]);
-
-  // Auto-attempt session recovery if login seems stuck
-  useEffect(() => {
-    if (loading && !isRecovering) {
-      const recoveryTimeout = setTimeout(async () => {
-        console.log('⚠️ LoginPage: Login seems stuck, attempting session recovery...');
-        await attemptSessionRecovery();
-      }, 10000); // Wait 10 seconds before attempting recovery
-
-      return () => clearTimeout(recoveryTimeout);
-    }
-  }, [loading, isRecovering, attemptSessionRecovery]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!isLogin) {
+      // This shouldn't happen as signup is handled by MultiTenantSignupForm
       return;
     }
-    
-    // Prevent double submission
-    if (isSubmitting || isRecovering) {
-      console.log('LoginPage: Preventing submission during processing');
-      return;
-    }
-    
-    setIsSubmitting(true);
-    console.log('LoginPage: Starting login submission for:', email);
     
     try {
       await login(email, password);
-      console.log('LoginPage: Login successful, will redirect via useEffect');
       toast.success('Welcome back!');
-      // Don't redirect here - let the useEffect handle it when isAuthenticated changes
     } catch (error) {
-      console.error('LoginPage: Authentication error:', error);
-      toast.error('Login failed. Please check your credentials.');
-    } finally {
-      setIsSubmitting(false);
-      console.log('LoginPage: Login submission complete');
+      console.error('Authentication error:', error);
     }
   };
 
   const handleBackToLogin = () => {
     setIsLogin(true);
   };
-
-  const handleSessionRecoveryClick = async () => {
-    console.log('LoginPage: Manual session recovery requested');
-    const recovered = await attemptSessionRecovery();
-    if (!recovered) {
-      toast.error('Unable to recover session. Please try logging in again.');
-    }
-  };
   
-  // Show signup form
   if (!isLogin) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
@@ -136,9 +90,6 @@ const LoginPage = () => {
       </div>
     );
   }
-  
-  // Form is disabled when actively submitting or recovering
-  const isFormDisabled = isSubmitting || isRecovering;
   
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
@@ -172,7 +123,6 @@ const LoginPage = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  disabled={isFormDisabled}
                 />
               </div>
               
@@ -185,38 +135,20 @@ const LoginPage = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  disabled={isFormDisabled}
                 />
               </div>
 
-              <Button type="submit" className="w-full" disabled={isFormDisabled}>
-                {isSubmitting ? 'Signing in...' : isRecovering ? 'Recovering session...' : 'Sign In'}
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? 'Signing in...' : 'Sign In'}
               </Button>
             </form>
-
-            {/* Session recovery help */}
-            {loading && !isSubmitting && (
-              <div className="mt-4 text-center">
-                <p className="text-sm text-muted-foreground mb-2">
-                  Taking longer than expected?
-                </p>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleSessionRecoveryClick}
-                  disabled={isRecovering}
-                >
-                  {isRecovering ? 'Recovering...' : 'Fix Connection'}
-                </Button>
-              </div>
-            )}
           </CardContent>
           <CardFooter>
             <Button
               variant="link"
               className="w-full"
               onClick={() => setIsLogin(false)}
-              disabled={isFormDisabled}
+              disabled={loading}
             >
               Don't have an account? Sign up for free
             </Button>

@@ -4,7 +4,6 @@ import { AuthContextType } from './types';
 import { useAuthOperations } from './hooks/useAuthOperations';
 import { useAuthState } from './hooks/useAuthState';
 import { useRoleAccess } from './hooks/useRoleAccess';
-import { testRLSPolicies } from './utils/rlsHelpers';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -13,7 +12,7 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  console.log('🚀 AuthProvider: Initializing');
+  console.log('AuthProvider: Initializing');
 
   const {
     user,
@@ -37,27 +36,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const isAuthenticated = !!user && !!session;
 
-  console.log('📊 AuthProvider: Current state', {
-    loading,
-    hasUser: !!user,
-    isAuthenticated,
-    userEmail: user?.email,
-    organizationId: user?.organizationId
-  });
-
-  // Test RLS policies when user is authenticated
-  React.useEffect(() => {
-    if (isAuthenticated && user) {
-      console.log('🔍 User authenticated, testing RLS policies...');
-      testRLSPolicies().then(result => {
-        if (result.success) {
-          console.log('✅ RLS policies working correctly:', result);
-        } else {
-          console.error('❌ RLS policies have issues:', result.error);
-        }
-      });
-    }
-  }, [isAuthenticated, user?.id]);
+  console.log('AuthProvider: Current state - loading:', loading, 'user:', !!user, 'isAuthenticated:', isAuthenticated);
 
   const value: AuthContextType = {
     user,
