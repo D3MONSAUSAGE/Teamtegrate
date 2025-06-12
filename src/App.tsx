@@ -21,11 +21,9 @@ function App() {
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<SimpleLoginPage />} />
-              <Route path="/dashboard" element={
-                <AppLayout>
-                  <DashboardPage />
-                </AppLayout>
-              } />
+              <Route path="/dashboard" element={<AppLayout />}>
+                <Route index element={<DashboardPage />} />
+              </Route>
             </Routes>
           </BrowserRouter>
         </TooltipProvider>
