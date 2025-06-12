@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +15,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { toast } from '@/components/ui/sonner';
 import { UserRole } from '@/types';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, AlertTriangle } from 'lucide-react';
 import BrandLogo from '@/components/shared/BrandLogo';
 import MultiTenantSignupForm from '@/components/auth/MultiTenantSignupForm';
 
@@ -25,26 +26,23 @@ const LoginPage = () => {
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loginAttempts, setLoginAttempts] = useState(0);
+  const [loginError, setLoginError] = useState<string | null>(null);
   const { login, isAuthenticated, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   
-  // Debug auth state
-  useEffect(() => {
-    console.log('🔍 LoginPage: Auth state debug:', {
-      isAuthenticated,
-      authLoading,
-      isSubmitting
-    });
-  }, [isAuthenticated, authLoading, isSubmitting]);
+  console.log('🔍 LoginPage: Rendering with state:', {
+    isAuthenticated,
+    authLoading,
+    isSubmitting,
+    loginError,
+    attempts: loginAttempts
+  });
   
-  // Redirect if already logged in - with delay to prevent flash
+  // Redirect if already logged in
   useEffect(() => {
     if (isAuthenticated && !authLoading) {
-      console.log('✅ LoginPage: User already authenticated, redirecting to dashboard');
-      // Small delay to prevent race conditions
-      setTimeout(() => {
-        navigate('/dashboard', { replace: true });
-      }, 100);
+      console.log('✅ LoginPage: User authenticated, redirecting to dashboard');
+      navigate('/dashboard', { replace: true });
     }
   }, [isAuthenticated, authLoading, navigate]);
 
@@ -60,8 +58,9 @@ const LoginPage = () => {
     if (loginAttempts > 0) {
       const resetTimer = setTimeout(() => {
         setLoginAttempts(0);
+        setLoginError(null);
         console.log('🔄 LoginPage: Login attempts reset');
-      }, 5 * 60 * 1000); // 5 minutes
+      }, 5 * 60 * 1000);
 
       return () => clearTimeout(resetTimer);
     }
@@ -90,45 +89,52 @@ const LoginPage = () => {
       return;
     }
 
-    console.log('🔑 LoginPage: Starting login process');
-    console.log('🔑 LoginPage: Form data:', {
-      email: email,
-      passwordLength: password.length,
-      emailValid: email.includes('@'),
-      formValid: email && password
-    });
+    console.log('🔑 LoginPage: Starting simplified login process');
     
     setIsSubmitting(true);
+    setLoginError(null);
     setLoginAttempts(prev => prev + 1);
     
     try {
-      console.log('🔑 LoginPage: Calling auth login...');
-      await login(email, password);
+      console.log('🔑 LoginPage: Calling auth login with timeout protection...');
+      
+      // Add a timeout to prevent infinite loading
+      const loginPromise = login(email, password);
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Login timeout after 30 seconds')), 30000)
+      );
+      
+      await Promise.race([loginPromise, timeoutPromise]);
       
       // Reset attempts on successful login
       setLoginAttempts(0);
-      console.log('✅ LoginPage: Login call completed successfully');
+      setLoginError(null);
+      console.log('✅ LoginPage: Login completed successfully');
       
-      // Don't set isSubmitting to false immediately - let auth state handle redirect
+      // Let auth state handle redirect
       
     } catch (error) {
       console.error('❌ LoginPage: Login failed:', error);
       setIsSubmitting(false);
       
-      // Additional client-side error handling
+      let errorMessage = 'Login failed';
+      
       if (error instanceof Error) {
-        console.error('❌ LoginPage: Error details:', {
-          name: error.name,
-          message: error.message,
-          stack: error.stack
-        });
-        
-        if (error.message?.includes('network')) {
-          toast.error('Network error. Please check your connection and try again.');
-        } else if (error.message?.includes('timeout')) {
-          toast.error('Request timed out. Please try again.');
+        if (error.message?.includes('timeout')) {
+          errorMessage = 'Login timed out. The database may be experiencing issues.';
+        } else if (error.message?.includes('Invalid login credentials')) {
+          errorMessage = 'Invalid email or password';
+        } else if (error.message?.includes('network') || error.message?.includes('500')) {
+          errorMessage = 'Database connection issues. Please try again.';
+        } else if (error.message?.includes('403') || error.message?.includes('unauthorized')) {
+          errorMessage = 'Authentication service unavailable. Please try again.';
+        } else {
+          errorMessage = error.message;
         }
       }
+      
+      setLoginError(errorMessage);
+      toast.error(errorMessage);
     }
   };
 
@@ -136,10 +142,12 @@ const LoginPage = () => {
     setIsLogin(true);
     setIsSubmitting(false);
     setLoginAttempts(0);
+    setLoginError(null);
   };
 
   const handleRetryLogin = () => {
     setIsSubmitting(false);
+    setLoginError(null);
     setPassword(''); // Clear password for security
     toast.info('Please try logging in again.');
   };
@@ -147,22 +155,23 @@ const LoginPage = () => {
   const handleTestLogin = () => {
     setEmail('generalmanager@guanatostacos.com');
     setPassword('12345678');
+    setLoginError(null);
     console.log('🧪 LoginPage: Test credentials populated');
   };
 
-  // Reset submitting state if auth completes
+  // Force reset if stuck in loading state for too long
   useEffect(() => {
-    if (!authLoading && isSubmitting) {
-      console.log('🔄 LoginPage: Auth loading finished, checking auth state...');
-      if (isAuthenticated) {
-        console.log('✅ LoginPage: User authenticated, keeping submitting state for redirect');
-        // Keep submitting state until redirect happens
-      } else {
-        console.log('❌ LoginPage: Auth completed but user not authenticated, resetting submit state');
+    if (isSubmitting) {
+      const forceResetTimer = setTimeout(() => {
+        console.log('⚠️ LoginPage: Force resetting stuck loading state');
         setIsSubmitting(false);
-      }
+        setLoginError('Login timed out. Please try again.');
+        toast.error('Login took too long. Please try again.');
+      }, 45000); // 45 seconds
+
+      return () => clearTimeout(forceResetTimer);
     }
-  }, [authLoading, isAuthenticated, isSubmitting]);
+  }, [isSubmitting]);
   
   if (!isLogin) {
     return (
@@ -257,6 +266,16 @@ const LoginPage = () => {
                 </Button>
               </div>
 
+              {/* Error display */}
+              {loginError && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                  <div className="flex">
+                    <AlertTriangle className="h-4 w-4 text-red-600 mr-2 mt-0.5" />
+                    <p className="text-sm text-red-800">{loginError}</p>
+                  </div>
+                </div>
+              )}
+
               {loginAttempts > 0 && (
                 <div className="text-sm text-muted-foreground text-center">
                   Login attempts: {loginAttempts}/3
@@ -288,7 +307,7 @@ const LoginPage = () => {
                     onClick={handleRetryLogin}
                     className="text-muted-foreground"
                   >
-                    Having trouble? Click here to retry
+                    Taking too long? Click here to cancel
                   </Button>
                 </div>
               )}
