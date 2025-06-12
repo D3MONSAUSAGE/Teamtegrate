@@ -33,10 +33,10 @@ export const getCurrentUserOrganizationId = async (): Promise<string | null> => 
   }
 };
 
-// Test function to verify RLS is working correctly after the fix
+// Test function to verify RLS is working correctly after the final fix
 export const testRLSPolicies = async () => {
   try {
-    console.log('🔍 Testing RLS policies after comprehensive cleanup...');
+    console.log('🔍 Testing RLS policies after final cleanup...');
     
     // Get current user info first
     const { data: { user } } = await supabase.auth.getUser();
