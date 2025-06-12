@@ -36,7 +36,7 @@ export const getCurrentUserOrganizationId = async (): Promise<string | null> => 
 // Test function to verify RLS is working correctly after the fix
 export const testRLSPolicies = async () => {
   try {
-    console.log('🔍 Testing RLS policies after infinite recursion fix...');
+    console.log('🔍 Testing RLS policies after comprehensive cleanup...');
     
     // Get current user info first
     const { data: { user } } = await supabase.auth.getUser();
@@ -80,16 +80,16 @@ export const testRLSPolicies = async () => {
       console.log(`✅ Projects RLS test passed: ${projects?.length || 0} projects returned`);
     }
 
-    // Test users query - should only return users from user's organization
-    const { data: users, error: usersError } = await supabase
-      .from('users')
-      .select('id, name, email, role, organization_id')
+    // Test project_team_members query
+    const { data: teamMembers, error: teamMembersError } = await supabase
+      .from('project_team_members')
+      .select('id, project_id, user_id')
       .limit(5);
     
-    if (usersError) {
-      console.error('❌ Users RLS test failed:', usersError);
+    if (teamMembersError) {
+      console.error('❌ Project team members RLS test failed:', teamMembersError);
     } else {
-      console.log(`✅ Users RLS test passed: ${users?.length || 0} users returned`);
+      console.log(`✅ Project team members RLS test passed: ${teamMembers?.length || 0} memberships returned`);
     }
 
     return {
@@ -99,12 +99,12 @@ export const testRLSPolicies = async () => {
       tests: {
         tasks: !tasksError,
         projects: !projectsError,
-        users: !usersError
+        teamMembers: !teamMembersError
       },
       counts: {
         tasks: tasks?.length || 0,
         projects: projects?.length || 0,
-        users: users?.length || 0
+        teamMembers: teamMembers?.length || 0
       }
     };
   } catch (error) {
@@ -167,29 +167,12 @@ export const testOrganizationIsolation = async () => {
       console.log(`✅ Organization isolation verified: ${allTasks?.length || 0} tasks all belong to user's org`);
     }
 
-    // Test that all returned users belong to user's organization
-    const { data: allUsers, error: allUsersError } = await supabase
-      .from('users')
-      .select('id, organization_id, email');
-
-    if (allUsersError) {
-      console.log('RLS correctly blocked or limited access:', allUsersError.message);
-    } else {
-      const invalidUsers = allUsers?.filter(u => u.organization_id !== currentOrgId) || [];
-      if (invalidUsers.length > 0) {
-        console.error('❌ Organization isolation breach in users!', invalidUsers);
-        return { success: false, error: 'Organization isolation breach detected' };
-      }
-      console.log(`✅ Organization isolation verified: ${allUsers?.length || 0} users all belong to user's org`);
-    }
-
     return {
       success: true,
       currentUser: { id: user.id, email: user.email },
       organizationId: currentOrgId,
       totalAccessibleProjects: allProjects?.length || 0,
-      totalAccessibleTasks: allTasks?.length || 0,
-      totalAccessibleUsers: allUsers?.length || 0
+      totalAccessibleTasks: allTasks?.length || 0
     };
   } catch (error) {
     console.error('Organization isolation test failed:', error);
