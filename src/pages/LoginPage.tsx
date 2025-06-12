@@ -25,7 +25,6 @@ const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [loginAttempts, setLoginAttempts] = useState(0);
   const [loginError, setLoginError] = useState<string | null>(null);
   const { login, isAuthenticated, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -34,8 +33,7 @@ const LoginPage = () => {
     isAuthenticated,
     authLoading,
     isSubmitting,
-    loginError,
-    attempts: loginAttempts
+    loginError
   });
   
   // Redirect if already logged in
@@ -52,19 +50,6 @@ const LoginPage = () => {
       setIsLogin(false);
     }
   }, [searchParams]);
-
-  // Auto-reset login attempts after 5 minutes
-  useEffect(() => {
-    if (loginAttempts > 0) {
-      const resetTimer = setTimeout(() => {
-        setLoginAttempts(0);
-        setLoginError(null);
-        console.log('🔄 LoginPage: Login attempts reset');
-      }, 5 * 60 * 1000);
-
-      return () => clearTimeout(resetTimer);
-    }
-  }, [loginAttempts]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,40 +63,22 @@ const LoginPage = () => {
       return;
     }
 
-    // Rate limiting check
-    if (loginAttempts >= 3) {
-      toast.error('Too many login attempts. Please wait 5 minutes before trying again.');
-      return;
-    }
-
     if (!email || !password) {
       toast.error('Please enter both email and password');
       return;
     }
 
-    console.log('🔑 LoginPage: Starting simplified login process');
+    console.log('🔑 LoginPage: Starting login process');
     
     setIsSubmitting(true);
     setLoginError(null);
-    setLoginAttempts(prev => prev + 1);
     
     try {
-      console.log('🔑 LoginPage: Calling auth login with timeout protection...');
+      console.log('🔑 LoginPage: Calling auth login...');
+      await login(email, password);
       
-      // Add a timeout to prevent infinite loading
-      const loginPromise = login(email, password);
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Login timeout after 30 seconds')), 30000)
-      );
-      
-      await Promise.race([loginPromise, timeoutPromise]);
-      
-      // Reset attempts on successful login
-      setLoginAttempts(0);
-      setLoginError(null);
       console.log('✅ LoginPage: Login completed successfully');
-      
-      // Let auth state handle redirect
+      // Auth state will handle redirect
       
     } catch (error) {
       console.error('❌ LoginPage: Login failed:', error);
@@ -120,9 +87,7 @@ const LoginPage = () => {
       let errorMessage = 'Login failed';
       
       if (error instanceof Error) {
-        if (error.message?.includes('timeout')) {
-          errorMessage = 'Login timed out. The database may be experiencing issues.';
-        } else if (error.message?.includes('Invalid login credentials')) {
+        if (error.message?.includes('Invalid login credentials')) {
           errorMessage = 'Invalid email or password';
         } else if (error.message?.includes('network') || error.message?.includes('500')) {
           errorMessage = 'Database connection issues. Please try again.';
@@ -141,15 +106,7 @@ const LoginPage = () => {
   const handleBackToLogin = () => {
     setIsLogin(true);
     setIsSubmitting(false);
-    setLoginAttempts(0);
     setLoginError(null);
-  };
-
-  const handleRetryLogin = () => {
-    setIsSubmitting(false);
-    setLoginError(null);
-    setPassword(''); // Clear password for security
-    toast.info('Please try logging in again.');
   };
 
   const handleTestLogin = () => {
@@ -158,20 +115,6 @@ const LoginPage = () => {
     setLoginError(null);
     console.log('🧪 LoginPage: Test credentials populated');
   };
-
-  // Force reset if stuck in loading state for too long
-  useEffect(() => {
-    if (isSubmitting) {
-      const forceResetTimer = setTimeout(() => {
-        console.log('⚠️ LoginPage: Force resetting stuck loading state');
-        setIsSubmitting(false);
-        setLoginError('Login timed out. Please try again.');
-        toast.error('Login took too long. Please try again.');
-      }, 45000); // 45 seconds
-
-      return () => clearTimeout(forceResetTimer);
-    }
-  }, [isSubmitting]);
   
   if (!isLogin) {
     return (
@@ -276,17 +219,10 @@ const LoginPage = () => {
                 </div>
               )}
 
-              {loginAttempts > 0 && (
-                <div className="text-sm text-muted-foreground text-center">
-                  Login attempts: {loginAttempts}/3
-                  {loginAttempts >= 3 && <div className="text-destructive">Please wait 5 minutes before trying again</div>}
-                </div>
-              )}
-
               <Button 
                 type="submit" 
                 className="w-full" 
-                disabled={isSubmitting || !email || !password || loginAttempts >= 3}
+                disabled={isSubmitting || !email || !password}
               >
                 {isSubmitting ? (
                   <>
@@ -297,20 +233,6 @@ const LoginPage = () => {
                   'Sign In'
                 )}
               </Button>
-
-              {isSubmitting && (
-                <div className="text-center">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleRetryLogin}
-                    className="text-muted-foreground"
-                  >
-                    Taking too long? Click here to cancel
-                  </Button>
-                </div>
-              )}
             </form>
           </CardContent>
           <CardFooter>
@@ -325,11 +247,11 @@ const LoginPage = () => {
           </CardFooter>
         </Card>
 
-        {/* Show database status warning */}
+        {/* Show database status warning if there are ongoing issues */}
         <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
           <p className="text-sm text-yellow-800">
-            ⚠️ <strong>Database Issues Detected:</strong> The database is currently experiencing connectivity issues. 
-            You may see errors or timeouts. Please try refreshing the page if login fails.
+            ⚠️ <strong>Note:</strong> If you experience login issues, try refreshing the page. 
+            Database connectivity is being improved.
           </p>
         </div>
       </div>

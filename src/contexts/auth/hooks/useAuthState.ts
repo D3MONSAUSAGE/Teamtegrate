@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,42 +11,16 @@ export const useAuthState = () => {
   const [loading, setLoading] = useState(true);
   const [sessionHealthy, setSessionHealthy] = useState<boolean | null>(null);
 
-  const fetchUserProfile = async (userId: string, retryCount = 0): Promise<AppUser | null> => {
+  const fetchUserProfile = async (userId: string): Promise<AppUser | null> => {
     try {
-      console.log('🔍 AuthState: Starting profile fetch for user:', userId, 'attempt:', retryCount + 1);
+      console.log('🔍 AuthState: Fetching user profile for:', userId);
       
-      // Test current auth state before profile fetch
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
-      const { data: { session: currentSession } } = await supabase.auth.getSession();
-      
-      console.log('🔍 AuthState: Current auth state during profile fetch:', {
-        currentUserId: currentUser?.id,
-        hasSession: !!currentSession,
-        sessionValid: currentSession?.expires_at ? new Date(currentSession.expires_at * 1000) > new Date() : false
-      });
-
-      if (!currentUser || currentUser.id !== userId) {
-        console.error('❌ AuthState: Auth user mismatch during profile fetch');
-        return null;
-      }
-
-      // Try to fetch user profile from database
-      console.log('🔍 AuthState: Fetching user profile from database...');
-      
-      const fetchPromise = supabase
+      // Simple profile fetch with timeout
+      const { data: userData, error: userError } = await supabase
         .from('users')
         .select('*')
         .eq('id', userId)
         .single();
-      
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Profile fetch timeout after 10 seconds')), 10000)
-      );
-      
-      const { data: userData, error: userError } = await Promise.race([
-        fetchPromise,
-        timeoutPromise
-      ]) as any;
         
       console.log('🔍 AuthState: Users table query result:', {
         hasData: !!userData,
@@ -55,38 +30,12 @@ export const useAuthState = () => {
         } : null
       });
 
-      if (userError) {
-        console.error('❌ AuthState: Database error during profile fetch:', userError);
-        
-        // For 500 errors or timeouts, create minimal user profile from auth data
-        if (userError.message?.includes('500') || userError.message?.includes('timeout')) {
-          console.log('🔧 AuthState: Creating minimal profile from auth data due to DB issues');
-          const authUser = currentUser;
-          if (authUser) {
-            const minimalUser: AppUser = {
-              id: authUser.id,
-              email: authUser.email || '',
-              name: authUser.user_metadata?.name || authUser.email || 'User',
-              role: (authUser.user_metadata?.role as UserRole) || 'user',
-              organizationId: authUser.user_metadata?.organization_id || '',
-              avatar_url: authUser.user_metadata?.avatar_url,
-              timezone: 'UTC',
-              createdAt: new Date(),
-            };
-            console.log('🔧 AuthState: Using minimal profile:', minimalUser);
-            setSessionHealthy(false);
-            return minimalUser;
-          }
-        }
-        return null;
-      }
-
-      if (!userData) {
-        console.error('❌ AuthState: No user data returned from database');
-        // Create minimal profile from auth data as fallback
-        const authUser = currentUser;
+      if (userError || !userData) {
+        console.log('⚠️ AuthState: Database error or no user data, using auth fallback');
+        // Get current auth user for fallback
+        const { data: { user: authUser } } = await supabase.auth.getUser();
         if (authUser) {
-          const minimalUser: AppUser = {
+          const fallbackUser: AppUser = {
             id: authUser.id,
             email: authUser.email || '',
             name: authUser.user_metadata?.name || authUser.email || 'User',
@@ -96,22 +45,13 @@ export const useAuthState = () => {
             timezone: 'UTC',
             createdAt: new Date(),
           };
-          console.log('🔧 AuthState: Using fallback profile from auth metadata:', minimalUser);
           setSessionHealthy(false);
-          return minimalUser;
+          return fallbackUser;
         }
         return null;
       }
 
-      console.log('✅ AuthState: User profile fetched successfully:', {
-        id: userData.id,
-        email: userData.email,
-        role: userData.role,
-        organization_id: userData.organization_id
-      });
-
       setSessionHealthy(true);
-
       const appUser: AppUser = {
         id: userData.id,
         email: userData.email,
@@ -128,26 +68,6 @@ export const useAuthState = () => {
     } catch (error) {
       console.error('❌ AuthState: Error in fetchUserProfile:', error);
       setSessionHealthy(false);
-      
-      // For timeout or 500 errors, try to create fallback user
-      if (error instanceof Error && (error.message.includes('timeout') || error.message.includes('500'))) {
-        const { data: { user: currentUser } } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
-        if (currentUser) {
-          const minimalUser: AppUser = {
-            id: currentUser.id,
-            email: currentUser.email || '',
-            name: currentUser.user_metadata?.name || currentUser.email || 'User',
-            role: (currentUser.user_metadata?.role as UserRole) || 'user',
-            organizationId: currentUser.user_metadata?.organization_id || '',
-            avatar_url: currentUser.user_metadata?.avatar_url,
-            timezone: 'UTC',
-            createdAt: new Date(),
-          };
-          console.log('🔧 AuthState: Using emergency fallback profile:', minimalUser);
-          return minimalUser;
-        }
-      }
-      
       return null;
     }
   };
@@ -162,7 +82,6 @@ export const useAuthState = () => {
         setSession(newSession);
         const userData = await fetchUserProfile(newSession.user.id);
         setUser(userData);
-        console.log('✅ AuthState: User data updated after refresh:', userData);
       }
     } catch (error) {
       console.error('❌ AuthState: Error refreshing session:', error);
@@ -172,9 +91,8 @@ export const useAuthState = () => {
 
   useEffect(() => {
     let isMounted = true;
-    let authTimeout: NodeJS.Timeout;
     
-    console.log('🚀 AuthState: Setting up simplified auth state management');
+    console.log('🚀 AuthState: Setting up auth state management');
     
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -184,16 +102,10 @@ export const useAuthState = () => {
         console.log('🔄 AuthState: Auth state change event:', {
           event,
           hasSession: !!session,
-          userId: session?.user?.id,
-          sessionValid: session?.expires_at ? new Date(session.expires_at * 1000) > new Date() : false
+          userId: session?.user?.id
         });
 
-        // Clear any existing timeout
-        if (authTimeout) {
-          clearTimeout(authTimeout);
-        }
-        
-        // Store session immediately
+        // Always update session state immediately
         setSession(session);
         
         if (event === 'SIGNED_IN' && session?.user) {
@@ -202,61 +114,54 @@ export const useAuthState = () => {
             const userData = await fetchUserProfile(session.user.id);
             if (isMounted) {
               setUser(userData);
-              if (userData) {
-                console.log('✅ AuthState: User profile loaded successfully after sign in');
-              } else {
-                console.log('❌ AuthState: Failed to load user profile after sign in');
-              }
+              console.log('✅ AuthState: User profile loaded after sign in');
             }
           } catch (error) {
-            console.error('❌ AuthState: Error loading user profile after sign in:', error);
+            console.error('❌ AuthState: Error loading profile after sign in:', error);
             if (isMounted) {
               setUser(null);
             }
           }
         } else if (event === 'SIGNED_OUT') {
           console.log('👋 AuthState: User signed out');
-          setSession(null);
           setUser(null);
           setSessionHealthy(null);
         } else if (event === 'TOKEN_REFRESHED') {
-          console.log('🔄 AuthState: Token refreshed');
-          // Keep existing user data
+          console.log('🔄 AuthState: Token refreshed, keeping existing user');
+          // Don't refetch user data on token refresh
         } else if (event === 'INITIAL_SESSION' && session?.user) {
-          console.log('🔄 AuthState: Initial session check');
+          console.log('🔄 AuthState: Initial session detected');
           try {
             const userData = await fetchUserProfile(session.user.id);
             if (isMounted) {
               setUser(userData);
             }
           } catch (error) {
-            console.error('❌ AuthState: Error loading user profile on initial session:', error);
+            console.error('❌ AuthState: Error loading profile on initial session:', error);
             if (isMounted) {
               setUser(null);
             }
           }
         }
         
-        // Always set loading to false after processing
+        // Set loading to false after processing any auth event
         if (isMounted) {
           setLoading(false);
         }
       }
     );
 
-    // Set timeout for loading state
-    authTimeout = setTimeout(() => {
-      if (isMounted && loading) {
-        console.log('⏰ AuthState: Auth timeout reached, forcing loading to false');
+    // Set a maximum loading timeout
+    const loadingTimeout = setTimeout(() => {
+      if (isMounted) {
+        console.log('⏰ AuthState: Loading timeout reached');
         setLoading(false);
       }
-    }, 10000);
+    }, 5000); // Reduced from 10s to 5s
 
     return () => {
       isMounted = false;
-      if (authTimeout) {
-        clearTimeout(authTimeout);
-      }
+      clearTimeout(loadingTimeout);
       console.log('🧹 AuthState: Cleaning up auth listener');
       subscription.unsubscribe();
     };

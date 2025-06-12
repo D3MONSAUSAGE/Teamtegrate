@@ -4,16 +4,9 @@ import { UserRole } from '@/types';
 
 export const login = async (email: string, password: string) => {
   try {
-    console.log('🔑 AuthOps: Starting simplified login for:', email);
+    console.log('🔑 AuthOps: Starting login for:', email);
     
-    // Clear any existing session first
-    console.log('🧹 AuthOps: Clearing any existing session...');
-    await supabase.auth.signOut();
-    
-    // Wait a moment for cleanup
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    // Attempt login with timeout protection
+    // Attempt login directly without clearing existing session
     console.log('🔑 AuthOps: Calling supabase.auth.signInWithPassword...');
     
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -41,18 +34,6 @@ export const login = async (email: string, password: string) => {
     if (!data?.user || !data?.session) {
       console.error('❌ AuthOps: No user or session data returned');
       throw new Error('Login failed: No user data received');
-    }
-
-    // Verify session is valid
-    const sessionValid = data.session.expires_at ? new Date(data.session.expires_at * 1000) > new Date() : false;
-    console.log('✅ AuthOps: Session validation:', {
-      expiresAt: data.session.expires_at,
-      isValid: sessionValid
-    });
-
-    if (!sessionValid) {
-      console.error('❌ AuthOps: Session is already expired');
-      throw new Error('Session expired immediately');
     }
 
     console.log('✅ AuthOps: Login successful for:', email);
