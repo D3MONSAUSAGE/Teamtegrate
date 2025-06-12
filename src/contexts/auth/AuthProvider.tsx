@@ -13,7 +13,7 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  console.log('🚀 AuthProvider: Initializing with improved error handling');
+  console.log('🚀 AuthProvider: Initializing');
 
   const {
     user,
@@ -37,68 +37,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const isAuthenticated = !!user && !!session;
 
-  console.log('📊 AuthProvider: Current state:', {
+  console.log('📊 AuthProvider: Current state', {
     loading,
     hasUser: !!user,
     isAuthenticated,
     userEmail: user?.email,
-    userId: user?.id,
-    organizationId: user?.organizationId,
-    userRole: user?.role,
-    sessionExists: !!session,
-    sessionValid: session?.expires_at ? new Date(session.expires_at * 1000) > new Date() : false
+    organizationId: user?.organizationId
   });
 
-  // Enhanced debug logging for auth provider state changes
+  // Test RLS policies when user is authenticated
   React.useEffect(() => {
-    console.log('🔄 AuthProvider: State change detected:', {
-      timestamp: new Date().toISOString(),
-      loading,
-      user: user ? {
-        id: user.id,
-        email: user.email,
-        organizationId: user.organizationId,
-        role: user.role,
-        name: user.name
-      } : null,
-      session: session ? {
-        userId: session.user?.id,
-        userEmail: session.user?.email,
-        hasAccessToken: !!session.access_token,
-        isValid: session.expires_at ? new Date(session.expires_at * 1000) > new Date() : false
-      } : null,
-      isAuthenticated
-    });
-  }, [loading, user, session, isAuthenticated]);
-
-  // Simplified RLS testing - only run when user is fully authenticated and stable
-  React.useEffect(() => {
-    if (isAuthenticated && user && user.organizationId && !loading) {
-      // Add delay to ensure auth is stable
-      const testTimeout = setTimeout(() => {
-        console.log('🔍 RLS TESTING: User fully authenticated, testing policies...');
-        
-        testRLSPolicies().then(result => {
-          if (result.success) {
-            console.log('✅ RLS TEST SUCCESS:', result);
-          } else {
-            console.error('❌ RLS TEST FAILURE:', result.error);
-          }
-        }).catch(error => {
-          console.error('❌ RLS test promise rejection:', error);
-        });
-      }, 2000); // 2 second delay
-
-      return () => clearTimeout(testTimeout);
-    } else {
-      console.log('🔍 RLS TESTING: Skipping - conditions not met:', {
-        isAuthenticated,
-        hasUser: !!user,
-        userOrgId: user?.organizationId,
-        loading
+    if (isAuthenticated && user) {
+      console.log('🔍 User authenticated, testing RLS policies...');
+      testRLSPolicies().then(result => {
+        if (result.success) {
+          console.log('✅ RLS policies working correctly:', result);
+        } else {
+          console.error('❌ RLS policies have issues:', result.error);
+        }
       });
     }
-  }, [isAuthenticated, user?.id, user?.organizationId, loading]);
+  }, [isAuthenticated, user?.id]);
 
   const value: AuthContextType = {
     user,

@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -43,15 +42,15 @@ const App: React.FC = () => {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <AuthProvider>
-              <ErrorBoundary>
-                <TaskProvider>
+        <AuthProvider>
+          <ErrorBoundary>
+            <TaskProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <BrowserRouter>
                   <Routes>
-                    {/* Public routes - now wrapped in AuthProvider */}
+                    {/* Public routes */}
                     <Route path="/" element={<Index />} />
                     <Route path="/login" element={<LoginPage />} />
                     
@@ -85,11 +84,11 @@ const App: React.FC = () => {
                     {/* 404 fallback */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>
-                </TaskProvider>
-              </ErrorBoundary>
-            </AuthProvider>
-          </BrowserRouter>
-        </TooltipProvider>
+                </BrowserRouter>
+              </TooltipProvider>
+            </TaskProvider>
+          </ErrorBoundary>
+        </AuthProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   );

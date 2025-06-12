@@ -1,70 +1,77 @@
 
 import { useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, checkSessionHealth, recoverSession } from '@/integrations/supabase/client';
 import { User as AppUser, UserRole } from '@/types';
 import { toast } from '@/components/ui/sonner';
 
 export const useAuthState = () => {
   const [user, setUser] = useState<AppUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // Start with true for proper initialization
   const [sessionHealthy, setSessionHealthy] = useState<boolean | null>(null);
 
-  const fetchUserProfile = async (userId: string): Promise<AppUser | null> => {
+  const fetchUserProfile = async (userId: string, retryCount = 0): Promise<AppUser | null> => {
     try {
-      console.log('🔍 AuthState: Fetching user profile for:', userId);
+      console.log('🔍 AuthState: Fetching user profile for:', userId, `(attempt ${retryCount + 1})`);
       
-      // Simple profile fetch with timeout
-      const { data: userData, error: userError } = await supabase
+      // Check session health before making queries
+      const healthCheck = await checkSessionHealth();
+      if (!healthCheck.healthy && retryCount === 0) {
+        console.log('⚠️ Session unhealthy, attempting recovery...');
+        const recovery = await recoverSession();
+        if (recovery.recovered) {
+          console.log('✅ Session recovered, retrying user profile fetch...');
+          return fetchUserProfile(userId, retryCount + 1);
+        }
+      }
+      
+      const { data, error } = await supabase
         .from('users')
         .select('*')
         .eq('id', userId)
         .single();
-        
-      console.log('🔍 AuthState: Users table query result:', {
-        hasData: !!userData,
-        error: userError ? {
-          message: userError.message,
-          code: userError.code
-        } : null
-      });
 
-      if (userError || !userData) {
-        console.log('⚠️ AuthState: Database error or no user data, using auth fallback');
-        // Get current auth user for fallback
-        const { data: { user: authUser } } = await supabase.auth.getUser();
-        if (authUser) {
-          const fallbackUser: AppUser = {
-            id: authUser.id,
-            email: authUser.email || '',
-            name: authUser.user_metadata?.name || authUser.email || 'User',
-            role: (authUser.user_metadata?.role as UserRole) || 'user',
-            organizationId: authUser.user_metadata?.organization_id || '',
-            avatar_url: authUser.user_metadata?.avatar_url,
-            timezone: 'UTC',
-            createdAt: new Date(),
-          };
+      if (error) {
+        console.error('❌ AuthState: Error fetching user profile:', error);
+        
+        // If it's an RLS error and session seems healthy, show helpful message
+        if (error.message?.includes('policy') || error.message?.includes('permission')) {
+          console.log('🔧 RLS policy error detected, this might be a session sync issue');
           setSessionHealthy(false);
-          return fallbackUser;
+          
+          if (retryCount === 0) {
+            toast.error('Session sync issue detected. Please refresh the page or log out and back in.');
+          }
         }
         return null;
       }
 
+      if (!data) {
+        console.error('❌ AuthState: No user data returned');
+        return null;
+      }
+
+      console.log('✅ AuthState: User profile fetched successfully:', {
+        id: data.id,
+        email: data.email,
+        role: data.role,
+        organization_id: data.organization_id,
+        name: data.name
+      });
+
       setSessionHealthy(true);
-      const appUser: AppUser = {
-        id: userData.id,
-        email: userData.email,
-        name: userData.name || userData.email,
-        role: userData.role as UserRole,
-        organizationId: userData.organization_id || '',
-        avatar_url: userData.avatar_url,
-        timezone: userData.timezone || 'UTC',
+
+      return {
+        id: data.id,
+        email: data.email,
+        name: data.name,
+        role: data.role as UserRole,
+        organizationId: data.organization_id,
+        avatar_url: data.avatar_url,
+        timezone: data.timezone,
         createdAt: new Date(),
       };
-
-      return appUser;
-
     } catch (error) {
       console.error('❌ AuthState: Error in fetchUserProfile:', error);
       setSessionHealthy(false);
@@ -76,12 +83,25 @@ export const useAuthState = () => {
     try {
       console.log('🔄 AuthState: Refreshing user session...');
       
+      // First try session recovery
+      const recovery = await recoverSession();
+      if (recovery.recovered && recovery.session?.user) {
+        console.log('✅ AuthState: Session recovered, fetching user data...');
+        setSession(recovery.session);
+        const userData = await fetchUserProfile(recovery.session.user.id);
+        setUser(userData);
+        console.log('✅ AuthState: User data updated after recovery:', userData);
+        return;
+      }
+      
+      // Fallback to regular session refresh
       const { data: { session: newSession } } = await supabase.auth.getSession();
       if (newSession?.user) {
         console.log('✅ AuthState: Session refreshed, fetching user data...');
         setSession(newSession);
         const userData = await fetchUserProfile(newSession.user.id);
         setUser(userData);
+        console.log('✅ AuthState: User data updated after refresh:', userData);
       }
     } catch (error) {
       console.error('❌ AuthState: Error refreshing session:', error);
@@ -92,77 +112,121 @@ export const useAuthState = () => {
   useEffect(() => {
     let isMounted = true;
     
-    console.log('🚀 AuthState: Setting up auth state management');
+    console.log('🚀 AuthState: Setting up enhanced auth initialization');
     
-    // Set up auth state listener
+    const initializeAuth = async () => {
+      try {
+        setLoading(true);
+        
+        // Step 1: Check session health first
+        console.log('🔍 AuthState: Checking session health...');
+        const healthCheck = await checkSessionHealth();
+        
+        if (healthCheck.healthy && healthCheck.session?.user) {
+          console.log('✅ AuthState: Healthy session found, loading user...');
+          
+          if (isMounted) {
+            setSession(healthCheck.session);
+            setSessionHealthy(true);
+            
+            const userProfile = await fetchUserProfile(healthCheck.session.user.id);
+            if (isMounted) {
+              setUser(userProfile);
+              console.log('✅ AuthState: Auth initialization complete with healthy session');
+            }
+          }
+        } else {
+          // Step 2: Try regular session check
+          console.log('⚠️ AuthState: Session unhealthy, trying regular session check...');
+          const { data: { session }, error } = await supabase.auth.getSession();
+          
+          if (error) {
+            console.error('❌ AuthState: Error getting session:', error);
+            setSessionHealthy(false);
+          } else if (session?.user) {
+            console.log('📄 AuthState: Session found but may be stale, attempting to use it...');
+            
+            if (isMounted) {
+              setSession(session);
+              const userProfile = await fetchUserProfile(session.user.id);
+              setUser(userProfile);
+              
+              if (!userProfile) {
+                console.log('⚠️ AuthState: Could not load user profile, session may be invalid');
+                setSessionHealthy(false);
+                toast.error('Session appears to be expired. Please refresh the page or log out and back in.');
+              }
+            }
+          } else {
+            console.log('🏠 AuthState: No session found - user not authenticated');
+            if (isMounted) {
+              setUser(null);
+              setSession(null);
+              setSessionHealthy(null);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('❌ AuthState: Error in initializeAuth:', error);
+        if (isMounted) {
+          setSessionHealthy(false);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    // Set up enhanced auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!isMounted) return;
         
-        console.log('🔄 AuthState: Auth state change event:', {
+        console.log('🔄 AuthState: Enhanced auth state change handler:', {
           event,
           hasSession: !!session,
-          userId: session?.user?.id
+          userId: session?.user?.id,
+          userEmail: session?.user?.email
         });
-
-        // Always update session state immediately
+        
         setSession(session);
         
-        if (event === 'SIGNED_IN' && session?.user) {
-          console.log('👤 AuthState: User signed in, fetching profile...');
-          try {
-            const userData = await fetchUserProfile(session.user.id);
+        if (session?.user) {
+          console.log('👤 AuthState: User authenticated, fetching profile with session validation...');
+          setLoading(true);
+          
+          // Add a small delay to ensure session is fully established
+          setTimeout(async () => {
             if (isMounted) {
-              setUser(userData);
-              console.log('✅ AuthState: User profile loaded after sign in');
+              const userData = await fetchUserProfile(session.user.id);
+              if (isMounted) {
+                setUser(userData);
+                setLoading(false);
+                
+                if (userData) {
+                  console.log('✅ AuthState: User profile loaded successfully after auth change');
+                } else {
+                  console.log('⚠️ AuthState: Failed to load user profile after auth change');
+                }
+              }
             }
-          } catch (error) {
-            console.error('❌ AuthState: Error loading profile after sign in:', error);
-            if (isMounted) {
-              setUser(null);
-            }
-          }
-        } else if (event === 'SIGNED_OUT') {
+          }, 100);
+        } else {
           console.log('👋 AuthState: User signed out');
           setUser(null);
           setSessionHealthy(null);
-        } else if (event === 'TOKEN_REFRESHED') {
-          console.log('🔄 AuthState: Token refreshed, keeping existing user');
-          // Don't refetch user data on token refresh
-        } else if (event === 'INITIAL_SESSION' && session?.user) {
-          console.log('🔄 AuthState: Initial session detected');
-          try {
-            const userData = await fetchUserProfile(session.user.id);
-            if (isMounted) {
-              setUser(userData);
-            }
-          } catch (error) {
-            console.error('❌ AuthState: Error loading profile on initial session:', error);
-            if (isMounted) {
-              setUser(null);
-            }
-          }
-        }
-        
-        // Set loading to false after processing any auth event
-        if (isMounted) {
           setLoading(false);
         }
       }
     );
 
-    // Set a maximum loading timeout
-    const loadingTimeout = setTimeout(() => {
-      if (isMounted) {
-        console.log('⏰ AuthState: Loading timeout reached');
-        setLoading(false);
-      }
-    }, 5000); // Reduced from 10s to 5s
+    // Initialize auth
+    initializeAuth();
 
     return () => {
       isMounted = false;
-      clearTimeout(loadingTimeout);
-      console.log('🧹 AuthState: Cleaning up auth listener');
+      console.log('🧹 AuthState: Cleaning up enhanced auth listener');
       subscription.unsubscribe();
     };
   }, []);

@@ -1,61 +1,27 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { UserRole } from '@/types';
 
 export const login = async (email: string, password: string) => {
   try {
-    console.log('🔑 AuthOps: Starting login for:', email);
-    
-    // Attempt login directly without clearing existing session
-    console.log('🔑 AuthOps: Calling supabase.auth.signInWithPassword...');
+    console.log('Attempting login for:', email);
     
     const { data, error } = await supabase.auth.signInWithPassword({
-      email: email.trim().toLowerCase(),
+      email,
       password,
     });
 
-    console.log('🔑 AuthOps: signInWithPassword response:', {
-      hasData: !!data,
-      hasUser: !!data?.user,
-      hasSession: !!data?.session,
-      userId: data?.user?.id,
-      userEmail: data?.user?.email,
-      error: error ? {
-        message: error.message,
-        status: error.status
-      } : null
-    });
-
     if (error) {
-      console.error('❌ AuthOps: Login error:', error);
+      console.error('Login error:', error);
+      toast.error(error.message);
       throw error;
     }
 
-    if (!data?.user || !data?.session) {
-      console.error('❌ AuthOps: No user or session data returned');
-      throw new Error('Login failed: No user data received');
-    }
-
-    console.log('✅ AuthOps: Login successful for:', email);
-    toast.success('Successfully logged in!');
+    console.log('Login successful for:', email);
     return data;
-    
   } catch (error) {
-    console.error('❌ AuthOps: Login failed:', error);
-    
-    // Provide user-friendly error messages
-    if (error instanceof Error) {
-      if (error.message?.includes('Invalid login credentials')) {
-        toast.error('Invalid email or password');
-      } else if (error.message?.includes('Too many requests')) {
-        toast.error('Too many login attempts. Please wait and try again.');
-      } else if (error.message?.includes('500')) {
-        toast.error('Database connection issues. Please try again.');
-      } else if (error.message?.includes('403')) {
-        toast.error('Authentication service unavailable. Please try again.');
-      }
-    }
-    
+    console.error('Login failed:', error);
     throw error;
   }
 };
