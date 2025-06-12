@@ -88,20 +88,23 @@ export const useAuthState = () => {
         
         if (error) {
           console.error('❌ AuthState: Error getting session:', error);
-          if (isMounted) {
-            setLoading(false);
-          }
           return;
         }
         
-        if (session?.user) {
+        if (session?.user && isMounted) {
           console.log('📄 AuthState: Session found, loading user profile...');
+          setSession(session);
           
-          if (isMounted) {
-            setSession(session);
+          try {
             const userProfile = await fetchUserProfile(session.user.id);
             if (isMounted) {
               setUser(userProfile);
+            }
+          } catch (profileError) {
+            console.error('❌ AuthState: Profile fetch failed:', profileError);
+            if (isMounted) {
+              setUser(null);
+              setSessionHealthy(false);
             }
           }
         } else {
@@ -115,6 +118,8 @@ export const useAuthState = () => {
       } catch (error) {
         console.error('❌ AuthState: Error in initializeAuth:', error);
         if (isMounted) {
+          setUser(null);
+          setSession(null);
           setSessionHealthy(false);
         }
       } finally {
@@ -141,18 +146,29 @@ export const useAuthState = () => {
         
         if (session?.user) {
           console.log('👤 AuthState: User authenticated, fetching profile...');
-          const userData = await fetchUserProfile(session.user.id);
-          if (isMounted) {
-            setUser(userData);
-            setLoading(false);
+          try {
+            const userData = await fetchUserProfile(session.user.id);
+            if (isMounted) {
+              setUser(userData);
+            }
+          } catch (error) {
+            console.error('❌ AuthState: Profile fetch failed in state change:', error);
+            if (isMounted) {
+              setUser(null);
+              setSessionHealthy(false);
+            }
           }
         } else {
           console.log('👋 AuthState: User signed out');
           if (isMounted) {
             setUser(null);
             setSessionHealthy(null);
-            setLoading(false);
           }
+        }
+        
+        // Always ensure loading is false after auth state change
+        if (isMounted) {
+          setLoading(false);
         }
       }
     );
