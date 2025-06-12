@@ -42,7 +42,7 @@ export const runDebugQueries = async () => {
     
     console.log('🎯 Projects for specific org (clean RLS):', {
       orgId,
-      count: orgProjectsData?.length,
+      count: orgProjects?.length,
       error: orgProjectsError?.message,
       projects: orgProjects?.map(p => ({ id: p.id, title: p.title }))
     });
