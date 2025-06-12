@@ -1,88 +1,99 @@
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Project, ProjectStatus } from '@/types';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { Project } from '@/types';
 import { toast } from '@/components/ui/sonner';
 
-export function useProjects() {
-  const { user } = useAuth();
-  const [fetchedProjects, setFetchedProjects] = useState<Project[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
+export const useProjects = () => {
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { user, isAuthenticated } = useAuth();
 
-  const fetchProjects = useCallback(async () => {
-    if (!user?.organizationId) {
-      console.log('useProjects: No user or organizationId, skipping fetch');
+  const fetchProjects = async () => {
+    if (!user || !isAuthenticated) {
+      console.log('No authenticated user, skipping project fetch');
+      setIsLoading(false);
+      setProjects([]);
       return;
     }
 
-    setIsLoading(true);
-    setError(null);
-
     try {
-      console.log('useProjects: Fetching projects for organization:', user.organizationId);
+      console.log('Fetching projects with new RLS policies for user:', user.id);
+      setIsLoading(true);
+      setError(null);
       
-      // With new RLS policies, we can simply select all projects
-      // The policies will automatically filter by organization
-      const { data, error } = await supabase
+      // Test the RLS policy first
+      const { data: orgTest, error: orgError } = await supabase.rpc('get_current_user_organization_id');
+      if (orgError) {
+        console.error('RLS function test failed:', orgError);
+      } else {
+        console.log('Current user organization ID from RLS function:', orgTest);
+      }
+
+      // With new RLS policies, simply select all projects
+      // The RLS policy will automatically filter by organization
+      const { data, error: fetchError } = await supabase
         .from('projects')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('useProjects: Error fetching projects:', error);
-        setError(error);
-        toast.error('Failed to load projects.');
-      } else {
-        console.log('useProjects: Successfully fetched projects:', data?.length || 0);
-        // Convert database format to app format
-        const convertedProjects: Project[] = (data || []).map(project => ({
-          id: project.id,
-          title: project.title,
-          description: project.description,
-          startDate: new Date(project.start_date),
-          endDate: new Date(project.end_date),
-          managerId: project.manager_id,
-          createdAt: new Date(project.created_at),
-          updatedAt: new Date(project.updated_at),
-          teamMemberIds: project.team_members || [],
-          budget: project.budget,
-          budgetSpent: project.budget_spent || 0,
-          isCompleted: project.is_completed || false,
-          status: (project.status as ProjectStatus) || 'To Do',
-          tasksCount: project.tasks_count || 0,
-          tags: project.tags || [],
-          organizationId: project.organization_id
-        }));
-        setFetchedProjects(convertedProjects);
+      if (fetchError) {
+        console.error('Error fetching projects:', fetchError);
+        throw fetchError;
       }
+
+      console.log(`Successfully fetched ${data?.length || 0} projects`);
+
+      if (!data || data.length === 0) {
+        console.log('No projects found - this could be normal or indicate an RLS issue');
+        setProjects([]);
+        return;
+      }
+
+      // Transform the data to match our Project interface
+      const transformedProjects: Project[] = data.map(project => ({
+        id: project.id,
+        title: project.title || '',
+        description: project.description || '',
+        startDate: project.start_date ? new Date(project.start_date) : new Date(project.created_at || new Date()),
+        endDate: project.end_date ? new Date(project.end_date) : new Date(),
+        managerId: project.manager_id || '',
+        createdAt: new Date(project.created_at || new Date()),
+        updatedAt: new Date(project.updated_at || new Date()),
+        teamMemberIds: Array.isArray(project.team_members) ? project.team_members.map(id => String(id)) : [],
+        budget: Number(project.budget) || 0,
+        budgetSpent: Number(project.budget_spent) || 0,
+        isCompleted: Boolean(project.is_completed),
+        status: project.status as Project['status'] || 'To Do',
+        tasksCount: Number(project.tasks_count) || 0,
+        tags: Array.isArray(project.tags) ? project.tags : [],
+        organizationId: user.organizationId
+      }));
+
+      setProjects(transformedProjects);
     } catch (err: any) {
-      console.error('useProjects: Unexpected error:', err);
-      setError(err);
-      toast.error('An unexpected error occurred while loading projects.');
+      console.error('Error in fetchProjects:', err);
+      setError(err.message || 'Failed to fetch projects');
+      toast.error('Failed to load projects: ' + (err.message || 'Unknown error'));
     } finally {
       setIsLoading(false);
     }
-  }, [user?.organizationId]);
+  };
+
+  const refreshProjects = async () => {
+    await fetchProjects();
+  };
 
   useEffect(() => {
     fetchProjects();
-  }, [fetchProjects]);
-
-  const mappedProjects = useMemo(() => {
-    return fetchedProjects.map(project => ({
-      ...project,
-      isCompleted: project.isCompleted || false,
-      tasksCount: project.tasksCount || 0
-    }));
-  }, [fetchedProjects]);
+  }, [user?.id, isAuthenticated]);
 
   return {
-    projects: mappedProjects,
+    projects,
     isLoading,
     error,
-    refetch: fetchProjects,
-    refreshProjects: fetchProjects // Add alias for compatibility
+    refreshProjects
   };
-}
+};
