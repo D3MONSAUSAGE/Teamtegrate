@@ -17,6 +17,7 @@ interface MultiTenantSignupFormProps {
 
 const MultiTenantSignupForm: React.FC<MultiTenantSignupFormProps> = ({ onBack }) => {
   const { signup, loading } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [signupType, setSignupType] = useState<'create' | 'join'>('create');
   const [formData, setFormData] = useState({
     name: '',
@@ -90,6 +91,7 @@ const MultiTenantSignupForm: React.FC<MultiTenantSignupFormProps> = ({ onBack })
       return;
     }
 
+    setIsSubmitting(true);
     try {
       const organizationData = {
         type: signupType,
@@ -120,8 +122,12 @@ const MultiTenantSignupForm: React.FC<MultiTenantSignupFormProps> = ({ onBack })
       } else {
         toast.error(error.message || 'Failed to create account. Please try again.');
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
+  const isDisabled = loading || isSubmitting;
 
   return (
     <div className="w-full max-w-md mx-auto">
@@ -248,16 +254,16 @@ const MultiTenantSignupForm: React.FC<MultiTenantSignupFormProps> = ({ onBack })
                 variant="outline"
                 onClick={onBack}
                 className="flex-1"
-                disabled={loading}
+                disabled={isDisabled}
               >
                 Back
               </Button>
               <Button 
                 type="submit" 
                 className="flex-1" 
-                disabled={loading || !isFormValid()}
+                disabled={isDisabled || !isFormValid()}
               >
-                {loading ? 'Creating Account...' : 'Create Account'}
+                {isSubmitting ? 'Creating Account...' : 'Create Account'}
               </Button>
             </div>
           </form>
