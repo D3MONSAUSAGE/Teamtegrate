@@ -28,6 +28,8 @@ const LoginPage = () => {
   const { login, isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
   
+  console.log('LoginPage: Auth state:', { isAuthenticated, loading, isSubmitting });
+  
   // Redirect if already logged in
   useEffect(() => {
     if (isAuthenticated && !loading) {
@@ -149,7 +151,7 @@ const LoginPage = () => {
                 />
               </div>
 
-              <Button type="submit" className="w-full" disabled={isSubmitting || loading}>
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
                 {isSubmitting ? 'Signing in...' : 'Sign In'}
               </Button>
             </form>
@@ -159,7 +161,7 @@ const LoginPage = () => {
               variant="link"
               className="w-full"
               onClick={() => setIsLogin(false)}
-              disabled={isSubmitting || loading}
+              disabled={isSubmitting}
             >
               Don't have an account? Sign up for free
             </Button>

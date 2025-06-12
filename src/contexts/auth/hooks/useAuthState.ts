@@ -11,9 +11,9 @@ export const useAuthState = () => {
   const [loading, setLoading] = useState(true);
   const [sessionHealthy, setSessionHealthy] = useState<boolean | null>(null);
 
-  const fetchUserProfile = async (userId: string, retryCount = 0): Promise<AppUser | null> => {
+  const fetchUserProfile = async (userId: string): Promise<AppUser | null> => {
     try {
-      console.log('🔍 AuthState: Fetching user profile for:', userId, `(attempt ${retryCount + 1})`);
+      console.log('🔍 AuthState: Fetching user profile for:', userId);
       
       const { data, error } = await supabase
         .from('users')
@@ -88,7 +88,13 @@ export const useAuthState = () => {
         
         if (error) {
           console.error('❌ AuthState: Error getting session:', error);
-        } else if (session?.user) {
+          if (isMounted) {
+            setLoading(false);
+          }
+          return;
+        }
+        
+        if (session?.user) {
           console.log('📄 AuthState: Session found, loading user profile...');
           
           if (isMounted) {
@@ -113,6 +119,7 @@ export const useAuthState = () => {
         }
       } finally {
         if (isMounted) {
+          console.log('✅ AuthState: Setting loading to false');
           setLoading(false);
         }
       }
