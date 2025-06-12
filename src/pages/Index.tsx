@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/SimpleAuthContext';
 import { Navigate } from 'react-router-dom';
 import LandingPage from './LandingPage';
 import { Loader2 } from 'lucide-react';
