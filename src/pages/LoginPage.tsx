@@ -114,8 +114,8 @@ const LoginPage = () => {
     );
   }
   
-  // Calculate if form should be disabled
-  const isFormDisabled = isSubmitting || loading;
+  // Calculate if form should be disabled - simplified logic
+  const isFormDisabled = isSubmitting;
   
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">

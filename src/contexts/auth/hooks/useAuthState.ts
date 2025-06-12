@@ -72,12 +72,16 @@ export const useAuthState = () => {
         console.error('❌ AuthState: Profile fetch failed:', error);
         setUser(null);
         setSessionHealthy(false);
+      } finally {
+        // Always clear loading state after profile fetch attempt
+        setLoading(false);
       }
     } else {
       console.log('👋 AuthState: No session - clearing user state');
       setSession(null);
       setUser(null);
       setSessionHealthy(null);
+      setLoading(false);
     }
   };
 
@@ -92,6 +96,7 @@ export const useAuthState = () => {
     } catch (error) {
       console.error('❌ AuthState: Error refreshing session:', error);
       setSessionHealthy(false);
+      setLoading(false);
     }
   };
 
@@ -113,6 +118,7 @@ export const useAuthState = () => {
             setSession(null);
             setUser(null);
             setSessionHealthy(false);
+            setLoading(false);
           }
           return;
         }
@@ -126,10 +132,6 @@ export const useAuthState = () => {
           setSession(null);
           setUser(null);
           setSessionHealthy(false);
-        }
-      } finally {
-        if (isMounted) {
-          console.log('✅ AuthState: Initialization complete, setting loading to false');
           setLoading(false);
         }
       }
@@ -150,8 +152,6 @@ export const useAuthState = () => {
           await updateAuthState(session);
         } catch (error) {
           console.error('❌ AuthState: Error in auth state change handler:', error);
-        } finally {
-          // Always ensure loading is false after any auth state change
           if (isMounted) {
             setLoading(false);
           }
@@ -168,7 +168,7 @@ export const useAuthState = () => {
         console.log('⚠️ AuthState: Initialization timeout reached, forcing loading to false');
         setLoading(false);
       }
-    }, 10000); // 10 second timeout
+    }, 5000); // Reduced to 5 seconds
 
     return () => {
       isMounted = false;
