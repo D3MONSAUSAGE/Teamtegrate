@@ -56,19 +56,6 @@ export const testRLSPolicies = async () => {
       console.log(`✅ RLS function working: current org ID = ${currentOrgId}`);
     }
 
-    // Test manual organization lookup
-    const { data: userOrgData, error: userOrgError } = await supabase
-      .from('users')
-      .select('organization_id, email')
-      .eq('id', user.id)
-      .single();
-    
-    if (userOrgError) {
-      console.error('❌ User org lookup failed:', userOrgError);
-    } else {
-      console.log('👤 User organization lookup:', userOrgData);
-    }
-
     // Test tasks query - should only return tasks from user's organization
     const { data: tasks, error: tasksError } = await supabase
       .from('tasks')
@@ -79,11 +66,6 @@ export const testRLSPolicies = async () => {
       console.error('❌ Tasks RLS test failed:', tasksError);
     } else {
       console.log(`✅ Tasks RLS test passed: ${tasks?.length || 0} tasks returned`);
-      if (tasks && tasks.length > 0) {
-        console.log('📋 Sample task org IDs:', tasks.map(t => ({ id: t.id, org: t.organization_id })));
-        console.log('🔍 Expected org ID:', currentOrgId);
-        console.log('🔍 All tasks match org?', tasks.every(t => t.organization_id === currentOrgId));
-      }
     }
 
     // Test projects query - should only return projects from user's organization
@@ -96,11 +78,6 @@ export const testRLSPolicies = async () => {
       console.error('❌ Projects RLS test failed:', projectsError);
     } else {
       console.log(`✅ Projects RLS test passed: ${projects?.length || 0} projects returned`);
-      if (projects && projects.length > 0) {
-        console.log('📁 Sample project org IDs:', projects.map(p => ({ id: p.id, org: p.organization_id })));
-        console.log('🔍 Expected org ID:', currentOrgId);
-        console.log('🔍 All projects match org?', projects.every(p => p.organization_id === currentOrgId));
-      }
     }
 
     // Test users query - should only return users from user's organization
@@ -113,18 +90,12 @@ export const testRLSPolicies = async () => {
       console.error('❌ Users RLS test failed:', usersError);
     } else {
       console.log(`✅ Users RLS test passed: ${users?.length || 0} users returned`);
-      if (users && users.length > 0) {
-        console.log('👥 Sample user org IDs:', users.map(u => ({ email: u.email, org: u.organization_id })));
-        console.log('🔍 Expected org ID:', currentOrgId);
-        console.log('🔍 All users match org?', users.every(u => u.organization_id === currentOrgId));
-      }
     }
 
     return {
       success: true,
       currentUser: { id: user.id, email: user.email },
       currentOrgId,
-      userOrgFromQuery: userOrgData?.organization_id,
       tests: {
         tasks: !tasksError,
         projects: !projectsError,

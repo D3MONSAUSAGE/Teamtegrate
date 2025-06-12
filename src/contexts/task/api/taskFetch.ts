@@ -33,20 +33,6 @@ export const fetchTasks = async (
       return;
     }
     
-    // Test the RLS policy first
-    console.log('🔍 Testing RLS policy - fetching current user org ID...');
-    const { data: orgTest, error: orgError } = await supabase.rpc('get_current_user_organization_id');
-    if (orgError) {
-      console.error('❌ RLS function test failed:', orgError);
-    } else {
-      console.log('✅ Current user organization ID from RLS function:', orgTest);
-      console.log('🔍 User context organization ID:', user.organization_id);
-      
-      if (orgTest !== user.organization_id) {
-        console.warn('⚠️ Mismatch between RLS function and user context organization IDs!');
-      }
-    }
-    
     // With new RLS policies, we can simply select all tasks
     // The policies will automatically filter by organization
     console.log('📋 Executing tasks query with RLS filtering...');
@@ -64,7 +50,7 @@ export const fetchTasks = async (
     console.log(`✅ Successfully fetched ${tasksData?.length || 0} tasks from database`);
     
     if (!tasksData || tasksData.length === 0) {
-      console.log('📋 No tasks found - this could be normal or indicate an RLS issue');
+      console.log('📋 No tasks found');
       setTasks([]);
       return;
     }
@@ -134,11 +120,6 @@ export const fetchTasks = async (
     }
 
     console.log(`✅ Successfully processed ${transformedTasks.length} tasks`);
-    console.log('📋 Sample tasks:', transformedTasks.slice(0, 3).map(t => ({
-      id: t.id,
-      title: t.title,
-      organizationId: t.organizationId
-    })));
     
     setTasks(transformedTasks);
   } catch (error) {

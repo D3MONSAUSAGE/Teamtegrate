@@ -13,10 +13,6 @@ export const useAuthState = () => {
     try {
       console.log('🔍 AuthState: Fetching user profile for:', userId);
       
-      // First, test the RLS function directly
-      const { data: orgIdFromFunction, error: funcError } = await supabase.rpc('get_current_user_organization_id');
-      console.log('🔍 AuthState: RLS function result:', { orgIdFromFunction, funcError });
-      
       const { data, error } = await supabase
         .from('users')
         .select('*')
@@ -35,17 +31,6 @@ export const useAuthState = () => {
         organization_id: data.organization_id,
         name: data.name
       });
-
-      // Verify organization exists
-      if (data.organization_id) {
-        const { data: orgData, error: orgError } = await supabase
-          .from('organizations')
-          .select('id, name')
-          .eq('id', data.organization_id)
-          .single();
-        
-        console.log('🏢 AuthState: Organization verification:', { orgData, orgError });
-      }
 
       return {
         id: data.id,
