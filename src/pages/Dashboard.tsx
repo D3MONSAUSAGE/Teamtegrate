@@ -9,10 +9,14 @@ import RecentProjects from '@/components/dashboard/RecentProjects';
 import UpcomingTasksSection from '@/components/dashboard/UpcomingTasksSection';
 import AnalyticsSection from '@/components/dashboard/AnalyticsSection';
 import SessionHealthIndicator from '@/components/auth/SessionHealthIndicator';
+import { useTask } from '@/contexts/task';
+import { useProjects } from '@/hooks/useProjects';
 import { Loader2 } from 'lucide-react';
 
 const Dashboard = () => {
   const { user, loading, isAuthenticated } = useAuth();
+  const { tasks } = useTask();
+  const { projects, isLoading: projectsLoading, refreshProjects } = useProjects();
 
   console.log('Dashboard: Rendering with auth state:', {
     loading,
@@ -55,6 +59,40 @@ const Dashboard = () => {
     );
   }
 
+  // Filter tasks for today and upcoming
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const nextWeek = new Date(today);
+  nextWeek.setDate(nextWeek.getDate() + 7);
+
+  const todaysTasks = tasks.filter((task) => {
+    const taskDate = new Date(task.deadline);
+    taskDate.setHours(0, 0, 0, 0);
+    return taskDate.getTime() === today.getTime();
+  });
+
+  const upcomingTasks = tasks.filter((task) => {
+    const taskDate = new Date(task.deadline);
+    taskDate.setHours(0, 0, 0, 0);
+    return taskDate > today && taskDate <= nextWeek;
+  }).sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime());
+
+  const handleCreateTask = () => {
+    console.log('Create task triggered');
+  };
+
+  const handleEditTask = (task: any) => {
+    console.log('Edit task triggered:', task.title);
+  };
+
+  const handleViewTasks = (project: any) => {
+    console.log('View tasks for project:', project.title);
+  };
+
+  const handleCreateTaskForProject = (project: any) => {
+    console.log('Create task for project:', project.title);
+  };
+
   return (
     <AppLayout>
       <div className="container mx-auto px-4 py-8 space-y-6">
@@ -73,7 +111,11 @@ const Dashboard = () => {
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           <div className="md:col-span-2 lg:col-span-2">
-            <DailyTasksSection />
+            <DailyTasksSection 
+              tasks={todaysTasks}
+              onCreateTask={handleCreateTask}
+              onEditTask={handleEditTask}
+            />
           </div>
           <div>
             <TimeTracking />
@@ -81,8 +123,17 @@ const Dashboard = () => {
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
-          <RecentProjects />
-          <UpcomingTasksSection />
+          <RecentProjects 
+            projects={projects}
+            onViewTasks={handleViewTasks}
+            onCreateTask={handleCreateTaskForProject}
+            onRefresh={refreshProjects}
+          />
+          <UpcomingTasksSection 
+            tasks={upcomingTasks}
+            onCreateTask={handleCreateTask}
+            onEditTask={handleEditTask}
+          />
         </div>
 
         <AnalyticsSection />
