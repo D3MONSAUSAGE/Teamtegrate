@@ -29,7 +29,10 @@ const SimpleLoginPage = () => {
   console.log('SimpleLoginPage: Auth state:', { 
     isAuthenticated, 
     authLoading: loading, 
-    formSubmitting: isSubmitting
+    formSubmitting: isSubmitting,
+    email: email,
+    password: password.length > 0 ? '[HIDDEN]' : 'empty',
+    canSubmit: !isSubmitting && !loading && email.length > 0 && password.length > 0
   });
   
   // Redirect if already logged in
@@ -57,6 +60,12 @@ const SimpleLoginPage = () => {
     if (isSubmitting) {
       return;
     }
+
+    // Validate form fields
+    if (!email || !password) {
+      console.log('SimpleLoginPage: Form validation failed - missing email or password');
+      return;
+    }
     
     setIsSubmitting(true);
     console.log('SimpleLoginPage: Starting login for:', email);
@@ -74,6 +83,10 @@ const SimpleLoginPage = () => {
   const handleBackToLogin = () => {
     setIsLogin(true);
   };
+
+  // Form is enabled when we have email, password, and not currently submitting
+  const isFormValid = email.length > 0 && password.length > 0;
+  const isFormDisabled = isSubmitting || loading || !isFormValid;
   
   // Show signup form
   if (!isLogin) {
@@ -136,6 +149,7 @@ const SimpleLoginPage = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   disabled={isSubmitting}
+                  autoComplete="email"
                 />
               </div>
               
@@ -149,10 +163,15 @@ const SimpleLoginPage = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   disabled={isSubmitting}
+                  autoComplete="current-password"
                 />
               </div>
 
-              <Button type="submit" className="w-full" disabled={isSubmitting || loading}>
+              <Button 
+                type="submit" 
+                className="w-full" 
+                disabled={isFormDisabled}
+              >
                 {isSubmitting ? 'Signing in...' : 'Sign In'}
               </Button>
             </form>

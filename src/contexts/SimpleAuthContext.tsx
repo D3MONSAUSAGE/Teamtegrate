@@ -9,10 +9,13 @@ interface AuthContextType {
   user: AppUser | null;
   session: Session | null;
   loading: boolean;
+  isLoading: boolean; // Add compatibility prop
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, name: string, role: UserRole, organizationData?: any) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
+  hasRoleAccess: (requiredRole: UserRole) => boolean; // Add missing method
+  refreshUserSession: () => Promise<void>; // Add missing method
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -61,6 +64,45 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } catch (error) {
       console.error('❌ Error in fetchUserProfile:', error);
       return null;
+    }
+  };
+
+  const hasRoleAccess = (requiredRole: UserRole): boolean => {
+    if (!user) return false;
+    
+    const roleHierarchy: Record<UserRole, number> = {
+      'user': 1,
+      'manager': 2,
+      'admin': 3,
+      'superadmin': 4
+    };
+    
+    const userLevel = roleHierarchy[user.role];
+    const requiredLevel = roleHierarchy[requiredRole];
+    
+    return userLevel >= requiredLevel;
+  };
+
+  const refreshUserSession = async (): Promise<void> => {
+    try {
+      console.log('🔄 Refreshing user session...');
+      
+      const { data: { session: newSession }, error } = await supabase.auth.refreshSession();
+      
+      if (error) {
+        console.error('❌ Error refreshing session:', error);
+        return;
+      }
+      
+      if (newSession?.user) {
+        setSession(newSession);
+        const userProfile = await fetchUserProfile(newSession.user.id);
+        setUser(userProfile);
+      }
+      
+      console.log('✅ Session refresh complete');
+    } catch (error) {
+      console.error('❌ Error refreshing session:', error);
     }
   };
 
@@ -226,10 +268,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     user,
     session,
     loading,
+    isLoading: loading, // Add compatibility
     login,
     signup,
     logout,
     isAuthenticated,
+    hasRoleAccess,
+    refreshUserSession,
   };
 
   return (
