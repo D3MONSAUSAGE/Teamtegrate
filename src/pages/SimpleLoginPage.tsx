@@ -1,11 +1,12 @@
 
 import React from 'react';
+import { AuthProvider } from '@/contexts/SimpleAuthContext';
 import { useLoginState } from '@/hooks/useLoginState';
 import AuthLayout from '@/components/auth/AuthLayout';
 import LoginCard from '@/components/auth/LoginCard';
 import SignupView from '@/components/auth/SignupView';
 
-const SimpleLoginPage = () => {
+const SimpleLoginPageContent = () => {
   const {
     isLogin,
     isSubmitting,
@@ -34,6 +35,14 @@ const SimpleLoginPage = () => {
         onSwitchToSignup={handleSwitchToSignup}
       />
     </AuthLayout>
+  );
+};
+
+const SimpleLoginPage = () => {
+  return (
+    <AuthProvider>
+      <SimpleLoginPageContent />
+    </AuthProvider>
   );
 };
 
