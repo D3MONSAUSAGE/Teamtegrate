@@ -3,6 +3,7 @@ import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { BrowserRouter, Routes, Route } from "react-router-dom"
+import { AuthProvider } from '@/contexts/SimpleAuthContext'
 import Index from "./pages/Index"
 import SimpleLoginPage from "./pages/SimpleLoginPage"
 import DashboardPage from "./pages/DashboardPage"
@@ -35,7 +36,11 @@ function App() {
           <Routes>
             {/* Public routes - no auth required */}
             <Route path="/" element={<Index />} />
-            <Route path="/login" element={<SimpleLoginPage />} />
+            <Route path="/login" element={
+              <AuthProvider>
+                <SimpleLoginPage />
+              </AuthProvider>
+            } />
             
             {/* Protected routes - wrapped in ProtectedRoute */}
             <Route path="/dashboard" element={
