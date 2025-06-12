@@ -14,7 +14,6 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { toast } from '@/components/ui/sonner';
-import { UserRole } from '@/types';
 import { ArrowLeft } from 'lucide-react';
 import BrandLogo from '@/components/shared/BrandLogo';
 import MultiTenantSignupForm from '@/components/auth/MultiTenantSignupForm';
@@ -28,11 +27,17 @@ const LoginPage = () => {
   const { login, isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
   
-  console.log('LoginPage: Auth state:', { isAuthenticated, loading, isSubmitting });
+  console.log('LoginPage: Auth state:', { 
+    isAuthenticated, 
+    authLoading: loading, 
+    formSubmitting: isSubmitting,
+    canSubmit: !isSubmitting && !loading
+  });
   
   // Redirect if already logged in
   useEffect(() => {
     if (isAuthenticated && !loading) {
+      console.log('LoginPage: User authenticated, redirecting to dashboard');
       navigate('/dashboard');
     }
   }, [isAuthenticated, loading, navigate]);
@@ -51,20 +56,26 @@ const LoginPage = () => {
       return;
     }
     
-    if (isSubmitting) {
+    // Prevent double submission
+    if (isSubmitting || loading) {
+      console.log('LoginPage: Preventing double submission', { isSubmitting, loading });
       return;
     }
     
     setIsSubmitting(true);
+    console.log('LoginPage: Starting login submission');
     
     try {
       await login(email, password);
+      console.log('LoginPage: Login successful');
       toast.success('Welcome back!');
+      // Don't redirect here - let the useEffect handle it when isAuthenticated changes
     } catch (error) {
-      console.error('Authentication error:', error);
+      console.error('LoginPage: Authentication error:', error);
       toast.error('Login failed. Please check your credentials.');
     } finally {
       setIsSubmitting(false);
+      console.log('LoginPage: Login submission complete');
     }
   };
 
@@ -72,6 +83,7 @@ const LoginPage = () => {
     setIsLogin(true);
   };
   
+  // Show signup form
   if (!isLogin) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
@@ -101,6 +113,9 @@ const LoginPage = () => {
       </div>
     );
   }
+  
+  // Calculate if form should be disabled
+  const isFormDisabled = isSubmitting || loading;
   
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
@@ -134,7 +149,7 @@ const LoginPage = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  disabled={isSubmitting}
+                  disabled={isFormDisabled}
                 />
               </div>
               
@@ -147,11 +162,11 @@ const LoginPage = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  disabled={isSubmitting}
+                  disabled={isFormDisabled}
                 />
               </div>
 
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
+              <Button type="submit" className="w-full" disabled={isFormDisabled}>
                 {isSubmitting ? 'Signing in...' : 'Sign In'}
               </Button>
             </form>
@@ -161,7 +176,7 @@ const LoginPage = () => {
               variant="link"
               className="w-full"
               onClick={() => setIsLogin(false)}
-              disabled={isSubmitting}
+              disabled={isFormDisabled}
             >
               Don't have an account? Sign up for free
             </Button>

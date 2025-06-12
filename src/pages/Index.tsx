@@ -8,18 +8,16 @@ import { Loader2 } from 'lucide-react';
 const Index = () => {
   const { user, loading, isAuthenticated } = useAuth();
 
-  console.log('Index page - Loading:', loading, 'User:', !!user, 'IsAuthenticated:', isAuthenticated);
+  console.log('Index page - Auth state:', { 
+    loading, 
+    hasUser: !!user, 
+    isAuthenticated,
+    userEmail: user?.email 
+  });
 
-  // If user is already authenticated, redirect to dashboard immediately
-  if (isAuthenticated && user) {
-    console.log('Index: User is authenticated, redirecting to dashboard');
-    return <Navigate to="/dashboard" replace />;
-  }
-
-  // Show loading only if we're in the middle of an authentication process
-  // (when there's a session being processed)
-  if (loading && user === undefined) {
-    console.log('Index: Showing loading state during auth process');
+  // If we're still loading auth state, show loading spinner
+  if (loading) {
+    console.log('Index: Showing loading state during auth initialization');
     return (
       <div className="h-screen flex items-center justify-center bg-background">
         <div className="text-center">
@@ -30,8 +28,14 @@ const Index = () => {
     );
   }
 
-  // For all other cases (unauthenticated users, or no loading), show landing page immediately
-  console.log('Index: Showing landing page');
+  // If user is authenticated, redirect to dashboard
+  if (isAuthenticated && user) {
+    console.log('Index: User is authenticated, redirecting to dashboard');
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  // For unauthenticated users, show landing page
+  console.log('Index: Showing landing page for unauthenticated user');
   return <LandingPage />;
 };
 

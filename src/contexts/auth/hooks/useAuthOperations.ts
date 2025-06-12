@@ -12,11 +12,12 @@ export const useAuthOperations = (
   setLoading: (loading: boolean) => void
 ) => {
   const login = async (email: string, password: string) => {
-    setLoading(true);
+    // Don't set loading here - let auth state changes handle it
     try {
       await authLogin(email, password);
+      // Auth state change will handle setting user/session
     } catch (error) {
-      setLoading(false);
+      // Don't modify loading state on error - let caller handle it
       throw error;
     }
   };
@@ -32,11 +33,12 @@ export const useAuthOperations = (
       inviteCode?: string;
     }
   ) => {
-    setLoading(true);
+    // Don't set loading here - let auth state changes handle it
     try {
       await authSignup(email, password, name, role, organizationData);
+      // Auth state change will handle setting user/session
     } catch (error) {
-      setLoading(false);
+      // Don't modify loading state on error - let caller handle it
       throw error;
     }
   };

@@ -1,9 +1,8 @@
 
 import { useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { supabase, checkSessionHealth, recoverSession } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
 import { User as AppUser, UserRole } from '@/types';
-import { toast } from '@/components/ui/sonner';
 
 export const useAuthState = () => {
   const [user, setUser] = useState<AppUser | null>(null);
@@ -23,11 +22,13 @@ export const useAuthState = () => {
 
       if (error) {
         console.error('❌ AuthState: Error fetching user profile:', error);
+        setSessionHealthy(false);
         return null;
       }
 
       if (!data) {
         console.error('❌ AuthState: No user data returned');
+        setSessionHealthy(false);
         return null;
       }
 
@@ -58,18 +59,36 @@ export const useAuthState = () => {
     }
   };
 
+  const updateAuthState = async (session: Session | null) => {
+    console.log('🔄 AuthState: Updating auth state:', { hasSession: !!session, userId: session?.user?.id });
+    
+    if (session?.user) {
+      setSession(session);
+      
+      try {
+        const userProfile = await fetchUserProfile(session.user.id);
+        setUser(userProfile);
+      } catch (error) {
+        console.error('❌ AuthState: Profile fetch failed:', error);
+        setUser(null);
+        setSessionHealthy(false);
+      }
+    } else {
+      console.log('👋 AuthState: No session - clearing user state');
+      setSession(null);
+      setUser(null);
+      setSessionHealthy(null);
+    }
+  };
+
   const refreshUserSession = async (): Promise<void> => {
     try {
       console.log('🔄 AuthState: Refreshing user session...');
       
       const { data: { session: newSession } } = await supabase.auth.getSession();
-      if (newSession?.user) {
-        console.log('✅ AuthState: Session refreshed, fetching user data...');
-        setSession(newSession);
-        const userData = await fetchUserProfile(newSession.user.id);
-        setUser(userData);
-        console.log('✅ AuthState: User data updated after refresh:', userData);
-      }
+      await updateAuthState(newSession);
+      
+      console.log('✅ AuthState: Session refresh complete');
     } catch (error) {
       console.error('❌ AuthState: Error refreshing session:', error);
       setSessionHealthy(false);
@@ -78,53 +97,39 @@ export const useAuthState = () => {
 
   useEffect(() => {
     let isMounted = true;
+    let initializationTimeout: NodeJS.Timeout;
     
     console.log('🚀 AuthState: Setting up auth initialization');
     
     const initializeAuth = async () => {
       try {
-        console.log('🔍 AuthState: Checking for existing session...');
+        console.log('🔍 AuthState: Getting initial session...');
+        
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
           console.error('❌ AuthState: Error getting session:', error);
+          if (isMounted) {
+            setSession(null);
+            setUser(null);
+            setSessionHealthy(false);
+          }
           return;
         }
         
-        if (session?.user && isMounted) {
-          console.log('📄 AuthState: Session found, loading user profile...');
-          setSession(session);
-          
-          try {
-            const userProfile = await fetchUserProfile(session.user.id);
-            if (isMounted) {
-              setUser(userProfile);
-            }
-          } catch (profileError) {
-            console.error('❌ AuthState: Profile fetch failed:', profileError);
-            if (isMounted) {
-              setUser(null);
-              setSessionHealthy(false);
-            }
-          }
-        } else {
-          console.log('🏠 AuthState: No session found - user not authenticated');
-          if (isMounted) {
-            setUser(null);
-            setSession(null);
-            setSessionHealthy(null);
-          }
+        if (isMounted) {
+          await updateAuthState(session);
         }
       } catch (error) {
         console.error('❌ AuthState: Error in initializeAuth:', error);
         if (isMounted) {
-          setUser(null);
           setSession(null);
+          setUser(null);
           setSessionHealthy(false);
         }
       } finally {
         if (isMounted) {
-          console.log('✅ AuthState: Setting loading to false');
+          console.log('✅ AuthState: Initialization complete, setting loading to false');
           setLoading(false);
         }
       }
@@ -139,45 +144,35 @@ export const useAuthState = () => {
           event,
           hasSession: !!session,
           userId: session?.user?.id,
-          userEmail: session?.user?.email
         });
         
-        setSession(session);
-        
-        if (session?.user) {
-          console.log('👤 AuthState: User authenticated, fetching profile...');
-          try {
-            const userData = await fetchUserProfile(session.user.id);
-            if (isMounted) {
-              setUser(userData);
-            }
-          } catch (error) {
-            console.error('❌ AuthState: Profile fetch failed in state change:', error);
-            if (isMounted) {
-              setUser(null);
-              setSessionHealthy(false);
-            }
-          }
-        } else {
-          console.log('👋 AuthState: User signed out');
+        try {
+          await updateAuthState(session);
+        } catch (error) {
+          console.error('❌ AuthState: Error in auth state change handler:', error);
+        } finally {
+          // Always ensure loading is false after any auth state change
           if (isMounted) {
-            setUser(null);
-            setSessionHealthy(null);
+            setLoading(false);
           }
-        }
-        
-        // Always ensure loading is false after auth state change
-        if (isMounted) {
-          setLoading(false);
         }
       }
     );
 
-    // Initialize auth immediately
+    // Initialize auth with timeout fallback
     initializeAuth();
+    
+    // Fallback timeout to ensure loading never stays true indefinitely
+    initializationTimeout = setTimeout(() => {
+      if (isMounted && loading) {
+        console.log('⚠️ AuthState: Initialization timeout reached, forcing loading to false');
+        setLoading(false);
+      }
+    }, 10000); // 10 second timeout
 
     return () => {
       isMounted = false;
+      clearTimeout(initializationTimeout);
       console.log('🧹 AuthState: Cleaning up auth listener');
       subscription.unsubscribe();
     };
