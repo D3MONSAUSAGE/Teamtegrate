@@ -24,7 +24,7 @@ const SimpleLoginPage = () => {
     );
   }
   
-  // Always show login form - don't wait for auth loading
+  // Show login form
   return (
     <AuthLayout>
       <LoginCard

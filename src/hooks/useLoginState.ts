@@ -8,7 +8,25 @@ export const useLoginState = () => {
   const [isLogin, setIsLogin] = useState(!searchParams.get('signup'));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
-  const { login, isAuthenticated, loading } = useAuth();
+  
+  // Add error boundary for auth context
+  let authContext;
+  try {
+    authContext = useAuth();
+  } catch (error) {
+    console.error('Auth context not available:', error);
+    // Return fallback state when auth context is not available
+    return {
+      isLogin,
+      isSubmitting: false,
+      loginError: 'Authentication system not ready',
+      handleLogin: async () => {},
+      handleBackToLogin: () => setIsLogin(true),
+      handleSwitchToSignup: () => setIsLogin(false)
+    };
+  }
+  
+  const { login, isAuthenticated, loading } = authContext;
   const navigate = useNavigate();
 
   console.log('useLoginState: Auth state:', { 
@@ -18,9 +36,9 @@ export const useLoginState = () => {
     isLogin
   });
 
-  // Redirect if already logged in - but only after loading is complete
+  // Only redirect if fully authenticated and not loading
   useEffect(() => {
-    if (!loading && isAuthenticated) {
+    if (isAuthenticated && !loading) {
       console.log('useLoginState: User authenticated, redirecting to dashboard');
       navigate('/dashboard', { replace: true });
     }
@@ -34,23 +52,11 @@ export const useLoginState = () => {
   }, [searchParams]);
 
   const handleLogin = async (email: string, password: string) => {
-    if (isSubmitting) {
-      return;
-    }
+    if (isSubmitting) return;
 
-    // Simple validation - allow empty fields to show server error
-    if (!email.trim() && !password) {
-      setLoginError('Please enter your email and password');
-      return;
-    }
-
-    if (!email.trim()) {
-      setLoginError('Please enter your email address');
-      return;
-    }
-
-    if (!password) {
-      setLoginError('Please enter your password');
+    // Simple validation
+    if (!email.trim() || !password) {
+      setLoginError('Please enter both email and password');
       return;
     }
     
@@ -61,7 +67,6 @@ export const useLoginState = () => {
     try {
       await login(email.trim(), password);
       console.log('useLoginState: Login successful');
-      // Navigation will happen via useEffect when isAuthenticated changes
     } catch (error) {
       console.error('useLoginState: Login failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Login failed. Please check your credentials.';
