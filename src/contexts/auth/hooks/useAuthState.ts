@@ -10,12 +10,21 @@ export const useAuthState = () => {
   const [loading, setLoading] = useState(true);
   const [sessionHealthy, setSessionHealthy] = useState<boolean | null>(null);
 
-  const fetchUserProfile = async (userId: string): Promise<AppUser | null> => {
+  const fetchUserProfile = async (userId: string, retries = 3): Promise<AppUser | null> => {
     try {
-      console.log('🔍 AuthState: Fetching user profile for:', userId);
+      console.log('🔍 AuthState: Fetching user profile for:', userId, `(attempt ${4 - retries})`);
       
-      // Add a small delay to ensure auth session is fully established
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Check if auth.uid() is available before making the query
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser) {
+        console.log('⚠️ AuthState: No authenticated user found, retrying...');
+        if (retries > 0) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+          return await fetchUserProfile(userId, retries - 1);
+        }
+        setSessionHealthy(false);
+        return null;
+      }
       
       const { data, error } = await supabase
         .from('users')
@@ -25,6 +34,14 @@ export const useAuthState = () => {
 
       if (error) {
         console.error('❌ AuthState: Error fetching user profile:', error);
+        
+        // If it's an RLS error and we have retries left, wait and try again
+        if (error.code === 'PGRST116' && retries > 0) {
+          console.log('🔄 AuthState: RLS error, retrying after session stabilizes...');
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          return await fetchUserProfile(userId, retries - 1);
+        }
+        
         setSessionHealthy(false);
         return null;
       }
@@ -57,6 +74,14 @@ export const useAuthState = () => {
       };
     } catch (error) {
       console.error('❌ AuthState: Error in fetchUserProfile:', error);
+      
+      // Retry on network errors
+      if (retries > 0) {
+        console.log('🔄 AuthState: Retrying profile fetch due to error...');
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return await fetchUserProfile(userId, retries - 1);
+      }
+      
       setSessionHealthy(false);
       return null;
     }
@@ -75,13 +100,17 @@ export const useAuthState = () => {
         if (userProfile) {
           console.log('✅ AuthState: Auth state updated successfully');
         } else {
-          console.error('❌ AuthState: Failed to fetch user profile');
+          console.error('❌ AuthState: Failed to fetch user profile after retries');
           setSessionHealthy(false);
+          // Clear session if we can't fetch profile after all retries
+          setSession(null);
+          setUser(null);
         }
       } catch (error) {
         console.error('❌ AuthState: Profile fetch failed:', error);
         setUser(null);
         setSessionHealthy(false);
+        setSession(null);
       } finally {
         setLoading(false);
       }
@@ -177,7 +206,7 @@ export const useAuthState = () => {
         console.log('⚠️ AuthState: Initialization timeout reached, forcing loading to false');
         setLoading(false);
       }
-    }, 5000);
+    }, 10000); // Increased timeout to 10 seconds
 
     return () => {
       isMounted = false;
