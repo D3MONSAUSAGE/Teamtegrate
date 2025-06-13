@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Task } from '@/types';
@@ -5,7 +6,7 @@ import { useTask } from '@/contexts/task';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Form } from "@/components/ui/form";
-import { useTaskFormWithAI } from '@/hooks/useTaskFormWithAI';
+import { useEnhancedTaskForm } from '@/hooks/useEnhancedTaskForm';
 import { useUsers } from '@/hooks/useUsers';
 import { cn } from '@/lib/utils';
 import TaskDialogHeader from './task/form/TaskDialogHeader';
@@ -34,9 +35,9 @@ const CreateTaskDialogEnhanced: React.FC<CreateTaskDialogEnhancedProps> = ({
   const isMobile = useIsMobile();
   const { users, isLoading: loadingUsers, error: usersError } = useUsers();
   const [multiAssignMode, setMultiAssignMode] = useState(false);
-  const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // Use our custom hook for form management
+  // Use our enhanced task form hook
   const {
     form,
     handleSubmit,
@@ -46,42 +47,20 @@ const CreateTaskDialogEnhanced: React.FC<CreateTaskDialogEnhancedProps> = ({
     setValue,
     selectedMember,
     setSelectedMember,
+    selectedMembers,
+    setSelectedMembers,
     deadlineDate,
     timeInput,
     handleDateChange,
-    handleTimeChange
-  } = useTaskFormWithAI(editingTask, currentProjectId);
+    handleTimeChange,
+    handleUserAssignment,
+    handleMembersChange,
+  } = useEnhancedTaskForm(editingTask, currentProjectId);
 
-  // Enhanced data validation
-  const isValidArray = (arr: any): arr is any[] => {
-    return Array.isArray(arr) && arr !== null && arr !== undefined;
-  };
-
-  const isValidUser = (user: any): user is any => {
-    return user && 
-           typeof user === 'object' && 
-           typeof user.id === 'string' && 
-           typeof user.name === 'string';
-  };
-
-  // Safe users array with comprehensive validation
-  const safeUsers = isValidArray(users) ? users.filter(isValidUser) : [];
-  const safeSelectedMembers = isValidArray(selectedMembers) ? selectedMembers.filter(id => typeof id === 'string' && id.length > 0) : [];
-
-  console.log('CreateTaskDialogEnhanced - data validation:', {
-    usersOriginal: users?.length || 'invalid',
-    usersFiltered: safeUsers.length,
-    selectedMembersOriginal: selectedMembers?.length || 'invalid',
-    selectedMembersFiltered: safeSelectedMembers.length,
-    loadingUsers,
-    usersError: !!usersError
-  });
-
-  // Initialize multi-assign mode and selected members for editing
+  // Initialize multi-assign mode for editing tasks with multiple assignees
   React.useEffect(() => {
     if (editingTask && editingTask.assignedToIds && editingTask.assignedToIds.length > 1) {
       setMultiAssignMode(true);
-      setSelectedMembers(editingTask.assignedToIds);
     }
   }, [editingTask]);
 
@@ -93,103 +72,67 @@ const CreateTaskDialogEnhanced: React.FC<CreateTaskDialogEnhancedProps> = ({
     }
   }, [usersError]);
 
-  const handleUserAssignment = (userId: string) => {
-    console.log('Assigning user:', userId);
-    
-    if (!userId || typeof userId !== 'string') {
-      console.error('Invalid userId in handleUserAssignment:', userId);
+  const onSubmit = async (data: any) => {
+    if (!user?.organizationId) {
+      toast.error('Organization context required');
       return;
     }
-    
-    if (userId === "unassigned") {
-      setSelectedMember(undefined);
-      setValue('assignedToId', undefined);
-      setValue('assignedToName', undefined);
-      return;
-    }
-    
-    const selectedUser = safeUsers.find(user => user && user.id === userId);
-    
-    if (selectedUser) {
-      setSelectedMember(userId);
-      setValue('assignedToId', userId);
-      setValue('assignedToName', selectedUser.name || selectedUser.email);
-    } else {
-      console.error('User not found in safeUsers array:', userId);
-    }
-  };
 
-  const handleMembersChange = (memberIds: string[]) => {
-    console.log('handleMembersChange called with:', memberIds);
-    
-    // Enhanced validation for memberIds
-    if (!isValidArray(memberIds)) {
-      console.error('Invalid memberIds passed to handleMembersChange:', memberIds);
-      return;
-    }
-    
-    const validMemberIds = memberIds.filter(id => typeof id === 'string' && id.length > 0);
-    setSelectedMembers(validMemberIds);
-    
-    // Update form values for multi-assignment
-    const selectedUsers = safeUsers.filter(user => user && validMemberIds.includes(user.id));
-    setValue('assignedToIds', validMemberIds);
-    setValue('assignedToNames', selectedUsers.map(user => user.name || user.email));
-  };
+    try {
+      setIsSubmitting(true);
+      
+      const deadlineDate = typeof data.deadline === 'string' 
+        ? new Date(data.deadline)
+        : data.deadline;
 
-  const handleMembersError = () => {
-    console.error('Error in TaskMultiAssigneeSelect component');
-    toast.error('Error managing team member selection');
-  };
-
-  const onSubmit = (data: any) => {
-    console.log('Form submission data:', data);
-    
-    const deadlineDate = typeof data.deadline === 'string' 
-      ? new Date(data.deadline)
-      : data.deadline;
-
-    const taskData = {
-      ...data,
-      deadline: deadlineDate,
-      // Handle single vs multi assignment
-      assignedToId: multiAssignMode ? undefined : (selectedMember === "unassigned" ? undefined : selectedMember),
-      assignedToName: multiAssignMode ? undefined : data.assignedToName,
-      assignedToIds: multiAssignMode ? selectedMembers : undefined,
-      assignedToNames: multiAssignMode ? 
-        (safeUsers.filter(u => selectedMembers.includes(u.id)).map(u => u.name || u.email)) : 
-        undefined
-    };
-
-    if (isEditMode && editingTask) {
-      updateTask(editingTask.id, taskData);
-    } else {
-      addTask({
-        title: data.title,
-        description: data.description,
-        priority: data.priority,
+      const taskData = {
+        ...data,
         deadline: deadlineDate,
-        status: 'To Do',
-        userId: user?.id || '',
-        projectId: data.projectId === "none" ? undefined : data.projectId,
-        ...taskData
-      });
-    }
-    
-    onOpenChange(false);
-    reset();
-    setSelectedMember(undefined);
-    setSelectedMembers([]);
-    
-    if (onTaskComplete) {
-      onTaskComplete();
+        userId: user.id,
+        organizationId: user.organizationId,
+        // Handle single vs multi assignment
+        assignedToId: multiAssignMode ? undefined : (selectedMember === "unassigned" ? undefined : selectedMember),
+        assignedToName: multiAssignMode ? undefined : data.assignedToName,
+        assignedToIds: multiAssignMode ? selectedMembers : undefined,
+        assignedToNames: multiAssignMode ? data.assignedToNames : undefined
+      };
+
+      if (isEditMode && editingTask) {
+        await updateTask(editingTask.id, taskData);
+        toast.success('Task updated successfully');
+      } else {
+        await addTask({
+          title: data.title,
+          description: data.description,
+          priority: data.priority,
+          deadline: deadlineDate,
+          status: 'To Do',
+          projectId: data.projectId === "none" ? undefined : data.projectId,
+          ...taskData
+        });
+        toast.success('Task created successfully');
+      }
+      
+      onOpenChange(false);
+      reset();
+      setSelectedMember("unassigned");
+      setSelectedMembers([]);
+      
+      if (onTaskComplete) {
+        onTaskComplete();
+      }
+    } catch (error) {
+      console.error('Error saving task:', error);
+      toast.error(`Failed to ${isEditMode ? 'update' : 'create'} task`);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleCancel = () => {
     onOpenChange(false);
     reset();
-    setSelectedMember(undefined);
+    setSelectedMember("unassigned");
     setSelectedMembers([]);
   };
 
@@ -242,9 +185,9 @@ const CreateTaskDialogEnhanced: React.FC<CreateTaskDialogEnhancedProps> = ({
               onDateChange={handleDateChange}
               onTimeChange={handleTimeChange}
               multiAssignMode={multiAssignMode}
-              selectedMembers={safeSelectedMembers}
+              selectedMembers={selectedMembers}
               onMembersChange={handleMembersChange}
-              users={safeUsers}
+              users={users}
               loadingUsers={loadingUsers}
               handleUserAssignment={handleUserAssignment}
             />
@@ -252,6 +195,7 @@ const CreateTaskDialogEnhanced: React.FC<CreateTaskDialogEnhancedProps> = ({
             <TaskFormActions
               isEditMode={isEditMode}
               onCancel={handleCancel}
+              isSubmitting={isSubmitting}
             />
           </form>
         </Form>

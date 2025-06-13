@@ -1,11 +1,11 @@
 
 import React from 'react';
-import { Project, Task, User } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import TaskFormFieldsWithAI from '../TaskFormFieldsWithAI';
-import TaskAssignmentSection from './TaskAssignmentSection';
+import { Task, Project } from '@/types';
+import TaskDetailsWithAISection from './TaskDetailsWithAISection';
+import EnhancedTaskAssignmentSection from './EnhancedTaskAssignmentSection';
 
-export interface TaskFormTabsProps {
+interface TaskFormTabsProps {
   register: any;
   errors: any;
   setValue: any;
@@ -13,15 +13,15 @@ export interface TaskFormTabsProps {
   editingTask?: Task;
   currentProjectId?: string;
   selectedMember?: string;
-  setSelectedMember: (id: string | undefined) => void;
-  deadlineDate: Date | undefined;
+  setSelectedMember: (member: string | undefined) => void;
+  deadlineDate?: Date;
   timeInput: string;
   onDateChange: (date: Date | undefined) => void;
   onTimeChange: (time: string) => void;
   multiAssignMode: boolean;
   selectedMembers: string[];
   onMembersChange: (memberIds: string[]) => void;
-  users: User[];
+  users: any[];
   loadingUsers: boolean;
   handleUserAssignment: (userId: string) => void;
 }
@@ -48,13 +48,17 @@ const TaskFormTabs: React.FC<TaskFormTabsProps> = ({
 }) => {
   return (
     <Tabs defaultValue="details" className="w-full">
-      <TabsList className="mb-4">
-        <TabsTrigger value="details">Task Details</TabsTrigger>
-        <TabsTrigger value="assignment">Assignment</TabsTrigger>
+      <TabsList className="grid w-full grid-cols-2 mb-6">
+        <TabsTrigger value="details" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+          Task Details
+        </TabsTrigger>
+        <TabsTrigger value="assignment" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+          Assignment
+        </TabsTrigger>
       </TabsList>
       
-      <TabsContent value="details" className="space-y-4">
-        <TaskFormFieldsWithAI
+      <TabsContent value="details" className="space-y-4 mt-0">
+        <TaskDetailsWithAISection
           register={register}
           errors={errors}
           setValue={setValue}
@@ -70,12 +74,15 @@ const TaskFormTabs: React.FC<TaskFormTabsProps> = ({
         />
       </TabsContent>
       
-      <TabsContent value="assignment">
-        <TaskAssignmentSection 
-          selectedUser={selectedMember || "unassigned"}
+      <TabsContent value="assignment" className="mt-0">
+        <EnhancedTaskAssignmentSection 
+          selectedMember={selectedMember || "unassigned"}
           onAssign={handleUserAssignment}
           users={users}
           isLoading={loadingUsers}
+          multiAssignMode={multiAssignMode}
+          selectedMembers={selectedMembers}
+          onMembersChange={onMembersChange}
         />
       </TabsContent>
     </Tabs>
