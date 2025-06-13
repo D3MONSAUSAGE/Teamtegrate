@@ -1,4 +1,3 @@
-
 import React, {
   createContext,
   useState,
@@ -12,6 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useProjects } from '@/hooks/useProjects';
 import { toast } from '@/components/ui/sonner';
 import { assignTaskToUser as assignTaskToUserAPI } from './operations/assignment/assignTaskToUser';
+import { useTasksPageData } from '@/hooks/useTasksPageData';
 
 interface TaskContextProps {
   tasks: Task[];
@@ -41,10 +41,14 @@ export const useTask = (): TaskContextProps => {
 };
 
 const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
   const { projects, refreshProjects } = useProjects();
+  
+  // Use the same data fetching pattern as the tasks page
+  const { tasks, isLoading } = useTasksPageData();
+  
+  // Keep setTasks for backward compatibility with components that might need it
+  const [, setTasks] = useState<Task[]>([]);
 
   const addTask = async (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
     if (!user) {
@@ -139,7 +143,7 @@ const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
     toast.success('Project deleted successfully');
   };
 
-  // Calculate daily score - this now works with empty tasks array
+  // Calculate daily score - this now works with the fetched tasks
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
