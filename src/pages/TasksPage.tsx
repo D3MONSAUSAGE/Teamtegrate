@@ -8,6 +8,7 @@ import TaskHeader from '@/components/task/TaskHeader';
 import TaskTabs from '@/components/task/TaskTabs';
 import CreateTaskDialogEnhanced from '@/components/CreateTaskDialogEnhanced';
 import { toast } from '@/components/ui/sonner';
+import { useTasksPageData } from '@/hooks/useTasksPageData';
 
 const TasksPage = () => {
   console.log('🚨 TasksPage: Component rendering');
@@ -26,17 +27,19 @@ const TasksPage = () => {
     }
   }, []);
 
-  // Use the enhanced task context with fixed RLS policies
-  const { tasks, isLoading, updateTaskStatus, error } = useTask();
+  // Get tasks directly from the enhanced hook
+  const { tasks, isLoading, error } = useTasksPageData();
   
   // Enhanced debug logging
-  console.log('🚨 TasksPage: useTask hook result:');
+  console.log('🚨 TasksPage: useTasksPageData hook result:');
   console.log('🚨  - tasks:', tasks);
   console.log('🚨  - isLoading:', isLoading);
   console.log('🚨  - error:', error);
   console.log('🚨  - tasks length:', tasks?.length || 0);
   console.log('🚨  - tasks is array:', Array.isArray(tasks));
-  console.log('🚨  - updateTaskStatus function:', typeof updateTaskStatus);
+  
+  // Get the update function from the context
+  const { updateTaskStatus } = useTask();
   
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [sortBy, setSortBy] = useState('deadline');

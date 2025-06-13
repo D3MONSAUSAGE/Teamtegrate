@@ -22,6 +22,7 @@ import ProfilePage from '@/pages/ProfilePage';
 import SettingsPage from '@/pages/SettingsPage';
 import OrganizationDashboard from '@/pages/OrganizationDashboard';
 import TeamPage from '@/pages/TeamPage';
+import FocusZonePage from '@/pages/FocusZonePage';
 
 const MainContent = ({ children }: { children: React.ReactNode }) => {
   const { setOpen, isMobile } = useSidebar();
@@ -85,6 +86,7 @@ const AppLayout = () => {
             <Route index element={<DashboardPage />} />
             <Route path="organization" element={<OrganizationDashboard />} />
             <Route path="team" element={<TeamPage />} />
+            <Route path="focus" element={<FocusZonePage />} />
             <Route path="calendar" element={<CalendarPage />} />
             <Route path="reports" element={<ReportsPage />} />
             <Route path="chat" element={<ChatPage />} />
