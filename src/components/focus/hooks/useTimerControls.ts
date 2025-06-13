@@ -42,7 +42,7 @@ export const useTimerControls = ({
       return;
     }
     
-    console.log('▶️ Starting focus session');
+    console.log('▶️ Starting focus session for task:', selectedTask.id);
     const newSessionId = generateSessionId();
     setSessionId(newSessionId);
     setIsActive(true);
@@ -53,9 +53,10 @@ export const useTimerControls = ({
     
     // Ensure timer starts with correct duration
     const startDuration = duration * 60;
+    console.log('▶️ Setting initial timer duration:', startDuration, 'seconds');
     setTimeRemaining(startDuration);
     timeRemainingRef.current = startDuration;
-  }, [selectedTask, generateSessionId, setSessionId, setIsActive, setIsPaused, setStartTime, setPausedTime, isCleanedUpRef, duration, setTimeRemaining, timeRemainingRef]);
+  }, [selectedTask, duration, generateSessionId, setSessionId, setIsActive, setIsPaused, setStartTime, setPausedTime, isCleanedUpRef, setTimeRemaining, timeRemainingRef]);
 
   const handlePause = useCallback(() => {
     console.log('⏸️ Pausing focus session');
@@ -70,7 +71,7 @@ export const useTimerControls = ({
   }, [setIsPaused, setStartTime, isCleanedUpRef]);
 
   const handleStop = useCallback(() => {
-    console.log('⏹️ Stopping focus session');
+    console.log('⏹️ Stopping focus session (user requested)');
     clearAllTimers();
     setIsActive(false);
     setIsPaused(false);
@@ -85,7 +86,7 @@ export const useTimerControls = ({
   }, [clearAllTimers, duration, setIsActive, setIsPaused, setTimeRemaining, timeRemainingRef, setSessionId, setStartTime, setPausedTime, isCleanedUpRef, lastTickTimeRef]);
 
   const handleReset = useCallback(() => {
-    console.log('🔄 Resetting focus timer');
+    console.log('🔄 Resetting focus timer (user requested)');
     clearAllTimers();
     setIsActive(false);
     setIsPaused(false);

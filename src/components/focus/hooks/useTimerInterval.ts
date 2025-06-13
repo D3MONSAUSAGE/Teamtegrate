@@ -40,14 +40,13 @@ export const useTimerInterval = ({
     isCleanedUpRef.current = true;
   }, [isCleanedUpRef]);
 
-  // Main timer effect - only depends on isActive and isPaused
+  // Main timer effect - more defensive and stable
   useEffect(() => {
     if (isActive && !isPaused && !isCleanedUpRef.current) {
-      console.log('▶️ Starting timer loop');
+      console.log('▶️ Starting timer loop with time remaining:', timeRemainingRef.current);
       
       // Reset timing references when starting
       lastTickTimeRef.current = performance.now();
-      timeRemainingRef.current = timeRemaining;
       
       // Create stable tick function inside the effect
       const tick = () => {
@@ -63,20 +62,29 @@ export const useTimerInterval = ({
         const deltaMs = now - lastTickTimeRef.current;
         const deltaSeconds = deltaMs / 1000;
         
+        // Only proceed if delta is reasonable (between 0.5 and 2 seconds)
+        if (deltaSeconds < 0.5 || deltaSeconds > 2) {
+          console.log('⚠️ Unusual delta time detected:', deltaSeconds, 'seconds - adjusting');
+          lastTickTimeRef.current = now;
+          return;
+        }
+        
         // Update time remaining using ref
+        const previousTime = timeRemainingRef.current;
         timeRemainingRef.current = Math.max(0, timeRemainingRef.current - deltaSeconds);
         lastTickTimeRef.current = now;
 
         // Round to nearest second for display
         const newTimeRemaining = Math.max(0, Math.round(timeRemainingRef.current));
 
+        // Only update state if there's a meaningful change
         setTimeRemaining(prev => {
-          if (newTimeRemaining !== prev) {
+          if (Math.abs(newTimeRemaining - prev) >= 1) {
             if (newTimeRemaining <= 0) {
               // Session completed
+              console.log('⏰ Timer completed - triggering session complete');
               setTimeout(() => {
                 if (!isCleanedUpRef.current) {
-                  console.log('⏰ Timer completed, calling onSessionComplete');
                   if (intervalRef.current) {
                     clearInterval(intervalRef.current);
                     intervalRef.current = null;
@@ -89,6 +97,12 @@ export const useTimerInterval = ({
               }, 0);
               return 0;
             }
+            
+            // Log progress occasionally
+            if (newTimeRemaining % 30 === 0) {
+              console.log('⏱️ Timer progress:', newTimeRemaining, 'seconds remaining');
+            }
+            
             return newTimeRemaining;
           }
           return prev;
@@ -97,9 +111,11 @@ export const useTimerInterval = ({
       
       // Use interval for consistent updates
       intervalRef.current = setInterval(tick, 1000);
+      
+      console.log('✅ Timer interval started');
     } else {
       if (intervalRef.current) {
-        console.log('⏸️ Stopping timer loop');
+        console.log('⏸️ Stopping timer loop - isActive:', isActive, 'isPaused:', isPaused);
         clearInterval(intervalRef.current);
         intervalRef.current = null;
       }
