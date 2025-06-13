@@ -6,7 +6,6 @@ import { RefreshCw } from 'lucide-react';
 import ProjectOverview from './ProjectOverview';
 import ProjectTasksFilters from './ProjectTasksFilters';
 import ProjectTasksGrid from './ProjectTasksGrid';
-import CreateTaskDialogWithAI from '@/components/CreateTaskDialogWithAI';
 
 interface ProjectTasksContentProps {
   project: Project;
@@ -45,7 +44,15 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
   onRefresh,
   isRefreshing
 }) => {
-  const allTasks = [...todoTasks, ...inProgressTasks, ...completedTasks];
+  console.log('ProjectTasksContent: Rendering with:', {
+    projectTitle: project?.title,
+    todoTasksCount: todoTasks?.length || 0,
+    inProgressTasksCount: inProgressTasks?.length || 0,
+    completedTasksCount: completedTasks?.length || 0,
+    teamMembersCount: teamMembers?.length || 0
+  });
+
+  const allTasks = [...(todoTasks || []), ...(inProgressTasks || []), ...(completedTasks || [])];
 
   return (
     <div className="space-y-6">
@@ -53,8 +60,8 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
       <ProjectOverview
         project={project}
         tasks={allTasks}
-        teamMembers={teamMembers}
-        progress={progress}
+        teamMembers={teamMembers || []}
+        progress={progress || 0}
       />
 
       {/* Header Actions */}
@@ -78,20 +85,20 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
 
       {/* Filters */}
       <ProjectTasksFilters
-        searchQuery={searchQuery}
-        sortBy={sortBy}
+        searchQuery={searchQuery || ''}
+        sortBy={sortBy || 'deadline'}
         onSearchChange={onSearchChange}
         onSortByChange={onSortByChange}
       />
 
       {/* Tasks Grid */}
       <ProjectTasksGrid
-        todoTasks={todoTasks}
-        inProgressTasks={inProgressTasks}
-        completedTasks={completedTasks}
+        todoTasks={todoTasks || []}
+        inProgressTasks={inProgressTasks || []}
+        completedTasks={completedTasks || []}
         onEditTask={onEditTask}
         onStatusChange={onTaskStatusChange}
-        teamMembers={teamMembers}
+        teamMembers={teamMembers || []}
         isLoadingTeamMembers={isLoadingTeamMembers}
       />
     </div>

@@ -9,13 +9,25 @@ import { useProjectTeamMembers } from '@/hooks/useProjectTeamMembers';
 import { Task } from '@/types';
 
 export const useProjectTasksView = (projectId: string | null) => {
+  console.log('useProjectTasksView: Called with projectId:', projectId);
+
   const { tasks, updateTaskStatus } = useTask();
   const { projects } = useProjects();
 
+  console.log('useProjectTasksView: Got data from hooks:', {
+    tasksCount: tasks?.length || 0,
+    projectsCount: projects?.length || 0
+  });
+
   // Get project tasks
   const projectTasks = useMemo(() => {
-    if (!projectId) return [];
-    return tasks.filter(task => task.projectId === projectId);
+    if (!projectId || !tasks) {
+      console.log('useProjectTasksView: No projectId or tasks, returning empty array');
+      return [];
+    }
+    const filtered = tasks.filter(task => task.projectId === projectId);
+    console.log('useProjectTasksView: Filtered tasks for project:', projectId, 'count:', filtered.length);
+    return filtered;
   }, [tasks, projectId]);
 
   // Convert to Task[] if needed - but since we're using unified types, this should be direct
@@ -24,7 +36,7 @@ export const useProjectTasksView = (projectId: string | null) => {
   }, [projectTasks]);
 
   // Use the separated hooks
-  const { project, isLoading, loadError } = useProjectAccess(projectId, projects);
+  const { project, isLoading, loadError } = useProjectAccess(projectId, projects || []);
   
   const {
     searchQuery,
@@ -42,6 +54,7 @@ export const useProjectTasksView = (projectId: string | null) => {
 
   // Wrap updateTaskStatus to ensure it returns a Promise
   const wrappedUpdateTaskStatus = async (taskId: string, status: any): Promise<void> => {
+    console.log('useProjectTasksView: Updating task status:', taskId, status);
     updateTaskStatus(taskId, status);
   };
 
@@ -57,6 +70,16 @@ export const useProjectTasksView = (projectId: string | null) => {
     handleTaskDialogComplete
   } = useProjectTasksActions({ updateTaskStatus: wrappedUpdateTaskStatus });
 
+  console.log('useProjectTasksView: Returning data:', {
+    isLoading,
+    hasLoadError: !!loadError,
+    hasProject: !!project,
+    todoTasksCount: todoTasks?.length || 0,
+    inProgressTasksCount: inProgressTasks?.length || 0,
+    completedTasksCount: completedTasks?.length || 0,
+    teamMembersCount: teamMembers?.length || 0
+  });
+
   return {
     isLoading,
     loadError,
@@ -67,7 +90,7 @@ export const useProjectTasksView = (projectId: string | null) => {
     inProgressTasks,
     completedTasks,
     progress,
-    teamMembers,
+    teamMembers: teamMembers || [],
     isLoadingTeamMembers,
     teamMembersError,
     isRefreshing,
