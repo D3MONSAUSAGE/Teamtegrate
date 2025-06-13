@@ -14,10 +14,10 @@ import {
   MoreVertical,
   Edit,
   Trash2,
-  ArrowUp,
-  ArrowDown,
   Eye,
-  Loader2
+  Loader2,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
 import { 
   DropdownMenu,
@@ -27,14 +27,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { useEnhancedUserManagement } from '@/hooks/useEnhancedUserManagement';
 import { UserRole } from '@/types';
 import { format } from 'date-fns';
@@ -79,16 +71,12 @@ const SuperadminUserManagement: React.FC = () => {
     isLoading,
     error,
     isSuperadmin,
-    createUser,
-    updateUserProfile,
-    deleteUser,
-    changeUserRole,
-    getUserImpactAnalysis
+    changeUserRole
   } = useEnhancedUserManagement();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRole, setSelectedRole] = useState<UserRole | 'all'>('all');
-  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
   
   // Dialog states
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -116,7 +104,9 @@ const SuperadminUserManagement: React.FC = () => {
   });
 
   const handleQuickRoleChange = async (userId: string, newRole: UserRole) => {
+    setUpdatingUserId(userId);
     await changeUserRole(userId, newRole);
+    setUpdatingUserId(null);
   };
 
   const handleViewImpact = async (user: any) => {
@@ -140,7 +130,7 @@ const SuperadminUserManagement: React.FC = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            Enhanced User Management
+            User Management
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -158,7 +148,7 @@ const SuperadminUserManagement: React.FC = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            Enhanced User Management
+            User Management
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -174,7 +164,7 @@ const SuperadminUserManagement: React.FC = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            Enhanced User Management
+            User Management
             <Badge variant="outline" className="ml-auto">
               {filteredUsers.length} Users
             </Badge>
@@ -182,7 +172,7 @@ const SuperadminUserManagement: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {/* Action Bar */}
+            {/* Filters and Search */}
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -212,132 +202,123 @@ const SuperadminUserManagement: React.FC = () => {
               </Button>
             </div>
 
-            {/* Users Table */}
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>User</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Tasks</TableHead>
-                    <TableHead>Joined</TableHead>
-                    <TableHead>Quick Actions</TableHead>
-                    <TableHead className="text-right">More</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredUsers.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                            <span className="text-sm font-medium text-primary">
-                              {user.name.substring(0, 1).toUpperCase()}
-                            </span>
-                          </div>
-                          <div>
-                            <p className="font-medium">{user.name}</p>
-                            <p className="text-sm text-muted-foreground">{user.email}</p>
+            {/* User Cards Grid */}
+            <div className="space-y-3">
+              {filteredUsers.map((user) => (
+                <Card key={user.id} className="p-4">
+                  <div className="flex items-center justify-between">
+                    {/* User Info */}
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span className="text-sm font-medium text-primary">
+                          {user.name.substring(0, 1).toUpperCase()}
+                        </span>
+                      </div>
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-medium truncate">{user.name}</h3>
+                          <div className="flex items-center gap-1">
+                            {getRoleIcon(user.role as UserRole)}
+                            <Badge variant={getRoleBadgeVariant(user.role as UserRole)} className="text-xs">
+                              {user.role}
+                            </Badge>
                           </div>
                         </div>
-                      </TableCell>
-                      
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {getRoleIcon(user.role as UserRole)}
-                          <Badge variant={getRoleBadgeVariant(user.role as UserRole)}>
-                            {user.role}
-                          </Badge>
+                        
+                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                          <span className="truncate">{user.email}</span>
+                          <span>{user.assigned_tasks_count || 0} tasks</span>
+                          <span>Joined {format(new Date(user.created_at), 'MMM yyyy')}</span>
                         </div>
-                      </TableCell>
-                      
-                      <TableCell>
-                        <div className="text-sm">
-                          <div>{user.assigned_tasks_count || 0} assigned</div>
-                          <div className="text-muted-foreground">
-                            {user.completed_tasks_count || 0} completed
-                          </div>
-                        </div>
-                      </TableCell>
-                      
-                      <TableCell>
-                        <div className="text-sm text-muted-foreground">
-                          {format(new Date(user.created_at), 'MMM dd, yyyy')}
-                        </div>
-                      </TableCell>
-                      
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          {user.role !== 'superadmin' && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleQuickRoleChange(user.id, 
-                                user.role === 'admin' ? 'superadmin' : 
-                                user.role === 'manager' ? 'admin' : 
-                                user.role === 'user' ? 'manager' : 'user'
-                              )}
-                              className="h-8 w-8 p-0"
-                              title="Promote"
-                            >
-                              <ArrowUp className="h-3 w-3" />
-                            </Button>
+                      </div>
+                    </div>
+
+                    {/* Role Actions */}
+                    <div className="flex items-center gap-1 ml-2">
+                      {/* Quick Role Change Buttons */}
+                      {user.role !== 'superadmin' && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleQuickRoleChange(user.id, 
+                            user.role === 'admin' ? 'superadmin' : 
+                            user.role === 'manager' ? 'admin' : 'manager'
                           )}
+                          className="h-8 w-8 p-0"
+                          disabled={updatingUserId === user.id}
+                          title="Promote"
+                        >
+                          {updatingUserId === user.id ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <ArrowUp className="h-3 w-3" />
+                          )}
+                        </Button>
+                      )}
+                      
+                      {user.role !== 'user' && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleQuickRoleChange(user.id,
+                            user.role === 'superadmin' ? 'admin' : 
+                            user.role === 'admin' ? 'manager' : 'user'
+                          )}
+                          className="h-8 w-8 p-0"
+                          disabled={updatingUserId === user.id}
+                          title="Demote"
+                        >
+                          {updatingUserId === user.id ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <ArrowDown className="h-3 w-3" />
+                          )}
+                        </Button>
+                      )}
+
+                      {/* More Actions Menu */}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="bg-background border shadow-md">
+                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
                           
-                          {user.role !== 'user' && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleQuickRoleChange(user.id,
-                                user.role === 'superadmin' ? 'admin' : 
-                                user.role === 'admin' ? 'manager' : 
-                                user.role === 'manager' ? 'user' : 'user'
-                              )}
-                              className="h-8 w-8 p-0"
-                              title="Demote"
-                            >
-                              <ArrowDown className="h-3 w-3" />
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                      
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            
-                            <DropdownMenuItem onClick={() => handleViewImpact(user)}>
-                              <Eye className="h-4 w-4 mr-2" />
-                              View Impact
-                            </DropdownMenuItem>
-                            
-                            <DropdownMenuItem onClick={() => handleEditUser(user)}>
-                              <Edit className="h-4 w-4 mr-2" />
-                              Edit Profile
-                            </DropdownMenuItem>
-                            
-                            <DropdownMenuSeparator />
-                            
-                            <DropdownMenuItem 
-                              onClick={() => handleDeleteUser(user)}
-                              className="text-red-600"
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete User
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                          <DropdownMenuItem onClick={() => handleViewImpact(user)}>
+                            <Eye className="h-4 w-4 mr-2" />
+                            View Impact
+                          </DropdownMenuItem>
+                          
+                          <DropdownMenuItem onClick={() => handleEditUser(user)}>
+                            <Edit className="h-4 w-4 mr-2" />
+                            Edit Profile
+                          </DropdownMenuItem>
+                          
+                          <DropdownMenuSeparator />
+                          
+                          <DropdownMenuItem 
+                            onClick={() => handleDeleteUser(user)}
+                            className="text-red-600"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete User
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+              
+              {filteredUsers.length === 0 && (
+                <div className="text-center py-8">
+                  <Users className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">No users found</p>
+                </div>
+              )}
             </div>
           </div>
         </CardContent>
