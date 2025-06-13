@@ -1,4 +1,3 @@
-
 import React, {
   createContext,
   useState,
@@ -178,7 +177,8 @@ const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   const dailyScore: DailyScore = {
     totalTasks: todaysTasks.length,
     completedTasks: completedTodaysTasks.length,
-    percentage: todaysTasks.length > 0 ? Math.round((completedTodaysTasks.length / todaysTasks.length) * 100) : 0
+    percentage: todaysTasks.length > 0 ? Math.round((completedTodaysTasks.length / todaysTasks.length) * 100) : 0,
+    date: today
   };
 
   const contextValue: TaskContextProps = {
