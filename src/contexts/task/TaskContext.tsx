@@ -108,10 +108,10 @@ const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
     }
   };
 
-  const updateTaskStatus = async (taskId: string, status: TaskStatus) => {
+  const updateTaskStatus = async (taskId: string, status: TaskStatus): Promise<void> => {
     if (!user) {
       toast.error('You must be logged in to update tasks');
-      return;
+      return Promise.resolve();
     }
 
     try {
