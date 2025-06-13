@@ -21,6 +21,7 @@ import SettingsPage from '@/pages/SettingsPage';
 import ProfilePage from '@/pages/ProfilePage';
 import AdminPage from '@/pages/AdminPage';
 import FocusZonePage from '@/pages/FocusZonePage';
+import OrganizationDashboard from '@/pages/OrganizationDashboard';
 import { Toaster } from '@/components/ui/sonner';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import './App.css';
@@ -53,6 +54,7 @@ function App() {
                   {/* Protected routes with AppLayout */}
                   <Route path="/dashboard" element={<AppLayout />}>
                     <Route index element={<DashboardPage />} />
+                    <Route path="organization" element={<OrganizationDashboard />} />
                     <Route 
                       path="tasks" 
                       element={

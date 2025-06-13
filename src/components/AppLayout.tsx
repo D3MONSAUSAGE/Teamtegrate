@@ -20,7 +20,6 @@ import JournalPage from '@/pages/JournalPage';
 import NotebookPage from '@/pages/NotebookPage';
 import ProfilePage from '@/pages/ProfilePage';
 import SettingsPage from '@/pages/SettingsPage';
-import OrganizationDashboard from '@/pages/OrganizationDashboard';
 import TeamPage from '@/pages/TeamPage';
 import FocusZonePage from '@/pages/FocusZonePage';
 
@@ -84,7 +83,6 @@ const AppLayout = () => {
         <MainContent>
           <Routes>
             <Route index element={<DashboardPage />} />
-            <Route path="organization" element={<OrganizationDashboard />} />
             <Route path="team" element={<TeamPage />} />
             <Route path="focus" element={<FocusZonePage />} />
             <Route path="calendar" element={<CalendarPage />} />
