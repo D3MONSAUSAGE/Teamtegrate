@@ -7,13 +7,10 @@ import { TaskProvider } from '@/contexts/task';
 import AppLayout from '@/components/AppLayout';
 import LandingPage from '@/pages/LandingPage';
 import LoginPage from '@/pages/LoginPage';
-import SignupPage from '@/pages/SignupPage';
 import DashboardPage from '@/pages/DashboardPage';
 import TasksPage from '@/pages/TasksPage';
 import ProjectsPage from '@/pages/ProjectsPage';
-import OrganizationPage from '@/pages/OrganizationPage';
 import CalendarPage from '@/pages/CalendarPage';
-import FocusPage from '@/pages/FocusPage';
 import ReportsPage from '@/pages/ReportsPage';
 import ChatPage from '@/pages/ChatPage';
 import DocumentsPage from '@/pages/DocumentsPage';
@@ -24,7 +21,7 @@ import SettingsPage from '@/pages/SettingsPage';
 import ProfilePage from '@/pages/ProfilePage';
 import AdminPage from '@/pages/AdminPage';
 import { Toaster } from '@/components/ui/sonner';
-import { ErrorBoundary } from '@/components/ErrorBoundary';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import './App.css';
 
 // Create a query client
@@ -51,7 +48,6 @@ function App() {
                   {/* Public routes */}
                   <Route path="/" element={<LandingPage />} />
                   <Route path="/login" element={<LoginPage />} />
-                  <Route path="/signup" element={<SignupPage />} />
                   
                   {/* Protected routes with AppLayout */}
                   <Route path="/dashboard" element={<AppLayout />}>
@@ -59,18 +55,16 @@ function App() {
                     <Route 
                       path="tasks" 
                       element={
-                        <div>
+                        <>
                           {console.log('🚨 App.tsx: TasksPage route matched!')}
                           <TasksPage />
-                        </div>
+                        </>
                       } 
                     />
                     <Route path="tasks/create" element={<TasksPage />} />
                     <Route path="projects" element={<ProjectsPage />} />
                     <Route path="projects/:projectId" element={<ProjectsPage />} />
-                    <Route path="organization" element={<OrganizationPage />} />
                     <Route path="calendar" element={<CalendarPage />} />
-                    <Route path="focus" element={<FocusPage />} />
                     <Route path="reports" element={<ReportsPage />} />
                     <Route path="chat" element={<ChatPage />} />
                     <Route path="chat/:roomId" element={<ChatPage />} />
