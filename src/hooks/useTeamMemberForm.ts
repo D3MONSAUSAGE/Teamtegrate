@@ -45,6 +45,11 @@ export const useTeamMemberForm = ({ onSuccess, onCancel }: UseTeamMemberFormProp
       return;
     }
 
+    if (!user.organizationId) {
+      setError('No organization found. Please contact your administrator.');
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 
@@ -81,14 +86,15 @@ export const useTeamMemberForm = ({ onSuccess, onCancel }: UseTeamMemberFormProp
         return;
       }
 
-      // Add user as team member
+      // Add user as team member with organization_id
       const { error: insertError } = await supabase
         .from('team_members')
         .insert({
           email: formData.email.trim().toLowerCase(),
           role: formData.role,
           name: existingUser.name,
-          manager_id: user.id
+          manager_id: user.id,
+          organization_id: user.organizationId
         });
 
       if (insertError) {
