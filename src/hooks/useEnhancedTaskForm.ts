@@ -1,9 +1,9 @@
-
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Task, TaskFormValues } from '@/types';
+import { Task } from '@/types';
+import { TaskFormValues } from '@/types/tasks';
 import { useTaskAssignmentValidation } from './useTaskAssignmentValidation';
 import { useUsers } from './useUsers';
 

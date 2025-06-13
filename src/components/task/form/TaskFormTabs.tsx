@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Task, Project } from '@/types';
-import TaskDetailsWithAISection from './TaskDetailsWithAISection';
+import { TaskDetailsWithAISection } from './TaskDetailsWithAISection';
 import EnhancedTaskAssignmentSection from './EnhancedTaskAssignmentSection';
 
 interface TaskFormTabsProps {
