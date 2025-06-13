@@ -10,11 +10,15 @@ import CreateTaskDialogEnhanced from '@/components/CreateTaskDialogEnhanced';
 import { toast } from '@/components/ui/sonner';
 
 const TasksPage = () => {
+  console.log('🔍 TasksPage: Component is rendering');
+  
   const navigate = useNavigate();
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   
   useEffect(() => {
+    console.log('🔍 TasksPage: useEffect running');
     const path = window.location.pathname;
+    console.log('🔍 TasksPage: Current path:', path);
     if (path.endsWith('/create')) {
       setIsCreateTaskOpen(true);
     }
@@ -23,10 +27,13 @@ const TasksPage = () => {
   // Use the same data source as the dashboard - through TaskContext
   const { tasks, isLoading, updateTaskStatus } = useTask();
   
-  // Debug logging
-  console.log('TasksPage: tasks:', tasks);
-  console.log('TasksPage: isLoading:', isLoading);
-  console.log('TasksPage: tasks length:', tasks?.length || 0);
+  // Enhanced debug logging
+  console.log('🔍 TasksPage: useTask hook result:');
+  console.log('  - tasks:', tasks);
+  console.log('  - isLoading:', isLoading);
+  console.log('  - tasks length:', tasks?.length || 0);
+  console.log('  - tasks is array:', Array.isArray(tasks));
+  console.log('  - updateTaskStatus function:', typeof updateTaskStatus);
   
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [sortBy, setSortBy] = useState('deadline');
@@ -40,11 +47,11 @@ const TasksPage = () => {
   
   const handleStatusChange = async (taskId: string, status: TaskStatus) => {
     try {
-      console.log(`Updating task ${taskId} status to ${status}`);
+      console.log(`🔍 TasksPage: Updating task ${taskId} status to ${status}`);
       await updateTaskStatus(taskId, status);
-      console.log(`Successfully updated task ${taskId} status to ${status}`);
+      console.log(`🔍 TasksPage: Successfully updated task ${taskId} status to ${status}`);
     } catch (error) {
-      console.error('Error updating task status:', error);
+      console.error('🔍 TasksPage: Error updating task status:', error);
       toast.error('Failed to update task status');
     }
   };
@@ -56,7 +63,7 @@ const TasksPage = () => {
   
   // Show loading state
   if (isLoading) {
-    console.log('TasksPage: Rendering loading state');
+    console.log('🔍 TasksPage: Rendering loading state because isLoading is true');
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-accent/10 relative overflow-hidden">
         <div className="flex items-center justify-center min-h-screen">
@@ -69,13 +76,30 @@ const TasksPage = () => {
     );
   }
   
-  console.log('TasksPage: Not in loading state, tasks array:', tasks);
+  console.log('🔍 TasksPage: Not in loading state, processing tasks array:', tasks);
+  
+  if (!tasks || !Array.isArray(tasks)) {
+    console.log('🔍 TasksPage: Tasks is not a valid array:', tasks);
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-accent/10 relative overflow-hidden">
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <p className="text-muted-foreground">Tasks data is not available</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
   
   const todoTasks = tasks.filter((task) => task.status === 'To Do');
   const inProgressTasks = tasks.filter((task) => task.status === 'In Progress');
   const completedTasks = tasks.filter((task) => task.status === 'Completed');
   
-  console.log('TasksPage: Filtered tasks - Todo:', todoTasks.length, 'InProgress:', inProgressTasks.length, 'Completed:', completedTasks.length);
+  console.log('🔍 TasksPage: Filtered tasks:');
+  console.log('  - Todo:', todoTasks.length);
+  console.log('  - InProgress:', inProgressTasks.length);
+  console.log('  - Completed:', completedTasks.length);
+  console.log('  - Sample todo task:', todoTasks[0]);
   
   const sortTasks = (tasksToSort: Task[]) => {
     return [...tasksToSort].sort((a, b) => {
@@ -106,7 +130,11 @@ const TasksPage = () => {
   const sortedInProgress = sortTasks(inProgressTasks);
   const sortedCompleted = sortTasks(completedTasks);
 
-  console.log('TasksPage: Sorted tasks - Todo:', sortedTodo.length, 'InProgress:', sortedInProgress.length, 'Completed:', sortedCompleted.length);
+  console.log('🔍 TasksPage: Sorted tasks:');
+  console.log('  - Todo:', sortedTodo.length);
+  console.log('  - InProgress:', sortedInProgress.length);
+  console.log('  - Completed:', sortedCompleted.length);
+  console.log('🔍 TasksPage: About to render main UI');
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-accent/10 relative overflow-hidden">
