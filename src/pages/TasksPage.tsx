@@ -23,6 +23,11 @@ const TasksPage = () => {
   // Use the same data source as the dashboard - through TaskContext
   const { tasks, isLoading, updateTaskStatus } = useTask();
   
+  // Debug logging
+  console.log('TasksPage: tasks:', tasks);
+  console.log('TasksPage: isLoading:', isLoading);
+  console.log('TasksPage: tasks length:', tasks?.length || 0);
+  
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [sortBy, setSortBy] = useState('deadline');
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -51,6 +56,7 @@ const TasksPage = () => {
   
   // Show loading state
   if (isLoading) {
+    console.log('TasksPage: Rendering loading state');
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-accent/10 relative overflow-hidden">
         <div className="flex items-center justify-center min-h-screen">
@@ -63,9 +69,13 @@ const TasksPage = () => {
     );
   }
   
+  console.log('TasksPage: Not in loading state, tasks array:', tasks);
+  
   const todoTasks = tasks.filter((task) => task.status === 'To Do');
   const inProgressTasks = tasks.filter((task) => task.status === 'In Progress');
   const completedTasks = tasks.filter((task) => task.status === 'Completed');
+  
+  console.log('TasksPage: Filtered tasks - Todo:', todoTasks.length, 'InProgress:', inProgressTasks.length, 'Completed:', completedTasks.length);
   
   const sortTasks = (tasksToSort: Task[]) => {
     return [...tasksToSort].sort((a, b) => {
@@ -95,6 +105,8 @@ const TasksPage = () => {
   const sortedTodo = sortTasks(todoTasks);
   const sortedInProgress = sortTasks(inProgressTasks);
   const sortedCompleted = sortTasks(completedTasks);
+
+  console.log('TasksPage: Sorted tasks - Todo:', sortedTodo.length, 'InProgress:', sortedInProgress.length, 'Completed:', sortedCompleted.length);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-accent/10 relative overflow-hidden">
