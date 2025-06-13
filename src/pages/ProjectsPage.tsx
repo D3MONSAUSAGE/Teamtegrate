@@ -12,6 +12,8 @@ import ProjectsLoadingState from './projects/ProjectsLoadingState';
 import ProjectsPageBackground from './projects/ProjectsPageBackground';
 
 const ProjectsPage = () => {
+  console.log('ProjectsPage: Component rendering');
+  
   const { user } = useAuth();
   const { projects, isLoading, refetch } = useProjects();
   const [searchQuery, setSearchQuery] = useState('');
@@ -20,35 +22,53 @@ const ProjectsPage = () => {
   const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>();
   const navigate = useNavigate();
 
+  console.log('ProjectsPage: State values:', {
+    projectsCount: projects?.length || 0,
+    isLoading,
+    searchQuery,
+    isCreateDialogOpen,
+    isCreateTaskOpen,
+    selectedProjectId,
+    user: !!user
+  });
+
   const filteredProjects = projects.filter(project =>
     project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     project.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  console.log('ProjectsPage: Filtered projects count:', filteredProjects.length);
+
   const handleViewTasks = (projectId: string) => {
-    console.log('ProjectsPage: View tasks clicked for project:', projectId);
+    console.log('ProjectsPage: handleViewTasks called for project:', projectId);
     try {
       const targetUrl = `/dashboard/projects/${projectId}/tasks`;
       console.log('ProjectsPage: Navigating to:', targetUrl);
       navigate(targetUrl);
+      console.log('ProjectsPage: Navigation initiated successfully');
     } catch (error) {
       console.error('ProjectsPage: Navigation error:', error);
     }
   };
 
   const handleCreateTask = (projectId: string) => {
-    console.log('ProjectsPage: Create task clicked for project:', projectId);
-    setSelectedProjectId(projectId);
-    setIsCreateTaskOpen(true);
+    console.log('ProjectsPage: handleCreateTask called for project:', projectId);
+    try {
+      setSelectedProjectId(projectId);
+      setIsCreateTaskOpen(true);
+      console.log('ProjectsPage: Task dialog state updated');
+    } catch (error) {
+      console.error('ProjectsPage: Error opening task dialog:', error);
+    }
   };
 
   const handleProjectCreated = () => {
-    console.log('Project created, refreshing list...');
+    console.log('ProjectsPage: Project created, refreshing list...');
     refetch();
   };
 
   const handleTaskCreated = () => {
-    console.log('Task created, closing dialog...');
+    console.log('ProjectsPage: Task created, closing dialog...');
     setIsCreateTaskOpen(false);
     setSelectedProjectId(undefined);
   };
@@ -59,8 +79,11 @@ const ProjectsPage = () => {
   };
 
   if (isLoading) {
+    console.log('ProjectsPage: Showing loading state');
     return <ProjectsLoadingState />;
   }
+
+  console.log('ProjectsPage: Rendering main content');
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-background/90 relative overflow-hidden">

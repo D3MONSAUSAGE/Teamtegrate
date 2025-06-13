@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Plus, FolderKanban } from 'lucide-react';
@@ -22,6 +21,40 @@ const ProjectsGridSection: React.FC<ProjectsGridSectionProps> = ({
   onCreateTask,
   onProjectDeleted
 }) => {
+  console.log('ProjectsGridSection: Rendering with props:', {
+    projectsCount: projects.length,
+    hasOnViewTasks: !!onViewTasks,
+    hasOnCreateTask: !!onCreateTask,
+    hasOnProjectDeleted: !!onProjectDeleted
+  });
+
+  const handleViewTasks = (projectId: string) => {
+    console.log('ProjectsGridSection: handleViewTasks called for project:', projectId);
+    if (onViewTasks) {
+      onViewTasks(projectId);
+    } else {
+      console.error('ProjectsGridSection: onViewTasks handler not provided');
+    }
+  };
+
+  const handleCreateTask = (projectId: string) => {
+    console.log('ProjectsGridSection: handleCreateTask called for project:', projectId);
+    if (onCreateTask) {
+      onCreateTask(projectId);
+    } else {
+      console.error('ProjectsGridSection: onCreateTask handler not provided');
+    }
+  };
+
+  const handleProjectDeleted = () => {
+    console.log('ProjectsGridSection: handleProjectDeleted called');
+    if (onProjectDeleted) {
+      onProjectDeleted();
+    } else {
+      console.error('ProjectsGridSection: onProjectDeleted handler not provided');
+    }
+  };
+
   return (
     <div className="glass-card border-2 border-primary/20 shadow-xl bg-gradient-to-br from-white/95 via-white/90 to-white/85 dark:from-card/95 dark:via-card/90 dark:to-card/85 backdrop-blur-2xl rounded-3xl p-8 hover:shadow-2xl transition-all duration-300">
       {projects.length > 0 ? (
@@ -36,23 +69,26 @@ const ProjectsGridSection: React.FC<ProjectsGridSectionProps> = ({
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {projects.map((project, index) => (
-              <div 
-                key={project.id} 
-                className="group transition-all duration-500 hover:scale-[1.03] animate-fade-in hover:-translate-y-2"
-                style={{ animationDelay: `${index * 150}ms` }}
-              >
-                <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 scale-110" />
-                  <ProjectCard
-                    project={project}
-                    onViewTasks={() => onViewTasks(project.id)}
-                    onCreateTask={() => onCreateTask(project.id)}
-                    onDeleted={onProjectDeleted}
-                  />
+            {projects.map((project, index) => {
+              console.log('ProjectsGridSection: Rendering project card for:', project.id, project.title);
+              return (
+                <div 
+                  key={project.id} 
+                  className="group transition-all duration-500 hover:scale-[1.03] animate-fade-in hover:-translate-y-2"
+                  style={{ animationDelay: `${index * 150}ms` }}
+                >
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 scale-110" />
+                    <ProjectCard
+                      project={project}
+                      onViewTasks={() => handleViewTasks(project.id)}
+                      onCreateTask={() => handleCreateTask(project.id)}
+                      onDeleted={handleProjectDeleted}
+                    />
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       ) : (

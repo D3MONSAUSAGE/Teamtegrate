@@ -16,6 +16,11 @@ interface ProjectCardContentProps {
 }
 
 const ProjectCardContent: React.FC<ProjectCardContentProps> = ({ project, onViewTasks, onCreateTask }) => {
+  console.log('ProjectCardContent: Rendering for project:', project.id, 'with handlers:', {
+    hasOnViewTasks: !!onViewTasks,
+    hasOnCreateTask: !!onCreateTask
+  });
+
   // Get status style for the badge
   const getStatusStyle = (status: string) => {
     switch(status) {
@@ -29,22 +34,38 @@ const ProjectCardContent: React.FC<ProjectCardContentProps> = ({ project, onView
   };
 
   const handleViewTasksClick = (e: React.MouseEvent) => {
+    console.log('ProjectCardContent: View tasks button clicked - event:', e.type);
     e.preventDefault();
     e.stopPropagation();
     console.log('ProjectCardContent: View tasks button clicked for project:', project.id);
+    
     if (onViewTasks) {
-      onViewTasks();
+      console.log('ProjectCardContent: Calling onViewTasks handler');
+      try {
+        onViewTasks();
+        console.log('ProjectCardContent: onViewTasks handler completed successfully');
+      } catch (error) {
+        console.error('ProjectCardContent: Error in onViewTasks handler:', error);
+      }
     } else {
       console.warn('ProjectCardContent: onViewTasks handler not provided');
     }
   };
 
   const handleCreateTaskClick = (e: React.MouseEvent) => {
+    console.log('ProjectCardContent: Create task button clicked - event:', e.type);
     e.preventDefault();
     e.stopPropagation();
     console.log('ProjectCardContent: Create task button clicked for project:', project.id);
+    
     if (onCreateTask) {
-      onCreateTask();
+      console.log('ProjectCardContent: Calling onCreateTask handler');
+      try {
+        onCreateTask();
+        console.log('ProjectCardContent: onCreateTask handler completed successfully');
+      } catch (error) {
+        console.error('ProjectCardContent: Error in onCreateTask handler:', error);
+      }
     } else {
       console.warn('ProjectCardContent: onCreateTask handler not provided');
     }
@@ -88,17 +109,29 @@ const ProjectCardContent: React.FC<ProjectCardContentProps> = ({ project, onView
         </div>
       </div>
       
-      <div className="mt-auto pt-4 flex gap-2 justify-end">
+      <div className="mt-auto pt-4 flex gap-2 justify-end relative z-20">
         <Button 
           variant="outline" 
           size="sm"
           onClick={handleViewTasksClick}
+          className="pointer-events-auto"
+          type="button"
+          onMouseDown={(e) => {
+            console.log('ProjectCardContent: View tasks button mouse down');
+            e.stopPropagation();
+          }}
         >
           <List className="w-4 h-4 mr-1" /> Tasks
         </Button>
         <Button 
           size="sm" 
           onClick={handleCreateTaskClick}
+          className="pointer-events-auto"
+          type="button"
+          onMouseDown={(e) => {
+            console.log('ProjectCardContent: Create task button mouse down');
+            e.stopPropagation();
+          }}
         >
           <Plus className="w-4 h-4 mr-1" /> Task
         </Button>

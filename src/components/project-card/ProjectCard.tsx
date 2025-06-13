@@ -17,6 +17,12 @@ interface ProjectCardProps {
 }
 
 const ProjectCard = ({ project, onViewTasks, onCreateTask, onDeleted }: ProjectCardProps) => {
+  console.log('ProjectCard: Rendering for project:', project.id, 'with handlers:', {
+    hasOnViewTasks: !!onViewTasks,
+    hasOnCreateTask: !!onCreateTask,
+    hasOnDeleted: !!onDeleted
+  });
+
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
@@ -65,6 +71,7 @@ const ProjectCard = ({ project, onViewTasks, onCreateTask, onDeleted }: ProjectC
   const handleViewTasks = () => {
     console.log('ProjectCard: View tasks handler called for project:', project.id);
     if (onViewTasks) {
+      console.log('ProjectCard: Calling onViewTasks handler');
       onViewTasks();
     } else {
       console.warn('ProjectCard: onViewTasks not provided');
@@ -74,6 +81,7 @@ const ProjectCard = ({ project, onViewTasks, onCreateTask, onDeleted }: ProjectC
   const handleCreateTask = () => {
     console.log('ProjectCard: Create task handler called for project:', project.id);
     if (onCreateTask) {
+      console.log('ProjectCard: Calling onCreateTask handler');
       onCreateTask();
     } else {
       console.warn('ProjectCard: onCreateTask not provided');
@@ -82,7 +90,7 @@ const ProjectCard = ({ project, onViewTasks, onCreateTask, onDeleted }: ProjectC
 
   return (
     <>
-      <Card className="overflow-hidden">
+      <Card className="overflow-hidden relative z-10">
         <ProjectCardHeader 
           project={project} 
           onDeleteClick={handleDeleteClick}
