@@ -37,8 +37,9 @@ export const useTaskCard = (task: Task) => {
 
   const handleDeleteTask = async (taskId: string) => {
     try {
+      console.log('TaskCard: Deleting task', taskId);
       await deleteTask(taskId);
-      toast.success('Task deleted successfully');
+      // Toast is handled in the deleteTask function
     } catch (error) {
       console.error('Error deleting task:', error);
       toast.error('Failed to delete task');

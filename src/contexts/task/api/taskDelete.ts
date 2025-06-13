@@ -1,45 +1,69 @@
+
 import { Task } from '@/types';
 import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { validateUserOrganization } from '@/utils/organizationHelpers';
 
 export const deleteTask = async (
   taskId: string,
-  user: { id: string; organization_id?: string },
+  user: { id: string; organizationId?: string; organization_id?: string },
   tasks: Task[],
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>,
   projects: any[],
   setProjects: React.Dispatch<React.SetStateAction<any[]>>
 ): Promise<void> => {
   try {
-    if (!validateUserOrganization(user)) {
+    console.log('Deleting task:', taskId, 'for user:', user);
+    
+    if (!user?.id) {
+      console.error('User ID is required for task deletion');
+      toast.error('User must be logged in to delete tasks');
       return;
     }
 
+    // Handle both property naming conventions
+    const organizationId = user.organizationId || user.organization_id;
+    
+    if (!organizationId) {
+      console.error('User must belong to an organization to delete tasks');
+      toast.error('User must belong to an organization to delete tasks');
+      return;
+    }
+
+    console.log(`Attempting to delete task ${taskId} from organization ${organizationId}`);
+
+    // Delete the task from the database with organization check
     const { error } = await supabase
       .from('tasks')
       .delete()
       .eq('id', taskId)
-      .eq('organization_id', user.organization_id!);
+      .eq('organization_id', organizationId);
 
     if (error) {
-      console.error('Error deleting task:', error);
-      toast.error('Failed to delete task');
+      console.error('Error deleting task from database:', error);
+      toast.error('Failed to delete task: ' + error.message);
       return;
     }
 
-    setTasks(tasks.filter((task) => task.id !== taskId));
+    console.log(`Task ${taskId} deleted successfully from database`);
 
+    // Update local state - remove from tasks array
+    setTasks(prevTasks => {
+      const filteredTasks = prevTasks.filter(task => task.id !== taskId);
+      console.log(`Removed task from local tasks. Before: ${prevTasks.length}, After: ${filteredTasks.length}`);
+      return filteredTasks;
+    });
+
+    // Update projects state if task was part of a project
     setProjects((prevProjects) =>
       prevProjects.map((project) => ({
         ...project,
-        tasks: project.tasks.filter((task) => task.id !== taskId),
+        tasks: project.tasks.filter((task: Task) => task.id !== taskId),
       }))
     );
 
     toast.success('Task deleted successfully!');
   } catch (error) {
-    console.error('Error deleting task:', error);
+    console.error('Error in deleteTask:', error);
     toast.error('Failed to delete task');
   }
 };

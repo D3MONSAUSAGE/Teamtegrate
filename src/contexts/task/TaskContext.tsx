@@ -1,202 +1,125 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Task, Project, User, TaskStatus, DailyScore } from '@/types';
-import { useAuth } from '@/contexts/AuthContext';
+import React, {
+  createContext,
+  useState,
+  useEffect,
+  useContext,
+  useCallback,
+} from 'react';
+import { Task, TaskStatus, User } from '@/types';
 import { fetchUserTasks } from './taskApi';
-import { addTask } from './api/taskCreate';
-import { updateTask } from './api/taskUpdate';
-import { updateTaskStatus } from './api/taskStatus';
-import { deleteTask } from './api/taskDelete';
-import { assignTaskToUser } from './operations/assignment/assignTaskToUser';
-import { assignTaskToProject } from './operations/assignment/assignTaskToProject';
-import { addCommentToTask } from './operations/taskContent';
+import { addTask as addTaskAPI } from './api/taskCreate';
+import { deleteTask as deleteTaskAPI } from './api/taskDelete';
+import { updateTaskStatus as updateTaskStatusAPI } from './api/taskUpdate';
+import { useAuth } from '@/contexts/AuthContext';
 import { useProjects } from '@/hooks/useProjects';
+import { toast } from '@/components/ui/sonner';
 
-interface TaskContextType {
+interface TaskContextProps {
   tasks: Task[];
-  projects: Project[];
-  dailyScore: DailyScore;
   isLoading: boolean;
-  refreshTasks: () => Promise<void>;
-  refreshProjects: () => Promise<void>;
   addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
-  updateTask: (taskId: string, updates: Partial<Task>) => Promise<void>;
   updateTaskStatus: (taskId: string, status: TaskStatus) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
-  assignTaskToUser: (taskId: string, userId: string, userName: string) => Promise<void>;
-  assignTaskToProject: (taskId: string, projectId: string) => Promise<void>;
-  addCommentToTask: (taskId: string, comment: string) => Promise<void>;
-  updateProject: (projectId: string, updates: Partial<Project>) => Promise<void>;
-  deleteProject: (projectId: string) => Promise<void>;
+  setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
 }
 
-const TaskContext = createContext<TaskContextType | undefined>(undefined);
+const TaskContext = createContext<TaskContextProps | undefined>(undefined);
 
-interface TaskProviderProps {
-  children: ReactNode;
-}
+export const useTask = (): TaskContextProps => {
+  const context = useContext(TaskContext);
+  if (!context) {
+    throw new Error('useTask must be used within a TaskProvider');
+  }
+  return context;
+};
 
-export const TaskProvider: React.FC<TaskProviderProps> = ({ children }) => {
-  const { user } = useAuth();
-  const { projects: contextProjects, refetch: refetchProjects } = useProjects();
+const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [dailyScore, setDailyScore] = useState<DailyScore>({
-    completedTasks: 0,
-    totalTasks: 0,
-    percentage: 0,
-    date: new Date(),
-  });
+  const [isLoading, setIsLoading] = useState(false);
+  const { user } = useAuth();
+  const { projects, setProjects } = useProjects();
 
-  // Sync projects from useProjects hook
   useEffect(() => {
-    if (contextProjects) {
-      setProjects(contextProjects);
-    }
-  }, [contextProjects]);
+    const loadTasks = async () => {
+      if (user) {
+        setIsLoading(true);
+        try {
+          await fetchUserTasks(user, setTasks);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
 
-  // Calculate daily score whenever tasks change
-  useEffect(() => {
-    if (tasks.length > 0) {
-      const today = new Date().toDateString();
-      const todaysTasks = tasks.filter(task => 
-        new Date(task.createdAt).toDateString() === today
-      );
-      const completedToday = todaysTasks.filter(task => task.status === 'Completed').length;
-      const totalToday = todaysTasks.length;
-      
-      setDailyScore({
-        completedTasks: completedToday,
-        totalTasks: totalToday,
-        percentage: totalToday > 0 ? (completedToday / totalToday) * 100 : 0,
-        date: new Date(),
-      });
-    }
-  }, [tasks]);
-
-  // Fetch tasks when user changes
-  useEffect(() => {
-    if (user) {
-      console.log('TaskProvider: User available, fetching tasks...', { userId: user.id, orgId: user.organizationId });
-      loadTasks();
-    } else {
-      console.log('TaskProvider: No user available, clearing tasks');
-      setTasks([]);
-      setIsLoading(false);
-    }
+    loadTasks();
   }, [user]);
 
-  const loadTasks = async () => {
+  const addTask = async (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
     if (!user) {
-      console.log('TaskProvider: No user for loadTasks');
+      toast.error('You must be logged in to add tasks');
       return;
     }
 
     try {
-      setIsLoading(true);
-      console.log('TaskProvider: Starting to fetch tasks...');
-      await fetchUserTasks(user, setTasks);
-      console.log('TaskProvider: Successfully fetched tasks');
+      await addTaskAPI(task, user, tasks, setTasks, projects, setProjects);
     } catch (error) {
-      console.error('TaskProvider: Error loading tasks:', error);
-    } finally {
-      setIsLoading(false);
+      console.error('Error adding task:', error);
+      toast.error('Failed to add task');
     }
   };
 
-  const refreshTasks = async () => {
-    console.log('TaskProvider: Refreshing tasks...');
-    await loadTasks();
-  };
+  // Updated deleteTask function to handle user object properly
+  const deleteTask = async (taskId: string) => {
+    if (!user) {
+      toast.error('You must be logged in to delete tasks');
+      return;
+    }
 
-  const refreshProjects = async () => {
-    console.log('TaskProvider: Refreshing projects...');
     try {
-      await refetchProjects();
+      console.log('TaskContext: Deleting task', taskId, 'for user:', user);
+      
+      // Ensure user object has the correct property names for deletion
+      const userForDeletion = {
+        id: user.id,
+        organizationId: user.organizationId,
+        organization_id: user.organizationId // Provide both for compatibility
+      };
+
+      await deleteTaskAPI(taskId, userForDeletion, tasks, setTasks, projects, setProjects);
     } catch (error) {
-      console.error('TaskProvider: Error refreshing projects:', error);
+      console.error('Error in TaskContext deleteTask:', error);
+      toast.error('Failed to delete task');
     }
   };
 
-  // Wrapper functions that pass the required parameters
-  const handleAddTask = async (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
-    if (!user) return;
-    await addTask(task, user, tasks, setTasks, projects, setProjects);
+  const updateTaskStatus = async (taskId: string, status: TaskStatus) => {
+    if (!user) {
+      toast.error('You must be logged in to update tasks');
+      return;
+    }
+
+    try {
+      await updateTaskStatusAPI(taskId, status, user, tasks, setTasks);
+    } catch (error) {
+      console.error('Error updating task status:', error);
+      toast.error('Failed to update task status');
+    }
   };
 
-  const handleUpdateTask = async (taskId: string, updates: Partial<Task>) => {
-    if (!user) return;
-    await updateTask(taskId, updates, user, tasks, setTasks, projects, setProjects);
-  };
-
-  const handleUpdateTaskStatus = async (taskId: string, status: TaskStatus) => {
-    if (!user) return;
-    await updateTaskStatus(taskId, status, user, tasks, setTasks, projects, setProjects, setDailyScore);
-  };
-
-  const handleDeleteTask = async (taskId: string) => {
-    if (!user) return;
-    await deleteTask(taskId, user, tasks, setTasks, projects, setProjects);
-  };
-
-  const handleAssignTaskToUser = async (taskId: string, userId: string, userName: string) => {
-    if (!user) return;
-    await assignTaskToUser(taskId, userId, userName, user, tasks, setTasks, projects, setProjects);
-  };
-
-  const handleAssignTaskToProject = async (taskId: string, projectId: string) => {
-    if (!user) return;
-    await assignTaskToProject(taskId, projectId, user, tasks, setTasks, projects, setProjects);
-  };
-
-  const handleAddCommentToTask = async (taskId: string, comment: string) => {
-    if (!user) return;
-    await addCommentToTask(taskId, {
-      userId: user.id,
-      userName: user.name || 'User',
-      text: comment,
-      organizationId: user.organizationId
-    }, tasks, setTasks, projects, setProjects);
-  };
-
-  // Project operations - using the useProjects hook for actual operations
-  const handleUpdateProject = async (projectId: string, updates: Partial<Project>) => {
-    console.log('TaskProvider: Update project not implemented in context - use useProjectOperations hook');
-  };
-
-  const handleDeleteProject = async (projectId: string) => {
-    console.log('TaskProvider: Delete project not implemented in context - use useProjectOperations hook');
-  };
-
-  const value: TaskContextType = {
+  const contextValue: TaskContextProps = {
     tasks,
-    projects,
-    dailyScore,
     isLoading,
-    refreshTasks,
-    refreshProjects,
-    addTask: handleAddTask,
-    updateTask: handleUpdateTask,
-    updateTaskStatus: handleUpdateTaskStatus,
-    deleteTask: handleDeleteTask,
-    assignTaskToUser: handleAssignTaskToUser,
-    assignTaskToProject: handleAssignTaskToProject,
-    addCommentToTask: handleAddCommentToTask,
-    updateProject: handleUpdateProject,
-    deleteProject: handleDeleteProject,
+    addTask,
+    updateTaskStatus,
+    deleteTask,
+    setTasks,
   };
 
   return (
-    <TaskContext.Provider value={value}>
+    <TaskContext.Provider value={contextValue}>
       {children}
     </TaskContext.Provider>
   );
 };
 
-export const useTask = () => {
-  const context = useContext(TaskContext);
-  if (context === undefined) {
-    throw new Error('useTask must be used within a TaskProvider');
-  }
-  return context;
-};
+export default TaskProvider;
