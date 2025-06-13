@@ -1,6 +1,6 @@
 
 import React, { useEffect } from 'react';
-import { Task } from '@/types';
+import { Task, TaskStatus } from '@/types';
 import CreateTaskDialogEnhanced from '../CreateTaskDialogEnhanced';
 import ProjectTasksContent from './project-view/ProjectTasksContent';
 import { useProjectTasksView } from './project-view/useProjectTasksView';
@@ -98,11 +98,11 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
     handleSearchChange(mockEvent);
   };
 
-  // Create a wrapper function that properly handles the async nature and returns void
-  const handleTaskStatusChangeWrapper = (taskId: string, status: string) => {
+  // Create a wrapper function with explicit typing to ensure it returns void
+  const handleTaskStatusChangeWrapper: (taskId: string, status: string) => void = (taskId: string, status: string) => {
     // Call the async function but don't return the promise
     // This ensures the wrapper returns void while still executing the async operation
-    handleTaskStatusChange(taskId, status as any).catch(error => {
+    handleTaskStatusChange(taskId, status as TaskStatus).catch(error => {
       console.error('Error updating task status:', error);
     });
   };
