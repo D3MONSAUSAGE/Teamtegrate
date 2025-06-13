@@ -6,7 +6,7 @@ import React, {
   useCallback,
 } from 'react';
 import { Task, TaskStatus, User, Project, DailyScore } from '@/types';
-import { fetchUserTasks } from './taskApi';
+import { fetchTasks } from './api/taskFetch'; // Use the correct fetch function
 import { addTask as addTaskAPI } from './api/taskCreate';
 import { deleteTask as deleteTaskAPI } from './api/taskDelete';
 import { updateTask as updateTaskAPI, updateTaskStatus as updateTaskStatusAPI } from './api/taskUpdate';
@@ -53,7 +53,16 @@ const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
       if (user) {
         setIsLoading(true);
         try {
-          await fetchUserTasks(user, setTasks);
+          // Use the same fetch function that works for other parts of the app
+          console.log('TaskContext: Loading tasks for user:', user);
+          const simpleUser = {
+            id: user.id,
+            organization_id: user.organizationId
+          };
+          await fetchTasks(simpleUser, setTasks);
+        } catch (error) {
+          console.error('TaskContext: Error loading tasks:', error);
+          toast.error('Failed to load tasks');
         } finally {
           setIsLoading(false);
         }
