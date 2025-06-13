@@ -10,32 +10,12 @@ import { useNavigate } from 'react-router-dom';
 
 const ProjectsPage = () => {
   const { user } = useAuth();
-  const { projects, isLoading, refreshProjects } = useProjects();
+  const { projects, isLoading, refetch } = useProjects();
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const navigate = useNavigate();
 
-  // Convert Projects to FlatProjects for compatibility with ProjectCard
-  const flatProjects = projects.map(project => ({
-    id: project.id,
-    title: project.title,
-    description: project.description,
-    status: project.status,
-    managerId: project.managerId,
-    organizationId: project.organizationId || user?.organizationId || '',
-    createdAt: project.createdAt.toISOString(),
-    updatedAt: project.updatedAt.toISOString(),
-    startDate: project.startDate,
-    endDate: project.endDate,
-    teamMemberIds: project.teamMemberIds || [],
-    budget: project.budget,
-    budgetSpent: project.budgetSpent || 0,
-    isCompleted: project.isCompleted,
-    tasksCount: project.tasksCount,
-    tags: project.tags || []
-  }));
-
-  const filteredProjects = flatProjects.filter(project =>
+  const filteredProjects = projects.filter(project =>
     project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     project.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -49,8 +29,8 @@ const ProjectsPage = () => {
   };
 
   const handleProjectCreated = () => {
-    // Refresh projects when a new one is created
-    refreshProjects();
+    console.log('Project created, refreshing list...');
+    refetch();
   };
 
   if (isLoading) {
@@ -175,14 +155,10 @@ const ProjectsPage = () => {
                     <div className="relative">
                       <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 scale-110" />
                       <ProjectCard
-                        project={{
-                          ...project,
-                          createdAt: new Date(project.createdAt),
-                          updatedAt: new Date(project.updatedAt)
-                        }}
+                        project={project}
                         onViewTasks={() => handleViewTasks(project.id)}
                         onCreateTask={() => handleCreateTask(project.id)}
-                        onDeleted={refreshProjects}
+                        onDeleted={refetch}
                       />
                     </div>
                   </div>

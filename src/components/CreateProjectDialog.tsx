@@ -26,8 +26,7 @@ import { CalendarIcon, Sparkles, DollarSign, Users, Calendar as CalendarIconLuci
 import { toast } from '@/components/ui/sonner';
 import MultiSelect from './MultiSelect';
 import { useAuth } from '@/contexts/AuthContext';
-import { Project } from '@/types';
-import { useTask } from '@/contexts/task';
+import { useProjectOperations } from '@/hooks/useProjectOperations';
 
 const FormSchema = z.object({
   title: z.string().min(2, {
@@ -64,70 +63,44 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
       budget: undefined,
     },
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const { user } = useAuth();
-  const { refreshProjects } = useTask();
-
-  const addProject = async (projectData: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>) => {
-    if (!user?.organizationId) {
-      toast.error('Organization context required');
-      return;
-    }
-
-    try {
-      const response = await fetch('/api/projects', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(projectData),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      toast.success('Project created successfully');
-      await refreshProjects();
-    } catch (error) {
-      console.error('Error adding project:', error);
-      toast.error('Failed to create project');
-    }
-  };
+  const { createProject, isLoading } = useProjectOperations();
 
   const onSubmit = async (data: any) => {
     try {
-      setIsSubmitting(true);
-      
-      const projectData: Omit<Project, 'id' | 'createdAt' | 'updatedAt'> = {
+      if (!user?.organizationId) {
+        toast.error('Organization context required');
+        return;
+      }
+
+      const projectData = {
         title: data.title,
-        description: data.description,
+        description: data.description || '',
         startDate: data.startDate,
         endDate: data.endDate,
-        managerId: user?.id || '',
+        managerId: user.id,
         budget: data.budget || 0,
         budgetSpent: 0,
         teamMemberIds: selectedMembers,
         isCompleted: false,
-        status: 'To Do',
+        status: 'To Do' as const,
         tasksCount: 0,
         tags: [],
-        organizationId: user?.organizationId || ''
+        organizationId: user.organizationId
       };
 
-      await addProject(projectData);
+      const newProject = await createProject(projectData);
       
-      toast.success('Project created successfully!');
-      reset();
-      setSelectedMembers([]);
-      onOpenChange(false);
-      onProjectCreated?.();
+      if (newProject) {
+        reset();
+        setSelectedMembers([]);
+        onOpenChange(false);
+        onProjectCreated?.();
+      }
     } catch (error) {
       console.error('Error creating project:', error);
       toast.error('Failed to create project');
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -304,16 +277,16 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
               type="button" 
               variant="outline" 
               onClick={() => onOpenChange(false)}
-              disabled={isSubmitting}
+              disabled={isLoading}
             >
               Cancel
             </Button>
             <Button 
               type="submit" 
-              disabled={isSubmitting}
+              disabled={isLoading}
               className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90"
             >
-              {isSubmitting ? (
+              {isLoading ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin mr-2" />
                   Creating...
