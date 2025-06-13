@@ -29,8 +29,7 @@ export const fetchTasks = async (
       return;
     }
     
-    // With cleaned RLS policies, we can simply select all tasks
-    // The policies will automatically filter by organization
+    // Fetch tasks with proper organization filtering
     console.log('Executing tasks query...');
     const { data: tasksData, error: tasksError } = await supabase
       .from('tasks')
@@ -54,7 +53,25 @@ export const fetchTasks = async (
       console.error('Error fetching comments:', commentsError);
     }
 
-    // Manual transformation with explicit types
+    // Fetch user information for proper assignee display
+    const { data: usersData, error: usersError } = await supabase
+      .from('users')
+      .select('id, name, email')
+      .eq('organization_id', user.organization_id);
+
+    if (usersError) {
+      console.error('Error fetching users:', usersError);
+    }
+
+    // Create user lookup map
+    const userMap = new Map();
+    if (usersData) {
+      usersData.forEach((userData: any) => {
+        userMap.set(userData.id, userData);
+      });
+    }
+
+    // Manual transformation with explicit types and proper assignee handling
     const transformedTasks: Task[] = [];
     
     if (tasksData) {
@@ -72,7 +89,41 @@ export const fetchTasks = async (
           taskStatus = dbTask.status;
         }
 
-        // Build task with explicit type annotations
+        // Handle single assignee with proper user lookup
+        let assignedToName = undefined;
+        if (dbTask.assigned_to_id) {
+          // First try to get name from assigned_to_names array
+          if (dbTask.assigned_to_names && dbTask.assigned_to_names.length > 0) {
+            assignedToName = dbTask.assigned_to_names[0];
+          } else {
+            // Fallback to user lookup
+            const assignedUser = userMap.get(dbTask.assigned_to_id);
+            if (assignedUser) {
+              assignedToName = assignedUser.name || assignedUser.email;
+            }
+          }
+        }
+
+        // Handle multiple assignees with proper user lookup
+        let assignedToNames: string[] = [];
+        let assignedToIds: string[] = [];
+        
+        if (dbTask.assigned_to_ids && Array.isArray(dbTask.assigned_to_ids) && dbTask.assigned_to_ids.length > 0) {
+          assignedToIds = dbTask.assigned_to_ids.map((id: any) => String(id));
+          
+          // Get names for multiple assignees
+          if (dbTask.assigned_to_names && Array.isArray(dbTask.assigned_to_names) && dbTask.assigned_to_names.length > 0) {
+            assignedToNames = dbTask.assigned_to_names.map((name: any) => String(name));
+          } else {
+            // Fallback to user lookup for multiple assignees
+            assignedToNames = assignedToIds.map(id => {
+              const assignedUser = userMap.get(id);
+              return assignedUser ? (assignedUser.name || assignedUser.email) : 'Unknown User';
+            });
+          }
+        }
+
+        // Build task with explicit type annotations and proper assignee data
         const task: Task = {
           id: String(dbTask.id || ''),
           userId: String(dbTask.user_id || user.id),
@@ -85,13 +136,9 @@ export const fetchTasks = async (
           createdAt: parseDate(dbTask.created_at),
           updatedAt: parseDate(dbTask.updated_at),
           assignedToId: dbTask.assigned_to_id ? String(dbTask.assigned_to_id) : undefined,
-          assignedToName: dbTask.assigned_to_names?.[0] ? String(dbTask.assigned_to_names[0]) : undefined,
-          assignedToIds: Array.isArray(dbTask.assigned_to_ids) 
-            ? dbTask.assigned_to_ids.map((id: any) => String(id)) 
-            : [],
-          assignedToNames: Array.isArray(dbTask.assigned_to_names) 
-            ? dbTask.assigned_to_names.map((name: any) => String(name)) 
-            : [],
+          assignedToName: assignedToName,
+          assignedToIds: assignedToIds,
+          assignedToNames: assignedToNames,
           tags: [],
           comments: commentsData ? commentsData
             .filter((comment: any) => comment.task_id === dbTask.id)
@@ -110,7 +157,7 @@ export const fetchTasks = async (
       }
     }
 
-    console.log(`Successfully processed ${transformedTasks.length} tasks for display`);
+    console.log(`Successfully processed ${transformedTasks.length} tasks for display with assignee info`);
     setTasks(transformedTasks);
   } catch (error) {
     console.error('Error in fetchTasks:', error);

@@ -6,31 +6,43 @@ interface TaskCardMetadataProps {
   deadline: Date;
   assignedToName?: string;
   assignedToId?: string;
+  assignedToNames?: string[];
+  assignedToIds?: string[];
 }
 
 const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({
   deadline,
   assignedToName,
   assignedToId,
+  assignedToNames,
+  assignedToIds,
 }) => {
-  // Improved logic for display name
-  const getDisplayName = () => {
-    // If we have a proper name that's not empty and not the same as the ID
+  // Improved logic for display name with multiple assignee support
+  const getDisplayInfo = () => {
+    // Handle multiple assignees first
+    if (assignedToNames && assignedToNames.length > 0) {
+      if (assignedToNames.length === 1) {
+        return { displayName: assignedToNames[0], isAssigned: true };
+      } else {
+        return { displayName: `${assignedToNames[0]} +${assignedToNames.length - 1} more`, isAssigned: true };
+      }
+    }
+    
+    // Handle single assignee
     if (assignedToName && assignedToName.trim() !== '' && assignedToName !== assignedToId) {
-      return assignedToName;
+      return { displayName: assignedToName, isAssigned: true };
     }
     
     // If we have an assignedToId but no proper name, show "Assigned User"
     if (assignedToId && assignedToId.trim() !== '') {
-      return 'Assigned User';
+      return { displayName: 'Assigned User', isAssigned: true };
     }
     
     // Otherwise, truly unassigned
-    return 'Unassigned';
+    return { displayName: 'Unassigned', isAssigned: false };
   };
 
-  const displayName = getDisplayName();
-  const isAssigned = assignedToId && assignedToId.trim() !== '';
+  const { displayName, isAssigned } = getDisplayInfo();
 
   return (
     <div className="flex items-center justify-between pt-1 md:pt-2">

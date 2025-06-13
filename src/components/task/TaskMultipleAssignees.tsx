@@ -17,14 +17,17 @@ const TaskMultipleAssignees: React.FC<TaskMultipleAssigneesProps> = ({
   maxDisplay = 3,
   variant = 'card'
 }) => {
-  if (assignedToNames.length === 0) {
+  // Filter out empty or invalid names
+  const validNames = assignedToNames.filter(name => name && name.trim() !== '');
+  
+  if (validNames.length === 0) {
     return <span className="text-gray-500 text-sm">Unassigned</span>;
   }
 
   if (variant === 'detail') {
     return (
       <div className="flex flex-wrap gap-1">
-        {assignedToNames.map((name, index) => (
+        {validNames.map((name, index) => (
           <Badge key={assignedToIds[index] || index} variant="secondary" className="text-xs">
             {name}
           </Badge>
@@ -34,8 +37,8 @@ const TaskMultipleAssignees: React.FC<TaskMultipleAssigneesProps> = ({
   }
 
   // Card variant - compact display
-  const displayNames = assignedToNames.slice(0, maxDisplay);
-  const remainingCount = assignedToNames.length - maxDisplay;
+  const displayNames = validNames.slice(0, maxDisplay);
+  const remainingCount = validNames.length - maxDisplay;
 
   return (
     <div className="flex items-center gap-1">

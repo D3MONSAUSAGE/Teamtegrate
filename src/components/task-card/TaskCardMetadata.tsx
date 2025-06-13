@@ -22,7 +22,11 @@ const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({
   assignedToIds,
   isOverdue,
 }) => {
-  const hasAssignees = (assignedToNames && assignedToNames.length > 0) || assignedToName;
+  // Check if task has assignees with improved logic
+  const hasMultipleAssignees = assignedToNames && assignedToNames.length > 1;
+  const hasSingleAssignee = assignedToName && assignedToName.trim() !== '' && assignedToName !== assignedToId;
+  const hasAssigneeId = assignedToId && assignedToId.trim() !== '';
+  const hasAssignees = hasMultipleAssignees || hasSingleAssignee || hasAssigneeId;
   
   return (
     <div className="space-y-3 text-sm">
@@ -41,21 +45,30 @@ const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({
         
         {hasAssignees && (
           <div className="pl-1">
-            {assignedToNames && assignedToNames.length > 0 ? (
+            {hasMultipleAssignees ? (
               <TaskMultipleAssignees
                 assignedToNames={assignedToNames}
                 assignedToIds={assignedToIds}
                 variant="detail"
                 maxDisplay={2}
               />
-            ) : assignedToName ? (
+            ) : hasSingleAssignee ? (
               <div className="flex items-center gap-2">
                 <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center">
                   <span className="text-xs font-medium text-primary">
-                    {assignedToName.substring(0, 1).toUpperCase()}
+                    {assignedToName!.substring(0, 1).toUpperCase()}
                   </span>
                 </div>
                 <span className="text-sm font-medium">{assignedToName}</span>
+              </div>
+            ) : hasAssigneeId ? (
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center">
+                  <span className="text-xs font-medium text-primary">
+                    ?
+                  </span>
+                </div>
+                <span className="text-sm font-medium text-muted-foreground">Assigned User</span>
               </div>
             ) : null}
           </div>
