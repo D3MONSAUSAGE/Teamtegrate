@@ -6,7 +6,7 @@ import { useProjectAccess } from './hooks/useProjectAccess';
 import { useProjectTasksFilters } from './hooks/useProjectTasksFilters';
 import { useProjectTasksActions } from './hooks/useProjectTasksActions';
 import { useProjectTeamMembers } from '@/hooks/useProjectTeamMembers';
-import { Task, TaskStatus } from '@/types';
+import { Task } from '@/types';
 
 export const useProjectTasksView = (projectId: string | null) => {
   console.log('useProjectTasksView: Called with projectId:', projectId);
@@ -52,26 +52,6 @@ export const useProjectTasksView = (projectId: string | null) => {
   // Fetch team members for the project
   const { teamMembers, isLoading: isLoadingTeamMembers, error: teamMembersError } = useProjectTeamMembers(projectId);
 
-  // Create a properly typed wrapper function that always returns Promise<void>
-  const wrappedUpdateTaskStatus = useMemo(() => {
-    return async (taskId: string, status: TaskStatus): Promise<void> => {
-      console.log('useProjectTasksView: Updating task status:', taskId, status);
-      try {
-        // Call the original updateTaskStatus and handle both void and Promise returns
-        const result = updateTaskStatus(taskId, status);
-        if (result && typeof result.then === 'function') {
-          // If it returns a Promise, await it
-          await result;
-        }
-        // Always return a resolved Promise
-        return Promise.resolve();
-      } catch (error) {
-        console.error('Error in wrappedUpdateTaskStatus:', error);
-        return Promise.reject(error);
-      }
-    };
-  }, [updateTaskStatus]);
-
   const {
     isRefreshing,
     isCreateTaskOpen,
@@ -82,7 +62,7 @@ export const useProjectTasksView = (projectId: string | null) => {
     handleManualRefresh,
     handleTaskStatusChange,
     handleTaskDialogComplete
-  } = useProjectTasksActions({ updateTaskStatus: wrappedUpdateTaskStatus });
+  } = useProjectTasksActions({ updateTaskStatus });
 
   console.log('useProjectTasksView: Returning data:', {
     isLoading,
