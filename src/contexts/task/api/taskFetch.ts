@@ -29,6 +29,17 @@ export const fetchTasks = async (
       return;
     }
     
+    // Check current auth state
+    const { data: { session } } = await supabase.auth.getSession();
+    console.log('Current auth session:', { 
+      userId: session?.user?.id, 
+      isAuthenticated: !!session?.user 
+    });
+    
+    // Test the organization function directly
+    const { data: orgId, error: orgError } = await supabase.rpc('get_current_user_organization_id');
+    console.log('Organization ID from function:', { orgId, orgError });
+    
     // Fetch tasks with proper organization filtering
     console.log('Executing tasks query...');
     const { data: tasksData, error: tasksError } = await supabase
@@ -43,6 +54,21 @@ export const fetchTasks = async (
     }
 
     console.log(`Fetched ${tasksData?.length || 0} tasks from database:`, tasksData);
+    
+    // If no tasks are returned but we expected some, log additional debug info
+    if (!tasksData || tasksData.length === 0) {
+      console.warn('No tasks returned from database. This could indicate:');
+      console.warn('1. No tasks exist for this organization');
+      console.warn('2. RLS policies are blocking access');
+      console.warn('3. User organization_id is not properly set');
+      
+      // Check if tasks exist at all (this will also be blocked by RLS if there's an issue)
+      const { count, error: countError } = await supabase
+        .from('tasks')
+        .select('*', { count: 'exact', head: true });
+      
+      console.log('Total task count check:', { count, countError });
+    }
     
     // Fetch comments with explicit column selection
     const { data: commentsData, error: commentsError } = await supabase
@@ -159,6 +185,14 @@ export const fetchTasks = async (
 
     console.log(`Successfully processed ${transformedTasks.length} tasks for display with assignee info`);
     setTasks(transformedTasks);
+    
+    // Show success message if tasks were loaded
+    if (transformedTasks.length > 0) {
+      console.log('Tasks loaded successfully');
+    } else {
+      console.log('No tasks found for this organization');
+    }
+    
   } catch (error) {
     console.error('Error in fetchTasks:', error);
     toast.error('Failed to load tasks');
