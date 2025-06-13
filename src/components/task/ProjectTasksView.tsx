@@ -23,7 +23,7 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
     return (
       <ProjectTasksError 
         errorMessage="Failed to load project tasks data"
-        onRefresh={() => window.location.reload()}
+        onRefresh={async () => window.location.reload()}
         isRefreshing={false}
       />
     );
