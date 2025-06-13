@@ -58,6 +58,7 @@ function App() {
                     <Route path="tasks/create" element={<TasksPage />} />
                     <Route path="projects" element={<ProjectsPage />} />
                     <Route path="projects/:projectId" element={<ProjectsPage />} />
+                    <Route path="projects/:projectId/tasks" element={<ProjectTasksPage />} />
                     <Route path="focus" element={<FocusZonePage />} />
                     <Route path="calendar" element={<CalendarPage />} />
                     <Route path="reports" element={<ReportsPage />} />
