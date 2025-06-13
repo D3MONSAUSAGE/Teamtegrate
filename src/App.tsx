@@ -20,6 +20,7 @@ import NotebookPage from '@/pages/NotebookPage';
 import SettingsPage from '@/pages/SettingsPage';
 import ProfilePage from '@/pages/ProfilePage';
 import AdminPage from '@/pages/AdminPage';
+import FocusZonePage from '@/pages/FocusZonePage';
 import { Toaster } from '@/components/ui/sonner';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import './App.css';
@@ -64,6 +65,7 @@ function App() {
                     <Route path="tasks/create" element={<TasksPage />} />
                     <Route path="projects" element={<ProjectsPage />} />
                     <Route path="projects/:projectId" element={<ProjectsPage />} />
+                    <Route path="focus" element={<FocusZonePage />} />
                     <Route path="calendar" element={<CalendarPage />} />
                     <Route path="reports" element={<ReportsPage />} />
                     <Route path="chat" element={<ChatPage />} />
