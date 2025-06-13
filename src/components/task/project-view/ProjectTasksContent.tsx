@@ -21,7 +21,7 @@ interface ProjectTasksContentProps {
   onSortByChange: (sortBy: string) => void;
   onCreateTask: () => void;
   onEditTask: (task: Task) => void;
-  onTaskStatusChange: (taskId: string, status: TaskStatus) => void;
+  onTaskStatusChange: (taskId: string, status: TaskStatus) => Promise<void>;
   onRefresh: () => void;
   isRefreshing: boolean;
 }

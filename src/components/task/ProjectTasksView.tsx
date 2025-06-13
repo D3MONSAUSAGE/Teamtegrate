@@ -98,16 +98,6 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
     handleSearchChange(mockEvent);
   };
 
-  // Create a wrapper function that truly returns void by not returning anything
-  const handleTaskStatusChangeWrapper = (taskId: string, status: string): void => {
-    // Call the async function and handle errors, but explicitly return nothing
-    handleTaskStatusChange(taskId, status as TaskStatus).catch(error => {
-      console.error('Error updating task status:', error);
-    });
-    // Explicitly return void to ensure TypeScript understands this function returns void
-    return;
-  };
-
   console.log('ProjectTasksView: Rendering content with project:', project.title);
 
   return (
@@ -128,7 +118,7 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
         isRefreshing={isRefreshing}
         onEditTask={handleEditTask}
         onCreateTask={handleCreateTask}
-        onTaskStatusChange={handleTaskStatusChangeWrapper}
+        onTaskStatusChange={handleTaskStatusChange}
       />
       
       <CreateTaskDialogEnhanced

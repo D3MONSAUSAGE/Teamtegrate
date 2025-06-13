@@ -8,7 +8,7 @@ interface ProjectTasksGridProps {
   inProgressTasks: Task[];
   completedTasks: Task[];
   onEditTask: (task: Task) => void;
-  onStatusChange: (taskId: string, status: TaskStatus) => void;
+  onStatusChange: (taskId: string, status: TaskStatus) => Promise<void>;
   teamMembers: User[];
   isLoadingTeamMembers: boolean;
 }
@@ -17,7 +17,7 @@ interface ProjectTasksGridProps {
 const SimpleTaskCard: React.FC<{
   task: Task;
   onEdit: () => void;
-  onStatusChange: (status: TaskStatus) => void;
+  onStatusChange: (status: TaskStatus) => Promise<void>;
 }> = ({ task, onEdit, onStatusChange }) => {
   return (
     <div className="p-3 border rounded-lg bg-card hover:shadow-md transition-shadow cursor-pointer" onClick={onEdit}>
