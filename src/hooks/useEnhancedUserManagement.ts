@@ -65,9 +65,17 @@ export const useEnhancedUserManagement = () => {
       if (error) throw error;
 
       return data?.map(user => ({
-        ...user,
-        is_active: true, // For now, all users are active
-        last_activity: user.created_at
+        id: user.id || '',
+        name: user.name || '',
+        email: user.email || '',
+        role: (user.role || 'user') as UserRole,
+        organization_id: user.organization_id || '',
+        created_at: user.created_at || '',
+        assigned_tasks_count: user.assigned_tasks_count || 0,
+        completed_tasks_count: user.completed_tasks_count || 0,
+        role_level: user.role_level || 0,
+        is_active: true,
+        last_activity: user.created_at || ''
       })) || [];
     },
     enabled: !!currentUser?.organizationId && currentUser?.role === 'superadmin',
@@ -216,7 +224,7 @@ export const useEnhancedUserManagement = () => {
       .rpc('get_user_management_impact', { target_user_id: userId });
 
     if (error) throw error;
-    return data;
+    return data as UserImpactAnalysis;
   };
 
   // Validate role change
@@ -233,7 +241,7 @@ export const useEnhancedUserManagement = () => {
       });
 
     if (error) throw error;
-    return data;
+    return data as RoleChangeValidation;
   };
 
   // Log user management actions
