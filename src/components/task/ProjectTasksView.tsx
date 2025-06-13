@@ -98,6 +98,12 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
     handleSearchChange(mockEvent);
   };
 
+  // Create a wrapper function that doesn't return the promise to fix the type mismatch
+  const handleTaskStatusChangeWrapper = (taskId: string, status: string) => {
+    handleTaskStatusChange(taskId, status as any);
+    // Don't return the promise - this implicitly returns void
+  };
+
   console.log('ProjectTasksView: Rendering content with project:', project.title);
 
   return (
@@ -118,7 +124,7 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
         isRefreshing={isRefreshing}
         onEditTask={handleEditTask}
         onCreateTask={handleCreateTask}
-        onTaskStatusChange={handleTaskStatusChange}
+        onTaskStatusChange={handleTaskStatusChangeWrapper}
       />
       
       <CreateTaskDialogEnhanced
