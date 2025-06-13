@@ -8,6 +8,7 @@ import TeamStatsCards from '@/components/team/TeamStatsCards';
 import TeamPageHeader from '@/components/team/TeamPageHeader';
 import TeamPageContent from '@/components/team/TeamPageContent';
 import TeamDebugPanel from '@/components/team/TeamDebugPanel';
+import OrganizationHeader from '@/components/team/OrganizationHeader';
 import useTeamMembers from '@/hooks/useTeamMembers';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -60,6 +61,8 @@ const TeamPage = () => {
   
   return (
     <div className="p-3 sm:p-6">
+      <OrganizationHeader />
+      
       <TeamPageHeader
         onAddMember={() => setIsAddMemberOpen(true)}
         onRefresh={handleRefresh}

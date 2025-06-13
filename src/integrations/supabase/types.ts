@@ -1017,6 +1017,7 @@ export type Database = {
           id: string
           manager_id: string
           name: string
+          organization_id: string
           role: string
         }
         Insert: {
@@ -1025,6 +1026,7 @@ export type Database = {
           id?: string
           manager_id: string
           name: string
+          organization_id: string
           role: string
         }
         Update: {
@@ -1033,9 +1035,18 @@ export type Database = {
           id?: string
           manager_id?: string
           name?: string
+          organization_id?: string
           role?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "team_members_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       time_entries: {
         Row: {
