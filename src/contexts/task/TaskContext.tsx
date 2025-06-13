@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Task, Project, User, TaskStatus, DailyScore } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,6 +8,7 @@ import { updateTaskStatus } from './api/taskStatus';
 import { deleteTask } from './api/taskDelete';
 import { assignTaskToUser } from './operations/assignment/assignTaskToUser';
 import { assignTaskToProject } from './operations/assignment/assignTaskToProject';
+import { addCommentToTask } from './operations/taskContent';
 import { useProjects } from '@/hooks/useProjects';
 
 interface TaskContextType {
@@ -20,10 +20,11 @@ interface TaskContextType {
   refreshProjects: () => Promise<void>;
   addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
   updateTask: (taskId: string, updates: Partial<Task>) => Promise<void>;
-  updateTaskStatus: (taskId: string, status: TaskStatus) => void;
+  updateTaskStatus: (taskId: string, status: TaskStatus) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
   assignTaskToUser: (taskId: string, userId: string, userName: string) => Promise<void>;
   assignTaskToProject: (taskId: string, projectId: string) => Promise<void>;
+  addCommentToTask: (taskId: string, comment: string) => Promise<void>;
   updateProject: (projectId: string, updates: Partial<Project>) => Promise<void>;
   deleteProject: (projectId: string) => Promise<void>;
 }
@@ -128,9 +129,9 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({ children }) => {
     await updateTask(taskId, updates, user, tasks, setTasks, projects, setProjects);
   };
 
-  const handleUpdateTaskStatus = (taskId: string, status: TaskStatus) => {
+  const handleUpdateTaskStatus = async (taskId: string, status: TaskStatus) => {
     if (!user) return;
-    updateTaskStatus(taskId, status, user, tasks, setTasks, projects, setProjects, setDailyScore);
+    await updateTaskStatus(taskId, status, user, tasks, setTasks, projects, setProjects, setDailyScore);
   };
 
   const handleDeleteTask = async (taskId: string) => {
@@ -146,6 +147,16 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({ children }) => {
   const handleAssignTaskToProject = async (taskId: string, projectId: string) => {
     if (!user) return;
     await assignTaskToProject(taskId, projectId, user, tasks, setTasks, projects, setProjects);
+  };
+
+  const handleAddCommentToTask = async (taskId: string, comment: string) => {
+    if (!user) return;
+    await addCommentToTask(taskId, {
+      userId: user.id,
+      userName: user.name || 'User',
+      text: comment,
+      organizationId: user.organizationId
+    }, tasks, setTasks, projects, setProjects);
   };
 
   // Project operations - using the useProjects hook for actual operations
@@ -170,6 +181,7 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({ children }) => {
     deleteTask: handleDeleteTask,
     assignTaskToUser: handleAssignTaskToUser,
     assignTaskToProject: handleAssignTaskToProject,
+    addCommentToTask: handleAddCommentToTask,
     updateProject: handleUpdateProject,
     deleteProject: handleDeleteProject,
   };
