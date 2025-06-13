@@ -1,4 +1,5 @@
-import { Task } from '@/types';
+
+import { Task, TaskStatus } from '@/types';
 import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { validateUserOrganization } from '@/utils/organizationHelpers';
@@ -10,7 +11,7 @@ export const updateTask = async (
   tasks: Task[],
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>,
   projects: any[],
-  setProjects: React.Dispatch<React.SetStateAction<any[]>>
+  setProjects: React.Dispatch<React.SetStateAction<any[]>> | (() => Promise<void>)
 ): Promise<void> => {
   try {
     if (!validateUserOrganization(user)) {
@@ -75,19 +76,22 @@ export const updateTask = async (
     );
 
     // Update project state if task belongs to a project
-    if (updatedTask.projectId) {
-      setProjects((prevProjects) =>
+    if (updatedTask.projectId && typeof setProjects === 'function' && setProjects.length > 0) {
+      setProjects((prevProjects: any[]) =>
         prevProjects.map((project) =>
           project.id === updatedTask.projectId
             ? {
                 ...project,
-                tasks: project.tasks.map((task) =>
+                tasks: project.tasks.map((task: Task) =>
                   task.id === taskId ? updatedTask : task
                 ),
               }
             : project
         )
       );
+    } else if (typeof setProjects === 'function' && setProjects.length === 0) {
+      // It's a refresh function
+      await setProjects();
     }
 
     toast.success('Task updated successfully!');
@@ -95,4 +99,14 @@ export const updateTask = async (
     console.error('Error updating task:', error);
     toast.error('Failed to update task');
   }
+};
+
+export const updateTaskStatus = async (
+  taskId: string,
+  status: TaskStatus,
+  user: { id: string; organization_id?: string },
+  tasks: Task[],
+  setTasks: React.Dispatch<React.SetStateAction<Task[]>>
+): Promise<void> => {
+  return updateTask(taskId, { status }, user, tasks, setTasks, [], () => Promise.resolve());
 };

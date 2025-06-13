@@ -19,7 +19,7 @@ export const assignTaskToUser = async (
   tasks: Task[],
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>,
   projects: Project[],
-  setProjects: React.Dispatch<React.SetStateAction<Project[]>>
+  setProjects: React.Dispatch<React.SetStateAction<Project[]>> | (() => Promise<void>)
 ) => {
   try {
     if (!user || !getUserOrganizationId(user)) return;

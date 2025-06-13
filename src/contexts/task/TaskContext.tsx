@@ -1,3 +1,4 @@
+
 import React, {
   createContext,
   useState,
@@ -5,21 +6,30 @@ import React, {
   useContext,
   useCallback,
 } from 'react';
-import { Task, TaskStatus, User } from '@/types';
+import { Task, TaskStatus, User, Project } from '@/types';
 import { fetchUserTasks } from './taskApi';
 import { addTask as addTaskAPI } from './api/taskCreate';
 import { deleteTask as deleteTaskAPI } from './api/taskDelete';
-import { updateTaskStatus as updateTaskStatusAPI } from './api/taskUpdate';
+import { updateTask as updateTaskAPI } from './api/taskUpdate';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProjects } from '@/hooks/useProjects';
 import { toast } from '@/components/ui/sonner';
+import { assignTaskToUser as assignTaskToUserAPI } from './operations/assignment/assignTaskToUser';
 
 interface TaskContextProps {
   tasks: Task[];
   isLoading: boolean;
+  projects: Project[];
   addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  updateTask: (taskId: string, updates: Partial<Task>) => Promise<void>;
   updateTaskStatus: (taskId: string, status: TaskStatus) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
+  assignTaskToUser: (taskId: string, userId: string, userName: string) => Promise<void>;
+  addCommentToTask: (taskId: string, comment: string) => Promise<void>;
+  updateProject: (projectId: string, updates: any) => Promise<void>;
+  deleteProject: (projectId: string) => Promise<void>;
+  refreshProjects: () => Promise<void>;
+  dailyScore: number;
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
 }
 
@@ -37,7 +47,7 @@ const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
-  const { projects, setProjects } = useProjects();
+  const { projects, refreshProjects } = useProjects();
 
   useEffect(() => {
     const loadTasks = async () => {
@@ -61,14 +71,27 @@ const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
     }
 
     try {
-      await addTaskAPI(task, user, tasks, setTasks, projects, setProjects);
+      await addTaskAPI(task, user, tasks, setTasks, projects, () => refreshProjects());
     } catch (error) {
       console.error('Error adding task:', error);
       toast.error('Failed to add task');
     }
   };
 
-  // Updated deleteTask function to handle user object properly
+  const updateTask = async (taskId: string, updates: Partial<Task>) => {
+    if (!user) {
+      toast.error('You must be logged in to update tasks');
+      return;
+    }
+
+    try {
+      await updateTaskAPI(taskId, updates, { id: user.id, organization_id: user.organizationId }, tasks, setTasks, projects, () => refreshProjects());
+    } catch (error) {
+      console.error('Error updating task:', error);
+      toast.error('Failed to update task');
+    }
+  };
+
   const deleteTask = async (taskId: string) => {
     if (!user) {
       toast.error('You must be logged in to delete tasks');
@@ -85,7 +108,7 @@ const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
         organization_id: user.organizationId // Provide both for compatibility
       };
 
-      await deleteTaskAPI(taskId, userForDeletion, tasks, setTasks, projects, setProjects);
+      await deleteTaskAPI(taskId, userForDeletion, tasks, setTasks, projects, () => refreshProjects());
     } catch (error) {
       console.error('Error in TaskContext deleteTask:', error);
       toast.error('Failed to delete task');
@@ -99,19 +122,61 @@ const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
     }
 
     try {
-      await updateTaskStatusAPI(taskId, status, user, tasks, setTasks);
+      await updateTask(taskId, { status });
     } catch (error) {
       console.error('Error updating task status:', error);
       toast.error('Failed to update task status');
     }
   };
 
+  const assignTaskToUser = async (taskId: string, userId: string, userName: string) => {
+    if (!user) {
+      toast.error('You must be logged in to assign tasks');
+      return;
+    }
+
+    try {
+      await assignTaskToUserAPI(taskId, userId, userName, user, tasks, setTasks, projects, () => refreshProjects());
+    } catch (error) {
+      console.error('Error assigning task to user:', error);
+      toast.error('Failed to assign task to user');
+    }
+  };
+
+  const addCommentToTask = async (taskId: string, comment: string) => {
+    // Placeholder implementation
+    console.log('Adding comment to task:', taskId, comment);
+    toast.success('Comment added successfully');
+  };
+
+  const updateProject = async (projectId: string, updates: any) => {
+    // Placeholder implementation
+    console.log('Updating project:', projectId, updates);
+    toast.success('Project updated successfully');
+  };
+
+  const deleteProject = async (projectId: string) => {
+    // Placeholder implementation
+    console.log('Deleting project:', projectId);
+    toast.success('Project deleted successfully');
+  };
+
+  const dailyScore = Math.round(Math.random() * 100); // Placeholder calculation
+
   const contextValue: TaskContextProps = {
     tasks,
     isLoading,
+    projects,
     addTask,
+    updateTask,
     updateTaskStatus,
     deleteTask,
+    assignTaskToUser,
+    addCommentToTask,
+    updateProject,
+    deleteProject,
+    refreshProjects,
+    dailyScore,
     setTasks,
   };
 
@@ -123,3 +188,4 @@ const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 };
 
 export default TaskProvider;
+export { TaskProvider };

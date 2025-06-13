@@ -9,7 +9,7 @@ export const deleteTask = async (
   tasks: Task[],
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>,
   projects: any[],
-  setProjects: React.Dispatch<React.SetStateAction<any[]>>
+  setProjects: React.Dispatch<React.SetStateAction<any[]>> | (() => Promise<void>)
 ): Promise<void> => {
   try {
     console.log('Deleting task:', taskId, 'for user:', user);
@@ -20,7 +20,7 @@ export const deleteTask = async (
       return;
     }
 
-    // Handle both property naming conventions
+    // Handle both property naming conventions and validate organization
     const organizationId = user.organizationId || user.organization_id;
     
     if (!organizationId) {
@@ -54,12 +54,17 @@ export const deleteTask = async (
     });
 
     // Update projects state if task was part of a project
-    setProjects((prevProjects) =>
-      prevProjects.map((project) => ({
-        ...project,
-        tasks: project.tasks.filter((task: Task) => task.id !== taskId),
-      }))
-    );
+    if (typeof setProjects === 'function' && setProjects.length > 0) {
+      setProjects((prevProjects: any[]) =>
+        prevProjects.map((project) => ({
+          ...project,
+          tasks: project.tasks.filter((task: Task) => task.id !== taskId),
+        }))
+      );
+    } else if (typeof setProjects === 'function' && setProjects.length === 0) {
+      // It's a refresh function
+      await setProjects();
+    }
 
     toast.success('Task deleted successfully!');
   } catch (error) {

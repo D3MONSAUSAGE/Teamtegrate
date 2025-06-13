@@ -1,7 +1,6 @@
 
-export { createTask, updateTaskInProject, assignTaskToProject } from './taskOperations';
-export { updateTaskStatus as updateTaskStatusOperation, updateTaskAssignment } from './taskUpdate';
-export { addCommentToTask } from './taskContent';
-export { deleteTask } from './taskDeletion';
-export { updateProject } from './updateProject';
-export { removeTeamMemberFromProject } from './removeTeamMemberFromProject';
+// Task operation exports
+export { assignTaskToUser } from './assignment/assignTaskToUser';
+export { createTaskAssignmentNotification } from './assignment/createNotification';
+export { fetchUserInfo } from './assignment/fetchUserInfo';
+export { updateTaskStates } from './assignment/updateTaskStates';

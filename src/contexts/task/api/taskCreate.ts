@@ -16,7 +16,7 @@ export const addTask = async (
   tasks: Task[],
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>,
   projects: any[],
-  setProjects: React.Dispatch<React.SetStateAction<any[]>>
+  setProjects: React.Dispatch<React.SetStateAction<any[]>> | (() => Promise<void>)
 ): Promise<void> => {
   try {
     console.log('Adding task for user:', { userId: user.id, organizationId: user.organizationId });
@@ -78,13 +78,18 @@ export const addTask = async (
     setTasks([...tasks, newTask]);
 
     if (newTask.projectId) {
-      setProjects((prevProjects) =>
-        prevProjects.map((project) =>
-          project.id === newTask.projectId
-            ? { ...project, tasks: [...project.tasks, newTask] }
-            : project
-        )
-      );
+      if (typeof setProjects === 'function' && setProjects.length > 0) {
+        setProjects((prevProjects: any[]) =>
+          prevProjects.map((project) =>
+            project.id === newTask.projectId
+              ? { ...project, tasks: [...project.tasks, newTask] }
+              : project
+          )
+        );
+      } else if (typeof setProjects === 'function' && setProjects.length === 0) {
+        // It's a refresh function
+        await setProjects();
+      }
     }
 
     toast.success('Task added successfully!');
