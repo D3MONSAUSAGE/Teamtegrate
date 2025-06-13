@@ -6,7 +6,7 @@ import { useProjectAccess } from './hooks/useProjectAccess';
 import { useProjectTasksFilters } from './hooks/useProjectTasksFilters';
 import { useProjectTasksActions } from './hooks/useProjectTasksActions';
 import { useProjectTeamMembers } from '@/hooks/useProjectTeamMembers';
-import { Task } from '@/types';
+import { Task, TaskStatus } from '@/types';
 
 export const useProjectTasksView = (projectId: string | null) => {
   console.log('useProjectTasksView: Called with projectId:', projectId);
@@ -54,7 +54,7 @@ export const useProjectTasksView = (projectId: string | null) => {
 
   // Create a properly typed wrapper function that always returns Promise<void>
   const wrappedUpdateTaskStatus = useMemo(() => {
-    return async (taskId: string, status: any): Promise<void> => {
+    return async (taskId: string, status: TaskStatus): Promise<void> => {
       console.log('useProjectTasksView: Updating task status:', taskId, status);
       try {
         // Call the original updateTaskStatus and handle both void and Promise returns
@@ -64,10 +64,10 @@ export const useProjectTasksView = (projectId: string | null) => {
           await result;
         }
         // If it returns void, we just resolve
-        return Promise.resolve();
+        return;
       } catch (error) {
         console.error('Error in wrappedUpdateTaskStatus:', error);
-        return Promise.reject(error);
+        throw error;
       }
     };
   }, [updateTaskStatus]);
