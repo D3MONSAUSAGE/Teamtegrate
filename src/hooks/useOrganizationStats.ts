@@ -31,7 +31,19 @@ export const useOrganizationStats = () => {
       throw new Error(error.message);
     }
 
-    return data as OrganizationStats;
+    // Parse the JSON response and ensure it matches our interface
+    const parsedData = typeof data === 'string' ? JSON.parse(data) : data;
+    
+    return {
+      total_users: parsedData.total_users || 0,
+      superadmins: parsedData.superadmins || 0,
+      admins: parsedData.admins || 0,
+      managers: parsedData.managers || 0,
+      users: parsedData.users || 0,
+      active_projects: parsedData.active_projects || 0,
+      total_tasks: parsedData.total_tasks || 0,
+      completed_tasks: parsedData.completed_tasks || 0,
+    } as OrganizationStats;
   };
 
   const { data: stats, isLoading, error, refetch } = useQuery({
