@@ -91,7 +91,11 @@ export const updateTask = async (
       );
     } else if (typeof setProjects === 'function' && setProjects.length === 0) {
       // It's a refresh function
-      await setProjects();
+      try {
+        await setProjects();
+      } catch (error) {
+        console.error('Error refreshing projects:', error);
+      }
     }
 
     toast.success('Task updated successfully!');
@@ -108,5 +112,5 @@ export const updateTaskStatus = async (
   tasks: Task[],
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>
 ): Promise<void> => {
-  return updateTask(taskId, { status }, user, tasks, setTasks, [], () => Promise.resolve());
+  return updateTask(taskId, { status }, user, tasks, setTasks, [], async () => {});
 };

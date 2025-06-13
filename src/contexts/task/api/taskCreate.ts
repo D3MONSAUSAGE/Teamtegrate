@@ -88,7 +88,11 @@ export const addTask = async (
         );
       } else if (typeof setProjects === 'function' && setProjects.length === 0) {
         // It's a refresh function
-        await setProjects();
+        try {
+          await setProjects();
+        } catch (error) {
+          console.error('Error refreshing projects:', error);
+        }
       }
     }
 
