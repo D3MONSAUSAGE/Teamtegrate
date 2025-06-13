@@ -86,26 +86,37 @@ const ProjectsPage = () => {
   console.log('ProjectsPage: Rendering main content');
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-background/90 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-accent/10 relative overflow-hidden">
       <ProjectsPageBackground />
 
-      <div className="relative z-10 p-4 md:p-8 space-y-8">
-        <ProjectsPageHeader onCreateProject={handleCreateProject} />
+      <div className="container mx-auto max-w-7xl px-4 lg:px-6 py-8 space-y-10 relative z-10">
+        {/* Enhanced Page Header */}
+        <div className="animate-fade-in">
+          <ProjectsPageHeader onCreateProject={handleCreateProject} />
+        </div>
         
-        <ProjectsSearchSection
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          resultsCount={filteredProjects.length}
-        />
+        {/* Enhanced Search Section */}
+        <div className="animate-fade-in delay-200">
+          <ProjectsSearchSection
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            resultsCount={filteredProjects.length}
+          />
+        </div>
 
-        <ProjectsGridSection
-          projects={filteredProjects}
-          searchQuery={searchQuery}
-          onCreateProject={handleCreateProject}
-          onViewTasks={handleViewTasks}
-          onCreateTask={handleCreateTask}
-          onProjectDeleted={refetch}
-        />
+        {/* Enhanced Main Content Area */}
+        <div className="animate-fade-in delay-300">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/40 rounded-3xl shadow-2xl shadow-primary/5 overflow-hidden">
+            <ProjectsGridSection
+              projects={filteredProjects}
+              searchQuery={searchQuery}
+              onCreateProject={handleCreateProject}
+              onViewTasks={handleViewTasks}
+              onCreateTask={handleCreateTask}
+              onProjectDeleted={refetch}
+            />
+          </div>
+        </div>
       </div>
 
       <CreateProjectDialog

@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Plus, FolderKanban } from 'lucide-react';
+import { Plus, FolderKanban, Rocket, Sparkles } from 'lucide-react';
 import { Project } from '@/types';
 import ProjectCard from '@/components/project-card';
 
@@ -56,15 +57,22 @@ const ProjectsGridSection: React.FC<ProjectsGridSectionProps> = ({
   };
 
   return (
-    <div className="glass-card border-2 border-primary/20 shadow-xl bg-gradient-to-br from-white/95 via-white/90 to-white/85 dark:from-card/95 dark:via-card/90 dark:to-card/85 backdrop-blur-2xl rounded-3xl p-8 hover:shadow-2xl transition-all duration-300">
+    <div className="p-8">
       {projects.length > 0 ? (
-        <div className="space-y-6">
+        <div className="space-y-8">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
-              Your Projects
-            </h2>
-            <div className="text-sm text-muted-foreground bg-muted/30 px-3 py-1 rounded-full">
-              {projects.length} project{projects.length !== 1 ? 's' : ''}
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-2xl bg-gradient-to-br from-primary/20 via-accent/15 to-secondary/10 backdrop-blur-sm border border-primary/20">
+                <FolderKanban className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-3xl font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
+                  Your Projects
+                </h2>
+                <p className="text-muted-foreground mt-1">
+                  {projects.length} active project{projects.length !== 1 ? 's' : ''} in your workspace
+                </p>
+              </div>
             </div>
           </div>
           
@@ -74,17 +82,24 @@ const ProjectsGridSection: React.FC<ProjectsGridSectionProps> = ({
               return (
                 <div 
                   key={project.id} 
-                  className="group transition-all duration-500 hover:scale-[1.03] animate-fade-in hover:-translate-y-2"
+                  className="group transition-all duration-700 hover:scale-[1.03] animate-fade-in hover:-translate-y-2"
                   style={{ animationDelay: `${index * 150}ms` }}
                 >
                   <div className="relative">
-                    <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 scale-110" />
-                    <ProjectCard
-                      project={project}
-                      onViewTasks={() => handleViewTasks(project.id)}
-                      onCreateTask={() => handleCreateTask(project.id)}
-                      onDeleted={handleProjectDeleted}
-                    />
+                    {/* Enhanced glow effect */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-accent/15 to-secondary/10 rounded-3xl blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-700 scale-110 group-hover:scale-125" />
+                    
+                    {/* Floating border effect */}
+                    <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-primary/30 via-accent/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-sm" />
+                    
+                    <div className="relative backdrop-blur-xl bg-gradient-to-br from-card/95 via-card/90 to-card/85 border-2 border-border/30 rounded-3xl overflow-hidden shadow-xl group-hover:shadow-2xl group-hover:border-primary/50 transition-all duration-500">
+                      <ProjectCard
+                        project={project}
+                        onViewTasks={() => handleViewTasks(project.id)}
+                        onCreateTask={() => handleCreateTask(project.id)}
+                        onDeleted={handleProjectDeleted}
+                      />
+                    </div>
                   </div>
                 </div>
               );
@@ -92,27 +107,27 @@ const ProjectsGridSection: React.FC<ProjectsGridSectionProps> = ({
           </div>
         </div>
       ) : (
-        <div className="glass-card border-2 border-dashed border-primary/30 bg-gradient-to-br from-white/90 via-white/85 to-white/80 dark:from-card/90 dark:via-card/85 dark:to-card/80 backdrop-blur-2xl rounded-3xl p-16 text-center">
-          <div className="flex flex-col items-center gap-8">
-            <div className="relative">
-              <div className="p-8 rounded-full bg-gradient-to-br from-primary/20 via-accent/15 to-secondary/10 backdrop-blur-sm border border-primary/20">
-                <FolderKanban className="h-16 w-16 text-primary" />
+        <div className="text-center py-20">
+          <div className="max-w-2xl mx-auto">
+            <div className="relative mb-12">
+              <div className="w-32 h-32 mx-auto bg-gradient-to-br from-primary/10 via-accent/10 to-secondary/5 rounded-3xl flex items-center justify-center backdrop-blur-sm border-2 border-border/30 shadow-2xl">
+                <Rocket className="h-16 w-16 text-primary" />
               </div>
-              <div className="absolute -top-2 -right-2">
-                <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center">
-                  <Plus className="h-3 w-3 text-accent" />
+              <div className="absolute -top-4 -right-4">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-accent/20 to-secondary/10 flex items-center justify-center backdrop-blur-sm border border-accent/30">
+                  <Sparkles className="h-6 w-6 text-accent animate-pulse" />
                 </div>
               </div>
             </div>
             
-            <div className="space-y-4 max-w-md">
-              <h3 className="text-3xl font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
+            <div className="space-y-6 mb-12">
+              <h3 className="text-4xl font-bold bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent">
                 {searchQuery ? 'No projects found' : 'Your Creative Journey Starts Here'}
               </h3>
-              <p className="text-muted-foreground text-lg leading-relaxed">
+              <p className="text-muted-foreground text-xl leading-relaxed max-w-xl mx-auto">
                 {searchQuery 
                   ? 'Try adjusting your search criteria to find what you\'re looking for.' 
-                  : 'Create your first project and transform your ideas into organized, actionable plans that drive results'
+                  : 'Create your first project and transform your ideas into organized, actionable plans that drive real results.'
                 }
               </p>
             </div>
@@ -121,10 +136,10 @@ const ProjectsGridSection: React.FC<ProjectsGridSectionProps> = ({
               <Button 
                 onClick={onCreateProject} 
                 size="lg"
-                className="mt-6 h-14 px-10 rounded-2xl bg-gradient-to-r from-primary via-primary/90 to-accent hover:from-primary/90 hover:via-primary/80 hover:to-accent/90 text-primary-foreground font-bold shadow-xl hover:shadow-2xl hover:scale-110 transition-all duration-500 border border-primary/30 group relative overflow-hidden"
+                className="h-16 px-12 rounded-2xl bg-gradient-to-r from-primary via-primary/90 to-accent hover:from-primary/90 hover:via-primary/80 hover:to-accent/90 text-primary-foreground font-bold shadow-2xl hover:shadow-3xl hover:scale-110 transition-all duration-500 border-2 border-primary/30 hover:border-primary/50 group relative overflow-hidden text-lg"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                <Plus className="h-6 w-6 mr-3 group-hover:rotate-180 transition-transform duration-500" />
+                <Plus className="h-6 w-6 mr-4 group-hover:rotate-180 transition-transform duration-500" />
                 <span className="relative z-10">Launch Your First Project</span>
               </Button>
             )}

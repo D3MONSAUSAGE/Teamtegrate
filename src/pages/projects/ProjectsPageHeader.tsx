@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Plus, Sparkles, Zap } from 'lucide-react';
+import { Plus, Sparkles, Zap, FolderKanban } from 'lucide-react';
 
 interface ProjectsPageHeaderProps {
   onCreateProject: () => void;
@@ -23,6 +23,9 @@ const ProjectsPageHeader: React.FC<ProjectsPageHeaderProps> = ({ onCreateProject
             <div className="absolute -bottom-2 left-0 w-full h-1 bg-gradient-to-r from-primary/50 via-accent/30 to-transparent rounded-full" />
           </div>
         </div>
+        <p className="text-xl text-muted-foreground max-w-2xl leading-relaxed">
+          Organize your ideas into actionable projects. Track progress, manage tasks, and collaborate with your team to achieve your goals.
+        </p>
       </div>
       
       <Button 
