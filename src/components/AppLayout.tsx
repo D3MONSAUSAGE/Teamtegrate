@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
@@ -8,20 +8,7 @@ import ChatbotBubble from './chat/ChatbotBubble';
 import { SidebarProvider, SidebarInset, useSidebar } from '@/components/ui/sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Loader2 } from 'lucide-react';
-
-// Import all dashboard pages
-import DashboardPage from '@/pages/DashboardPage';
-import CalendarPage from '@/pages/CalendarPage';
-import ReportsPage from '@/pages/ReportsPage';
-import ChatPage from '@/pages/ChatPage';
-import DocumentsPage from '@/pages/DocumentsPage';
-import FinancePage from '@/pages/FinancePage';
-import JournalPage from '@/pages/JournalPage';
-import NotebookPage from '@/pages/NotebookPage';
-import ProfilePage from '@/pages/ProfilePage';
-import SettingsPage from '@/pages/SettingsPage';
-import TeamPage from '@/pages/TeamPage';
-import FocusZonePage from '@/pages/FocusZonePage';
+import { Navigate } from 'react-router-dom';
 
 const MainContent = ({ children }: { children: React.ReactNode }) => {
   const { setOpen, isMobile } = useSidebar();
@@ -52,8 +39,6 @@ const MainContent = ({ children }: { children: React.ReactNode }) => {
 const AppLayout = () => {
   const { user, loading, isAuthenticated } = useAuth();
 
-  console.log('AppLayout - Loading:', loading, 'User:', !!user, 'IsAuthenticated:', isAuthenticated);
-
   // Show loading while auth is initializing
   if (loading) {
     return (
@@ -71,7 +56,6 @@ const AppLayout = () => {
 
   // Redirect to login if not authenticated
   if (!isAuthenticated || !user) {
-    console.log('AppLayout: Not authenticated, redirecting to login');
     return <Navigate to="/login" replace />;
   }
 
@@ -81,21 +65,7 @@ const AppLayout = () => {
         <Sidebar />
         
         <MainContent>
-          <Routes>
-            <Route index element={<DashboardPage />} />
-            <Route path="team" element={<TeamPage />} />
-            <Route path="focus" element={<FocusZonePage />} />
-            <Route path="calendar" element={<CalendarPage />} />
-            <Route path="reports" element={<ReportsPage />} />
-            <Route path="chat" element={<ChatPage />} />
-            <Route path="chat/:roomId" element={<ChatPage />} />
-            <Route path="documents" element={<DocumentsPage />} />
-            <Route path="finance" element={<FinancePage />} />
-            <Route path="journal" element={<JournalPage />} />
-            <Route path="notebook" element={<NotebookPage />} />
-            <Route path="profile" element={<ProfilePage />} />
-            <Route path="settings" element={<SettingsPage />} />
-          </Routes>
+          <Outlet />
         </MainContent>
 
         <ChatbotBubble />

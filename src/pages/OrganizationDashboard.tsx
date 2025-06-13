@@ -14,9 +14,6 @@ import OrganizationQuickActions from '@/components/organization/OrganizationQuic
 const OrganizationDashboard = () => {
   const { user, loading } = useAuth();
 
-  console.log('OrganizationDashboard - User:', user);
-  console.log('OrganizationDashboard - Loading:', loading);
-
   // Show loading state while auth is loading
   if (loading) {
     return (
@@ -31,7 +28,6 @@ const OrganizationDashboard = () => {
 
   // Check if user exists
   if (!user) {
-    console.log('OrganizationDashboard - No user found');
     return (
       <div className="p-6 text-center">
         <Alert>
@@ -47,9 +43,6 @@ const OrganizationDashboard = () => {
   // Check if user has permission to access organization dashboard
   const hasOrganizationAccess = ['superadmin', 'admin', 'manager'].includes(user.role);
   
-  console.log('OrganizationDashboard - User role:', user.role);
-  console.log('OrganizationDashboard - Has access:', hasOrganizationAccess);
-
   if (!hasOrganizationAccess) {
     return (
       <div className="p-6">
@@ -63,8 +56,6 @@ const OrganizationDashboard = () => {
       </div>
     );
   }
-
-  console.log('OrganizationDashboard - Rendering dashboard components');
 
   return (
     <div className="p-3 sm:p-6 space-y-6">

@@ -14,11 +14,7 @@ export const useOrganization = () => {
   const { user } = useAuth();
 
   const fetchOrganization = async (): Promise<Organization | null> => {
-    console.log('useOrganization - Fetching for user:', user);
-    console.log('useOrganization - Organization ID:', user?.organizationId);
-    
     if (!user?.organizationId) {
-      console.log('useOrganization - No organization ID found');
       return null;
     }
 
@@ -29,11 +25,10 @@ export const useOrganization = () => {
       .single();
 
     if (error) {
-      console.error('useOrganization - Error fetching organization:', error);
+      console.error('Error fetching organization:', error);
       throw new Error(error.message);
     }
 
-    console.log('useOrganization - Fetched organization:', data);
     return data;
   };
 

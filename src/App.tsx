@@ -37,8 +37,6 @@ const queryClient = new QueryClient({
 });
 
 function App() {
-  console.log('🚨 App.tsx: App component rendering');
-  
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
@@ -55,15 +53,7 @@ function App() {
                   <Route path="/dashboard" element={<AppLayout />}>
                     <Route index element={<DashboardPage />} />
                     <Route path="organization" element={<OrganizationDashboard />} />
-                    <Route 
-                      path="tasks" 
-                      element={
-                        <>
-                          {console.log('🚨 App.tsx: TasksPage route matched!')}
-                          <TasksPage />
-                        </>
-                      } 
-                    />
+                    <Route path="tasks" element={<TasksPage />} />
                     <Route path="tasks/create" element={<TasksPage />} />
                     <Route path="projects" element={<ProjectsPage />} />
                     <Route path="projects/:projectId" element={<ProjectsPage />} />

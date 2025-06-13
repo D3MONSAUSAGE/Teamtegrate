@@ -1,17 +1,13 @@
 
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
-import { Building2, Users, Calendar, Loader2 } from 'lucide-react';
+import { Building2, Users, Calendar } from 'lucide-react';
 import { useOrganization } from '@/hooks/useOrganization';
 import { useAuth } from '@/contexts/AuthContext';
 
 const OrganizationHeader: React.FC = () => {
   const { data: organization, isLoading, error } = useOrganization();
   const { user } = useAuth();
-
-  console.log('OrganizationHeader - Organization:', organization);
-  console.log('OrganizationHeader - Loading:', isLoading);
-  console.log('OrganizationHeader - Error:', error);
 
   if (isLoading) {
     return (
@@ -30,7 +26,6 @@ const OrganizationHeader: React.FC = () => {
   }
 
   if (error) {
-    console.error('OrganizationHeader - Error loading organization:', error);
     return (
       <Card className="border-destructive">
         <CardContent className="p-4">
@@ -44,7 +39,6 @@ const OrganizationHeader: React.FC = () => {
   }
 
   if (!organization) {
-    console.log('OrganizationHeader - No organization found');
     return (
       <Card className="border-orange-200 bg-orange-50">
         <CardContent className="p-4">
