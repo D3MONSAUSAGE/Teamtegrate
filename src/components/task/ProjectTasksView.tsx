@@ -98,10 +98,13 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
     handleSearchChange(mockEvent);
   };
 
-  // Create a wrapper function that doesn't return the promise to fix the type mismatch
+  // Create a wrapper function that properly handles the async nature and returns void
   const handleTaskStatusChangeWrapper = (taskId: string, status: string) => {
-    handleTaskStatusChange(taskId, status as any);
-    // Don't return the promise - this implicitly returns void
+    // Call the async function but don't return the promise
+    // This ensures the wrapper returns void while still executing the async operation
+    handleTaskStatusChange(taskId, status as any).catch(error => {
+      console.error('Error updating task status:', error);
+    });
   };
 
   console.log('ProjectTasksView: Rendering content with project:', project.title);
