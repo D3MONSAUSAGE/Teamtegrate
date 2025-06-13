@@ -6,11 +6,11 @@ import React, {
   useContext,
   useCallback,
 } from 'react';
-import { Task, TaskStatus, User, Project } from '@/types';
+import { Task, TaskStatus, User, Project, DailyScore } from '@/types';
 import { fetchUserTasks } from './taskApi';
 import { addTask as addTaskAPI } from './api/taskCreate';
 import { deleteTask as deleteTaskAPI } from './api/taskDelete';
-import { updateTask as updateTaskAPI } from './api/taskUpdate';
+import { updateTask as updateTaskAPI, updateTaskStatus as updateTaskStatusAPI } from './api/taskUpdate';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProjects } from '@/hooks/useProjects';
 import { toast } from '@/components/ui/sonner';
@@ -29,7 +29,7 @@ interface TaskContextProps {
   updateProject: (projectId: string, updates: any) => Promise<void>;
   deleteProject: (projectId: string) => Promise<void>;
   refreshProjects: () => Promise<void>;
-  dailyScore: number;
+  dailyScore: DailyScore;
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
 }
 
@@ -71,7 +71,7 @@ const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
     }
 
     try {
-      await addTaskAPI(task, user, tasks, setTasks, projects, () => refreshProjects());
+      await addTaskAPI(task, user, tasks, setTasks, projects, refreshProjects);
     } catch (error) {
       console.error('Error adding task:', error);
       toast.error('Failed to add task');
@@ -85,7 +85,7 @@ const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
     }
 
     try {
-      await updateTaskAPI(taskId, updates, { id: user.id, organization_id: user.organizationId }, tasks, setTasks, projects, () => refreshProjects());
+      await updateTaskAPI(taskId, updates, { id: user.id, organization_id: user.organizationId }, tasks, setTasks, projects, refreshProjects);
     } catch (error) {
       console.error('Error updating task:', error);
       toast.error('Failed to update task');
@@ -108,7 +108,7 @@ const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
         organization_id: user.organizationId // Provide both for compatibility
       };
 
-      await deleteTaskAPI(taskId, userForDeletion, tasks, setTasks, projects, () => refreshProjects());
+      await deleteTaskAPI(taskId, userForDeletion, tasks, setTasks, projects, refreshProjects);
     } catch (error) {
       console.error('Error in TaskContext deleteTask:', error);
       toast.error('Failed to delete task');
@@ -122,7 +122,7 @@ const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
     }
 
     try {
-      await updateTask(taskId, { status });
+      await updateTaskStatusAPI(taskId, status, { id: user.id, organization_id: user.organizationId }, tasks, setTasks);
     } catch (error) {
       console.error('Error updating task status:', error);
       toast.error('Failed to update task status');
@@ -136,7 +136,7 @@ const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
     }
 
     try {
-      await assignTaskToUserAPI(taskId, userId, userName, user, tasks, setTasks, projects, () => refreshProjects());
+      await assignTaskToUserAPI(taskId, userId, userName, user, tasks, setTasks, projects, refreshProjects);
     } catch (error) {
       console.error('Error assigning task to user:', error);
       toast.error('Failed to assign task to user');
@@ -161,7 +161,25 @@ const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
     toast.success('Project deleted successfully');
   };
 
-  const dailyScore = Math.round(Math.random() * 100); // Placeholder calculation
+  // Calculate daily score
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  
+  const todaysTasks = tasks.filter((task) => {
+    const taskDate = new Date(task.deadline);
+    taskDate.setHours(0, 0, 0, 0);
+    return taskDate.getTime() === today.getTime();
+  });
+  
+  const completedTodaysTasks = todaysTasks.filter(task => task.status === 'Completed');
+  
+  const dailyScore: DailyScore = {
+    totalTasks: todaysTasks.length,
+    completedTasks: completedTodaysTasks.length,
+    percentage: todaysTasks.length > 0 ? Math.round((completedTodaysTasks.length / todaysTasks.length) * 100) : 0
+  };
 
   const contextValue: TaskContextProps = {
     tasks,

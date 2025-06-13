@@ -1,3 +1,4 @@
+
 import { Task } from '@/types';
 
 export const updateTaskStates = (
@@ -46,7 +47,7 @@ export const updateTaskStates = (
     );
   } else if (typeof setProjects === 'function' && setProjects.length === 0) {
     // It's a refresh function - call it asynchronously
-    const refreshResult = setProjects();
+    const refreshResult = (setProjects as () => Promise<void>)();
     if (refreshResult && typeof refreshResult.catch === 'function') {
       refreshResult.catch(error => console.error('Error refreshing projects:', error));
     }
