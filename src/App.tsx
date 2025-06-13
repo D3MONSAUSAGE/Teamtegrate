@@ -1,97 +1,99 @@
-import React from "react";
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "./contexts/AuthContext";
-import { TaskProvider } from "./contexts/task";
-import ErrorBoundary from "./components/ErrorBoundary";
-import AppLayout from "./components/AppLayout";
-import LoginPage from "./pages/LoginPage";
-import DashboardPage from "./pages/DashboardPage";
-import TasksPage from "./pages/TasksPage";
-import ProjectsPage from "./pages/ProjectsPage";
-import TeamPage from "./pages/TeamPage";
-import SettingsPage from "./pages/SettingsPage";
-import ProfilePage from "./pages/ProfilePage";
-import ReportsPage from "./pages/ReportsPage";
-import TimeTrackingPage from "./pages/TimeTrackingPage";
-import NotFound from "./pages/NotFound";
-import Index from "./pages/Index";
-import AppEntry from "./pages/AppEntry";
-import DocumentsPage from "./pages/DocumentsPage";
-import FinancePage from "./pages/FinancePage";
-import ChatPage from "./pages/ChatPage";
-import NotebookPage from "./pages/NotebookPage";
-import ProjectTasksPage from "./pages/ProjectTasksPage";
-import CalendarPage from "./pages/CalendarPage";
-import NotificationsPage from "./pages/NotificationsPage";
-import FocusZonePage from "./pages/FocusZonePage";
+import React from 'react';
+import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
+import { QueryClient } from '@tanstack/react-query';
+import { ErrorBoundary } from 'react-error-boundary';
+import {
+  Home,
+  CheckSquare,
+  Briefcase,
+  Users,
+  Calendar,
+  Target,
+  BarChart3,
+  MessageCircle,
+  FileText,
+  DollarSign,
+  BookOpen,
+  NotebookPen,
+} from 'lucide-react';
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
+import { AuthProvider } from '@/contexts/AuthContext';
+import { TaskProvider } from '@/contexts/task';
+import { useAuth } from '@/contexts/AuthContext';
 
-const App: React.FC = () => {
+import LandingPage from '@/pages/LandingPage';
+import LoginPage from '@/pages/LoginPage';
+import SignupPage from '@/pages/SignupPage';
+import DashboardPage from '@/pages/DashboardPage';
+import TaskPage from '@/pages/TaskPage';
+import ProjectPage from '@/pages/ProjectPage';
+import CalendarPage from '@/pages/CalendarPage';
+import FocusPage from '@/pages/FocusPage';
+import ReportsPage from '@/pages/ReportsPage';
+import ChatPage from '@/pages/ChatPage';
+import DocumentsPage from '@/pages/DocumentsPage';
+import FinancePage from '@/pages/FinancePage';
+import PnlViewPage from '@/pages/PnlViewPage';
+import JournalPage from '@/pages/JournalPage';
+import NotebookPage from '@/pages/NotebookPage';
+import ProfilePage from '@/pages/ProfilePage';
+import SettingsPage from '@/pages/SettingsPage';
+import AppLayout from '@/components/layout/AppLayout';
+
+import OrganizationDashboard from '@/pages/OrganizationDashboard';
+
+const ErrorFallback = ({ error, resetErrorBoundary }: any) => {
   return (
-    <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <ErrorBoundary>
-            <TaskProvider>
-              <TooltipProvider>
-                <Toaster />
-                <Sonner />
-                <BrowserRouter>
-                  <Routes>
-                    {/* Public routes */}
-                    <Route path="/" element={<Index />} />
-                    <Route path="/login" element={<LoginPage />} />
-                    
-                    {/* Legacy route redirects */}
-                    <Route path="/auth/login" element={<Navigate to="/login" replace />} />
-                    
-                    {/* App entry point - handles auth check and redirect */}
-                    <Route path="/app" element={<AppEntry />} />
-                    
-                    {/* Protected dashboard routes */}
-                    <Route path="/dashboard" element={<AppLayout />}>
-                      <Route index element={<DashboardPage />} />
-                      <Route path="tasks" element={<TasksPage />} />
-                      <Route path="tasks/create" element={<TasksPage />} />
-                      <Route path="projects" element={<ProjectsPage />} />
-                      <Route path="projects/:projectId/tasks" element={<ProjectTasksPage />} />
-                      <Route path="calendar" element={<CalendarPage />} />
-                      <Route path="team" element={<TeamPage />} />
-                      <Route path="chat" element={<ChatPage />} />
-                      <Route path="notifications" element={<NotificationsPage />} />
-                      <Route path="reports" element={<ReportsPage />} />
-                      <Route path="settings" element={<SettingsPage />} />
-                      <Route path="profile" element={<ProfilePage />} />
-                      <Route path="time-tracking" element={<TimeTrackingPage />} />
-                      <Route path="focus-zone" element={<FocusZonePage />} />
-                      <Route path="documents" element={<DocumentsPage />} />
-                      <Route path="finance" element={<FinancePage />} />
-                      <Route path="notebook" element={<NotebookPage />} />
-                    </Route>
-                    
-                    {/* 404 fallback */}
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </BrowserRouter>
-              </TooltipProvider>
-            </TaskProvider>
-          </ErrorBoundary>
-        </AuthProvider>
-      </QueryClientProvider>
-    </ErrorBoundary>
+    <div role="alert">
+      <p>Something went wrong:</p>
+      <pre>{error.message}</pre>
+      <button onClick={() => resetErrorBoundary()}>Try again</button>
+    </div>
   );
 };
+
+function App() {
+  return (
+    <ErrorBoundary FallbackComponent={ErrorFallback}>
+      <QueryClient>
+        <Router>
+          <AuthProvider>
+            <TaskProvider>
+              <Routes>
+                {/* Landing page route */}
+                <Route path="/" element={<LandingPage />} />
+                
+                {/* Auth routes */}
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/signup" element={<SignupPage />} />
+                
+                {/* Protected dashboard routes */}
+                <Route path="/dashboard" element={<AppLayout />}>
+                  <Route index element={<DashboardPage />} />
+                  <Route path="tasks" element={<TaskPage />} />
+                  <Route path="projects" element={<ProjectPage />} />
+                  <Route path="organization" element={<OrganizationDashboard />} />
+                  <Route path="team" element={<OrganizationDashboard />} />
+                  <Route path="calendar" element={<CalendarPage />} />
+                  <Route path="focus" element={<FocusPage />} />
+                  <Route path="reports" element={<ReportsPage />} />
+                  <Route path="chat" element={<ChatPage />} />
+                  <Route path="chat/:roomId" element={<ChatPage />} />
+                  <Route path="documents" element={<DocumentsPage />} />
+                  <Route path="finance" element={<FinancePage />} />
+                  <Route path="finance/pnl" element={<PnlViewPage />} />
+                  <Route path="journal" element={<JournalPage />} />
+                  <Route path="notebook" element={<NotebookPage />} />
+                  <Route path="profile" element={<ProfilePage />} />
+                  <Route path="settings" element={<SettingsPage />} />
+                </Route>
+              </Routes>
+            </TaskProvider>
+          </AuthProvider>
+        </Router>
+      </QueryClient>
+    </ErrorBoundary>
+  );
+}
 
 export default App;

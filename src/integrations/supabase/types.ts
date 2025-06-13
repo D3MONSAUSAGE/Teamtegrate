@@ -202,6 +202,13 @@ export type Database = {
             foreignKeyName: "chat_room_participants_added_by_fkey"
             columns: ["added_by"]
             isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_room_participants_added_by_fkey"
+            columns: ["added_by"]
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -210,6 +217,13 @@ export type Database = {
             columns: ["room_id"]
             isOneToOne: false
             referencedRelation: "chat_rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_room_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
             referencedColumns: ["id"]
           },
           {
@@ -713,6 +727,13 @@ export type Database = {
             foreignKeyName: "organization_invites_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_invites_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -836,6 +857,13 @@ export type Database = {
             foreignKeyName: "project_team_members_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_team_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -933,7 +961,21 @@ export type Database = {
             foreignKeyName: "shared_folders_owner_id_fkey"
             columns: ["owner_id"]
             isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shared_folders_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shared_folders_shared_with_user_id_fkey"
+            columns: ["shared_with_user_id"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
             referencedColumns: ["id"]
           },
           {
@@ -1177,7 +1219,29 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      organization_user_hierarchy: {
+        Row: {
+          assigned_tasks_count: number | null
+          completed_tasks_count: number | null
+          created_at: string | null
+          email: string | null
+          id: string | null
+          name: string | null
+          organization_id: string | null
+          organization_name: string | null
+          role: string | null
+          role_level: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "users_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       audit_organization_data: {
@@ -1187,6 +1251,10 @@ export type Database = {
           records_without_org: number
           orphaned_records: number
         }[]
+      }
+      can_manage_user_role: {
+        Args: { manager_role: string; target_role: string }
+        Returns: boolean
       }
       create_get_all_projects_function: {
         Args: Record<PropertyKey, never>
@@ -1261,6 +1329,10 @@ export type Database = {
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_organization_stats: {
+        Args: { org_id: string }
+        Returns: Json
       }
       get_user_deletion_impact: {
         Args: { target_user_id: string }
