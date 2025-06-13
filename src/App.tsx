@@ -9,21 +9,7 @@ import { TaskProvider } from '@/contexts/task';
 
 import LandingPage from '@/pages/LandingPage';
 import LoginPage from '@/pages/LoginPage';
-import DashboardPage from '@/pages/DashboardPage';
-import CalendarPage from '@/pages/CalendarPage';
-import ReportsPage from '@/pages/ReportsPage';
-import ChatPage from '@/pages/ChatPage';
-import DocumentsPage from '@/pages/DocumentsPage';
-import FinancePage from '@/pages/FinancePage';
-import JournalPage from '@/pages/JournalPage';
-import NotebookPage from '@/pages/NotebookPage';
-import ProfilePage from '@/pages/ProfilePage';
-import SettingsPage from '@/pages/SettingsPage';
-import Sidebar from '@/components/Sidebar';
-import Navbar from '@/components/Navbar';
-
-import OrganizationDashboard from '@/pages/OrganizationDashboard';
-import TeamPage from '@/pages/TeamPage';
+import AppLayout from '@/components/AppLayout';
 
 // Create a query client instance
 const queryClient = new QueryClient();
@@ -45,21 +31,6 @@ const ErrorFallback = ({ error, resetErrorBoundary }: any) => {
   );
 };
 
-// Simple layout wrapper for dashboard routes
-const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
-  return (
-    <div className="flex h-screen bg-background">
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Navbar />
-        <main className="flex-1 overflow-auto">
-          {children}
-        </main>
-      </div>
-    </div>
-  );
-};
-
 function App() {
   return (
     <ErrorBoundary FallbackComponent={ErrorFallback}>
@@ -74,72 +45,8 @@ function App() {
                 {/* Auth routes */}
                 <Route path="/login" element={<LoginPage />} />
                 
-                {/* Protected dashboard routes */}
-                <Route path="/dashboard" element={
-                  <DashboardLayout>
-                    <DashboardPage />
-                  </DashboardLayout>
-                } />
-                <Route path="/dashboard/organization" element={
-                  <DashboardLayout>
-                    <OrganizationDashboard />
-                  </DashboardLayout>
-                } />
-                <Route path="/dashboard/team" element={
-                  <DashboardLayout>
-                    <TeamPage />
-                  </DashboardLayout>
-                } />
-                <Route path="/dashboard/calendar" element={
-                  <DashboardLayout>
-                    <CalendarPage />
-                  </DashboardLayout>
-                } />
-                <Route path="/dashboard/reports" element={
-                  <DashboardLayout>
-                    <ReportsPage />
-                  </DashboardLayout>
-                } />
-                <Route path="/dashboard/chat" element={
-                  <DashboardLayout>
-                    <ChatPage />
-                  </DashboardLayout>
-                } />
-                <Route path="/dashboard/chat/:roomId" element={
-                  <DashboardLayout>
-                    <ChatPage />
-                  </DashboardLayout>
-                } />
-                <Route path="/dashboard/documents" element={
-                  <DashboardLayout>
-                    <DocumentsPage />
-                  </DashboardLayout>
-                } />
-                <Route path="/dashboard/finance" element={
-                  <DashboardLayout>
-                    <FinancePage />
-                  </DashboardLayout>
-                } />
-                <Route path="/dashboard/journal" element={
-                  <DashboardLayout>
-                    <JournalPage />
-                  </DashboardLayout>
-                } />
-                <Route path="/dashboard/notebook" element={
-                  <DashboardLayout>
-                    <NotebookPage />
-                  </DashboardLayout>
-                } />
-                <Route path="/dashboard/profile" element={
-                  <DashboardLayout>
-                    <ProfilePage />
-                  </DashboardLayout>
-                } />
-                <Route path="/dashboard/settings" element={
-                  <DashboardLayout>
-                    <SettingsPage />
-                  </DashboardLayout>
-                } />
+                {/* Protected dashboard routes - using AppLayout which includes SidebarProvider */}
+                <Route path="/dashboard/*" element={<AppLayout />} />
               </Routes>
             </TaskProvider>
           </AuthProvider>

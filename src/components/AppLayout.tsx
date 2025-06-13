@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Outlet, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
@@ -8,6 +8,20 @@ import ChatbotBubble from './chat/ChatbotBubble';
 import { SidebarProvider, SidebarInset, useSidebar } from '@/components/ui/sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Loader2 } from 'lucide-react';
+
+// Import all dashboard pages
+import DashboardPage from '@/pages/DashboardPage';
+import CalendarPage from '@/pages/CalendarPage';
+import ReportsPage from '@/pages/ReportsPage';
+import ChatPage from '@/pages/ChatPage';
+import DocumentsPage from '@/pages/DocumentsPage';
+import FinancePage from '@/pages/FinancePage';
+import JournalPage from '@/pages/JournalPage';
+import NotebookPage from '@/pages/NotebookPage';
+import ProfilePage from '@/pages/ProfilePage';
+import SettingsPage from '@/pages/SettingsPage';
+import OrganizationDashboard from '@/pages/OrganizationDashboard';
+import TeamPage from '@/pages/TeamPage';
 
 const MainContent = ({ children }: { children: React.ReactNode }) => {
   const { setOpen, isMobile } = useSidebar();
@@ -67,7 +81,21 @@ const AppLayout = () => {
         <Sidebar />
         
         <MainContent>
-          <Outlet />
+          <Routes>
+            <Route index element={<DashboardPage />} />
+            <Route path="organization" element={<OrganizationDashboard />} />
+            <Route path="team" element={<TeamPage />} />
+            <Route path="calendar" element={<CalendarPage />} />
+            <Route path="reports" element={<ReportsPage />} />
+            <Route path="chat" element={<ChatPage />} />
+            <Route path="chat/:roomId" element={<ChatPage />} />
+            <Route path="documents" element={<DocumentsPage />} />
+            <Route path="finance" element={<FinancePage />} />
+            <Route path="journal" element={<JournalPage />} />
+            <Route path="notebook" element={<NotebookPage />} />
+            <Route path="profile" element={<ProfilePage />} />
+            <Route path="settings" element={<SettingsPage />} />
+          </Routes>
         </MainContent>
 
         <ChatbotBubble />
