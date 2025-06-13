@@ -10,6 +10,7 @@ import LoginPage from '@/pages/LoginPage';
 import DashboardPage from '@/pages/DashboardPage';
 import TasksPage from '@/pages/TasksPage';
 import ProjectsPage from '@/pages/ProjectsPage';
+import ProjectTasksPage from '@/pages/ProjectTasksPage';
 import CalendarPage from '@/pages/CalendarPage';
 import ReportsPage from '@/pages/ReportsPage';
 import ChatPage from '@/pages/ChatPage';
