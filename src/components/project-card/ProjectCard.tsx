@@ -39,9 +39,20 @@ const ProjectCard = ({ project, onViewTasks, onCreateTask, onDeleted }: ProjectC
     }
   };
 
+  const handleEditClick = () => {
+    console.log('Edit button clicked for project:', project.id);
+    setShowEditDialog(true);
+  };
+
   const handleEditSuccess = () => {
     refreshProjects();
     toast.success("Project updated successfully");
+    setShowEditDialog(false);
+  };
+
+  const handleEditCancel = () => {
+    console.log('Edit dialog cancelled');
+    setShowEditDialog(false);
   };
 
   return (
@@ -50,7 +61,7 @@ const ProjectCard = ({ project, onViewTasks, onCreateTask, onDeleted }: ProjectC
         <ProjectCardHeader 
           project={project} 
           onDeleteClick={() => setShowDeleteDialog(true)}
-          onEditClick={() => setShowEditDialog(true)}
+          onEditClick={handleEditClick}
           isDeleting={isDeleting} 
         />
         <ProjectCardContent 
@@ -70,7 +81,7 @@ const ProjectCard = ({ project, onViewTasks, onCreateTask, onDeleted }: ProjectC
 
       <EditProjectDialog 
         open={showEditDialog}
-        onOpenChange={setShowEditDialog}
+        onOpenChange={handleEditCancel}
         project={project}
         onSuccess={handleEditSuccess}
       />

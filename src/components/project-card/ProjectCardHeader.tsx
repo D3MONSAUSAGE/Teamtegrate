@@ -1,12 +1,15 @@
 
 import React from 'react';
-import { CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { MoreHorizontal, Edit, Trash2 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Project } from '@/types';
-import { Calendar, AlertTriangle, Users, Trash2, PencilLine } from 'lucide-react';
-import { format, isAfter } from 'date-fns';
-import ProjectTags from './ProjectTags';
 
 interface ProjectCardHeaderProps {
   project: Project;
@@ -15,104 +18,92 @@ interface ProjectCardHeaderProps {
   isDeleting: boolean;
 }
 
-const statusColors = {
-  'To Do': 'bg-yellow-500/10 text-yellow-700 border-yellow-500',
-  'In Progress': 'bg-blue-500/10 text-blue-700 border-blue-500',
-  'Completed': 'bg-green-500/10 text-green-700 border-green-500'
-};
-
-const ProjectCardHeader: React.FC<ProjectCardHeaderProps> = ({ project, onDeleteClick, onEditClick, isDeleting }) => {
-  // Calculate days left or overdue
-  const calculateDaysRemaining = () => {
-    const today = new Date();
-    const endDate = new Date(project.endDate);
-    
-    if (project.status === 'Completed') {
-      return null; // No need to show days remaining for completed projects
-    }
-    
-    if (isAfter(today, endDate)) {
-      const daysOverdue = Math.ceil((today.getTime() - endDate.getTime()) / (1000 * 60 * 60 * 24));
-      return { overdue: true, days: daysOverdue };
-    } else {
-      const daysLeft = Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-      return { overdue: false, days: daysLeft };
+const ProjectCardHeader: React.FC<ProjectCardHeaderProps> = ({
+  project,
+  onDeleteClick,
+  onEditClick,
+  isDeleting
+}) => {
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'completed':
+        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+      case 'in progress':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
+      case 'on hold':
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
+      default:
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
     }
   };
 
-  const timeInfo = calculateDaysRemaining();
-  
+  const handleEditClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('Edit menu item clicked');
+    onEditClick();
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onDeleteClick();
+  };
+
   return (
-    <CardHeader className="pb-2">
-      <div className="flex justify-between items-start">
-        <div className="space-y-1">
-          <h3 className="text-lg font-semibold line-clamp-1">{project.title}</h3>
-          <div className="flex items-center space-x-2">
-            <Calendar className="w-4 h-4 text-gray-500" />
-            <span className="text-sm text-gray-500">
-              {format(new Date(project.startDate), 'MMM d')} - {format(new Date(project.endDate), 'MMM d, yyyy')}
-            </span>
+    <div className="p-6 pb-4">
+      <div className="flex items-start justify-between">
+        <div className="space-y-2 flex-1">
+          <h3 className="text-xl font-semibold text-card-foreground line-clamp-2 leading-tight">
+            {project.title}
+          </h3>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge 
+              variant="secondary" 
+              className={`text-xs font-medium ${getStatusColor(project.status)}`}
+            >
+              {project.status}
+            </Badge>
+            {project.isCompleted && (
+              <Badge variant="outline" className="text-xs">
+                ✓ Completed
+              </Badge>
+            )}
           </div>
         </div>
-        <div className="flex space-x-1">
-          <Button 
-            variant="ghost" 
-            size="icon"
-            className="text-blue-600 hover:text-blue-800"
-            onClick={onEditClick}
-          >
-            <PencilLine className="h-4 w-4" />
-          </Button>
-          <Button 
-            variant="ghost" 
-            size="icon"
-            className="text-destructive hover:text-destructive"
-            onClick={onDeleteClick}
-            disabled={isDeleting}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
+        
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-8 w-8 p-0 hover:bg-muted transition-colors"
+              disabled={isDeleting}
+            >
+              <span className="sr-only">Open menu</span>
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem 
+              onClick={handleEditClick}
+              className="flex items-center gap-2 cursor-pointer"
+            >
+              <Edit className="h-4 w-4" />
+              Edit Project
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={handleDeleteClick}
+              className="flex items-center gap-2 text-red-600 focus:text-red-600 cursor-pointer"
+              disabled={isDeleting}
+            >
+              <Trash2 className="h-4 w-4" />
+              Delete Project
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
-      
-      <div className="flex flex-wrap gap-2 mt-2">
-        <Badge 
-          variant="outline" 
-          className={`${statusColors[project.status]} text-xs`}
-        >
-          {project.status}
-        </Badge>
-        
-        <Badge variant="outline" className="text-xs">
-          {project.tasksCount} {project.tasksCount === 1 ? 'task' : 'tasks'}
-        </Badge>
-        
-        {timeInfo && timeInfo.overdue && (
-          <Badge variant="destructive" className="flex gap-1 items-center">
-            <AlertTriangle className="h-3 w-3" /> 
-            {timeInfo.days} {timeInfo.days === 1 ? 'day' : 'days'} overdue
-          </Badge>
-        )}
-        
-        {timeInfo && !timeInfo.overdue && (
-          <Badge variant="secondary" className="text-xs">
-            {timeInfo.days} {timeInfo.days === 1 ? 'day' : 'days'} left
-          </Badge>
-        )}
-        
-        {project.teamMemberIds && project.teamMemberIds.length > 0 && (
-          <Badge variant="outline" className="flex gap-1 items-center text-xs">
-            <Users className="h-3 w-3" />
-            {project.teamMemberIds.length}
-          </Badge>
-        )}
-      </div>
-      
-      {/* Display project tags if any */}
-      {project.tags && project.tags.length > 0 && (
-        <ProjectTags tags={project.tags} />
-      )}
-    </CardHeader>
+    </div>
   );
 };
 

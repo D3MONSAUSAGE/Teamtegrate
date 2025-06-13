@@ -58,9 +58,10 @@ const EditProjectDialog: React.FC<EditProjectDialogProps> = ({
     name: "teamMembers"
   });
   
-  // Update form when project changes
+  // Update form when project changes or dialog opens
   useEffect(() => {
     if (project && open) {
+      console.log('Resetting form with project data:', project);
       reset({
         title: project.title || '',
         description: project.description || '',
@@ -74,6 +75,8 @@ const EditProjectDialog: React.FC<EditProjectDialogProps> = ({
 
   const onSubmit = async (data: FormValues) => {
     try {
+      console.log('Submitting project update:', data);
+      
       // Extract team member IDs from the form data
       const teamMemberIds = data.teamMembers?.map(tm => tm.memberId) || [];
       
@@ -87,7 +90,6 @@ const EditProjectDialog: React.FC<EditProjectDialogProps> = ({
       });
       
       toast.success("Project updated successfully");
-      onOpenChange(false);
       if (onSuccess) {
         onSuccess();
       }
@@ -97,11 +99,16 @@ const EditProjectDialog: React.FC<EditProjectDialogProps> = ({
     }
   };
 
+  const handleCancel = () => {
+    console.log('Edit dialog cancelled');
+    onOpenChange(false);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Edit Project</DialogTitle>
+          <DialogTitle>Edit Project: {project?.title}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -124,9 +131,8 @@ const EditProjectDialog: React.FC<EditProjectDialogProps> = ({
             <Button 
               type="button" 
               variant="outline" 
-              onClick={() => {
-                onOpenChange(false);
-              }}
+              onClick={handleCancel}
+              disabled={isSubmitting}
             >
               Cancel
             </Button>
