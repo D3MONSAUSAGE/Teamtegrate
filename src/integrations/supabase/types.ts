@@ -1176,6 +1176,57 @@ export type Database = {
         }
         Relationships: []
       }
+      user_management_audit: {
+        Row: {
+          action_type: string
+          created_at: string | null
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          new_values: Json | null
+          old_values: Json | null
+          organization_id: string
+          performed_by_email: string
+          performed_by_user_id: string
+          target_user_email: string
+          target_user_id: string
+          target_user_name: string
+          user_agent: string | null
+        }
+        Insert: {
+          action_type: string
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          new_values?: Json | null
+          old_values?: Json | null
+          organization_id: string
+          performed_by_email: string
+          performed_by_user_id: string
+          target_user_email: string
+          target_user_id: string
+          target_user_name: string
+          user_agent?: string | null
+        }
+        Update: {
+          action_type?: string
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          new_values?: Json | null
+          old_values?: Json | null
+          organization_id?: string
+          performed_by_email?: string
+          performed_by_user_id?: string
+          target_user_email?: string
+          target_user_id?: string
+          target_user_name?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           avatar_url: string | null
@@ -1251,6 +1302,14 @@ export type Database = {
           records_without_org: number
           orphaned_records: number
         }[]
+      }
+      can_change_user_role: {
+        Args: {
+          manager_user_id: string
+          target_user_id: string
+          new_role: string
+        }
+        Returns: Json
       }
       can_manage_user_role: {
         Args: { manager_role: string; target_role: string }
@@ -1338,6 +1397,10 @@ export type Database = {
         Args: { target_user_id: string }
         Returns: Json
       }
+      get_user_management_impact: {
+        Args: { target_user_id: string }
+        Returns: Json
+      }
       get_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -1385,6 +1448,10 @@ export type Database = {
       validate_and_use_invite_code: {
         Args: { code: string }
         Returns: Json
+      }
+      would_leave_org_without_superadmin: {
+        Args: { target_user_id: string; target_org_id: string }
+        Returns: boolean
       }
     }
     Enums: {

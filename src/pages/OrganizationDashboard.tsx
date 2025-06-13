@@ -7,6 +7,7 @@ import { Shield, AlertCircle } from 'lucide-react';
 import OrganizationHeader from '@/components/organization/OrganizationHeader';
 import OrganizationStatsCards from '@/components/organization/OrganizationStatsCards';
 import UserRoleManagement from '@/components/organization/UserRoleManagement';
+import SuperadminUserManagement from '@/components/organization/SuperadminUserManagement';
 import RoleDistributionChart from '@/components/organization/RoleDistributionChart';
 import OrganizationQuickActions from '@/components/organization/OrganizationQuickActions';
 
@@ -51,7 +52,11 @@ const OrganizationDashboard = () => {
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          <UserRoleManagement />
+          {user.role === 'superadmin' ? (
+            <SuperadminUserManagement />
+          ) : (
+            <UserRoleManagement />
+          )}
         </div>
         <div className="space-y-6">
           <RoleDistributionChart />
