@@ -52,10 +52,13 @@ export const useProjectTasksView = (projectId: string | null) => {
   // Fetch team members for the project
   const { teamMembers, isLoading: isLoadingTeamMembers, error: teamMembersError } = useProjectTeamMembers(projectId);
 
-  // Wrap updateTaskStatus to ensure it returns a Promise
+  // Wrap updateTaskStatus to ensure it returns a Promise - fix the TypeScript error
   const wrappedUpdateTaskStatus = async (taskId: string, status: any): Promise<void> => {
     console.log('useProjectTasksView: Updating task status:', taskId, status);
-    updateTaskStatus(taskId, status);
+    // Convert the void return to a Promise
+    const result = updateTaskStatus(taskId, status);
+    // If updateTaskStatus returns a Promise, await it; otherwise return resolved Promise
+    return result instanceof Promise ? result : Promise.resolve();
   };
 
   const {
