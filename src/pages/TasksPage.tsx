@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTask } from '@/contexts/task';
@@ -9,8 +10,7 @@ import CreateTaskDialogEnhanced from '@/components/CreateTaskDialogEnhanced';
 import { toast } from '@/components/ui/sonner';
 
 const TasksPage = () => {
-  // Add very visible logging to ensure this component renders
-  console.log('🚨🚨🚨 TasksPage: Component is DEFINITELY rendering! 🚨🚨🚨');
+  console.log('🚨 TasksPage: Component rendering');
   console.log('🚨 Current URL:', window.location.href);
   console.log('🚨 Current pathname:', window.location.pathname);
   
@@ -26,13 +26,14 @@ const TasksPage = () => {
     }
   }, []);
 
-  // Use the same data source as the dashboard - through TaskContext
-  const { tasks, isLoading, updateTaskStatus } = useTask();
+  // Use the enhanced task context with fixed RLS policies
+  const { tasks, isLoading, updateTaskStatus, error } = useTask();
   
   // Enhanced debug logging
   console.log('🚨 TasksPage: useTask hook result:');
   console.log('🚨  - tasks:', tasks);
   console.log('🚨  - isLoading:', isLoading);
+  console.log('🚨  - error:', error);
   console.log('🚨  - tasks length:', tasks?.length || 0);
   console.log('🚨  - tasks is array:', Array.isArray(tasks));
   console.log('🚨  - updateTaskStatus function:', typeof updateTaskStatus);
@@ -72,6 +73,27 @@ const TasksPage = () => {
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
             <p className="text-muted-foreground">Loading tasks...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  // Show error state if there's an error
+  if (error) {
+    console.log('🚨 TasksPage: Rendering error state:', error);
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-accent/10 relative overflow-hidden">
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <p className="text-destructive mb-4">Error loading tasks</p>
+            <p className="text-muted-foreground text-sm">{error.message}</p>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+            >
+              Retry
+            </button>
           </div>
         </div>
       </div>

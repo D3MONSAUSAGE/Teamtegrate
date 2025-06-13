@@ -44,8 +44,16 @@ const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   const { user } = useAuth();
   const { projects, refreshProjects } = useProjects();
   
-  // Use the same data fetching pattern as the tasks page
-  const { tasks, isLoading } = useTasksPageData();
+  // Use the enhanced tasks data fetching with fixed RLS policies
+  const { tasks, isLoading, error } = useTasksPageData();
+  
+  // Log the current state for debugging
+  console.log('TaskContext state:', {
+    tasksCount: tasks.length,
+    isLoading,
+    hasError: !!error,
+    userOrganization: user?.organizationId
+  });
   
   // Keep setTasks for backward compatibility with components that might need it
   const [, setTasks] = useState<Task[]>([]);
