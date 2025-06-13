@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Project, Task, TaskStatus } from '@/types';
 import { Button } from "@/components/ui/button";
