@@ -98,13 +98,14 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
     handleSearchChange(mockEvent);
   };
 
-  // Create a wrapper function with explicit typing to ensure it returns void
-  const handleTaskStatusChangeWrapper: (taskId: string, status: string) => void = (taskId: string, status: string) => {
-    // Call the async function but don't return the promise
-    // This ensures the wrapper returns void while still executing the async operation
+  // Create a wrapper function that truly returns void by not returning anything
+  const handleTaskStatusChangeWrapper = (taskId: string, status: string): void => {
+    // Call the async function and handle errors, but explicitly return nothing
     handleTaskStatusChange(taskId, status as TaskStatus).catch(error => {
       console.error('Error updating task status:', error);
     });
+    // Explicitly return void to ensure TypeScript understands this function returns void
+    return;
   };
 
   console.log('ProjectTasksView: Rendering content with project:', project.title);
