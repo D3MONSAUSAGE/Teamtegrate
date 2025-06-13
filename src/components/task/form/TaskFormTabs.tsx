@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Task, Project } from '@/types';
@@ -64,8 +65,6 @@ const TaskFormTabs: React.FC<TaskFormTabsProps> = ({
           projects={projects}
           editingTask={editingTask}
           currentProjectId={currentProjectId}
-          selectedMember={selectedMember}
-          setSelectedMember={setSelectedMember}
           date={deadlineDate}
           timeInput={timeInput}
           onDateChange={onDateChange}
