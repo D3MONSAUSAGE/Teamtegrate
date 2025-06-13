@@ -1,3 +1,4 @@
+
 import React, {
   createContext,
   useState,
@@ -57,7 +58,9 @@ const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
           console.log('TaskContext: Loading tasks for user:', user);
           const simpleUser = {
             id: user.id,
-            organization_id: user.organizationId
+            organization_id: user.organizationId,
+            email: user.email,
+            role: user.role
           };
           await fetchTasks(simpleUser, setTasks);
         } catch (error) {
