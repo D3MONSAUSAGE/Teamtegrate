@@ -48,6 +48,11 @@ const ProjectsPage = () => {
     navigate(`/dashboard/projects/${projectId}/tasks`);
   };
 
+  const handleProjectCreated = () => {
+    // Refresh projects when a new one is created
+    refreshProjects();
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-background/90 relative overflow-hidden">
@@ -230,6 +235,7 @@ const ProjectsPage = () => {
       <CreateProjectDialog
         open={isCreateDialogOpen}
         onOpenChange={setIsCreateDialogOpen}
+        onProjectCreated={handleProjectCreated}
       />
     </div>
   );

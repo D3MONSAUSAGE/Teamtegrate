@@ -1,5 +1,6 @@
+
 import React, { useState, useCallback } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import {
@@ -8,11 +9,11 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
 import { Calendar } from "@/components/ui/calendar"
 import {
   Popover,
@@ -21,7 +22,7 @@ import {
 } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
 import { format } from "date-fns"
-import { CalendarIcon } from "lucide-react"
+import { CalendarIcon, Sparkles, DollarSign, Users, Calendar as CalendarIconLucide } from "lucide-react"
 import { toast } from '@/components/ui/sonner';
 import MultiSelect from './MultiSelect';
 import { useAuth } from '@/contexts/AuthContext';
@@ -33,8 +34,12 @@ const FormSchema = z.object({
     message: "Project title must be at least 2 characters.",
   }),
   description: z.string().optional(),
-  startDate: z.date(),
-  endDate: z.date(),
+  startDate: z.date({
+    required_error: "Start date is required.",
+  }),
+  endDate: z.date({
+    required_error: "End date is required.",
+  }),
   budget: z.number().optional(),
 })
 
@@ -49,14 +54,14 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
   onOpenChange,
   onProjectCreated
 }) => {
-  const { register, handleSubmit, reset, control, formState: { errors } } = useForm<z.infer<typeof FormSchema>>({
+  const { control, handleSubmit, reset, register, formState: { errors } } = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
       title: "",
       description: "",
       startDate: new Date(),
-      endDate: new Date(),
-      budget: 0,
+      endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Default to 1 week from now
+      budget: undefined,
     },
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -98,10 +103,10 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
       const projectData: Omit<Project, 'id' | 'createdAt' | 'updatedAt'> = {
         title: data.title,
         description: data.description,
-        startDate: new Date(data.startDate),
-        endDate: new Date(data.endDate),
+        startDate: data.startDate,
+        endDate: data.endDate,
         managerId: user?.id || '',
-        budget: Number(data.budget) || 0,
+        budget: data.budget || 0,
         budgetSpent: 0,
         teamMemberIds: selectedMembers,
         isCompleted: false,
@@ -132,109 +137,195 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogTrigger asChild>
-        <Button variant="outline">Create Project</Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Create Project</DialogTitle>
-          <DialogDescription>
-            Create a new project to kickstart your productivity.
-          </DialogDescription>
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-full bg-gradient-to-r from-primary/20 to-accent/20">
+              <Sparkles className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
+                Create New Project
+              </DialogTitle>
+              <DialogDescription className="text-muted-foreground">
+                Start organizing your work by creating a new project with clear goals and timelines.
+              </DialogDescription>
+            </div>
+          </div>
         </DialogHeader>
-        <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 py-4">
-          <div className="grid gap-2">
-            <Label htmlFor="title">Project Title</Label>
-            <Input
-              id="title"
-              placeholder="Enter project title"
-              type="text"
-              {...register("title")}
-            />
-            {errors.title && (
-              <p className="text-sm text-red-500">{errors.title.message}</p>
-            )}
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="description">Description</Label>
-            <Input
-              id="description"
-              placeholder="Enter project description"
-              type="text"
-              {...register("description")}
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="budget">Budget</Label>
-            <Input
-              id="budget"
-              placeholder="Enter project budget"
-              type="number"
-              {...register("budget", { valueAsNumber: true })}
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <Label>Start Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant={"outline"}
-                    className={cn(
-                      "w-[240px] justify-start text-left font-normal",
-                      !register ? "text-muted-foreground" : undefined
-                    )}
-                  >
-                    {format(new Date(), "PPP")}
-                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={new Date()}
-                    onSelect={() => { }}
-                    disabled={(date) =>
-                      date > new Date()
-                    }
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          {/* Project Details Section */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-sm font-medium text-primary">
+              <CalendarIconLucide className="h-4 w-4" />
+              Project Details
             </div>
-            <div className="grid gap-2">
-              <Label>End Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant={"outline"}
-                    className={cn(
-                      "w-[240px] justify-start text-left font-normal",
-                      !register ? "text-muted-foreground" : undefined
+            
+            <div className="space-y-4 pl-6">
+              <div className="space-y-2">
+                <Label htmlFor="title">Project Title *</Label>
+                <Input
+                  id="title"
+                  placeholder="Enter a descriptive project title..."
+                  {...register("title")}
+                  className="h-12"
+                />
+                {errors.title && (
+                  <p className="text-sm text-red-500">{errors.title.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  placeholder="Describe the project goals, scope, and key deliverables..."
+                  {...register("description")}
+                  className="h-24 resize-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Start Date *</Label>
+                  <Controller
+                    name="startDate"
+                    control={control}
+                    render={({ field }) => (
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full h-12 justify-start text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {field.value ? format(field.value, "PPP") : "Pick start date"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={field.onChange}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
                     )}
-                  >
-                    {format(new Date(), "PPP")}
-                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={new Date()}
-                    onSelect={() => { }}
-                    disabled={(date) =>
-                      date > new Date()
-                    }
-                    initialFocus
                   />
-                </PopoverContent>
-              </Popover>
+                  {errors.startDate && (
+                    <p className="text-sm text-red-500">{errors.startDate.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label>End Date *</Label>
+                  <Controller
+                    name="endDate"
+                    control={control}
+                    render={({ field }) => (
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full h-12 justify-start text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {field.value ? format(field.value, "PPP") : "Pick end date"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={field.onChange}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    )}
+                  />
+                  {errors.endDate && (
+                    <p className="text-sm text-red-500">{errors.endDate.message}</p>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
-          <MultiSelect onChange={onMemberChange} />
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Creating..." : "Create Project"}
-          </Button>
+
+          {/* Budget Section */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-sm font-medium text-primary">
+              <DollarSign className="h-4 w-4" />
+              Budget (Optional)
+            </div>
+            
+            <div className="pl-6">
+              <div className="space-y-2">
+                <Label htmlFor="budget">Project Budget</Label>
+                <Input
+                  id="budget"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="0.00"
+                  {...register("budget", { 
+                    setValueAs: value => value === "" ? undefined : Number(value),
+                    valueAsNumber: true 
+                  })}
+                  className="h-12"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Team Section */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-sm font-medium text-primary">
+              <Users className="h-4 w-4" />
+              Team Members
+            </div>
+            
+            <div className="pl-6">
+              <MultiSelect onChange={onMemberChange} />
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex justify-end gap-3 pt-6 border-t">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => onOpenChange(false)}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              disabled={isSubmitting}
+              className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90"
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin mr-2" />
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Create Project
+                </>
+              )}
+            </Button>
+          </div>
         </form>
       </DialogContent>
     </Dialog>
