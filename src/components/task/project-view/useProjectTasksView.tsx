@@ -63,11 +63,11 @@ export const useProjectTasksView = (projectId: string | null) => {
           // If it returns a Promise, await it
           await result;
         }
-        // If it returns void, we just resolve
-        return;
+        // Always return a resolved Promise
+        return Promise.resolve();
       } catch (error) {
         console.error('Error in wrappedUpdateTaskStatus:', error);
-        throw error;
+        return Promise.reject(error);
       }
     };
   }, [updateTaskStatus]);
