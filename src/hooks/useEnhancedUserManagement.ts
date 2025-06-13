@@ -52,6 +52,12 @@ interface SuperadminTransferData {
   currentSuperadminName: string;
 }
 
+interface TransferResponse {
+  success: boolean;
+  error?: string;
+  message?: string;
+}
+
 export const useEnhancedUserManagement = () => {
   const { user: currentUser } = useAuth();
   const queryClient = useQueryClient();
@@ -180,8 +186,11 @@ export const useEnhancedUserManagement = () => {
 
       if (error) throw error;
 
-      if (!data.success) {
-        throw new Error(data.error);
+      // Type cast the response to our expected interface
+      const response = data as TransferResponse;
+
+      if (!response.success) {
+        throw new Error(response.error);
       }
 
       // Log audit trail for both users
