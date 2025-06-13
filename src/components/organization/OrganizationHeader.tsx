@@ -1,13 +1,17 @@
 
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
-import { Building2, Users, Calendar } from 'lucide-react';
+import { Building2, Users, Calendar, Loader2 } from 'lucide-react';
 import { useOrganization } from '@/hooks/useOrganization';
 import { useAuth } from '@/contexts/AuthContext';
 
 const OrganizationHeader: React.FC = () => {
-  const { data: organization, isLoading } = useOrganization();
+  const { data: organization, isLoading, error } = useOrganization();
   const { user } = useAuth();
+
+  console.log('OrganizationHeader - Organization:', organization);
+  console.log('OrganizationHeader - Loading:', isLoading);
+  console.log('OrganizationHeader - Error:', error);
 
   if (isLoading) {
     return (
@@ -25,8 +29,32 @@ const OrganizationHeader: React.FC = () => {
     );
   }
 
+  if (error) {
+    console.error('OrganizationHeader - Error loading organization:', error);
+    return (
+      <Card className="border-destructive">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-3 text-destructive">
+            <Building2 className="h-5 w-5" />
+            <span>Error loading organization: {error.message}</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (!organization) {
-    return null;
+    console.log('OrganizationHeader - No organization found');
+    return (
+      <Card className="border-orange-200 bg-orange-50">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-3 text-orange-600">
+            <Building2 className="h-5 w-5" />
+            <span>No organization found for user</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
   const memberSince = user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'Unknown';

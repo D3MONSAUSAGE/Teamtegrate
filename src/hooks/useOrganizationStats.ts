@@ -19,6 +19,8 @@ export const useOrganizationStats = () => {
   const { user } = useAuth();
 
   const fetchOrganizationStats = async (): Promise<OrganizationStats> => {
+    console.log('useOrganizationStats - Fetching for organization:', user?.organizationId);
+    
     if (!user?.organizationId) {
       throw new Error('User must belong to an organization');
     }
@@ -27,12 +29,16 @@ export const useOrganizationStats = () => {
       .rpc('get_organization_stats', { org_id: user.organizationId });
 
     if (error) {
-      console.error('Error fetching organization stats:', error);
+      console.error('useOrganizationStats - Error fetching organization stats:', error);
       throw new Error(error.message);
     }
 
+    console.log('useOrganizationStats - Raw data:', data);
+
     // Parse the JSON response and ensure it matches our interface
     const parsedData = typeof data === 'string' ? JSON.parse(data) : data;
+    
+    console.log('useOrganizationStats - Parsed data:', parsedData);
     
     return {
       total_users: parsedData.total_users || 0,
