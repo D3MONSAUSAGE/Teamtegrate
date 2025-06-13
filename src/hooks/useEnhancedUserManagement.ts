@@ -224,7 +224,7 @@ export const useEnhancedUserManagement = () => {
       .rpc('get_user_management_impact', { target_user_id: userId });
 
     if (error) throw error;
-    return data as UserImpactAnalysis;
+    return data as unknown as UserImpactAnalysis;
   };
 
   // Validate role change
@@ -241,7 +241,7 @@ export const useEnhancedUserManagement = () => {
       });
 
     if (error) throw error;
-    return data as RoleChangeValidation;
+    return data as unknown as RoleChangeValidation;
   };
 
   // Log user management actions
