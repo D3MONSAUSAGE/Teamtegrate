@@ -2,6 +2,7 @@
 import React from 'react';
 import { Task, TaskStatus, User } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import TaskCard from '@/components/task-card/TaskCard';
 
 interface ProjectTasksGridProps {
   todoTasks: Task[];
@@ -12,32 +13,6 @@ interface ProjectTasksGridProps {
   teamMembers: User[];
   isLoadingTeamMembers: boolean;
 }
-
-// Simple task card component since we don't have access to TaskCard
-const SimpleTaskCard: React.FC<{
-  task: Task;
-  onEdit: () => void;
-  onStatusChange: (status: TaskStatus) => Promise<void>;
-}> = ({ task, onEdit, onStatusChange }) => {
-  return (
-    <div className="p-3 border rounded-lg bg-card hover:shadow-md transition-shadow cursor-pointer" onClick={onEdit}>
-      <h4 className="font-medium text-sm mb-1">{task.title}</h4>
-      {task.description && (
-        <p className="text-xs text-muted-foreground mb-2 line-clamp-2">{task.description}</p>
-      )}
-      <div className="flex items-center justify-between text-xs">
-        <span className="px-2 py-1 rounded-full bg-muted text-muted-foreground">
-          {task.priority}
-        </span>
-        {task.assignedToName && (
-          <span className="text-muted-foreground">
-            {task.assignedToName}
-          </span>
-        )}
-      </div>
-    </div>
-  );
-};
 
 const ProjectTasksGrid: React.FC<ProjectTasksGridProps> = ({
   todoTasks,
@@ -61,6 +36,10 @@ const ProjectTasksGrid: React.FC<ProjectTasksGridProps> = ({
     }
   };
 
+  const handleStatusChange = async (taskId: string, status: TaskStatus) => {
+    await onStatusChange(taskId, status);
+  };
+
   const renderTaskColumn = (tasks: Task[], status: TaskStatus, title: string) => (
     <Card className={`h-fit ${getStatusColor(status)}`}>
       <CardHeader className="pb-3">
@@ -78,11 +57,12 @@ const ProjectTasksGrid: React.FC<ProjectTasksGridProps> = ({
           </p>
         ) : (
           tasks.map((task) => (
-            <SimpleTaskCard
+            <TaskCard
               key={task.id}
               task={task}
-              onEdit={() => onEditTask(task)}
-              onStatusChange={(newStatus) => onStatusChange(task.id, newStatus)}
+              onEdit={onEditTask}
+              onStatusChange={handleStatusChange}
+              showProjectInfo={false}
             />
           ))
         )}
