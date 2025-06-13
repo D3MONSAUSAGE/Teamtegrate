@@ -15,11 +15,11 @@ export const fetchTasks = async (
   setTasks: (tasks: Task[]) => void
 ): Promise<void> => {
   try {
-    console.log('Fetching tasks for user:', user?.id, 'org:', user?.organization_id);
+    console.log('Fetching tasks for user:', { id: user?.id, organizationId: user?.organization_id });
     
     if (!user) {
       console.error('User is required for this operation');
-      toast.error('User must belong to an organization to view tasks');
+      toast.error('User must be logged in to view tasks');
       return;
     }
     
@@ -29,8 +29,9 @@ export const fetchTasks = async (
       return;
     }
     
-    // With new RLS policies, we can simply select all tasks
+    // With cleaned RLS policies, we can simply select all tasks
     // The policies will automatically filter by organization
+    console.log('Executing tasks query...');
     const { data: tasksData, error: tasksError } = await supabase
       .from('tasks')
       .select('*')
@@ -38,11 +39,11 @@ export const fetchTasks = async (
 
     if (tasksError) {
       console.error('Error fetching tasks:', tasksError);
-      toast.error('Failed to load tasks');
+      toast.error('Failed to load tasks: ' + tasksError.message);
       return;
     }
 
-    console.log(`Fetched ${tasksData?.length || 0} tasks from database`);
+    console.log(`Fetched ${tasksData?.length || 0} tasks from database:`, tasksData);
     
     // Fetch comments with explicit column selection
     const { data: commentsData, error: commentsError } = await supabase
@@ -58,6 +59,8 @@ export const fetchTasks = async (
     
     if (tasksData) {
       for (const dbTask of tasksData) {
+        console.log('Processing task:', dbTask);
+        
         // Explicit type validation
         let taskPriority: 'Low' | 'Medium' | 'High' = 'Medium';
         if (dbTask.priority === 'Low' || dbTask.priority === 'Medium' || dbTask.priority === 'High') {
@@ -107,8 +110,8 @@ export const fetchTasks = async (
       }
     }
 
+    console.log(`Successfully processed ${transformedTasks.length} tasks for display`);
     setTasks(transformedTasks);
-    console.log(`Successfully processed ${transformedTasks.length} tasks`);
   } catch (error) {
     console.error('Error in fetchTasks:', error);
     toast.error('Failed to load tasks');

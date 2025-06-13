@@ -9,6 +9,8 @@ export const fetchUserTasks = async (
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>
 ): Promise<void> => {
   try {
+    console.log('fetchUserTasks called with user:', { id: user.id, organizationId: user.organizationId });
+    
     // Validate and cast role to proper type
     const validRoles = ['user', 'manager', 'admin', 'superadmin'] as const;
     const userRole = validRoles.includes(user.role as any) ? user.role as 'user' | 'manager' | 'admin' | 'superadmin' : 'user';
@@ -21,6 +23,7 @@ export const fetchUserTasks = async (
       role: userRole
     };
     
+    console.log('Calling fetchTasks with simpleUser:', simpleUser);
     await fetchTasks(simpleUser, setTasks);
   } catch (error) {
     console.error('Error in fetchUserTasks:', error);

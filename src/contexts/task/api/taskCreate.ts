@@ -3,12 +3,11 @@ import { Task } from '@/types';
 import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
-import { addOrgIdToInsert, validateUserOrganization } from '@/utils/organizationHelpers';
 
 // Simple user interface to avoid deep instantiation
 interface SimpleUserContext {
   id: string;
-  organization_id?: string;
+  organizationId?: string;
 }
 
 export const addTask = async (
@@ -20,7 +19,11 @@ export const addTask = async (
   setProjects: React.Dispatch<React.SetStateAction<any[]>>
 ): Promise<void> => {
   try {
-    if (!validateUserOrganization(user)) {
+    console.log('Adding task for user:', { userId: user.id, organizationId: user.organizationId });
+    
+    if (!user.organizationId) {
+      console.error('User must belong to an organization to create tasks');
+      toast.error('User must belong to an organization to create tasks');
       return;
     }
     
@@ -39,7 +42,7 @@ export const addTask = async (
       ? newTask.deadline.toISOString() 
       : new Date(newTask.deadline).toISOString();
 
-    const insertData = addOrgIdToInsert({
+    const insertData = {
       id: newTask.id,
       user_id: newTask.userId,
       project_id: newTask.projectId || null,
@@ -54,7 +57,10 @@ export const addTask = async (
       assigned_to_ids: newTask.assignedToIds || [],
       assigned_to_names: newTask.assignedToNames || [],
       cost: newTask.cost || 0,
-    }, user);
+      organization_id: user.organizationId // Ensure organization_id is always set
+    };
+
+    console.log('Inserting task with data:', insertData);
 
     const { data, error } = await supabase
       .from('tasks')
@@ -63,9 +69,11 @@ export const addTask = async (
 
     if (error) {
       console.error('Error adding task:', error);
-      toast.error('Failed to add task');
+      toast.error('Failed to add task: ' + error.message);
       return;
     }
+
+    console.log('Task created successfully:', data);
 
     setTasks([...tasks, newTask]);
 
