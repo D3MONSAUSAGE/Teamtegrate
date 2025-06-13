@@ -8,7 +8,6 @@ import TaskHeader from '@/components/task/TaskHeader';
 import TaskTabs from '@/components/task/TaskTabs';
 import CreateTaskDialogEnhanced from '@/components/CreateTaskDialogEnhanced';
 import { toast } from '@/components/ui/sonner';
-import { useTasksPageData } from '@/hooks/useTasksPageData';
 
 const TasksPage = () => {
   const navigate = useNavigate();
@@ -21,9 +20,8 @@ const TasksPage = () => {
     }
   }, []);
 
-  // Use the same data fetching pattern as dashboard
-  const { tasks, isLoading } = useTasksPageData();
-  const { updateTaskStatus } = useTask();
+  // Use the same data source as the dashboard - through TaskContext
+  const { tasks, isLoading, updateTaskStatus } = useTask();
   
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [sortBy, setSortBy] = useState('deadline');
