@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTask } from '@/contexts/task';
@@ -20,7 +21,7 @@ const TasksPage = () => {
   }, []);
 
   // Render the general tasks view
-  const { tasks, updateTaskStatus } = useTask();
+  const { tasks, updateTaskStatus, isLoading } = useTask();
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [sortBy, setSortBy] = useState('deadline');
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -31,11 +32,12 @@ const TasksPage = () => {
     setIsCreateTaskOpen(true);
   };
   
-  const handleStatusChange = (taskId: string, status: TaskStatus) => {
+  const handleStatusChange = async (taskId: string, status: TaskStatus) => {
     try {
       console.log(`Updating task ${taskId} status to ${status}`);
-      updateTaskStatus(taskId, status);
-      toast.success(`Task status updated to ${status}`);
+      // The updateTaskStatus function is now async, so we can await it
+      await updateTaskStatus(taskId, status);
+      console.log(`Successfully updated task ${taskId} status to ${status}`);
     } catch (error) {
       console.error('Error updating task status:', error);
       toast.error('Failed to update task status');
@@ -46,6 +48,20 @@ const TasksPage = () => {
     setIsCreateTaskOpen(false);
     setEditingTask(undefined);
   };
+  
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-accent/10 relative overflow-hidden">
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading tasks...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
   
   const todoTasks = tasks.filter((task) => task.status === 'To Do');
   const inProgressTasks = tasks.filter((task) => task.status === 'In Progress');

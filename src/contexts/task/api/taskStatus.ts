@@ -1,3 +1,4 @@
+
 import { Task } from '@/types';
 import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,6 +27,7 @@ export const updateTaskStatus = async (
     const task = tasks.find((t) => t.id === taskId);
     if (!task) {
       console.error('Task not found');
+      toast.error('Task not found');
       return;
     }
 
@@ -40,12 +42,13 @@ export const updateTaskStatus = async (
       completedByName = user!.name || task.assignedToName || 'User';
     }
 
+    // Update in database first
     const { error } = await supabase
       .from('tasks')
       .update({
         status: status,
         completed_at: status === 'Completed' ? now.toISOString() : null,
-        completed_by_id: completedById,
+        updated_at: now.toISOString()
       })
       .eq('id', taskId)
       .eq('organization_id', user!.organization_id);
@@ -56,15 +59,16 @@ export const updateTaskStatus = async (
       return;
     }
 
-    // Update tasks in local state
-    setTasks(
-      tasks.map((t) =>
+    // Update local state
+    setTasks(prevTasks =>
+      prevTasks.map((t) =>
         t.id === taskId ? { 
           ...t, 
           status: status, 
           completedAt: status === 'Completed' ? now : undefined,
           completedById: status === 'Completed' ? user!.id : undefined,
-          completedByName: status === 'Completed' ? (user!.name || t.assignedToName || 'User') : undefined
+          completedByName: status === 'Completed' ? (user!.name || t.assignedToName || 'User') : undefined,
+          updatedAt: now
         } : t
       )
     );
@@ -73,15 +77,16 @@ export const updateTaskStatus = async (
     setProjects((prevProjects) =>
       prevProjects.map((project) => ({
         ...project,
-        tasks: project.tasks.map((t) =>
+        tasks: project.tasks?.map((t) =>
           t.id === taskId ? { 
             ...t, 
             status: status, 
             completedAt: status === 'Completed' ? now : undefined,
             completedById: status === 'Completed' ? user!.id : undefined,
-            completedByName: status === 'Completed' ? (user!.name || t.assignedToName || 'User') : undefined
+            completedByName: status === 'Completed' ? (user!.name || t.assignedToName || 'User') : undefined,
+            updatedAt: now
           } : t
-        ),
+        ) || [],
       }))
     );
 
@@ -92,7 +97,7 @@ export const updateTaskStatus = async (
         const completedTasks =
           status === 'Completed'
             ? prevScore.completedTasks + 1
-            : prevScore.completedTasks - 1;
+            : Math.max(0, prevScore.completedTasks - (task.status === 'Completed' ? 1 : 0));
         const totalTasks = prevScore.totalTasks;
         const percentage = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
         return {
@@ -104,7 +109,7 @@ export const updateTaskStatus = async (
       return prevScore;
     });
 
-    toast.success('Task status updated successfully!');
+    toast.success(`Task status updated to ${status}`);
   } catch (error) {
     console.error('Error updating task status:', error);
     toast.error('Failed to update task status');

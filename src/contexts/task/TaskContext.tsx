@@ -1,25 +1,31 @@
-import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
-import { Task, Project, User, TaskStatus } from '@/types';
-import { getUserOrganizationId } from '@/utils/typeCompatibility';
-import { addCommentToTask } from './operations/taskContent';
-import { deleteTask } from './operations/taskDeletion';
+
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { Task, Project, User, TaskStatus, DailyScore } from '@/types';
+import { useAuth } from '@/contexts/AuthContext';
+import { fetchUserTasks } from './taskApi';
+import { addTask } from './api/taskCreate';
+import { updateTask } from './api/taskUpdate';
+import { updateTaskStatus } from './api/taskStatus';
+import { deleteTask } from './api/taskDelete';
+import { assignTaskToUser } from './operations/assignment/assignTaskToUser';
+import { assignTaskToProject } from './operations/assignment/assignTaskToProject';
+import { useProjects } from '@/hooks/useProjects';
 
 interface TaskContextType {
   tasks: Task[];
   projects: Project[];
-  setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
-  setProjects: React.Dispatch<React.SetStateAction<Project[]>>;
-  updateProject: (projectId: string, updates: Partial<Project>) => Promise<void>;
-  updateTaskStatus: (taskId: string, status: string) => void;
+  dailyScore: DailyScore;
+  isLoading: boolean;
+  refreshTasks: () => Promise<void>;
   refreshProjects: () => Promise<void>;
-  dailyScore: { completedTasks: number; totalTasks: number; percentage: number; date: Date };
-  // Add missing methods
-  addTask: (taskData: any) => Promise<void>;
-  updateTask: (taskId: string, updates: any) => Promise<void>;
+  addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  updateTask: (taskId: string, updates: Partial<Task>) => Promise<void>;
+  updateTaskStatus: (taskId: string, status: TaskStatus) => void;
   deleteTask: (taskId: string) => Promise<void>;
+  assignTaskToUser: (taskId: string, userId: string, userName: string) => Promise<void>;
+  assignTaskToProject: (taskId: string, projectId: string) => Promise<void>;
+  updateProject: (projectId: string, updates: Partial<Project>) => Promise<void>;
   deleteProject: (projectId: string) => Promise<void>;
-  assignTaskToUser: (taskId: string, userId: string, userName: string) => void;
-  addCommentToTask: (taskId: string, comment: string) => void;
 }
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
@@ -29,129 +35,143 @@ interface TaskProviderProps {
 }
 
 export const TaskProvider: React.FC<TaskProviderProps> = ({ children }) => {
+  const { user } = useAuth();
+  const { projects: contextProjects, refetch: refetchProjects } = useProjects();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [dailyScore, setDailyScore] = useState<DailyScore>({
+    completedTasks: 0,
+    totalTasks: 0,
+    percentage: 0,
+    date: new Date(),
+  });
 
-  // Calculate daily score
-  const dailyScore = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    const todayTasks = tasks.filter(task => {
-      const taskDate = new Date(task.createdAt);
-      taskDate.setHours(0, 0, 0, 0);
-      return taskDate.getTime() === today.getTime();
-    });
-    
-    const completedTasks = todayTasks.filter(task => task.status === 'Completed').length;
-    const totalTasks = todayTasks.length;
-    const percentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-    
-    return {
-      completedTasks,
-      totalTasks,
-      percentage,
-      date: today
-    };
+  // Sync projects from useProjects hook
+  useEffect(() => {
+    if (contextProjects) {
+      setProjects(contextProjects);
+    }
+  }, [contextProjects]);
+
+  // Calculate daily score whenever tasks change
+  useEffect(() => {
+    if (tasks.length > 0) {
+      const today = new Date().toDateString();
+      const todaysTasks = tasks.filter(task => 
+        new Date(task.createdAt).toDateString() === today
+      );
+      const completedToday = todaysTasks.filter(task => task.status === 'Completed').length;
+      const totalToday = todaysTasks.length;
+      
+      setDailyScore({
+        completedTasks: completedToday,
+        totalTasks: totalToday,
+        percentage: totalToday > 0 ? (completedToday / totalToday) * 100 : 0,
+        date: new Date(),
+      });
+    }
   }, [tasks]);
 
-  const updateProject = async (projectId: string, updates: Partial<Project>) => {
-    setProjects(prev => prev.map(p => p.id === projectId ? { ...p, ...updates } : p));
+  // Fetch tasks when user changes
+  useEffect(() => {
+    if (user) {
+      console.log('TaskProvider: User available, fetching tasks...', { userId: user.id, orgId: user.organizationId });
+      loadTasks();
+    } else {
+      console.log('TaskProvider: No user available, clearing tasks');
+      setTasks([]);
+      setIsLoading(false);
+    }
+  }, [user]);
+
+  const loadTasks = async () => {
+    if (!user) {
+      console.log('TaskProvider: No user for loadTasks');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      console.log('TaskProvider: Starting to fetch tasks...');
+      await fetchUserTasks(user, setTasks);
+      console.log('TaskProvider: Successfully fetched tasks');
+    } catch (error) {
+      console.error('TaskProvider: Error loading tasks:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const updateTaskStatus = (taskId: string, status: string) => {
-    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: status as TaskStatus } : t));
+  const refreshTasks = async () => {
+    console.log('TaskProvider: Refreshing tasks...');
+    await loadTasks();
   };
 
   const refreshProjects = async () => {
-    // Implementation here
+    console.log('TaskProvider: Refreshing projects...');
+    try {
+      await refetchProjects();
+    } catch (error) {
+      console.error('TaskProvider: Error refreshing projects:', error);
+    }
   };
 
-  const addTask = async (taskData: any) => {
-    const newTask: Task = {
-      id: Math.random().toString(),
-      title: taskData.title,
-      description: taskData.description,
-      priority: taskData.priority,
-      status: 'To Do',
-      deadline: taskData.deadline,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      userId: taskData.userId,
-      projectId: taskData.projectId,
-      assignedToId: taskData.assignedToId,
-      assignedToName: taskData.assignedToName,
-      organizationId: taskData.organizationId
-    };
-    setTasks(prev => [...prev, newTask]);
+  // Wrapper functions that pass the required parameters
+  const handleAddTask = async (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
+    if (!user) return;
+    await addTask(task, user, tasks, setTasks, projects, setProjects);
   };
 
-  const updateTask = async (taskId: string, updates: any) => {
-    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, ...updates } : t));
+  const handleUpdateTask = async (taskId: string, updates: Partial<Task>) => {
+    if (!user) return;
+    await updateTask(taskId, updates, user, tasks, setTasks, projects, setProjects);
   };
 
-  const deleteTaskMethod = async (taskId: string) => {
-    setTasks(prev => prev.filter(t => t.id !== taskId));
+  const handleUpdateTaskStatus = (taskId: string, status: TaskStatus) => {
+    if (!user) return;
+    updateTaskStatus(taskId, status, user, tasks, setTasks, projects, setProjects, setDailyScore);
   };
 
-  const deleteProject = async (projectId: string) => {
-    setProjects(prev => prev.filter(p => p.id !== projectId));
+  const handleDeleteTask = async (taskId: string) => {
+    if (!user) return;
+    await deleteTask(taskId, user, tasks, setTasks, projects, setProjects);
   };
 
-  const assignTaskToUser = (taskId: string, userId: string, userName: string) => {
-    setTasks(prev => prev.map(t => 
-      t.id === taskId 
-        ? { ...t, assignedToId: userId, assignedToName: userName }
-        : t
-    ));
+  const handleAssignTaskToUser = async (taskId: string, userId: string, userName: string) => {
+    if (!user) return;
+    await assignTaskToUser(taskId, userId, userName, user, tasks, setTasks, projects, setProjects);
   };
 
-  const addCommentToTaskMethod = (taskId: string, comment: string) => {
-    // Implementation here - for now just a placeholder
-    console.log('Adding comment to task:', taskId, comment);
+  const handleAssignTaskToProject = async (taskId: string, projectId: string) => {
+    if (!user) return;
+    await assignTaskToProject(taskId, projectId, user, tasks, setTasks, projects, setProjects);
   };
 
-  // Mock data with all required properties
-  useEffect(() => {
-    const mockProjects: Project[] = [
-      {
-        id: '1',
-        title: 'Mock Project 1',
-        description: 'A mock project for testing',
-        startDate: new Date(),
-        endDate: new Date(),
-        managerId: 'user1',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        teamMemberIds: ['user1', 'user2'],
-        budget: 10000,
-        budgetSpent: 2500,
-        isCompleted: false,
-        status: 'In Progress',
-        tasksCount: 5,
-        tags: ['development', 'testing'],
-        organizationId: 'org1'
-      }
-    ];
-    
-    setProjects(mockProjects);
-  }, []);
+  // Project operations - using the useProjects hook for actual operations
+  const handleUpdateProject = async (projectId: string, updates: Partial<Project>) => {
+    console.log('TaskProvider: Update project not implemented in context - use useProjectOperations hook');
+  };
+
+  const handleDeleteProject = async (projectId: string) => {
+    console.log('TaskProvider: Delete project not implemented in context - use useProjectOperations hook');
+  };
 
   const value: TaskContextType = {
     tasks,
     projects,
-    setTasks,
-    setProjects,
-    updateProject,
-    updateTaskStatus,
-    refreshProjects,
     dailyScore,
-    addTask,
-    updateTask,
-    deleteTask: deleteTaskMethod,
-    deleteProject,
-    assignTaskToUser,
-    addCommentToTask: addCommentToTaskMethod,
+    isLoading,
+    refreshTasks,
+    refreshProjects,
+    addTask: handleAddTask,
+    updateTask: handleUpdateTask,
+    updateTaskStatus: handleUpdateTaskStatus,
+    deleteTask: handleDeleteTask,
+    assignTaskToUser: handleAssignTaskToUser,
+    assignTaskToProject: handleAssignTaskToProject,
+    updateProject: handleUpdateProject,
+    deleteProject: handleDeleteProject,
   };
 
   return (
