@@ -98,6 +98,11 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
     handleSearchChange(mockEvent);
   };
 
+  // Explicitly type the task status change handler to ensure Promise<void>
+  const handleTaskStatusChangeAsync = async (taskId: string, status: TaskStatus): Promise<void> => {
+    return await handleTaskStatusChange(taskId, status);
+  };
+
   console.log('ProjectTasksView: Rendering content with project:', project.title);
 
   return (
@@ -118,7 +123,7 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
         isRefreshing={isRefreshing}
         onEditTask={handleEditTask}
         onCreateTask={handleCreateTask}
-        onTaskStatusChange={handleTaskStatusChange}
+        onTaskStatusChange={handleTaskStatusChangeAsync}
       />
       
       <CreateTaskDialogEnhanced
