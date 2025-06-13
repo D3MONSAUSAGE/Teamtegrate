@@ -2,12 +2,9 @@
 import React, {
   createContext,
   useState,
-  useEffect,
   useContext,
-  useCallback,
 } from 'react';
 import { Task, TaskStatus, User, Project, DailyScore } from '@/types';
-import { fetchTasks } from './api/taskFetch'; // Use the correct fetch function
 import { addTask as addTaskAPI } from './api/taskCreate';
 import { deleteTask as deleteTaskAPI } from './api/taskDelete';
 import { updateTask as updateTaskAPI, updateTaskStatus as updateTaskStatusAPI } from './api/taskUpdate';
@@ -49,32 +46,6 @@ const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   const { user } = useAuth();
   const { projects, refreshProjects } = useProjects();
 
-  useEffect(() => {
-    const loadTasks = async () => {
-      if (user) {
-        setIsLoading(true);
-        try {
-          // Use the same fetch function that works for other parts of the app
-          console.log('TaskContext: Loading tasks for user:', user);
-          const simpleUser = {
-            id: user.id,
-            organization_id: user.organizationId,
-            email: user.email,
-            role: user.role
-          };
-          await fetchTasks(simpleUser, setTasks);
-        } catch (error) {
-          console.error('TaskContext: Error loading tasks:', error);
-          toast.error('Failed to load tasks');
-        } finally {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    loadTasks();
-  }, [user]);
-
   const addTask = async (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
     if (!user) {
       toast.error('You must be logged in to add tasks');
@@ -112,11 +83,10 @@ const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
     try {
       console.log('TaskContext: Deleting task', taskId, 'for user:', user);
       
-      // Ensure user object has the correct property names for deletion
       const userForDeletion = {
         id: user.id,
         organizationId: user.organizationId,
-        organization_id: user.organizationId // Provide both for compatibility
+        organization_id: user.organizationId
       };
 
       await deleteTaskAPI(taskId, userForDeletion, tasks, setTasks, projects, refreshProjects);
@@ -155,28 +125,23 @@ const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   };
 
   const addCommentToTask = async (taskId: string, comment: string) => {
-    // Placeholder implementation
     console.log('Adding comment to task:', taskId, comment);
     toast.success('Comment added successfully');
   };
 
   const updateProject = async (projectId: string, updates: any) => {
-    // Placeholder implementation
     console.log('Updating project:', projectId, updates);
     toast.success('Project updated successfully');
   };
 
   const deleteProject = async (projectId: string) => {
-    // Placeholder implementation
     console.log('Deleting project:', projectId);
     toast.success('Project deleted successfully');
   };
 
-  // Calculate daily score
+  // Calculate daily score - this now works with empty tasks array
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
   
   const todaysTasks = tasks.filter((task) => {
     const taskDate = new Date(task.deadline);

@@ -8,6 +8,7 @@ import TaskHeader from '@/components/task/TaskHeader';
 import TaskTabs from '@/components/task/TaskTabs';
 import CreateTaskDialogEnhanced from '@/components/CreateTaskDialogEnhanced';
 import { toast } from '@/components/ui/sonner';
+import { useTasksPageData } from '@/hooks/useTasksPageData';
 
 const TasksPage = () => {
   const navigate = useNavigate();
@@ -20,8 +21,10 @@ const TasksPage = () => {
     }
   }, []);
 
-  // Render the general tasks view
-  const { tasks, updateTaskStatus, isLoading } = useTask();
+  // Use the same data fetching pattern as dashboard
+  const { tasks, isLoading } = useTasksPageData();
+  const { updateTaskStatus } = useTask();
+  
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [sortBy, setSortBy] = useState('deadline');
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -35,7 +38,6 @@ const TasksPage = () => {
   const handleStatusChange = async (taskId: string, status: TaskStatus) => {
     try {
       console.log(`Updating task ${taskId} status to ${status}`);
-      // The updateTaskStatus function is now async, so we can await it
       await updateTaskStatus(taskId, status);
       console.log(`Successfully updated task ${taskId} status to ${status}`);
     } catch (error) {
