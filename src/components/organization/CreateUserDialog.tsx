@@ -9,7 +9,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, UserPlus } from 'lucide-react';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Loader2, UserPlus, Crown, AlertCircle } from 'lucide-react';
 import { UserRole } from '@/types';
 import { useEnhancedUserManagement } from '@/hooks/useEnhancedUserManagement';
 
@@ -24,7 +25,7 @@ const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
   onOpenChange,
   onUserCreated
 }) => {
-  const { createUser } = useEnhancedUserManagement();
+  const { createUser, users } = useEnhancedUserManagement();
   const [formData, setFormData] = useState({
     email: '',
     name: '',
@@ -80,6 +81,11 @@ const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
     onOpenChange(false);
   };
 
+  // Check if a superadmin already exists
+  const existingSuperadmin = users?.find(u => u.role === 'superadmin');
+  const superadminSelected = formData.role === 'superadmin';
+  const canCreateSuperadmin = !existingSuperadmin;
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[500px]">
@@ -126,8 +132,23 @@ const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
               <option value="user">User</option>
               <option value="manager">Manager</option>
               <option value="admin">Admin</option>
-              <option value="superadmin">Superadmin</option>
+              <option value="superadmin" disabled={!canCreateSuperadmin}>
+                Superadmin {!canCreateSuperadmin ? '(Already exists)' : ''}
+              </option>
             </select>
+            
+            {superadminSelected && existingSuperadmin && (
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="text-sm">
+                  <div className="flex items-center gap-2">
+                    <Crown className="h-4 w-4 text-yellow-500" />
+                    <span>A superadmin already exists: <strong>{existingSuperadmin.name}</strong></span>
+                  </div>
+                  <p className="mt-1">Only one superadmin is allowed per organization. Please select a different role.</p>
+                </AlertDescription>
+              </Alert>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -159,7 +180,10 @@ const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
             <Button type="button" variant="outline" onClick={handleClose} disabled={isCreating}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isCreating}>
+            <Button 
+              type="submit" 
+              disabled={isCreating || (superadminSelected && !canCreateSuperadmin)}
+            >
               {isCreating ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />

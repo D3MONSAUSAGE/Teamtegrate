@@ -17,7 +17,8 @@ import {
   Eye,
   Loader2,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
+  Crown
 } from 'lucide-react';
 import { 
   DropdownMenu,
@@ -34,11 +35,12 @@ import CreateUserDialog from './CreateUserDialog';
 import EditUserDialog from './EditUserDialog';
 import DeleteUserDialog from './DeleteUserDialog';
 import UserImpactDialog from './UserImpactDialog';
+import SuperadminTransferDialog from './SuperadminTransferDialog';
 
 const getRoleIcon = (role: UserRole) => {
   switch (role) {
     case 'superadmin':
-      return <Shield className="h-4 w-4 text-red-500" />;
+      return <Crown className="h-4 w-4 text-yellow-500" />;
     case 'admin':
       return <Shield className="h-4 w-4 text-orange-500" />;
     case 'manager':
@@ -53,9 +55,9 @@ const getRoleIcon = (role: UserRole) => {
 const getRoleBadgeVariant = (role: UserRole) => {
   switch (role) {
     case 'superadmin':
-      return 'destructive';
-    case 'admin':
       return 'default';
+    case 'admin':
+      return 'destructive';
     case 'manager':
       return 'secondary';
     case 'user':
@@ -65,25 +67,36 @@ const getRoleBadgeVariant = (role: UserRole) => {
   }
 };
 
+interface SuperadminTransferData {
+  targetUserId: string;
+  targetUserName: string;
+  currentSuperadminId: string;
+  currentSuperadminName: string;
+}
+
 const SuperadminUserManagement: React.FC = () => {
   const {
     users,
     isLoading,
     error,
     isSuperadmin,
-    changeUserRole
+    changeUserRole,
+    transferSuperadminRole
   } = useEnhancedUserManagement();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRole, setSelectedRole] = useState<UserRole | 'all'>('all');
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
+  const [isTransferring, setIsTransferring] = useState(false);
   
   // Dialog states
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [impactDialogOpen, setImpactDialogOpen] = useState(false);
+  const [transferDialogOpen, setTransferDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [transferData, setTransferData] = useState<SuperadminTransferData | null>(null);
 
   if (!isSuperadmin) {
     return (
@@ -105,8 +118,30 @@ const SuperadminUserManagement: React.FC = () => {
 
   const handleQuickRoleChange = async (userId: string, newRole: UserRole) => {
     setUpdatingUserId(userId);
-    await changeUserRole(userId, newRole);
-    setUpdatingUserId(null);
+    
+    try {
+      const result = await changeUserRole(userId, newRole);
+      
+      if (result.requiresTransfer && result.transferData) {
+        setTransferData(result.transferData);
+        setTransferDialogOpen(true);
+      }
+    } catch (error) {
+      console.error('Error changing role:', error);
+    } finally {
+      setUpdatingUserId(null);
+    }
+  };
+
+  const handleSuperadminTransfer = async (transferData: SuperadminTransferData) => {
+    setIsTransferring(true);
+    try {
+      await transferSuperadminRole(transferData);
+    } catch (error) {
+      console.error('Error transferring superadmin role:', error);
+    } finally {
+      setIsTransferring(false);
+    }
   };
 
   const handleViewImpact = async (user: any) => {
@@ -158,6 +193,8 @@ const SuperadminUserManagement: React.FC = () => {
     );
   }
 
+  const currentSuperadmin = users.find(user => user.role === 'superadmin');
+
   return (
     <>
       <Card>
@@ -169,6 +206,12 @@ const SuperadminUserManagement: React.FC = () => {
               {filteredUsers.length} Users
             </Badge>
           </CardTitle>
+          {currentSuperadmin && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Crown className="h-4 w-4 text-yellow-500" />
+              <span>Current Superadmin: <strong>{currentSuperadmin.name}</strong></span>
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -223,6 +266,11 @@ const SuperadminUserManagement: React.FC = () => {
                             <Badge variant={getRoleBadgeVariant(user.role as UserRole)} className="text-xs">
                               {user.role}
                             </Badge>
+                            {user.role === 'superadmin' && (
+                              <Badge variant="outline" className="text-xs text-yellow-600">
+                                Only One Allowed
+                              </Badge>
+                            )}
                           </div>
                         </div>
                         
@@ -247,7 +295,7 @@ const SuperadminUserManagement: React.FC = () => {
                           )}
                           className="h-8 w-8 p-0"
                           disabled={updatingUserId === user.id}
-                          title="Promote"
+                          title={user.role === 'admin' ? 'Promote to Superadmin (will transfer role)' : 'Promote'}
                         >
                           {updatingUserId === user.id ? (
                             <Loader2 className="h-3 w-3 animate-spin" />
@@ -349,6 +397,14 @@ const SuperadminUserManagement: React.FC = () => {
         open={impactDialogOpen}
         onOpenChange={setImpactDialogOpen}
         user={selectedUser}
+      />
+
+      <SuperadminTransferDialog
+        open={transferDialogOpen}
+        onOpenChange={setTransferDialogOpen}
+        transferData={transferData}
+        onConfirm={handleSuperadminTransfer}
+        isTransferring={isTransferring}
       />
     </>
   );

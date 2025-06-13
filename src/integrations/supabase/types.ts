@@ -1421,6 +1421,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      transfer_superadmin_role: {
+        Args: {
+          current_superadmin_id: string
+          new_superadmin_id: string
+          organization_id: string
+        }
+        Returns: Json
+      }
       user_can_access_room: {
         Args: { room_id: string; user_id: string }
         Returns: boolean

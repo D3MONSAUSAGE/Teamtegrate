@@ -39,7 +39,17 @@ interface UserImpactAnalysis {
 
 interface RoleChangeValidation {
   allowed: boolean;
+  requires_transfer?: boolean;
+  current_superadmin_id?: string;
+  current_superadmin_name?: string;
   reason?: string;
+}
+
+interface SuperadminTransferData {
+  targetUserId: string;
+  targetUserName: string;
+  currentSuperadminId: string;
+  currentSuperadminName: string;
 }
 
 export const useEnhancedUserManagement = () => {
@@ -85,6 +95,14 @@ export const useEnhancedUserManagement = () => {
   const createUser = async (email: string, name: string, role: UserRole, temporaryPassword: string) => {
     if (!currentUser?.organizationId) {
       throw new Error('Organization ID required');
+    }
+
+    // Check if trying to create superadmin when one already exists
+    if (role === 'superadmin') {
+      const existingSuperadmin = users?.find(u => u.role === 'superadmin');
+      if (existingSuperadmin) {
+        throw new Error('Cannot create another superadmin. Only one superadmin is allowed per organization.');
+      }
     }
 
     setIsLoading(true);
@@ -146,17 +164,75 @@ export const useEnhancedUserManagement = () => {
     }
   };
 
-  // Change user role with validation
-  const changeUserRole = async (userId: string, newRole: UserRole) => {
+  // Transfer superadmin role atomically
+  const transferSuperadminRole = async (transferData: SuperadminTransferData) => {
+    if (!currentUser?.organizationId) {
+      throw new Error('Organization ID required');
+    }
+
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.rpc('transfer_superadmin_role', {
+        current_superadmin_id: transferData.currentSuperadminId,
+        new_superadmin_id: transferData.targetUserId,
+        organization_id: currentUser.organizationId
+      });
+
+      if (error) throw error;
+
+      if (!data.success) {
+        throw new Error(data.error);
+      }
+
+      // Log audit trail for both users
+      await logUserAction('role_change', transferData.currentSuperadminId, '', transferData.currentSuperadminName, 
+        { role: 'superadmin' }, { role: 'admin' });
+      await logUserAction('role_change', transferData.targetUserId, '', transferData.targetUserName, 
+        { role: users?.find(u => u.id === transferData.targetUserId)?.role }, { role: 'superadmin' });
+
+      await refetchUsers();
+      toast.success(`Superadmin role transferred from ${transferData.currentSuperadminName} to ${transferData.targetUserName}`);
+      return true;
+    } catch (error) {
+      console.error('Error transferring superadmin role:', error);
+      toast.error('Failed to transfer superadmin role');
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Change user role with validation and transfer support
+  const changeUserRole = async (userId: string, newRole: UserRole): Promise<{ success: boolean; requiresTransfer?: boolean; transferData?: SuperadminTransferData }> => {
     setIsLoading(true);
     try {
       // Validate role change
       const validation = await validateRoleChange(userId, newRole);
       if (!validation.allowed) {
         toast.error(validation.reason || 'Role change not allowed');
-        return false;
+        return { success: false };
       }
 
+      // Check if this requires a superadmin transfer
+      if (validation.requires_transfer && validation.current_superadmin_id && validation.current_superadmin_name) {
+        const targetUser = users?.find(u => u.id === userId);
+        if (!targetUser) {
+          throw new Error('Target user not found');
+        }
+
+        return {
+          success: false,
+          requiresTransfer: true,
+          transferData: {
+            targetUserId: userId,
+            targetUserName: targetUser.name,
+            currentSuperadminId: validation.current_superadmin_id,
+            currentSuperadminName: validation.current_superadmin_name
+          }
+        };
+      }
+
+      // Proceed with normal role change
       const oldUser = users?.find(u => u.id === userId);
       
       const { error } = await supabase
@@ -173,11 +249,11 @@ export const useEnhancedUserManagement = () => {
 
       await refetchUsers();
       toast.success(`User role updated to ${newRole}`);
-      return true;
+      return { success: true };
     } catch (error) {
       console.error('Error changing role:', error);
       toast.error('Failed to change role');
-      return false;
+      return { success: false };
     } finally {
       setIsLoading(false);
     }
@@ -266,7 +342,7 @@ export const useEnhancedUserManagement = () => {
         performed_by_email: currentUser.email,
         old_values: oldValues,
         new_values: newValues,
-        ip_address: null, // Could be populated from request if needed
+        ip_address: null,
         user_agent: navigator.userAgent
       });
     } catch (error) {
@@ -282,7 +358,7 @@ export const useEnhancedUserManagement = () => {
         userIds.map(userId => changeUserRole(userId, newRole))
       );
       
-      const successful = results.filter(r => r.status === 'fulfilled' && r.value).length;
+      const successful = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
       const failed = results.length - successful;
       
       if (successful > 0) {
@@ -318,6 +394,7 @@ export const useEnhancedUserManagement = () => {
     changeUserRole,
     validateRoleChange,
     bulkChangeRoles,
+    transferSuperadminRole,
     
     // Analysis
     getUserImpactAnalysis,
