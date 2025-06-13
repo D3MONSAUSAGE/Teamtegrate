@@ -24,6 +24,7 @@ const ProjectCard = ({ project, onViewTasks, onCreateTask, onDeleted }: ProjectC
 
   const handleDelete = async () => {
     try {
+      console.log('ProjectCard: Deleting project:', project.id);
       setIsDeleting(true);
       await deleteProject(project.id);
       toast.success('Project deleted successfully');
@@ -31,7 +32,7 @@ const ProjectCard = ({ project, onViewTasks, onCreateTask, onDeleted }: ProjectC
         onDeleted();
       }
     } catch (error) {
-      console.error('Error deleting project:', error);
+      console.error('ProjectCard: Error deleting project:', error);
       toast.error('Failed to delete project');
     } finally {
       setIsDeleting(false);
@@ -40,19 +41,43 @@ const ProjectCard = ({ project, onViewTasks, onCreateTask, onDeleted }: ProjectC
   };
 
   const handleEditClick = () => {
-    console.log('Edit button clicked for project:', project.id);
+    console.log('ProjectCard: Edit button clicked for project:', project.id);
     setShowEditDialog(true);
   };
 
   const handleEditSuccess = () => {
+    console.log('ProjectCard: Edit success, refreshing projects');
     refreshProjects();
     toast.success("Project updated successfully");
     setShowEditDialog(false);
   };
 
   const handleEditCancel = () => {
-    console.log('Edit dialog cancelled');
+    console.log('ProjectCard: Edit dialog cancelled');
     setShowEditDialog(false);
+  };
+
+  const handleDeleteClick = () => {
+    console.log('ProjectCard: Delete button clicked for project:', project.id);
+    setShowDeleteDialog(true);
+  };
+
+  const handleViewTasks = () => {
+    console.log('ProjectCard: View tasks handler called for project:', project.id);
+    if (onViewTasks) {
+      onViewTasks();
+    } else {
+      console.warn('ProjectCard: onViewTasks not provided');
+    }
+  };
+
+  const handleCreateTask = () => {
+    console.log('ProjectCard: Create task handler called for project:', project.id);
+    if (onCreateTask) {
+      onCreateTask();
+    } else {
+      console.warn('ProjectCard: onCreateTask not provided');
+    }
   };
 
   return (
@@ -60,14 +85,14 @@ const ProjectCard = ({ project, onViewTasks, onCreateTask, onDeleted }: ProjectC
       <Card className="overflow-hidden">
         <ProjectCardHeader 
           project={project} 
-          onDeleteClick={() => setShowDeleteDialog(true)}
+          onDeleteClick={handleDeleteClick}
           onEditClick={handleEditClick}
           isDeleting={isDeleting} 
         />
         <ProjectCardContent 
           project={project}
-          onViewTasks={onViewTasks}
-          onCreateTask={onCreateTask}
+          onViewTasks={handleViewTasks}
+          onCreateTask={handleCreateTask}
         />
       </Card>
 

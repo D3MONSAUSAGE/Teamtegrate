@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Plus, Search, Loader2, Sparkles, FolderKanban, Zap } from 'lucide-react';
 import ProjectCard from '@/components/project-card';
 import CreateProjectDialog from '@/components/CreateProjectDialog';
+import CreateTaskDialogEnhanced from '@/components/CreateTaskDialogEnhanced';
 import { useNavigate } from 'react-router-dom';
 
 const ProjectsPage = () => {
@@ -13,6 +14,8 @@ const ProjectsPage = () => {
   const { projects, isLoading, refetch } = useProjects();
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>();
   const navigate = useNavigate();
 
   const filteredProjects = projects.filter(project =>
@@ -21,16 +24,31 @@ const ProjectsPage = () => {
   );
 
   const handleViewTasks = (projectId: string) => {
-    navigate(`/dashboard/projects/${projectId}/tasks`);
+    console.log('ProjectsPage: View tasks clicked for project:', projectId);
+    try {
+      const targetUrl = `/dashboard/projects/${projectId}/tasks`;
+      console.log('ProjectsPage: Navigating to:', targetUrl);
+      navigate(targetUrl);
+    } catch (error) {
+      console.error('ProjectsPage: Navigation error:', error);
+    }
   };
 
   const handleCreateTask = (projectId: string) => {
-    navigate(`/dashboard/projects/${projectId}/tasks`);
+    console.log('ProjectsPage: Create task clicked for project:', projectId);
+    setSelectedProjectId(projectId);
+    setIsCreateTaskOpen(true);
   };
 
   const handleProjectCreated = () => {
     console.log('Project created, refreshing list...');
     refetch();
+  };
+
+  const handleTaskCreated = () => {
+    console.log('Task created, closing dialog...');
+    setIsCreateTaskOpen(false);
+    setSelectedProjectId(undefined);
   };
 
   if (isLoading) {
@@ -212,6 +230,13 @@ const ProjectsPage = () => {
         open={isCreateDialogOpen}
         onOpenChange={setIsCreateDialogOpen}
         onProjectCreated={handleProjectCreated}
+      />
+
+      <CreateTaskDialogEnhanced
+        open={isCreateTaskOpen}
+        onOpenChange={setIsCreateTaskOpen}
+        currentProjectId={selectedProjectId}
+        onTaskComplete={handleTaskCreated}
       />
     </div>
   );

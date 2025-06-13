@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Project } from '@/types';
 import { List, Plus, Calendar, Users } from 'lucide-react';
 import { format } from 'date-fns';
-import { Link } from 'react-router-dom';
 import ProjectProgressBar from '@/components/ProjectProgressBar';
 import ProjectBudgetInfo from './ProjectBudgetInfo';
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +25,28 @@ const ProjectCardContent: React.FC<ProjectCardContentProps> = ({ project, onView
         return "bg-blue-500/20 text-blue-700 dark:text-blue-500 hover:bg-blue-500/30";
       default: // To Do
         return "bg-yellow-500/20 text-yellow-700 dark:text-yellow-500 hover:bg-yellow-500/30";
+    }
+  };
+
+  const handleViewTasksClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('ProjectCardContent: View tasks button clicked for project:', project.id);
+    if (onViewTasks) {
+      onViewTasks();
+    } else {
+      console.warn('ProjectCardContent: onViewTasks handler not provided');
+    }
+  };
+
+  const handleCreateTaskClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('ProjectCardContent: Create task button clicked for project:', project.id);
+    if (onCreateTask) {
+      onCreateTask();
+    } else {
+      console.warn('ProjectCardContent: onCreateTask handler not provided');
     }
   };
 
@@ -67,22 +88,21 @@ const ProjectCardContent: React.FC<ProjectCardContentProps> = ({ project, onView
         </div>
       </div>
       
-      {(onViewTasks || onCreateTask) && (
-        <div className="mt-auto pt-4 flex gap-2 justify-end">
-          {onViewTasks && (
-            <Link to={`/dashboard/projects/${project.id}/tasks`}>
-              <Button variant="outline" size="sm">
-                <List className="w-4 h-4 mr-1" /> Tasks
-              </Button>
-            </Link>
-          )}
-          {onCreateTask && (
-            <Button size="sm" onClick={onCreateTask}>
-              <Plus className="w-4 h-4 mr-1" /> Task
-            </Button>
-          )}
-        </div>
-      )}
+      <div className="mt-auto pt-4 flex gap-2 justify-end">
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={handleViewTasksClick}
+        >
+          <List className="w-4 h-4 mr-1" /> Tasks
+        </Button>
+        <Button 
+          size="sm" 
+          onClick={handleCreateTaskClick}
+        >
+          <Plus className="w-4 h-4 mr-1" /> Task
+        </Button>
+      </div>
     </CardContent>
   );
 };

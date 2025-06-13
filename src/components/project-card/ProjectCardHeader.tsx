@@ -40,14 +40,21 @@ const ProjectCardHeader: React.FC<ProjectCardHeaderProps> = ({
   const handleEditClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('Edit menu item clicked');
+    console.log('ProjectCardHeader: Edit menu item clicked for project:', project.id);
     onEditClick();
   };
 
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    console.log('ProjectCardHeader: Delete menu item clicked for project:', project.id);
     onDeleteClick();
+  };
+
+  const handleDropdownTriggerClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('ProjectCardHeader: Dropdown trigger clicked for project:', project.id);
   };
 
   return (
@@ -79,6 +86,7 @@ const ProjectCardHeader: React.FC<ProjectCardHeaderProps> = ({
               size="sm" 
               className="h-8 w-8 p-0 hover:bg-muted transition-colors"
               disabled={isDeleting}
+              onClick={handleDropdownTriggerClick}
             >
               <span className="sr-only">Open menu</span>
               <MoreHorizontal className="h-4 w-4" />
