@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { format, startOfWeek, addWeeks, subWeeks, addDays, differenceInMinutes, isToday, parseISO } from 'date-fns';
+import { format, startOfWeek, addWeeks, subWeeks, addDays, differenceInMinutes, parseISO } from 'date-fns';
 import { useTimeTracking } from './useTimeTracking';
 
 interface TimeEntry {
@@ -16,7 +16,7 @@ interface WeeklyChartData {
 }
 
 export const useTimeTrackingPage = () => {
-  const { currentEntry, clockIn, clockOut, getWeeklyTimeEntries } = useTimeTracking();
+  const { currentEntry, clockIn, clockOut, startBreak, getWeeklyTimeEntries, fetchTimeEntries } = useTimeTracking();
   const [notes, setNotes] = useState('');
   const [elapsedTime, setElapsedTime] = useState('');
   const [dailyEntries, setDailyEntries] = useState<TimeEntry[]>([]);
@@ -28,10 +28,33 @@ export const useTimeTrackingPage = () => {
     const stored = localStorage.getItem("targetWeeklyHours");
     return stored ? Number(stored) : 40;
   });
-  // Selected date for daily entries, defaults to today
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
   const { start: weekStart, end: weekEnd } = getWeekRange(weekDate);
+
+  // Calculate total worked minutes for break tracking
+  const totalWorkedMinutes = weeklyEntries.reduce((total, entry) => {
+    if (entry.duration_minutes) {
+      return total + entry.duration_minutes;
+    } else if (entry.clock_in && entry.clock_out) {
+      return total + differenceInMinutes(
+        new Date(entry.clock_out),
+        new Date(entry.clock_in)
+      );
+    }
+    return total;
+  }, 0);
+
+  // Check if currently on break (last entry was a break)
+  const isOnBreak = weeklyEntries.length > 0 && 
+    weeklyEntries[0].notes?.includes('break') && 
+    weeklyEntries[0].clock_out;
+
+  const lastBreakType = isOnBreak ? 
+    weeklyEntries[0].notes?.split(' ')[0] : undefined;
+
+  const breakStartTime = isOnBreak ? 
+    new Date(weeklyEntries[0].clock_out!) : undefined;
 
   const getWeeklyChartData = (): WeeklyChartData[] => {
     const weekDays = Array.from({ length: 7 }, (_, i) => {
@@ -75,7 +98,6 @@ export const useTimeTrackingPage = () => {
   const totalTrackedHours = +(totalTrackedMinutes / 60).toFixed(2);
   const remainingHours = Math.max(targetWeeklyHours - totalTrackedHours, 0);
 
-  // Filter daily entries based on selected date (today or a specific date)
   const filterDailyEntries = (entries: TimeEntry[], date: Date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
     return entries.filter(entry => {
@@ -89,7 +111,6 @@ export const useTimeTrackingPage = () => {
       const entries = await getWeeklyTimeEntries(weekStart);
       setWeeklyEntries(entries);
       
-      // Set daily entries based on selected date (defaults to today)
       const filteredDailyEntries = filterDailyEntries(entries, selectedDate);
       setDailyEntries(filteredDailyEntries);
     };
@@ -113,8 +134,9 @@ export const useTimeTrackingPage = () => {
     localStorage.setItem("targetWeeklyHours", String(targetWeeklyHours));
   }, [targetWeeklyHours]);
 
+  // Enhanced break handler using new startBreak function
   const handleBreak = (breakType: string) => {
-    clockOut(`${breakType} break started`);
+    startBreak(breakType);
   };
 
   const handleWeekChange = (direction: "prev" | "next") => {
@@ -129,7 +151,7 @@ export const useTimeTrackingPage = () => {
     try {
       if (/^\d{4}-\d{2}-\d{2}$/.test(searchValue)) {
         date = new Date(searchValue);
-        setSelectedDate(date); // Update selected date when searching
+        setSelectedDate(date);
       } else if (/^\d{4}-\d{2}$/.test(searchValue)) {
         date = new Date(searchValue + "-01");
       } else {
@@ -142,11 +164,9 @@ export const useTimeTrackingPage = () => {
     setIsSearching(false);
   };
 
-  // Handler for changing the selected date for daily view
   const handleDateChange = (date: Date) => {
     setSelectedDate(date);
     
-    // If the new date is outside the current week, update week view too
     const currentWeekStart = startOfWeek(weekDate, { weekStartsOn: 1 });
     const currentWeekEnd = addDays(currentWeekStart, 6);
     
@@ -154,7 +174,6 @@ export const useTimeTrackingPage = () => {
       setWeekDate(date);
     }
     
-    // Update daily entries based on the new selected date
     const filteredEntries = filterDailyEntries(weeklyEntries, date);
     setDailyEntries(filteredEntries);
   };
@@ -176,6 +195,10 @@ export const useTimeTrackingPage = () => {
     setTargetWeeklyHours,
     totalTrackedHours,
     remainingHours,
+    totalWorkedMinutes,
+    isOnBreak,
+    lastBreakType,
+    breakStartTime,
     getWeeklyChartData,
     handleBreak,
     handleWeekChange,

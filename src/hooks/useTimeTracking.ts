@@ -22,7 +22,6 @@ export interface CurrentEntryState {
   id?: string;
 }
 
-// Accept an optional "weekStart" param to fetch entries for a specific week.
 export function useTimeTracking() {
   const { user } = useAuth();
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
@@ -75,8 +74,36 @@ export function useTimeTracking() {
     }
   }, [user?.id, user?.organizationId]);
 
+  // Check for existing active sessions to prevent duplicates
+  const checkActiveSession = async (): Promise<boolean> => {
+    if (!user?.organizationId) return false;
+
+    try {
+      const { data, error } = await supabase
+        .from('time_entries')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('organization_id', user.organizationId)
+        .is('clock_out', null)
+        .limit(1);
+
+      if (error) throw error;
+      return (data || []).length > 0;
+    } catch (error) {
+      console.error('Error checking active session:', error);
+      return false;
+    }
+  };
+
   const clockIn = async (notes?: string) => {
     if (!user?.organizationId) return;
+
+    // Check for existing active session
+    const hasActiveSession = await checkActiveSession();
+    if (hasActiveSession) {
+      toast.error('You already have an active time tracking session');
+      return;
+    }
 
     try {
       const { data, error } = await supabase
@@ -101,16 +128,23 @@ export function useTimeTracking() {
         organizationId: data.organization_id
       };
 
+      // Optimistic update
       setCurrentEntry({
         isClocked: true,
         clock_in: newEntry.clock_in,
         id: newEntry.id
       });
       setTimeEntries(prev => [newEntry, ...prev]);
+      
       toast.success('Clocked in successfully');
+      
+      // Refresh data to ensure consistency
+      await fetchTimeEntries();
     } catch (error) {
       console.error('Error clocking in:', error);
       toast.error('Failed to clock in');
+      // Revert optimistic update on error
+      setCurrentEntry({ isClocked: false });
     }
   };
 
@@ -120,25 +154,63 @@ export function useTimeTracking() {
       return;
     }
 
+    const clockOutTime = new Date();
+    
     try {
+      // Optimistic update
+      setCurrentEntry({ isClocked: false });
+      
       const { error } = await supabase
         .from('time_entries')
         .update({ 
-          clock_out: new Date().toISOString(),
+          clock_out: clockOutTime.toISOString(),
           notes: notes || null 
         })
         .eq('id', currentEntry.id);
 
       if (error) {
         toast.error('Failed to clock out', { description: error.message });
+        // Revert optimistic update on error
+        setCurrentEntry({
+          isClocked: true,
+          clock_in: currentEntry.clock_in,
+          id: currentEntry.id
+        });
         return;
       }
 
-      setCurrentEntry({ isClocked: false });
       toast.success('Clocked out successfully');
+      
+      // Refresh data immediately to show updated duration
+      await fetchTimeEntries();
     } catch (error) {
       console.error('Error in clockOut:', error);
       toast.error('An unexpected error occurred');
+      // Revert optimistic update on error
+      setCurrentEntry({
+        isClocked: true,
+        clock_in: currentEntry.clock_in,
+        id: currentEntry.id
+      });
+    }
+  };
+
+  // Enhanced break handling
+  const startBreak = async (breakType: string, notes?: string) => {
+    if (!currentEntry?.id) {
+      toast.error('No active session to take a break from');
+      return;
+    }
+
+    try {
+      // Clock out current session with break notation
+      const breakNotes = `${breakType} break${notes ? `: ${notes}` : ''}`;
+      await clockOut(breakNotes);
+      
+      toast.success(`${breakType} break started`);
+    } catch (error) {
+      console.error('Error starting break:', error);
+      toast.error('Failed to start break');
     }
   };
 
@@ -153,10 +225,8 @@ export function useTimeTracking() {
       } else {
         start = startOfWeek(new Date(), { weekStartsOn: 1 });
       }
-      // End: start + 7 days, i.e. next week's Monday
       const end = addDays(start, 7);
 
-      // RLS policies will automatically filter by organization
       const { data, error } = await supabase
         .from('time_entries')
         .select('*')
@@ -185,7 +255,6 @@ export function useTimeTracking() {
       const start = startOfWeek(weekStart, { weekStartsOn: 1 });
       const end = addDays(start, 7);
 
-      // RLS policies will ensure only same-organization data is returned
       const { data, error } = await supabase
         .from('time_entries')
         .select('*')
@@ -206,12 +275,42 @@ export function useTimeTracking() {
     }
   };
 
+  // Setup real-time subscription
+  useEffect(() => {
+    if (!user?.organizationId) return;
+
+    const channel = supabase
+      .channel('time_entries_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'time_entries',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Real-time time entry update:', payload);
+          // Refresh data when changes occur
+          fetchTimeEntries();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, user?.organizationId, fetchTimeEntries]);
+
   return {
     timeEntries,
     currentEntry,
+    isLoading,
     clockIn,
     clockOut,
+    startBreak,
     getWeeklyTimeEntries,
-    getTeamMemberTimeEntries
+    getTeamMemberTimeEntries,
+    fetchTimeEntries
   };
-};
+}

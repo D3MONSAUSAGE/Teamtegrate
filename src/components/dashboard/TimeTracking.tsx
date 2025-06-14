@@ -7,7 +7,6 @@ import TimeTrackingSummary from './time/TimeTrackingSummary';
 import TimeChartSection from './time/TimeChartSection';
 import TimeTrackingControls from './TimeTrackingControls';
 import WeekNavigation from './WeekNavigation';
-import { format } from 'date-fns';
 
 const TimeTracking: React.FC = () => {
   const {
@@ -27,6 +26,10 @@ const TimeTracking: React.FC = () => {
     setTargetWeeklyHours,
     totalTrackedHours,
     remainingHours,
+    totalWorkedMinutes,
+    isOnBreak,
+    lastBreakType,
+    breakStartTime,
     getWeeklyChartData,
     handleBreak,
     handleWeekChange,
@@ -56,6 +59,10 @@ const TimeTracking: React.FC = () => {
         clockOut={clockOut}
         handleBreak={handleBreak}
         elapsedTime={elapsedTime}
+        totalWorkedMinutes={totalWorkedMinutes}
+        isOnBreak={isOnBreak}
+        lastBreakType={lastBreakType}
+        breakStartTime={breakStartTime}
       />
 
       <WeekNavigation
