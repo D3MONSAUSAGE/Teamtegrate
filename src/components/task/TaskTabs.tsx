@@ -23,7 +23,7 @@ const TaskTabs: React.FC<TaskTabsProps> = ({
   onStatusChange,
 }) => {
   return (
-    <div className="p-8">
+    <div className="p-2 sm:p-4 lg:p-6">
       <Tabs defaultValue="todo" className="w-full">
         <TabsList className="grid grid-cols-3 mb-10 h-16 bg-muted/30 rounded-2xl p-2 backdrop-blur-sm border border-border/30">
           <TabsTrigger 

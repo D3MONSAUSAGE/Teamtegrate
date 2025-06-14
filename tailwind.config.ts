@@ -15,10 +15,14 @@ export default {
       center: true,
       padding: '2rem',
       screens: {
-        '2xl': '1400px'
+        '2xl': '1400px',
+        '3xl': '1600px'
       }
     },
     extend: {
+      screens: {
+        '3xl': '1600px',
+      },
       transitionDuration: {
         400: "400ms"
       },
@@ -142,4 +146,3 @@ export default {
   },
   plugins: [require("tailwindcss-animate")],
 } satisfies Config;
-
