@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,7 +33,6 @@ import { format } from 'date-fns';
 import CreateUserDialog from './CreateUserDialog';
 import EditUserDialog from './EditUserDialog';
 import SimpleDeleteUserDialog from './SimpleDeleteUserDialog';
-import UserImpactDialog from './UserImpactDialog';
 import SuperadminTransferDialog from './SuperadminTransferDialog';
 
 const getRoleIcon = (role: UserRole) => {
@@ -94,7 +92,6 @@ const SuperadminUserManagement: React.FC = () => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [impactDialogOpen, setImpactDialogOpen] = useState(false);
   const [transferDialogOpen, setTransferDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [transferData, setTransferData] = useState<SuperadminTransferData | null>(null);
@@ -398,12 +395,6 @@ const SuperadminUserManagement: React.FC = () => {
         onOpenChange={setDeleteDialogOpen}
         user={selectedUser}
         onUserDeleted={onUserDeleted}
-      />
-
-      <UserImpactDialog
-        open={impactDialogOpen}
-        onOpenChange={setImpactDialogOpen}
-        user={selectedUser}
       />
 
       <SuperadminTransferDialog
