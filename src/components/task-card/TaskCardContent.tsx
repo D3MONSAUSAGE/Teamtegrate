@@ -33,7 +33,7 @@ const TaskCardContent: React.FC<TaskCardContentProps> = ({
         <TaskCardDescription description={task.description} />
       </div>
       
-      <div className="mt-auto space-y-3 p-4 pt-0">
+      <div className="mt-auto space-y-2 p-4 pt-0">
         <TaskCardMetadata 
           task={task}
           isOverdue={isOverdue}
