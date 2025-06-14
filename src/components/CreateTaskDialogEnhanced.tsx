@@ -6,7 +6,7 @@ import { Task, User } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTask } from '@/contexts/task';
 import { useProjects } from '@/hooks/useProjects';
-import { useTeamMembers } from '@/hooks/useTeamMembers';
+import useTeamMembers from '@/hooks/useTeamMembers';
 import { useForm } from 'react-hook-form';
 import { toast } from '@/components/ui/sonner';
 import { TaskAssignmentService } from '@/services/taskAssignmentService';
@@ -32,7 +32,7 @@ const CreateTaskDialogEnhanced: React.FC<CreateTaskDialogEnhancedProps> = ({
   const { user } = useAuth();
   const { addTask, updateTask } = useTask();
   const { projects } = useProjects();
-  const { users, isLoading: loadingUsers } = useTeamMembers();
+  const { teamMembers: users, isLoading: loadingUsers } = useTeamMembers();
 
   const [selectedUsers, setSelectedUsers] = useState<User[]>([]);
   const [deadlineDate, setDeadlineDate] = useState<Date | undefined>();
@@ -43,7 +43,7 @@ const CreateTaskDialogEnhanced: React.FC<CreateTaskDialogEnhancedProps> = ({
     defaultValues: {
       title: '',
       description: '',
-      priority: 'Medium' as const,
+      priority: 'Medium' as 'Low' | 'Medium' | 'High',
       projectId: currentProjectId || 'none',
       cost: 0,
     }
