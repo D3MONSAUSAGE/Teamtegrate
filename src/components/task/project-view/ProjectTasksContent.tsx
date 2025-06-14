@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
 import ProjectOverview from './ProjectOverview';
 import ProjectTasksFilters from './ProjectTasksFilters';
-import ProjectTasksGrid from './ProjectTasksGrid';
+import ProjectTasksTabs from './ProjectTasksTabs';
 
 interface ProjectTasksContentProps {
   project: Project;
@@ -65,7 +65,7 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
       />
 
       {/* Header Actions */}
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center px-8">
         <h2 className="text-2xl font-bold">Project Tasks</h2>
         <div className="flex gap-2">
           <Button
@@ -84,22 +84,22 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
       </div>
 
       {/* Filters */}
-      <ProjectTasksFilters
-        searchQuery={searchQuery || ''}
-        sortBy={sortBy || 'deadline'}
-        onSearchChange={onSearchChange}
-        onSortByChange={onSortByChange}
-      />
+      <div className="px-8">
+        <ProjectTasksFilters
+          searchQuery={searchQuery || ''}
+          sortBy={sortBy || 'deadline'}
+          onSearchChange={onSearchChange}
+          onSortByChange={onSortByChange}
+        />
+      </div>
 
-      {/* Tasks Grid */}
-      <ProjectTasksGrid
+      {/* Tasks Tabs (replacing the grid) */}
+      <ProjectTasksTabs
         todoTasks={todoTasks || []}
         inProgressTasks={inProgressTasks || []}
         completedTasks={completedTasks || []}
-        onEditTask={onEditTask}
+        onEdit={onEditTask}
         onStatusChange={onTaskStatusChange}
-        teamMembers={teamMembers || []}
-        isLoadingTeamMembers={isLoadingTeamMembers}
       />
     </div>
   );
