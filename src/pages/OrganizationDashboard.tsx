@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +9,7 @@ import UserRoleManagement from '@/components/organization/UserRoleManagement';
 import SuperadminUserManagement from '@/components/organization/SuperadminUserManagement';
 import RoleDistributionChart from '@/components/organization/RoleDistributionChart';
 import OrganizationQuickActions from '@/components/organization/OrganizationQuickActions';
+import TeamManagementSection from '@/components/organization/team/TeamManagementSection';
 
 const OrganizationDashboard = () => {
   const { user, loading } = useAuth();
@@ -68,18 +68,24 @@ const OrganizationDashboard = () => {
 
       <OrganizationStatsCards />
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          {user.role === 'superadmin' ? (
-            <SuperadminUserManagement />
-          ) : (
-            <UserRoleManagement />
-          )}
+      <div className="grid grid-cols-1 gap-6">
+        {/* User Management Section */}
+        <div className="lg:grid lg:grid-cols-3 lg:gap-6 space-y-6 lg:space-y-0">
+          <div className="lg:col-span-2">
+            {user.role === 'superadmin' ? (
+              <SuperadminUserManagement />
+            ) : (
+              <UserRoleManagement />
+            )}
+          </div>
+          <div className="space-y-6">
+            <RoleDistributionChart />
+            <OrganizationQuickActions />
+          </div>
         </div>
-        <div className="space-y-6">
-          <RoleDistributionChart />
-          <OrganizationQuickActions />
-        </div>
+
+        {/* Team Management Section */}
+        <TeamManagementSection />
       </div>
     </div>
   );
