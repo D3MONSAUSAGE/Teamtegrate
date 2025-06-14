@@ -447,6 +447,60 @@ export type Database = {
           },
         ]
       }
+      daily_time_summaries: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          break_count: number | null
+          compliance_notes: string | null
+          created_at: string | null
+          id: string
+          is_approved: boolean | null
+          organization_id: string
+          overtime_minutes: number | null
+          session_count: number | null
+          total_break_minutes: number | null
+          total_work_minutes: number | null
+          updated_at: string | null
+          user_id: string
+          work_date: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          break_count?: number | null
+          compliance_notes?: string | null
+          created_at?: string | null
+          id?: string
+          is_approved?: boolean | null
+          organization_id: string
+          overtime_minutes?: number | null
+          session_count?: number | null
+          total_break_minutes?: number | null
+          total_work_minutes?: number | null
+          updated_at?: string | null
+          user_id: string
+          work_date: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          break_count?: number | null
+          compliance_notes?: string | null
+          created_at?: string | null
+          id?: string
+          is_approved?: boolean | null
+          organization_id?: string
+          overtime_minutes?: number | null
+          session_count?: number | null
+          total_break_minutes?: number | null
+          total_work_minutes?: number | null
+          updated_at?: string | null
+          user_id?: string
+          work_date?: string
+        }
+        Relationships: []
+      }
       documents: {
         Row: {
           created_at: string | null
@@ -1303,6 +1357,10 @@ export type Database = {
           orphaned_records: number
         }[]
       }
+      auto_close_stale_sessions: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       can_change_user_role: {
         Args: {
           manager_user_id: string
@@ -1331,6 +1389,10 @@ export type Database = {
           user_role: string
         }
         Returns: Json
+      }
+      end_of_day_auto_close: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       generate_invite_code: {
         Args: {
@@ -1428,6 +1490,10 @@ export type Database = {
           organization_id: string
         }
         Returns: Json
+      }
+      update_daily_summary: {
+        Args: { target_user_id: string; target_date: string }
+        Returns: undefined
       }
       user_can_access_room: {
         Args: { room_id: string; user_id: string }
