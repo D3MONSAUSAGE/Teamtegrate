@@ -133,50 +133,40 @@ export const useTimeTrackingPage = () => {
     }
   }, 300);
 
-  // Enhanced session validation with reduced frequency
-  const validateAndRecoverSession = debounce(async () => {
-    try {
-      if (!isOnline) {
-        console.log('Skipping session validation - offline');
-        return;
-      }
-
-      // Only validate if we think we're in an inconsistent state
-      if (currentEntry.isClocked && !currentEntry.id) {
-        console.log('Detected inconsistent session state, attempting recovery...');
-        await fetchTimeEntries();
-        toast.warning('Session state recovered.');
-      }
-    } catch (error) {
-      console.error('Error validating session:', error);
-    }
-  }, 5000); // Reduced frequency to every 5 seconds
-
   // Fetch entries when dependencies change
   useEffect(() => {
     debouncedFetchEntries();
   }, [weekStart, selectedDate]);
 
-  // Validate session state less frequently
-  useEffect(() => {
-    if (currentEntry.isClocked || weeklyEntries.length > 0) {
-      validateAndRecoverSession();
-    }
-  }, [currentEntry.isClocked, currentEntry.id]);
-
-  // Timer effect for elapsed time
+  // Fixed timer effect with proper cleanup and error handling
   useEffect(() => {
     let interval: NodeJS.Timeout;
+    
     if (currentEntry.isClocked && currentEntry.clock_in) {
-      interval = setInterval(() => {
-        const elapsedMs = Date.now() - new Date(currentEntry.clock_in!).getTime();
-        setElapsedTime(formatDuration(elapsedMs));
-      }, 1000);
+      // Start timer immediately
+      const updateElapsedTime = () => {
+        try {
+          const elapsedMs = Date.now() - currentEntry.clock_in!.getTime();
+          setElapsedTime(formatDuration(elapsedMs));
+        } catch (error) {
+          console.error('Error updating elapsed time:', error);
+          setElapsedTime('00:00:00');
+        }
+      };
+
+      // Update immediately, then every second
+      updateElapsedTime();
+      interval = setInterval(updateElapsedTime, 1000);
     } else {
-      setElapsedTime("");
+      setElapsedTime('00:00:00');
     }
-    return () => clearInterval(interval);
-  }, [currentEntry]);
+
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [currentEntry.isClocked, currentEntry.clock_in]);
 
   // Save target hours to localStorage
   useEffect(() => {
@@ -245,6 +235,7 @@ export const useTimeTrackingPage = () => {
 
     try {
       await clockIn(notes);
+      setNotes(''); // Clear notes after successful clock in
     } catch (error) {
       console.error('Clock in failed:', error);
       toast.error('Failed to clock in. Please try again.');
@@ -265,6 +256,7 @@ export const useTimeTrackingPage = () => {
 
     try {
       await clockOut(notes);
+      setNotes(''); // Clear notes after successful clock out
     } catch (error) {
       console.error('Clock out failed:', error);
       toast.error('Failed to clock out. Please try again.');
@@ -300,8 +292,7 @@ export const useTimeTrackingPage = () => {
     clockOut: enhancedClockOut,
     selectedDate,
     handleDateChange,
-    validateAndRecoverSession,
-    // New properties for connection status and error handling
+    // Connection status and error handling
     isLoading,
     lastError,
     isOnline,

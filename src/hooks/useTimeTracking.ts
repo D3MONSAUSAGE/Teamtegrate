@@ -40,6 +40,33 @@ export function useTimeTracking() {
     return params ? `${baseKey}-${JSON.stringify(params)}` : baseKey;
   }, [user?.id, user?.organizationId]);
 
+  // Simple active session check without debounce
+  const checkActiveSession = useCallback(async (): Promise<boolean> => {
+    if (!user?.organizationId) return false;
+
+    const requestKey = createRequestKey('check-active');
+
+    try {
+      const result = await requestManager.dedupe(requestKey, async () => {
+        const { data, error } = await supabase
+          .from('time_entries')
+          .select('id, clock_in, created_at')
+          .eq('user_id', user.id)
+          .eq('organization_id', user.organizationId)
+          .is('clock_out', null)
+          .limit(1);
+
+        if (error) throw error;
+        return data || [];
+      });
+
+      return result.length > 0;
+    } catch (error) {
+      console.error('Error checking active session:', error);
+      return false;
+    }
+  }, [user?.id, user?.organizationId, createRequestKey]);
+
   // Enhanced fetch with deduplication and error handling
   const fetchTimeEntries = useCallback(async (showLoading = true) => {
     if (!user?.organizationId || fetchingRef.current) return;
@@ -119,34 +146,7 @@ export function useTimeTracking() {
     }
   }, [user?.id, user?.organizationId, createRequestKey, setConnecting]);
 
-  // Debounced active session check
-  const checkActiveSession = useCallback(debounce(async (): Promise<boolean> => {
-    if (!user?.organizationId) return false;
-
-    const requestKey = createRequestKey('check-active');
-
-    try {
-      const result = await requestManager.dedupe(requestKey, async () => {
-        const { data, error } = await supabase
-          .from('time_entries')
-          .select('id, clock_in, created_at')
-          .eq('user_id', user.id)
-          .eq('organization_id', user.organizationId)
-          .is('clock_out', null)
-          .limit(1);
-
-        if (error) throw error;
-        return data || [];
-      });
-
-      return result.length > 0;
-    } catch (error) {
-      console.error('Error checking active session:', error);
-      return false;
-    }
-  }, 1000), [user?.id, user?.organizationId, createRequestKey]);
-
-  // Enhanced clock in with better error handling
+  // Enhanced clock in with simplified validation
   const clockIn = async (notes?: string) => {
     if (!user?.organizationId) {
       toast.error('Organization not found');
@@ -161,12 +161,16 @@ export function useTimeTracking() {
     try {
       setIsLoading(true);
       
-      // Check for active session first
-      const hasActive = await checkActiveSession();
-      if (hasActive) {
-        toast.error('You already have an active time tracking session. Please clock out first.');
-        await fetchTimeEntries(false);
-        return;
+      // Simple check for active session - don't block if check fails
+      try {
+        const hasActive = await checkActiveSession();
+        if (hasActive) {
+          toast.error('You already have an active time tracking session. Please clock out first.');
+          await fetchTimeEntries(false);
+          return;
+        }
+      } catch (checkError) {
+        console.warn('Active session check failed, proceeding with clock in:', checkError);
       }
 
       const { data, error } = await supabase
