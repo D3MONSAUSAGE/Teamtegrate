@@ -50,7 +50,7 @@ const ProjectTasksGrid: React.FC<ProjectTasksGridProps> = ({
           </span>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-3 max-h-[80vh] overflow-y-auto">
         {tasks.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-4">
             No {status.toLowerCase()} tasks
@@ -71,7 +71,7 @@ const ProjectTasksGrid: React.FC<ProjectTasksGridProps> = ({
   );
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
       {renderTaskColumn(todoTasks, 'To Do', 'To Do')}
       {renderTaskColumn(inProgressTasks, 'In Progress', 'In Progress')}
       {renderTaskColumn(completedTasks, 'Completed', 'Completed')}
