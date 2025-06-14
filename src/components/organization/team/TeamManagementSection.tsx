@@ -15,6 +15,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTeamManagement } from '@/hooks/organization/useTeamManagement';
 import TeamCard from './TeamCard';
 import CreateTeamDialog from './CreateTeamDialog';
+import ManageTeamMembersDialog from './ManageTeamMembersDialog';
 import { Team } from '@/types/teams';
 
 const TeamManagementSection: React.FC = () => {
