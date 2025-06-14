@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useChatRoomsFetch } from '@/hooks/use-chat-rooms-fetch';
 
 interface ChatRoomData {
@@ -24,6 +24,12 @@ export function useChatRoomsState() {
     setIsLoading, 
     setError 
   });
+
+  // Automatically fetch rooms when component mounts
+  useEffect(() => {
+    console.log('useChatRoomsState: Component mounted, fetching rooms...');
+    fetchRooms();
+  }, [fetchRooms]);
 
   const filteredRooms = rooms.filter(room => 
     room.name.toLowerCase().includes(searchQuery.toLowerCase())
