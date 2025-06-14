@@ -59,13 +59,13 @@ const TimeTracking: React.FC = () => {
       <TimeTrackingControls
         notes={notes}
         setNotes={setNotes}
-        isClocked={!!currentEntry.isClocked}
+        isClocked={Boolean(currentEntry?.isClocked)}
         clockIn={clockIn}
         clockOut={clockOut}
         handleBreak={handleBreak}
         elapsedTime={elapsedTime}
         totalWorkedMinutes={totalWorkedMinutes}
-        isOnBreak={isOnBreak}
+        isOnBreak={Boolean(isOnBreak)}
         lastBreakType={lastBreakType}
         breakStartTime={breakStartTime}
       />
@@ -77,7 +77,7 @@ const TimeTracking: React.FC = () => {
         searchValue={searchValue}
         setSearchValue={setSearchValue}
         handleSearch={handleSearch}
-        isSearching={isSearching}
+        isSearching={Boolean(isSearching)}
         handleExport={handleExport}
         selectedDate={selectedDate}
         onDateChange={handleDateChange}
