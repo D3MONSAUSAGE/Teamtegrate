@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { useProjects } from '@/hooks/useProjects';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUsers } from '@/hooks/useUsers';
 import CreateProjectDialog from '@/components/CreateProjectDialog';
 import CreateTaskDialogEnhanced from '@/components/CreateTaskDialogEnhanced';
 import { useNavigate } from 'react-router-dom';
@@ -10,17 +11,34 @@ import ProjectsSearchSection from './projects/ProjectsSearchSection';
 import ProjectsGridSection from './projects/ProjectsGridSection';
 import ProjectsLoadingState from './projects/ProjectsLoadingState';
 import ProjectsPageBackground from './projects/ProjectsPageBackground';
+import ProjectsActionToolbar from './projects/ProjectsActionToolbar';
+import { useProjectsPageState } from './projects/hooks/useProjectsPageState';
 
 const ProjectsPage = () => {
   console.log('ProjectsPage: Component rendering');
   
   const { user } = useAuth();
   const { projects, isLoading, refetch } = useProjects();
+  const { users: allUsers } = useUsers();
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>();
   const navigate = useNavigate();
+
+  const {
+    viewMode,
+    setViewMode,
+    sortBy,
+    setSortBy,
+    statusFilter,
+    setStatusFilter,
+    selectedAssignee,
+    handleAssigneeFilter,
+    showCompleted,
+    toggleCompleted,
+    filteredAndSortedProjects
+  } = useProjectsPageState(projects);
 
   console.log('ProjectsPage: State values:', {
     projectsCount: projects?.length || 0,
@@ -29,15 +47,19 @@ const ProjectsPage = () => {
     isCreateDialogOpen,
     isCreateTaskOpen,
     selectedProjectId,
-    user: !!user
+    user: !!user,
+    viewMode,
+    sortBy,
+    statusFilter
   });
 
-  const filteredProjects = projects.filter(project =>
+  // Apply search filter to the already filtered and sorted projects
+  const searchFilteredProjects = filteredAndSortedProjects.filter(project =>
     project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     project.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  console.log('ProjectsPage: Filtered projects count:', filteredProjects.length);
+  console.log('ProjectsPage: Search filtered projects count:', searchFilteredProjects.length);
 
   const handleViewTasks = (projectId: string) => {
     console.log('ProjectsPage: handleViewTasks called for project:', projectId);
@@ -89,10 +111,24 @@ const ProjectsPage = () => {
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-accent/10 relative overflow-hidden">
       <ProjectsPageBackground />
 
-      <div className="container mx-auto max-w-7xl px-4 lg:px-6 py-8 space-y-10 relative z-10">
-        {/* Enhanced Page Header */}
+      <div className="container mx-auto max-w-7xl px-4 lg:px-6 py-8 space-y-6 relative z-10">
+        {/* Enhanced Action Toolbar */}
         <div className="animate-fade-in">
-          <ProjectsPageHeader onCreateProject={handleCreateProject} />
+          <ProjectsActionToolbar
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+            sortBy={sortBy}
+            onSortByChange={setSortBy}
+            statusFilter={statusFilter}
+            onStatusFilterChange={setStatusFilter}
+            teamMembers={allUsers}
+            selectedAssignee={selectedAssignee}
+            onAssigneeFilter={handleAssigneeFilter}
+            showCompleted={showCompleted}
+            onToggleCompleted={toggleCompleted}
+            onCreateProject={handleCreateProject}
+            projectsCount={searchFilteredProjects.length}
+          />
         </div>
         
         {/* Enhanced Search Section */}
@@ -100,7 +136,7 @@ const ProjectsPage = () => {
           <ProjectsSearchSection
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
-            resultsCount={filteredProjects.length}
+            resultsCount={searchFilteredProjects.length}
           />
         </div>
 
@@ -108,7 +144,7 @@ const ProjectsPage = () => {
         <div className="animate-fade-in delay-300">
           <div className="bg-card/60 backdrop-blur-xl border border-border/40 rounded-3xl shadow-2xl shadow-primary/5 overflow-hidden">
             <ProjectsGridSection
-              projects={filteredProjects}
+              projects={searchFilteredProjects}
               searchQuery={searchQuery}
               onCreateProject={handleCreateProject}
               onViewTasks={handleViewTasks}

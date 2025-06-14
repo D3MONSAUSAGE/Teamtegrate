@@ -120,8 +120,17 @@ export function useProjects() {
     }));
   }, [fetchedProjects]);
 
+  const setProjects = useCallback((updater: React.SetStateAction<Project[]>) => {
+    if (typeof updater === 'function') {
+      setFetchedProjects(prevProjects => updater(prevProjects));
+    } else {
+      setFetchedProjects(updater);
+    }
+  }, []);
+
   return {
     projects: mappedProjects,
+    setProjects,
     isLoading,
     error,
     refetch: fetchProjects,
