@@ -40,6 +40,11 @@ const TimeTracking: React.FC = () => {
     handleDateChange
   } = useTimeTrackingPage();
 
+  const handleExport = () => {
+    // TODO: Implement export functionality
+    console.log('Export functionality to be implemented');
+  };
+
   return (
     <div className="space-y-4">
       <TimeTrackingSummary
@@ -73,7 +78,7 @@ const TimeTracking: React.FC = () => {
         setSearchValue={setSearchValue}
         handleSearch={handleSearch}
         isSearching={isSearching}
-        handleExport={() => {}}
+        handleExport={handleExport}
         selectedDate={selectedDate}
         onDateChange={handleDateChange}
       />
