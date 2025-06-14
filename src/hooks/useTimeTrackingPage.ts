@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { format, startOfWeek, addWeeks, subWeeks, addDays, differenceInMinutes, parseISO } from 'date-fns';
 import { useTimeTracking } from './useTimeTracking';
 import { toast } from 'sonner';
+import { debounce } from '@/utils/requestManager';
 
 interface TimeEntry {
   clock_in: string;
@@ -17,7 +18,19 @@ interface WeeklyChartData {
 }
 
 export const useTimeTrackingPage = () => {
-  const { currentEntry, clockIn, clockOut, startBreak, getWeeklyTimeEntries, fetchTimeEntries } = useTimeTracking();
+  const { 
+    currentEntry, 
+    clockIn, 
+    clockOut, 
+    startBreak, 
+    getWeeklyTimeEntries, 
+    fetchTimeEntries,
+    isLoading,
+    lastError,
+    isOnline,
+    forceRefresh
+  } = useTimeTracking();
+  
   const [notes, setNotes] = useState('');
   const [elapsedTime, setElapsedTime] = useState('');
   const [dailyEntries, setDailyEntries] = useState<TimeEntry[]>([]);
@@ -107,42 +120,51 @@ export const useTimeTrackingPage = () => {
     });
   };
 
-  // Enhanced session validation and recovery
-  const validateAndRecoverSession = async () => {
+  // Debounced data fetching to prevent excessive calls
+  const debouncedFetchEntries = debounce(async () => {
     try {
-      // Refresh current session state
-      await fetchTimeEntries();
-      
-      // If we think we're clocked in but there's no active session, reset the state
-      if (currentEntry.isClocked && !currentEntry.id) {
-        console.log('Detected inconsistent session state, resetting...');
-        toast.warning('Session state recovered. You can now start a new time tracking session.');
-      }
-      
-      // If there's an active session but the timer isn't updating, log it
-      if (currentEntry.isClocked && currentEntry.clock_in && !elapsedTime) {
-        console.log('Active session detected, timer should be running...');
-      }
-    } catch (error) {
-      console.error('Error validating session:', error);
-      toast.error('Failed to validate time tracking session');
-    }
-  };
-
-  useEffect(() => {
-    const fetchEntries = async () => {
       const entries = await getWeeklyTimeEntries(weekStart);
       setWeeklyEntries(entries);
       
       const filteredDailyEntries = filterDailyEntries(entries, selectedDate);
       setDailyEntries(filteredDailyEntries);
-    };
-    fetchEntries();
-    
-    // Validate session state when entries change
-    validateAndRecoverSession();
-  }, [currentEntry, weekStart, selectedDate]);
+    } catch (error) {
+      console.error('Error fetching weekly entries:', error);
+    }
+  }, 300);
 
+  // Enhanced session validation with reduced frequency
+  const validateAndRecoverSession = debounce(async () => {
+    try {
+      if (!isOnline) {
+        console.log('Skipping session validation - offline');
+        return;
+      }
+
+      // Only validate if we think we're in an inconsistent state
+      if (currentEntry.isClocked && !currentEntry.id) {
+        console.log('Detected inconsistent session state, attempting recovery...');
+        await fetchTimeEntries();
+        toast.warning('Session state recovered.');
+      }
+    } catch (error) {
+      console.error('Error validating session:', error);
+    }
+  }, 5000); // Reduced frequency to every 5 seconds
+
+  // Fetch entries when dependencies change
+  useEffect(() => {
+    debouncedFetchEntries();
+  }, [weekStart, selectedDate]);
+
+  // Validate session state less frequently
+  useEffect(() => {
+    if (currentEntry.isClocked || weeklyEntries.length > 0) {
+      validateAndRecoverSession();
+    }
+  }, [currentEntry.isClocked, currentEntry.id]);
+
+  // Timer effect for elapsed time
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (currentEntry.isClocked && currentEntry.clock_in) {
@@ -156,12 +178,17 @@ export const useTimeTrackingPage = () => {
     return () => clearInterval(interval);
   }, [currentEntry]);
 
+  // Save target hours to localStorage
   useEffect(() => {
     localStorage.setItem("targetWeeklyHours", String(targetWeeklyHours));
   }, [targetWeeklyHours]);
 
-  // Enhanced break handler using new startBreak function
+  // Enhanced break handler
   const handleBreak = (breakType: string) => {
+    if (!isOnline) {
+      toast.error('Cannot start break while offline');
+      return;
+    }
     startBreak(breakType);
   };
 
@@ -185,7 +212,7 @@ export const useTimeTrackingPage = () => {
       }
       setWeekDate(date);
     } catch {
-      // Ignore and do nothing if invalid
+      toast.error('Invalid date format. Use YYYY-MM-DD or YYYY-MM');
     }
     setIsSearching(false);
   };
@@ -204,8 +231,18 @@ export const useTimeTrackingPage = () => {
     setDailyEntries(filteredEntries);
   };
 
-  // Enhanced clockIn with better error handling
+  // Enhanced clockIn with connection check
   const enhancedClockIn = async (notes?: string) => {
+    if (!isOnline) {
+      toast.error('Cannot clock in while offline. Please check your connection.');
+      return;
+    }
+    
+    if (isLoading) {
+      toast.warning('Please wait, operation in progress...');
+      return;
+    }
+
     try {
       await clockIn(notes);
     } catch (error) {
@@ -214,8 +251,18 @@ export const useTimeTrackingPage = () => {
     }
   };
 
-  // Enhanced clockOut with better error handling
+  // Enhanced clockOut with connection check
   const enhancedClockOut = async (notes?: string) => {
+    if (!isOnline) {
+      toast.error('Cannot clock out while offline. Please check your connection.');
+      return;
+    }
+    
+    if (isLoading) {
+      toast.warning('Please wait, operation in progress...');
+      return;
+    }
+
     try {
       await clockOut(notes);
     } catch (error) {
@@ -253,7 +300,12 @@ export const useTimeTrackingPage = () => {
     clockOut: enhancedClockOut,
     selectedDate,
     handleDateChange,
-    validateAndRecoverSession
+    validateAndRecoverSession,
+    // New properties for connection status and error handling
+    isLoading,
+    lastError,
+    isOnline,
+    forceRefresh
   };
 };
 

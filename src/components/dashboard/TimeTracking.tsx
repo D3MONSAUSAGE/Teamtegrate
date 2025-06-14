@@ -7,6 +7,7 @@ import TimeTrackingSummary from './time/TimeTrackingSummary';
 import TimeChartSection from './time/TimeChartSection';
 import TimeTrackingControls from './TimeTrackingControls';
 import WeekNavigation from './WeekNavigation';
+import ConnectionStatus from './ConnectionStatus';
 
 const TimeTracking: React.FC = () => {
   const {
@@ -37,7 +38,11 @@ const TimeTracking: React.FC = () => {
     clockIn,
     clockOut,
     selectedDate,
-    handleDateChange
+    handleDateChange,
+    isLoading,
+    lastError,
+    isOnline,
+    forceRefresh
   } = useTimeTrackingPage();
 
   const handleExport = () => {
@@ -47,6 +52,13 @@ const TimeTracking: React.FC = () => {
 
   return (
     <div className="space-y-4">
+      {/* Connection Status - only shows when there are issues */}
+      <ConnectionStatus 
+        lastError={lastError}
+        onRetry={forceRefresh}
+        isLoading={isLoading}
+      />
+
       <TimeTrackingSummary
         targetWeeklyHours={targetWeeklyHours}
         setTargetWeeklyHours={setTargetWeeklyHours}
@@ -68,6 +80,8 @@ const TimeTracking: React.FC = () => {
         isOnBreak={Boolean(isOnBreak)}
         lastBreakType={lastBreakType}
         breakStartTime={breakStartTime}
+        isLoading={isLoading}
+        isOnline={isOnline}
       />
 
       <WeekNavigation

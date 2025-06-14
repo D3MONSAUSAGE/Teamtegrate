@@ -1,9 +1,11 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { startOfWeek, addDays } from 'date-fns';
+import { requestManager, debounce } from '@/utils/requestManager';
+import { useConnectionStatus } from './useConnectionStatus';
 
 export interface TimeEntry {
   id: string;
@@ -24,25 +26,51 @@ export interface CurrentEntryState {
 
 export function useTimeTracking() {
   const { user } = useAuth();
+  const { isOnline, setConnecting } = useConnectionStatus();
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
   const [currentEntry, setCurrentEntry] = useState<CurrentEntryState>({ isClocked: false });
   const [isLoading, setIsLoading] = useState(false);
+  const [lastError, setLastError] = useState<string | null>(null);
+  const fetchingRef = useRef(false);
+  const subscriptionRef = useRef<any>(null);
 
-  const fetchTimeEntries = useCallback(async () => {
-    if (!user?.organizationId) return;
+  // Create request keys for deduplication
+  const createRequestKey = useCallback((type: string, params?: Record<string, any>) => {
+    const baseKey = `${user?.id}-${user?.organizationId}-${type}`;
+    return params ? `${baseKey}-${JSON.stringify(params)}` : baseKey;
+  }, [user?.id, user?.organizationId]);
 
-    setIsLoading(true);
+  // Enhanced fetch with deduplication and error handling
+  const fetchTimeEntries = useCallback(async (showLoading = true) => {
+    if (!user?.organizationId || fetchingRef.current) return;
+
+    const requestKey = createRequestKey('fetch-entries');
+    
     try {
-      const { data, error } = await supabase
-        .from('time_entries')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('organization_id', user.organizationId)
-        .order('created_at', { ascending: false });
+      fetchingRef.current = true;
+      if (showLoading) setIsLoading(true);
+      setConnecting(true);
+      setLastError(null);
 
-      if (error) throw error;
+      const data = await requestManager.dedupe(requestKey, async () => {
+        console.log('Fetching time entries...');
+        const { data, error } = await supabase
+          .from('time_entries')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('organization_id', user.organizationId)
+          .order('created_at', { ascending: false });
 
-      const entries: TimeEntry[] = (data || []).map(entry => ({
+        if (error) throw error;
+        return data;
+      });
+
+      if (!data) {
+        console.warn('No data returned from time entries fetch');
+        return;
+      }
+
+      const entries: TimeEntry[] = data.map(entry => ({
         id: entry.id,
         user_id: entry.user_id,
         clock_in: new Date(entry.clock_in),
@@ -55,10 +83,9 @@ export function useTimeTracking() {
 
       setTimeEntries(entries);
       
-      // Find current active entry - enhanced validation
+      // Find current active entry with better validation
       const activeEntry = entries.find(entry => !entry.clock_out);
       if (activeEntry) {
-        console.log('Found active entry:', activeEntry);
         setCurrentEntry({
           isClocked: true,
           clock_in: activeEntry.clock_in,
@@ -67,61 +94,81 @@ export function useTimeTracking() {
       } else {
         setCurrentEntry({ isClocked: false });
       }
+
+      console.log(`Successfully loaded ${entries.length} time entries`);
     } catch (error) {
       console.error('Error fetching time entries:', error);
-      toast.error('Failed to load time entries');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      setLastError(errorMessage);
+      
+      // Use cached data if available
+      const cachedData = requestManager.getCachedData<any[]>(requestKey);
+      if (cachedData && cachedData.length > 0) {
+        console.log('Using cached time entries data');
+        toast.warning('Using cached data due to connection issues');
+      } else {
+        toast.error('Failed to load time entries. Please check your connection.');
+      }
+      
       // Reset current entry state on error to prevent stuck state
       setCurrentEntry({ isClocked: false });
     } finally {
+      fetchingRef.current = false;
       setIsLoading(false);
+      setConnecting(false);
     }
-  }, [user?.id, user?.organizationId]);
+  }, [user?.id, user?.organizationId, createRequestKey, setConnecting]);
 
-  // Enhanced active session check with better error handling
-  const checkActiveSession = async (): Promise<boolean> => {
+  // Debounced active session check
+  const checkActiveSession = useCallback(debounce(async (): Promise<boolean> => {
     if (!user?.organizationId) return false;
 
+    const requestKey = createRequestKey('check-active');
+
     try {
-      const { data, error } = await supabase
-        .from('time_entries')
-        .select('id, clock_in, created_at')
-        .eq('user_id', user.id)
-        .eq('organization_id', user.organizationId)
-        .is('clock_out', null)
-        .limit(1);
+      const result = await requestManager.dedupe(requestKey, async () => {
+        const { data, error } = await supabase
+          .from('time_entries')
+          .select('id, clock_in, created_at')
+          .eq('user_id', user.id)
+          .eq('organization_id', user.organizationId)
+          .is('clock_out', null)
+          .limit(1);
 
-      if (error) {
-        console.error('Error checking active session:', error);
-        return false;
-      }
+        if (error) throw error;
+        return data || [];
+      });
 
-      const hasActive = (data || []).length > 0;
-      if (hasActive) {
-        console.log('Active session found:', data[0]);
-      }
-      return hasActive;
+      return result.length > 0;
     } catch (error) {
       console.error('Error checking active session:', error);
       return false;
     }
-  };
+  }, 1000), [user?.id, user?.organizationId, createRequestKey]);
 
+  // Enhanced clock in with better error handling
   const clockIn = async (notes?: string) => {
     if (!user?.organizationId) {
       toast.error('Organization not found');
       return;
     }
 
-    // Enhanced active session check
-    const hasActiveSession = await checkActiveSession();
-    if (hasActiveSession) {
-      toast.error('You already have an active time tracking session. Please clock out first.');
-      // Refresh entries to sync state
-      await fetchTimeEntries();
+    if (!isOnline) {
+      toast.error('Cannot clock in while offline. Please check your connection.');
       return;
     }
 
     try {
+      setIsLoading(true);
+      
+      // Check for active session first
+      const hasActive = await checkActiveSession();
+      if (hasActive) {
+        toast.error('You already have an active time tracking session. Please clock out first.');
+        await fetchTimeEntries(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('time_entries')
         .insert([{
@@ -152,31 +199,39 @@ export function useTimeTracking() {
       });
       setTimeEntries(prev => [newEntry, ...prev]);
       
+      // Clear cache to force refresh
+      requestManager.clearCache(createRequestKey('fetch-entries'));
+      
       toast.success('Clocked in successfully');
       
-      // Refresh data to ensure consistency
-      await fetchTimeEntries();
+      // Refresh data after a short delay
+      setTimeout(() => fetchTimeEntries(false), 1000);
     } catch (error) {
       console.error('Error clocking in:', error);
-      toast.error('Failed to clock in');
-      // Revert optimistic update on error
+      toast.error('Failed to clock in. Please try again.');
       setCurrentEntry({ isClocked: false });
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  // Enhanced clock out with better error handling
   const clockOut = async (notes?: string) => {
     if (!currentEntry?.id) {
       toast.error('No active clock-in found');
-      // Try to refresh and find active session
-      await fetchTimeEntries();
+      await fetchTimeEntries(false);
+      return;
+    }
+
+    if (!isOnline) {
+      toast.error('Cannot clock out while offline. Changes will sync when connection is restored.');
       return;
     }
 
     const clockOutTime = new Date();
     
     try {
-      // Optimistic update
-      setCurrentEntry({ isClocked: false });
+      setIsLoading(true);
       
       const { error } = await supabase
         .from('time_entries')
@@ -186,30 +241,30 @@ export function useTimeTracking() {
         })
         .eq('id', currentEntry.id);
 
-      if (error) {
-        toast.error('Failed to clock out', { description: error.message });
-        // Revert optimistic update on error
-        setCurrentEntry({
-          isClocked: true,
-          clock_in: currentEntry.clock_in,
-          id: currentEntry.id
-        });
-        return;
-      }
+      if (error) throw error;
 
+      // Optimistic update
+      setCurrentEntry({ isClocked: false });
+      
+      // Clear cache to force refresh
+      requestManager.clearCache(createRequestKey('fetch-entries'));
+      
       toast.success('Clocked out successfully');
       
-      // Refresh data immediately to show updated duration
-      await fetchTimeEntries();
+      // Refresh data after a short delay
+      setTimeout(() => fetchTimeEntries(false), 1000);
     } catch (error) {
       console.error('Error in clockOut:', error);
-      toast.error('An unexpected error occurred');
+      toast.error('Failed to clock out. Please try again.');
+      
       // Revert optimistic update on error
       setCurrentEntry({
         isClocked: true,
         clock_in: currentEntry.clock_in,
         id: currentEntry.id
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -221,10 +276,8 @@ export function useTimeTracking() {
     }
 
     try {
-      // Clock out current session with break notation
       const breakNotes = `${breakType} break${notes ? `: ${notes}` : ''}`;
       await clockOut(breakNotes);
-      
       toast.success(`${breakType} break started`);
     } catch (error) {
       console.error('Error starting break:', error);
@@ -232,70 +285,80 @@ export function useTimeTracking() {
     }
   };
 
-  // Accepts an optional weekStart: Date to fetch entries in ANY specific week
+  // Enhanced weekly entries fetch
   const getWeeklyTimeEntries = async (weekStart?: Date) => {
     if (!user) return [];
     
+    const requestKey = createRequestKey('weekly-entries', { 
+      weekStart: weekStart?.toISOString() 
+    });
+    
     try {
-      let start: Date;
-      if (weekStart) {
-        start = startOfWeek(weekStart, { weekStartsOn: 1 });
-      } else {
-        start = startOfWeek(new Date(), { weekStartsOn: 1 });
-      }
-      const end = addDays(start, 7);
+      return await requestManager.dedupe(requestKey, async () => {
+        let start: Date;
+        if (weekStart) {
+          start = startOfWeek(weekStart, { weekStartsOn: 1 });
+        } else {
+          start = startOfWeek(new Date(), { weekStartsOn: 1 });
+        }
+        const end = addDays(start, 7);
 
-      const { data, error } = await supabase
-        .from('time_entries')
-        .select('*')
-        .eq('user_id', user.id)
-        .gte('clock_in', start.toISOString())
-        .lt('clock_in', end.toISOString())
-        .order('clock_in', { ascending: true });
+        const { data, error } = await supabase
+          .from('time_entries')
+          .select('*')
+          .eq('user_id', user.id)
+          .gte('clock_in', start.toISOString())
+          .lt('clock_in', end.toISOString())
+          .order('clock_in', { ascending: true });
 
-      if (error) {
-        console.error('Error fetching weekly time entries:', error);
-        return [];
-      }
-
-      return data || [];
+        if (error) throw error;
+        return data || [];
+      });
     } catch (error) {
       console.error('Error in getWeeklyTimeEntries:', error);
       return [];
     }
   };
 
-  // New function to fetch time entries for a specific team member
+  // Enhanced team member entries fetch
   const getTeamMemberTimeEntries = async (teamMemberId: string, weekStart: Date) => {
     if (!user) return [];
     
+    const requestKey = createRequestKey('team-entries', { 
+      teamMemberId, 
+      weekStart: weekStart.toISOString() 
+    });
+    
     try {
-      const start = startOfWeek(weekStart, { weekStartsOn: 1 });
-      const end = addDays(start, 7);
+      return await requestManager.dedupe(requestKey, async () => {
+        const start = startOfWeek(weekStart, { weekStartsOn: 1 });
+        const end = addDays(start, 7);
 
-      const { data, error } = await supabase
-        .from('time_entries')
-        .select('*')
-        .eq('user_id', teamMemberId)
-        .gte('clock_in', start.toISOString())
-        .lt('clock_in', end.toISOString())
-        .order('clock_in', { ascending: true });
+        const { data, error } = await supabase
+          .from('time_entries')
+          .select('*')
+          .eq('user_id', teamMemberId)
+          .gte('clock_in', start.toISOString())
+          .lt('clock_in', end.toISOString())
+          .order('clock_in', { ascending: true });
 
-      if (error) {
-        console.error(`Error fetching time entries for team member ${teamMemberId}:`, error);
-        return [];
-      }
-
-      return data || [];
+        if (error) throw error;
+        return data || [];
+      });
     } catch (error) {
-      console.error('Error in getTeamMemberTimeEntries:', error);
+      console.error(`Error fetching time entries for team member ${teamMemberId}:`, error);
       return [];
     }
   };
 
-  // Setup real-time subscription with enhanced error handling
+  // Optimized real-time subscription
   useEffect(() => {
     if (!user?.organizationId) return;
+
+    // Clean up existing subscription
+    if (subscriptionRef.current) {
+      supabase.removeChannel(subscriptionRef.current);
+    }
 
     const channel = supabase
       .channel('time_entries_changes')
@@ -309,16 +372,27 @@ export function useTimeTracking() {
         },
         (payload) => {
           console.log('Real-time time entry update:', payload);
-          // Refresh data when changes occur
-          fetchTimeEntries();
+          
+          // Clear cache and refresh after a short debounce
+          requestManager.clearCache(createRequestKey('fetch-entries'));
+          setTimeout(() => {
+            if (!fetchingRef.current) {
+              fetchTimeEntries(false);
+            }
+          }, 500);
         }
       )
       .subscribe();
 
+    subscriptionRef.current = channel;
+
     return () => {
-      supabase.removeChannel(channel);
+      if (subscriptionRef.current) {
+        supabase.removeChannel(subscriptionRef.current);
+        subscriptionRef.current = null;
+      }
     };
-  }, [user?.id, user?.organizationId, fetchTimeEntries]);
+  }, [user?.id, user?.organizationId, fetchTimeEntries, createRequestKey]);
 
   // Initialize data on mount
   useEffect(() => {
@@ -327,15 +401,33 @@ export function useTimeTracking() {
     }
   }, [user?.organizationId, fetchTimeEntries]);
 
+  // Cleanup cache periodically
+  useEffect(() => {
+    const interval = setInterval(() => {
+      requestManager.clearExpiredCache();
+    }, 60000); // Every minute
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Force refresh function for manual retry
+  const forceRefresh = useCallback(() => {
+    requestManager.clearCache(createRequestKey('fetch-entries'));
+    fetchTimeEntries();
+  }, [createRequestKey, fetchTimeEntries]);
+
   return {
     timeEntries,
     currentEntry,
     isLoading,
+    lastError,
+    isOnline,
     clockIn,
     clockOut,
     startBreak,
     getWeeklyTimeEntries,
     getTeamMemberTimeEntries,
-    fetchTimeEntries
+    fetchTimeEntries,
+    forceRefresh
   };
 }

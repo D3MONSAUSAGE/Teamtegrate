@@ -2,7 +2,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Clock, TimerOff, Timer } from "lucide-react";
+import { Clock, TimerOff, Timer, Loader2 } from "lucide-react";
 import BreakTracker from "./time/BreakTracker";
 
 interface TimeTrackingControlsProps {
@@ -17,6 +17,8 @@ interface TimeTrackingControlsProps {
   isOnBreak?: boolean;
   lastBreakType?: string;
   breakStartTime?: Date;
+  isLoading?: boolean;
+  isOnline?: boolean;
 }
 
 const TimeTrackingControls: React.FC<TimeTrackingControlsProps> = ({
@@ -31,6 +33,8 @@ const TimeTrackingControls: React.FC<TimeTrackingControlsProps> = ({
   isOnBreak = false,
   lastBreakType,
   breakStartTime,
+  isLoading = false,
+  isOnline = true,
 }) => (
   <div className="space-y-6 animate-fade-in">
     {/* Main Time Tracking Controls */}
@@ -42,6 +46,11 @@ const TimeTrackingControls: React.FC<TimeTrackingControlsProps> = ({
         <h3 className="text-lg font-semibold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
           Time Tracking
         </h3>
+        {!isOnline && (
+          <span className="text-xs px-2 py-1 bg-amber-100 text-amber-800 rounded-full dark:bg-amber-900 dark:text-amber-200">
+            Offline
+          </span>
+        )}
       </div>
 
       <div className="flex flex-col gap-4">
@@ -50,6 +59,7 @@ const TimeTrackingControls: React.FC<TimeTrackingControlsProps> = ({
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           className="flex-grow bg-white/50 dark:bg-input/50 backdrop-blur-sm border-border/60 focus:border-primary/60 transition-all duration-200"
+          disabled={isLoading}
         />
         
         <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center">
@@ -57,17 +67,27 @@ const TimeTrackingControls: React.FC<TimeTrackingControlsProps> = ({
             <Button 
               variant="destructive" 
               onClick={() => clockOut(notes)}
+              disabled={isLoading || !isOnline}
               className="interactive-button bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 shadow-lg"
             >
-              <TimerOff className="mr-2 h-4 w-4" /> 
+              {isLoading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <TimerOff className="mr-2 h-4 w-4" />
+              )}
               Clock Out
             </Button>
           ) : (
             <Button 
               onClick={() => clockIn(notes)}
+              disabled={isLoading || !isOnline}
               className="interactive-button bg-gradient-to-r from-primary to-emerald-500 hover:from-emerald-600 hover:to-lime-500 shadow-lg"
             >
-              <Clock className="mr-2 h-4 w-4" /> 
+              {isLoading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Clock className="mr-2 h-4 w-4" />
+              )}
               Clock In
             </Button>
           )}
@@ -93,6 +113,7 @@ const TimeTrackingControls: React.FC<TimeTrackingControlsProps> = ({
       isOnBreak={isOnBreak}
       lastBreakType={lastBreakType}
       breakStartTime={breakStartTime}
+      isOnline={isOnline}
     />
   </div>
 );

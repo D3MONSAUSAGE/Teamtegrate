@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Coffee, UtensilsCrossed, Clock, Play, Pause } from 'lucide-react';
+import { Coffee, UtensilsCrossed, Clock, Play, Pause, WifiOff } from 'lucide-react';
 import { calculateBreakRequirements } from '@/utils/breakTracking';
 import { cn } from '@/lib/utils';
 
@@ -13,6 +13,7 @@ interface BreakTrackerProps {
   isOnBreak: boolean;
   lastBreakType?: string;
   breakStartTime?: Date;
+  isOnline?: boolean;
 }
 
 const BreakTracker: React.FC<BreakTrackerProps> = ({
@@ -20,7 +21,8 @@ const BreakTracker: React.FC<BreakTrackerProps> = ({
   onStartBreak,
   isOnBreak,
   lastBreakType,
-  breakStartTime
+  breakStartTime,
+  isOnline = true
 }) => {
   const [breakElapsed, setBreakElapsed] = useState('00:00');
   const { mealBreaks, restBreaks, earnedBreakMinutes } = calculateBreakRequirements(totalWorkedMinutes);
@@ -67,6 +69,12 @@ const BreakTracker: React.FC<BreakTrackerProps> = ({
             <Badge variant="secondary" className="ml-auto animate-pulse">
               <Pause className="h-3 w-3 mr-1" />
               On {lastBreakType} Break
+            </Badge>
+          )}
+          {!isOnline && (
+            <Badge variant="outline" className="ml-auto">
+              <WifiOff className="h-3 w-3 mr-1" />
+              Offline
             </Badge>
           )}
         </CardTitle>
@@ -121,18 +129,22 @@ const BreakTracker: React.FC<BreakTrackerProps> = ({
               onClick={() => onStartBreak('Coffee')}
               className="w-full justify-start"
               size="sm"
+              disabled={!isOnline}
             >
               <Coffee className="h-4 w-4 mr-2" />
               Take Coffee Break (10 min)
+              {!isOnline && <span className="ml-auto text-xs">(Offline)</span>}
             </Button>
             <Button
               variant="outline"
               onClick={() => onStartBreak('Lunch')}
               className="w-full justify-start"
               size="sm"
+              disabled={!isOnline}
             >
               <UtensilsCrossed className="h-4 w-4 mr-2" />
               Take Lunch Break (30 min)
+              {!isOnline && <span className="ml-auto text-xs">(Offline)</span>}
             </Button>
           </div>
         )}
