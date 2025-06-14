@@ -33,7 +33,7 @@ import { UserRole } from '@/types';
 import { format } from 'date-fns';
 import CreateUserDialog from './CreateUserDialog';
 import EditUserDialog from './EditUserDialog';
-import DeleteUserDialog from './DeleteUserDialog';
+import SimpleDeleteUserDialog from './SimpleDeleteUserDialog';
 import UserImpactDialog from './UserImpactDialog';
 import SuperadminTransferDialog from './SuperadminTransferDialog';
 
@@ -81,7 +81,8 @@ const SuperadminUserManagement: React.FC = () => {
     error,
     isSuperadmin,
     changeUserRole,
-    transferSuperadminRole
+    transferSuperadminRole,
+    refetchUsers
   } = useEnhancedUserManagement();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -157,6 +158,12 @@ const SuperadminUserManagement: React.FC = () => {
   const handleDeleteUser = (user: any) => {
     setSelectedUser(user);
     setDeleteDialogOpen(true);
+  };
+
+  const onUserDeleted = () => {
+    refetchUsers();
+    setDeleteDialogOpen(false);
+    setSelectedUser(null);
   };
 
   if (isLoading) {
@@ -386,11 +393,11 @@ const SuperadminUserManagement: React.FC = () => {
         onUserUpdated={() => {}}
       />
 
-      <DeleteUserDialog
+      <SimpleDeleteUserDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
         user={selectedUser}
-        onUserDeleted={() => {}}
+        onUserDeleted={onUserDeleted}
       />
 
       <UserImpactDialog

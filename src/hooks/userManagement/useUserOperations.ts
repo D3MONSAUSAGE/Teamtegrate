@@ -4,7 +4,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { UserRole } from '@/types';
 import { toast } from '@/components/ui/sonner';
-import { UserImpactAnalysis } from './types';
 
 export const useUserOperations = (refetchUsers: () => void) => {
   const { user: currentUser } = useAuth();
@@ -81,48 +80,6 @@ export const useUserOperations = (refetchUsers: () => void) => {
     }
   };
 
-  const deleteUser = async (userId: string) => {
-    if (!currentUser?.id) {
-      throw new Error('Current user required');
-    }
-
-    setIsLoading(true);
-    try {
-      // Get impact analysis first
-      const impact = await getUserImpactAnalysis(userId);
-      if (!impact.can_be_deleted) {
-        toast.error(impact.deletion_blocked_reason || 'User cannot be deleted');
-        return false;
-      }
-
-      // Delete from auth (this cascades to users table)
-      const { error: authError } = await supabase.auth.admin.deleteUser(userId);
-      if (authError) throw authError;
-
-      // Log audit trail
-      await logUserAction('delete', userId, impact.user_info.email, impact.user_info.name, 
-        impact.user_info, {});
-
-      await refetchUsers();
-      toast.success('User deleted successfully');
-      return true;
-    } catch (error) {
-      console.error('Error deleting user:', error);
-      toast.error('Failed to delete user');
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const getUserImpactAnalysis = async (userId: string): Promise<UserImpactAnalysis> => {
-    const { data, error } = await supabase
-      .rpc('get_user_management_impact', { target_user_id: userId });
-
-    if (error) throw error;
-    return data as unknown as UserImpactAnalysis;
-  };
-
   const logUserAction = async (
     actionType: string, 
     targetUserId: string, 
@@ -155,8 +112,6 @@ export const useUserOperations = (refetchUsers: () => void) => {
   return {
     isLoading,
     createUser,
-    updateUserProfile,
-    deleteUser,
-    getUserImpactAnalysis
+    updateUserProfile
   };
 };

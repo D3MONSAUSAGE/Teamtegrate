@@ -19,9 +19,7 @@ export const useEnhancedUserManagement = () => {
   const { 
     isLoading: operationsLoading,
     createUser,
-    updateUserProfile,
-    deleteUser,
-    getUserImpactAnalysis
+    updateUserProfile
   } = useUserOperations(refetchUsers);
 
   const {
@@ -45,16 +43,12 @@ export const useEnhancedUserManagement = () => {
       createUser(email, name, role, temporaryPassword, users),
     updateUserProfile: (userId: string, updates: { name?: string; email?: string }) =>
       updateUserProfile(userId, updates, users),
-    deleteUser,
     
     // Role management
     changeUserRole,
     validateRoleChange,
     bulkChangeRoles,
     transferSuperadminRole,
-    
-    // Analysis
-    getUserImpactAnalysis,
     
     // Utilities
     refetchUsers
