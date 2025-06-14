@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,6 @@ import {
   MoreVertical,
   Edit,
   Trash2,
-  Eye,
   Loader2,
   ArrowUp,
   ArrowDown,
@@ -142,11 +142,6 @@ const SuperadminUserManagement: React.FC = () => {
     }
   };
 
-  const handleViewImpact = async (user: any) => {
-    setSelectedUser(user);
-    setImpactDialogOpen(true);
-  };
-
   const handleEditUser = (user: any) => {
     setSelectedUser(user);
     setEditDialogOpen(true);
@@ -160,6 +155,12 @@ const SuperadminUserManagement: React.FC = () => {
   const onUserDeleted = () => {
     refetchUsers();
     setDeleteDialogOpen(false);
+    setSelectedUser(null);
+  };
+
+  const onUserUpdated = () => {
+    refetchUsers();
+    setEditDialogOpen(false);
     setSelectedUser(null);
   };
 
@@ -339,11 +340,6 @@ const SuperadminUserManagement: React.FC = () => {
                         <DropdownMenuContent align="end" className="bg-background border shadow-md">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
                           
-                          <DropdownMenuItem onClick={() => handleViewImpact(user)}>
-                            <Eye className="h-4 w-4 mr-2" />
-                            View Impact
-                          </DropdownMenuItem>
-                          
                           <DropdownMenuItem onClick={() => handleEditUser(user)}>
                             <Edit className="h-4 w-4 mr-2" />
                             Edit Profile
@@ -380,14 +376,17 @@ const SuperadminUserManagement: React.FC = () => {
       <CreateUserDialog
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
-        onUserCreated={() => {}}
+        onUserCreated={() => {
+          refetchUsers();
+          setCreateDialogOpen(false);
+        }}
       />
 
       <EditUserDialog
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}
         user={selectedUser}
-        onUserUpdated={() => {}}
+        onUserUpdated={onUserUpdated}
       />
 
       <SimpleDeleteUserDialog
