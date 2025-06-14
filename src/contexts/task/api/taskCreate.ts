@@ -41,8 +41,34 @@ export const addTask = async (
       ? newTask.deadline.toISOString() 
       : new Date(newTask.deadline).toISOString();
 
-    // Use unified assignment logic - prioritize multi-assignment
-    const isSingleAssignment = newTask.assignedToIds && newTask.assignedToIds.length === 1;
+    // Normalize assignment data for consistent storage
+    let assignmentData = {};
+    
+    if (newTask.assignedToIds && newTask.assignedToIds.length > 0) {
+      // We have multi-assignment data
+      const isSingleAssignment = newTask.assignedToIds.length === 1;
+      
+      assignmentData = {
+        assigned_to_ids: newTask.assignedToIds,
+        assigned_to_names: newTask.assignedToNames || [],
+        // For single assignment, also populate single field for backward compatibility
+        assigned_to_id: isSingleAssignment ? newTask.assignedToIds[0] : null,
+      };
+    } else if (newTask.assignedToId) {
+      // Legacy single assignment - normalize to both formats
+      assignmentData = {
+        assigned_to_id: newTask.assignedToId,
+        assigned_to_ids: [newTask.assignedToId],
+        assigned_to_names: newTask.assignedToName ? [newTask.assignedToName] : [],
+      };
+    } else {
+      // No assignment
+      assignmentData = {
+        assigned_to_id: null,
+        assigned_to_ids: [],
+        assigned_to_names: [],
+      };
+    }
     
     const insertData = {
       id: newTask.id,
@@ -57,13 +83,10 @@ export const addTask = async (
       updated_at: now.toISOString(),
       cost: newTask.cost || 0,
       organization_id: user.organizationId,
-      // Unified assignment fields
-      assigned_to_id: isSingleAssignment ? newTask.assignedToIds?.[0] : null,
-      assigned_to_ids: newTask.assignedToIds || [],
-      assigned_to_names: newTask.assignedToNames || [],
+      ...assignmentData,
     };
 
-    console.log('Inserting task with unified assignment data:', insertData);
+    console.log('Inserting task with normalized assignment data:', insertData);
 
     const { data, error } = await supabase
       .from('tasks')

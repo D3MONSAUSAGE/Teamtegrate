@@ -115,38 +115,42 @@ export const fetchTasks = async (
           taskStatus = dbTask.status;
         }
 
-        // Handle single assignee with proper user lookup
-        let assignedToName = undefined;
-        if (dbTask.assigned_to_id) {
-          // First try to get name from assigned_to_names array
-          if (dbTask.assigned_to_names && dbTask.assigned_to_names.length > 0) {
-            assignedToName = dbTask.assigned_to_names[0];
-          } else {
-            // Fallback to user lookup
-            const assignedUser = userMap.get(dbTask.assigned_to_id);
-            if (assignedUser) {
-              assignedToName = assignedUser.name || assignedUser.email;
-            }
-          }
-        }
-
-        // Handle multiple assignees with proper user lookup
-        let assignedToNames: string[] = [];
+        // Handle assignment data with proper normalization
+        let assignedToId: string | undefined;
+        let assignedToName: string | undefined;
         let assignedToIds: string[] = [];
-        
+        let assignedToNames: string[] = [];
+
+        // Priority: Use assigned_to_ids if available (normalized data)
         if (dbTask.assigned_to_ids && Array.isArray(dbTask.assigned_to_ids) && dbTask.assigned_to_ids.length > 0) {
           assignedToIds = dbTask.assigned_to_ids.map((id: any) => String(id));
           
-          // Get names for multiple assignees
+          // Get names from assigned_to_names or fallback to user lookup
           if (dbTask.assigned_to_names && Array.isArray(dbTask.assigned_to_names) && dbTask.assigned_to_names.length > 0) {
             assignedToNames = dbTask.assigned_to_names.map((name: any) => String(name));
           } else {
-            // Fallback to user lookup for multiple assignees
+            // Fallback to user lookup for names
             assignedToNames = assignedToIds.map(id => {
               const assignedUser = userMap.get(id);
               return assignedUser ? (assignedUser.name || assignedUser.email) : 'Unknown User';
             });
           }
+
+          // For single assignment, also populate single fields for backward compatibility
+          if (assignedToIds.length === 1) {
+            assignedToId = assignedToIds[0];
+            assignedToName = assignedToNames[0];
+          }
+        } 
+        // Fallback: Use assigned_to_id if no assigned_to_ids (legacy data)
+        else if (dbTask.assigned_to_id && dbTask.assigned_to_id.trim() !== '') {
+          assignedToId = String(dbTask.assigned_to_id);
+          assignedToIds = [assignedToId];
+          
+          // Get name from user lookup
+          const assignedUser = userMap.get(assignedToId);
+          assignedToName = assignedUser ? (assignedUser.name || assignedUser.email) : 'Assigned User';
+          assignedToNames = [assignedToName];
         }
 
         // Build task with explicit type annotations and proper assignee data
@@ -161,10 +165,10 @@ export const fetchTasks = async (
           status: taskStatus,
           createdAt: parseDate(dbTask.created_at),
           updatedAt: parseDate(dbTask.updated_at),
-          assignedToId: dbTask.assigned_to_id ? String(dbTask.assigned_to_id) : undefined,
-          assignedToName: assignedToName,
-          assignedToIds: assignedToIds,
-          assignedToNames: assignedToNames,
+          assignedToId,
+          assignedToName,
+          assignedToIds,
+          assignedToNames,
           tags: [],
           comments: commentsData ? commentsData
             .filter((comment: any) => comment.task_id === dbTask.id)
@@ -183,7 +187,7 @@ export const fetchTasks = async (
       }
     }
 
-    console.log(`Successfully processed ${transformedTasks.length} tasks for display with assignee info`);
+    console.log(`Successfully processed ${transformedTasks.length} tasks for display with normalized assignee info`);
     setTasks(transformedTasks);
     
     // Show success message if tasks were loaded

@@ -32,8 +32,34 @@ export const updateTask = async (
       updatedAt: now,
     };
 
-    // Handle unified assignment logic
-    const isSingleAssignment = updatedTask.assignedToIds && updatedTask.assignedToIds.length === 1;
+    // Normalize assignment data for consistent storage
+    let assignmentData = {};
+    
+    if (updatedTask.assignedToIds && updatedTask.assignedToIds.length > 0) {
+      // We have multi-assignment data
+      const isSingleAssignment = updatedTask.assignedToIds.length === 1;
+      
+      assignmentData = {
+        assigned_to_ids: updatedTask.assignedToIds,
+        assigned_to_names: updatedTask.assignedToNames || [],
+        // For single assignment, also populate single field for backward compatibility
+        assigned_to_id: isSingleAssignment ? updatedTask.assignedToIds[0] : null,
+      };
+    } else if (updatedTask.assignedToId) {
+      // Legacy single assignment - normalize to both formats
+      assignmentData = {
+        assigned_to_id: updatedTask.assignedToId,
+        assigned_to_ids: [updatedTask.assignedToId],
+        assigned_to_names: updatedTask.assignedToName ? [updatedTask.assignedToName] : [],
+      };
+    } else {
+      // No assignment
+      assignmentData = {
+        assigned_to_id: null,
+        assigned_to_ids: [],
+        assigned_to_names: [],
+      };
+    }
     
     const updatePayload: Record<string, any> = {
       title: updatedTask.title,
@@ -42,10 +68,7 @@ export const updateTask = async (
       status: updatedTask.status,
       updated_at: now.toISOString(),
       cost: updatedTask.cost || 0,
-      // Unified assignment fields
-      assigned_to_id: isSingleAssignment ? updatedTask.assignedToIds?.[0] : null,
-      assigned_to_ids: updatedTask.assignedToIds || [],
-      assigned_to_names: updatedTask.assignedToNames || [],
+      ...assignmentData,
     };
     
     if (updatedTask.deadline) {
@@ -58,7 +81,7 @@ export const updateTask = async (
       }
     }
 
-    console.log('Updating task with unified assignment:', updatePayload);
+    console.log('Updating task with normalized assignment data:', updatePayload);
 
     const { error } = await supabase
       .from('tasks')

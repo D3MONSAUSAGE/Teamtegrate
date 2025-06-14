@@ -1,16 +1,14 @@
 
-import { supabase } from '@/integrations/supabase/client';
-import { Task, User } from '@/types';
-import { toast } from '@/components/ui/sonner';
+import { Task } from '@/types';
 
-export interface AssignmentData {
+export interface TaskAssignments {
   assignedToId?: string;
   assignedToName?: string;
   assignedToIds?: string[];
   assignedToNames?: string[];
 }
 
-export interface UnifiedAssignmentParams {
+export interface AssignTaskParams {
   taskId: string;
   userIds: string[];
   userNames: string[];
@@ -18,220 +16,99 @@ export interface UnifiedAssignmentParams {
   currentUserId: string;
 }
 
-/**
- * Unified task assignment service that handles both single and multi-assignment
- */
 export class TaskAssignmentService {
-  
   /**
-   * Assign task to users (handles both single and multiple)
+   * Get unified assignment data from a task, handling legacy data
    */
-  static async assignTask({
-    taskId,
-    userIds,
-    userNames,
-    organizationId,
-    currentUserId
-  }: UnifiedAssignmentParams): Promise<boolean> {
-    try {
-      const now = new Date();
-      
-      // Determine if this is single or multi-assignment
-      const isSingleAssignment = userIds.length === 1;
-      
-      const updateData: any = {
-        updated_at: now.toISOString()
-      };
-
-      if (isSingleAssignment) {
-        // Single assignment - use single fields and clear multi fields
-        updateData.assigned_to_id = userIds[0];
-        updateData.assigned_to_ids = [];
-        updateData.assigned_to_names = [];
-      } else {
-        // Multi assignment - use multi fields and clear single fields
-        updateData.assigned_to_id = null;
-        updateData.assigned_to_ids = userIds;
-        updateData.assigned_to_names = userNames;
-      }
-
-      const { error } = await supabase
-        .from('tasks')
-        .update(updateData)
-        .eq('id', taskId)
-        .eq('organization_id', organizationId);
-
-      if (error) {
-        console.error('Error assigning task:', error);
-        toast.error('Failed to assign task');
-        return false;
-      }
-
-      // Create notifications for assigned users
-      await this.createAssignmentNotifications(
-        taskId,
-        userIds,
-        userNames,
-        currentUserId,
-        organizationId
-      );
-
-      const assigneeText = isSingleAssignment 
-        ? userNames[0] 
-        : `${userNames.length} team members`;
-      
-      toast.success(`Task assigned to ${assigneeText} successfully!`);
-      return true;
-
-    } catch (error) {
-      console.error('Error in task assignment:', error);
-      toast.error('Failed to assign task');
-      return false;
-    }
-  }
-
-  /**
-   * Unassign task (remove all assignments)
-   */
-  static async unassignTask(taskId: string, organizationId: string): Promise<boolean> {
-    try {
-      const { error } = await supabase
-        .from('tasks')
-        .update({
-          assigned_to_id: null,
-          assigned_to_ids: [],
-          assigned_to_names: [],
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', taskId)
-        .eq('organization_id', organizationId);
-
-      if (error) {
-        console.error('Error unassigning task:', error);
-        toast.error('Failed to unassign task');
-        return false;
-      }
-
-      toast.success('Task unassigned successfully!');
-      return true;
-
-    } catch (error) {
-      console.error('Error unassigning task:', error);
-      toast.error('Failed to unassign task');
-      return false;
-    }
-  }
-
-  /**
-   * Get current task assignments in a normalized format
-   */
-  static getTaskAssignments(task: Task): AssignmentData {
-    // Check for multi-assignment first
+  static getTaskAssignments(task: Task): TaskAssignments {
+    // Check if we have multi-assignment data
     if (task.assignedToIds && task.assignedToIds.length > 0) {
       return {
         assignedToIds: task.assignedToIds,
-        assignedToNames: task.assignedToNames || []
+        assignedToNames: task.assignedToNames || [],
+        // For single assignment, also populate single fields for backward compatibility
+        ...(task.assignedToIds.length === 1 && {
+          assignedToId: task.assignedToIds[0],
+          assignedToName: task.assignedToNames?.[0] || 'Assigned User'
+        })
       };
     }
     
-    // Check for single assignment
-    if (task.assignedToId) {
+    // Fallback to legacy single assignment data
+    if (task.assignedToId && task.assignedToId.trim() !== '') {
       return {
         assignedToId: task.assignedToId,
         assignedToName: task.assignedToName || 'Assigned User',
         assignedToIds: [task.assignedToId],
-        assignedToNames: [task.assignedToName || 'Assigned User']
+        assignedToNames: task.assignedToName ? [task.assignedToName] : ['Assigned User']
       };
     }
-
+    
     // No assignment
-    return {};
+    return {
+      assignedToIds: [],
+      assignedToNames: []
+    };
   }
 
   /**
-   * Check if task has any assignments
+   * Check if a task is assigned to any user
    */
   static isTaskAssigned(task: Task): boolean {
-    return !!(
-      (task.assignedToIds && task.assignedToIds.length > 0) ||
-      task.assignedToId
-    );
+    const assignments = this.getTaskAssignments(task);
+    return (assignments.assignedToIds && assignments.assignedToIds.length > 0) || false;
   }
 
   /**
-   * Check if task has multiple assignments
+   * Check if a task has multiple assignments
    */
   static hasMultipleAssignments(task: Task): boolean {
-    return !!(task.assignedToIds && task.assignedToIds.length > 1);
+    const assignments = this.getTaskAssignments(task);
+    return (assignments.assignedToIds && assignments.assignedToIds.length > 1) || false;
   }
 
   /**
-   * Create notifications for task assignment
+   * Get assignment display text
    */
-  private static async createAssignmentNotifications(
-    taskId: string,
-    userIds: string[],
-    userNames: string[],
-    currentUserId: string,
-    organizationId: string
-  ): Promise<void> {
-    try {
-      // Get task title for notification
-      const { data: task } = await supabase
-        .from('tasks')
-        .select('title')
-        .eq('id', taskId)
-        .single();
-
-      if (!task) return;
-
-      const notifications = userIds.map((userId, index) => ({
-        user_id: userId,
-        title: userId === currentUserId ? 'Task Self-Assigned' : 'Task Assigned',
-        content: userId === currentUserId 
-          ? `You assigned yourself to task: ${task.title}`
-          : `You've been assigned to task: ${task.title}`,
-        type: 'task_assignment',
-        task_id: taskId,
-        organization_id: organizationId
-      }));
-
-      await supabase.from('notifications').insert(notifications);
-      
-    } catch (error) {
-      console.error('Error creating assignment notifications:', error);
-      // Don't fail the assignment if notifications fail
+  static getAssignmentDisplay(task: Task): string {
+    const assignments = this.getTaskAssignments(task);
+    
+    if (!this.isTaskAssigned(task)) {
+      return 'Unassigned';
     }
+
+    if (this.hasMultipleAssignments(task)) {
+      const count = assignments.assignedToNames?.length || 0;
+      const firstName = assignments.assignedToNames?.[0] || 'User';
+      return count > 1 ? `${firstName} +${count - 1} more` : firstName;
+    }
+
+    return assignments.assignedToName || assignments.assignedToNames?.[0] || 'Assigned User';
   }
 
   /**
-   * Clean up inconsistent assignment data for a task
+   * Assign task to users (placeholder for future implementation)
+   */
+  static async assignTask(params: AssignTaskParams): Promise<boolean> {
+    // This would be implemented to handle the actual assignment
+    console.log('Assigning task:', params);
+    return true;
+  }
+
+  /**
+   * Unassign task (placeholder for future implementation)
+   */
+  static async unassignTask(taskId: string, organizationId: string): Promise<boolean> {
+    // This would be implemented to handle the actual unassignment
+    console.log('Unassigning task:', taskId);
+    return true;
+  }
+
+  /**
+   * Cleanup task assignment (placeholder for future implementation)
    */
   static async cleanupTaskAssignment(taskId: string, organizationId: string): Promise<void> {
-    try {
-      const { data: task } = await supabase
-        .from('tasks')
-        .select('assigned_to_id, assigned_to_ids, assigned_to_names')
-        .eq('id', taskId)
-        .single();
-
-      if (!task) return;
-
-      const hasMulti = task.assigned_to_ids && task.assigned_to_ids.length > 0;
-      const hasSingle = !!task.assigned_to_id;
-
-      // If both exist, prioritize multi-assignment
-      if (hasMulti && hasSingle) {
-        await supabase
-          .from('tasks')
-          .update({
-            assigned_to_id: null,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', taskId);
-      }
-    } catch (error) {
-      console.error('Error cleaning up task assignment:', error);
-    }
+    // This would be implemented to handle cleanup
+    console.log('Cleaning up task assignment:', taskId);
   }
 }

@@ -68,19 +68,7 @@ export const useUnifiedTaskAssignment = () => {
   };
 
   const getAssignmentDisplay = (task: Task): string => {
-    const assignments = TaskAssignmentService.getTaskAssignments(task);
-    
-    if (!TaskAssignmentService.isTaskAssigned(task)) {
-      return 'Unassigned';
-    }
-
-    if (TaskAssignmentService.hasMultipleAssignments(task)) {
-      const count = assignments.assignedToNames?.length || 0;
-      const firstName = assignments.assignedToNames?.[0] || 'User';
-      return count > 1 ? `${firstName} +${count - 1} more` : firstName;
-    }
-
-    return assignments.assignedToName || 'Assigned User';
+    return TaskAssignmentService.getAssignmentDisplay(task);
   };
 
   const cleanupTaskAssignment = async (taskId: string): Promise<void> => {
