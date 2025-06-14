@@ -1,11 +1,14 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Task, TaskStatus } from '@/types';
 import CreateTaskDialogEnhanced from '../CreateTaskDialogEnhanced';
+import EditProjectDialog from '../project/EditProjectDialog';
 import ProjectTasksContent from './project-view/ProjectTasksContent';
 import { useProjectTasksView } from './project-view/useProjectTasksView';
 import ProjectTasksLoading from './project-view/ProjectTasksLoading';
 import ProjectTasksError from './project-view/ProjectTasksError';
+import { addTeamMemberToProject, removeTeamMemberFromProject } from '@/contexts/task/operations';
+import { useProjects } from '@/hooks/useProjects';
 
 interface ProjectTasksViewProps {
   projectId: string | undefined;
@@ -13,6 +16,9 @@ interface ProjectTasksViewProps {
 
 const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
   console.log('ProjectTasksView: Rendering with projectId:', projectId);
+
+  const [isEditProjectOpen, setIsEditProjectOpen] = useState(false);
+  const { projects, setProjects } = useProjects();
 
   // Add error boundary for the hook
   let hookData;
@@ -103,6 +109,37 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
     return await handleTaskStatusChange(taskId, status);
   };
 
+  // Handle editing project
+  const handleEditProject = () => {
+    setIsEditProjectOpen(true);
+  };
+
+  // Handle adding team member
+  const handleAddTeamMember = async (userId: string) => {
+    if (!projectId) return;
+    
+    try {
+      await addTeamMemberToProject(projectId, userId, projects, setProjects);
+      // Refresh team members after adding
+      handleManualRefresh();
+    } catch (error) {
+      console.error('Error adding team member:', error);
+    }
+  };
+
+  // Handle removing team member
+  const handleRemoveTeamMember = async (userId: string) => {
+    if (!projectId) return;
+    
+    try {
+      await removeTeamMemberFromProject(projectId, userId, projects, setProjects);
+      // Refresh team members after removing
+      handleManualRefresh();
+    } catch (error) {
+      console.error('Error removing team member:', error);
+    }
+  };
+
   console.log('ProjectTasksView: Rendering content with project:', project.title);
 
   return (
@@ -124,6 +161,9 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
         onEditTask={handleEditTask}
         onCreateTask={handleCreateTask}
         onTaskStatusChange={handleTaskStatusChangeAsync}
+        onEditProject={handleEditProject}
+        onAddTeamMember={handleAddTeamMember}
+        onRemoveTeamMember={handleRemoveTeamMember}
       />
       
       <CreateTaskDialogEnhanced
@@ -132,6 +172,12 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
         editingTask={editingTask}
         currentProjectId={projectId ?? undefined}
         onTaskComplete={handleTaskDialogComplete}
+      />
+
+      <EditProjectDialog
+        open={isEditProjectOpen}
+        onOpenChange={setIsEditProjectOpen}
+        project={project}
       />
     </>
   );

@@ -1,11 +1,15 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Project, Task, TaskStatus, User } from '@/types';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
 import ProjectOverview from './ProjectOverview';
 import ProjectTasksFilters from './ProjectTasksFilters';
 import ProjectTasksTabs from './ProjectTasksTabs';
+import ProjectActionToolbar from './ProjectActionToolbar';
+import TeamManagementDialog from './TeamManagementDialog';
+import ViewControlsPanel from './ViewControlsPanel';
+import { useProjectViewState } from './hooks/useProjectViewState';
 
 interface ProjectTasksContentProps {
   project: Project;
@@ -24,6 +28,9 @@ interface ProjectTasksContentProps {
   onTaskStatusChange: (taskId: string, status: TaskStatus) => Promise<void>;
   onRefresh: () => void;
   isRefreshing: boolean;
+  onEditProject?: () => void;
+  onAddTeamMember?: (userId: string) => void;
+  onRemoveTeamMember?: (userId: string) => void;
 }
 
 const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
@@ -42,7 +49,10 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
   onEditTask,
   onTaskStatusChange,
   onRefresh,
-  isRefreshing
+  isRefreshing,
+  onEditProject,
+  onAddTeamMember,
+  onRemoveTeamMember
 }) => {
   console.log('ProjectTasksContent: Rendering with:', {
     projectTitle: project?.title,
@@ -53,20 +63,92 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
   });
 
   const allTasks = [...(todoTasks || []), ...(inProgressTasks || []), ...(completedTasks || [])];
+  
+  const {
+    viewMode,
+    setViewMode,
+    filteredTasks,
+    selectedAssignee,
+    selectedPriority,
+    showCompleted,
+    showOverview,
+    handleAssigneeFilter,
+    handlePriorityFilter,
+    toggleCompleted,
+    toggleOverview
+  } = useProjectViewState(allTasks);
+
+  const [showTeamManagement, setShowTeamManagement] = useState(false);
+
+  // Filter tasks by the view state
+  const filteredTodoTasks = filteredTasks.filter(task => task.status === 'To Do');
+  const filteredInProgressTasks = filteredTasks.filter(task => task.status === 'In Progress');
+  const filteredCompletedTasks = showCompleted 
+    ? filteredTasks.filter(task => task.status === 'Completed')
+    : [];
+
+  const handleEditProject = () => {
+    if (onEditProject) {
+      onEditProject();
+    }
+  };
+
+  const handleManageTeam = () => {
+    setShowTeamManagement(true);
+  };
+
+  const handleAddTeamMember = (userId: string) => {
+    if (onAddTeamMember) {
+      onAddTeamMember(userId);
+    }
+  };
+
+  const handleRemoveTeamMember = (userId: string) => {
+    if (onRemoveTeamMember) {
+      onRemoveTeamMember(userId);
+    }
+  };
 
   return (
     <div className="space-y-6">
-      {/* Project Overview */}
-      <ProjectOverview
+      {/* Enhanced Project Action Toolbar */}
+      <ProjectActionToolbar
         project={project}
-        tasks={allTasks}
+        onEditProject={handleEditProject}
+        onManageTeam={handleManageTeam}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+      />
+
+      {/* Project Overview - Conditionally Rendered */}
+      {showOverview && (
+        <ProjectOverview
+          project={project}
+          tasks={allTasks}
+          teamMembers={teamMembers || []}
+          progress={progress || 0}
+        />
+      )}
+
+      {/* Enhanced View Controls Panel */}
+      <ViewControlsPanel
+        viewMode={viewMode}
+        sortBy={sortBy || 'deadline'}
+        onSortByChange={onSortByChange}
         teamMembers={teamMembers || []}
-        progress={progress || 0}
+        selectedAssignee={selectedAssignee}
+        onAssigneeFilter={handleAssigneeFilter}
+        selectedPriority={selectedPriority}
+        onPriorityFilter={handlePriorityFilter}
+        showCompleted={showCompleted}
+        onToggleCompleted={toggleCompleted}
+        showOverview={showOverview}
+        onToggleOverview={toggleOverview}
       />
 
       {/* Header Actions */}
       <div className="flex justify-between items-center px-4 sm:px-6 lg:px-8">
-        <h2 className="text-2xl font-bold">Project Tasks</h2>
+        <h2 className="text-xl font-semibold">Project Tasks</h2>
         <div className="flex gap-2">
           <Button
             variant="outline"
@@ -93,13 +175,24 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
         />
       </div>
 
-      {/* Tasks Tabs (replacing the grid) */}
+      {/* Tasks Display - Now with Filtered Data */}
       <ProjectTasksTabs
-        todoTasks={todoTasks || []}
-        inProgressTasks={inProgressTasks || []}
-        completedTasks={completedTasks || []}
+        todoTasks={filteredTodoTasks || []}
+        inProgressTasks={filteredInProgressTasks || []}
+        completedTasks={filteredCompletedTasks || []}
         onEdit={onEditTask}
         onStatusChange={onTaskStatusChange}
+      />
+
+      {/* Team Management Dialog */}
+      <TeamManagementDialog
+        open={showTeamManagement}
+        onOpenChange={setShowTeamManagement}
+        project={project}
+        teamMembers={teamMembers || []}
+        isLoadingTeamMembers={isLoadingTeamMembers}
+        onAddTeamMember={handleAddTeamMember}
+        onRemoveTeamMember={handleRemoveTeamMember}
       />
     </div>
   );
