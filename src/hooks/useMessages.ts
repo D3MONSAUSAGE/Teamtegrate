@@ -24,7 +24,14 @@ export function useMessages(roomId: string | null) {
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      setMessages(data || []);
+      
+      // Cast the data to match our ChatMessage type
+      const typedMessages: ChatMessage[] = (data || []).map(msg => ({
+        ...msg,
+        message_type: msg.message_type as 'text' | 'file' | 'image' | 'system'
+      }));
+      
+      setMessages(typedMessages);
     } catch (err: any) {
       setError(err.message);
       toast.error('Failed to load messages');
@@ -118,7 +125,10 @@ export function useMessages(roomId: string | null) {
           filter: `room_id=eq.${roomId}`
         },
         (payload) => {
-          const newMessage = payload.new as ChatMessage;
+          const newMessage = {
+            ...payload.new,
+            message_type: payload.new.message_type as 'text' | 'file' | 'image' | 'system'
+          } as ChatMessage;
           setMessages(prev => [...prev, newMessage]);
         }
       )
@@ -130,7 +140,11 @@ export function useMessages(roomId: string | null) {
           filter: `room_id=eq.${roomId}`
         },
         (payload) => {
-          const updatedMessage = payload.new as ChatMessage;
+          const updatedMessage = {
+            ...payload.new,
+            message_type: payload.new.message_type as 'text' | 'file' | 'image' | 'system'
+          } as ChatMessage;
+          
           if (updatedMessage.deleted_at) {
             setMessages(prev => prev.filter(msg => msg.id !== updatedMessage.id));
           } else {

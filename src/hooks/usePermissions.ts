@@ -22,10 +22,16 @@ export function usePermissions(roomId: string | null) {
 
       if (error) throw error;
       
-      setParticipants(data || []);
+      // Cast the data to match our ChatParticipant type
+      const typedParticipants: ChatParticipant[] = (data || []).map(participant => ({
+        ...participant,
+        role: participant.role as 'admin' | 'moderator' | 'member'
+      }));
+      
+      setParticipants(typedParticipants);
       
       // Find current user's role
-      const currentUserParticipant = data?.find(p => p.user_id === user.id);
+      const currentUserParticipant = typedParticipants.find(p => p.user_id === user.id);
       setUserRole(currentUserParticipant?.role || null);
     } catch (err) {
       console.error('Failed to fetch participants:', err);
@@ -50,8 +56,13 @@ export function usePermissions(roomId: string | null) {
 
       if (error) throw error;
       
-      setParticipants(prev => [...prev, data]);
-      return data;
+      const typedParticipant: ChatParticipant = {
+        ...data,
+        role: data.role as 'admin' | 'moderator' | 'member'
+      };
+      
+      setParticipants(prev => [...prev, typedParticipant]);
+      return typedParticipant;
     } catch (err) {
       console.error('Failed to add participant:', err);
       throw err;

@@ -45,29 +45,45 @@ const MentionInput: React.FC<MentionInputProps> = ({
 
   const fetchRoomParticipants = async () => {
     try {
-      const { data, error } = await supabase
+      // First get participant user IDs
+      const { data: participants, error: participantsError } = await supabase
         .from('chat_participants')
-        .select(`
-          user_id,
-          users!user_id(
-            id,
-            email,
-            name
-          )
-        `)
+        .select('user_id')
         .eq('room_id', roomId);
 
-      if (error) throw error;
+      if (participantsError) throw participantsError;
 
-      const users = data?.map(participant => ({
-        id: participant.users.id,
-        email: participant.users.email,
-        name: participant.users.name,
-      })).filter(user => user.id !== currentUser?.id) || [];
+      if (!participants || participants.length === 0) {
+        setMentionUsers([]);
+        return;
+      }
 
-      setMentionUsers(users);
+      // Extract unique user IDs excluding current user
+      const userIds = participants
+        .map(p => p.user_id)
+        .filter(id => id !== currentUser?.id);
+
+      if (userIds.length === 0) {
+        setMentionUsers([]);
+        return;
+      }
+
+      // Fetch user details
+      const { data: users, error: usersError } = await supabase
+        .from('users')
+        .select('id, email, name')
+        .in('id', userIds);
+
+      if (usersError) {
+        console.error('Error fetching users:', usersError);
+        setMentionUsers([]);
+        return;
+      }
+
+      setMentionUsers(users || []);
     } catch (error) {
       console.error('Error fetching room participants:', error);
+      setMentionUsers([]);
     }
   };
 

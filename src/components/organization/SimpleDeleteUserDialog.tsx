@@ -127,9 +127,9 @@ const SimpleDeleteUserDialog: React.FC<SimpleDeleteUserDialogProps> = ({
         .delete()
         .eq('user_id', userId);
 
-      // Remove from chat room participants
+      // Remove from chat participants
       await supabase
-        .from('chat_room_participants')
+        .from('chat_participants')
         .delete()
         .eq('user_id', userId);
 
