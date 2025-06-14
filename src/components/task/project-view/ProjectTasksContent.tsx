@@ -65,7 +65,7 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
       />
 
       {/* Header Actions */}
-      <div className="flex justify-between items-center px-8">
+      <div className="flex justify-between items-center px-4 sm:px-6 lg:px-8">
         <h2 className="text-2xl font-bold">Project Tasks</h2>
         <div className="flex gap-2">
           <Button
@@ -84,7 +84,7 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
       </div>
 
       {/* Filters */}
-      <div className="px-8">
+      <div className="px-4 sm:px-6 lg:px-8">
         <ProjectTasksFilters
           searchQuery={searchQuery || ''}
           sortBy={sortBy || 'deadline'}
