@@ -14,7 +14,7 @@ export function useChatPermissions() {
     
     console.log('useChatPermissions: Checking canCreateRooms for role:', user.role, 'type:', typeof user.role);
     
-    // Ensure the role is properly typed
+    // With new simplified policies: managers+ can create rooms
     const userRole = user.role as UserRole;
     const result = hasRoleAccess(userRole, 'manager');
     
@@ -30,13 +30,13 @@ export function useChatPermissions() {
     
     console.log('useChatPermissions: Checking canDeleteRoom for user:', user.id, 'role:', user.role, 'roomCreatedBy:', roomCreatedBy);
     
-    // Admins can delete any room (matches new RLS policy)
+    // Admins can delete any room (matches new simplified RLS policy)
     if (hasRoleAccess(user.role as UserRole, 'admin')) {
       console.log('useChatPermissions: User is admin+, can delete any room');
       return true;
     }
     
-    // Room creator can delete their own room (matches new RLS policy)
+    // Room creator can delete their own room (matches new simplified RLS policy)
     if (user.id === roomCreatedBy) {
       console.log('useChatPermissions: User is room creator, can delete own room');
       return true;
@@ -54,13 +54,13 @@ export function useChatPermissions() {
     
     console.log('useChatPermissions: Checking canAddParticipants for user:', user.id, 'role:', user.role);
     
-    // Admins can add participants to any room (matches new RLS policy)
+    // Admins can add participants to any room (matches new simplified RLS policy)
     if (hasRoleAccess(user.role as UserRole, 'admin')) {
       console.log('useChatPermissions: User is admin+, can add participants to any room');
       return true;
     }
     
-    // Room creator can add participants (matches new RLS policy)
+    // Room creator can add participants (matches new simplified RLS policy)
     if (user.id === roomCreatedBy) {
       console.log('useChatPermissions: User is room creator, can add participants');
       return true;
@@ -76,19 +76,19 @@ export function useChatPermissions() {
       return false;
     }
 
-    // Admins can access any room (matches new RLS policy)
+    // Admins can access any room (matches new simplified RLS policy)
     if (hasRoleAccess(user.role as UserRole, 'admin')) {
       console.log('useChatPermissions: User is admin+, can access any room');
       return true;
     }
 
-    // Room creators can access their rooms (matches new RLS policy)
+    // Room creators can access their rooms (matches new simplified RLS policy)
     if (user.id === roomCreatedBy) {
       console.log('useChatPermissions: User is room creator, can access room');
       return true;
     }
 
-    // For participants, this will be handled by the participant check
+    // For participants, this will be handled by the new simplified participant check
     return false;
   };
 

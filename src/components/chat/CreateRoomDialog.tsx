@@ -1,105 +1,123 @@
+
 import React, { useState } from 'react';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Button } from "@/components/ui/button"
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { toast } from '@/components/ui/sonner';
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Plus, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-
-const formSchema = z.object({
-  name: z.string().min(2, {
-    message: "Chat room name must be at least 2 characters.",
-  }),
-});
+import { toast } from 'sonner';
 
 interface CreateRoomDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onRoomCreated?: (room: any) => void;
+  onRoomCreated: () => void;
+  canCreate: boolean;
 }
 
-const CreateRoomDialog: React.FC<CreateRoomDialogProps> = ({
-  open,
-  onOpenChange,
-  onRoomCreated
-}) => {
+const CreateRoomDialog: React.FC<CreateRoomDialogProps> = ({ onRoomCreated, canCreate }) => {
+  const [open, setOpen] = useState(false);
+  const [roomName, setRoomName] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
   const { user } = useAuth();
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: "",
-    },
-  });
-
-  const onSubmit = async (data: any) => {
-    if (!user?.organizationId) {
-      toast.error('Organization context required');
+  const handleCreateRoom = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!roomName.trim() || !user) {
+      toast.error('Please enter a room name');
       return;
     }
 
+    setIsCreating(true);
+    
     try {
-      setIsSubmitting(true);
+      console.log('Creating room:', roomName, 'for user:', user.id, 'org:', user.organizationId);
       
-      const { data: roomData, error } = await supabase
+      // With the new simplified RLS policies, this will work if user has manager+ role
+      const { data, error } = await supabase
         .from('chat_rooms')
-        .insert({
-          name: data.name,
+        .insert([{
+          name: roomName.trim(),
           created_by: user.id,
           organization_id: user.organizationId
-        })
+        }])
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating room:', error);
+        throw error;
+      }
 
+      console.log('Room created successfully:', data);
       toast.success('Chat room created successfully!');
-      reset();
-      onOpenChange(false);
-      onRoomCreated?.(roomData);
-    } catch (error) {
-      console.error('Error creating room:', error);
-      toast.error('Failed to create chat room');
+      
+      setRoomName('');
+      setOpen(false);
+      onRoomCreated();
+      
+    } catch (error: any) {
+      console.error('Failed to create room:', error);
+      toast.error(`Failed to create room: ${error.message}`);
     } finally {
-      setIsSubmitting(false);
+      setIsCreating(false);
     }
   };
 
+  if (!canCreate) {
+    return null;
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline">Create Room</Button>
+        <Button size="sm" className="flex items-center gap-2">
+          <Plus className="h-4 w-4" />
+          New Room
+        </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Create Chat Room</DialogTitle>
-          <DialogDescription>
-            Create a new chat room to collaborate with your team.
-          </DialogDescription>
+          <DialogTitle>Create New Chat Room</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 py-4">
-          <div className="grid gap-2">
-            <Label htmlFor="name">Room Name</Label>
-            <Input id="name" placeholder="Enter room name" {...register("name")} />
-            {errors.name && (
-              <p className="text-sm text-red-500">{errors.name?.message}</p>
-            )}
+        <form onSubmit={handleCreateRoom} className="space-y-4">
+          <div>
+            <Label htmlFor="roomName">Room Name</Label>
+            <Input
+              id="roomName"
+              value={roomName}
+              onChange={(e) => setRoomName(e.target.value)}
+              placeholder="Enter room name..."
+              disabled={isCreating}
+              autoFocus
+            />
           </div>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Creating..." : "Create Room"}
-          </Button>
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+              disabled={isCreating}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isCreating || !roomName.trim()}>
+              {isCreating ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Creating...
+                </>
+              ) : (
+                'Create Room'
+              )}
+            </Button>
+          </div>
         </form>
       </DialogContent>
     </Dialog>

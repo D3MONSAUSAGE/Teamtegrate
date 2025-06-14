@@ -36,9 +36,9 @@ export function useChatParticipantCheck(roomId: string): ParticipantCheckResult 
           return;
         }
 
-        // With the new RLS policies, we can simply try to fetch the room
+        // With the new simplified RLS policies, we can simply try to fetch the room
         // If the user has access (creator or participant), they'll see it
-        // If not, the query will return no results due to RLS
+        // If not, the query will return no results due to the new RLS policies
         const { data: roomData, error: roomError } = await supabase
           .from('chat_rooms')
           .select('id, created_by')

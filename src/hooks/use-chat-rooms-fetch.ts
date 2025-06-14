@@ -38,8 +38,8 @@ export function useChatRoomsFetch({ setRooms, setIsLoading, setError }: UseChatR
     try {
       console.log('ChatRooms: Fetching rooms for user:', user.id, 'role:', user.role);
       
-      // With the new RLS policies, this query will automatically filter
-      // to only show rooms the user has access to
+      // With the new simplified RLS policies, this query will automatically filter
+      // to only show rooms the user has access to (created, participant, or admin)
       const { data, error } = await supabase
         .from('chat_rooms')
         .select('*')
