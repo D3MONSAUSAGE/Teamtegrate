@@ -12,8 +12,8 @@ const TaskCardDescription: React.FC<TaskCardDescriptionProps> = ({ description }
   // Handle empty descriptions
   if (!description || description.trim() === '') {
     return (
-      <div className="py-3">
-        <div className="bg-gradient-to-r from-muted/40 via-muted/30 to-muted/40 p-4 rounded-xl border border-border/30 backdrop-blur-sm">
+      <div className="py-2">
+        <div className="bg-gradient-to-r from-muted/30 via-muted/20 to-muted/30 p-3 rounded-lg border border-border/30 backdrop-blur-sm">
           <p className="text-sm text-muted-foreground italic flex items-center gap-2">
             <div className="w-1 h-1 bg-muted-foreground/40 rounded-full" />
             No description provided
@@ -24,11 +24,11 @@ const TaskCardDescription: React.FC<TaskCardDescriptionProps> = ({ description }
   }
 
   // If the description is short, don't enable expansion
-  const isExpandable = description.length > 120;
+  const isExpandable = description.length > 100;
   const shouldShowExpansion = isExpandable && !expanded;
 
   return (
-    <div className="py-3">
+    <div className="py-2">
       <div 
         className={cn(
           "relative cursor-pointer group/desc transition-all duration-300",
@@ -37,33 +37,33 @@ const TaskCardDescription: React.FC<TaskCardDescriptionProps> = ({ description }
         onClick={() => isExpandable && setExpanded(!expanded)}
       >
         <div className={cn(
-          "bg-gradient-to-br from-muted/30 via-muted/20 to-muted/30 p-4 rounded-xl border border-border/30",
+          "bg-gradient-to-br from-muted/20 via-muted/15 to-muted/20 p-3 rounded-lg border border-border/30",
           "hover:border-border/50 transition-all duration-300 backdrop-blur-sm",
-          "hover:shadow-md group-hover/desc:shadow-lg",
+          "hover:shadow-sm group-hover/desc:shadow-md",
           "relative overflow-hidden"
         )}>
           {/* Subtle background pattern */}
-          <div className="absolute inset-0 bg-gradient-to-br from-transparent via-background/10 to-transparent opacity-0 group-hover/desc:opacity-100 transition-opacity duration-300" />
+          <div className="absolute inset-0 bg-gradient-to-br from-transparent via-background/5 to-transparent opacity-0 group-hover/desc:opacity-100 transition-opacity duration-300" />
           
           <p className={cn(
             "text-sm text-muted-foreground leading-relaxed relative z-10",
             "transition-all duration-300",
-            shouldShowExpansion ? "line-clamp-3" : ""
+            shouldShowExpansion ? "line-clamp-2" : ""
           )}>
             {description}
           </p>
           
           {shouldShowExpansion && (
-            <div className="absolute bottom-4 right-4 bg-gradient-to-l from-card via-card/95 to-transparent pl-6">
-              <span className="text-xs text-primary hover:text-primary/80 font-semibold tracking-wide flex items-center gap-1">
+            <div className="absolute bottom-3 right-3 bg-gradient-to-l from-card via-card/95 to-transparent pl-4">
+              <span className="text-xs text-primary hover:text-primary/80 font-medium tracking-wide flex items-center gap-1">
                 <div className="w-1 h-1 bg-primary rounded-full animate-pulse" />
-                read more
+                more
               </span>
             </div>
           )}
           
           {expanded && isExpandable && (
-            <button className="text-xs text-primary hover:text-primary/80 mt-3 font-semibold tracking-wide flex items-center gap-1 transition-colors duration-200">
+            <button className="text-xs text-primary hover:text-primary/80 mt-2 font-medium tracking-wide flex items-center gap-1 transition-colors duration-200">
               <div className="w-1 h-1 bg-primary rounded-full" />
               Show less
             </button>

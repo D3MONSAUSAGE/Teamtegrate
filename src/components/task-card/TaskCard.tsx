@@ -68,30 +68,26 @@ const TaskCard: React.FC<TaskCardProps> = ({
       case 'High': 
         return {
           glow: 'shadow-red-200/50 dark:shadow-red-900/30 hover:shadow-red-300/60 dark:hover:shadow-red-800/40',
-          ribbon: 'bg-gradient-to-br from-red-500 via-red-600 to-red-700 shadow-red-300/60 dark:shadow-red-900/40',
           border: 'hover:border-red-300/60 dark:hover:border-red-700/50',
-          accent: 'before:bg-gradient-to-r before:from-red-500/20 before:to-transparent'
+          accent: 'before:bg-gradient-to-r before:from-red-500/15 before:to-transparent'
         };
       case 'Medium': 
         return {
           glow: 'shadow-amber-200/50 dark:shadow-amber-900/30 hover:shadow-amber-300/60 dark:hover:shadow-amber-800/40',
-          ribbon: 'bg-gradient-to-br from-amber-500 via-amber-600 to-amber-700 shadow-amber-300/60 dark:shadow-amber-900/40',
           border: 'hover:border-amber-300/60 dark:hover:border-amber-700/50',
-          accent: 'before:bg-gradient-to-r before:from-amber-500/20 before:to-transparent'
+          accent: 'before:bg-gradient-to-r before:from-amber-500/15 before:to-transparent'
         };
       case 'Low': 
         return {
           glow: 'shadow-blue-200/50 dark:shadow-blue-900/30 hover:shadow-blue-300/60 dark:hover:shadow-blue-800/40',
-          ribbon: 'bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 shadow-blue-300/60 dark:shadow-blue-900/40',
           border: 'hover:border-blue-300/60 dark:hover:border-blue-700/50',
-          accent: 'before:bg-gradient-to-r before:from-blue-500/20 before:to-transparent'
+          accent: 'before:bg-gradient-to-r before:from-blue-500/15 before:to-transparent'
         };
       default: 
         return {
           glow: 'shadow-gray-200/50 dark:shadow-gray-800/30 hover:shadow-gray-300/60 dark:hover:shadow-gray-700/40',
-          ribbon: 'bg-gradient-to-br from-gray-500 via-gray-600 to-gray-700 shadow-gray-300/60 dark:shadow-gray-800/40',
           border: 'hover:border-gray-300/60 dark:hover:border-gray-700/50',
-          accent: 'before:bg-gradient-to-r before:from-gray-500/20 before:to-transparent'
+          accent: 'before:bg-gradient-to-r before:from-gray-500/15 before:to-transparent'
         };
     }
   };
@@ -102,17 +98,17 @@ const TaskCard: React.FC<TaskCardProps> = ({
     <>
       <Card
         className={cn(
-          "group relative cursor-pointer overflow-hidden h-full min-h-[360px] flex flex-col",
+          "group relative cursor-pointer overflow-hidden h-full min-h-[280px] flex flex-col",
           // Enhanced glass morphism with better depth
           "backdrop-blur-xl bg-gradient-to-br from-background/98 via-background/95 to-background/90",
-          "border border-border/40 shadow-xl hover:shadow-2xl",
-          // Sophisticated animations with staggered effects
-          "transition-all duration-700 ease-[cubic-bezier(0.25,0.8,0.25,1)]",
-          "hover:scale-[1.03] hover:-translate-y-3 transform-gpu",
+          "border border-border/40 shadow-lg hover:shadow-xl",
+          // Optimized animations
+          "transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)]",
+          "hover:scale-[1.02] hover:-translate-y-2 transform-gpu",
           // Dynamic priority-based styling
           !isOverdue && priorityStyles.glow,
           !isOverdue && priorityStyles.border,
-          // Enhanced overdue state with pulsing animation
+          // Enhanced overdue state
           isOverdue && [
             "ring-2 ring-red-400/80 shadow-red-200/70 dark:shadow-red-900/50",
             "bg-gradient-to-br from-red-50/95 to-red-100/70 dark:from-red-950/50 dark:to-red-900/40",
@@ -121,24 +117,14 @@ const TaskCard: React.FC<TaskCardProps> = ({
             "animate-pulse"
           ],
           // Subtle accent line
-          "relative before:absolute before:inset-0 before:rounded-lg before:p-[1px] before:bg-gradient-to-r before:from-transparent before:via-primary/10 before:to-transparent before:opacity-0 hover:before:opacity-100 before:transition-opacity before:duration-500"
+          "relative before:absolute before:inset-0 before:rounded-lg before:p-[1px] before:bg-gradient-to-r before:from-transparent before:via-primary/8 before:to-transparent before:opacity-0 hover:before:opacity-100 before:transition-opacity before:duration-500"
         )}
         onClick={handleCardClick}
         tabIndex={0}
         aria-label={`Open details for ${task.title}`}
         role="button"
       >
-        {/* Enhanced Priority Corner Ribbon with modern styling */}
-        <div className="absolute top-0 left-0 w-16 h-16 overflow-hidden z-20">
-          <div className={cn(
-            "absolute top-3 -left-3 w-20 h-5 shadow-lg transform -rotate-45 transition-all duration-500 group-hover:scale-110 group-hover:shadow-xl",
-            priorityStyles.ribbon
-          )}>
-            <div className="absolute inset-0 bg-white/20 rounded-sm" />
-          </div>
-        </div>
-
-        {/* Floating Action Menu - Enhanced positioning and styling */}
+        {/* Floating Action Menu - Enhanced positioning */}
         <div className="absolute top-3 right-3 z-30 opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-y-2 group-hover:translate-y-0 scale-90 group-hover:scale-100">
           <div className="backdrop-blur-lg bg-background/90 rounded-xl p-1.5 shadow-xl border border-border/50 ring-1 ring-black/5 dark:ring-white/10">
             <TaskCardActions
@@ -162,34 +148,34 @@ const TaskCard: React.FC<TaskCardProps> = ({
           />
         </div>
         
-        {/* Enhanced Overdue Badge - Modern floating design */}
+        {/* Enhanced Overdue Badge - Compact design */}
         {isOverdue && (
-          <div className="absolute bottom-4 right-4 z-20">
-            <div className="flex items-center gap-2 bg-gradient-to-r from-red-500 via-red-600 to-red-700 text-white px-3 py-1.5 rounded-full shadow-xl backdrop-blur-sm border border-red-400/40 text-xs font-semibold">
+          <div className="absolute bottom-3 right-3 z-20">
+            <div className="flex items-center gap-1.5 bg-gradient-to-r from-red-500 via-red-600 to-red-700 text-white px-2.5 py-1 rounded-full shadow-lg backdrop-blur-sm border border-red-400/40 text-xs font-semibold">
               <div className="w-1.5 h-1.5 bg-white rounded-full animate-ping" />
               <span>Overdue</span>
             </div>
           </div>
         )}
 
-        {/* Enhanced Background Elements with better layering */}
+        {/* Enhanced Background Elements */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           {/* Gradient overlays for depth */}
-          <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-radial from-primary/[0.04] via-primary/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-          <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-radial from-accent/[0.03] via-accent/[0.01] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 delay-100" />
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-radial from-primary/[0.03] via-primary/[0.015] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-radial from-accent/[0.02] via-accent/[0.01] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 delay-100" />
           
-          {/* Floating gradient orbs with staggered animation */}
-          <div className="absolute -bottom-10 -right-10 w-28 h-28 bg-primary/[0.02] rounded-full blur-2xl transition-all duration-1000 group-hover:bg-primary/[0.05] group-hover:scale-125 group-hover:-translate-y-2" />
-          <div className="absolute -top-8 -left-8 w-24 h-24 bg-secondary/[0.02] rounded-full blur-xl transition-all duration-1000 delay-200 group-hover:bg-secondary/[0.04] group-hover:scale-110" />
+          {/* Floating gradient orbs */}
+          <div className="absolute -bottom-8 -right-8 w-20 h-20 bg-primary/[0.015] rounded-full blur-2xl transition-all duration-1000 group-hover:bg-primary/[0.03] group-hover:scale-125 group-hover:-translate-y-2" />
+          <div className="absolute -top-6 -left-6 w-16 h-16 bg-secondary/[0.015] rounded-full blur-xl transition-all duration-1000 delay-200 group-hover:bg-secondary/[0.03] group-hover:scale-110" />
         </div>
 
         {/* Animated border highlight */}
-        <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-transparent via-primary/15 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none">
+        <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-transparent via-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none">
           <div className="absolute inset-[1px] rounded-lg bg-gradient-to-r from-transparent via-background/50 to-transparent" />
         </div>
 
         {/* Subtle inner glow effect */}
-        <div className="absolute inset-[2px] rounded-lg bg-gradient-to-br from-white/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+        <div className="absolute inset-[2px] rounded-lg bg-gradient-to-br from-white/[0.015] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
       </Card>
       
       <TaskDetailDrawer

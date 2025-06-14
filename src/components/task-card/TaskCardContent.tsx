@@ -29,11 +29,11 @@ const TaskCardContent: React.FC<TaskCardContentProps> = ({
         priority={task.priority}
       />
       
-      <div className="flex-1 min-h-0 px-4 py-2">
+      <div className="flex-1 min-h-0 px-4 py-1">
         <TaskCardDescription description={task.description} />
       </div>
       
-      <div className="mt-auto space-y-3 p-4 pt-0">
+      <div className="mt-auto space-y-2 p-4 pt-0">
         <TaskCardMetadata 
           task={task}
           isOverdue={isOverdue}
