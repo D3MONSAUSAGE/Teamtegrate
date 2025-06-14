@@ -90,7 +90,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
     <>
       <Card
         className={cn(
-          "group relative cursor-pointer overflow-hidden h-full min-h-[320px] flex flex-col",
+          "group relative cursor-pointer overflow-hidden h-full min-h-[340px] flex flex-col",
           // Enhanced glass morphism base
           "backdrop-blur-xl bg-gradient-to-br from-background/95 via-background/90 to-background/85",
           "border border-border/30 shadow-lg hover:shadow-2xl",
@@ -112,16 +112,16 @@ const TaskCard: React.FC<TaskCardProps> = ({
         aria-label={`Open details for ${task.title}`}
         role="button"
       >
-        {/* Priority Corner Ribbon - Top Left */}
-        <div className="absolute top-0 left-0 w-16 h-16 overflow-hidden z-10">
+        {/* Priority Corner Ribbon - Top Left - Smaller to avoid title overlap */}
+        <div className="absolute top-0 left-0 w-12 h-12 overflow-hidden z-10">
           <div className={cn(
-            "absolute top-3 -left-3 w-20 h-6 shadow-lg transform -rotate-45 transition-all duration-300 group-hover:scale-110",
+            "absolute top-2 -left-2 w-16 h-4 shadow-md transform -rotate-45 transition-all duration-300 group-hover:scale-110",
             getPriorityRibbon(task.priority)
           )} />
         </div>
 
-        {/* Floating Action Button - Top Right */}
-        <div className="absolute top-4 right-4 z-30 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+        {/* Floating Action Button - Top Right - Adjusted position */}
+        <div className="absolute top-2 right-2 z-30 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
           <div className="backdrop-blur-md bg-background/80 rounded-full p-1 shadow-lg border border-border/40">
             <TaskCardActions
               task={task}
@@ -135,10 +135,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
         </div>
 
         {/* Enhanced Content Container */}
-        <div className="relative flex-1 flex flex-col">
-          {/* Subtle Top Gradient Overlay */}
-          <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-primary/[0.02] to-transparent pointer-events-none" />
-          
+        <div className="relative flex-1 flex flex-col">          
           <TaskCardContent
             task={task}
             handleStatusChange={handleStatusChange}
@@ -149,10 +146,10 @@ const TaskCard: React.FC<TaskCardProps> = ({
         
         {/* Enhanced Overdue Indicator - Bottom Right Corner */}
         {isOverdue && (
-          <div className="absolute bottom-4 right-4 z-20">
-            <div className="flex items-center gap-2 bg-gradient-to-r from-red-500 to-red-600 text-white px-3 py-1.5 rounded-full shadow-lg backdrop-blur-sm border border-red-400/30">
-              <div className="w-1.5 h-1.5 bg-white rounded-full animate-ping" />
-              <span className="text-xs font-semibold">Overdue</span>
+          <div className="absolute bottom-3 right-3 z-20">
+            <div className="flex items-center gap-2 bg-gradient-to-r from-red-500 to-red-600 text-white px-2 py-1 rounded-full shadow-lg backdrop-blur-sm border border-red-400/30 text-xs">
+              <div className="w-1 h-1 bg-white rounded-full animate-ping" />
+              <span className="font-semibold">Overdue</span>
             </div>
           </div>
         )}

@@ -44,35 +44,35 @@ const TaskCardHeader: React.FC<TaskCardHeaderProps> = ({ title, priority }) => {
   const PriorityIcon = priorityConfig.icon;
 
   return (
-    <CardHeader className="p-6 pb-4 space-y-4 relative">
-      <div className="flex items-start justify-between gap-4">
-        {/* Title with better spacing to avoid ribbon overlap */}
-        <CardTitle className="text-lg font-bold leading-tight line-clamp-2 flex-1 min-w-0 text-foreground group-hover:text-primary/90 transition-colors duration-300 ml-8">
+    <CardHeader className="p-4 pb-3 space-y-3 relative">
+      {/* Priority Badge - Positioned at top right to avoid title overlap */}
+      <div className="absolute top-3 right-3 z-10">
+        <Badge className={cn(
+          "font-semibold rounded-lg border backdrop-blur-sm",
+          "flex items-center gap-1.5 px-2 py-1 text-xs",
+          "transition-all duration-300 hover:scale-105",
+          "shadow-md hover:shadow-lg",
+          priorityConfig.color,
+          priorityConfig.shadowColor
+        )}>
+          <PriorityIcon className="h-3 w-3" />
+          <span>{priority}</span>
+        </Badge>
+        
+        {/* Subtle glow effect */}
+        <div className={cn(
+          "absolute inset-0 rounded-lg blur-sm opacity-20 -z-10 transition-opacity duration-300 group-hover:opacity-40",
+          priority === 'High' && "bg-red-400",
+          priority === 'Medium' && "bg-amber-400", 
+          priority === 'Low' && "bg-blue-400"
+        )} />
+      </div>
+
+      {/* Title with proper spacing and no overlap */}
+      <div className="pr-20">
+        <CardTitle className="text-base font-bold leading-tight text-foreground group-hover:text-primary/90 transition-colors duration-300 break-words">
           {title}
         </CardTitle>
-        
-        {/* Enhanced Floating Priority Badge - Positioned to avoid overlap */}
-        <div className="relative shrink-0 ml-2">
-          <Badge className={cn(
-            "font-bold rounded-xl border-2 backdrop-blur-sm",
-            "flex items-center gap-2 px-3 py-2 text-sm",
-            "transition-all duration-300 hover:scale-105",
-            "shadow-lg hover:shadow-xl",
-            priorityConfig.color,
-            priorityConfig.shadowColor
-          )}>
-            <PriorityIcon className="h-4 w-4" />
-            <span>{priority}</span>
-          </Badge>
-          
-          {/* Subtle glow effect */}
-          <div className={cn(
-            "absolute inset-0 rounded-xl blur-sm opacity-30 -z-10 transition-opacity duration-300 group-hover:opacity-50",
-            priority === 'High' && "bg-red-400",
-            priority === 'Medium' && "bg-amber-400", 
-            priority === 'Low' && "bg-blue-400"
-          )} />
-        </div>
       </div>
     </CardHeader>
   );
