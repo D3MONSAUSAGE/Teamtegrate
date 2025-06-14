@@ -18,7 +18,6 @@ export const updateTask = async (
       return;
     }
     
-    // Find the existing task to merge with updates
     const existingTask = tasks.find((task) => task.id === taskId);
     if (!existingTask) {
       console.error('Task not found:', taskId);
@@ -33,20 +32,22 @@ export const updateTask = async (
       updatedAt: now,
     };
 
-    // Prepare the supabase update payload with snake_case column names
+    // Handle unified assignment logic
+    const isSingleAssignment = updatedTask.assignedToIds && updatedTask.assignedToIds.length === 1;
+    
     const updatePayload: Record<string, any> = {
       title: updatedTask.title,
       description: updatedTask.description,
       priority: updatedTask.priority,
       status: updatedTask.status,
       updated_at: now.toISOString(),
-      assigned_to_id: updatedTask.assignedToId || null,
+      cost: updatedTask.cost || 0,
+      // Unified assignment fields
+      assigned_to_id: isSingleAssignment ? updatedTask.assignedToIds?.[0] : null,
       assigned_to_ids: updatedTask.assignedToIds || [],
       assigned_to_names: updatedTask.assignedToNames || [],
-      cost: updatedTask.cost || 0,
     };
     
-    // Only add deadline if it exists and is valid
     if (updatedTask.deadline) {
       const deadlineDate = updatedTask.deadline instanceof Date 
         ? updatedTask.deadline 
@@ -57,7 +58,8 @@ export const updateTask = async (
       }
     }
 
-    // Send update to Supabase with organization validation
+    console.log('Updating task with unified assignment:', updatePayload);
+
     const { error } = await supabase
       .from('tasks')
       .update(updatePayload)
@@ -70,12 +72,10 @@ export const updateTask = async (
       return;
     }
 
-    // Update local state
     setTasks(
       tasks.map((task) => (task.id === taskId ? updatedTask : task))
     );
 
-    // Update project state if task belongs to a project
     if (updatedTask.projectId && typeof setProjects === 'function' && setProjects.length > 0) {
       setProjects((prevProjects: any[]) =>
         prevProjects.map((project) =>
@@ -90,7 +90,6 @@ export const updateTask = async (
         )
       );
     } else if (typeof setProjects === 'function' && setProjects.length === 0) {
-      // It's a refresh function
       try {
         await (setProjects as () => Promise<void>)();
       } catch (error) {

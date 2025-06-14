@@ -4,7 +4,6 @@ import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
 
-// Simple user interface to avoid deep instantiation
 interface SimpleUserContext {
   id: string;
   organizationId?: string;
@@ -42,6 +41,9 @@ export const addTask = async (
       ? newTask.deadline.toISOString() 
       : new Date(newTask.deadline).toISOString();
 
+    // Use unified assignment logic - prioritize multi-assignment
+    const isSingleAssignment = newTask.assignedToIds && newTask.assignedToIds.length === 1;
+    
     const insertData = {
       id: newTask.id,
       user_id: newTask.userId,
@@ -53,14 +55,15 @@ export const addTask = async (
       status: newTask.status,
       created_at: now.toISOString(),
       updated_at: now.toISOString(),
-      assigned_to_id: newTask.assignedToId || null,
+      cost: newTask.cost || 0,
+      organization_id: user.organizationId,
+      // Unified assignment fields
+      assigned_to_id: isSingleAssignment ? newTask.assignedToIds?.[0] : null,
       assigned_to_ids: newTask.assignedToIds || [],
       assigned_to_names: newTask.assignedToNames || [],
-      cost: newTask.cost || 0,
-      organization_id: user.organizationId // Ensure organization_id is always set
     };
 
-    console.log('Inserting task with data:', insertData);
+    console.log('Inserting task with unified assignment data:', insertData);
 
     const { data, error } = await supabase
       .from('tasks')
@@ -87,7 +90,6 @@ export const addTask = async (
           )
         );
       } else if (typeof setProjects === 'function' && setProjects.length === 0) {
-        // It's a refresh function
         try {
           await (setProjects as () => Promise<void>)();
         } catch (error) {

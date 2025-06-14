@@ -1,18 +1,18 @@
 
-import React, { useState } from 'react';
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Task } from '@/types';
-import { useTask } from '@/contexts/task';
+import React, { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Task, User } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { Form } from "@/components/ui/form";
-import { useEnhancedTaskForm } from '@/hooks/useEnhancedTaskForm';
-import { useUsers } from '@/hooks/useUsers';
-import { cn } from '@/lib/utils';
-import TaskDialogHeader from './task/form/TaskDialogHeader';
-import TaskFormTabs from './task/form/TaskFormTabs';
-import TaskFormActions from './task/form/TaskFormActions';
+import { useTask } from '@/contexts/task';
+import { useProjects } from '@/hooks/useProjects';
+import { useTeamMembers } from '@/hooks/useTeamMembers';
+import { useForm } from 'react-hook-form';
 import { toast } from '@/components/ui/sonner';
+import { TaskAssignmentService } from '@/services/taskAssignmentService';
+import TaskFormTabs from './task/form/TaskFormTabs';
+import UnifiedTaskAssignment from './task/assignment/UnifiedTaskAssignment';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface CreateTaskDialogEnhancedProps {
   open: boolean;
@@ -22,183 +22,199 @@ interface CreateTaskDialogEnhancedProps {
   onTaskComplete?: () => void;
 }
 
-const CreateTaskDialogEnhanced: React.FC<CreateTaskDialogEnhancedProps> = ({ 
-  open, 
-  onOpenChange, 
+const CreateTaskDialogEnhanced: React.FC<CreateTaskDialogEnhancedProps> = ({
+  open,
+  onOpenChange,
   editingTask,
   currentProjectId,
-  onTaskComplete
+  onTaskComplete,
 }) => {
   const { user } = useAuth();
-  const { addTask, updateTask, projects } = useTask();
-  const isEditMode = !!editingTask;
-  const isMobile = useIsMobile();
-  const { users, isLoading: loadingUsers, error: usersError } = useUsers();
-  const [multiAssignMode, setMultiAssignMode] = useState(false);
+  const { addTask, updateTask } = useTask();
+  const { projects } = useProjects();
+  const { users, isLoading: loadingUsers } = useTeamMembers();
+
+  const [selectedUsers, setSelectedUsers] = useState<User[]>([]);
+  const [deadlineDate, setDeadlineDate] = useState<Date | undefined>();
+  const [timeInput, setTimeInput] = useState('09:00');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // Use our enhanced task form hook
-  const {
-    form,
-    handleSubmit,
-    register,
-    errors, 
-    reset,
-    setValue,
-    selectedMember,
-    setSelectedMember,
-    selectedMembers,
-    setSelectedMembers,
-    deadlineDate,
-    timeInput,
-    handleDateChange,
-    handleTimeChange,
-    handleUserAssignment,
-    handleMembersChange,
-  } = useEnhancedTaskForm(editingTask, currentProjectId);
 
-  // Initialize multi-assign mode for editing tasks with multiple assignees
-  React.useEffect(() => {
-    if (editingTask && editingTask.assignedToIds && editingTask.assignedToIds.length > 1) {
-      setMultiAssignMode(true);
+  const form = useForm({
+    defaultValues: {
+      title: '',
+      description: '',
+      priority: 'Medium' as const,
+      projectId: currentProjectId || 'none',
+      cost: 0,
     }
-  }, [editingTask]);
+  });
 
-  // Handle users loading error
-  React.useEffect(() => {
-    if (usersError) {
-      console.error('Error loading users:', usersError);
-      toast.error('Failed to load team members');
+  // Initialize form and assignments when editing
+  useEffect(() => {
+    if (editingTask && open) {
+      form.reset({
+        title: editingTask.title,
+        description: editingTask.description,
+        priority: editingTask.priority,
+        projectId: editingTask.projectId || 'none',
+        cost: editingTask.cost || 0,
+      });
+
+      // Set deadline
+      if (editingTask.deadline) {
+        const deadline = new Date(editingTask.deadline);
+        setDeadlineDate(deadline);
+        setTimeInput(deadline.toTimeString().slice(0, 5));
+      }
+
+      // Set assignments using unified service
+      const assignments = TaskAssignmentService.getTaskAssignments(editingTask);
+      if (assignments.assignedToIds && assignments.assignedToIds.length > 0) {
+        const assignedUsers = users.filter(user => 
+          assignments.assignedToIds?.includes(user.id)
+        );
+        setSelectedUsers(assignedUsers);
+      }
+    } else if (open && !editingTask) {
+      // Reset for new task
+      form.reset({
+        title: '',
+        description: '',
+        priority: 'Medium',
+        projectId: currentProjectId || 'none',
+        cost: 0,
+      });
+      setSelectedUsers([]);
+      setDeadlineDate(undefined);
+      setTimeInput('09:00');
     }
-  }, [usersError]);
+  }, [editingTask, open, users, form, currentProjectId]);
 
-  const onSubmit = async (data: any) => {
+  const handleSubmit = async (data: any) => {
     if (!user?.organizationId) {
       toast.error('Organization context required');
       return;
     }
 
+    if (!deadlineDate) {
+      toast.error('Please select a deadline');
+      return;
+    }
+
+    setIsSubmitting(true);
+
     try {
-      setIsSubmitting(true);
-      
-      const deadlineDate = typeof data.deadline === 'string' 
-        ? new Date(data.deadline)
-        : data.deadline;
+      // Combine date and time
+      const [hours, minutes] = timeInput.split(':').map(Number);
+      const deadline = new Date(deadlineDate);
+      deadline.setHours(hours, minutes, 0, 0);
+
+      // Prepare assignment data
+      const assignmentData = selectedUsers.length > 0 ? {
+        assignedToIds: selectedUsers.map(u => u.id),
+        assignedToNames: selectedUsers.map(u => u.name || u.email),
+        // For single assignment, also populate single fields for backward compatibility
+        ...(selectedUsers.length === 1 && {
+          assignedToId: selectedUsers[0].id,
+          assignedToName: selectedUsers[0].name || selectedUsers[0].email
+        })
+      } : {};
 
       const taskData = {
         ...data,
-        deadline: deadlineDate,
-        userId: user.id,
+        deadline,
         organizationId: user.organizationId,
-        // Handle single vs multi assignment
-        assignedToId: multiAssignMode ? undefined : (selectedMember === "unassigned" ? undefined : selectedMember),
-        assignedToName: multiAssignMode ? undefined : data.assignedToName,
-        assignedToIds: multiAssignMode ? selectedMembers : undefined,
-        assignedToNames: multiAssignMode ? data.assignedToNames : undefined
+        ...assignmentData,
       };
 
-      if (isEditMode && editingTask) {
+      if (editingTask) {
         await updateTask(editingTask.id, taskData);
-        toast.success('Task updated successfully');
+        toast.success('Task updated successfully!');
       } else {
-        await addTask({
-          title: data.title,
-          description: data.description,
-          priority: data.priority,
-          deadline: deadlineDate,
-          status: 'To Do',
-          projectId: data.projectId === "none" ? undefined : data.projectId,
-          ...taskData
-        });
-        toast.success('Task created successfully');
+        await addTask(taskData);
+        toast.success('Task created successfully!');
       }
-      
+
       onOpenChange(false);
-      reset();
-      setSelectedMember("unassigned");
-      setSelectedMembers([]);
-      
-      if (onTaskComplete) {
-        onTaskComplete();
-      }
+      onTaskComplete?.();
     } catch (error) {
       console.error('Error saving task:', error);
-      toast.error(`Failed to ${isEditMode ? 'update' : 'create'} task`);
+      toast.error(editingTask ? 'Failed to update task' : 'Failed to create task');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleCancel = () => {
-    onOpenChange(false);
-    reset();
-    setSelectedMember("unassigned");
-    setSelectedMembers([]);
-  };
-
-  const getCompletionPercentage = () => {
-    const requiredFields = ['title'];
-    const optionalFields = ['description', 'priority', 'deadline'];
-    
-    let completed = 0;
-    let total = requiredFields.length + optionalFields.length;
-    
-    // Check required fields
-    if (form.watch('title')?.trim()) completed++;
-    
-    // Check optional fields
-    if (form.watch('description')?.trim()) completed++;
-    if (form.watch('priority')) completed++;
-    if (deadlineDate) completed++;
-    
-    return Math.round((completed / total) * 100);
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={cn(
-        "glass-card backdrop-blur-xl border-2 border-border/30 shadow-2xl",
-        "bg-gradient-to-br from-background/95 via-background/90 to-background/85",
-        isMobile ? 'w-[95%] p-4 max-h-[90vh]' : 'sm:max-w-[600px] max-h-[85vh]',
-        "overflow-y-auto animate-in fade-in-0 zoom-in-95 duration-300"
-      )}>
-        <TaskDialogHeader
-          isEditMode={isEditMode}
-          completionPercentage={getCompletionPercentage()}
-          multiAssignMode={multiAssignMode}
-          onMultiAssignToggle={setMultiAssignMode}
-        />
-        
-        <Form {...form}>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <TaskFormTabs
-              register={register}
-              errors={errors}
-              setValue={setValue}
-              projects={projects as any}
-              editingTask={editingTask}
-              currentProjectId={currentProjectId}
-              selectedMember={selectedMember}
-              setSelectedMember={setSelectedMember}
-              deadlineDate={deadlineDate}
-              timeInput={timeInput}
-              onDateChange={handleDateChange}
-              onTimeChange={handleTimeChange}
-              multiAssignMode={multiAssignMode}
-              selectedMembers={selectedMembers}
-              onMembersChange={handleMembersChange}
-              users={users}
-              loadingUsers={loadingUsers}
-              handleUserAssignment={handleUserAssignment}
-            />
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>
+            {editingTask ? 'Edit Task' : 'Create New Task'}
+          </DialogTitle>
+        </DialogHeader>
+
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+          <Tabs defaultValue="details" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsTrigger value="details">Task Details</TabsTrigger>
+              <TabsTrigger value="assignment">Assignment</TabsTrigger>
+            </TabsList>
             
-            <TaskFormActions
-              isEditMode={isEditMode}
-              onCancel={handleCancel}
-              isSubmitting={isSubmitting}
-            />
-          </form>
-        </Form>
+            <TabsContent value="details" className="space-y-4 mt-0">
+              <TaskFormTabs
+                register={form.register}
+                errors={form.formState.errors}
+                setValue={form.setValue}
+                projects={projects}
+                editingTask={editingTask}
+                currentProjectId={currentProjectId}
+                selectedMember={undefined}
+                setSelectedMember={() => {}}
+                deadlineDate={deadlineDate}
+                timeInput={timeInput}
+                onDateChange={setDeadlineDate}
+                onTimeChange={setTimeInput}
+                multiAssignMode={false}
+                selectedMembers={[]}
+                onMembersChange={() => {}}
+                users={[]}
+                loadingUsers={false}
+                handleUserAssignment={() => {}}
+              />
+            </TabsContent>
+            
+            <TabsContent value="assignment" className="mt-0">
+              <UnifiedTaskAssignment
+                selectedUsers={selectedUsers}
+                onSelectionChange={setSelectedUsers}
+                availableUsers={users}
+                isLoading={loadingUsers}
+                disabled={isSubmitting}
+              />
+            </TabsContent>
+          </Tabs>
+
+          <div className="flex justify-end gap-3 pt-4 border-t">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+            >
+              {isSubmitting 
+                ? (editingTask ? 'Updating...' : 'Creating...') 
+                : (editingTask ? 'Update Task' : 'Create Task')
+              }
+            </Button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );

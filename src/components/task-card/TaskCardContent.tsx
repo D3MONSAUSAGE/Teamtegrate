@@ -35,11 +35,7 @@ const TaskCardContent: React.FC<TaskCardContentProps> = ({
       
       <div className="mt-auto space-y-3 p-4 pt-0">
         <TaskCardMetadata 
-          deadline={task.deadline} 
-          assignedToName={task.assignedToName}
-          assignedToId={task.assignedToId}
-          assignedToNames={task.assignedToNames}
-          assignedToIds={task.assignedToIds}
+          task={task}
           isOverdue={isOverdue}
         />
         

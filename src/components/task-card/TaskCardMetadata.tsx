@@ -3,80 +3,64 @@ import React from "react";
 import { format } from "date-fns";
 import { Calendar, Clock, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { TaskAssignmentService } from "@/services/taskAssignmentService";
 import TaskMultipleAssignees from "@/components/task/TaskMultipleAssignees";
 
 interface TaskCardMetadataProps {
-  deadline?: Date;
-  assignedToName?: string;
-  assignedToId?: string;
-  assignedToNames?: string[];
-  assignedToIds?: string[];
+  task: any; // Using any to accommodate both Task types
   isOverdue: boolean;
 }
 
 const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({
-  deadline,
-  assignedToName,
-  assignedToId,
-  assignedToNames,
-  assignedToIds,
+  task,
   isOverdue,
 }) => {
-  // Check if task has assignees with improved logic
-  const hasMultipleAssignees = assignedToNames && assignedToNames.length > 1;
-  const hasSingleAssignee = assignedToName && assignedToName.trim() !== '' && assignedToName !== assignedToId;
-  const hasAssigneeId = assignedToId && assignedToId.trim() !== '';
-  const hasAssignees = hasMultipleAssignees || hasSingleAssignee || hasAssigneeId;
+  const assignments = TaskAssignmentService.getTaskAssignments(task);
+  const isAssigned = TaskAssignmentService.isTaskAssigned(task);
+  const hasMultiple = TaskAssignmentService.hasMultipleAssignments(task);
   
   return (
     <div className="space-y-3 text-sm">
-      {/* Assignee Section - Now more prominent */}
+      {/* Assignee Section */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
             Assigned To
           </span>
-          {!hasAssignees && (
+          {!isAssigned && (
             <Badge variant="outline" className="text-xs">
               Unassigned
             </Badge>
           )}
         </div>
         
-        {hasAssignees && (
+        {isAssigned && (
           <div className="pl-1">
-            {hasMultipleAssignees ? (
+            {hasMultiple ? (
               <TaskMultipleAssignees
-                assignedToNames={assignedToNames}
-                assignedToIds={assignedToIds}
+                assignedToNames={assignments.assignedToNames}
+                assignedToIds={assignments.assignedToIds}
                 variant="detail"
                 maxDisplay={2}
               />
-            ) : hasSingleAssignee ? (
+            ) : (
               <div className="flex items-center gap-2">
                 <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center">
                   <span className="text-xs font-medium text-primary">
-                    {assignedToName!.substring(0, 1).toUpperCase()}
+                    {(assignments.assignedToName || 'U').substring(0, 1).toUpperCase()}
                   </span>
                 </div>
-                <span className="text-sm font-medium">{assignedToName}</span>
+                <span className="text-sm font-medium">
+                  {assignments.assignedToName || 'Assigned User'}
+                </span>
               </div>
-            ) : hasAssigneeId ? (
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center">
-                  <span className="text-xs font-medium text-primary">
-                    ?
-                  </span>
-                </div>
-                <span className="text-sm font-medium text-muted-foreground">Assigned User</span>
-              </div>
-            ) : null}
+            )}
           </div>
         )}
       </div>
 
       {/* Deadline Section */}
-      {deadline && (
+      {task.deadline && (
         <div className="space-y-2">
           <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
             Deadline
@@ -88,7 +72,7 @@ const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({
               <Calendar className="h-4 w-4" />
             )}
             <span className={`text-sm ${isOverdue ? 'font-medium' : ''}`}>
-              {format(deadline, "MMM dd, yyyy")}
+              {format(task.deadline, "MMM dd, yyyy")}
             </span>
             {isOverdue && (
               <Badge variant="destructive" className="text-xs ml-auto">
@@ -97,11 +81,11 @@ const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({
             )}
           </div>
           
-          {deadline && !isOverdue && (
+          {task.deadline && !isOverdue && (
             <div className="flex items-center gap-2 pl-6 text-xs text-muted-foreground">
               <Clock className="h-3 w-3" />
               <span>
-                {format(deadline, "h:mm a")}
+                {format(task.deadline, "h:mm a")}
               </span>
             </div>
           )}
