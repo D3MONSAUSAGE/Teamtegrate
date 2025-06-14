@@ -26,7 +26,7 @@ const MainContent = ({ children }: { children: React.ReactNode }) => {
     >
       <Navbar />
       <main className="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar smooth-scroll">
-        <div className="p-2 md:p-4 space-y-6 animate-fade-in">
+        <div className="p-1 md:p-2 space-y-6 animate-fade-in">
           {children}
         </div>
       </main>
