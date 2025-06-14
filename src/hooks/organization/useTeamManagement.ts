@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -44,7 +43,18 @@ export const useTeamManagement = () => {
       });
 
       if (error) throw error;
-      return data || { total_teams: 0, teams_with_managers: 0, total_team_members: 0, average_team_size: 0 };
+      
+      // Handle the JSON response properly
+      if (data && typeof data === 'object') {
+        return {
+          total_teams: (data as any).total_teams || 0,
+          teams_with_managers: (data as any).teams_with_managers || 0,
+          total_team_members: (data as any).total_team_members || 0,
+          average_team_size: (data as any).average_team_size || 0,
+        };
+      }
+      
+      return { total_teams: 0, teams_with_managers: 0, total_team_members: 0, average_team_size: 0 };
     },
     enabled: !!user?.organizationId,
   });
