@@ -14,6 +14,7 @@ const TimeTracking: React.FC = () => {
     notes,
     setNotes,
     elapsedTime,
+    breakElapsedTime,
     dailyEntries,
     weeklyEntries,
     currentEntry,
@@ -28,11 +29,10 @@ const TimeTracking: React.FC = () => {
     totalTrackedHours,
     remainingHours,
     totalWorkedMinutes,
-    isOnBreak,
-    lastBreakType,
-    breakStartTime,
+    breakState,
     getWeeklyChartData,
     handleBreak,
+    resumeFromBreak,
     handleWeekChange,
     handleSearch,
     clockIn,
@@ -75,11 +75,11 @@ const TimeTracking: React.FC = () => {
         clockIn={clockIn}
         clockOut={clockOut}
         handleBreak={handleBreak}
+        resumeFromBreak={resumeFromBreak}
         elapsedTime={elapsedTime}
+        breakElapsedTime={breakElapsedTime}
         totalWorkedMinutes={totalWorkedMinutes}
-        isOnBreak={Boolean(isOnBreak)}
-        lastBreakType={lastBreakType}
-        breakStartTime={breakStartTime}
+        breakState={breakState}
         isLoading={isLoading}
         isOnline={isOnline}
       />

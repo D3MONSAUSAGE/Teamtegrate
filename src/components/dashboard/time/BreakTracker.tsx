@@ -14,6 +14,7 @@ interface BreakTrackerProps {
   lastBreakType?: string;
   breakStartTime?: Date;
   isOnline?: boolean;
+  isActivelyWorking?: boolean;
 }
 
 const BreakTracker: React.FC<BreakTrackerProps> = ({
@@ -22,7 +23,8 @@ const BreakTracker: React.FC<BreakTrackerProps> = ({
   isOnBreak,
   lastBreakType,
   breakStartTime,
-  isOnline = true
+  isOnline = true,
+  isActivelyWorking = false
 }) => {
   const [breakElapsed, setBreakElapsed] = useState('00:00');
   const { mealBreaks, restBreaks, earnedBreakMinutes } = calculateBreakRequirements(totalWorkedMinutes);
@@ -121,8 +123,8 @@ const BreakTracker: React.FC<BreakTrackerProps> = ({
           </div>
         </div>
 
-        {/* Break Action Buttons */}
-        {!isOnBreak && totalWorkedMinutes >= 120 && (
+        {/* Break Action Buttons - only show when actively working */}
+        {isActivelyWorking && totalWorkedMinutes >= 120 && (
           <div className="space-y-2">
             <Button
               variant="outline"
@@ -146,6 +148,15 @@ const BreakTracker: React.FC<BreakTrackerProps> = ({
               Take Lunch Break (30 min)
               {!isOnline && <span className="ml-auto text-xs">(Offline)</span>}
             </Button>
+          </div>
+        )}
+
+        {/* Status message when not actively working */}
+        {!isActivelyWorking && !isOnBreak && (
+          <div className="p-3 bg-muted/30 rounded-lg text-center">
+            <p className="text-sm text-muted-foreground">
+              Clock in to start working and earn break time
+            </p>
           </div>
         )}
 

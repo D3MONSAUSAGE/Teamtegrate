@@ -17,6 +17,13 @@ interface WeeklyChartData {
   totalHours: number;
 }
 
+interface BreakState {
+  isOnBreak: boolean;
+  breakType?: string;
+  breakStartTime?: Date;
+  workSessionId?: string;
+}
+
 export const useTimeTrackingPage = () => {
   const { 
     currentEntry, 
@@ -33,6 +40,7 @@ export const useTimeTrackingPage = () => {
   
   const [notes, setNotes] = useState('');
   const [elapsedTime, setElapsedTime] = useState('');
+  const [breakElapsedTime, setBreakElapsedTime] = useState('');
   const [dailyEntries, setDailyEntries] = useState<TimeEntry[]>([]);
   const [weeklyEntries, setWeeklyEntries] = useState<TimeEntry[]>([]);
   const [weekDate, setWeekDate] = useState<Date>(new Date());
@@ -43,6 +51,9 @@ export const useTimeTrackingPage = () => {
     return stored ? Number(stored) : 40;
   });
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [breakState, setBreakState] = useState<BreakState>({
+    isOnBreak: false
+  });
 
   const { start: weekStart, end: weekEnd } = getWeekRange(weekDate);
 
@@ -59,16 +70,34 @@ export const useTimeTrackingPage = () => {
     return total;
   }, 0);
 
-  // Check if currently on break (last entry was a break)
-  const isOnBreak = weeklyEntries.length > 0 && 
-    weeklyEntries[0].notes?.includes('break') && 
-    weeklyEntries[0].clock_out;
+  // Enhanced break detection logic
+  const detectBreakState = (entries: TimeEntry[]): BreakState => {
+    if (entries.length === 0) {
+      return { isOnBreak: false };
+    }
 
-  const lastBreakType = isOnBreak ? 
-    weeklyEntries[0].notes?.split(' ')[0] : undefined;
+    const latestEntry = entries[0]; // Most recent entry
+    
+    // Check if the latest entry is a break entry
+    if (latestEntry.clock_out && latestEntry.notes?.includes('break')) {
+      const breakType = latestEntry.notes.split(' ')[0];
+      return {
+        isOnBreak: true,
+        breakType,
+        breakStartTime: new Date(latestEntry.clock_out),
+        workSessionId: latestEntry.notes?.includes('session:') ? 
+          latestEntry.notes.split('session:')[1]?.trim() : undefined
+      };
+    }
 
-  const breakStartTime = isOnBreak ? 
-    new Date(weeklyEntries[0].clock_out!) : undefined;
+    return { isOnBreak: false };
+  };
+
+  // Update break state when entries change
+  useEffect(() => {
+    const newBreakState = detectBreakState(weeklyEntries);
+    setBreakState(newBreakState);
+  }, [weeklyEntries]);
 
   const getWeeklyChartData = (): WeeklyChartData[] => {
     const weekDays = Array.from({ length: 7 }, (_, i) => {
@@ -120,7 +149,7 @@ export const useTimeTrackingPage = () => {
     });
   };
 
-  // Debounced data fetching to prevent excessive calls
+  // Debounced data fetching
   const debouncedFetchEntries = debounce(async () => {
     try {
       const entries = await getWeeklyTimeEntries(weekStart);
@@ -138,12 +167,11 @@ export const useTimeTrackingPage = () => {
     debouncedFetchEntries();
   }, [weekStart, selectedDate]);
 
-  // Fixed timer effect with proper cleanup and error handling
+  // Work session timer effect
   useEffect(() => {
     let interval: NodeJS.Timeout;
     
-    if (currentEntry.isClocked && currentEntry.clock_in) {
-      // Start timer immediately
+    if (currentEntry.isClocked && currentEntry.clock_in && !breakState.isOnBreak) {
       const updateElapsedTime = () => {
         try {
           const elapsedMs = Date.now() - currentEntry.clock_in!.getTime();
@@ -154,7 +182,6 @@ export const useTimeTrackingPage = () => {
         }
       };
 
-      // Update immediately, then every second
       updateElapsedTime();
       interval = setInterval(updateElapsedTime, 1000);
     } else {
@@ -166,20 +193,74 @@ export const useTimeTrackingPage = () => {
         clearInterval(interval);
       }
     };
-  }, [currentEntry.isClocked, currentEntry.clock_in]);
+  }, [currentEntry.isClocked, currentEntry.clock_in, breakState.isOnBreak]);
+
+  // Break timer effect
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    
+    if (breakState.isOnBreak && breakState.breakStartTime) {
+      const updateBreakTime = () => {
+        try {
+          const elapsedMs = Date.now() - breakState.breakStartTime!.getTime();
+          setBreakElapsedTime(formatDuration(elapsedMs));
+        } catch (error) {
+          console.error('Error updating break time:', error);
+          setBreakElapsedTime('00:00:00');
+        }
+      };
+
+      updateBreakTime();
+      interval = setInterval(updateBreakTime, 1000);
+    } else {
+      setBreakElapsedTime('00:00:00');
+    }
+
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [breakState.isOnBreak, breakState.breakStartTime]);
 
   // Save target hours to localStorage
   useEffect(() => {
     localStorage.setItem("targetWeeklyHours", String(targetWeeklyHours));
   }, [targetWeeklyHours]);
 
-  // Enhanced break handler
+  // Enhanced break handler that tracks session continuity
   const handleBreak = (breakType: string) => {
     if (!isOnline) {
       toast.error('Cannot start break while offline');
       return;
     }
-    startBreak(breakType);
+    
+    if (!currentEntry.isClocked) {
+      toast.error('No active session to take a break from');
+      return;
+    }
+
+    // Include session ID in break notes for continuity
+    const breakNotes = `${breakType} break session:${currentEntry.id}`;
+    startBreak(breakType, breakNotes);
+  };
+
+  // Resume from break - clock back in and link to previous session
+  const resumeFromBreak = async () => {
+    if (!breakState.isOnBreak) {
+      toast.error('Not currently on break');
+      return;
+    }
+
+    try {
+      const resumeNotes = `Resumed from ${breakState.breakType} break`;
+      await clockIn(resumeNotes);
+      setBreakState({ isOnBreak: false });
+      toast.success(`Resumed from ${breakState.breakType} break`);
+    } catch (error) {
+      console.error('Error resuming from break:', error);
+      toast.error('Failed to resume from break');
+    }
   };
 
   const handleWeekChange = (direction: "prev" | "next") => {
@@ -235,7 +316,8 @@ export const useTimeTrackingPage = () => {
 
     try {
       await clockIn(notes);
-      setNotes(''); // Clear notes after successful clock in
+      setNotes('');
+      setBreakState({ isOnBreak: false }); // Clear break state when clocking in
     } catch (error) {
       console.error('Clock in failed:', error);
       toast.error('Failed to clock in. Please try again.');
@@ -256,7 +338,8 @@ export const useTimeTrackingPage = () => {
 
     try {
       await clockOut(notes);
-      setNotes(''); // Clear notes after successful clock out
+      setNotes('');
+      setBreakState({ isOnBreak: false }); // Clear break state when completely clocking out
     } catch (error) {
       console.error('Clock out failed:', error);
       toast.error('Failed to clock out. Please try again.');
@@ -267,6 +350,7 @@ export const useTimeTrackingPage = () => {
     notes,
     setNotes,
     elapsedTime,
+    breakElapsedTime,
     dailyEntries,
     weeklyEntries,
     currentEntry,
@@ -281,18 +365,16 @@ export const useTimeTrackingPage = () => {
     totalTrackedHours,
     remainingHours,
     totalWorkedMinutes,
-    isOnBreak,
-    lastBreakType,
-    breakStartTime,
+    breakState,
     getWeeklyChartData,
     handleBreak,
+    resumeFromBreak,
     handleWeekChange,
     handleSearch,
     clockIn: enhancedClockIn,
     clockOut: enhancedClockOut,
     selectedDate,
     handleDateChange,
-    // Connection status and error handling
     isLoading,
     lastError,
     isOnline,
