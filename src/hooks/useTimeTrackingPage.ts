@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { format, startOfWeek, addWeeks, subWeeks, addDays, differenceInMinutes, parseISO } from 'date-fns';
 import { useTimeTracking } from './useTimeTracking';
@@ -70,34 +69,21 @@ export const useTimeTrackingPage = () => {
     return total;
   }, 0);
 
-  // Enhanced break detection logic
+  // Simplified break detection - only show break state when actively on break
   const detectBreakState = (entries: TimeEntry[]): BreakState => {
-    if (entries.length === 0) {
-      return { isOnBreak: false };
-    }
-
-    const latestEntry = entries[0]; // Most recent entry
-    
-    // Check if the latest entry is a break entry
-    if (latestEntry.clock_out && latestEntry.notes?.includes('break')) {
-      const breakType = latestEntry.notes.split(' ')[0];
-      return {
-        isOnBreak: true,
-        breakType,
-        breakStartTime: new Date(latestEntry.clock_out),
-        workSessionId: latestEntry.notes?.includes('session:') ? 
-          latestEntry.notes.split('session:')[1]?.trim() : undefined
-      };
-    }
-
+    // For now, we'll manage break state manually through the break controls
+    // This prevents the automatic detection from causing calculation errors
     return { isOnBreak: false };
   };
 
   // Update break state when entries change
   useEffect(() => {
-    const newBreakState = detectBreakState(weeklyEntries);
-    setBreakState(newBreakState);
-  }, [weeklyEntries]);
+    // Only auto-detect if we're not manually managing break state
+    if (!breakState.isOnBreak) {
+      const newBreakState = detectBreakState(weeklyEntries);
+      setBreakState(newBreakState);
+    }
+  }, [weeklyEntries, breakState.isOnBreak]);
 
   const getWeeklyChartData = (): WeeklyChartData[] => {
     const weekDays = Array.from({ length: 7 }, (_, i) => {
@@ -195,7 +181,7 @@ export const useTimeTrackingPage = () => {
     };
   }, [currentEntry.isClocked, currentEntry.clock_in, breakState.isOnBreak]);
 
-  // Break timer effect
+  // Fixed break timer effect
   useEffect(() => {
     let interval: NodeJS.Timeout;
     
@@ -203,7 +189,9 @@ export const useTimeTrackingPage = () => {
       const updateBreakTime = () => {
         try {
           const elapsedMs = Date.now() - breakState.breakStartTime!.getTime();
-          setBreakElapsedTime(formatDuration(elapsedMs));
+          // Ensure we don't have negative or invalid times
+          const validElapsedMs = Math.max(0, elapsedMs);
+          setBreakElapsedTime(formatDuration(validElapsedMs));
         } catch (error) {
           console.error('Error updating break time:', error);
           setBreakElapsedTime('00:00:00');
@@ -228,8 +216,8 @@ export const useTimeTrackingPage = () => {
     localStorage.setItem("targetWeeklyHours", String(targetWeeklyHours));
   }, [targetWeeklyHours]);
 
-  // Enhanced break handler that tracks session continuity
-  const handleBreak = (breakType: string) => {
+  // Enhanced break handler with proper state management
+  const handleBreak = async (breakType: string) => {
     if (!isOnline) {
       toast.error('Cannot start break while offline');
       return;
@@ -240,12 +228,29 @@ export const useTimeTrackingPage = () => {
       return;
     }
 
-    // Include session ID in break notes for continuity
-    const breakNotes = `${breakType} break session:${currentEntry.id}`;
-    startBreak(breakType, breakNotes);
+    try {
+      // Set break state immediately for UI responsiveness
+      setBreakState({
+        isOnBreak: true,
+        breakType,
+        breakStartTime: new Date(),
+        workSessionId: currentEntry.id
+      });
+
+      // Include session ID in break notes for continuity
+      const breakNotes = `${breakType} break session:${currentEntry.id}`;
+      await startBreak(breakType, breakNotes);
+      
+      toast.success(`${breakType} break started`);
+    } catch (error) {
+      console.error('Error starting break:', error);
+      // Revert break state on error
+      setBreakState({ isOnBreak: false });
+      toast.error('Failed to start break');
+    }
   };
 
-  // Resume from break - clock back in and link to previous session
+  // Resume from break with proper state management
   const resumeFromBreak = async () => {
     if (!breakState.isOnBreak) {
       toast.error('Not currently on break');
@@ -254,15 +259,26 @@ export const useTimeTrackingPage = () => {
 
     try {
       const resumeNotes = `Resumed from ${breakState.breakType} break`;
-      await clockIn(resumeNotes);
+      
+      // Clear break state immediately
       setBreakState({ isOnBreak: false });
+      
+      await clockIn(resumeNotes);
       toast.success(`Resumed from ${breakState.breakType} break`);
     } catch (error) {
       console.error('Error resuming from break:', error);
+      // Revert break state on error
+      setBreakState({
+        isOnBreak: true,
+        breakType: breakState.breakType,
+        breakStartTime: breakState.breakStartTime,
+        workSessionId: breakState.workSessionId
+      });
       toast.error('Failed to resume from break');
     }
   };
 
+  // ... keep existing code (handleWeekChange, handleSearch, handleDateChange functions)
   const handleWeekChange = (direction: "prev" | "next") => {
     setWeekDate(
       direction === "prev" ? subWeeks(weekDate, 1) : addWeeks(weekDate, 1)
@@ -390,7 +406,7 @@ function getWeekRange(date: Date) {
 }
 
 function formatDuration(ms: number): string {
-  const totalSeconds = Math.floor(ms / 1000);
+  const totalSeconds = Math.floor(Math.max(0, ms) / 1000); // Ensure non-negative
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = totalSeconds % 60;
