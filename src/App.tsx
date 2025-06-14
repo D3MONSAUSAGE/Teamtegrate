@@ -16,8 +16,8 @@ import ReportsPage from '@/pages/ReportsPage';
 import ChatPage from '@/pages/ChatPage';
 import DocumentsPage from '@/pages/DocumentsPage';
 import FinancePage from '@/pages/FinancePage';
-import JournalPage from '@/pages/JournalPage';
 import NotebookPage from '@/pages/NotebookPage';
+import TimeTrackingPage from '@/pages/TimeTrackingPage';
 import SettingsPage from '@/pages/SettingsPage';
 import ProfilePage from '@/pages/ProfilePage';
 import AdminPage from '@/pages/AdminPage';
@@ -66,8 +66,8 @@ function App() {
                     <Route path="chat/:roomId" element={<ChatPage />} />
                     <Route path="documents" element={<DocumentsPage />} />
                     <Route path="finance" element={<FinancePage />} />
-                    <Route path="journal" element={<JournalPage />} />
                     <Route path="notebook" element={<NotebookPage />} />
+                    <Route path="time-tracking" element={<TimeTrackingPage />} />
                     <Route path="settings" element={<SettingsPage />} />
                     <Route path="profile" element={<ProfilePage />} />
                     <Route path="admin" element={<AdminPage />} />

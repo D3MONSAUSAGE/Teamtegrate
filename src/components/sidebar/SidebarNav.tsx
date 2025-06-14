@@ -14,8 +14,9 @@ import {
   MessageCircle,
   FileText,
   DollarSign,
-  BookOpen,
   NotebookPen,
+  User,
+  Clock,
 } from 'lucide-react';
 
 interface NavItemProps {
@@ -44,8 +45,9 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ onNavigation, isCollapsed = fal
     { name: 'Chat', href: '/dashboard/chat', icon: MessageCircle },
     { name: 'Documents', href: '/dashboard/documents', icon: FileText },
     { name: 'Finance', href: '/dashboard/finance', icon: DollarSign },
-    { name: 'Journal', href: '/dashboard/journal', icon: BookOpen },
     { name: 'Notebook', href: '/dashboard/notebook', icon: NotebookPen },
+    { name: 'Time Clock', href: '/dashboard/time-tracking', icon: Clock },
+    { name: 'Profile', href: '/dashboard/profile', icon: User },
   ];
 
   const handleNavClick = () => {
