@@ -32,7 +32,7 @@ const CreateTeamDialog: React.FC<CreateTeamDialogProps> = ({
   onOpenChange,
 }) => {
   const { createTeam, isCreating } = useTeamManagement();
-  const { users } = useUsers();
+  const { users, isLoading: usersLoading, error: usersError } = useUsers();
   
   const [formData, setFormData] = useState<CreateTeamData>({
     name: '',
@@ -40,27 +40,35 @@ const CreateTeamDialog: React.FC<CreateTeamDialogProps> = ({
     manager_id: '',
   });
 
+  console.log('CreateTeamDialog - users:', users);
+  console.log('CreateTeamDialog - usersLoading:', usersLoading);
+  console.log('CreateTeamDialog - usersError:', usersError);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.name.trim()) {
+      console.log('CreateTeamDialog - validation failed: name is empty');
       return;
     }
 
     try {
+      console.log('CreateTeamDialog - submitting form data:', formData);
+      
       await createTeam({
         ...formData,
-        manager_id: formData.manager_id || undefined,
+        manager_id: formData.manager_id === 'none' ? undefined : formData.manager_id || undefined,
       });
       
       setFormData({ name: '', description: '', manager_id: '' });
       onOpenChange(false);
     } catch (error) {
-      // Error is handled in the hook
+      console.error('CreateTeamDialog - submission error:', error);
     }
   };
 
   const handleClose = () => {
+    console.log('CreateTeamDialog - closing dialog');
     setFormData({ name: '', description: '', manager_id: '' });
     onOpenChange(false);
   };
@@ -69,6 +77,8 @@ const CreateTeamDialog: React.FC<CreateTeamDialogProps> = ({
   const potentialManagers = users.filter(user => 
     ['admin', 'manager', 'superadmin'].includes(user.role)
   );
+
+  console.log('CreateTeamDialog - potentialManagers:', potentialManagers);
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -105,22 +115,28 @@ const CreateTeamDialog: React.FC<CreateTeamDialogProps> = ({
 
           <div className="space-y-2">
             <Label htmlFor="manager">Team Manager</Label>
-            <Select
-              value={formData.manager_id}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, manager_id: value }))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select a manager (optional)" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">No manager assigned</SelectItem>
-                {potentialManagers.map((user) => (
-                  <SelectItem key={user.id} value={user.id}>
-                    {user.name} ({user.role})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {usersError ? (
+              <div className="text-sm text-red-500">
+                Failed to load users: {usersError}
+              </div>
+            ) : (
+              <Select
+                value={formData.manager_id}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, manager_id: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a manager (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No manager assigned</SelectItem>
+                  {potentialManagers.map((user) => (
+                    <SelectItem key={user.id} value={user.id}>
+                      {user.name} ({user.role})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           <div className="flex justify-end gap-2 pt-4">

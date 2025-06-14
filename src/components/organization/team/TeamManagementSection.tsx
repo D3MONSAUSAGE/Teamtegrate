@@ -22,8 +22,25 @@ const TeamManagementSection: React.FC = () => {
   const { user } = useAuth();
   const { teams, teamStats, isLoading, error } = useTeamManagement();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [manageDialogOpen, setManageDialogOpen] = useState(false);
+  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
 
   const canCreateTeams = user?.role && ['superadmin', 'admin'].includes(user.role);
+
+  console.log('TeamManagementSection - user:', user);
+  console.log('TeamManagementSection - canCreateTeams:', canCreateTeams);
+  console.log('TeamManagementSection - createDialogOpen:', createDialogOpen);
+
+  const handleCreateTeam = () => {
+    console.log('TeamManagementSection - handleCreateTeam clicked');
+    setCreateDialogOpen(true);
+  };
+
+  const handleManageMembers = (team: Team) => {
+    console.log('TeamManagementSection - handleManageMembers clicked for team:', team);
+    setSelectedTeam(team);
+    setManageDialogOpen(true);
+  };
 
   if (isLoading) {
     return (
@@ -75,7 +92,7 @@ const TeamManagementSection: React.FC = () => {
             </CardTitle>
             
             {canCreateTeams && (
-              <Button onClick={() => setCreateDialogOpen(true)}>
+              <Button onClick={handleCreateTeam}>
                 <Plus className="h-4 w-4 mr-2" />
                 Create Team
               </Button>
@@ -131,7 +148,7 @@ const TeamManagementSection: React.FC = () => {
                 Create your first team to organize your workforce
               </p>
               {canCreateTeams && (
-                <Button onClick={() => setCreateDialogOpen(true)}>
+                <Button onClick={handleCreateTeam}>
                   <Plus className="h-4 w-4 mr-2" />
                   Create First Team
                 </Button>
@@ -151,10 +168,7 @@ const TeamManagementSection: React.FC = () => {
                     // TODO: Implement delete confirmation
                     console.log('Delete team:', team);
                   }}
-                  onManageMembers={(team) => {
-                    // TODO: Implement member management dialog
-                    console.log('Manage members:', team);
-                  }}
+                  onManageMembers={handleManageMembers}
                 />
               ))}
             </div>
@@ -165,6 +179,12 @@ const TeamManagementSection: React.FC = () => {
       <CreateTeamDialog
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
+      />
+
+      <ManageTeamMembersDialog
+        open={manageDialogOpen}
+        onOpenChange={setManageDialogOpen}
+        team={selectedTeam}
       />
     </>
   );
