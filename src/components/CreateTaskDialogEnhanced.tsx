@@ -32,7 +32,19 @@ const CreateTaskDialogEnhanced: React.FC<CreateTaskDialogEnhancedProps> = ({
   const { user } = useAuth();
   const { addTask, updateTask } = useTask();
   const { projects } = useProjects();
-  const { teamMembers: users, isLoading: loadingUsers } = useTeamMembers();
+  const { teamMembers, isLoading: loadingUsers } = useTeamMembers();
+
+  // Convert TeamMember[] to User[] with required properties
+  const users: User[] = teamMembers.map(member => ({
+    id: member.id,
+    email: member.email,
+    role: member.role as 'superadmin' | 'admin' | 'manager' | 'user',
+    organizationId: member.organizationId,
+    name: member.name,
+    createdAt: new Date(), // Default value since TeamMember doesn't have this
+    timezone: 'UTC', // Default value
+    avatar_url: undefined
+  }));
 
   const [selectedUsers, setSelectedUsers] = useState<User[]>([]);
   const [deadlineDate, setDeadlineDate] = useState<Date | undefined>();
