@@ -6,6 +6,7 @@ import { Plus, MessagesSquare } from 'lucide-react';
 interface ChatRoomsHeaderProps {
   canCreateRooms: boolean;
   onCreateRoom: () => void;
+  onRoomCreated?: () => void;
 }
 
 const ChatRoomsHeader: React.FC<ChatRoomsHeaderProps> = ({ canCreateRooms, onCreateRoom }) => {

@@ -1,5 +1,6 @@
 
 import { useState } from 'react';
+import { useChatRoomsFetch } from '@/hooks/use-chat-rooms-fetch';
 
 interface ChatRoomData {
   id: string;
@@ -16,6 +17,13 @@ export function useChatRoomsState() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Initialize the fetch hook
+  const { fetchRooms } = useChatRoomsFetch({ 
+    setRooms, 
+    setIsLoading, 
+    setError 
+  });
 
   const filteredRooms = rooms.filter(room => 
     room.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -49,6 +57,7 @@ export function useChatRoomsState() {
     error,
     setError,
     filteredRooms,
-    handleRoomSelect
+    handleRoomSelect,
+    refetch: fetchRooms
   };
 }

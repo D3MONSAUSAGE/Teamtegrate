@@ -2,7 +2,6 @@
 import React from 'react';
 import { useChatRoomsState } from '@/hooks/use-chat-rooms-state';
 import { useChatPermissions } from '@/hooks/use-chat-permissions';
-import ChatRoomsHeader from './ChatRoomsHeader';
 import ChatRoomsContent from './ChatRoomsContent';
 
 interface ChatRoomData {
@@ -27,10 +26,6 @@ const ChatRooms: React.FC<ChatRoomsProps> = ({ selectedRoom, onRoomSelect }) => 
 
   return (
     <div className="h-full flex flex-col bg-background border-r">
-      <ChatRoomsHeader 
-        onRoomCreated={refetch}
-        canCreateRooms={canCreateRooms()}
-      />
       <ChatRoomsContent
         rooms={rooms}
         selectedRoom={selectedRoom}

@@ -18,41 +18,65 @@ interface ChatRoomData {
 }
 
 interface ChatRoomsContentProps {
-  filteredRooms: ChatRoomData[];
+  rooms: ChatRoomData[];
   selectedRoom: ChatRoomData | null;
   onRoomSelect: (room: ChatRoomData) => void;
-  searchQuery: string;
-  onSearchChange: (query: string) => void;
-  canCreateRooms: boolean;
-  onCreateRoom: () => void;
-  isCreateRoomOpen: boolean;
-  onCreateRoomOpenChange: (open: boolean) => void;
-  roomsCount: number;
+  isLoading: boolean;
+  error: string | null;
+  onRetry: () => void;
 }
 
 const ChatRoomsContent: React.FC<ChatRoomsContentProps> = ({
-  filteredRooms,
+  rooms,
   selectedRoom,
   onRoomSelect,
-  searchQuery,
-  onSearchChange,
-  canCreateRooms,
-  onCreateRoom,
-  isCreateRoomOpen,
-  onCreateRoomOpenChange,
-  roomsCount
+  isLoading,
+  error,
+  onRetry
 }) => {
+  const [searchQuery, setSearchQuery] = React.useState('');
+  const [isCreateRoomOpen, setIsCreateRoomOpen] = React.useState(false);
+
+  const filteredRooms = rooms.filter(room => 
+    room.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  if (isLoading) {
+    return (
+      <Card className="h-full flex items-center justify-center border-0 rounded-none">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+          <p className="text-muted-foreground">Loading chat rooms...</p>
+        </div>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="h-full flex items-center justify-center border-0 rounded-none">
+        <div className="text-center">
+          <p className="text-destructive mb-2">{error}</p>
+          <Button onClick={onRetry} size="sm">
+            Try Again
+          </Button>
+        </div>
+      </Card>
+    );
+  }
+
   return (
     <Card className="h-full flex flex-col border-0 rounded-none">
       <div className="p-4 border-b border-border dark:border-gray-800">
         <ChatRoomsHeader
-          canCreateRooms={canCreateRooms}
-          onCreateRoom={onCreateRoom}
+          canCreateRooms={true}
+          onCreateRoom={() => setIsCreateRoomOpen(true)}
+          onRoomCreated={onRetry}
         />
         
         <ChatRoomsSearch
           searchQuery={searchQuery}
-          onSearchChange={onSearchChange}
+          onSearchChange={setSearchQuery}
         />
       </div>
       
@@ -66,17 +90,15 @@ const ChatRoomsContent: React.FC<ChatRoomsContentProps> = ({
         ) : (
           <ChatRoomsEmptyState
             searchQuery={searchQuery}
-            roomsCount={roomsCount}
+            roomsCount={rooms.length}
           />
         )}
       </ScrollArea>
 
-      {canCreateRooms && (
-        <CreateRoomDialog
-          open={isCreateRoomOpen}
-          onOpenChange={onCreateRoomOpenChange}
-        />
-      )}
+      <CreateRoomDialog
+        onRoomCreated={onRetry}
+        canCreate={true}
+      />
     </Card>
   );
 };
