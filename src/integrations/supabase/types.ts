@@ -82,37 +82,37 @@ export type Database = {
           },
         ]
       }
-      chat_message_attachments: {
+      chat_attachments: {
         Row: {
           created_at: string
           file_name: string
-          file_path: string
           file_size: number
           file_type: string
+          file_url: string
           id: string
           message_id: string
         }
         Insert: {
           created_at?: string
           file_name: string
-          file_path: string
           file_size: number
           file_type: string
+          file_url: string
           id?: string
           message_id: string
         }
         Update: {
           created_at?: string
           file_name?: string
-          file_path?: string
           file_size?: number
           file_type?: string
+          file_url?: string
           id?: string
           message_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "chat_message_attachments_message_id_fkey"
+            foreignKeyName: "chat_attachments_message_id_fkey"
             columns: ["message_id"]
             isOneToOne: false
             referencedRelation: "chat_messages"
@@ -124,48 +124,34 @@ export type Database = {
         Row: {
           content: string
           created_at: string
+          deleted_at: string | null
           id: string
-          organization_id: string
-          parent_id: string | null
+          message_type: string
           room_id: string
-          type: Database["public"]["Enums"]["message_type"]
+          updated_at: string
           user_id: string
         }
         Insert: {
           content: string
           created_at?: string
+          deleted_at?: string | null
           id?: string
-          organization_id: string
-          parent_id?: string | null
+          message_type?: string
           room_id: string
-          type?: Database["public"]["Enums"]["message_type"]
+          updated_at?: string
           user_id: string
         }
         Update: {
           content?: string
           created_at?: string
+          deleted_at?: string | null
           id?: string
-          organization_id?: string
-          parent_id?: string | null
+          message_type?: string
           room_id?: string
-          type?: Database["public"]["Enums"]["message_type"]
+          updated_at?: string
           user_id?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "chat_messages_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "chat_messages_parent_id_fkey"
-            columns: ["parent_id"]
-            isOneToOne: false
-            referencedRelation: "chat_messages"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "chat_messages_room_id_fkey"
             columns: ["room_id"]
@@ -175,62 +161,34 @@ export type Database = {
           },
         ]
       }
-      chat_room_participants: {
+      chat_participants: {
         Row: {
-          added_by: string | null
-          created_at: string | null
           id: string
+          joined_at: string
+          role: string
           room_id: string
           user_id: string
         }
         Insert: {
-          added_by?: string | null
-          created_at?: string | null
           id?: string
+          joined_at?: string
+          role?: string
           room_id: string
           user_id: string
         }
         Update: {
-          added_by?: string | null
-          created_at?: string | null
           id?: string
+          joined_at?: string
+          role?: string
           room_id?: string
           user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "chat_room_participants_added_by_fkey"
-            columns: ["added_by"]
-            isOneToOne: false
-            referencedRelation: "organization_user_hierarchy"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "chat_room_participants_added_by_fkey"
-            columns: ["added_by"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "chat_room_participants_room_id_fkey"
+            foreignKeyName: "chat_participants_room_id_fkey"
             columns: ["room_id"]
             isOneToOne: false
             referencedRelation: "chat_rooms"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "chat_room_participants_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "organization_user_hierarchy"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "chat_room_participants_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -239,23 +197,32 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string
+          description: string | null
           id: string
+          is_public: boolean
           name: string
           organization_id: string
+          updated_at: string
         }
         Insert: {
           created_at?: string
           created_by: string
+          description?: string | null
           id?: string
+          is_public?: boolean
           name: string
           organization_id: string
+          updated_at?: string
         }
         Update: {
           created_at?: string
           created_by?: string
+          description?: string | null
           id?: string
+          is_public?: boolean
           name?: string
           organization_id?: string
+          updated_at?: string
         }
         Relationships: [
           {
@@ -1621,6 +1588,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      is_room_participant: {
+        Args: { room_id: string; user_id: string }
+        Returns: boolean
+      }
       is_sole_admin_anywhere: {
         Args: { target_user_id: string }
         Returns: boolean
@@ -1645,10 +1616,6 @@ export type Database = {
         Args: { target_user_id: string; target_date: string }
         Returns: undefined
       }
-      user_can_access_room: {
-        Args: { room_id: string; user_id: string }
-        Returns: boolean
-      }
       user_is_admin_or_superadmin: {
         Args: { user_id: string }
         Returns: boolean
@@ -1663,10 +1630,6 @@ export type Database = {
       }
       user_is_project_team_member: {
         Args: { project_id_val: string; user_id_val: string }
-        Returns: boolean
-      }
-      user_participates_in_room: {
-        Args: { room_id: string }
         Returns: boolean
       }
       validate_and_use_invite_code: {

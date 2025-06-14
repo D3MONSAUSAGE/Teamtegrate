@@ -5,110 +5,101 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Loader2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { toast } from 'sonner';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Loader2 } from 'lucide-react';
 
 interface CreateRoomDialogProps {
-  onRoomCreated: () => void;
-  canCreate: boolean;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onCreateRoom: (name: string, description?: string, isPublic?: boolean) => Promise<any>;
 }
 
-const CreateRoomDialog: React.FC<CreateRoomDialogProps> = ({ onRoomCreated, canCreate }) => {
-  const [open, setOpen] = useState(false);
-  const [roomName, setRoomName] = useState('');
-  const [isCreating, setIsCreating] = useState(false);
-  const { user } = useAuth();
+const CreateRoomDialog: React.FC<CreateRoomDialogProps> = ({
+  open,
+  onOpenChange,
+  onCreateRoom
+}) => {
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [isPublic, setIsPublic] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleCreateRoom = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!roomName.trim() || !user) {
-      toast.error('Please enter a room name');
-      return;
-    }
+    if (!name.trim()) return;
 
-    setIsCreating(true);
-    
     try {
-      console.log('Creating room:', roomName, 'for user:', user.id, 'org:', user.organizationId);
-      
-      // With the new simplified RLS policies, this will work if user has manager+ role
-      const { data, error } = await supabase
-        .from('chat_rooms')
-        .insert([{
-          name: roomName.trim(),
-          created_by: user.id,
-          organization_id: user.organizationId
-        }])
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error creating room:', error);
-        throw error;
-      }
-
-      console.log('Room created successfully:', data);
-      toast.success('Chat room created successfully!');
-      
-      setRoomName('');
-      setOpen(false);
-      onRoomCreated();
-      
-    } catch (error: any) {
+      setLoading(true);
+      await onCreateRoom(name.trim(), description.trim() || undefined, isPublic);
+      setName('');
+      setDescription('');
+      setIsPublic(false);
+      onOpenChange(false);
+    } catch (error) {
       console.error('Failed to create room:', error);
-      toast.error(`Failed to create room: ${error.message}`);
     } finally {
-      setIsCreating(false);
+      setLoading(false);
     }
   };
 
-  if (!canCreate) {
-    return null;
-  }
-
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button size="sm" className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          New Room
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Create New Chat Room</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleCreateRoom} className="space-y-4">
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="roomName">Room Name</Label>
+            <Label htmlFor="name">Room Name *</Label>
             <Input
-              id="roomName"
-              value={roomName}
-              onChange={(e) => setRoomName(e.target.value)}
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               placeholder="Enter room name..."
-              disabled={isCreating}
-              autoFocus
+              disabled={loading}
+              required
             />
           </div>
+          
+          <div>
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Optional room description..."
+              disabled={loading}
+              rows={3}
+            />
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="public"
+              checked={isPublic}
+              onCheckedChange={(checked) => setIsPublic(checked as boolean)}
+              disabled={loading}
+            />
+            <Label htmlFor="public">Make this room public</Label>
+          </div>
+          
           <div className="flex justify-end gap-2">
             <Button
               type="button"
               variant="outline"
-              onClick={() => setOpen(false)}
-              disabled={isCreating}
+              onClick={() => onOpenChange(false)}
+              disabled={loading}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isCreating || !roomName.trim()}>
-              {isCreating ? (
+            <Button type="submit" disabled={loading || !name.trim()}>
+              {loading ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
                   Creating...
