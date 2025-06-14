@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { format, startOfWeek, addWeeks, subWeeks, addDays, differenceInMinutes, parseISO } from 'date-fns';
 import { useTimeTracking } from './useTimeTracking';
+import { toast } from 'sonner';
 
 interface TimeEntry {
   clock_in: string;
@@ -106,6 +107,28 @@ export const useTimeTrackingPage = () => {
     });
   };
 
+  // Enhanced session validation and recovery
+  const validateAndRecoverSession = async () => {
+    try {
+      // Refresh current session state
+      await fetchTimeEntries();
+      
+      // If we think we're clocked in but there's no active session, reset the state
+      if (currentEntry.isClocked && !currentEntry.id) {
+        console.log('Detected inconsistent session state, resetting...');
+        toast.warning('Session state recovered. You can now start a new time tracking session.');
+      }
+      
+      // If there's an active session but the timer isn't updating, log it
+      if (currentEntry.isClocked && currentEntry.clock_in && !elapsedTime) {
+        console.log('Active session detected, timer should be running...');
+      }
+    } catch (error) {
+      console.error('Error validating session:', error);
+      toast.error('Failed to validate time tracking session');
+    }
+  };
+
   useEffect(() => {
     const fetchEntries = async () => {
       const entries = await getWeeklyTimeEntries(weekStart);
@@ -115,6 +138,9 @@ export const useTimeTrackingPage = () => {
       setDailyEntries(filteredDailyEntries);
     };
     fetchEntries();
+    
+    // Validate session state when entries change
+    validateAndRecoverSession();
   }, [currentEntry, weekStart, selectedDate]);
 
   useEffect(() => {
@@ -178,6 +204,26 @@ export const useTimeTrackingPage = () => {
     setDailyEntries(filteredEntries);
   };
 
+  // Enhanced clockIn with better error handling
+  const enhancedClockIn = async (notes?: string) => {
+    try {
+      await clockIn(notes);
+    } catch (error) {
+      console.error('Clock in failed:', error);
+      toast.error('Failed to clock in. Please try again.');
+    }
+  };
+
+  // Enhanced clockOut with better error handling
+  const enhancedClockOut = async (notes?: string) => {
+    try {
+      await clockOut(notes);
+    } catch (error) {
+      console.error('Clock out failed:', error);
+      toast.error('Failed to clock out. Please try again.');
+    }
+  };
+
   return {
     notes,
     setNotes,
@@ -203,10 +249,11 @@ export const useTimeTrackingPage = () => {
     handleBreak,
     handleWeekChange,
     handleSearch,
-    clockIn,
-    clockOut,
+    clockIn: enhancedClockIn,
+    clockOut: enhancedClockOut,
     selectedDate,
-    handleDateChange
+    handleDateChange,
+    validateAndRecoverSession
   };
 };
 

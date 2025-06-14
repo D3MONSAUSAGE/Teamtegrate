@@ -55,9 +55,10 @@ export function useTimeTracking() {
 
       setTimeEntries(entries);
       
-      // Find current active entry
+      // Find current active entry - enhanced validation
       const activeEntry = entries.find(entry => !entry.clock_out);
       if (activeEntry) {
+        console.log('Found active entry:', activeEntry);
         setCurrentEntry({
           isClocked: true,
           clock_in: activeEntry.clock_in,
@@ -69,26 +70,36 @@ export function useTimeTracking() {
     } catch (error) {
       console.error('Error fetching time entries:', error);
       toast.error('Failed to load time entries');
+      // Reset current entry state on error to prevent stuck state
+      setCurrentEntry({ isClocked: false });
     } finally {
       setIsLoading(false);
     }
   }, [user?.id, user?.organizationId]);
 
-  // Check for existing active sessions to prevent duplicates
+  // Enhanced active session check with better error handling
   const checkActiveSession = async (): Promise<boolean> => {
     if (!user?.organizationId) return false;
 
     try {
       const { data, error } = await supabase
         .from('time_entries')
-        .select('id')
+        .select('id, clock_in, created_at')
         .eq('user_id', user.id)
         .eq('organization_id', user.organizationId)
         .is('clock_out', null)
         .limit(1);
 
-      if (error) throw error;
-      return (data || []).length > 0;
+      if (error) {
+        console.error('Error checking active session:', error);
+        return false;
+      }
+
+      const hasActive = (data || []).length > 0;
+      if (hasActive) {
+        console.log('Active session found:', data[0]);
+      }
+      return hasActive;
     } catch (error) {
       console.error('Error checking active session:', error);
       return false;
@@ -96,12 +107,17 @@ export function useTimeTracking() {
   };
 
   const clockIn = async (notes?: string) => {
-    if (!user?.organizationId) return;
+    if (!user?.organizationId) {
+      toast.error('Organization not found');
+      return;
+    }
 
-    // Check for existing active session
+    // Enhanced active session check
     const hasActiveSession = await checkActiveSession();
     if (hasActiveSession) {
-      toast.error('You already have an active time tracking session');
+      toast.error('You already have an active time tracking session. Please clock out first.');
+      // Refresh entries to sync state
+      await fetchTimeEntries();
       return;
     }
 
@@ -151,6 +167,8 @@ export function useTimeTracking() {
   const clockOut = async (notes?: string) => {
     if (!currentEntry?.id) {
       toast.error('No active clock-in found');
+      // Try to refresh and find active session
+      await fetchTimeEntries();
       return;
     }
 
@@ -275,7 +293,7 @@ export function useTimeTracking() {
     }
   };
 
-  // Setup real-time subscription
+  // Setup real-time subscription with enhanced error handling
   useEffect(() => {
     if (!user?.organizationId) return;
 
@@ -301,6 +319,13 @@ export function useTimeTracking() {
       supabase.removeChannel(channel);
     };
   }, [user?.id, user?.organizationId, fetchTimeEntries]);
+
+  // Initialize data on mount
+  useEffect(() => {
+    if (user?.organizationId) {
+      fetchTimeEntries();
+    }
+  }, [user?.organizationId, fetchTimeEntries]);
 
   return {
     timeEntries,
