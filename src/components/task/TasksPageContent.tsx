@@ -89,7 +89,7 @@ const TasksPageContent = ({
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-secondary/3 rounded-full blur-3xl animate-pulse delay-500"></div>
       </div>
 
-      <div className="container mx-auto max-w-none px-1 sm:px-2 md:px-4 py-8 space-y-10 relative z-10">
+      <div className="container mx-auto max-w-none px-1 py-8 space-y-10 relative z-10">
         {/* Enhanced Page Header */}
         <div className="animate-fade-in">
           <TaskHeader 
