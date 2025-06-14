@@ -59,7 +59,7 @@ const TimeTracking: React.FC = () => {
       <TimeTrackingControls
         notes={notes}
         setNotes={setNotes}
-        isClocked={currentEntry.isClocked}
+        isClocked={!!currentEntry.isClocked}
         clockIn={clockIn}
         clockOut={clockOut}
         handleBreak={handleBreak}
