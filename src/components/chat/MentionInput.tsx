@@ -46,7 +46,7 @@ const MentionInput: React.FC<MentionInputProps> = ({
   const fetchRoomParticipants = async () => {
     try {
       const { data, error } = await supabase
-        .from('chat_room_participants')
+        .from('chat_participants')
         .select(`
           user_id,
           users!user_id(
@@ -97,7 +97,6 @@ const MentionInput: React.FC<MentionInputProps> = ({
     const mentionMatch = textBeforeCursor.match(/@(\w*)$/);
     if (mentionMatch) {
       const beforeMention = textBeforeCursor.slice(0, mentionMatch.index);
-      // Use the user's name (full name from profile settings) for the mention
       const newValue = `${beforeMention}@${user.name || user.email} ${textAfterCursor}`;
       onChange(newValue);
     }

@@ -9,7 +9,6 @@ import ChatSoundSettings from './ChatSoundSettings';
 import AddChatParticipantDialog from './AddChatParticipantDialog';
 import DeleteChatRoomDialog from './DeleteChatRoomDialog';
 import { toast } from 'sonner';
-import { playSuccessSound } from '@/utils/sounds';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ChatRoomHeaderProps {
@@ -49,7 +48,6 @@ const ChatRoomHeader: React.FC<ChatRoomHeaderProps> = ({
   }, [room, currentUserId, canUserDeleteRoom, canUserAddParticipants]);
 
   const handleParticipantAdded = () => {
-    playSuccessSound();
     toast.success('Member added to the chat room');
   };
 

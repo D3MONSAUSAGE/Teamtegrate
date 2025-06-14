@@ -4,7 +4,6 @@ import { Outlet } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
-import ChatbotBubble from './chat/ChatbotBubble';
 import { SidebarProvider, SidebarInset, useSidebar } from '@/components/ui/sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Loader2 } from 'lucide-react';
@@ -67,8 +66,6 @@ const AppLayout = () => {
         <MainContent>
           <Outlet />
         </MainContent>
-
-        <ChatbotBubble />
       </div>
     </SidebarProvider>
   );

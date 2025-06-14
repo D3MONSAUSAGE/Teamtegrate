@@ -42,13 +42,11 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   onReplyClick,
   parentMessage,
 }) => {
-  const { data: userData } = useMessageDisplayName(message, isCurrentUser);
-
   const timestamp = message.created_at 
     ? formatDistanceToNow(new Date(message.created_at), { addSuffix: false })
     : '';
 
-  const displayName = message.type === 'system' ? 'System' : userData?.name || (isCurrentUser ? 'You' : 'Unknown User');
+  const displayName = message.type === 'system' ? 'System' : (isCurrentUser ? 'You' : 'Unknown User');
 
   const handleEditMessage = async (messageId: string, newContent: string) => {
     try {
