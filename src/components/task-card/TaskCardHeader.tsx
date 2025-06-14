@@ -70,7 +70,7 @@ const TaskCardHeader: React.FC<TaskCardHeaderProps> = ({ title, priority }) => {
           priority === 'High' && "bg-red-400",
           priority === 'Medium' && "bg-amber-400", 
           priority === 'Low' && "bg-blue-400",
-          priority === 'Low' && priority !== 'Medium' && priority !== 'High' && "bg-gray-400"
+          priority !== 'Low' && priority !== 'Medium' && priority !== 'High' && "bg-gray-400"
         )} />
       </div>
 
