@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,7 +19,8 @@ import {
   Edit, 
   Trash2, 
   UserPlus,
-  Calendar 
+  Calendar,
+  Eye
 } from 'lucide-react';
 import { Team } from '@/types/teams';
 import { format } from 'date-fns';
@@ -38,10 +40,23 @@ const TeamCard: React.FC<TeamCardProps> = ({
   onManageMembers,
 }) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const canManage = user?.role && ['superadmin', 'admin'].includes(user.role);
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Don't navigate if clicking on the dropdown trigger
+    if ((e.target as Element).closest('[data-dropdown-trigger]')) {
+      return;
+    }
+    navigate(`/dashboard/organization/teams/${team.id}`);
+  };
+
+  const handleViewDetails = () => {
+    navigate(`/dashboard/organization/teams/${team.id}`);
+  };
+
   return (
-    <Card className="hover:shadow-md transition-shadow">
+    <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={handleCardClick}>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
@@ -75,13 +90,18 @@ const TeamCard: React.FC<TeamCardProps> = ({
 
           {canManage && (
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+              <DropdownMenuTrigger asChild data-dropdown-trigger>
                 <Button variant="ghost" className="h-8 w-8 p-0">
                   <MoreVertical className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="bg-background border shadow-md">
                 <DropdownMenuLabel>Team Actions</DropdownMenuLabel>
+                
+                <DropdownMenuItem onClick={handleViewDetails}>
+                  <Eye className="h-4 w-4 mr-2" />
+                  View Details
+                </DropdownMenuItem>
                 
                 <DropdownMenuItem onClick={() => onManageMembers?.(team)}>
                   <UserPlus className="h-4 w-4 mr-2" />
@@ -119,16 +139,17 @@ const TeamCard: React.FC<TeamCardProps> = ({
             )}
           </div>
           
-          {canManage && (
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => onManageMembers?.(team)}
-            >
-              <UserPlus className="h-4 w-4 mr-1" />
-              Members
-            </Button>
-          )}
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleViewDetails();
+            }}
+          >
+            <Eye className="h-4 w-4 mr-1" />
+            View
+          </Button>
         </div>
       </CardContent>
     </Card>

@@ -23,6 +23,7 @@ import ProfilePage from '@/pages/ProfilePage';
 import AdminPage from '@/pages/AdminPage';
 import FocusZonePage from '@/pages/FocusZonePage';
 import OrganizationDashboard from '@/pages/OrganizationDashboard';
+import TeamDetailPage from '@/pages/TeamDetailPage';
 import { Toaster } from '@/components/ui/sonner';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import './App.css';
