@@ -24,29 +24,38 @@ export const useUserOperations = (refetchUsers: () => void) => {
 
     setIsLoading(true);
     try {
-      // Create user in auth
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email,
-        password: temporaryPassword,
-        user_metadata: {
-          organization_id: currentUser.organizationId,
+      console.log('Creating user via Edge Function:', { email, name, role });
+
+      // Call the Edge Function instead of admin API
+      const { data, error } = await supabase.functions.invoke('admin-create-user', {
+        body: {
+          email,
+          name,
           role,
-          name
+          temporaryPassword
         }
       });
 
-      if (authError) throw authError;
+      if (error) {
+        console.error('Edge Function error:', error);
+        throw new Error(error.message || 'Failed to create user');
+      }
 
-      // Log audit trail
-      await logUserAction('create', authData.user.id, email, name, {}, { role, name, email });
+      if (!data?.success) {
+        console.error('Edge Function returned failure:', data);
+        throw new Error(data?.error || 'Failed to create user');
+      }
+
+      console.log('User created successfully via Edge Function:', data);
 
       await refetchUsers();
       toast.success(`User ${name} created successfully`);
-      return authData.user;
-    } catch (error) {
+      return data.user;
+    } catch (error: any) {
       console.error('Error creating user:', error);
-      toast.error('Failed to create user');
-      throw error;
+      const errorMessage = error.message || 'Failed to create user';
+      toast.error(errorMessage);
+      throw new Error(errorMessage);
     } finally {
       setIsLoading(false);
     }
