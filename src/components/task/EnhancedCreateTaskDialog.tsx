@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -11,6 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
+import TimeSelector from "@/components/ui/time-selector";
 import { 
   CalendarIcon, 
   Clock, 
@@ -277,8 +277,8 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
                     </div>
                     
                     {/* Date and Time Picker */}
-                    <div className="grid grid-cols-3 gap-2">
-                      <div className="col-span-2">
+                    <div className="grid grid-cols-1 gap-4">
+                      <div>
                         <Popover>
                           <PopoverTrigger asChild>
                             <Button
@@ -299,16 +299,12 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
                           </PopoverContent>
                         </Popover>
                       </div>
-                      <div className="col-span-1">
-                        <div className="relative">
-                          <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                          <Input
-                            type="time"
-                            value={timeInput}
-                            onChange={(e) => setTimeInput(e.target.value)}
-                            className="pl-10 h-12 border-2 focus:border-primary"
-                          />
-                        </div>
+                      <div>
+                        <TimeSelector
+                          value={timeInput}
+                          onChange={setTimeInput}
+                          placeholder="Select time"
+                        />
                       </div>
                     </div>
                   </div>
