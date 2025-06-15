@@ -4,17 +4,50 @@ import { User } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Users, Mail } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Users, Mail, RefreshCw, AlertTriangle } from 'lucide-react';
 
 interface ProjectTeamMembersSectionProps {
   teamMembers: User[];
   isLoading: boolean;
+  error?: string;
+  onRetry?: () => void;
 }
 
 const ProjectTeamMembersSection: React.FC<ProjectTeamMembersSectionProps> = ({
   teamMembers,
-  isLoading
+  isLoading,
+  error,
+  onRetry
 }) => {
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Team Members
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-6 space-y-4">
+            <AlertTriangle className="h-12 w-12 text-amber-500 mx-auto" />
+            <div>
+              <p className="text-sm text-muted-foreground mb-2">Failed to load team members</p>
+              <p className="text-xs text-muted-foreground">{error}</p>
+            </div>
+            {onRetry && (
+              <Button variant="outline" size="sm" onClick={onRetry}>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Try Again
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (isLoading) {
     return (
       <Card>
@@ -25,7 +58,12 @@ const ProjectTeamMembersSection: React.FC<ProjectTeamMembersSectionProps> = ({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-4">Loading team members...</div>
+          <div className="text-center py-4">
+            <div className="flex items-center justify-center gap-2">
+              <RefreshCw className="h-4 w-4 animate-spin" />
+              Loading team members...
+            </div>
+          </div>
         </CardContent>
       </Card>
     );

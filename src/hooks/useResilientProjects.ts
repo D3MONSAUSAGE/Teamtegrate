@@ -27,6 +27,7 @@ export const useResilientProjects = (options: UseResilientProjectsOptions = {}) 
   // Cache successful data
   useEffect(() => {
     if (projects.length > 0 && !loading && !error) {
+      console.log('useResilientProjects: Caching successful project data:', projects.length);
       setCachedProjects(projects);
       setIsShowingCached(false);
       setRetryCount(0);
@@ -39,6 +40,7 @@ export const useResilientProjects = (options: UseResilientProjectsOptions = {}) 
             data: projects,
             timestamp: Date.now()
           }));
+          console.log('useResilientProjects: Projects cached to localStorage');
         } catch (e) {
           console.warn('Failed to cache projects to localStorage:', e);
         }
@@ -56,9 +58,12 @@ export const useResilientProjects = (options: UseResilientProjectsOptions = {}) 
           const age = Date.now() - timestamp;
           
           if (age < cacheTimeout) {
+            console.log('useResilientProjects: Loading projects from cache due to error');
             setCachedProjects(data);
             setIsShowingCached(true);
             toast.info('Showing cached projects - trying to refresh...');
+          } else {
+            console.log('useResilientProjects: Cached projects too old, not using');
           }
         }
       } catch (e) {
@@ -67,20 +72,23 @@ export const useResilientProjects = (options: UseResilientProjectsOptions = {}) 
     }
   }, [error, cachedProjects.length, enableOfflineMode, cacheTimeout]);
 
-  // Auto-retry on error
+  // Auto-retry on error with exponential backoff
   useEffect(() => {
     if (error && retryCount < retryAttempts) {
+      const delay = Math.min(1000 * Math.pow(2, retryCount), 10000); // Exponential backoff, max 10s
+      console.log(`useResilientProjects: Auto-retrying projects fetch (attempt ${retryCount + 1}/${retryAttempts}) in ${delay}ms`);
+      
       const timeoutId = setTimeout(() => {
-        console.log(`Auto-retrying projects fetch (attempt ${retryCount + 1}/${retryAttempts})`);
         setRetryCount(prev => prev + 1);
         refetch();
-      }, Math.min(1000 * Math.pow(2, retryCount), 10000)); // Exponential backoff, max 10s
+      }, delay);
 
       return () => clearTimeout(timeoutId);
     }
   }, [error, retryCount, retryAttempts, refetch]);
 
   const handleRetry = useCallback(async () => {
+    console.log('useResilientProjects: Manual retry triggered');
     setRetryCount(0);
     setIsShowingCached(false);
     
