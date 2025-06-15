@@ -117,6 +117,20 @@ export const UnifiedDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
     };
   };
 
+  // Transform database user to app User type
+  const transformDbUserToAppUser = (dbUser: any): User => {
+    return {
+      id: String(dbUser.id || ''),
+      email: String(dbUser.email || ''),
+      role: dbUser.role as User['role'],
+      organizationId: String(dbUser.organization_id || ''),
+      name: String(dbUser.name || ''),
+      timezone: String(dbUser.timezone || 'UTC'),
+      createdAt: new Date(dbUser.created_at || new Date()),
+      avatar_url: dbUser.avatar_url || undefined
+    };
+  };
+
   // Unified task fetching
   const {
     data: rawTasks = [],
@@ -207,7 +221,7 @@ export const UnifiedDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   // Unified user fetching
   const {
-    data: users = [],
+    data: rawUsers = [],
     isLoading: isLoadingUsers,
     error: usersError,
     refetch: refetchUsersQuery
@@ -243,6 +257,11 @@ export const UnifiedDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
       return failureCount < 2;
     }
   });
+
+  // Transform raw users to app format
+  const users = useMemo(() => {
+    return rawUsers.map(transformDbUserToAppUser);
+  }, [rawUsers]);
 
   // Coordinated refetch functions
   const refetchTasks = useCallback(async () => {

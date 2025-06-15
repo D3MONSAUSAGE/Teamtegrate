@@ -56,7 +56,8 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [dailyScore, setDailyScore] = useState<DailyScore>({
     completedTasks: 0,
     totalTasks: 0,
-    score: 0
+    percentage: 0,
+    date: new Date()
   });
 
   // Sync with unified data
@@ -65,26 +66,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, [unifiedTasks]);
 
   useEffect(() => {
-    // Transform unified projects to Project type
-    const transformedProjects: Project[] = unifiedProjects.map(p => ({
-      id: p.id,
-      title: p.title || '',
-      description: p.description || '',
-      startDate: p.start_date ? new Date(p.start_date) : new Date(),
-      endDate: p.end_date ? new Date(p.end_date) : new Date(),
-      status: p.status as any,
-      budget: p.budget || 0,
-      budgetSpent: p.budget_spent || 0,
-      managerId: p.manager_id || '',
-      teamMemberIds: p.team_members || [],
-      tags: p.tags || [],
-      createdAt: p.created_at ? new Date(p.created_at) : new Date(),
-      updatedAt: p.updated_at ? new Date(p.updated_at) : new Date(),
-      isCompleted: p.is_completed || false,
-      organizationId: p.organization_id,
-      tasksCount: p.tasks_count || 0
-    }));
-    setProjects(transformedProjects);
+    setProjects(unifiedProjects);
   }, [unifiedProjects]);
 
   // Calculate daily score
@@ -100,12 +82,13 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     const completed = todayTasks.filter(task => task.status === 'Completed').length;
     const total = todayTasks.length;
-    const score = total > 0 ? Math.round((completed / total) * 100) : 0;
+    const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
     
     setDailyScore({
       completedTasks: completed,
       totalTasks: total,
-      score
+      percentage,
+      date: today
     });
   }, [tasks]);
 
@@ -258,7 +241,8 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         userId: user.id,
         userName: user.name || user.email,
         text: comment,
-        createdAt: new Date()
+        createdAt: new Date(),
+        organizationId: user.organizationId
       };
 
       setTasks(prev => prev.map(task => 
