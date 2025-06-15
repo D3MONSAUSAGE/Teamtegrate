@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -125,6 +124,10 @@ export const useInvoiceActions = () => {
       // For PDFs, open in new tab
       if (invoice.file_type === 'application/pdf') {
         window.open(data.signedUrl, '_blank');
+        toast({
+          title: "PDF Opened",
+          description: `${invoice.file_name} opened in new tab`,
+        });
         return;
       }
 

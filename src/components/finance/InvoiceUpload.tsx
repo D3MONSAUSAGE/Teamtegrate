@@ -1,4 +1,3 @@
-
 import React, { useCallback, useState, useRef } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -87,7 +86,15 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
       }
 
       console.log('Invoice uploaded successfully');
-      toast.success('Invoice uploaded successfully');
+      
+      // Enhanced success feedback
+      toast.success(
+        `Invoice "${metadata.invoiceNumber}" uploaded successfully!`,
+        {
+          description: `File: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`,
+          duration: 4000,
+        }
+      );
       
       // Reset form
       setInvoiceNumber('');
