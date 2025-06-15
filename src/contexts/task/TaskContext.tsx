@@ -1,16 +1,16 @@
-
 import React, {
   createContext,
   useContext,
   useState,
   useCallback,
 } from 'react';
-import { Task, TaskStatus, Project } from '@/types';
+import { Task, TaskStatus, Project, DailyScore } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useProjects } from '@/hooks/useProjects';
+import { calculateDailyScore } from './taskMetrics';
 
 interface TaskContextType {
   tasks: Task[];
@@ -22,7 +22,7 @@ interface TaskContextType {
   updateTaskStatus: (id: string, status: TaskStatus) => Promise<void>;
   assignTaskToUser: (taskId: string, userId: string, userName: string) => Promise<void>;
   addCommentToTask: (taskId: string, comment: string) => Promise<void>;
-  dailyScore: number;
+  dailyScore: DailyScore;
   
   // Project operations
   projects: Project[];
@@ -44,8 +44,10 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [dailyScore] = useState(85); // Mock daily score for now
   const { user } = useAuth();
+
+  // Calculate daily score from tasks
+  const dailyScore = calculateDailyScore(tasks);
 
   const addTask = async (taskData: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
     if (!user?.id) {

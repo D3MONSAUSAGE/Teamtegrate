@@ -1,6 +1,6 @@
 
 import { createContext, useContext } from 'react';
-import { Task, Project } from '@/types';
+import { Task, Project, DailyScore } from '@/types';
 
 export interface TaskContextType {
   tasks: Task[];
@@ -14,7 +14,7 @@ export interface TaskContextType {
   updateTaskStatus: (taskId: string, status: Task['status']) => Promise<void>;
   assignTaskToUser: (taskId: string, userId: string, userName: string) => Promise<void>;
   addCommentToTask: (taskId: string, comment: string) => Promise<void>;
-  dailyScore: number;
+  dailyScore: DailyScore;
   
   projects: Project[];
   projectsLoading: boolean;
