@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider } from './contexts/AuthContext'
@@ -9,7 +8,7 @@ import NetworkPerformanceMonitor from '@/components/debug/NetworkPerformanceMoni
 import { Toaster } from '@/components/ui/toaster';
 
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import AppLayout from './components/layout/AppLayout';
+import AppLayout from './components/AppLayout';
 
 // --- Page components ---
 import Index from './pages/Index';
