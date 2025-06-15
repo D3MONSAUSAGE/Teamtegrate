@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { Task, Project, User, TaskStatus, DailyScore } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
@@ -137,7 +136,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       if (error) throw error;
 
-      // Add to local state
+      // Add to local state immediately for optimistic updates
       const newTask: Task = {
         ...taskData,
         id: newTaskId,
@@ -148,6 +147,9 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       
       setTasks(prev => [...prev, newTask]);
       toast.success('Task created successfully');
+      
+      // Trigger refetch to ensure data consistency
+      await refetchTasks();
     } catch (error) {
       console.error('Error creating task:', error);
       toast.error('Failed to create task');
@@ -178,12 +180,15 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       if (error) throw error;
 
-      // Update local state
+      // Update local state immediately for optimistic updates
       setTasks(prev => prev.map(task => 
         task.id === taskId ? { ...task, ...updates, updatedAt: new Date() } : task
       ));
       
       toast.success('Task updated successfully');
+      
+      // Trigger refetch to ensure data consistency
+      await refetchTasks();
     } catch (error) {
       console.error('Error updating task:', error);
       toast.error('Failed to update task');
@@ -201,6 +206,9 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       setTasks(prev => prev.filter(task => task.id !== taskId));
       toast.success('Task deleted successfully');
+      
+      // Trigger refetch to ensure data consistency
+      await refetchTasks();
     } catch (error) {
       console.error('Error deleting task:', error);
       toast.error('Failed to delete task');
@@ -314,6 +322,9 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       setProjects(prev => [...prev, newProject]);
       toast.success('Project created successfully');
+      
+      // Trigger refetch to ensure data consistency
+      await refetchProjects();
       return newProject;
     } catch (error) {
       console.error('Error creating project:', error);
@@ -349,6 +360,9 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       ));
       
       toast.success('Project updated successfully');
+      
+      // Trigger refetch to ensure data consistency
+      await refetchProjects();
     } catch (error) {
       console.error('Error updating project:', error);
       toast.error('Failed to update project');
@@ -366,6 +380,9 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       setProjects(prev => prev.filter(project => project.id !== projectId));
       toast.success('Project deleted successfully');
+      
+      // Trigger refetch to ensure data consistency
+      await refetchProjects();
     } catch (error) {
       console.error('Error deleting project:', error);
       toast.error('Failed to delete project');

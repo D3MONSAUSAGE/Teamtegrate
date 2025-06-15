@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { format } from 'date-fns';
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -28,14 +28,21 @@ const TaskDeadlinePicker: React.FC<TaskDeadlinePickerProps> = ({
   onTimeChange,
   error
 }) => {
-  // Add state for PopOver visibility (optional for controlled behavior)
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const timeInputRef = useRef<HTMLInputElement>(null);
   
   const formattedDate = date ? format(date, "PPP") : "Select date";
 
-  // Create a handler function that properly manages the time input
   const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onTimeChange(e);
+  };
+
+  const handleTimeClick = () => {
+    // Force focus and show time picker on mobile/desktop
+    if (timeInputRef.current) {
+      timeInputRef.current.focus();
+      timeInputRef.current.showPicker?.();
+    }
   };
 
   return (
@@ -61,7 +68,6 @@ const TaskDeadlinePicker: React.FC<TaskDeadlinePickerProps> = ({
               selected={date}
               onSelect={(selectedDate) => {
                 onDateChange(selectedDate);
-                // Optional: close calendar after selection
                 setIsCalendarOpen(false);
               }}
               initialFocus
@@ -70,13 +76,19 @@ const TaskDeadlinePicker: React.FC<TaskDeadlinePickerProps> = ({
           </PopoverContent>
         </Popover>
         
-        <div className="flex items-center">
-          <Clock className="mr-2 h-4 w-4" />
+        <div className="flex items-center relative">
+          <Clock className="absolute left-2 h-4 w-4 z-10 pointer-events-none text-muted-foreground" />
           <Input
+            ref={timeInputRef}
             type="time"
             value={timeInput}
             onChange={handleTimeChange}
-            className="w-full"
+            onClick={handleTimeClick}
+            className="w-full pl-8 cursor-pointer"
+            placeholder="Select time"
+            // Add these attributes for better mobile support
+            step="60"
+            autoComplete="off"
           />
         </div>
       </div>

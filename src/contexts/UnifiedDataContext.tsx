@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Task, Project, User } from '@/types';
@@ -162,8 +161,8 @@ export const UnifiedDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
       );
     },
     enabled: !!user?.organizationId,
-    staleTime: 1000 * 60 * 2, // 2 minutes
-    refetchOnWindowFocus: false,
+    staleTime: 1000 * 30, // Reduced from 2 minutes to 30 seconds for faster updates
+    refetchOnWindowFocus: true, // Changed to true for better real-time feel
     retry: (failureCount, error) => {
       if (networkStatus === 'offline') return false;
       return failureCount < 2;
@@ -206,8 +205,8 @@ export const UnifiedDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
       );
     },
     enabled: !!user?.organizationId,
-    staleTime: 1000 * 60 * 5, // 5 minutes (projects change less frequently)
-    refetchOnWindowFocus: false,
+    staleTime: 1000 * 60 * 2, // Reduced from 5 minutes to 2 minutes
+    refetchOnWindowFocus: true, // Changed to true for better real-time feel
     retry: (failureCount, error) => {
       if (networkStatus === 'offline') return false;
       return failureCount < 2;
@@ -263,14 +262,18 @@ export const UnifiedDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
     return rawUsers.map(transformDbUserToAppUser);
   }, [rawUsers]);
 
-  // Coordinated refetch functions
+  // Coordinated refetch functions with query invalidation
   const refetchTasks = useCallback(async () => {
+    // Invalidate and refetch tasks
+    await queryClient.invalidateQueries({ queryKey: ['unified-tasks', user?.organizationId] });
     await refetchTasksQuery();
-  }, [refetchTasksQuery]);
+  }, [refetchTasksQuery, queryClient, user?.organizationId]);
 
   const refetchProjects = useCallback(async () => {
+    // Invalidate and refetch projects
+    await queryClient.invalidateQueries({ queryKey: ['unified-projects', user?.organizationId] });
     await refetchProjectsQuery();
-  }, [refetchProjectsQuery]);
+  }, [refetchProjectsQuery, queryClient, user?.organizationId]);
 
   const refetchUsers = useCallback(async () => {
     await refetchUsersQuery();
@@ -283,6 +286,11 @@ export const UnifiedDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
 
     try {
+      // Invalidate all queries first
+      await queryClient.invalidateQueries({ queryKey: ['unified-tasks', user?.organizationId] });
+      await queryClient.invalidateQueries({ queryKey: ['unified-projects', user?.organizationId] });
+      await queryClient.invalidateQueries({ queryKey: ['unified-users', user?.organizationId] });
+      
       await Promise.allSettled([
         refetchTasksQuery(),
         refetchProjectsQuery(),
@@ -293,7 +301,7 @@ export const UnifiedDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
       console.error('Error refreshing data:', error);
       toast.error('Failed to refresh some data');
     }
-  }, [refetchTasksQuery, refetchProjectsQuery, refetchUsersQuery, networkStatus]);
+  }, [refetchTasksQuery, refetchProjectsQuery, refetchUsersQuery, networkStatus, queryClient, user?.organizationId]);
 
   const value = useMemo(() => ({
     // Data
