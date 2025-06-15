@@ -8,7 +8,7 @@ interface ConnectionStatus {
   retryCount: number;
 }
 
-export const useConnectionStatus = (): ConnectionStatus => {
+export const useConnectionStatus = () => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [isConnecting, setIsConnecting] = useState(false);
   const [lastConnected, setLastConnected] = useState<Date | null>(null);
@@ -77,6 +77,7 @@ export const useConnectionStatus = (): ConnectionStatus => {
     isOnline,
     isConnecting,
     lastConnected,
-    retryCount
+    retryCount,
+    setConnecting: setIsConnecting
   };
 };
