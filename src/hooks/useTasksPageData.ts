@@ -17,7 +17,7 @@ export const useTasksPageData = () => {
         throw new Error('User must be authenticated and belong to an organization');
       }
 
-      console.log('useTasksPageData: Fetching tasks for user:', {
+      console.log('useTasksPageData: Fetching RESTRICTED tasks for user:', {
         userId: user.id,
         organizationId: user.organizationId,
         role: user.role
@@ -27,7 +27,7 @@ export const useTasksPageData = () => {
       localStorage.removeItem('tasks-cache');
       sessionStorage.clear();
 
-      // Fetch tasks using new RLS policies - only authorized tasks will be returned
+      // Fetch tasks using STRICT RLS policies - only directly assigned or created tasks
       const { data: tasksData, error: tasksError } = await supabase
         .from('tasks')
         .select('*')
@@ -38,10 +38,10 @@ export const useTasksPageData = () => {
         throw new Error(`Failed to fetch authorized tasks: ${tasksError.message}`);
       }
 
-      console.log(`useTasksPageData: RLS returned ${tasksData?.length || 0} authorized tasks for user ${user.id} (${user.role})`);
+      console.log(`useTasksPageData: STRICT RLS returned ${tasksData?.length || 0} directly accessible tasks for user ${user.id} (${user.role})`);
 
       if (!tasksData || tasksData.length === 0) {
-        console.log('useTasksPageData: No authorized tasks found - this is expected behavior for users without access');
+        console.log('useTasksPageData: No directly assigned or created tasks found - this is expected with strict RLS');
         return [];
       }
 
@@ -63,14 +63,20 @@ export const useTasksPageData = () => {
         });
       }
 
-      // Process and validate each task
+      // Process and validate each task with STRICT access logging
       const processedTasks = tasksData.map(task => {
-        console.log('useTasksPageData: Processing authorized task:', {
+        console.log('useTasksPageData: Processing STRICTLY authorized task:', {
           taskId: task.id,
           taskTitle: task.title,
-          userId: user.id,
-          taskOrg: task.organization_id,
-          userOrg: user.organizationId
+          taskCreator: task.user_id,
+          taskAssignedTo: task.assigned_to_id,
+          taskAssignedToIds: task.assigned_to_ids,
+          currentUserId: user.id,
+          userRole: user.role,
+          accessReason: task.user_id === user.id ? 'CREATOR' : 
+                       task.assigned_to_id === user.id ? 'SINGLE_ASSIGNEE' :
+                       (task.assigned_to_ids && task.assigned_to_ids.includes(user.id)) ? 'MULTI_ASSIGNEE' :
+                       user.role === 'admin' || user.role === 'superadmin' ? 'ADMIN_ACCESS' : 'UNKNOWN'
         });
 
         // Security check: Ensure task belongs to user's organization
@@ -79,6 +85,22 @@ export const useTasksPageData = () => {
             taskId: task.id,
             taskOrg: task.organization_id,
             userOrg: user.organizationId
+          });
+          return null; // Filter out unauthorized tasks
+        }
+
+        // Additional security check: Verify user should have access to this task
+        const hasDirectAccess = 
+          task.user_id === user.id || // Task creator
+          task.assigned_to_id === user.id || // Single assignee
+          (task.assigned_to_ids && task.assigned_to_ids.includes(user.id)) || // Multi assignee
+          user.role === 'admin' || user.role === 'superadmin'; // Admin access
+
+        if (!hasDirectAccess) {
+          console.error('useTasksPageData: SECURITY VIOLATION - User should not have access to this task:', {
+            taskId: task.id,
+            userId: user.id,
+            userRole: user.role
           });
           return null; // Filter out unauthorized tasks
         }
@@ -147,11 +169,12 @@ export const useTasksPageData = () => {
         };
       }).filter(task => task !== null); // Remove any null tasks (security violations)
 
-      console.log('useTasksPageData: Successfully processed authorized tasks:', {
+      console.log('useTasksPageData: Successfully processed STRICTLY authorized tasks:', {
         originalCount: tasksData.length,
         processedCount: processedTasks.length,
         userId: user.id,
-        role: user.role
+        role: user.role,
+        accessType: 'STRICT_RLS_ONLY_ASSIGNED_OR_CREATED'
       });
 
       return flatTasksToTasks(processedTasks);

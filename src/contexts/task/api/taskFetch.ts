@@ -15,7 +15,7 @@ export const fetchTasks = async (
   setTasks: (tasks: Task[]) => void
 ): Promise<void> => {
   try {
-    console.log('fetchTasks: Starting RLS-secured task fetch for user:', { 
+    console.log('fetchTasks: Starting STRICT RLS-secured task fetch for user:', { 
       id: user?.id, 
       organizationId: user?.organization_id,
       role: user?.role 
@@ -37,8 +37,8 @@ export const fetchTasks = async (
     localStorage.removeItem('tasks-cache');
     sessionStorage.clear();
     
-    // Fetch tasks with RLS policies - will only return authorized tasks
-    console.log('fetchTasks: Executing RLS-secured tasks query...');
+    // Fetch tasks with STRICT RLS policies - will only return directly assigned or created tasks
+    console.log('fetchTasks: Executing STRICT RLS-secured tasks query...');
     const { data: tasksData, error: tasksError } = await supabase
       .from('tasks')
       .select('*')
@@ -50,10 +50,11 @@ export const fetchTasks = async (
       return;
     }
 
-    console.log(`fetchTasks: RLS returned ${tasksData?.length || 0} authorized tasks from database for user ${user.id} (${user.role})`);
+    console.log(`fetchTasks: STRICT RLS returned ${tasksData?.length || 0} directly accessible tasks from database for user ${user.id} (${user.role})`);
     
-    // Security validation: Ensure all returned tasks belong to user's organization
+    // Security validation: Ensure all returned tasks should be accessible by this user
     const validatedTasks = tasksData?.filter(dbTask => {
+      // Check organization match
       if (dbTask.organization_id !== user.organization_id) {
         console.error('fetchTasks: SECURITY VIOLATION - Task from different organization leaked:', {
           taskId: dbTask.id,
@@ -62,10 +63,30 @@ export const fetchTasks = async (
         });
         return false;
       }
+
+      // Check if user should have access to this task
+      const hasDirectAccess = 
+        dbTask.user_id === user.id || // Task creator
+        dbTask.assigned_to_id === user.id || // Single assignee
+        (dbTask.assigned_to_ids && dbTask.assigned_to_ids.includes(user.id)) || // Multi assignee
+        user.role === 'admin' || user.role === 'superadmin'; // Admin access
+
+      if (!hasDirectAccess) {
+        console.error('fetchTasks: SECURITY VIOLATION - User should not have access to this task:', {
+          taskId: dbTask.id,
+          userId: user.id,
+          userRole: user.role,
+          taskCreator: dbTask.user_id,
+          taskAssignedTo: dbTask.assigned_to_id,
+          taskAssignedToIds: dbTask.assigned_to_ids
+        });
+        return false;
+      }
+
       return true;
     }) || [];
 
-    console.log(`fetchTasks: Security validation passed for ${validatedTasks.length} tasks`);
+    console.log(`fetchTasks: Security validation passed for ${validatedTasks.length} STRICTLY accessible tasks`);
     
     // Fetch comments with explicit column selection (only from same organization)
     const { data: commentsData, error: commentsError } = await supabase
@@ -100,13 +121,20 @@ export const fetchTasks = async (
     
     if (validatedTasks.length > 0) {
       for (const dbTask of validatedTasks) {
-        console.log('fetchTasks: Processing authorized task:', {
+        const accessReason = 
+          dbTask.user_id === user.id ? 'CREATOR' :
+          dbTask.assigned_to_id === user.id ? 'SINGLE_ASSIGNEE' :
+          (dbTask.assigned_to_ids && dbTask.assigned_to_ids.includes(user.id)) ? 'MULTI_ASSIGNEE' :
+          user.role === 'admin' || user.role === 'superadmin' ? 'ADMIN_ACCESS' : 'UNKNOWN';
+
+        console.log('fetchTasks: Processing STRICTLY authorized task:', {
           taskId: dbTask.id,
           taskTitle: dbTask.title,
           assignedTo: dbTask.assigned_to_id,
           projectId: dbTask.project_id,
           userId: user.id,
-          userRole: user.role
+          userRole: user.role,
+          accessReason: accessReason
         });
         
         // Explicit type validation
@@ -192,21 +220,22 @@ export const fetchTasks = async (
       }
     }
 
-    console.log(`fetchTasks: Successfully processed ${transformedTasks.length} authorized tasks for user ${user.id} (${user.role})`);
+    console.log(`fetchTasks: Successfully processed ${transformedTasks.length} STRICTLY authorized tasks for user ${user.id} (${user.role})`);
     
     // Additional security log
-    console.log('fetchTasks: Final security summary:', {
+    console.log('fetchTasks: Final STRICT security summary:', {
       userId: user.id,
       userRole: user.role,
       userOrg: user.organization_id,
       tasksReturned: transformedTasks.length,
+      accessType: 'STRICT_RLS_ONLY_ASSIGNED_OR_CREATED',
       timestamp: new Date().toISOString()
     });
     
     setTasks(transformedTasks);
     
   } catch (error: any) {
-    console.error('fetchTasks: Critical error during RLS-secured task fetch:', error);
+    console.error('fetchTasks: Critical error during STRICT RLS-secured task fetch:', error);
     toast.error('Failed to load authorized tasks: ' + error.message);
     setTasks([]);
   }
