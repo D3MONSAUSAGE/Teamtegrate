@@ -66,7 +66,7 @@ const TaskDetailsCard: React.FC<TaskDetailsCardProps> = ({
           {form.formState.errors.title && (
             <p className="text-sm text-destructive flex items-center gap-1">
               <AlertCircle className="h-4 w-4" />
-              {form.formState.errors.title.message}
+              {String(form.formState.errors.title.message || 'Title is required')}
             </p>
           )}
         </div>
