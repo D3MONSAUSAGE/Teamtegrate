@@ -90,6 +90,15 @@ export class TaskAssignmentService {
     }
   }
 
+  static getTaskAssignments(task: Task) {
+    return {
+      assignedToIds: task.assignedToIds || [],
+      assignedToNames: task.assignedToNames || [],
+      assignedToId: task.assignedToId,
+      assignedToName: task.assignedToName
+    };
+  }
+
   static getAssignmentDisplay(task: Task): string {
     if (!task.assignedToIds || task.assignedToIds.length === 0) {
       return 'Unassigned';

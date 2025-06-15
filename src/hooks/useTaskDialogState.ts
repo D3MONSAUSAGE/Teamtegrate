@@ -50,7 +50,7 @@ export const useTaskDialogState = ({
         setTimeInput(deadline.toTimeString().slice(0, 5));
       }
 
-      // Set assignments using unified service
+      // Set assignments using the correct service method
       const assignments = TaskAssignmentService.getTaskAssignments(editingTask);
       if (assignments.assignedToIds && assignments.assignedToIds.length > 0) {
         const assignedUsers = users.filter(user => 

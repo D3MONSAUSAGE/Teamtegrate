@@ -24,16 +24,39 @@ export const TaskProjectField: React.FC<TaskProjectFieldProps> = ({
 }) => {
   const { user } = useAuth();
   
-  // Filter projects to only show those the user has access to
-  const accessibleProjects = projects.filter(project => {
-    if (!user) return false;
+  // Superadmins and admins can see all projects, others see only projects they have access to
+  const accessibleProjects = React.useMemo(() => {
+    if (!user) return [];
     
-    const isManager = project.managerId === user.id;
-    const isTeamMember = Array.isArray(project.teamMemberIds) && 
-      project.teamMemberIds.includes(user.id); // Changed from teamMembers to teamMemberIds
+    console.log('TaskProjectField: Filtering projects for user:', {
+      userId: user.id,
+      userRole: user.role,
+      totalProjects: projects.length,
+      projectTitles: projects.map(p => p.title)
+    });
     
-    return isManager || isTeamMember;
-  });
+    // Superadmins and admins can access all projects in their organization
+    if (user.role === 'superadmin' || user.role === 'admin') {
+      console.log('TaskProjectField: User is superadmin/admin, showing all projects:', projects.length);
+      return projects;
+    }
+    
+    // For other users, filter based on management or team membership
+    const filtered = projects.filter(project => {
+      const isManager = project.managerId === user.id;
+      const isTeamMember = Array.isArray(project.teamMemberIds) && 
+        project.teamMemberIds.includes(user.id);
+      
+      return isManager || isTeamMember;
+    });
+    
+    console.log('TaskProjectField: Filtered projects for non-admin user:', {
+      filteredCount: filtered.length,
+      filteredTitles: filtered.map(p => p.title)
+    });
+    
+    return filtered;
+  }, [projects, user]);
 
   return (
     <div>
@@ -58,6 +81,11 @@ export const TaskProjectField: React.FC<TaskProjectFieldProps> = ({
           </SelectGroup>
         </SelectContent>
       </Select>
+      {accessibleProjects.length === 0 && user?.role !== 'superadmin' && user?.role !== 'admin' && (
+        <p className="text-sm text-muted-foreground mt-1">
+          No projects available. You need to be assigned to a project or create one first.
+        </p>
+      )}
     </div>
   );
 };
