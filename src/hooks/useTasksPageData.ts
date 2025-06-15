@@ -158,7 +158,7 @@ export const useTasksPageData = () => {
     },
     enabled: !!user?.organizationId && !!user?.id,
     staleTime: 0, // Force fresh data
-    cacheTime: 0, // Don't cache
+    gcTime: 0, // Don't cache (renamed from cacheTime)
     retry: (failureCount, error) => {
       if (failureCount >= 2) return false;
       if (error.message.includes('organization') || error.message.includes('permission')) return false;
