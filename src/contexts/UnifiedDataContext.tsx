@@ -130,26 +130,28 @@ export const UnifiedDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
     };
   };
 
-  // Unified task fetching with more aggressive real-time settings
+  // Unified task fetching with user-specific filtering
   const {
     data: rawTasks = [],
     isLoading: isLoadingTasks,
     error: tasksError,
     refetch: refetchTasksQuery
   } = useQuery({
-    queryKey: ['unified-tasks', user?.organizationId],
+    queryKey: ['unified-tasks', user?.organizationId, user?.id],
     queryFn: async () => {
-      if (!user?.organizationId) return [];
+      if (!user?.organizationId || !user?.id) return [];
       
       return await networkManager.withNetworkResilience(
         'fetch-tasks',
         async () => {
           setRequestsInFlight(prev => prev + 1);
           try {
+            // Filter tasks to only show those created by or assigned to the current user
             const { data, error } = await supabase
               .from('tasks')
               .select('*')
               .eq('organization_id', user.organizationId)
+              .or(`user_id.eq.${user.id},assigned_to_id.eq.${user.id},assigned_to_ids.cs.{${user.id}}`)
               .order('created_at', { ascending: false });
 
             if (error) throw error;
@@ -160,7 +162,7 @@ export const UnifiedDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
         }
       );
     },
-    enabled: !!user?.organizationId,
+    enabled: !!user?.organizationId && !!user?.id,
     staleTime: 0, // Always consider data stale for real-time updates
     gcTime: 60000, // Keep in cache for 1 minute
     refetchOnWindowFocus: true,
@@ -268,7 +270,7 @@ export const UnifiedDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
   // Enhanced coordinated refetch functions with immediate invalidation
   const refetchTasks = useCallback(async () => {
     // Immediately invalidate and refetch tasks
-    await queryClient.invalidateQueries({ queryKey: ['unified-tasks', user?.organizationId] });
+    await queryClient.invalidateQueries({ queryKey: ['unified-tasks', user?.organizationId, user?.id] });
     await queryClient.invalidateQueries({ queryKey: ['tasks', user?.organizationId, user?.id] });
     await refetchTasksQuery();
   }, [refetchTasksQuery, queryClient, user?.organizationId, user?.id]);
@@ -291,7 +293,7 @@ export const UnifiedDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
     try {
       // Invalidate all queries first for immediate UI update
-      await queryClient.invalidateQueries({ queryKey: ['unified-tasks', user?.organizationId] });
+      await queryClient.invalidateQueries({ queryKey: ['unified-tasks', user?.organizationId, user?.id] });
       await queryClient.invalidateQueries({ queryKey: ['unified-projects', user?.organizationId] });
       await queryClient.invalidateQueries({ queryKey: ['unified-users', user?.organizationId] });
       await queryClient.invalidateQueries({ queryKey: ['tasks', user?.organizationId, user?.id] });
