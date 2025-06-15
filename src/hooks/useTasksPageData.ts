@@ -16,9 +16,9 @@ export const useTasksPageData = () => {
         throw new Error('User must belong to an organization');
       }
 
-      console.log('useTasksPageData: Fetching authorized tasks for organization:', user.organizationId);
+      console.log('useTasksPageData: Fetching tasks for organization:', user.organizationId);
 
-      // With new RLS policies, this query will only return authorized tasks
+      // The new RLS policies will automatically filter to only return authorized tasks
       const { data: tasksData, error: tasksError } = await supabase
         .from('tasks')
         .select('*')
@@ -26,38 +26,10 @@ export const useTasksPageData = () => {
 
       if (tasksError) {
         console.error('useTasksPageData: Error fetching tasks:', tasksError);
-        console.error('Error details:', {
-          message: tasksError.message,
-          code: tasksError.code,
-          details: tasksError.details,
-          hint: tasksError.hint
-        });
         throw new Error(`Failed to fetch tasks: ${tasksError.message}`);
       }
 
-      console.log(`useTasksPageData: Successfully fetched ${tasksData?.length || 0} authorized tasks from database`);
-
-      // Log access for security audit
-      if (tasksData && tasksData.length > 0) {
-        console.log('useTasksPageData: Security audit - Task access granted:', {
-          userId: user.id,
-          userRole: user.role,
-          taskCount: tasksData.length,
-          accessType: 'RLS_AUTHORIZED',
-          timestamp: new Date().toISOString()
-        });
-
-        // Call audit logging function
-        try {
-          await supabase.rpc('log_data_access', {
-            table_name: 'tasks',
-            action_type: 'SELECT',
-            record_count: tasksData.length
-          });
-        } catch (auditError) {
-          console.warn('useTasksPageData: Audit logging failed:', auditError);
-        }
-      }
+      console.log(`useTasksPageData: Successfully fetched ${tasksData?.length || 0} authorized tasks`);
 
       if (!tasksData || tasksData.length === 0) {
         console.log('useTasksPageData: No authorized tasks found for user:', user.id);
@@ -82,13 +54,9 @@ export const useTasksPageData = () => {
         });
       }
 
-      // Convert flat tasks to proper Task objects with enhanced assignment processing
+      // Convert flat tasks to proper Task objects
       const processedTasks = tasksData.map(task => {
-        console.log('useTasksPageData: Processing authorized task:', task.id, 'Assignment data:', {
-          assigned_to_id: task.assigned_to_id,
-          assigned_to_ids: task.assigned_to_ids,
-          assigned_to_names: task.assigned_to_names
-        });
+        console.log('useTasksPageData: Processing task:', task.id);
 
         // Process assignment data with proper validation and fallbacks
         let assignedToId = undefined;
@@ -98,7 +66,6 @@ export const useTasksPageData = () => {
 
         // Handle assigned_to_ids array (primary source)
         if (task.assigned_to_ids && Array.isArray(task.assigned_to_ids) && task.assigned_to_ids.length > 0) {
-          // Filter out any null/empty values and convert to strings
           assignedToIds = task.assigned_to_ids
             .filter(id => id && id.toString().trim() !== '')
             .map(id => id.toString());
@@ -116,7 +83,6 @@ export const useTasksPageData = () => {
               if (index < assignedToNames.length && assignedToNames[index]) {
                 return assignedToNames[index];
               }
-              // Fallback to user lookup
               return userLookup.get(id) || 'Unknown User';
             });
           }
@@ -126,31 +92,14 @@ export const useTasksPageData = () => {
             assignedToId = assignedToIds[0];
             assignedToName = assignedToNames[0];
           }
-
-          console.log('useTasksPageData: Processed multi-assignment:', {
-            assignedToIds,
-            assignedToNames,
-            assignedToId,
-            assignedToName
-          });
         }
         // Fallback to single assignment fields (legacy support)
         else if (task.assigned_to_id && task.assigned_to_id.toString().trim() !== '') {
           assignedToId = task.assigned_to_id.toString();
           assignedToIds = [assignedToId];
           
-          // Try to get name from user lookup
           assignedToName = userLookup.get(assignedToId) || 'Assigned User';
           assignedToNames = [assignedToName];
-
-          console.log('useTasksPageData: Processed single assignment:', {
-            assignedToId,
-            assignedToName,
-            assignedToIds,
-            assignedToNames
-          });
-        } else {
-          console.log('useTasksPageData: No assignment found for task:', task.id);
         }
 
         return {
@@ -173,21 +122,12 @@ export const useTasksPageData = () => {
         };
       });
 
-      console.log('useTasksPageData: Successfully processed authorized tasks with assignment data:', 
-        processedTasks.map(t => ({ 
-          id: t.id, 
-          title: t.title, 
-          assignedToName: t.assignedToName,
-          assignedToNames: t.assignedToNames 
-        }))
-      );
-
+      console.log('useTasksPageData: Successfully processed authorized tasks');
       return flatTasksToTasks(processedTasks);
     },
     enabled: !!user?.organizationId,
     staleTime: 1000 * 60 * 5, // 5 minutes
     retry: (failureCount, error) => {
-      // Retry up to 2 times for network errors, but not for auth/permission errors
       if (failureCount >= 2) return false;
       if (error.message.includes('organization') || error.message.includes('permission')) return false;
       return true;

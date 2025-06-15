@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -26,7 +27,7 @@ export function useProjects() {
         organizationId: user.organizationId
       });
       
-      // With new RLS policies, this will only return projects the user is authorized to see
+      // The new RLS policies will automatically filter to only return authorized projects
       const { data, error } = await supabase
         .from('projects')
         .select('*')
@@ -41,40 +42,8 @@ export function useProjects() {
         userId: user.id,
         userRole: user.role,
         projectCount: data?.length || 0,
-        projectIds: data?.map(p => p.id).slice(0, 5) || [],
         timestamp: new Date().toISOString()
       });
-
-      // Log access for security audit
-      if (data && data.length > 0) {
-        console.log('useProjects: Security audit - Project access granted:', {
-          userId: user.id,
-          userRole: user.role,
-          projectsAccessible: data.length,
-          accessReason: user.role === 'admin' || user.role === 'superadmin' 
-            ? 'Admin role access' 
-            : 'Manager or team member access',
-          timestamp: new Date().toISOString()
-        });
-
-        // Call audit logging function
-        try {
-          await supabase.rpc('log_data_access', {
-            table_name: 'projects',
-            action_type: 'SELECT',
-            record_count: data.length
-          });
-        } catch (auditError) {
-          console.warn('useProjects: Audit logging failed:', auditError);
-        }
-      } else {
-        console.log('useProjects: Security audit - No projects accessible:', {
-          userId: user.id,
-          userRole: user.role,
-          reason: 'User is not manager, team member, or admin of any projects',
-          timestamp: new Date().toISOString()
-        });
-      }
 
       // Transform database projects to match Project type
       const transformedProjects: Project[] = data?.map(dbProject => ({
@@ -131,7 +100,6 @@ export function useProjects() {
         orgId: user.organizationId 
       });
       
-      // Transform the data for Supabase insertion
       const supabaseProject = {
         id: uuidv4(),
         title,
@@ -141,7 +109,7 @@ export function useProjects() {
         budget,
         manager_id: user.id,
         organization_id: user.organizationId,
-        team_members: [user.id] // Add creator as team member
+        team_members: [user.id]
       };
       
       const { data, error } = await supabase
@@ -157,7 +125,6 @@ export function useProjects() {
       
       console.log('useProjects: Successfully created project:', data);
       
-      // Transform the created project to match Project type
       const transformedProject: Project = {
         id: data.id,
         title: data.title || '',
@@ -244,11 +211,11 @@ export function useProjects() {
   return {
     projects,
     loading,
-    isLoading: loading, // Add alias for backward compatibility
+    isLoading: loading,
     error,
     fetchProjects,
-    refetch: fetchProjects, // Add alias for backward compatibility
-    refreshProjects: fetchProjects, // Add alias for backward compatibility
+    refetch: fetchProjects,
+    refreshProjects: fetchProjects,
     createProject,
     deleteProject,
     setProjects

@@ -1486,8 +1486,16 @@ export type Database = {
         Args: { manager_role: string; target_role: string }
         Returns: boolean
       }
+      can_user_access_project: {
+        Args: { project_id_param: string; user_id_param: string }
+        Returns: boolean
+      }
       can_user_access_room: {
         Args: { room_id_param: string; user_id_param: string }
+        Returns: boolean
+      }
+      can_user_access_task: {
+        Args: { task_id_param: string; user_id_param: string }
         Returns: boolean
       }
       create_get_all_projects_function: {

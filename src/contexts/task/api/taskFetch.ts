@@ -33,13 +33,6 @@ export const fetchTasks = async (
       return;
     }
     
-    // Check current auth state
-    const { data: { session } } = await supabase.auth.getSession();
-    console.log('fetchTasks: Current auth session:', { 
-      userId: session?.user?.id, 
-      isAuthenticated: !!session?.user 
-    });
-    
     // Fetch tasks with new RLS policies - will only return authorized tasks
     console.log('fetchTasks: Executing tasks query with new RLS policies...');
     const { data: tasksData, error: tasksError } = await supabase
@@ -54,34 +47,6 @@ export const fetchTasks = async (
     }
 
     console.log(`fetchTasks: Successfully fetched ${tasksData?.length || 0} authorized tasks from database`);
-    
-    // Log access for security audit
-    if (tasksData && tasksData.length > 0) {
-      console.log('fetchTasks: Access granted to tasks:', {
-        userId: user.id,
-        userRole: user.role,
-        taskCount: tasksData.length,
-        taskIds: tasksData.map(t => t.id).slice(0, 5), // Log first 5 task IDs
-        timestamp: new Date().toISOString()
-      });
-
-      // Call audit logging function
-      try {
-        await supabase.rpc('log_data_access', {
-          table_name: 'tasks',
-          action_type: 'SELECT',
-          record_count: tasksData.length
-        });
-      } catch (auditError) {
-        console.warn('fetchTasks: Audit logging failed:', auditError);
-      }
-    } else {
-      console.log('fetchTasks: No tasks accessible to user:', {
-        userId: user.id,
-        userRole: user.role,
-        timestamp: new Date().toISOString()
-      });
-    }
     
     // Fetch comments with explicit column selection
     const { data: commentsData, error: commentsError } = await supabase
@@ -208,27 +173,9 @@ export const fetchTasks = async (
     console.log(`fetchTasks: Successfully processed ${transformedTasks.length} authorized tasks for user ${user.id} (${user.role})`);
     setTasks(transformedTasks);
     
-    // Final security audit log
-    console.log('fetchTasks: Security audit - Task access summary:', {
-      userId: user.id,
-      userRole: user.role,
-      organizationId: user.organization_id,
-      authorizedTaskCount: transformedTasks.length,
-      accessType: 'RLS_AUTHORIZED',
-      timestamp: new Date().toISOString()
-    });
-    
   } catch (error: any) {
     console.error('fetchTasks: Critical error during task fetch:', error);
     toast.error('Failed to load tasks: ' + error.message);
     setTasks([]);
-    
-    // Log security incident
-    console.error('fetchTasks: Security incident - Task fetch failed:', {
-      userId: user?.id,
-      userRole: user?.role,
-      error: error.message,
-      timestamp: new Date().toISOString()
-    });
   }
 };
