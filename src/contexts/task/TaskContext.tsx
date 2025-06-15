@@ -3,6 +3,7 @@ import React, {
   useContext,
   useState,
   useCallback,
+  useEffect,
 } from 'react';
 import { Task, TaskStatus, Project, DailyScore } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
@@ -11,11 +12,13 @@ import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useProjects } from '@/hooks/useProjects';
 import { calculateDailyScore } from './taskMetrics';
+import { fetchTasks } from './api/taskFetch';
 
 interface TaskContextType {
   tasks: Task[];
   loading: boolean;
   error: string | null;
+  fetchTasks: () => Promise<void>;
   addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
   updateTask: (taskId: string, task: Partial<Task>) => Promise<void>;
   deleteTask: (id: string) => Promise<void>;
@@ -48,6 +51,43 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Calculate daily score from tasks
   const dailyScore = calculateDailyScore(tasks);
+
+  // Convert SimpleUser to the format expected by fetchTasks
+  const userForFetch = user ? {
+    id: user.id,
+    organization_id: user.organizationId,
+    role: user.role,
+    name: user.name,
+    email: user.email
+  } : null;
+
+  const fetchTasksData = useCallback(async () => {
+    if (!userForFetch) {
+      console.log('TaskContext: No user available for task fetching');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      console.log('TaskContext: Fetching tasks for user:', userForFetch.id);
+      await fetchTasks(userForFetch, setTasks);
+      console.log('TaskContext: Tasks fetched successfully');
+    } catch (err: any) {
+      console.error('TaskContext: Error fetching tasks:', err);
+      setError(err.message);
+      toast.error('Failed to load tasks');
+    } finally {
+      setLoading(false);
+    }
+  }, [userForFetch]);
+
+  // Fetch tasks when user is available
+  useEffect(() => {
+    if (userForFetch) {
+      fetchTasksData();
+    }
+  }, [fetchTasksData]);
 
   const addTask = async (taskData: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
     if (!user?.id) {
@@ -329,6 +369,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({
     tasks,
     loading,
     error,
+    fetchTasks: fetchTasksData,
     addTask,
     updateTask,
     deleteTask,

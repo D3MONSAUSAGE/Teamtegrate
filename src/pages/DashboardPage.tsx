@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { useTask } from '@/contexts/task';
@@ -16,7 +15,6 @@ import TeamManagement from '@/components/dashboard/TeamManagement';
 import { useIsMobile } from '@/hooks/use-mobile';
 import AnalyticsSection from '@/components/dashboard/AnalyticsSection';
 import TimeTracking from '@/components/dashboard/TimeTracking';
-import { flatTasksToTasks, flatProjectsToProjects } from '@/utils/typeConversions';
 
 const DashboardPage = () => {
   const { user } = useAuth();
@@ -27,8 +25,8 @@ const DashboardPage = () => {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const isMobile = useIsMobile();
   
-  // Convert FlatTasks to Tasks for compatibility
-  const convertedTasks = flatTasksToTasks(tasks);
+  // Tasks are already proper Task objects from TaskContext
+  const convertedTasks = tasks;
   
   // Convert Projects to FlatProjects for components that expect FlatProject
   const flatProjects = projects.map(project => ({
