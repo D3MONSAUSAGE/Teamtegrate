@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider } from './contexts/AuthContext'
@@ -19,6 +20,7 @@ import NotFound from './pages/NotFound';
 import DashboardPage from './pages/DashboardPage';
 import TasksPage from './pages/TasksPage';
 import ProjectsPage from './pages/ProjectsPage';
+import OrganizationDashboard from './pages/OrganizationDashboard';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -48,6 +50,7 @@ function App() {
                     <Route index element={<DashboardPage />} />
                     <Route path="tasks" element={<TasksPage />} />
                     <Route path="projects" element={<ProjectsPage />} />
+                    <Route path="organization" element={<OrganizationDashboard />} />
                     {/* Add more nested routes here as needed */}
                   </Route>
 
@@ -66,3 +69,4 @@ function App() {
 }
 
 export default App;
+
