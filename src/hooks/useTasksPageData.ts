@@ -175,23 +175,21 @@ export const useTasksPageData = () => {
       return flatTasksToTasks(processedTasks);
     },
     enabled: !!user?.organizationId && !!user?.id,
-    staleTime: 30000, // Cache for 30 seconds instead of 0 for better performance
-    gcTime: 300000, // Cache for 5 minutes instead of 0
+    staleTime: 30000,
+    gcTime: 300000,
     retry: (failureCount, error: any) => {
       if (failureCount >= 2) return false;
       if (error.message.includes('organization') || error.message.includes('permission')) return false;
-      if (error.message.includes('invalid input syntax for type uuid')) return false; // Don't retry UUID errors
-      if (error.message.includes('set-returning functions are not allowed in WHERE')) return false; // Don't retry RLS transition errors
+      if (error.message.includes('invalid input syntax for type uuid')) return false;
+      if (error.message.includes('set-returning functions are not allowed in WHERE')) return false;
       return true;
     },
   });
 
-  // Only log errors to console, don't show toast messages to users unless it's a critical failure
+  // Silently handle errors - only log to console, no user-facing error messages
   if (error) {
     console.error('useTasksPageData: Tasks query error:', error);
-    
-    // Only show user-facing errors for truly critical failures that prevent app functionality
-    // RLS transition errors and UUID validation errors are handled gracefully and don't need user notification
+    // No toast notifications for users - errors are handled gracefully with fallbacks
   }
 
   return {
