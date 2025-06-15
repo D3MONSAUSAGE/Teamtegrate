@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider } from './contexts/AuthContext'
@@ -43,8 +44,8 @@ function App() {
                   <Route path="/login" element={<LoginPage />} />
 
                   {/* All protected routes - nested inside AppLayout */}
-                  <Route path="/" element={<AppLayout />}>
-                    <Route path="dashboard" element={<DashboardPage />} />
+                  <Route path="/dashboard" element={<AppLayout />}>
+                    <Route index element={<DashboardPage />} />
                     <Route path="tasks" element={<TasksPage />} />
                     <Route path="projects" element={<ProjectsPage />} />
                     {/* Add more nested routes here as needed */}
