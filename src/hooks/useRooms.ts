@@ -12,18 +12,31 @@ export function useRooms() {
   const { user } = useAuth();
 
   const fetchRooms = async () => {
-    if (!user) return;
+    if (!user) {
+      console.log('useRooms: No user, skipping fetch');
+      setLoading(false);
+      return;
+    }
     
     try {
       setLoading(true);
+      console.log('useRooms: Fetching rooms for user:', user.id);
+      
       const { data, error } = await supabase
         .from('chat_rooms')
         .select('*')
         .order('updated_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('useRooms: Error fetching rooms:', error);
+        throw error;
+      }
+
+      console.log('useRooms: Successfully fetched rooms:', data);
       setRooms(data || []);
+      setError(null);
     } catch (err: any) {
+      console.error('useRooms: Fetch error:', err);
       setError(err.message);
       toast.error('Failed to load chat rooms');
     } finally {
@@ -32,9 +45,15 @@ export function useRooms() {
   };
 
   const createRoom = async (name: string, description?: string, isPublic = false) => {
-    if (!user) return;
+    if (!user?.id || !user?.organizationId) {
+      console.error('useRooms: Missing user or organization info:', { userId: user?.id, orgId: user?.organizationId });
+      toast.error('Unable to create room: User not properly authenticated');
+      return;
+    }
 
     try {
+      console.log('useRooms: Creating room:', { name, description, isPublic, userId: user.id, orgId: user.organizationId });
+      
       const { data, error } = await supabase
         .from('chat_rooms')
         .insert({
@@ -47,30 +66,46 @@ export function useRooms() {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('useRooms: Error creating room:', error);
+        throw error;
+      }
       
+      console.log('useRooms: Successfully created room:', data);
       setRooms(prev => [data, ...prev]);
       toast.success('Room created successfully');
       return data;
     } catch (err: any) {
-      toast.error('Failed to create room');
+      console.error('useRooms: Create room error:', err);
+      toast.error(`Failed to create room: ${err.message}`);
       throw err;
     }
   };
 
   const deleteRoom = async (roomId: string) => {
+    if (!user?.id) {
+      toast.error('User not authenticated');
+      return;
+    }
+
     try {
+      console.log('useRooms: Deleting room:', roomId);
+      
       const { error } = await supabase
         .from('chat_rooms')
         .delete()
         .eq('id', roomId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('useRooms: Error deleting room:', error);
+        throw error;
+      }
       
       setRooms(prev => prev.filter(room => room.id !== roomId));
       toast.success('Room deleted successfully');
     } catch (err: any) {
-      toast.error('Failed to delete room');
+      console.error('useRooms: Delete room error:', err);
+      toast.error(`Failed to delete room: ${err.message}`);
       throw err;
     }
   };
@@ -83,15 +118,20 @@ export function useRooms() {
   useEffect(() => {
     if (!user) return;
 
+    console.log('useRooms: Setting up real-time subscription');
     const channel = supabase
       .channel('chat_rooms_changes')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'chat_rooms' },
-        () => fetchRooms()
+        (payload) => {
+          console.log('useRooms: Real-time update received:', payload);
+          fetchRooms();
+        }
       )
       .subscribe();
 
     return () => {
+      console.log('useRooms: Cleaning up real-time subscription');
       supabase.removeChannel(channel);
     };
   }, [user]);

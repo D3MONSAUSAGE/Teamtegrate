@@ -1486,6 +1486,10 @@ export type Database = {
         Args: { manager_role: string; target_role: string }
         Returns: boolean
       }
+      can_user_access_room: {
+        Args: { room_id_param: string; user_id_param: string }
+        Returns: boolean
+      }
       create_get_all_projects_function: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -1594,6 +1598,10 @@ export type Database = {
       }
       is_sole_admin_anywhere: {
         Args: { target_user_id: string }
+        Returns: boolean
+      }
+      is_user_room_admin: {
+        Args: { room_id_param: string; user_id_param: string }
         Returns: boolean
       }
       send_reminders: {
