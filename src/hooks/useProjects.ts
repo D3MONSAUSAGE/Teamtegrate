@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Project } from '@/types';
 import { toast } from 'sonner';
+import { v4 as uuidv4 } from 'uuid';
 
 export function useProjects() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -41,7 +42,7 @@ export function useProjects() {
         userId: user.id,
         userRole: user.role,
         projectCount: data?.length || 0,
-        projectIds: data?.map(p => p.id).slice(0, 5) || [], // Log first 5 project IDs
+        projectIds: data?.map(p => p.id).slice(0, 5) || [],
         timestamp: new Date().toISOString()
       });
 
@@ -120,18 +121,22 @@ export function useProjects() {
         orgId: user.organizationId 
       });
       
+      // Transform the data for Supabase insertion
+      const supabaseProject = {
+        id: uuidv4(),
+        title,
+        description,
+        start_date: startDate,
+        end_date: endDate,
+        budget,
+        manager_id: user.id,
+        organization_id: user.organizationId,
+        team_members: [user.id] // Add creator as team member
+      };
+      
       const { data, error } = await supabase
         .from('projects')
-        .insert({
-          title,
-          description,
-          start_date: startDate,
-          end_date: endDate,
-          budget,
-          manager_id: user.id,
-          organization_id: user.organizationId,
-          team_members: [user.id] // Add creator as team member
-        })
+        .insert([supabaseProject])
         .select()
         .single();
 

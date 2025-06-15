@@ -1,3 +1,4 @@
+
 import React, {
   createContext,
   useContext,
@@ -47,28 +48,29 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({
       return;
     }
 
-    const newTask: Omit<Task, 'id' | 'createdAt' | 'updatedAt'> = {
-      ...taskData,
-      userId: user.id,
-    };
-
     try {
       setLoading(true);
+      
+      // Transform the task data for Supabase insertion
+      const supabaseTask = {
+        id: uuidv4(),
+        user_id: user.id,
+        project_id: taskData.projectId,
+        title: taskData.title,
+        description: taskData.description,
+        deadline: taskData.deadline.toISOString(),
+        priority: taskData.priority,
+        status: taskData.status,
+        cost: taskData.cost,
+        organization_id: user.organizationId,
+        assigned_to_id: taskData.assignedToId,
+        assigned_to_ids: taskData.assignedToIds || [],
+        assigned_to_names: taskData.assignedToNames || []
+      };
+
       const { data, error } = await supabase
         .from('tasks')
-        .insert([
-          {
-            ...newTask,
-            user_id: newTask.userId,
-            project_id: newTask.projectId,
-            title: newTask.title,
-            description: newTask.description,
-            deadline: newTask.deadline,
-            priority: newTask.priority,
-            status: newTask.status,
-            cost: newTask.cost
-          },
-        ])
+        .insert([supabaseTask])
         .select();
 
       if (error) {
@@ -78,24 +80,29 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({
       } else {
         console.log('Task added successfully:', data);
         
-        // Optimistically update the local state
-        setTasks((prevTasks) => [
-          ...prevTasks,
-          {
-            id: data[0].id,
-            userId: data[0].user_id,
-            projectId: data[0].project_id,
-            title: data[0].title,
-            description: data[0].description,
-            deadline: new Date(data[0].deadline),
-            priority: data[0].priority as Task['priority'],
-            status: data[0].status as Task['status'],
-            createdAt: new Date(data[0].created_at),
-            updatedAt: new Date(data[0].updated_at),
-            cost: data[0].cost,
-            organizationId: data[0].organization_id
-          },
-        ]);
+        // Transform back to frontend format and update local state
+        if (data && data.length > 0) {
+          const dbTask = data[0];
+          const transformedTask: Task = {
+            id: dbTask.id,
+            userId: dbTask.user_id,
+            projectId: dbTask.project_id,
+            title: dbTask.title,
+            description: dbTask.description,
+            deadline: new Date(dbTask.deadline),
+            priority: dbTask.priority as Task['priority'],
+            status: dbTask.status as Task['status'],
+            createdAt: new Date(dbTask.created_at),
+            updatedAt: new Date(dbTask.updated_at),
+            cost: dbTask.cost,
+            organizationId: dbTask.organization_id,
+            assignedToId: dbTask.assigned_to_id,
+            assignedToIds: dbTask.assigned_to_ids,
+            assignedToNames: dbTask.assigned_to_names
+          };
+          
+          setTasks((prevTasks) => [...prevTasks, transformedTask]);
+        }
         toast.success('Task added successfully');
       }
     } catch (err: any) {
@@ -115,7 +122,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({
         .update({
           title: task.title,
           description: task.description,
-          deadline: task.deadline,
+          deadline: task.deadline.toISOString(),
           priority: task.priority,
           status: task.status,
           cost: task.cost
@@ -203,7 +210,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({
     loading: projectsLoading, 
     error: projectsError, 
     fetchProjects,
-    refreshProjects, // Add this line
+    refreshProjects,
     createProject,
     deleteProject,
     setProjects
@@ -221,7 +228,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({
     projectsLoading,
     projectsError,
     fetchProjects,
-    refreshProjects, // Add this line
+    refreshProjects,
     createProject,
     deleteProject,
     setProjects,

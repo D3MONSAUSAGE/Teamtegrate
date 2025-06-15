@@ -1,3 +1,4 @@
+
 import { createContext, useContext } from 'react';
 import { Task, Project } from '@/types';
 
@@ -30,3 +31,6 @@ export const useTaskContext = () => {
   }
   return context;
 };
+
+// Export the provider and hook from TaskContext
+export { TaskProvider, useTask } from './TaskContext';
