@@ -1,9 +1,11 @@
+
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { Task, Project, User, TaskStatus, DailyScore } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUnifiedData } from '@/contexts/UnifiedDataContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface TaskContextType {
   tasks: Task[];
@@ -50,6 +52,7 @@ export const useTask = useTaskContext;
 export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user } = useAuth();
   const { tasks: unifiedTasks, projects: unifiedProjects, isLoadingTasks, isLoadingProjects, refetchTasks, refetchProjects } = useUnifiedData();
+  const queryClient = useQueryClient();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [dailyScore, setDailyScore] = useState<DailyScore>({
@@ -148,7 +151,9 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setTasks(prev => [...prev, newTask]);
       toast.success('Task created successfully');
       
-      // Trigger refetch to ensure data consistency
+      // Invalidate queries and trigger refetch to ensure data consistency
+      await queryClient.invalidateQueries({ queryKey: ['unified-tasks', user.organizationId] });
+      await queryClient.invalidateQueries({ queryKey: ['tasks', user.organizationId, user.id] });
       await refetchTasks();
     } catch (error) {
       console.error('Error creating task:', error);
@@ -187,8 +192,12 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       
       toast.success('Task updated successfully');
       
-      // Trigger refetch to ensure data consistency
-      await refetchTasks();
+      // Invalidate queries and trigger refetch to ensure data consistency
+      if (user?.organizationId) {
+        await queryClient.invalidateQueries({ queryKey: ['unified-tasks', user.organizationId] });
+        await queryClient.invalidateQueries({ queryKey: ['tasks', user.organizationId, user.id] });
+        await refetchTasks();
+      }
     } catch (error) {
       console.error('Error updating task:', error);
       toast.error('Failed to update task');
@@ -207,8 +216,12 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setTasks(prev => prev.filter(task => task.id !== taskId));
       toast.success('Task deleted successfully');
       
-      // Trigger refetch to ensure data consistency
-      await refetchTasks();
+      // Invalidate queries and trigger refetch to ensure data consistency
+      if (user?.organizationId) {
+        await queryClient.invalidateQueries({ queryKey: ['unified-tasks', user.organizationId] });
+        await queryClient.invalidateQueries({ queryKey: ['tasks', user.organizationId, user.id] });
+        await refetchTasks();
+      }
     } catch (error) {
       console.error('Error deleting task:', error);
       toast.error('Failed to delete task');
@@ -216,7 +229,50 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const updateTaskStatus = async (taskId: string, status: TaskStatus) => {
-    await updateTask(taskId, { status });
+    try {
+      const now = new Date();
+      const updateData: any = {
+        status,
+        updated_at: now.toISOString()
+      };
+      
+      // If completing the task, set completed_at
+      if (status === 'Completed') {
+        updateData.completed_at = now.toISOString();
+      } else {
+        // If changing from completed to something else, clear completed_at
+        updateData.completed_at = null;
+      }
+
+      const { error } = await supabase
+        .from('tasks')
+        .update(updateData)
+        .eq('id', taskId);
+
+      if (error) throw error;
+
+      // Update local state immediately for optimistic updates
+      setTasks(prev => prev.map(task => 
+        task.id === taskId ? { 
+          ...task, 
+          status, 
+          updatedAt: now,
+          completedAt: status === 'Completed' ? now : undefined
+        } : task
+      ));
+      
+      toast.success(`Task status updated to ${status}`);
+      
+      // Invalidate queries and trigger refetch to ensure data consistency
+      if (user?.organizationId) {
+        await queryClient.invalidateQueries({ queryKey: ['unified-tasks', user.organizationId] });
+        await queryClient.invalidateQueries({ queryKey: ['tasks', user.organizationId, user.id] });
+        await refetchTasks();
+      }
+    } catch (error) {
+      console.error('Error updating task status:', error);
+      toast.error('Failed to update task status');
+    }
   };
 
   const assignTaskToUser = async (taskId: string, userId: string, userName: string) => {

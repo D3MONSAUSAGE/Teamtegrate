@@ -9,7 +9,6 @@ import TasksPageLoading from '@/components/task/TasksPageLoading';
 import TasksPageError from '@/components/task/TasksPageError';
 import TasksPageContent from '@/components/task/TasksPageContent';
 import { toast } from '@/components/ui/sonner';
-import { useTasksPageData } from '@/hooks/useTasksPageData';
 import { useDebounce } from '@/utils/performanceUtils';
 
 const TasksPage = () => {
@@ -23,11 +22,8 @@ const TasksPage = () => {
     }
   }, []);
 
-  // Get tasks directly from the enhanced hook
-  const { tasks, isLoading, error } = useTasksPageData();
-  
-  // Get the update function from the context
-  const { updateTaskStatus } = useTask();
+  // Use TaskContext directly for real-time updates
+  const { tasks, isLoading, updateTaskStatus } = useTask();
   
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [sortBy, setSortBy] = useState('deadline');
@@ -74,9 +70,9 @@ const TasksPage = () => {
     return <TasksPageLoading />;
   }
   
-  // Show error state if there's an error
-  if (error) {
-    return <TasksPageError error={error} />;
+  // Show error state if tasks is null or undefined
+  if (!tasks) {
+    return <TasksPageError error="Failed to load tasks" />;
   }
 
   return (

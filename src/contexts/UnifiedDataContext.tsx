@@ -130,7 +130,7 @@ export const UnifiedDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
     };
   };
 
-  // Unified task fetching
+  // Unified task fetching with more aggressive real-time settings
   const {
     data: rawTasks = [],
     isLoading: isLoadingTasks,
@@ -161,8 +161,10 @@ export const UnifiedDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
       );
     },
     enabled: !!user?.organizationId,
-    staleTime: 1000 * 30, // Reduced from 2 minutes to 30 seconds for faster updates
-    refetchOnWindowFocus: true, // Changed to true for better real-time feel
+    staleTime: 0, // Always consider data stale for real-time updates
+    gcTime: 60000, // Keep in cache for 1 minute
+    refetchOnWindowFocus: true,
+    refetchInterval: 10000, // Refetch every 10 seconds for real-time feel
     retry: (failureCount, error) => {
       if (networkStatus === 'offline') return false;
       return failureCount < 2;
@@ -174,7 +176,7 @@ export const UnifiedDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
     return rawTasks.map(transformDbTaskToAppTask);
   }, [rawTasks, user?.id, user?.organizationId]);
 
-  // Unified project fetching
+  // Unified project fetching with more aggressive real-time settings
   const {
     data: rawProjects = [],
     isLoading: isLoadingProjects,
@@ -205,8 +207,9 @@ export const UnifiedDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
       );
     },
     enabled: !!user?.organizationId,
-    staleTime: 1000 * 60 * 2, // Reduced from 5 minutes to 2 minutes
-    refetchOnWindowFocus: true, // Changed to true for better real-time feel
+    staleTime: 30000, // 30 seconds
+    gcTime: 300000, // 5 minutes
+    refetchOnWindowFocus: true,
     retry: (failureCount, error) => {
       if (networkStatus === 'offline') return false;
       return failureCount < 2;
@@ -262,15 +265,16 @@ export const UnifiedDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
     return rawUsers.map(transformDbUserToAppUser);
   }, [rawUsers]);
 
-  // Coordinated refetch functions with query invalidation
+  // Enhanced coordinated refetch functions with immediate invalidation
   const refetchTasks = useCallback(async () => {
-    // Invalidate and refetch tasks
+    // Immediately invalidate and refetch tasks
     await queryClient.invalidateQueries({ queryKey: ['unified-tasks', user?.organizationId] });
+    await queryClient.invalidateQueries({ queryKey: ['tasks', user?.organizationId, user?.id] });
     await refetchTasksQuery();
-  }, [refetchTasksQuery, queryClient, user?.organizationId]);
+  }, [refetchTasksQuery, queryClient, user?.organizationId, user?.id]);
 
   const refetchProjects = useCallback(async () => {
-    // Invalidate and refetch projects
+    // Immediately invalidate and refetch projects
     await queryClient.invalidateQueries({ queryKey: ['unified-projects', user?.organizationId] });
     await refetchProjectsQuery();
   }, [refetchProjectsQuery, queryClient, user?.organizationId]);
@@ -286,10 +290,11 @@ export const UnifiedDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
 
     try {
-      // Invalidate all queries first
+      // Invalidate all queries first for immediate UI update
       await queryClient.invalidateQueries({ queryKey: ['unified-tasks', user?.organizationId] });
       await queryClient.invalidateQueries({ queryKey: ['unified-projects', user?.organizationId] });
       await queryClient.invalidateQueries({ queryKey: ['unified-users', user?.organizationId] });
+      await queryClient.invalidateQueries({ queryKey: ['tasks', user?.organizationId, user?.id] });
       
       await Promise.allSettled([
         refetchTasksQuery(),
@@ -301,7 +306,7 @@ export const UnifiedDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
       console.error('Error refreshing data:', error);
       toast.error('Failed to refresh some data');
     }
-  }, [refetchTasksQuery, refetchProjectsQuery, refetchUsersQuery, networkStatus, queryClient, user?.organizationId]);
+  }, [refetchTasksQuery, refetchProjectsQuery, refetchUsersQuery, networkStatus, queryClient, user?.organizationId, user?.id]);
 
   const value = useMemo(() => ({
     // Data
