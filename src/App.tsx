@@ -8,14 +8,17 @@ import { UnifiedDataProvider } from '@/contexts/UnifiedDataContext';
 import NetworkPerformanceMonitor from '@/components/debug/NetworkPerformanceMonitor';
 import { Toaster } from '@/components/ui/toaster';
 
-// Import routes and router provider
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import AppLayout from './components/layout/AppLayout';
 
-// Import page components
+// --- Page components ---
 import Index from './pages/Index';
 import LoginPage from './pages/LoginPage';
 import NotFound from './pages/NotFound';
+// These imports assume you have these files:
+import DashboardPage from './pages/DashboardPage';
+import TasksPage from './pages/TasksPage';
+import ProjectsPage from './pages/ProjectsPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -36,13 +39,18 @@ function App() {
             <ChatProvider>
               <BrowserRouter>
                 <Routes>
-                  {/* Public and authentication routes */}
+                  {/* Public / general routes */}
                   <Route path="/" element={<Index />} />
                   <Route path="/login" element={<LoginPage />} />
-                  {/* All protected routes go through AppLayout */}
-                  <Route path="/*" element={
-                    <AppLayout />
-                  } />
+
+                  {/* All protected routes - nested inside AppLayout */}
+                  <Route path="/" element={<AppLayout />}>
+                    <Route path="dashboard" element={<DashboardPage />} />
+                    <Route path="tasks" element={<TasksPage />} />
+                    <Route path="projects" element={<ProjectsPage />} />
+                    {/* Add more nested routes here as needed */}
+                  </Route>
+
                   {/* Not found */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>
