@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -26,7 +25,7 @@ export function useProjects() {
       
       const cacheKey = `projects-${user.organizationId}-${user.id}`;
       
-      console.log('useProjects: Fetching projects for user:', {
+      console.log('useProjects: Fetching user-specific projects for user:', {
         userId: user.id,
         userRole: user.role,
         organizationId: user.organizationId
@@ -38,9 +37,12 @@ export function useProjects() {
           setTimeout(() => reject(new Error('Request timeout after 30 seconds')), 30000)
         );
 
+        // Filter projects to only show those managed by user or where user is a team member
         const projectPromise = supabase
           .from('projects')
           .select('*')
+          .eq('organization_id', user.organizationId)
+          .or(`manager_id.eq.${user.id},team_members.cs.{${user.id}}`)
           .order('updated_at', { ascending: false });
 
         const { data, error } = await Promise.race([
@@ -66,7 +68,7 @@ export function useProjects() {
           throw error;
         }
 
-        console.log('useProjects: Retrieved projects from database:', {
+        console.log('useProjects: Retrieved user-specific projects from database:', {
           userId: user.id,
           userRole: user.role,
           projectCount: data?.length || 0,
@@ -76,7 +78,7 @@ export function useProjects() {
         return data;
       });
 
-      // Security validation: Ensure all returned projects should be accessible by this user
+      // Since we're now filtering at the database level, we only need basic validation
       const validatedProjects = data?.filter(dbProject => {
         if (dbProject.organization_id !== user.organizationId) {
           console.error('useProjects: SECURITY VIOLATION - Project from different organization:', {
@@ -86,22 +88,6 @@ export function useProjects() {
           });
           return false;
         }
-
-        // Additional access validation
-        const hasDirectAccess = 
-          dbProject.manager_id === user.id || // Project manager
-          (dbProject.team_members && dbProject.team_members.includes(user.id)) || // Team member
-          user.role === 'admin' || user.role === 'superadmin'; // Admin access
-
-        if (!hasDirectAccess) {
-          console.warn('useProjects: User does not have access to project:', {
-            projectId: dbProject.id,
-            userId: user.id,
-            userRole: user.role
-          });
-          return false;
-        }
-
         return true;
       }) || [];
 
@@ -130,7 +116,7 @@ export function useProjects() {
       setProjects(transformedProjects);
       setError(null);
       
-      console.log('useProjects: Successfully processed projects:', {
+      console.log('useProjects: Successfully processed user-specific projects:', {
         originalCount: data?.length || 0,
         validatedCount: validatedProjects.length,
         transformedCount: transformedProjects.length,
@@ -267,14 +253,14 @@ export function useProjects() {
   useEffect(() => {
     if (!user) return;
 
-    console.log('useProjects: Setting up real-time subscription for projects');
+    console.log('useProjects: Setting up real-time subscription for user-specific projects');
     const channel = supabase
       .channel('projects_changes')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'projects' },
         (payload) => {
           console.log('useProjects: Real-time project update received:', payload);
-          fetchProjects(); // Refetch to ensure proper authorization
+          fetchProjects(); // Refetch to ensure proper filtering and authorization
         }
       )
       .subscribe();
@@ -293,110 +279,8 @@ export function useProjects() {
     fetchProjects,
     refetch: fetchProjects,
     refreshProjects: fetchProjects,
-    createProject: async (
-      title: string, 
-      description?: string, 
-      startDate?: string, 
-      endDate?: string, 
-      budget?: number
-    ) => {
-      if (!user?.id || !user?.organizationId) {
-        console.error('useProjects: Missing user or organization info:', { 
-          userId: user?.id, 
-          orgId: user?.organizationId 
-        });
-        toast.error('Unable to create project: User not properly authenticated');
-        return;
-      }
-
-      try {
-        console.log('useProjects: Creating project:', { 
-          title, 
-          description, 
-          userId: user.id, 
-          orgId: user.organizationId 
-        });
-        
-        const supabaseProject = {
-          id: uuidv4(),
-          title,
-          description,
-          start_date: startDate,
-          end_date: endDate,
-          budget,
-          manager_id: user.id,
-          organization_id: user.organizationId,
-          team_members: [user.id]
-        };
-        
-        const { data, error } = await supabase
-          .from('projects')
-          .insert([supabaseProject])
-          .select()
-          .single();
-
-        if (error) {
-          console.error('useProjects: Error creating project:', error);
-          throw error;
-        }
-        
-        console.log('useProjects: Successfully created project:', data);
-        
-        const transformedProject: Project = {
-          id: data.id,
-          title: data.title || '',
-          description: data.description || '',
-          startDate: new Date(data.start_date || data.created_at),
-          endDate: new Date(data.end_date || data.updated_at),
-          managerId: data.manager_id || '',
-          createdAt: new Date(data.created_at),
-          updatedAt: new Date(data.updated_at),
-          teamMemberIds: data.team_members || [],
-          budget: data.budget || 0,
-          budgetSpent: data.budget_spent || 0,
-          isCompleted: data.is_completed || false,
-          status: data.status as Project['status'] || 'To Do',
-          tasksCount: data.tasks_count || 0,
-          tags: data.tags || [],
-          organizationId: data.organization_id
-        };
-        
-        setProjects(prev => [transformedProject, ...prev]);
-        toast.success('Project created successfully');
-        return transformedProject;
-      } catch (err: any) {
-        console.error('useProjects: Create project error:', err);
-        toast.error(`Failed to create project: ${err.message}`);
-        throw err;
-      }
-    },
-    deleteProject: async (projectId: string) => {
-      if (!user?.id) {
-        toast.error('User not authenticated');
-        return;
-      }
-
-      try {
-        console.log('useProjects: Deleting project:', projectId);
-        
-        const { error } = await supabase
-          .from('projects')
-          .delete()
-          .eq('id', projectId);
-
-        if (error) {
-          console.error('useProjects: Error deleting project:', error);
-          throw error;
-        }
-        
-        setProjects(prev => prev.filter(project => project.id !== projectId));
-        toast.success('Project deleted successfully');
-      } catch (err: any) {
-        console.error('useProjects: Delete project error:', err);
-        toast.error(`Failed to delete project: ${err.message}`);
-        throw err;
-      }
-    },
+    createProject,
+    deleteProject,
     setProjects
   };
 }

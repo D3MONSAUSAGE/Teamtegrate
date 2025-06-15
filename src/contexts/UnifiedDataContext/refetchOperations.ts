@@ -31,10 +31,11 @@ export const useRefetchOperations = ({
   }, [refetchTasksQuery, queryClient, user?.organizationId, user?.id]);
 
   const refetchProjects = useCallback(async () => {
-    // Immediately invalidate and refetch projects
-    await queryClient.invalidateQueries({ queryKey: ['unified-projects', user?.organizationId] });
+    // Immediately invalidate and refetch projects (now user-specific)
+    await queryClient.invalidateQueries({ queryKey: ['unified-projects', user?.organizationId, user?.id] });
+    await queryClient.invalidateQueries({ queryKey: ['projects', user?.organizationId, user?.id] });
     await refetchProjectsQuery();
-  }, [refetchProjectsQuery, queryClient, user?.organizationId]);
+  }, [refetchProjectsQuery, queryClient, user?.organizationId, user?.id]);
 
   const refetchUsers = useCallback(async () => {
     await refetchUsersQuery();
@@ -47,11 +48,12 @@ export const useRefetchOperations = ({
     }
 
     try {
-      // Invalidate all queries first for immediate UI update
+      // Invalidate all queries first for immediate UI update (now user-specific for projects)
       await queryClient.invalidateQueries({ queryKey: ['unified-tasks', user?.organizationId, user?.id] });
-      await queryClient.invalidateQueries({ queryKey: ['unified-projects', user?.organizationId] });
+      await queryClient.invalidateQueries({ queryKey: ['unified-projects', user?.organizationId, user?.id] });
       await queryClient.invalidateQueries({ queryKey: ['unified-users', user?.organizationId] });
       await queryClient.invalidateQueries({ queryKey: ['tasks', user?.organizationId, user?.id] });
+      await queryClient.invalidateQueries({ queryKey: ['projects', user?.organizationId, user?.id] });
       
       await Promise.allSettled([
         refetchTasksQuery(),

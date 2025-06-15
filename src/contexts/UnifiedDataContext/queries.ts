@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { networkManager } from '@/utils/networkManager';
@@ -77,19 +76,21 @@ export const useProjectsQuery = ({ user, networkStatus, setRequestsInFlight }: Q
     error: projectsError,
     refetch: refetchProjectsQuery
   } = useQuery({
-    queryKey: ['unified-projects', user?.organizationId],
+    queryKey: ['unified-projects', user?.organizationId, user?.id],
     queryFn: async () => {
-      if (!user?.organizationId) return [];
+      if (!user?.organizationId || !user?.id) return [];
       
       return await networkManager.withNetworkResilience(
         'fetch-projects',
         async () => {
           setRequestsInFlight(prev => prev + 1);
           try {
+            // Filter projects to only show those managed by user or where user is a team member
             const { data, error } = await supabase
               .from('projects')
               .select('*')
               .eq('organization_id', user.organizationId)
+              .or(`manager_id.eq.${user.id},team_members.cs.{${user.id}}`)
               .order('created_at', { ascending: false });
 
             if (error) throw error;
@@ -100,7 +101,7 @@ export const useProjectsQuery = ({ user, networkStatus, setRequestsInFlight }: Q
         }
       );
     },
-    enabled: !!user?.organizationId,
+    enabled: !!user?.organizationId && !!user?.id,
     staleTime: 30000, // 30 seconds
     gcTime: 300000, // 5 minutes
     refetchOnWindowFocus: true,
