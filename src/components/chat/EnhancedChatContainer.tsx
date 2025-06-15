@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import RoomList from './RoomList';
-import MessageArea from './MessageArea';
+import EnhancedMessageArea from './EnhancedMessageArea';
 import RoomMembersPanel from './RoomMembersPanel';
 import UserSearchDialog from './UserSearchDialog';
 import RoomSettingsDialog from './RoomSettingsDialog';
@@ -50,15 +50,16 @@ const EnhancedChatContainer: React.FC = () => {
       <div className="h-full flex flex-col">
         {!selectedRoomId ? (
           <RoomList
-            selectedRoomId={selectedRoomId}
+            selectedRoom={selectedRoom}
             onRoomSelect={handleRoomSelect}
           />
         ) : selectedRoom ? (
-          <MessageArea
+          <EnhancedMessageArea
             room={selectedRoom}
             onBack={() => setSelectedRoomId(null)}
             onToggleMembers={() => setShowMembers(!showMembers)}
             onShowSettings={() => setShowRoomSettings(true)}
+            onAddMember={() => setShowAddMember(true)}
           />
         ) : null}
         
@@ -87,7 +88,7 @@ const EnhancedChatContainer: React.FC = () => {
       {/* Room List */}
       <ResizablePanel defaultSize={25} minSize={20} maxSize={35}>
         <RoomList
-          selectedRoomId={selectedRoomId}
+          selectedRoom={selectedRoom}
           onRoomSelect={handleRoomSelect}
         />
       </ResizablePanel>
@@ -97,7 +98,7 @@ const EnhancedChatContainer: React.FC = () => {
       {/* Message Area */}
       <ResizablePanel defaultSize={showMembers ? 50 : 75}>
         {selectedRoomId && selectedRoom ? (
-          <MessageArea
+          <EnhancedMessageArea
             room={selectedRoom}
             onToggleMembers={() => setShowMembers(!showMembers)}
             onShowSettings={() => setShowRoomSettings(true)}
