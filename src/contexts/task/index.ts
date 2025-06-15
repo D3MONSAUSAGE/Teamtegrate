@@ -8,9 +8,13 @@ export interface TaskContextType {
   error: string | null;
   fetchTasks: () => Promise<void>;
   createTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
-  updateTask: (task: Task) => Promise<void>;
+  addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  updateTask: (taskId: string, task: Partial<Task>) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
   updateTaskStatus: (taskId: string, status: Task['status']) => Promise<void>;
+  assignTaskToUser: (taskId: string, userId: string, userName: string) => Promise<void>;
+  addCommentToTask: (taskId: string, comment: string) => Promise<void>;
+  dailyScore: number;
   
   projects: Project[];
   projectsLoading: boolean;
@@ -18,6 +22,7 @@ export interface TaskContextType {
   fetchProjects: () => Promise<void>;
   refreshProjects: () => Promise<void>;
   createProject: (title: string, description?: string, startDate?: string, endDate?: string, budget?: number) => Promise<Project | undefined>;
+  updateProject: (projectId: string, updates: Partial<Project>) => Promise<void>;
   deleteProject: (projectId: string) => Promise<void>;
   setProjects: (projects: Project[] | ((prev: Project[]) => Project[])) => void;
 }

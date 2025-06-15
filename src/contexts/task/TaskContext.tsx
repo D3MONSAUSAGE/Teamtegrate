@@ -17,9 +17,12 @@ interface TaskContextType {
   loading: boolean;
   error: string | null;
   addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
-  updateTask: (task: Task) => Promise<void>;
+  updateTask: (taskId: string, task: Partial<Task>) => Promise<void>;
   deleteTask: (id: string) => Promise<void>;
   updateTaskStatus: (id: string, status: TaskStatus) => Promise<void>;
+  assignTaskToUser: (taskId: string, userId: string, userName: string) => Promise<void>;
+  addCommentToTask: (taskId: string, comment: string) => Promise<void>;
+  dailyScore: number;
   
   // Project operations
   projects: Project[];
@@ -28,6 +31,7 @@ interface TaskContextType {
   fetchProjects: () => Promise<void>;
   refreshProjects: () => Promise<void>;
   createProject: (title: string, description?: string, startDate?: string, endDate?: string, budget?: number) => Promise<Project | undefined>;
+  updateProject: (projectId: string, updates: Partial<Project>) => Promise<void>;
   deleteProject: (projectId: string) => Promise<void>;
   setProjects: (projects: Project[] | ((prev: Project[]) => Project[])) => void;
 }
@@ -40,6 +44,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [dailyScore] = useState(85); // Mock daily score for now
   const { user } = useAuth();
 
   const addTask = async (taskData: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -114,20 +119,23 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const updateTask = async (task: Task) => {
+  const updateTask = async (taskId: string, taskUpdates: Partial<Task>) => {
     try {
       setLoading(true);
+      
+      // Transform updates for database
+      const dbUpdates: any = {};
+      if (taskUpdates.title) dbUpdates.title = taskUpdates.title;
+      if (taskUpdates.description) dbUpdates.description = taskUpdates.description;
+      if (taskUpdates.deadline) dbUpdates.deadline = taskUpdates.deadline.toISOString();
+      if (taskUpdates.priority) dbUpdates.priority = taskUpdates.priority;
+      if (taskUpdates.status) dbUpdates.status = taskUpdates.status;
+      if (taskUpdates.cost !== undefined) dbUpdates.cost = taskUpdates.cost;
+      
       const { data, error } = await supabase
         .from('tasks')
-        .update({
-          title: task.title,
-          description: task.description,
-          deadline: task.deadline.toISOString(),
-          priority: task.priority,
-          status: task.status,
-          cost: task.cost
-        })
-        .eq('id', task.id)
+        .update(dbUpdates)
+        .eq('id', taskId)
         .select();
 
       if (error) {
@@ -137,7 +145,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({
       } else {
         console.log('Task updated successfully:', data);
         setTasks((prevTasks) =>
-          prevTasks.map((t) => (t.id === task.id ? { ...task } : t))
+          prevTasks.map((t) => (t.id === taskId ? { ...t, ...taskUpdates } : t))
         );
         toast.success('Task updated successfully');
       }
@@ -204,6 +212,66 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  const assignTaskToUser = async (taskId: string, userId: string, userName: string) => {
+    try {
+      setLoading(true);
+      const { error } = await supabase
+        .from('tasks')
+        .update({ 
+          assigned_to_id: userId,
+          assigned_to_names: [userName]
+        })
+        .eq('id', taskId);
+
+      if (error) {
+        console.error('Error assigning task:', error);
+        toast.error('Failed to assign task');
+        setError(error.message);
+      } else {
+        setTasks((prevTasks) =>
+          prevTasks.map((task) =>
+            task.id === taskId ? { ...task, assignedToId: userId, assignedToNames: [userName] } : task
+          )
+        );
+        toast.success('Task assigned successfully');
+      }
+    } catch (err: any) {
+      console.error('Error assigning task:', err);
+      toast.error('Failed to assign task');
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const addCommentToTask = async (taskId: string, comment: string) => {
+    if (!user?.id || !user?.organizationId) {
+      toast.error('User not authenticated');
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('comments')
+        .insert([{
+          task_id: taskId,
+          user_id: user.id,
+          organization_id: user.organizationId,
+          content: comment
+        }]);
+
+      if (error) {
+        console.error('Error adding comment:', error);
+        toast.error('Failed to add comment');
+      } else {
+        toast.success('Comment added successfully');
+      }
+    } catch (err: any) {
+      console.error('Error adding comment:', err);
+      toast.error('Failed to add comment');
+    }
+  };
+
   // Get projects hook data
   const { 
     projects, 
@@ -216,6 +284,45 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({
     setProjects
   } = useProjects();
 
+  const updateProject = async (projectId: string, updates: Partial<Project>) => {
+    try {
+      setLoading(true);
+      
+      // Transform updates for database
+      const dbUpdates: any = {};
+      if (updates.title) dbUpdates.title = updates.title;
+      if (updates.description) dbUpdates.description = updates.description;
+      if (updates.startDate) dbUpdates.start_date = updates.startDate.toISOString();
+      if (updates.endDate) dbUpdates.end_date = updates.endDate.toISOString();
+      if (updates.budget !== undefined) dbUpdates.budget = updates.budget;
+      if (updates.status) dbUpdates.status = updates.status;
+      if (updates.isCompleted !== undefined) dbUpdates.is_completed = updates.isCompleted;
+      if (updates.teamMemberIds) dbUpdates.team_members = updates.teamMemberIds;
+      
+      const { error } = await supabase
+        .from('projects')
+        .update(dbUpdates)
+        .eq('id', projectId);
+
+      if (error) {
+        console.error('Error updating project:', error);
+        toast.error('Failed to update project');
+        setError(error.message);
+      } else {
+        setProjects((prevProjects) =>
+          prevProjects.map((p) => (p.id === projectId ? { ...p, ...updates } : p))
+        );
+        toast.success('Project updated successfully');
+      }
+    } catch (err: any) {
+      console.error('Error updating project:', err);
+      toast.error('Failed to update project');
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const value: TaskContextType = {
     tasks,
     loading,
@@ -224,12 +331,16 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({
     updateTask,
     deleteTask,
     updateTaskStatus,
+    assignTaskToUser,
+    addCommentToTask,
+    dailyScore,
     projects,
     projectsLoading,
     projectsError,
     fetchProjects,
     refreshProjects,
     createProject,
+    updateProject,
     deleteProject,
     setProjects,
   };
