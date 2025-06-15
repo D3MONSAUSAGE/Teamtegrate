@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { useTask } from '@/contexts/task';
 import { useProjects } from '@/hooks/useProjects';
@@ -15,6 +15,8 @@ import TeamManagement from '@/components/dashboard/TeamManagement';
 import { useIsMobile } from '@/hooks/use-mobile';
 import AnalyticsSection from '@/components/dashboard/AnalyticsSection';
 import TimeTracking from '@/components/dashboard/TimeTracking';
+import RLSTestPanel from '@/components/debug/RLSTestPanel';
+import { debugRLSPolicies } from '@/utils/rlsDebugger';
 
 const DashboardPage = () => {
   const { user } = useAuth();
@@ -24,6 +26,18 @@ const DashboardPage = () => {
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const isMobile = useIsMobile();
+  
+  // Run RLS debugging on mount for troubleshooting
+  useEffect(() => {
+    if (user?.id && user?.organizationId) {
+      console.log('🔍 Dashboard: Running RLS debug check for user:', {
+        userId: user.id,
+        role: user.role,
+        organizationId: user.organizationId
+      });
+      debugRLSPolicies(user.id, user.organizationId);
+    }
+  }, [user]);
   
   // Tasks are already proper Task objects from TaskContext
   const convertedTasks = tasks;
@@ -154,11 +168,25 @@ const DashboardPage = () => {
                 {/* Quick Stats */}
                 <div className="flex items-center gap-6 pt-2">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-primary">{todaysTasks.length}</div>
+                    <div className="text-2xl font-bold text-primary">{convertedTasks.filter(task => {
+                      const taskDate = new Date(task.deadline);
+                      taskDate.setHours(0, 0, 0, 0);
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0);
+                      return taskDate.getTime() === today.getTime();
+                    }).length}</div>
                     <div className="text-xs text-muted-foreground">Today's Tasks</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-emerald-600">{upcomingTasks.length}</div>
+                    <div className="text-2xl font-bold text-emerald-600">{convertedTasks.filter(task => {
+                      const taskDate = new Date(task.deadline);
+                      taskDate.setHours(0, 0, 0, 0);
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0);
+                      const nextWeek = new Date(today);
+                      nextWeek.setDate(nextWeek.getDate() + 7);
+                      return taskDate > today && taskDate <= nextWeek;
+                    }).length}</div>
                     <div className="text-xs text-muted-foreground">Upcoming</div>
                   </div>
                   <div className="text-center">
@@ -182,9 +210,16 @@ const DashboardPage = () => {
             </div>
           </div>
         </div>
+
+        {/* Debug Panel for Development */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="animate-slide-up" style={{ animationDelay: '0.1s' }}>
+            <RLSTestPanel />
+          </div>
+        )}
         
         {/* Enhanced Quick Stats Summary */}
-        <div className="animate-slide-up" style={{ animationDelay: '0.1s' }}>
+        <div className="animate-slide-up" style={{ animationDelay: '0.2s' }}>
           <TasksSummary 
             dailyScore={dailyScore}
             todaysTasks={todaysTasks}
@@ -193,7 +228,7 @@ const DashboardPage = () => {
         </div>
 
         {/* Enhanced Time Tracking Section */}
-        <div className="animate-slide-up" style={{ animationDelay: '0.2s' }}>
+        <div className="animate-slide-up" style={{ animationDelay: '0.3s' }}>
           <div className="glass-card border shadow-xl bg-gradient-to-br from-white/90 via-white/85 to-white/80 dark:from-card/90 dark:via-card/85 dark:to-card/80 backdrop-blur-xl rounded-2xl">
             <div className="p-6 border-b border-border/50">
               <h2 className="text-xl font-semibold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
@@ -207,7 +242,7 @@ const DashboardPage = () => {
         </div>
 
         {/* Enhanced Analytics Overview */}
-        <div className="animate-slide-up" style={{ animationDelay: '0.3s' }}>
+        <div className="animate-slide-up" style={{ animationDelay: '0.4s' }}>
           <div className="glass-card border shadow-xl bg-gradient-to-br from-white/90 via-white/85 to-white/80 dark:from-card/90 dark:via-card/85 dark:to-card/80 backdrop-blur-xl rounded-2xl">
             <div className="p-6 border-b border-border/50">
               <h2 className="text-xl font-semibold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
@@ -222,7 +257,7 @@ const DashboardPage = () => {
         
         {/* Enhanced Tasks Sections */}
         <div className="space-y-8">
-          <div className="animate-slide-up" style={{ animationDelay: '0.4s' }}>
+          <div className="animate-slide-up" style={{ animationDelay: '0.5s' }}>
             <div className="glass-card border shadow-xl bg-gradient-to-br from-white/90 via-white/85 to-white/80 dark:from-card/90 dark:via-card/85 dark:to-card/80 backdrop-blur-xl rounded-2xl p-6">
               <DailyTasksSection 
                 tasks={todaysTasks}
@@ -232,7 +267,7 @@ const DashboardPage = () => {
             </div>
           </div>
           
-          <div className="animate-slide-up" style={{ animationDelay: '0.5s' }}>
+          <div className="animate-slide-up" style={{ animationDelay: '0.6s' }}>
             <div className="glass-card border shadow-xl bg-gradient-to-br from-white/90 via-white/85 to-white/80 dark:from-card/90 dark:via-card/85 dark:to-card/80 backdrop-blur-xl rounded-2xl p-6">
               <UpcomingTasksSection 
                 tasks={upcomingTasks}
@@ -246,7 +281,7 @@ const DashboardPage = () => {
         {/* Enhanced Manager-only sections */}
         {user?.role === 'manager' && (
           <div className="space-y-8">
-            <div className="animate-slide-up" style={{ animationDelay: '0.6s' }}>
+            <div className="animate-slide-up" style={{ animationDelay: '0.7s' }}>
               <div className="glass-card border shadow-xl bg-gradient-to-br from-white/90 via-white/85 to-white/80 dark:from-card/90 dark:via-card/85 dark:to-card/80 backdrop-blur-xl rounded-2xl p-6">
                 <RecentProjects 
                   projects={recentProjects}
@@ -257,7 +292,7 @@ const DashboardPage = () => {
               </div>
             </div>
             
-            <div className="animate-slide-up" style={{ animationDelay: '0.7s' }}>
+            <div className="animate-slide-up" style={{ animationDelay: '0.8s' }}>
               <div className="glass-card border shadow-xl bg-gradient-to-br from-white/90 via-white/85 to-white/80 dark:from-card/90 dark:via-card/85 dark:to-card/80 backdrop-blur-xl rounded-2xl">
                 <TeamManagement />
               </div>

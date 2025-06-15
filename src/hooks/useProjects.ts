@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -21,56 +20,92 @@ export function useProjects() {
     
     try {
       setLoading(true);
+      
+      // Clear any cached data first
+      localStorage.removeItem('projects-cache');
+      sessionStorage.clear();
+      
       console.log('useProjects: Fetching authorized projects for user:', {
         userId: user.id,
         userRole: user.role,
         organizationId: user.organizationId
       });
       
-      // The new RLS policies will automatically filter to only return authorized projects
+      // Use RLS policies to automatically filter to only return authorized projects
       const { data, error } = await supabase
         .from('projects')
         .select('*')
         .order('updated_at', { ascending: false });
 
       if (error) {
-        console.error('useProjects: Error fetching projects:', error);
+        console.error('useProjects: RLS Policy Error fetching projects:', error);
         throw error;
       }
 
-      console.log('useProjects: Successfully fetched authorized projects:', {
+      console.log('useProjects: RLS returned authorized projects:', {
         userId: user.id,
         userRole: user.role,
         projectCount: data?.length || 0,
         timestamp: new Date().toISOString()
       });
 
+      // Security validation: Ensure all returned projects belong to user's organization
+      const validatedProjects = data?.filter(dbProject => {
+        if (dbProject.organization_id !== user.organizationId) {
+          console.error('useProjects: SECURITY VIOLATION - Project from different organization leaked:', {
+            projectId: dbProject.id,
+            projectOrg: dbProject.organization_id,
+            userOrg: user.organizationId
+          });
+          return false;
+        }
+        return true;
+      }) || [];
+
       // Transform database projects to match Project type
-      const transformedProjects: Project[] = data?.map(dbProject => ({
-        id: dbProject.id,
-        title: dbProject.title || '',
-        description: dbProject.description || '',
-        startDate: new Date(dbProject.start_date || dbProject.created_at),
-        endDate: new Date(dbProject.end_date || dbProject.updated_at),
-        managerId: dbProject.manager_id || '',
-        createdAt: new Date(dbProject.created_at),
-        updatedAt: new Date(dbProject.updated_at),
-        teamMemberIds: dbProject.team_members || [],
-        budget: dbProject.budget || 0,
-        budgetSpent: dbProject.budget_spent || 0,
-        isCompleted: dbProject.is_completed || false,
-        status: dbProject.status as Project['status'] || 'To Do',
-        tasksCount: dbProject.tasks_count || 0,
-        tags: dbProject.tags || [],
-        organizationId: dbProject.organization_id
-      })) || [];
+      const transformedProjects: Project[] = validatedProjects.map(dbProject => {
+        console.log('useProjects: Processing authorized project:', {
+          projectId: dbProject.id,
+          title: dbProject.title,
+          userId: user.id,
+          userRole: user.role
+        });
+
+        return {
+          id: dbProject.id,
+          title: dbProject.title || '',
+          description: dbProject.description || '',
+          startDate: new Date(dbProject.start_date || dbProject.created_at),
+          endDate: new Date(dbProject.end_date || dbProject.updated_at),
+          managerId: dbProject.manager_id || '',
+          createdAt: new Date(dbProject.created_at),
+          updatedAt: new Date(dbProject.updated_at),
+          teamMemberIds: dbProject.team_members || [],
+          budget: dbProject.budget || 0,
+          budgetSpent: dbProject.budget_spent || 0,
+          isCompleted: dbProject.is_completed || false,
+          status: dbProject.status as Project['status'] || 'To Do',
+          tasksCount: dbProject.tasks_count || 0,
+          tags: dbProject.tags || [],
+          organizationId: dbProject.organization_id
+        };
+      });
 
       setProjects(transformedProjects);
       setError(null);
+      
+      console.log('useProjects: Successfully processed authorized projects:', {
+        originalCount: data?.length || 0,
+        validatedCount: validatedProjects.length,
+        transformedCount: transformedProjects.length,
+        userId: user.id,
+        role: user.role
+      });
+      
     } catch (err: any) {
       console.error('useProjects: Fetch error:', err);
       setError(err.message);
-      toast.error('Failed to load projects - you may not have access to any projects');
+      toast.error('Failed to load authorized projects - you may not have access to any projects');
     } finally {
       setLoading(false);
     }
@@ -186,17 +221,17 @@ export function useProjects() {
     fetchProjects();
   }, [user]);
 
-  // Subscribe to real-time updates
+  // Subscribe to real-time updates with proper filtering
   useEffect(() => {
     if (!user) return;
 
-    console.log('useProjects: Setting up real-time subscription');
+    console.log('useProjects: Setting up real-time subscription with RLS filtering');
     const channel = supabase
       .channel('projects_changes')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'projects' },
         (payload) => {
-          console.log('useProjects: Real-time update received:', payload);
+          console.log('useProjects: Real-time update received (will be filtered by RLS):', payload);
           fetchProjects(); // Refetch to ensure proper authorization
         }
       )

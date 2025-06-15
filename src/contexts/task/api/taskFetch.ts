@@ -15,7 +15,7 @@ export const fetchTasks = async (
   setTasks: (tasks: Task[]) => void
 ): Promise<void> => {
   try {
-    console.log('fetchTasks: Starting task fetch for user:', { 
+    console.log('fetchTasks: Starting RLS-secured task fetch for user:', { 
       id: user?.id, 
       organizationId: user?.organization_id,
       role: user?.role 
@@ -33,38 +33,58 @@ export const fetchTasks = async (
       return;
     }
     
-    // Fetch tasks with new RLS policies - will only return authorized tasks
-    console.log('fetchTasks: Executing tasks query with new RLS policies...');
+    // Clear any cached data first
+    localStorage.removeItem('tasks-cache');
+    sessionStorage.clear();
+    
+    // Fetch tasks with RLS policies - will only return authorized tasks
+    console.log('fetchTasks: Executing RLS-secured tasks query...');
     const { data: tasksData, error: tasksError } = await supabase
       .from('tasks')
       .select('*')
       .order('created_at', { ascending: false });
 
     if (tasksError) {
-      console.error('fetchTasks: Error fetching tasks:', tasksError);
-      toast.error('Failed to load tasks: ' + tasksError.message);
+      console.error('fetchTasks: RLS Policy Error fetching tasks:', tasksError);
+      toast.error('Failed to load authorized tasks: ' + tasksError.message);
       return;
     }
 
-    console.log(`fetchTasks: Successfully fetched ${tasksData?.length || 0} authorized tasks from database`);
+    console.log(`fetchTasks: RLS returned ${tasksData?.length || 0} authorized tasks from database for user ${user.id} (${user.role})`);
     
-    // Fetch comments with explicit column selection
+    // Security validation: Ensure all returned tasks belong to user's organization
+    const validatedTasks = tasksData?.filter(dbTask => {
+      if (dbTask.organization_id !== user.organization_id) {
+        console.error('fetchTasks: SECURITY VIOLATION - Task from different organization leaked:', {
+          taskId: dbTask.id,
+          taskOrg: dbTask.organization_id,
+          userOrg: user.organization_id
+        });
+        return false;
+      }
+      return true;
+    }) || [];
+
+    console.log(`fetchTasks: Security validation passed for ${validatedTasks.length} tasks`);
+    
+    // Fetch comments with explicit column selection (only from same organization)
     const { data: commentsData, error: commentsError } = await supabase
       .from('comments')
-      .select('id, user_id, task_id, content, created_at');
+      .select('id, user_id, task_id, content, created_at')
+      .eq('organization_id', user.organization_id);
 
     if (commentsError) {
       console.error('fetchTasks: Error fetching comments:', commentsError);
     }
 
-    // Fetch user information for proper assignee display
+    // Fetch user information for proper assignee display (only from same organization)
     const { data: usersData, error: usersError } = await supabase
       .from('users')
       .select('id, name, email')
       .eq('organization_id', user.organization_id);
 
     if (usersError) {
-      console.error('fetchTasks: Error fetching users:', usersError);
+      console.error('fetchTasks: Error fetching organization users:', usersError);
     }
 
     // Create user lookup map
@@ -78,13 +98,15 @@ export const fetchTasks = async (
     // Transform tasks with enhanced security logging
     const transformedTasks: Task[] = [];
     
-    if (tasksData) {
-      for (const dbTask of tasksData) {
+    if (validatedTasks.length > 0) {
+      for (const dbTask of validatedTasks) {
         console.log('fetchTasks: Processing authorized task:', {
           taskId: dbTask.id,
           taskTitle: dbTask.title,
           assignedTo: dbTask.assigned_to_id,
-          projectId: dbTask.project_id
+          projectId: dbTask.project_id,
+          userId: user.id,
+          userRole: user.role
         });
         
         // Explicit type validation
@@ -171,11 +193,21 @@ export const fetchTasks = async (
     }
 
     console.log(`fetchTasks: Successfully processed ${transformedTasks.length} authorized tasks for user ${user.id} (${user.role})`);
+    
+    // Additional security log
+    console.log('fetchTasks: Final security summary:', {
+      userId: user.id,
+      userRole: user.role,
+      userOrg: user.organization_id,
+      tasksReturned: transformedTasks.length,
+      timestamp: new Date().toISOString()
+    });
+    
     setTasks(transformedTasks);
     
   } catch (error: any) {
-    console.error('fetchTasks: Critical error during task fetch:', error);
-    toast.error('Failed to load tasks: ' + error.message);
+    console.error('fetchTasks: Critical error during RLS-secured task fetch:', error);
+    toast.error('Failed to load authorized tasks: ' + error.message);
     setTasks([]);
   }
 };

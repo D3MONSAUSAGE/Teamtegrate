@@ -10,40 +10,49 @@ export const useTasksPageData = () => {
   const { user } = useAuth();
 
   const { data: tasks = [], isLoading, error } = useQuery({
-    queryKey: ['tasks', user?.organizationId],
+    queryKey: ['tasks', user?.organizationId, user?.id],
     queryFn: async (): Promise<Task[]> => {
-      if (!user?.organizationId) {
-        throw new Error('User must belong to an organization');
+      if (!user?.organizationId || !user?.id) {
+        console.log('useTasksPageData: Missing user data, cannot fetch tasks');
+        throw new Error('User must be authenticated and belong to an organization');
       }
 
-      console.log('useTasksPageData: Fetching tasks for organization:', user.organizationId);
+      console.log('useTasksPageData: Fetching tasks for user:', {
+        userId: user.id,
+        organizationId: user.organizationId,
+        role: user.role
+      });
 
-      // The new RLS policies will automatically filter to only return authorized tasks
+      // Clear any cached data first
+      localStorage.removeItem('tasks-cache');
+      sessionStorage.clear();
+
+      // Fetch tasks using new RLS policies - only authorized tasks will be returned
       const { data: tasksData, error: tasksError } = await supabase
         .from('tasks')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (tasksError) {
-        console.error('useTasksPageData: Error fetching tasks:', tasksError);
-        throw new Error(`Failed to fetch tasks: ${tasksError.message}`);
+        console.error('useTasksPageData: RLS Policy Error fetching tasks:', tasksError);
+        throw new Error(`Failed to fetch authorized tasks: ${tasksError.message}`);
       }
 
-      console.log(`useTasksPageData: Successfully fetched ${tasksData?.length || 0} authorized tasks`);
+      console.log(`useTasksPageData: RLS returned ${tasksData?.length || 0} authorized tasks for user ${user.id} (${user.role})`);
 
       if (!tasksData || tasksData.length === 0) {
-        console.log('useTasksPageData: No authorized tasks found for user:', user.id);
+        console.log('useTasksPageData: No authorized tasks found - this is expected behavior for users without access');
         return [];
       }
 
-      // Fetch users data for name lookup fallback
+      // Fetch users data for name lookup (only from same organization)
       const { data: usersData, error: usersError } = await supabase
         .from('users')
         .select('id, name, email')
         .eq('organization_id', user.organizationId);
 
       if (usersError) {
-        console.error('useTasksPageData: Error fetching users for name lookup:', usersError);
+        console.error('useTasksPageData: Error fetching organization users:', usersError);
       }
 
       // Create user lookup map
@@ -54,9 +63,25 @@ export const useTasksPageData = () => {
         });
       }
 
-      // Convert flat tasks to proper Task objects
+      // Process and validate each task
       const processedTasks = tasksData.map(task => {
-        console.log('useTasksPageData: Processing task:', task.id);
+        console.log('useTasksPageData: Processing authorized task:', {
+          taskId: task.id,
+          taskTitle: task.title,
+          userId: user.id,
+          taskOrg: task.organization_id,
+          userOrg: user.organizationId
+        });
+
+        // Security check: Ensure task belongs to user's organization
+        if (task.organization_id !== user.organizationId) {
+          console.error('useTasksPageData: SECURITY VIOLATION - Task from different organization leaked:', {
+            taskId: task.id,
+            taskOrg: task.organization_id,
+            userOrg: user.organizationId
+          });
+          return null; // Filter out unauthorized tasks
+        }
 
         // Process assignment data with proper validation and fallbacks
         let assignedToId = undefined;
@@ -120,13 +145,20 @@ export const useTasksPageData = () => {
           cost: Number(task.cost) || 0,
           organizationId: task.organization_id
         };
+      }).filter(task => task !== null); // Remove any null tasks (security violations)
+
+      console.log('useTasksPageData: Successfully processed authorized tasks:', {
+        originalCount: tasksData.length,
+        processedCount: processedTasks.length,
+        userId: user.id,
+        role: user.role
       });
 
-      console.log('useTasksPageData: Successfully processed authorized tasks');
       return flatTasksToTasks(processedTasks);
     },
-    enabled: !!user?.organizationId,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    enabled: !!user?.organizationId && !!user?.id,
+    staleTime: 0, // Force fresh data
+    cacheTime: 0, // Don't cache
     retry: (failureCount, error) => {
       if (failureCount >= 2) return false;
       if (error.message.includes('organization') || error.message.includes('permission')) return false;
@@ -136,7 +168,7 @@ export const useTasksPageData = () => {
 
   if (error) {
     console.error('useTasksPageData: Tasks query error:', error);
-    toast.error(`Failed to load tasks: ${error.message}`);
+    toast.error(`Failed to load authorized tasks: ${error.message}`);
   }
 
   return {
