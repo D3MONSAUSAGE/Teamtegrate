@@ -1,5 +1,4 @@
-
-import { useCallback, useRef } from 'react';
+import React, { useCallback, useRef } from 'react';
 
 // Debounce utility for preventing rapid function calls
 export const useDebounce = (callback: (...args: any[]) => void, delay: number) => {
