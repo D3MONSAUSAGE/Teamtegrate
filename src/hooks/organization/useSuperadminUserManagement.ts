@@ -1,25 +1,21 @@
 
-import { useState } from 'react';
-import { useEnhancedUserManagement } from '@/hooks/useEnhancedUserManagement';
+import { useState, useMemo } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import { UserRole } from '@/types';
+import { toast } from '@/components/ui/sonner';
+import { useResilientUserData } from '../userManagement/useResilientUserData';
+import { useEnhancedUserOperations } from '../userManagement/useEnhancedUserOperations';
+import { useRoleManagement } from '../userManagement/useRoleManagement';
+import { useQueryClient } from '@tanstack/react-query';
 
 export const useSuperadminUserManagement = () => {
-  const {
-    users,
-    isLoading,
-    error,
-    isSuperadmin,
-    changeUserRole,
-    transferSuperadminRole,
-    refetchUsers
-  } = useEnhancedUserManagement();
-
+  const { user: currentUser } = useAuth();
+  const queryClient = useQueryClient();
+  
+  // State management
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRole, setSelectedRole] = useState<UserRole | 'all'>('all');
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
-  const [isTransferring, setIsTransferring] = useState(false);
-
-  // Dialog states
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -27,38 +23,82 @@ export const useSuperadminUserManagement = () => {
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [transferData, setTransferData] = useState<any>(null);
 
-  const filteredUsers = users.filter(user => {
-    const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRole = selectedRole === 'all' || user.role === selectedRole;
-    return matchesSearch && matchesRole;
-  });
+  // Data hooks with resilience
+  const { 
+    users, 
+    isLoading, 
+    error, 
+    isUsingFallback 
+  } = useResilientUserData();
 
+  // Refetch function
+  const refetchUsers = () => {
+    queryClient.invalidateQueries({ queryKey: ['enhanced-organization-users'] });
+    queryClient.invalidateQueries({ queryKey: ['basic-organization-users'] });
+    queryClient.invalidateQueries({ queryKey: ['organization-stats'] });
+  };
+
+  // Operations hooks
+  const { 
+    isLoading: operationsLoading,
+    connectionStatus,
+    testConnection,
+    createUser,
+    updateUserProfile
+  } = useEnhancedUserOperations(refetchUsers);
+
+  const {
+    isLoading: roleLoading,
+    changeUserRole,
+    transferSuperadminRole
+  } = useRoleManagement(users, refetchUsers);
+
+  // Computed values
+  const isSuperadmin = currentUser?.role === 'superadmin';
+  const isTransferring = roleLoading;
+
+  // Filter users based on search and role
+  const filteredUsers = useMemo(() => {
+    let filtered = users;
+
+    if (searchTerm) {
+      const search = searchTerm.toLowerCase();
+      filtered = filtered.filter(user =>
+        user.name.toLowerCase().includes(search) ||
+        user.email.toLowerCase().includes(search)
+      );
+    }
+
+    if (selectedRole !== 'all') {
+      filtered = filtered.filter(user => user.role === selectedRole);
+    }
+
+    return filtered;
+  }, [users, searchTerm, selectedRole]);
+
+  // Handlers
   const handleQuickRoleChange = async (userId: string, newRole: UserRole) => {
     setUpdatingUserId(userId);
-    
     try {
       const result = await changeUserRole(userId, newRole);
-      
       if (result.requiresTransfer && result.transferData) {
         setTransferData(result.transferData);
         setTransferDialogOpen(true);
       }
     } catch (error) {
-      console.error('Error changing role:', error);
+      console.error('Role change failed:', error);
     } finally {
       setUpdatingUserId(null);
     }
   };
 
   const handleSuperadminTransfer = async (transferData: any) => {
-    setIsTransferring(true);
     try {
       await transferSuperadminRole(transferData);
+      setTransferDialogOpen(false);
+      setTransferData(null);
     } catch (error) {
-      console.error('Error transferring superadmin role:', error);
-    } finally {
-      setIsTransferring(false);
+      console.error('Superadmin transfer failed:', error);
     }
   };
 
@@ -72,30 +112,35 @@ export const useSuperadminUserManagement = () => {
     setDeleteDialogOpen(true);
   };
 
-  const onUserDeleted = () => {
+  const onUserCreated = () => {
+    setCreateDialogOpen(false);
     refetchUsers();
-    setDeleteDialogOpen(false);
-    setSelectedUser(null);
+    toast.success('User created successfully');
   };
 
   const onUserUpdated = () => {
-    refetchUsers();
     setEditDialogOpen(false);
     setSelectedUser(null);
+    refetchUsers();
+    toast.success('User updated successfully');
   };
 
-  const onUserCreated = () => {
+  const onUserDeleted = () => {
+    setDeleteDialogOpen(false);
+    setSelectedUser(null);
     refetchUsers();
-    setCreateDialogOpen(false);
+    toast.success('User deleted successfully');
   };
 
   return {
     // Data
     users,
     filteredUsers,
-    isLoading,
+    isLoading: isLoading || operationsLoading,
     error,
     isSuperadmin,
+    isUsingFallback,
+    connectionStatus,
     
     // Search and filters
     searchTerm,
@@ -103,11 +148,9 @@ export const useSuperadminUserManagement = () => {
     selectedRole,
     setSelectedRole,
     
-    // State
+    // UI state
     updatingUserId,
     isTransferring,
-    
-    // Dialog states
     createDialogOpen,
     setCreateDialogOpen,
     editDialogOpen,
@@ -120,12 +163,13 @@ export const useSuperadminUserManagement = () => {
     transferData,
     
     // Actions
+    testConnection,
     handleQuickRoleChange,
     handleSuperadminTransfer,
     handleEditUser,
     handleDeleteUser,
-    onUserDeleted,
+    onUserCreated,
     onUserUpdated,
-    onUserCreated
+    onUserDeleted
   };
 };
