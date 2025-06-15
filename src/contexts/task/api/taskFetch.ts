@@ -64,6 +64,17 @@ export const fetchTasks = async (
         taskIds: tasksData.map(t => t.id).slice(0, 5), // Log first 5 task IDs
         timestamp: new Date().toISOString()
       });
+
+      // Call audit logging function
+      try {
+        await supabase.rpc('log_data_access', {
+          table_name: 'tasks',
+          action_type: 'SELECT',
+          record_count: tasksData.length
+        });
+      } catch (auditError) {
+        console.warn('fetchTasks: Audit logging failed:', auditError);
+      }
     } else {
       console.log('fetchTasks: No tasks accessible to user:', {
         userId: user.id,
@@ -202,13 +213,22 @@ export const fetchTasks = async (
       userId: user.id,
       userRole: user.role,
       organizationId: user.organization_id,
-      tasksReturned: transformedTasks.length,
-      timestamp: new Date().toISOString(),
-      message: 'User can only see tasks they are authorized to access'
+      authorizedTaskCount: transformedTasks.length,
+      accessType: 'RLS_AUTHORIZED',
+      timestamp: new Date().toISOString()
     });
     
-  } catch (error) {
-    console.error('fetchTasks: Error in fetchTasks:', error);
-    toast.error('Failed to load tasks');
+  } catch (error: any) {
+    console.error('fetchTasks: Critical error during task fetch:', error);
+    toast.error('Failed to load tasks: ' + error.message);
+    setTasks([]);
+    
+    // Log security incident
+    console.error('fetchTasks: Security incident - Task fetch failed:', {
+      userId: user?.id,
+      userRole: user?.role,
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
   }
 };

@@ -16,17 +16,16 @@ export const useTasksPageData = () => {
         throw new Error('User must belong to an organization');
       }
 
-      console.log('Fetching tasks for organization:', user.organizationId);
+      console.log('useTasksPageData: Fetching authorized tasks for organization:', user.organizationId);
 
-      // Enhanced query with explicit organization filtering as safety net
+      // With new RLS policies, this query will only return authorized tasks
       const { data: tasksData, error: tasksError } = await supabase
         .from('tasks')
         .select('*')
-        .eq('organization_id', user.organizationId) // Explicit organization filter
         .order('created_at', { ascending: false });
 
       if (tasksError) {
-        console.error('Error fetching tasks:', tasksError);
+        console.error('useTasksPageData: Error fetching tasks:', tasksError);
         console.error('Error details:', {
           message: tasksError.message,
           code: tasksError.code,
@@ -36,10 +35,32 @@ export const useTasksPageData = () => {
         throw new Error(`Failed to fetch tasks: ${tasksError.message}`);
       }
 
-      console.log(`Successfully fetched ${tasksData?.length || 0} tasks from database`);
+      console.log(`useTasksPageData: Successfully fetched ${tasksData?.length || 0} authorized tasks from database`);
+
+      // Log access for security audit
+      if (tasksData && tasksData.length > 0) {
+        console.log('useTasksPageData: Security audit - Task access granted:', {
+          userId: user.id,
+          userRole: user.role,
+          taskCount: tasksData.length,
+          accessType: 'RLS_AUTHORIZED',
+          timestamp: new Date().toISOString()
+        });
+
+        // Call audit logging function
+        try {
+          await supabase.rpc('log_data_access', {
+            table_name: 'tasks',
+            action_type: 'SELECT',
+            record_count: tasksData.length
+          });
+        } catch (auditError) {
+          console.warn('useTasksPageData: Audit logging failed:', auditError);
+        }
+      }
 
       if (!tasksData || tasksData.length === 0) {
-        console.log('No tasks found for organization:', user.organizationId);
+        console.log('useTasksPageData: No authorized tasks found for user:', user.id);
         return [];
       }
 
@@ -50,7 +71,7 @@ export const useTasksPageData = () => {
         .eq('organization_id', user.organizationId);
 
       if (usersError) {
-        console.error('Error fetching users for name lookup:', usersError);
+        console.error('useTasksPageData: Error fetching users for name lookup:', usersError);
       }
 
       // Create user lookup map
@@ -63,7 +84,7 @@ export const useTasksPageData = () => {
 
       // Convert flat tasks to proper Task objects with enhanced assignment processing
       const processedTasks = tasksData.map(task => {
-        console.log('Processing task:', task.id, 'Assignment data:', {
+        console.log('useTasksPageData: Processing authorized task:', task.id, 'Assignment data:', {
           assigned_to_id: task.assigned_to_id,
           assigned_to_ids: task.assigned_to_ids,
           assigned_to_names: task.assigned_to_names
@@ -106,7 +127,7 @@ export const useTasksPageData = () => {
             assignedToName = assignedToNames[0];
           }
 
-          console.log('Processed multi-assignment:', {
+          console.log('useTasksPageData: Processed multi-assignment:', {
             assignedToIds,
             assignedToNames,
             assignedToId,
@@ -122,14 +143,14 @@ export const useTasksPageData = () => {
           assignedToName = userLookup.get(assignedToId) || 'Assigned User';
           assignedToNames = [assignedToName];
 
-          console.log('Processed single assignment:', {
+          console.log('useTasksPageData: Processed single assignment:', {
             assignedToId,
             assignedToName,
             assignedToIds,
             assignedToNames
           });
         } else {
-          console.log('No assignment found for task:', task.id);
+          console.log('useTasksPageData: No assignment found for task:', task.id);
         }
 
         return {
@@ -152,7 +173,7 @@ export const useTasksPageData = () => {
         };
       });
 
-      console.log('Successfully processed tasks with assignment data:', 
+      console.log('useTasksPageData: Successfully processed authorized tasks with assignment data:', 
         processedTasks.map(t => ({ 
           id: t.id, 
           title: t.title, 
@@ -174,7 +195,7 @@ export const useTasksPageData = () => {
   });
 
   if (error) {
-    console.error('Tasks query error:', error);
+    console.error('useTasksPageData: Tasks query error:', error);
     toast.error(`Failed to load tasks: ${error.message}`);
   }
 

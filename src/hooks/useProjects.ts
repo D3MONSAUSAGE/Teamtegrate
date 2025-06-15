@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -57,6 +56,17 @@ export function useProjects() {
             : 'Manager or team member access',
           timestamp: new Date().toISOString()
         });
+
+        // Call audit logging function
+        try {
+          await supabase.rpc('log_data_access', {
+            table_name: 'projects',
+            action_type: 'SELECT',
+            record_count: data.length
+          });
+        } catch (auditError) {
+          console.warn('useProjects: Audit logging failed:', auditError);
+        }
       } else {
         console.log('useProjects: Security audit - No projects accessible:', {
           userId: user.id,

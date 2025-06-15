@@ -1604,6 +1604,10 @@ export type Database = {
         Args: { room_id_param: string; user_id_param: string }
         Returns: boolean
       }
+      log_data_access: {
+        Args: { table_name: string; action_type: string; record_count: number }
+        Returns: undefined
+      }
       send_reminders: {
         Args: Record<PropertyKey, never>
         Returns: undefined
