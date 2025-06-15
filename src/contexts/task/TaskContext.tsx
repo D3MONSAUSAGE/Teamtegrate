@@ -21,6 +21,9 @@ export const useTaskContext = () => {
   return context;
 };
 
+// Add the missing useTask export (alias for useTaskContext)
+export const useTask = useTaskContext;
+
 export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user } = useAuth();
   const { tasks: unifiedTasks, isLoadingTasks, refetchTasks } = useUnifiedData();

@@ -71,9 +71,33 @@ export const UnifiedDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
     return () => clearInterval(interval);
   }, []);
 
+  // Transform database task to app Task type
+  const transformDbTaskToAppTask = (dbTask: any): Task => {
+    return {
+      id: String(dbTask.id || ''),
+      userId: String(dbTask.user_id || user?.id || ''),
+      projectId: dbTask.project_id ? String(dbTask.project_id) : undefined,
+      title: String(dbTask.title || ''),
+      description: String(dbTask.description || ''),
+      deadline: new Date(dbTask.deadline || new Date()),
+      priority: (['Low', 'Medium', 'High'].includes(dbTask.priority) ? dbTask.priority : 'Medium') as 'Low' | 'Medium' | 'High',
+      status: (['To Do', 'In Progress', 'Completed'].includes(dbTask.status) ? dbTask.status : 'To Do') as 'To Do' | 'In Progress' | 'Completed',
+      createdAt: new Date(dbTask.created_at || new Date()),
+      updatedAt: new Date(dbTask.updated_at || new Date()),
+      assignedToId: dbTask.assigned_to_id ? String(dbTask.assigned_to_id) : undefined,
+      assignedToName: dbTask.assigned_to_names?.[0] || undefined,
+      assignedToIds: dbTask.assigned_to_ids || [],
+      assignedToNames: dbTask.assigned_to_names || [],
+      tags: [],
+      comments: [],
+      cost: Number(dbTask.cost) || 0,
+      organizationId: String(dbTask.organization_id || user?.organizationId || '')
+    };
+  };
+
   // Unified task fetching
   const {
-    data: tasks = [],
+    data: rawTasks = [],
     isLoading: isLoadingTasks,
     error: tasksError,
     refetch: refetchTasksQuery
@@ -109,6 +133,11 @@ export const UnifiedDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
       return failureCount < 2;
     }
   });
+
+  // Transform raw tasks to app format
+  const tasks = useMemo(() => {
+    return rawTasks.map(transformDbTaskToAppTask);
+  }, [rawTasks, user?.id, user?.organizationId]);
 
   // Unified project fetching
   const {
