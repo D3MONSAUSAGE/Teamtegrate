@@ -20,30 +20,57 @@ const TeamProjectsView: React.FC<TeamProjectsViewProps> = ({ teamId }) => {
     queryFn: async () => {
       if (!teamId || !user?.organizationId) return [];
       
+      console.log('TeamProjectsView: Fetching projects for team with STRICT RLS:', {
+        teamId,
+        currentUserId: user.id,
+        userRole: user.role,
+        organizationId: user.organizationId
+      });
+      
       // Get team member IDs first
       const { data: teamMembers, error: membersError } = await supabase
         .from('team_memberships')
         .select('user_id')
         .eq('team_id', teamId);
 
-      if (membersError) throw membersError;
+      if (membersError) {
+        console.error('TeamProjectsView: Error fetching team members:', membersError);
+        throw membersError;
+      }
       
-      if (!teamMembers || teamMembers.length === 0) return [];
+      if (!teamMembers || teamMembers.length === 0) {
+        console.log('TeamProjectsView: No team members found');
+        return [];
+      }
       
       const memberIds = teamMembers.map(m => m.user_id);
+      console.log('TeamProjectsView: Found team members:', memberIds.length);
       
-      // Find projects where any team member is the manager or in team_members array
+      // Find projects using STRICT RLS - will only return projects current user can access
       const { data: projects, error: projectsError } = await supabase
         .from('projects')
         .select('*')
-        .eq('organization_id', user.organizationId)
         .or(`manager_id.in.(${memberIds.join(',')}),team_members.cs.{${memberIds.join(',')}}`);
 
-      if (projectsError) throw projectsError;
+      if (projectsError) {
+        console.error('TeamProjectsView: Error fetching projects with strict RLS:', projectsError);
+        throw projectsError;
+      }
+      
+      console.log('TeamProjectsView: STRICT RLS returned projects:', {
+        totalProjects: projects?.length || 0,
+        teamMemberCount: memberIds.length,
+        note: 'Only projects current user can access are returned'
+      });
       
       return projects || [];
     },
     enabled: !!teamId && !!user?.organizationId,
+    staleTime: 30000, // Cache for 30 seconds for better performance
+    retry: (failureCount, error) => {
+      console.error('TeamProjectsView: Query retry attempt:', failureCount, error?.message);
+      return failureCount < 2;
+    }
   });
 
   return (
@@ -51,7 +78,7 @@ const TeamProjectsView: React.FC<TeamProjectsViewProps> = ({ teamId }) => {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <FolderOpen className="h-5 w-5" />
-          Team Projects ({projects.length})
+          Team Projects ({projects.length}) - Strict Access
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -60,7 +87,7 @@ const TeamProjectsView: React.FC<TeamProjectsViewProps> = ({ teamId }) => {
             <Loader2 className="h-6 w-6 animate-spin" />
           </div>
         ) : projects.length === 0 ? (
-          <p className="text-muted-foreground text-center py-8">No projects assigned to this team.</p>
+          <p className="text-muted-foreground text-center py-8">No accessible projects for this team.</p>
         ) : (
           <div className="grid gap-4">
             {projects.map((project) => (

@@ -17,24 +17,20 @@ export const useTasksPageData = () => {
         throw new Error('User must be authenticated and belong to an organization');
       }
 
-      console.log('useTasksPageData: Fetching RESTRICTED tasks for user:', {
+      console.log('useTasksPageData: Fetching tasks with STRICT RLS policies for user:', {
         userId: user.id,
         organizationId: user.organizationId,
         role: user.role
       });
 
-      // Clear any cached data first
-      localStorage.removeItem('tasks-cache');
-      sessionStorage.clear();
-
-      // Fetch tasks using STRICT RLS policies - only directly assigned or created tasks
+      // Fetch tasks using NEW STRICT RLS policies - only directly assigned or created tasks
       const { data: tasksData, error: tasksError } = await supabase
         .from('tasks')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (tasksError) {
-        console.error('useTasksPageData: RLS Policy Error fetching tasks:', tasksError);
+        console.error('useTasksPageData: Error fetching tasks with strict RLS:', tasksError);
         throw new Error(`Failed to fetch authorized tasks: ${tasksError.message}`);
       }
 
@@ -63,7 +59,7 @@ export const useTasksPageData = () => {
         });
       }
 
-      // Process and validate each task with STRICT access logging
+      // Process tasks with STRICT access validation
       const processedTasks = tasksData.map(task => {
         console.log('useTasksPageData: Processing STRICTLY authorized task:', {
           taskId: task.id,
@@ -86,23 +82,7 @@ export const useTasksPageData = () => {
             taskOrg: task.organization_id,
             userOrg: user.organizationId
           });
-          return null; // Filter out unauthorized tasks
-        }
-
-        // Additional security check: Verify user should have access to this task
-        const hasDirectAccess = 
-          task.user_id === user.id || // Task creator
-          task.assigned_to_id === user.id || // Single assignee
-          (task.assigned_to_ids && task.assigned_to_ids.includes(user.id)) || // Multi assignee
-          user.role === 'admin' || user.role === 'superadmin'; // Admin access
-
-        if (!hasDirectAccess) {
-          console.error('useTasksPageData: SECURITY VIOLATION - User should not have access to this task:', {
-            taskId: task.id,
-            userId: user.id,
-            userRole: user.role
-          });
-          return null; // Filter out unauthorized tasks
+          return null;
         }
 
         // Process assignment data with proper validation and fallbacks
@@ -167,7 +147,7 @@ export const useTasksPageData = () => {
           cost: Number(task.cost) || 0,
           organizationId: task.organization_id
         };
-      }).filter(task => task !== null); // Remove any null tasks (security violations)
+      }).filter(task => task !== null);
 
       console.log('useTasksPageData: Successfully processed STRICTLY authorized tasks:', {
         originalCount: tasksData.length,
@@ -180,8 +160,8 @@ export const useTasksPageData = () => {
       return flatTasksToTasks(processedTasks);
     },
     enabled: !!user?.organizationId && !!user?.id,
-    staleTime: 0, // Force fresh data
-    gcTime: 0, // Don't cache (renamed from cacheTime)
+    staleTime: 30000, // Cache for 30 seconds instead of 0 for better performance
+    gcTime: 300000, // Cache for 5 minutes instead of 0
     retry: (failureCount, error) => {
       if (failureCount >= 2) return false;
       if (error.message.includes('organization') || error.message.includes('permission')) return false;

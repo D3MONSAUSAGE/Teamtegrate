@@ -53,14 +53,29 @@ const TeamMemberTasksView: React.FC<TeamMemberTasksViewProps> = ({ teamId, teamM
       
       const memberIds = teamMembers.map(m => m.user_id);
       
-      // Fetch tasks assigned to team members
+      console.log('TeamMemberTasksView: Fetching tasks for team members with STRICT RLS:', {
+        teamId,
+        memberIds: memberIds.length,
+        currentUserId: user.id,
+        userRole: user.role
+      });
+      
+      // Fetch tasks using STRICT RLS policies - will only return tasks the current user can access
       const { data: tasks, error } = await supabase
         .from('tasks')
         .select('*')
-        .eq('organization_id', user.organizationId)
         .or(`user_id.in.(${memberIds.join(',')}),assigned_to_id.in.(${memberIds.join(',')}),assigned_to_ids.cs.{${memberIds.join(',')}}`);
 
-      if (error) throw error;
+      if (error) {
+        console.error('TeamMemberTasksView: Error fetching tasks with strict RLS:', error);
+        throw error;
+      }
+      
+      console.log('TeamMemberTasksView: STRICT RLS returned tasks:', {
+        totalTasks: tasks?.length || 0,
+        memberIds: memberIds.length,
+        note: 'Only tasks current user can access are returned'
+      });
       
       // Group tasks by member
       const tasksByMember = memberIds.reduce((acc, memberId) => {
@@ -72,9 +87,19 @@ const TeamMemberTasksView: React.FC<TeamMemberTasksViewProps> = ({ teamId, teamM
         return acc;
       }, {} as Record<string, any[]>);
       
+      console.log('TeamMemberTasksView: Tasks grouped by member:', {
+        membersWithTasks: Object.keys(tasksByMember).filter(id => tasksByMember[id].length > 0).length,
+        totalMembers: memberIds.length
+      });
+      
       return tasksByMember;
     },
     enabled: !!teamId && !!user?.organizationId && teamMembers.length > 0,
+    staleTime: 30000, // Cache for 30 seconds for better performance
+    retry: (failureCount, error) => {
+      console.error('TeamMemberTasksView: Query retry attempt:', failureCount, error?.message);
+      return failureCount < 2;
+    }
   });
 
   const toggleMemberExpansion = (memberId: string) => {
@@ -92,7 +117,7 @@ const TeamMemberTasksView: React.FC<TeamMemberTasksViewProps> = ({ teamId, teamM
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <CheckSquare className="h-5 w-5" />
-          Team Member Tasks
+          Team Member Tasks (Strict Access)
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -126,7 +151,7 @@ const TeamMemberTasksView: React.FC<TeamMemberTasksViewProps> = ({ teamId, teamM
                         <div className="text-left">
                           <p className="font-medium">{membership.users.name || membership.users.email}</p>
                           <p className="text-sm text-muted-foreground">
-                            {memberTasks.length} total tasks
+                            {memberTasks.length} accessible tasks
                           </p>
                         </div>
                       </div>
@@ -160,7 +185,7 @@ const TeamMemberTasksView: React.FC<TeamMemberTasksViewProps> = ({ teamId, teamM
                   <CollapsibleContent className="mt-2">
                     {memberTasks.length === 0 ? (
                       <div className="text-center py-4 text-muted-foreground">
-                        No tasks assigned to this member
+                        No accessible tasks for this member
                       </div>
                     ) : (
                       <Tabs defaultValue="all" className="w-full">

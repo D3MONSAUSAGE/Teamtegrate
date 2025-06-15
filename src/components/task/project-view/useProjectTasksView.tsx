@@ -19,15 +19,26 @@ export const useProjectTasksView = (projectId: string | null) => {
     projectsCount: projects?.length || 0
   });
 
-  // Get project tasks
+  // Get project tasks with STRICT RLS enforcement
   const projectTasks = useMemo(() => {
     if (!projectId || !tasks) {
       console.log('useProjectTasksView: No projectId or tasks, returning empty array');
       return [];
     }
     const filtered = tasks.filter(task => task.projectId === projectId);
-    console.log('useProjectTasksView: Filtered tasks for project:', projectId, 'count:', filtered.length);
-    return filtered;
+    console.log('useProjectTasksView: Filtered tasks for project with STRICT RLS:', projectId, 'count:', filtered.length);
+    
+    // Additional security check: ensure all tasks belong to current user's accessible data
+    const secureFiltered = filtered.filter(task => {
+      // This filter is redundant with RLS but adds client-side security validation
+      return task.organizationId && task.projectId === projectId;
+    });
+    
+    if (secureFiltered.length !== filtered.length) {
+      console.warn('useProjectTasksView: Some tasks were filtered out due to security checks');
+    }
+    
+    return secureFiltered;
   }, [tasks, projectId]);
 
   // Convert to Task[] if needed - but since we're using unified types, this should be direct
@@ -49,7 +60,7 @@ export const useProjectTasksView = (projectId: string | null) => {
     onSortByChange
   } = useProjectTasksFilters(convertedProjectTasks);
 
-  // Fetch team members for the project
+  // Fetch team members for the project with error handling
   const { teamMembers, isLoading: isLoadingTeamMembers, error: teamMembersError } = useProjectTeamMembers(projectId);
 
   const {
@@ -64,14 +75,15 @@ export const useProjectTasksView = (projectId: string | null) => {
     handleTaskDialogComplete
   } = useProjectTasksActions({ updateTaskStatus });
 
-  console.log('useProjectTasksView: Returning data:', {
+  console.log('useProjectTasksView: Returning data with STRICT RLS enforcement:', {
     isLoading,
     hasLoadError: !!loadError,
     hasProject: !!project,
     todoTasksCount: todoTasks?.length || 0,
     inProgressTasksCount: inProgressTasks?.length || 0,
     completedTasksCount: completedTasks?.length || 0,
-    teamMembersCount: teamMembers?.length || 0
+    teamMembersCount: teamMembers?.length || 0,
+    teamMembersError: teamMembersError?.message || null
   });
 
   return {

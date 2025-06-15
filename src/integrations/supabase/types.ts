@@ -1613,7 +1613,9 @@ export type Database = {
         Returns: boolean
       }
       log_data_access: {
-        Args: { table_name: string; action_type: string; record_count: number }
+        Args:
+          | { table_name: string; action_type: string; record_count: number }
+          | { table_name: string; operation: string; user_id: string }
         Returns: undefined
       }
       send_reminders: {
