@@ -113,6 +113,10 @@ const ProjectsPage = () => {
     refetch();
   }, [refetch]);
 
+  const handleProjectDeleted = useMemo(() => (projectId: string) => {
+    return resilientDeleteProject(projectId);
+  }, [resilientDeleteProject]);
+
   return (
     <ProjectsErrorBoundary onRetry={handleRetry}>
       <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-accent/10 relative overflow-hidden">
@@ -123,7 +127,7 @@ const ProjectsPage = () => {
           {(error || isShowingCached) && (
             <div className="animate-fade-in">
               <ConnectionStatus 
-                lastError={error?.message} 
+                lastError={error} 
                 onRetry={handleRetry}
                 isLoading={isLoading}
               />
@@ -181,7 +185,7 @@ const ProjectsPage = () => {
                   onCreateProject={handleCreateProject}
                   onViewTasks={handleViewTasks}
                   onCreateTask={handleCreateTask}
-                  onProjectDeleted={resilientDeleteProject}
+                  onProjectDeleted={handleProjectDeleted}
                 />
               )}
             </div>
