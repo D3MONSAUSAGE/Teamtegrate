@@ -25,31 +25,31 @@ export function useProjects() {
       localStorage.removeItem('projects-cache');
       sessionStorage.clear();
       
-      console.log('useProjects: Fetching authorized projects for user:', {
+      console.log('useProjects: Fetching STRICTLY accessible projects for user:', {
         userId: user.id,
         userRole: user.role,
         organizationId: user.organizationId
       });
       
-      // Use RLS policies to automatically filter to only return authorized projects
+      // Use STRICT RLS policies to automatically filter to only return accessible projects
       const { data, error } = await supabase
         .from('projects')
         .select('*')
         .order('updated_at', { ascending: false });
 
       if (error) {
-        console.error('useProjects: RLS Policy Error fetching projects:', error);
+        console.error('useProjects: STRICT RLS Policy Error fetching projects:', error);
         throw error;
       }
 
-      console.log('useProjects: RLS returned authorized projects:', {
+      console.log('useProjects: STRICT RLS returned accessible projects:', {
         userId: user.id,
         userRole: user.role,
         projectCount: data?.length || 0,
         timestamp: new Date().toISOString()
       });
 
-      // Security validation: Ensure all returned projects belong to user's organization
+      // Security validation: Ensure all returned projects should be accessible by this user
       const validatedProjects = data?.filter(dbProject => {
         if (dbProject.organization_id !== user.organizationId) {
           console.error('useProjects: SECURITY VIOLATION - Project from different organization leaked:', {
@@ -59,18 +59,43 @@ export function useProjects() {
           });
           return false;
         }
+
+        // Additional access validation logging
+        const hasDirectAccess = 
+          dbProject.manager_id === user.id || // Project manager
+          (dbProject.team_members && dbProject.team_members.includes(user.id)) || // Team member
+          user.role === 'admin' || user.role === 'superadmin'; // Admin access
+
+        if (!hasDirectAccess) {
+          console.error('useProjects: SECURITY VIOLATION - User should not have access to this project:', {
+            projectId: dbProject.id,
+            userId: user.id,
+            userRole: user.role,
+            projectManager: dbProject.manager_id,
+            teamMembers: dbProject.team_members
+          });
+          return false;
+        }
+
+        // Log successful access validation
+        const accessReason = 
+          dbProject.manager_id === user.id ? 'PROJECT_MANAGER' :
+          (dbProject.team_members && dbProject.team_members.includes(user.id)) ? 'TEAM_MEMBER' :
+          user.role === 'admin' || user.role === 'superadmin' ? 'ADMIN_ACCESS' : 'UNKNOWN';
+
+        console.log('useProjects: Processing STRICTLY accessible project:', {
+          projectId: dbProject.id,
+          projectTitle: dbProject.title,
+          userId: user.id,
+          userRole: user.role,
+          accessReason: accessReason
+        });
+
         return true;
       }) || [];
 
       // Transform database projects to match Project type
       const transformedProjects: Project[] = validatedProjects.map(dbProject => {
-        console.log('useProjects: Processing authorized project:', {
-          projectId: dbProject.id,
-          title: dbProject.title,
-          userId: user.id,
-          userRole: user.role
-        });
-
         return {
           id: dbProject.id,
           title: dbProject.title || '',
@@ -94,18 +119,19 @@ export function useProjects() {
       setProjects(transformedProjects);
       setError(null);
       
-      console.log('useProjects: Successfully processed authorized projects:', {
+      console.log('useProjects: Successfully processed STRICTLY accessible projects:', {
         originalCount: data?.length || 0,
         validatedCount: validatedProjects.length,
         transformedCount: transformedProjects.length,
         userId: user.id,
-        role: user.role
+        role: user.role,
+        accessType: 'STRICT_RLS_MANAGER_TEAM_ADMIN_ONLY'
       });
       
     } catch (err: any) {
       console.error('useProjects: Fetch error:', err);
       setError(err.message);
-      toast.error('Failed to load authorized projects - you may not have access to any projects');
+      toast.error('Failed to load accessible projects - you may not have access to any projects');
     } finally {
       setLoading(false);
     }
@@ -225,13 +251,13 @@ export function useProjects() {
   useEffect(() => {
     if (!user) return;
 
-    console.log('useProjects: Setting up real-time subscription with RLS filtering');
+    console.log('useProjects: Setting up real-time subscription with STRICT RLS filtering');
     const channel = supabase
       .channel('projects_changes')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'projects' },
         (payload) => {
-          console.log('useProjects: Real-time update received (will be filtered by RLS):', payload);
+          console.log('useProjects: Real-time update received (will be filtered by STRICT RLS):', payload);
           fetchProjects(); // Refetch to ensure proper authorization
         }
       )
