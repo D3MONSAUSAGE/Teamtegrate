@@ -14,53 +14,56 @@ export const fetchTasks = async (
   setTasks: (tasks: Task[]) => void
 ): Promise<void> => {
   try {
-    console.log('fetchTasks: Starting STRICT RLS-secured task fetch for user:', { 
-      id: user?.id, 
-      organizationId: user?.organization_id,
-      role: user?.role 
-    });
+    // Only log in development mode to reduce production overhead
+    if (process.env.NODE_ENV === 'development') {
+      console.log('fetchTasks: Starting task fetch for user:', { 
+        id: user?.id, 
+        organizationId: user?.organization_id,
+        role: user?.role 
+      });
+    }
     
     if (!user) {
-      console.error('fetchTasks: User is required for this operation');
       // Silently handle - don't show error to user
       return;
     }
     
     if (!user.organization_id) {
-      console.error('fetchTasks: User must belong to an organization');
       // Silently handle - don't show error to user
       return;
     }
     
-    // Clear any cached data first
-    localStorage.removeItem('tasks-cache');
-    sessionStorage.clear();
-    
-    // Fetch tasks with STRICT RLS policies - will only return directly assigned or created tasks
-    console.log('fetchTasks: Executing STRICT RLS-secured tasks query...');
+    // Fetch tasks with RLS policies
     const { data: tasksData, error: tasksError } = await supabase
       .from('tasks')
       .select('*')
       .order('created_at', { ascending: false });
 
     if (tasksError) {
-      console.error('fetchTasks: RLS Policy Error fetching tasks:', tasksError);
-      // Silently handle - don't show error to user, just return empty array
+      if (process.env.NODE_ENV === 'development') {
+        console.error('fetchTasks: Error fetching tasks:', tasksError);
+      }
+      // For "set-returning functions" error, silently return empty array
+      if (tasksError.message?.includes('set-returning functions are not allowed in WHERE')) {
+        setTasks([]);
+        return;
+      }
+      // Silently handle other errors
       setTasks([]);
       return;
     }
 
-    console.log(`fetchTasks: STRICT RLS returned ${tasksData?.length || 0} directly accessible tasks from database for user ${user.id} (${user.role})`);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`fetchTasks: Retrieved ${tasksData?.length || 0} tasks`);
+    }
     
     // Security validation: Ensure all returned tasks should be accessible by this user
     const validatedTasks = tasksData?.filter(dbTask => {
       // Check organization match
       if (dbTask.organization_id !== user.organization_id) {
-        console.error('fetchTasks: SECURITY VIOLATION - Task from different organization leaked:', {
-          taskId: dbTask.id,
-          taskOrg: dbTask.organization_id,
-          userOrg: user.organization_id
-        });
+        if (process.env.NODE_ENV === 'development') {
+          console.error('fetchTasks: Task from different organization filtered out');
+        }
         return false;
       }
 
@@ -71,44 +74,25 @@ export const fetchTasks = async (
         (dbTask.assigned_to_ids && dbTask.assigned_to_ids.includes(user.id)) || // Multi assignee
         user.role === 'admin' || user.role === 'superadmin'; // Admin access
 
-      if (!hasDirectAccess) {
-        console.error('fetchTasks: SECURITY VIOLATION - User should not have access to this task:', {
-          taskId: dbTask.id,
-          userId: user.id,
-          userRole: user.role,
-          taskCreator: dbTask.user_id,
-          taskAssignedTo: dbTask.assigned_to_id,
-          taskAssignedToIds: dbTask.assigned_to_ids
-        });
-        return false;
-      }
-
-      return true;
+      return hasDirectAccess;
     }) || [];
-
-    console.log(`fetchTasks: Security validation passed for ${validatedTasks.length} STRICTLY accessible tasks`);
     
-    // Fetch comments with explicit column selection (only from same organization)
-    const { data: commentsData, error: commentsError } = await supabase
-      .from('comments')
-      .select('id, user_id, task_id, content, created_at')
-      .eq('organization_id', user.organization_id);
+    // Fetch comments and users data in parallel for better performance
+    const [commentsResult, usersResult] = await Promise.allSettled([
+      supabase
+        .from('comments')
+        .select('id, user_id, task_id, content, created_at')
+        .eq('organization_id', user.organization_id),
+      supabase
+        .from('users')
+        .select('id, name, email')
+        .eq('organization_id', user.organization_id)
+    ]);
 
-    if (commentsError) {
-      console.error('fetchTasks: Error fetching comments:', commentsError);
-    }
+    const commentsData = commentsResult.status === 'fulfilled' ? commentsResult.value.data : null;
+    const usersData = usersResult.status === 'fulfilled' ? usersResult.value.data : null;
 
-    // Fetch user information for proper assignee display (only from same organization)
-    const { data: usersData, error: usersError } = await supabase
-      .from('users')
-      .select('id, name, email')
-      .eq('organization_id', user.organization_id);
-
-    if (usersError) {
-      console.error('fetchTasks: Error fetching organization users:', usersError);
-    }
-
-    // Create user lookup map
+    // Create user lookup map for better performance
     const userMap = new Map();
     if (usersData) {
       usersData.forEach((userData: any) => {
@@ -116,127 +100,93 @@ export const fetchTasks = async (
       });
     }
 
-    // Transform tasks with enhanced security logging
-    const transformedTasks: Task[] = [];
-    
-    if (validatedTasks.length > 0) {
-      for (const dbTask of validatedTasks) {
-        const accessReason = 
-          dbTask.user_id === user.id ? 'CREATOR' :
-          dbTask.assigned_to_id === user.id ? 'SINGLE_ASSIGNEE' :
-          (dbTask.assigned_to_ids && dbTask.assigned_to_ids.includes(user.id)) ? 'MULTI_ASSIGNEE' :
-          user.role === 'admin' || user.role === 'superadmin' ? 'ADMIN_ACCESS' : 'UNKNOWN';
+    // Transform tasks with optimized processing
+    const transformedTasks: Task[] = validatedTasks.map(dbTask => {
+      // Explicit type validation with defaults
+      const taskPriority = ['Low', 'Medium', 'High'].includes(dbTask.priority) ? dbTask.priority : 'Medium';
+      const taskStatus = ['To Do', 'In Progress', 'Completed'].includes(dbTask.status) ? dbTask.status : 'To Do';
 
-        console.log('fetchTasks: Processing STRICTLY authorized task:', {
-          taskId: dbTask.id,
-          taskTitle: dbTask.title,
-          assignedTo: dbTask.assigned_to_id,
-          projectId: dbTask.project_id,
-          userId: user.id,
-          userRole: user.role,
-          accessReason: accessReason
-        });
+      // Optimized assignment data processing
+      let assignedToId: string | undefined;
+      let assignedToName: string | undefined;
+      let assignedToIds: string[] = [];
+      let assignedToNames: string[] = [];
+
+      // Handle assigned_to_ids array (primary source)
+      if (dbTask.assigned_to_ids && Array.isArray(dbTask.assigned_to_ids) && dbTask.assigned_to_ids.length > 0) {
+        assignedToIds = dbTask.assigned_to_ids.filter(id => id && id.toString().trim() !== '').map(id => String(id));
         
-        // Explicit type validation
-        let taskPriority: 'Low' | 'Medium' | 'High' = 'Medium';
-        if (dbTask.priority === 'Low' || dbTask.priority === 'Medium' || dbTask.priority === 'High') {
-          taskPriority = dbTask.priority;
-        }
-        
-        let taskStatus: 'To Do' | 'In Progress' | 'Completed' = 'To Do';
-        if (dbTask.status === 'To Do' || dbTask.status === 'In Progress' || dbTask.status === 'Completed') {
-          taskStatus = dbTask.status;
-        }
-
-        // Handle assignment data with proper normalization
-        let assignedToId: string | undefined;
-        let assignedToName: string | undefined;
-        let assignedToIds: string[] = [];
-        let assignedToNames: string[] = [];
-
-        // Priority: Use assigned_to_ids if available (normalized data)
-        if (dbTask.assigned_to_ids && Array.isArray(dbTask.assigned_to_ids) && dbTask.assigned_to_ids.length > 0) {
-          assignedToIds = dbTask.assigned_to_ids.map((id: any) => String(id));
-          
-          // Get names from assigned_to_names or fallback to user lookup
+        if (assignedToIds.length > 0) {
+          // Use cached names or lookup
           if (dbTask.assigned_to_names && Array.isArray(dbTask.assigned_to_names) && dbTask.assigned_to_names.length > 0) {
-            assignedToNames = dbTask.assigned_to_names.map((name: any) => String(name));
+            assignedToNames = dbTask.assigned_to_names.filter(name => name && name.toString().trim() !== '').map(name => String(name));
           } else {
-            // Fallback to user lookup for names
             assignedToNames = assignedToIds.map(id => {
               const assignedUser = userMap.get(id);
               return assignedUser ? (assignedUser.name || assignedUser.email) : 'Unknown User';
             });
           }
 
-          // For single assignment, also populate single fields for backward compatibility
           if (assignedToIds.length === 1) {
             assignedToId = assignedToIds[0];
             assignedToName = assignedToNames[0];
           }
-        } 
-        // Fallback: Use assigned_to_id if no assigned_to_ids (legacy data)
-        else if (dbTask.assigned_to_id && dbTask.assigned_to_id.trim() !== '') {
-          assignedToId = String(dbTask.assigned_to_id);
-          assignedToIds = [assignedToId];
-          
-          // Get name from user lookup
-          const assignedUser = userMap.get(assignedToId);
-          assignedToName = assignedUser ? (assignedUser.name || assignedUser.email) : 'Assigned User';
-          assignedToNames = [assignedToName];
         }
-
-        // Build task with explicit type annotations and proper assignee data
-        const task: Task = {
-          id: String(dbTask.id || ''),
-          userId: String(dbTask.user_id || user.id),
-          projectId: dbTask.project_id ? String(dbTask.project_id) : undefined,
-          title: String(dbTask.title || ''),
-          description: String(dbTask.description || ''),
-          deadline: parseDate(dbTask.deadline),
-          priority: taskPriority,
-          status: taskStatus,
-          createdAt: parseDate(dbTask.created_at),
-          updatedAt: parseDate(dbTask.updated_at),
-          assignedToId,
-          assignedToName,
-          assignedToIds,
-          assignedToNames,
-          tags: [],
-          comments: commentsData ? commentsData
-            .filter((comment: any) => comment.task_id === dbTask.id)
-            .map((comment: any) => ensureTaskCommentComplete({
-              id: String(comment.id),
-              userId: String(comment.user_id),
-              userName: 'User',
-              text: String(comment.content),
-              createdAt: parseDate(comment.created_at),
-            }, user.organization_id)) : [],
-          cost: Number(dbTask.cost) || 0,
-          organizationId: user.organization_id
-        };
-
-        transformedTasks.push(task);
+      } 
+      // Fallback to single assignment
+      else if (dbTask.assigned_to_id && dbTask.assigned_to_id.trim() !== '') {
+        assignedToId = String(dbTask.assigned_to_id);
+        assignedToIds = [assignedToId];
+        
+        const assignedUser = userMap.get(assignedToId);
+        assignedToName = assignedUser ? (assignedUser.name || assignedUser.email) : 'Assigned User';
+        assignedToNames = [assignedToName];
       }
-    }
 
-    console.log(`fetchTasks: Successfully processed ${transformedTasks.length} STRICTLY authorized tasks for user ${user.id} (${user.role})`);
-    
-    // Additional security log
-    console.log('fetchTasks: Final STRICT security summary:', {
-      userId: user.id,
-      userRole: user.role,
-      userOrg: user.organization_id,
-      tasksReturned: transformedTasks.length,
-      accessType: 'STRICT_RLS_ONLY_ASSIGNED_OR_CREATED',
-      timestamp: new Date().toISOString()
+      // Build task with optimized comment processing
+      const taskComments = commentsData ? commentsData
+        .filter((comment: any) => comment.task_id === dbTask.id)
+        .map((comment: any) => ensureTaskCommentComplete({
+          id: String(comment.id),
+          userId: String(comment.user_id),
+          userName: 'User',
+          text: String(comment.content),
+          createdAt: parseDate(comment.created_at),
+        }, user.organization_id)) : [];
+
+      return {
+        id: String(dbTask.id || ''),
+        userId: String(dbTask.user_id || user.id),
+        projectId: dbTask.project_id ? String(dbTask.project_id) : undefined,
+        title: String(dbTask.title || ''),
+        description: String(dbTask.description || ''),
+        deadline: parseDate(dbTask.deadline),
+        priority: taskPriority as 'Low' | 'Medium' | 'High',
+        status: taskStatus as 'To Do' | 'In Progress' | 'Completed',
+        createdAt: parseDate(dbTask.created_at),
+        updatedAt: parseDate(dbTask.updated_at),
+        assignedToId,
+        assignedToName,
+        assignedToIds,
+        assignedToNames,
+        tags: [],
+        comments: taskComments,
+        cost: Number(dbTask.cost) || 0,
+        organizationId: user.organization_id
+      };
     });
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`fetchTasks: Successfully processed ${transformedTasks.length} tasks`);
+    }
     
     setTasks(transformedTasks);
     
   } catch (error: any) {
-    console.error('fetchTasks: Critical error during STRICT RLS-secured task fetch:', error);
-    // Silently handle - don't show error to user, just return empty array
+    if (process.env.NODE_ENV === 'development') {
+      console.error('fetchTasks: Critical error during task fetch:', error);
+    }
+    // Silently handle errors in production
     setTasks([]);
   }
 };
