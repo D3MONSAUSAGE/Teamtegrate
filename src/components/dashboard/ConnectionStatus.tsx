@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Wifi, WifiOff, RefreshCw, AlertCircle } from 'lucide-react';
+import { Wifi, WifiOff, RefreshCw, AlertCircle, CheckCircle } from 'lucide-react';
 import { useConnectionStatus } from '@/hooks/useConnectionStatus';
 
 interface ConnectionStatusProps {
@@ -19,30 +19,56 @@ const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
 }) => {
   const { isOnline, isConnecting, lastConnected, retryCount } = useConnectionStatus();
 
-  if (isOnline && !lastError) {
-    return null; // Don't show when everything is working
+  // Show status when there are issues or when explicitly needed
+  const shouldShow = !isOnline || lastError || isConnecting || retryCount > 0;
+
+  if (!shouldShow) {
+    return null;
   }
 
+  const getStatusColor = () => {
+    if (!isOnline) return 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/20';
+    if (lastError) return 'border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/20';
+    if (isConnecting) return 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/20';
+    return 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/20';
+  };
+
+  const getStatusIcon = () => {
+    if (!isOnline) return <WifiOff className="h-4 w-4 text-red-600" />;
+    if (isConnecting) return <RefreshCw className="h-4 w-4 text-blue-600 animate-spin" />;
+    return <Wifi className="h-4 w-4 text-green-600" />;
+  };
+
+  const getStatusText = () => {
+    if (isConnecting) return 'Reconnecting...';
+    if (!isOnline) return 'Connection Lost';
+    if (lastError) return 'Network Issues Detected';
+    return 'Connected';
+  };
+
+  const getStatusVariant = () => {
+    if (!isOnline) return 'destructive' as const;
+    if (lastError) return 'secondary' as const;
+    if (isConnecting) return 'secondary' as const;
+    return 'default' as const;
+  };
+
   return (
-    <Card className="border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/20">
+    <Card className={`${getStatusColor()} transition-all duration-300`}>
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            {isOnline ? (
-              <Wifi className="h-4 w-4 text-green-600" />
-            ) : (
-              <WifiOff className="h-4 w-4 text-red-600" />
-            )}
+            {getStatusIcon()}
             
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2">
-                <Badge variant={isOnline ? "default" : "destructive"}>
-                  {isConnecting ? 'Connecting...' : (isOnline ? 'Online' : 'Offline')}
+                <Badge variant={getStatusVariant()}>
+                  {getStatusText()}
                 </Badge>
                 
                 {retryCount > 0 && (
                   <span className="text-xs text-muted-foreground">
-                    Retry attempt: {retryCount}
+                    Attempt {retryCount}/3
                   </span>
                 )}
               </div>
@@ -50,7 +76,12 @@ const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
               {lastError && (
                 <div className="flex items-center gap-1 text-sm text-amber-700 dark:text-amber-300">
                   <AlertCircle className="h-3 w-3" />
-                  <span>{lastError}</span>
+                  <span>
+                    {lastError.includes('Network connection issue') 
+                      ? 'Poor network connection - retrying automatically'
+                      : lastError
+                    }
+                  </span>
                 </div>
               )}
               
@@ -59,10 +90,17 @@ const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
                   Last connected: {lastConnected.toLocaleTimeString()}
                 </span>
               )}
+              
+              {isOnline && !lastError && retryCount === 0 && (
+                <div className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
+                  <CheckCircle className="h-3 w-3" />
+                  <span>Connection restored</span>
+                </div>
+              )}
             </div>
           </div>
 
-          {onRetry && (
+          {onRetry && (isConnecting || !isOnline || lastError) && (
             <Button 
               variant="outline" 
               size="sm"
@@ -71,7 +109,7 @@ const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
               className="flex items-center gap-2"
             >
               <RefreshCw className={`h-3 w-3 ${(isLoading || isConnecting) ? 'animate-spin' : ''}`} />
-              Retry
+              {isConnecting ? 'Connecting...' : 'Retry'}
             </Button>
           )}
         </div>

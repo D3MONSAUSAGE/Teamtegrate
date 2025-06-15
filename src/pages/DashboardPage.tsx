@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { useTask } from '@/contexts/task';
@@ -16,15 +15,27 @@ import TeamManagement from '@/components/dashboard/TeamManagement';
 import { useIsMobile } from '@/hooks/use-mobile';
 import AnalyticsSection from '@/components/dashboard/AnalyticsSection';
 import TimeTracking from '@/components/dashboard/TimeTracking';
+import ConnectionStatus from '@/components/dashboard/ConnectionStatus';
+import { useTasksPageData } from '@/hooks/useTasksPageData';
 
 const DashboardPage = () => {
   const { user } = useAuth();
-  const { tasks, dailyScore } = useTask();
-  const { projects, isLoading: projectsLoading, refreshProjects } = useProjects();
+  const { tasks: contextTasks, dailyScore } = useTask();
+  const { tasks: hookTasks, isLoading: tasksLoading, error: tasksError } = useTasksPageData();
+  const { projects, isLoading: projectsLoading, refreshProjects, error: projectsError } = useProjects();
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const isMobile = useIsMobile();
+  
+  // Use hook tasks if available and context tasks as fallback
+  const tasks = hookTasks.length > 0 ? hookTasks : contextTasks;
+  
+  // Combined loading state
+  const isLoading = tasksLoading || projectsLoading;
+  
+  // Combined error state
+  const lastError = tasksError?.message || projectsError || null;
   
   // Memoize expensive calculations to prevent re-computation on every render
   const { todaysTasks, upcomingTasks, flatProjects, recentProjects } = useMemo(() => {
@@ -68,6 +79,19 @@ const DashboardPage = () => {
     
     return { todaysTasks, upcomingTasks, flatProjects, recentProjects };
   }, [tasks, projects, user?.organizationId]);
+
+  // Manual refresh handler
+  const handleManualRefresh = useCallback(async () => {
+    try {
+      await refreshProjects();
+      // Force refetch of tasks through context
+      if (window.location) {
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error('Manual refresh failed:', error);
+    }
+  }, [refreshProjects]);
 
   // Debounced click handlers to prevent rapid clicking issues
   const handleEditTask = useCallback((task: Task) => {
@@ -119,12 +143,19 @@ const DashboardPage = () => {
   const headerStats = useMemo(() => ({
     todaysCount: todaysTasks.length,
     upcomingCount: upcomingTasks.length,
-    projectsCount: projectsLoading ? '...' : flatProjects.length
-  }), [todaysTasks.length, upcomingTasks.length, projectsLoading, flatProjects.length]);
+    projectsCount: isLoading ? '...' : flatProjects.length
+  }), [todaysTasks.length, upcomingTasks.length, isLoading, flatProjects.length]);
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/5 to-background">
       <div className="relative space-y-8 no-scrollbar">
+        {/* Connection Status Alert */}
+        <ConnectionStatus 
+          lastError={lastError}
+          onRetry={handleManualRefresh}
+          isLoading={isLoading}
+        />
+
         {/* Simplified Welcome Header */}
         <div className="relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-r from-primary/3 via-emerald-500/3 to-primary/3" />
@@ -172,6 +203,7 @@ const DashboardPage = () => {
                 onClick={() => handleCreateTask()} 
                 size={isMobile ? "default" : "lg"} 
                 className="bg-gradient-to-r from-primary to-emerald-500 hover:shadow-lg transition-all duration-200"
+                disabled={isLoading}
               >
                 <Plus className="h-4 w-4 mr-2" /> 
                 Create Task

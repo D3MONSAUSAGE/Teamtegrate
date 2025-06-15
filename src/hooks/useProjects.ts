@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Project } from '@/types';
 import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
+import { requestManager } from '@/utils/requestManager';
 
 export function useProjects() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -20,33 +21,53 @@ export function useProjects() {
     
     try {
       setLoading(true);
+      setError(null);
       
-      // Clear any cached data first
-      localStorage.removeItem('projects-cache');
-      sessionStorage.clear();
+      const cacheKey = `projects-${user.organizationId}-${user.id}`;
       
-      console.log('useProjects: Fetching STRICTLY accessible projects for user:', {
-        userId: user.id,
-        userRole: user.role,
-        organizationId: user.organizationId
-      });
-      
-      // Use STRICT RLS policies to automatically filter to only return accessible projects
-      const { data, error } = await supabase
-        .from('projects')
-        .select('*')
-        .order('updated_at', { ascending: false });
+      const data = await requestManager.dedupe(cacheKey, async () => {
+        console.log('useProjects: Fetching STRICTLY accessible projects for user:', {
+          userId: user.id,
+          userRole: user.role,
+          organizationId: user.organizationId
+        });
+        
+        // Add timeout to project fetch
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Request timeout')), 10000)
+        );
 
-      if (error) {
-        console.error('useProjects: STRICT RLS Policy Error fetching projects:', error);
-        throw error;
-      }
+        const projectPromise = supabase
+          .from('projects')
+          .select('*')
+          .order('updated_at', { ascending: false });
 
-      console.log('useProjects: STRICT RLS returned accessible projects:', {
-        userId: user.id,
-        userRole: user.role,
-        projectCount: data?.length || 0,
-        timestamp: new Date().toISOString()
+        const { data, error } = await Promise.race([
+          projectPromise,
+          timeoutPromise
+        ]) as any;
+
+        if (error) {
+          console.error('useProjects: STRICT RLS Policy Error fetching projects:', error);
+          
+          // Handle network errors specifically
+          if (error.message?.includes('Failed to fetch') || 
+              error.message?.includes('Network Error') ||
+              error.message?.includes('timeout')) {
+            throw new Error('Network connection issue. Please check your connection and try again.');
+          }
+          
+          throw error;
+        }
+
+        console.log('useProjects: STRICT RLS returned accessible projects:', {
+          userId: user.id,
+          userRole: user.role,
+          projectCount: data?.length || 0,
+          timestamp: new Date().toISOString()
+        });
+
+        return data;
       });
 
       // Security validation: Ensure all returned projects should be accessible by this user
@@ -130,8 +151,16 @@ export function useProjects() {
       
     } catch (err: any) {
       console.error('useProjects: Fetch error:', err);
-      setError(err.message);
-      toast.error('Failed to load accessible projects - you may not have access to any projects');
+      const errorMessage = err.message;
+      
+      setError(errorMessage);
+      
+      // Show user-friendly error messages
+      if (errorMessage.includes('Network connection issue')) {
+        toast.error('Connection issue - please check your internet and try again');
+      } else {
+        toast.error('Failed to load accessible projects - you may not have access to any projects');
+      }
     } finally {
       setLoading(false);
     }

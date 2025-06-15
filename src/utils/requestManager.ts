@@ -27,19 +27,19 @@ class RequestManager {
     const now = Date.now();
     const cached = this.cache[key];
 
-    // Return cached promise if it's still pending
+    // Return cached promise if it's still pending and not expired
     if (cached && (now - cached.timestamp) < ttl) {
       try {
         return await cached.promise;
       } catch (error) {
-        // Remove failed cache entry
+        // Remove failed cache entry and continue with new request
         delete this.cache[key];
-        throw error;
+        console.warn('Cached request failed, retrying with new request:', error);
       }
     }
 
-    // Create new request
-    const promise = this.withRetry(requestFn);
+    // Create new request with timeout and retry logic
+    const promise = this.withRetryAndTimeout(requestFn);
     this.cache[key] = {
       promise,
       timestamp: now
@@ -55,8 +55,8 @@ class RequestManager {
     }
   }
 
-  // Retry logic with exponential backoff
-  private async withRetry<T>(
+  // Retry logic with exponential backoff and timeout
+  private async withRetryAndTimeout<T>(
     requestFn: () => Promise<T>, 
     config = this.DEFAULT_RETRY_CONFIG
   ): Promise<T> {
@@ -64,25 +64,64 @@ class RequestManager {
 
     for (let attempt = 0; attempt <= config.maxRetries; attempt++) {
       try {
-        return await requestFn();
+        // Add timeout to each attempt
+        const timeoutPromise = new Promise<never>((_, reject) => 
+          setTimeout(() => reject(new Error('Request timeout')), 15000)
+        );
+
+        const result = await Promise.race([
+          requestFn(),
+          timeoutPromise
+        ]);
+
+        return result;
       } catch (error) {
         lastError = error as Error;
+        
+        console.warn(`Request attempt ${attempt + 1} failed:`, lastError.message);
         
         if (attempt === config.maxRetries) {
           break;
         }
 
-        // Calculate delay with exponential backoff
-        const delay = Math.min(
-          config.baseDelay * Math.pow(2, attempt),
-          config.maxDelay
-        );
+        // Don't retry on certain error types
+        if (this.isNonRetryableError(lastError)) {
+          break;
+        }
 
+        // Calculate delay with exponential backoff and jitter
+        const baseDelay = config.baseDelay * Math.pow(2, attempt);
+        const jitter = Math.random() * 0.1 * baseDelay; // 10% jitter
+        const delay = Math.min(baseDelay + jitter, config.maxDelay);
+
+        console.log(`Retrying in ${delay}ms...`);
         await this.sleep(delay);
       }
     }
 
+    // Enhance error message for user-facing errors
+    if (this.isNetworkError(lastError!)) {
+      throw new Error('Network connection issue. Please check your connection and try again.');
+    }
+
     throw lastError!;
+  }
+
+  private isNonRetryableError(error: Error): boolean {
+    const message = error.message.toLowerCase();
+    return message.includes('unauthorized') ||
+           message.includes('forbidden') ||
+           message.includes('not found') ||
+           message.includes('invalid input syntax') ||
+           message.includes('permission');
+  }
+
+  private isNetworkError(error: Error): boolean {
+    const message = error.message.toLowerCase();
+    return message.includes('failed to fetch') ||
+           message.includes('network error') ||
+           message.includes('timeout') ||
+           message.includes('connection');
   }
 
   private sleep(ms: number): Promise<void> {
@@ -115,11 +154,24 @@ class RequestManager {
     const cached = this.cache[key];
     return cached?.data || null;
   }
+
+  // Clear all cache
+  clearAllCache(): void {
+    this.cache = {};
+  }
+
+  // Get cache stats for debugging
+  getCacheStats(): { size: number; keys: string[] } {
+    return {
+      size: Object.keys(this.cache).length,
+      keys: Object.keys(this.cache)
+    };
+  }
 }
 
 export const requestManager = new RequestManager();
 
-// Debounce utility
+// Enhanced debounce utility with cleanup
 export function debounce<T extends (...args: any[]) => any>(
   func: T,
   delay: number
@@ -128,5 +180,20 @@ export function debounce<T extends (...args: any[]) => any>(
   return (...args: Parameters<T>) => {
     clearTimeout(timeoutId);
     timeoutId = setTimeout(() => func(...args), delay);
+  };
+}
+
+// Throttle utility for rate limiting
+export function throttle<T extends (...args: any[]) => any>(
+  func: T,
+  limit: number
+): (...args: Parameters<T>) => void {
+  let inThrottle: boolean;
+  return (...args: Parameters<T>) => {
+    if (!inThrottle) {
+      func(...args);
+      inThrottle = true;
+      setTimeout(() => inThrottle = false, limit);
+    }
   };
 }
