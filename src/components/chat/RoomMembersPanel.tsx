@@ -37,16 +37,33 @@ const RoomMembersPanel: React.FC<RoomMembersPanelProps> = ({ roomId, canManage, 
   const { data: members = [], isLoading } = useQuery({
     queryKey: ['room-members', roomId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // First get participants
+      const { data: participants, error: participantsError } = await supabase
         .from('chat_participants')
-        .select(`
-          *,
-          user:users(name, email)
-        `)
+        .select('*')
         .eq('room_id', roomId);
 
-      if (error) throw error;
-      return data as Member[];
+      if (participantsError) throw participantsError;
+
+      // Then get user details for each participant
+      const userIds = participants.map(p => p.user_id);
+      if (userIds.length === 0) return [];
+
+      const { data: users, error: usersError } = await supabase
+        .from('users')
+        .select('id, name, email')
+        .in('id', userIds);
+
+      if (usersError) throw usersError;
+
+      // Combine the data
+      return participants.map(participant => {
+        const user = users.find(u => u.id === participant.user_id);
+        return {
+          ...participant,
+          user: user || { name: 'Unknown User', email: 'unknown@example.com' }
+        };
+      }) as Member[];
     },
   });
 

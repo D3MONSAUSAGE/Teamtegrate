@@ -11,6 +11,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
+import { ChatRoom } from '@/types/chat';
 
 const EnhancedChatContainer: React.FC = () => {
   const isMobile = useIsMobile();
@@ -40,22 +41,26 @@ const EnhancedChatContainer: React.FC = () => {
     enabled: !!selectedRoomId,
   });
 
+  const handleRoomSelect = (room: ChatRoom) => {
+    setSelectedRoomId(room.id);
+  };
+
   if (isMobile) {
     return (
       <div className="h-full flex flex-col">
         {!selectedRoomId ? (
           <RoomList
             selectedRoomId={selectedRoomId}
-            onRoomSelect={setSelectedRoomId}
+            onRoomSelect={handleRoomSelect}
           />
-        ) : (
+        ) : selectedRoom ? (
           <MessageArea
-            roomId={selectedRoomId}
+            room={selectedRoom}
             onBack={() => setSelectedRoomId(null)}
             onToggleMembers={() => setShowMembers(!showMembers)}
             onShowSettings={() => setShowRoomSettings(true)}
           />
-        )}
+        ) : null}
         
         {selectedRoom && (
           <>
@@ -83,7 +88,7 @@ const EnhancedChatContainer: React.FC = () => {
       <ResizablePanel defaultSize={25} minSize={20} maxSize={35}>
         <RoomList
           selectedRoomId={selectedRoomId}
-          onRoomSelect={setSelectedRoomId}
+          onRoomSelect={handleRoomSelect}
         />
       </ResizablePanel>
       
@@ -91,9 +96,9 @@ const EnhancedChatContainer: React.FC = () => {
       
       {/* Message Area */}
       <ResizablePanel defaultSize={showMembers ? 50 : 75}>
-        {selectedRoomId ? (
+        {selectedRoomId && selectedRoom ? (
           <MessageArea
-            roomId={selectedRoomId}
+            room={selectedRoom}
             onToggleMembers={() => setShowMembers(!showMembers)}
             onShowSettings={() => setShowRoomSettings(true)}
             onAddMember={() => setShowAddMember(true)}
