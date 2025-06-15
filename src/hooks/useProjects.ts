@@ -65,7 +65,27 @@ export function useProjects() {
         });
       }
 
-      setProjects(data || []);
+      // Transform database projects to match Project type
+      const transformedProjects: Project[] = data?.map(dbProject => ({
+        id: dbProject.id,
+        title: dbProject.title || '',
+        description: dbProject.description || '',
+        startDate: new Date(dbProject.start_date || dbProject.created_at),
+        endDate: new Date(dbProject.end_date || dbProject.updated_at),
+        managerId: dbProject.manager_id || '',
+        createdAt: new Date(dbProject.created_at),
+        updatedAt: new Date(dbProject.updated_at),
+        teamMemberIds: dbProject.team_members || [],
+        budget: dbProject.budget || 0,
+        budgetSpent: dbProject.budget_spent || 0,
+        isCompleted: dbProject.is_completed || false,
+        status: dbProject.status as Project['status'] || 'To Do',
+        tasksCount: dbProject.tasks_count || 0,
+        tags: dbProject.tags || [],
+        organizationId: dbProject.organization_id
+      })) || [];
+
+      setProjects(transformedProjects);
       setError(null);
     } catch (err: any) {
       console.error('useProjects: Fetch error:', err);
@@ -121,9 +141,30 @@ export function useProjects() {
       }
       
       console.log('useProjects: Successfully created project:', data);
-      setProjects(prev => [data, ...prev]);
+      
+      // Transform the created project to match Project type
+      const transformedProject: Project = {
+        id: data.id,
+        title: data.title || '',
+        description: data.description || '',
+        startDate: new Date(data.start_date || data.created_at),
+        endDate: new Date(data.end_date || data.updated_at),
+        managerId: data.manager_id || '',
+        createdAt: new Date(data.created_at),
+        updatedAt: new Date(data.updated_at),
+        teamMemberIds: data.team_members || [],
+        budget: data.budget || 0,
+        budgetSpent: data.budget_spent || 0,
+        isCompleted: data.is_completed || false,
+        status: data.status as Project['status'] || 'To Do',
+        tasksCount: data.tasks_count || 0,
+        tags: data.tags || [],
+        organizationId: data.organization_id
+      };
+      
+      setProjects(prev => [transformedProject, ...prev]);
       toast.success('Project created successfully');
-      return data;
+      return transformedProject;
     } catch (err: any) {
       console.error('useProjects: Create project error:', err);
       toast.error(`Failed to create project: ${err.message}`);
@@ -188,8 +229,11 @@ export function useProjects() {
   return {
     projects,
     loading,
+    isLoading: loading, // Add alias for backward compatibility
     error,
     fetchProjects,
+    refetch: fetchProjects, // Add alias for backward compatibility
+    refreshProjects: fetchProjects, // Add alias for backward compatibility
     createProject,
     deleteProject,
     setProjects

@@ -1,198 +1,240 @@
 import React, {
   createContext,
-  useState,
   useContext,
+  useState,
+  useCallback,
 } from 'react';
-import { Task, TaskStatus, User, Project, DailyScore } from '@/types';
-import { addTask as addTaskAPI } from './api/taskCreate';
-import { deleteTask as deleteTaskAPI } from './api/taskDelete';
-import { updateTask as updateTaskAPI, updateTaskStatus as updateTaskStatusAPI } from './api/taskUpdate';
+import { Task, TaskStatus, Project } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
-import { useProjects } from '@/hooks/useProjects';
+import { v4 as uuidv4 } from 'uuid';
 import { toast } from '@/components/ui/sonner';
-import { assignTaskToUser as assignTaskToUserAPI } from './operations/assignment/assignTaskToUser';
-import { useTasksPageData } from '@/hooks/useTasksPageData';
+import { supabase } from '@/integrations/supabase/client';
+import { useProjects } from '@/hooks/useProjects';
 
-interface TaskContextProps {
+interface TaskContextType {
   tasks: Task[];
-  isLoading: boolean;
-  projects: Project[];
+  loading: boolean;
+  error: string | null;
   addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
-  updateTask: (taskId: string, updates: Partial<Task>) => Promise<void>;
-  updateTaskStatus: (taskId: string, status: TaskStatus) => Promise<void>;
-  deleteTask: (taskId: string) => Promise<void>;
-  assignTaskToUser: (taskId: string, userId: string, userName: string) => Promise<void>;
-  addCommentToTask: (taskId: string, comment: string) => Promise<void>;
-  updateProject: (projectId: string, updates: any) => Promise<void>;
-  deleteProject: (projectId: string) => Promise<void>;
+  updateTask: (task: Task) => Promise<void>;
+  deleteTask: (id: string) => Promise<void>;
+  updateTaskStatus: (id: string, status: TaskStatus) => Promise<void>;
+  
+  // Project operations
+  projects: Project[];
+  projectsLoading: boolean;
+  projectsError: string | null;
+  fetchProjects: () => Promise<void>;
   refreshProjects: () => Promise<void>;
-  dailyScore: DailyScore;
-  setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
+  createProject: (title: string, description?: string, startDate?: string, endDate?: string, budget?: number) => Promise<Project | undefined>;
+  deleteProject: (projectId: string) => Promise<void>;
+  setProjects: (projects: Project[] | ((prev: Project[]) => Project[])) => void;
 }
 
-const TaskContext = createContext<TaskContextProps | undefined>(undefined);
+const TaskContext = createContext<TaskContextType | undefined>(undefined);
 
-export const useTask = (): TaskContextProps => {
+export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
+
+  const addTask = async (taskData: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
+    if (!user?.id) {
+      console.error('User ID is missing');
+      return;
+    }
+
+    const newTask: Omit<Task, 'id' | 'createdAt' | 'updatedAt'> = {
+      ...taskData,
+      userId: user.id,
+    };
+
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('tasks')
+        .insert([
+          {
+            ...newTask,
+            user_id: newTask.userId,
+            project_id: newTask.projectId,
+            title: newTask.title,
+            description: newTask.description,
+            deadline: newTask.deadline,
+            priority: newTask.priority,
+            status: newTask.status,
+            cost: newTask.cost
+          },
+        ])
+        .select();
+
+      if (error) {
+        console.error('Error adding task:', error);
+        toast.error('Failed to add task');
+        setError(error.message);
+      } else {
+        console.log('Task added successfully:', data);
+        
+        // Optimistically update the local state
+        setTasks((prevTasks) => [
+          ...prevTasks,
+          {
+            id: data[0].id,
+            userId: data[0].user_id,
+            projectId: data[0].project_id,
+            title: data[0].title,
+            description: data[0].description,
+            deadline: new Date(data[0].deadline),
+            priority: data[0].priority as Task['priority'],
+            status: data[0].status as Task['status'],
+            createdAt: new Date(data[0].created_at),
+            updatedAt: new Date(data[0].updated_at),
+            cost: data[0].cost,
+            organizationId: data[0].organization_id
+          },
+        ]);
+        toast.success('Task added successfully');
+      }
+    } catch (err: any) {
+      console.error('Error adding task:', err);
+      toast.error('Failed to add task');
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateTask = async (task: Task) => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('tasks')
+        .update({
+          title: task.title,
+          description: task.description,
+          deadline: task.deadline,
+          priority: task.priority,
+          status: task.status,
+          cost: task.cost
+        })
+        .eq('id', task.id)
+        .select();
+
+      if (error) {
+        console.error('Error updating task:', error);
+        toast.error('Failed to update task');
+        setError(error.message);
+      } else {
+        console.log('Task updated successfully:', data);
+        setTasks((prevTasks) =>
+          prevTasks.map((t) => (t.id === task.id ? { ...task } : t))
+        );
+        toast.success('Task updated successfully');
+      }
+    } catch (err: any) {
+      console.error('Error updating task:', err);
+      toast.error('Failed to update task');
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteTask = async (id: string) => {
+    try {
+      setLoading(true);
+      const { error } = await supabase.from('tasks').delete().eq('id', id);
+
+      if (error) {
+        console.error('Error deleting task:', error);
+        toast.error('Failed to delete task');
+        setError(error.message);
+      } else {
+        console.log('Task deleted successfully');
+        setTasks((prevTasks) => prevTasks.filter((task) => task.id !== id));
+        toast.success('Task deleted successfully');
+      }
+    } catch (err: any) {
+      console.error('Error deleting task:', err);
+      toast.error('Failed to delete task');
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateTaskStatus = async (id: string, status: TaskStatus) => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('tasks')
+        .update({ status })
+        .eq('id', id)
+        .select();
+  
+      if (error) {
+        console.error('Error updating task status:', error);
+        toast.error('Failed to update task status');
+        setError(error.message);
+      } else {
+        console.log('Task status updated successfully:', data);
+        setTasks((prevTasks) =>
+          prevTasks.map((task) =>
+            task.id === id ? { ...task, status: status } : task
+          )
+        );
+        toast.success('Task status updated successfully');
+      }
+    } catch (err: any) {
+      console.error('Error updating task status:', err);
+      toast.error('Failed to update task status');
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Get projects hook data
+  const { 
+    projects, 
+    loading: projectsLoading, 
+    error: projectsError, 
+    fetchProjects,
+    refreshProjects, // Add this line
+    createProject,
+    deleteProject,
+    setProjects
+  } = useProjects();
+
+  const value: TaskContextType = {
+    tasks,
+    loading,
+    error,
+    addTask,
+    updateTask,
+    deleteTask,
+    updateTaskStatus,
+    projects,
+    projectsLoading,
+    projectsError,
+    fetchProjects,
+    refreshProjects, // Add this line
+    createProject,
+    deleteProject,
+    setProjects,
+  };
+
+  return <TaskContext.Provider value={value}>{children}</TaskContext.Provider>;
+};
+
+export const useTask = (): TaskContextType => {
   const context = useContext(TaskContext);
   if (!context) {
     throw new Error('useTask must be used within a TaskProvider');
   }
+
   return context;
 };
-
-const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user } = useAuth();
-  const { projects, refreshProjects } = useProjects();
-  
-  // Use the enhanced tasks data fetching with fixed RLS policies
-  const { tasks, isLoading, error } = useTasksPageData();
-  
-  // Log the current state for debugging
-  console.log('TaskContext state:', {
-    tasksCount: tasks.length,
-    isLoading,
-    hasError: !!error,
-    userOrganization: user?.organizationId
-  });
-  
-  // Keep setTasks for backward compatibility with components that might need it
-  const [, setTasks] = useState<Task[]>([]);
-
-  const addTask = async (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
-    if (!user) {
-      toast.error('You must be logged in to add tasks');
-      return;
-    }
-
-    try {
-      await addTaskAPI(task, user, tasks, setTasks, projects, refreshProjects);
-    } catch (error) {
-      console.error('Error adding task:', error);
-      toast.error('Failed to add task');
-    }
-  };
-
-  const updateTask = async (taskId: string, updates: Partial<Task>) => {
-    if (!user) {
-      toast.error('You must be logged in to update tasks');
-      return;
-    }
-
-    try {
-      await updateTaskAPI(taskId, updates, { id: user.id, organization_id: user.organizationId }, tasks, setTasks, projects, refreshProjects);
-    } catch (error) {
-      console.error('Error updating task:', error);
-      toast.error('Failed to update task');
-    }
-  };
-
-  const deleteTask = async (taskId: string) => {
-    if (!user) {
-      toast.error('You must be logged in to delete tasks');
-      return;
-    }
-
-    try {
-      console.log('TaskContext: Deleting task', taskId, 'for user:', user);
-      
-      const userForDeletion = {
-        id: user.id,
-        organizationId: user.organizationId,
-        organization_id: user.organizationId
-      };
-
-      await deleteTaskAPI(taskId, userForDeletion, tasks, setTasks, projects, refreshProjects);
-    } catch (error) {
-      console.error('Error in TaskContext deleteTask:', error);
-      toast.error('Failed to delete task');
-    }
-  };
-
-  const updateTaskStatus = async (taskId: string, status: TaskStatus): Promise<void> => {
-    if (!user) {
-      toast.error('You must be logged in to update tasks');
-      return Promise.resolve();
-    }
-
-    try {
-      await updateTaskStatusAPI(taskId, status, { id: user.id, organization_id: user.organizationId }, tasks, setTasks);
-    } catch (error) {
-      console.error('Error updating task status:', error);
-      toast.error('Failed to update task status');
-    }
-  };
-
-  const assignTaskToUser = async (taskId: string, userId: string, userName: string) => {
-    if (!user) {
-      toast.error('You must be logged in to assign tasks');
-      return;
-    }
-
-    try {
-      await assignTaskToUserAPI(taskId, userId, userName, user, tasks, setTasks, projects, refreshProjects);
-    } catch (error) {
-      console.error('Error assigning task to user:', error);
-      toast.error('Failed to assign task to user');
-    }
-  };
-
-  const addCommentToTask = async (taskId: string, comment: string) => {
-    console.log('Adding comment to task:', taskId, comment);
-    toast.success('Comment added successfully');
-  };
-
-  const updateProject = async (projectId: string, updates: any) => {
-    console.log('Updating project:', projectId, updates);
-    toast.success('Project updated successfully');
-  };
-
-  const deleteProject = async (projectId: string) => {
-    console.log('Deleting project:', projectId);
-    toast.success('Project deleted successfully');
-  };
-
-  // Calculate daily score - this now works with the fetched tasks
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  
-  const todaysTasks = tasks.filter((task) => {
-    const taskDate = new Date(task.deadline);
-    taskDate.setHours(0, 0, 0, 0);
-    return taskDate.getTime() === today.getTime();
-  });
-  
-  const completedTodaysTasks = todaysTasks.filter(task => task.status === 'Completed');
-  
-  const dailyScore: DailyScore = {
-    totalTasks: todaysTasks.length,
-    completedTasks: completedTodaysTasks.length,
-    percentage: todaysTasks.length > 0 ? Math.round((completedTodaysTasks.length / todaysTasks.length) * 100) : 0,
-    date: today
-  };
-
-  const contextValue: TaskContextProps = {
-    tasks,
-    isLoading,
-    projects,
-    addTask,
-    updateTask,
-    updateTaskStatus,
-    deleteTask,
-    assignTaskToUser,
-    addCommentToTask,
-    updateProject,
-    deleteProject,
-    refreshProjects,
-    dailyScore,
-    setTasks,
-  };
-
-  return (
-    <TaskContext.Provider value={contextValue}>
-      {children}
-    </TaskContext.Provider>
-  );
-};
-
-export default TaskProvider;
-export { TaskProvider };
