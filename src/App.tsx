@@ -55,6 +55,7 @@ function App() {
                   <Route path="/dashboard" element={<AppLayout />}>
                     <Route index element={<DashboardPage />} />
                     <Route path="organization" element={<OrganizationDashboard />} />
+                    <Route path="organization/teams/:teamId" element={<TeamDetailPage />} />
                     <Route path="tasks" element={<TasksPage />} />
                     <Route path="tasks/create" element={<TasksPage />} />
                     <Route path="projects" element={<ProjectsPage />} />
