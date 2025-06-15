@@ -31,6 +31,13 @@ export const useTasksPageData = () => {
 
       if (tasksError) {
         console.error('useTasksPageData: Error fetching tasks with strict RLS:', tasksError);
+        
+        // Enhanced error handling for UUID validation issues
+        if (tasksError.message?.includes('invalid input syntax for type uuid')) {
+          console.error('useTasksPageData: UUID validation error detected - this should now be fixed with the migration');
+          throw new Error('Data validation error. Please refresh the page and try again.');
+        }
+        
         throw new Error(`Failed to fetch authorized tasks: ${tasksError.message}`);
       }
 
@@ -91,36 +98,39 @@ export const useTasksPageData = () => {
         let assignedToIds = [];
         let assignedToNames = [];
 
-        // Handle assigned_to_ids array (primary source)
+        // Handle assigned_to_ids array (primary source) with enhanced null/empty checking
         if (task.assigned_to_ids && Array.isArray(task.assigned_to_ids) && task.assigned_to_ids.length > 0) {
+          // Filter out null, undefined, and empty strings (should not happen after migration but defensive programming)
           assignedToIds = task.assigned_to_ids
             .filter(id => id && id.toString().trim() !== '')
             .map(id => id.toString());
 
-          // Process assigned_to_names array with fallback to user lookup
-          if (task.assigned_to_names && Array.isArray(task.assigned_to_names) && task.assigned_to_names.length > 0) {
-            assignedToNames = task.assigned_to_names
-              .filter(name => name && name.toString().trim() !== '')
-              .map(name => name.toString());
-          }
+          if (assignedToIds.length > 0) {
+            // Process assigned_to_names array with fallback to user lookup
+            if (task.assigned_to_names && Array.isArray(task.assigned_to_names) && task.assigned_to_names.length > 0) {
+              assignedToNames = task.assigned_to_names
+                .filter(name => name && name.toString().trim() !== '')
+                .map(name => name.toString());
+            }
 
-          // If we don't have enough names, lookup missing ones
-          if (assignedToNames.length < assignedToIds.length) {
-            assignedToNames = assignedToIds.map((id, index) => {
-              if (index < assignedToNames.length && assignedToNames[index]) {
-                return assignedToNames[index];
-              }
-              return userLookup.get(id) || 'Unknown User';
-            });
-          }
+            // If we don't have enough names, lookup missing ones
+            if (assignedToNames.length < assignedToIds.length) {
+              assignedToNames = assignedToIds.map((id, index) => {
+                if (index < assignedToNames.length && assignedToNames[index]) {
+                  return assignedToNames[index];
+                }
+                return userLookup.get(id) || 'Unknown User';
+              });
+            }
 
-          // For single assignment, populate single fields for backward compatibility
-          if (assignedToIds.length === 1) {
-            assignedToId = assignedToIds[0];
-            assignedToName = assignedToNames[0];
+            // For single assignment, populate single fields for backward compatibility
+            if (assignedToIds.length === 1) {
+              assignedToId = assignedToIds[0];
+              assignedToName = assignedToNames[0];
+            }
           }
         }
-        // Fallback to single assignment fields (legacy support)
+        // Fallback to single assignment fields (legacy support) with enhanced validation
         else if (task.assigned_to_id && task.assigned_to_id.toString().trim() !== '') {
           assignedToId = task.assigned_to_id.toString();
           assignedToIds = [assignedToId];
@@ -162,16 +172,23 @@ export const useTasksPageData = () => {
     enabled: !!user?.organizationId && !!user?.id,
     staleTime: 30000, // Cache for 30 seconds instead of 0 for better performance
     gcTime: 300000, // Cache for 5 minutes instead of 0
-    retry: (failureCount, error) => {
+    retry: (failureCount, error: any) => {
       if (failureCount >= 2) return false;
       if (error.message.includes('organization') || error.message.includes('permission')) return false;
+      if (error.message.includes('invalid input syntax for type uuid')) return false; // Don't retry UUID errors
       return true;
     },
   });
 
   if (error) {
     console.error('useTasksPageData: Tasks query error:', error);
-    toast.error(`Failed to load authorized tasks: ${error.message}`);
+    
+    // Enhanced error messages for UUID validation issues
+    if (error.message?.includes('invalid input syntax for type uuid')) {
+      toast.error('Data validation error. Please refresh the page and try again.');
+    } else {
+      toast.error(`Failed to load authorized tasks: ${error.message}`);
+    }
   }
 
   return {

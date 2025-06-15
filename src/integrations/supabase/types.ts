@@ -1658,6 +1658,10 @@ export type Database = {
         Args: { code: string }
         Returns: Json
       }
+      validate_assigned_to_ids: {
+        Args: { ids: string[] }
+        Returns: boolean
+      }
       would_leave_org_without_superadmin: {
         Args: { target_user_id: string; target_org_id: string }
         Returns: boolean
