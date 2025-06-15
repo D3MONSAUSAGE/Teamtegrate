@@ -53,7 +53,11 @@ const TasksPage = () => {
   
   // Memoized handlers
   const handleEditTask = useMemo(() => debouncedEditTask, [debouncedEditTask]);
-  const handleStatusChange = useMemo(() => debouncedStatusChange, [debouncedStatusChange]);
+  
+  // Fix: Return a Promise from the status change handler
+  const handleStatusChange = useMemo(() => async (taskId: string, status: TaskStatus) => {
+    return debouncedStatusChange(taskId, status);
+  }, [debouncedStatusChange]);
   
   const handleTaskDialogComplete = useMemo(() => () => {
     setIsCreateTaskOpen(false);

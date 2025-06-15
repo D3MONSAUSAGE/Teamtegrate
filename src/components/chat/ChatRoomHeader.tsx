@@ -1,32 +1,40 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, LogOut, UserPlus, Trash2, MoreVertical } from 'lucide-react';
+import { ChevronLeft, LogOut, UserPlus, Trash2, MoreVertical, Settings, Users } from 'lucide-react';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { useChatPermissions } from '@/hooks/use-chat-permissions';
 import ChatParticipants from './ChatParticipants';
 import ChatSoundSettings from './ChatSoundSettings';
-import AddChatParticipantDialog from './AddChatParticipantDialog';
 import DeleteChatRoomDialog from './DeleteChatRoomDialog';
 import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ChatRoomHeaderProps {
   room: { id: string; name: string; created_by: string };
-  isMobile: boolean;
+  isMobile?: boolean;
   currentUserId?: string;
   onBack?: () => void;
   toggleParticipants: () => void;
   onLeave: () => void;
   onDelete?: () => void;
+  onAddMember?: () => void;
+  onShowSettings?: () => void;
   leaving: boolean;
   canDelete: boolean;
 }
 
 const ChatRoomHeader: React.FC<ChatRoomHeaderProps> = ({
-  room, isMobile, currentUserId, onBack, toggleParticipants, onLeave, onDelete, leaving,
+  room, 
+  currentUserId, 
+  onBack, 
+  toggleParticipants, 
+  onLeave, 
+  onDelete, 
+  onAddMember,
+  onShowSettings,
+  leaving,
 }) => {
-  const [showAddParticipant, setShowAddParticipant] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const { canDeleteRoom, canAddParticipants } = useChatPermissions();
@@ -34,22 +42,6 @@ const ChatRoomHeader: React.FC<ChatRoomHeaderProps> = ({
 
   const canUserDeleteRoom = canDeleteRoom(room.created_by);
   const canUserAddParticipants = canAddParticipants(room.created_by);
-
-  // Debug logging
-  useEffect(() => {
-    console.log('ChatRoomHeader: Room details:', {
-      roomId: room.id,
-      roomName: room.name,
-      roomCreatedBy: room.created_by,
-      currentUserId,
-      canUserDeleteRoom,
-      canUserAddParticipants
-    });
-  }, [room, currentUserId, canUserDeleteRoom, canUserAddParticipants]);
-
-  const handleParticipantAdded = () => {
-    toast.success('Member added to the chat room');
-  };
 
   const handleDeleteRoom = async () => {
     if (!onDelete) return;
@@ -98,10 +90,20 @@ const ChatRoomHeader: React.FC<ChatRoomHeaderProps> = ({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
-              {canUserAddParticipants && (
-                <DropdownMenuItem onClick={() => setShowAddParticipant(true)}>
+              <DropdownMenuItem onClick={toggleParticipants}>
+                <Users className="h-4 w-4 mr-2" />
+                Show Members
+              </DropdownMenuItem>
+              {canUserAddParticipants && onAddMember && (
+                <DropdownMenuItem onClick={onAddMember}>
                   <UserPlus className="h-4 w-4 mr-2" />
                   Add Member
+                </DropdownMenuItem>
+              )}
+              {canUserDeleteRoom && onShowSettings && (
+                <DropdownMenuItem onClick={onShowSettings}>
+                  <Settings className="h-4 w-4 mr-2" />
+                  Room Settings
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem>
@@ -129,15 +131,37 @@ const ChatRoomHeader: React.FC<ChatRoomHeaderProps> = ({
           </DropdownMenu>
         ) : (
           <>
-            {canUserAddParticipants && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleParticipants}
+              className="flex-shrink-0"
+              title="Show Members"
+            >
+              <Users className="h-5 w-5" />
+            </Button>
+
+            {canUserAddParticipants && onAddMember && (
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setShowAddParticipant(true)}
+                onClick={onAddMember}
                 className="flex-shrink-0"
               >
                 <UserPlus className="h-4 w-4 mr-1" />
                 Add Member
+              </Button>
+            )}
+
+            {canUserDeleteRoom && onShowSettings && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onShowSettings}
+                className="flex-shrink-0"
+                title="Room Settings"
+              >
+                <Settings className="h-5 w-5" />
               </Button>
             )}
 
@@ -173,15 +197,6 @@ const ChatRoomHeader: React.FC<ChatRoomHeaderProps> = ({
           </>
         )}
       </div>
-
-      {canUserAddParticipants && (
-        <AddChatParticipantDialog
-          open={showAddParticipant}
-          onOpenChange={setShowAddParticipant}
-          roomId={room.id}
-          onAdded={handleParticipantAdded}
-        />
-      )}
 
       <DeleteChatRoomDialog
         open={showDeleteConfirm}
