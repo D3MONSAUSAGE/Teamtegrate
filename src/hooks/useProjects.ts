@@ -32,9 +32,9 @@ export function useProjects() {
           organizationId: user.organizationId
         });
         
-        // Add timeout to project fetch
+        // Extended timeout from 10s to 20s for better reliability
         const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Request timeout')), 10000)
+          setTimeout(() => reject(new Error('Request timeout after 20 seconds')), 20000)
         );
 
         const projectPromise = supabase
@@ -50,11 +50,16 @@ export function useProjects() {
         if (error) {
           console.error('useProjects: STRICT RLS Policy Error fetching projects:', error);
           
-          // Handle network errors specifically
+          // Enhanced error handling with specific error types
           if (error.message?.includes('Failed to fetch') || 
               error.message?.includes('Network Error') ||
               error.message?.includes('timeout')) {
             throw new Error('Network connection issue. Please check your connection and try again.');
+          }
+          
+          if (error.message?.includes('permission') || 
+              error.message?.includes('unauthorized')) {
+            throw new Error('You do not have permission to access these projects.');
           }
           
           throw error;
@@ -155,11 +160,13 @@ export function useProjects() {
       
       setError(errorMessage);
       
-      // Show user-friendly error messages
+      // Improved user-friendly error messages
       if (errorMessage.includes('Network connection issue')) {
-        toast.error('Connection issue - please check your internet and try again');
+        console.warn('Network connection issue detected - data may be cached');
+      } else if (errorMessage.includes('permission')) {
+        console.warn('Permission issue - user may not have access to any projects');
       } else {
-        toast.error('Failed to load accessible projects - you may not have access to any projects');
+        console.error('Unexpected error loading projects:', errorMessage);
       }
     } finally {
       setLoading(false);
