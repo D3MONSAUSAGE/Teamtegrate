@@ -1,7 +1,6 @@
 
 import { Task } from '@/types';
 import { SimpleUser, RawTask, RawComment } from '@/types/simplified';
-import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { ensureTaskCommentComplete } from '@/utils/typeCompatibility';
 
@@ -23,13 +22,13 @@ export const fetchTasks = async (
     
     if (!user) {
       console.error('fetchTasks: User is required for this operation');
-      toast.error('User must be logged in to view tasks');
+      // Silently handle - don't show error to user
       return;
     }
     
     if (!user.organization_id) {
       console.error('fetchTasks: User must belong to an organization');
-      toast.error('User must belong to an organization to view tasks');
+      // Silently handle - don't show error to user
       return;
     }
     
@@ -46,7 +45,8 @@ export const fetchTasks = async (
 
     if (tasksError) {
       console.error('fetchTasks: RLS Policy Error fetching tasks:', tasksError);
-      toast.error('Failed to load authorized tasks: ' + tasksError.message);
+      // Silently handle - don't show error to user, just return empty array
+      setTasks([]);
       return;
     }
 
@@ -236,7 +236,7 @@ export const fetchTasks = async (
     
   } catch (error: any) {
     console.error('fetchTasks: Critical error during STRICT RLS-secured task fetch:', error);
-    toast.error('Failed to load authorized tasks: ' + error.message);
+    // Silently handle - don't show error to user, just return empty array
     setTasks([]);
   }
 };

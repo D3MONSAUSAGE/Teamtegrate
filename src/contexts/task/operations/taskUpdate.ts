@@ -16,12 +16,16 @@ export const updateTask = async (
     console.log('updateTask: Starting task update with enhanced validation for task:', taskId);
     
     if (!user?.organization_id) {
+      console.error('updateTask: User must belong to an organization to update tasks');
+      toast.error('User must belong to an organization to update tasks');
       throw new Error('User must belong to an organization to update tasks');
     }
 
     // Validate assignment data if being updated
     if (updates.assignedToId !== undefined || updates.assignedToIds !== undefined) {
       if (!validateTaskAssignment(updates.assignedToId, updates.assignedToIds)) {
+        console.error('updateTask: Invalid task assignment data');
+        toast.error('Invalid task assignment: empty strings not allowed in UUID fields');
         throw new Error('Invalid task assignment: empty strings not allowed in UUID fields');
       }
     }
@@ -59,18 +63,25 @@ export const updateTask = async (
     if (error) {
       console.error('updateTask: Database error:', error);
       if (error.message.includes('invalid input syntax for type uuid')) {
+        toast.error('Invalid user assignment. Please ensure all selected users are valid.');
         throw new Error('Invalid user assignment. Please ensure all selected users are valid.');
       }
       if (error.message.includes('check_assigned_to_id_not_empty')) {
+        toast.error('Task assignment cannot be empty. Please select a valid user or leave unassigned.');
         throw new Error('Task assignment cannot be empty. Please select a valid user or leave unassigned.');
       }
       if (error.message.includes('check_assigned_to_ids_no_empty')) {
+        toast.error('Task assignments cannot contain empty values. Please select valid users only.');
         throw new Error('Task assignments cannot contain empty values. Please select valid users only.');
       }
+      // For other errors, just log them and throw without user-facing message
+      console.error('updateTask: Unexpected database error:', error.message);
       throw error;
     }
 
     if (!updatedTask) {
+      console.error('updateTask: Failed to update task - no data returned');
+      toast.error('Failed to update task - no data returned');
       throw new Error('Failed to update task - no data returned');
     }
 
@@ -110,8 +121,11 @@ export const updateTask = async (
       toast.error('Task assignment cannot be empty. Please select a valid user or leave unassigned.');
     } else if (error.message?.includes('check_assigned_to_ids_no_empty')) {
       toast.error('Task assignments cannot contain empty values. Please select valid users only.');
+    } else if (error.message?.includes('User must belong to an organization')) {
+      // Already handled above, don't show duplicate toast
     } else {
-      toast.error(`Failed to update task: ${error.message}`);
+      // For unexpected errors, only show generic message
+      toast.error('Failed to update task. Please try again.');
     }
     
     throw error;

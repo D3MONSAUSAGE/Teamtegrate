@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import TaskCard from '@/components/task-card';
@@ -6,7 +7,6 @@ import { Plus, ChevronRight, Calendar } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import TaskDetailDrawer from '@/components/task/TaskDetailDrawer';
-import CreateTaskDialogEnhanced from '@/components/CreateTaskDialogEnhanced';
 
 interface DailyTasksSectionProps {
   tasks: Task[];
@@ -22,28 +22,14 @@ const DailyTasksSection: React.FC<DailyTasksSectionProps> = ({
   const isMobile = useIsMobile();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [showDetails, setShowDetails] = useState(false);
-  const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
-  const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
 
   const handleOpenDetails = (task: Task) => {
     setSelectedTask(task);
     setShowDetails(true);
   };
-  
-  const handleCreateTask = () => {
-    setEditingTask(undefined);
-    setIsCreateTaskOpen(true);
-  };
 
   const handleEditTask = (task: Task) => {
-    setEditingTask(task);
-    setIsCreateTaskOpen(true);
     onEditTask(task);
-  };
-
-  const handleTaskDialogComplete = () => {
-    setIsCreateTaskOpen(false);
-    setEditingTask(undefined);
   };
   
   return (
@@ -90,7 +76,7 @@ const DailyTasksSection: React.FC<DailyTasksSectionProps> = ({
               variant="outline" 
               size={isMobile ? "sm" : "default"}
               className="mt-2 hover:bg-primary/10 hover:border-primary transition-colors" 
-              onClick={handleCreateTask}
+              onClick={onCreateTask}
             >
               <Plus className="h-4 w-4 mr-2" /> Add Task
             </Button>
@@ -102,13 +88,6 @@ const DailyTasksSection: React.FC<DailyTasksSectionProps> = ({
         open={showDetails}
         onOpenChange={setShowDetails}
         task={selectedTask}
-      />
-
-      <CreateTaskDialogEnhanced
-        open={isCreateTaskOpen}
-        onOpenChange={setIsCreateTaskOpen}
-        editingTask={editingTask}
-        onTaskComplete={handleTaskDialogComplete}
       />
     </div>
   );

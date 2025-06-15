@@ -15,11 +15,15 @@ export const createTask = async (
     console.log('createTask: Starting task creation with enhanced validation');
     
     if (!user?.organization_id) {
+      console.error('createTask: User must belong to an organization to create tasks');
+      toast.error('User must belong to an organization to create tasks');
       throw new Error('User must belong to an organization to create tasks');
     }
 
     // Validate assignment data before processing
     if (!validateTaskAssignment(taskData.assignedToId, taskData.assignedToIds)) {
+      console.error('createTask: Invalid task assignment data');
+      toast.error('Invalid task assignment: empty strings not allowed in UUID fields');
       throw new Error('Invalid task assignment: empty strings not allowed in UUID fields');
     }
 
@@ -54,18 +58,25 @@ export const createTask = async (
     if (error) {
       console.error('createTask: Database error:', error);
       if (error.message.includes('invalid input syntax for type uuid')) {
+        toast.error('Invalid user assignment. Please ensure all selected users are valid.');
         throw new Error('Invalid user assignment. Please ensure all selected users are valid.');
       }
       if (error.message.includes('check_assigned_to_id_not_empty')) {
+        toast.error('Task assignment cannot be empty. Please select a valid user or leave unassigned.');
         throw new Error('Task assignment cannot be empty. Please select a valid user or leave unassigned.');
       }
       if (error.message.includes('check_assigned_to_ids_no_empty')) {
+        toast.error('Task assignments cannot contain empty values. Please select valid users only.');
         throw new Error('Task assignments cannot contain empty values. Please select valid users only.');
       }
+      // For other errors, just log them and throw without user-facing message
+      console.error('createTask: Unexpected database error:', error.message);
       throw error;
     }
 
     if (!insertedTask) {
+      console.error('createTask: Failed to create task - no data returned');
+      toast.error('Failed to create task - no data returned');
       throw new Error('Failed to create task - no data returned');
     }
 
@@ -109,8 +120,11 @@ export const createTask = async (
       toast.error('Task assignment cannot be empty. Please select a valid user or leave unassigned.');
     } else if (error.message?.includes('check_assigned_to_ids_no_empty')) {
       toast.error('Task assignments cannot contain empty values. Please select valid users only.');
+    } else if (error.message?.includes('User must belong to an organization')) {
+      // Already handled above, don't show duplicate toast
     } else {
-      toast.error(`Failed to create task: ${error.message}`);
+      // For unexpected errors, only show generic message
+      toast.error('Failed to create task. Please try again.');
     }
     
     throw error;
