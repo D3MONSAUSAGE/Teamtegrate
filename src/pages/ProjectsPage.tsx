@@ -113,9 +113,9 @@ const ProjectsPage = () => {
     refetch();
   }, [refetch]);
 
-  const handleProjectDeleted = useMemo(() => (projectId: string) => {
-    return resilientDeleteProject(projectId);
-  }, [resilientDeleteProject]);
+  const handleProjectDeleted = useMemo(() => () => {
+    refetch();
+  }, [refetch]);
 
   return (
     <ProjectsErrorBoundary onRetry={handleRetry}>
