@@ -1,88 +1,38 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { AuthProvider } from './contexts/AuthContext'
+import { TaskProvider } from './contexts/task/TaskContext'
+import { ChatProvider } from './contexts/chat/ChatContext'
+import AppLayout from './components/layout/AppLayout'
+import { Toaster } from '@/components/ui/toaster'
 
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider } from '@/contexts/AuthContext';
-import { TaskProvider } from '@/contexts/task';
-import AppLayout from '@/components/AppLayout';
-import LandingPage from '@/pages/LandingPage';
-import LoginPage from '@/pages/LoginPage';
-import DashboardPage from '@/pages/DashboardPage';
-import TasksPage from '@/pages/TasksPage';
-import ProjectsPage from '@/pages/ProjectsPage';
-import ProjectTasksPage from '@/pages/ProjectTasksPage';
-import CalendarPage from '@/pages/CalendarPage';
-import ReportsPage from '@/pages/ReportsPage';
-import ChatPage from '@/pages/ChatPage';
-import DocumentsPage from '@/pages/DocumentsPage';
-import FinancePage from '@/pages/FinancePage';
-import NotebookPage from '@/pages/NotebookPage';
-import TimeTrackingPage from '@/pages/TimeTrackingPage';
-import SettingsPage from '@/pages/SettingsPage';
-import ProfilePage from '@/pages/ProfilePage';
-import AdminPage from '@/pages/AdminPage';
-import FocusZonePage from '@/pages/FocusZonePage';
-import OrganizationDashboard from '@/pages/OrganizationDashboard';
-import TeamDetailPage from '@/pages/TeamDetailPage';
-import { Toaster } from '@/components/ui/sonner';
-import ErrorBoundary from '@/components/ErrorBoundary';
-import './App.css';
-
-// Create a query client
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
+      retry: false,
+      refetchOnMount: false,
+      refetchOnWindowFocus: false
+    }
+  }
+})
+
+import { UnifiedDataProvider } from '@/contexts/UnifiedDataContext';
+import NetworkPerformanceMonitor from '@/components/debug/NetworkPerformanceMonitor';
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <TaskProvider>
-          <Router>
-            <ErrorBoundary>
+        <UnifiedDataProvider>
+          <TaskProvider>
+            <ChatProvider>
               <div className="min-h-screen bg-background">
-                <Routes>
-                  {/* Public routes */}
-                  <Route path="/" element={<LandingPage />} />
-                  <Route path="/login" element={<LoginPage />} />
-                  
-                  {/* Protected routes with AppLayout */}
-                  <Route path="/dashboard" element={<AppLayout />}>
-                    <Route index element={<DashboardPage />} />
-                    <Route path="organization" element={<OrganizationDashboard />} />
-                    <Route path="organization/teams/:teamId" element={<TeamDetailPage />} />
-                    <Route path="tasks" element={<TasksPage />} />
-                    <Route path="tasks/create" element={<TasksPage />} />
-                    <Route path="projects" element={<ProjectsPage />} />
-                    <Route path="projects/:projectId" element={<ProjectsPage />} />
-                    <Route path="projects/:projectId/tasks" element={<ProjectTasksPage />} />
-                    <Route path="focus" element={<FocusZonePage />} />
-                    <Route path="calendar" element={<CalendarPage />} />
-                    <Route path="reports" element={<ReportsPage />} />
-                    <Route path="chat" element={<ChatPage />} />
-                    <Route path="chat/:roomId" element={<ChatPage />} />
-                    <Route path="documents" element={<DocumentsPage />} />
-                    <Route path="finance" element={<FinancePage />} />
-                    <Route path="notebook" element={<NotebookPage />} />
-                    <Route path="time-tracking" element={<TimeTrackingPage />} />
-                    <Route path="settings" element={<SettingsPage />} />
-                    <Route path="profile" element={<ProfilePage />} />
-                    <Route path="admin" element={<AdminPage />} />
-                  </Route>
-                  
-                  {/* Catch all route */}
-                  <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
+                <AppLayout />
+                <NetworkPerformanceMonitor />
                 <Toaster />
               </div>
-            </ErrorBoundary>
-          </Router>
-        </TaskProvider>
+            </ChatProvider>
+          </TaskProvider>
+        </UnifiedDataProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

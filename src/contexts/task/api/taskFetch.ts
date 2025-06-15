@@ -1,4 +1,3 @@
-
 import { Task } from '@/types';
 import { SimpleUser, RawTask, RawComment } from '@/types/simplified';
 import { supabase } from '@/integrations/supabase/client';
