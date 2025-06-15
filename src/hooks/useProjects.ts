@@ -1,139 +1,197 @@
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Project, ProjectStatus } from '@/types';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { toast } from '@/components/ui/sonner';
+import { Project } from '@/types';
+import { toast } from 'sonner';
 
 export function useProjects() {
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
-  const [fetchedProjects, setFetchedProjects] = useState<Project[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
 
-  const fetchProjects = useCallback(async () => {
-    if (!user?.organizationId) {
-      console.log('useProjects: No user or organizationId, skipping fetch');
+  const fetchProjects = async () => {
+    if (!user) {
+      console.log('useProjects: No user, skipping fetch');
+      setLoading(false);
       return;
     }
-
-    setIsLoading(true);
-    setError(null);
-
+    
     try {
-      console.log('useProjects: Fetching projects for organization:', user.organizationId);
-      console.log('useProjects: Current user:', user);
+      setLoading(true);
+      console.log('useProjects: Fetching authorized projects for user:', {
+        userId: user.id,
+        userRole: user.role,
+        organizationId: user.organizationId
+      });
       
-      // Enhanced query with explicit organization filtering as safety net
+      // With new RLS policies, this will only return projects the user is authorized to see
       const { data, error } = await supabase
         .from('projects')
         .select('*')
-        .eq('organization_id', user.organizationId) // Explicit organization filter
-        .order('created_at', { ascending: false });
+        .order('updated_at', { ascending: false });
 
       if (error) {
         console.error('useProjects: Error fetching projects:', error);
-        console.error('useProjects: Error details:', {
-          message: error.message,
-          code: error.code,
-          details: error.details,
-          hint: error.hint
-        });
-        setError(error);
-        toast.error(`Failed to load projects: ${error.message}`);
-      } else {
-        console.log(`useProjects: Successfully fetched ${data?.length || 0} projects from database`);
-        console.log('useProjects: Raw projects data:', data);
-        
-        if (!data || data.length === 0) {
-          console.log('useProjects: No projects found for organization:', user.organizationId);
-          setFetchedProjects([]);
-          return;
-        }
-        
-        // Convert database format to app format with enhanced error handling
-        const convertedProjects: Project[] = data.map(project => {
-          try {
-            return {
-              id: project.id,
-              title: project.title || 'Untitled Project',
-              description: project.description || '',
-              startDate: project.start_date ? new Date(project.start_date) : new Date(),
-              endDate: project.end_date ? new Date(project.end_date) : new Date(),
-              managerId: project.manager_id || '',
-              createdAt: project.created_at ? new Date(project.created_at) : new Date(),
-              updatedAt: project.updated_at ? new Date(project.updated_at) : new Date(),
-              teamMemberIds: project.team_members || [],
-              budget: project.budget || 0,
-              budgetSpent: project.budget_spent || 0,
-              isCompleted: project.is_completed || false,
-              status: (project.status as ProjectStatus) || 'To Do',
-              tasksCount: project.tasks_count || 0,
-              tags: project.tags || [],
-              organizationId: project.organization_id
-            };
-          } catch (conversionError) {
-            console.error('useProjects: Error converting project:', project.id, conversionError);
-            // Return a basic project structure to avoid breaking the entire list
-            return {
-              id: project.id || 'unknown',
-              title: project.title || 'Untitled Project',
-              description: project.description || '',
-              startDate: new Date(),
-              endDate: new Date(),
-              managerId: project.manager_id || '',
-              createdAt: new Date(),
-              updatedAt: new Date(),
-              teamMemberIds: [],
-              budget: 0,
-              budgetSpent: 0,
-              isCompleted: false,
-              status: 'To Do' as ProjectStatus,
-              tasksCount: 0,
-              tags: [],
-              organizationId: project.organization_id || ''
-            };
-          }
-        });
-        
-        console.log('useProjects: Successfully converted projects:', convertedProjects);
-        setFetchedProjects(convertedProjects);
+        throw error;
       }
+
+      console.log('useProjects: Successfully fetched authorized projects:', {
+        userId: user.id,
+        userRole: user.role,
+        projectCount: data?.length || 0,
+        projectIds: data?.map(p => p.id).slice(0, 5) || [], // Log first 5 project IDs
+        timestamp: new Date().toISOString()
+      });
+
+      // Log access for security audit
+      if (data && data.length > 0) {
+        console.log('useProjects: Security audit - Project access granted:', {
+          userId: user.id,
+          userRole: user.role,
+          projectsAccessible: data.length,
+          accessReason: user.role === 'admin' || user.role === 'superadmin' 
+            ? 'Admin role access' 
+            : 'Manager or team member access',
+          timestamp: new Date().toISOString()
+        });
+      } else {
+        console.log('useProjects: Security audit - No projects accessible:', {
+          userId: user.id,
+          userRole: user.role,
+          reason: 'User is not manager, team member, or admin of any projects',
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      setProjects(data || []);
+      setError(null);
     } catch (err: any) {
-      console.error('useProjects: Unexpected error:', err);
-      setError(err);
-      toast.error('An unexpected error occurred while loading projects.');
+      console.error('useProjects: Fetch error:', err);
+      setError(err.message);
+      toast.error('Failed to load projects - you may not have access to any projects');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  }, [user?.organizationId]);
+  };
+
+  const createProject = async (
+    title: string, 
+    description?: string, 
+    startDate?: string, 
+    endDate?: string, 
+    budget?: number
+  ) => {
+    if (!user?.id || !user?.organizationId) {
+      console.error('useProjects: Missing user or organization info:', { 
+        userId: user?.id, 
+        orgId: user?.organizationId 
+      });
+      toast.error('Unable to create project: User not properly authenticated');
+      return;
+    }
+
+    try {
+      console.log('useProjects: Creating project:', { 
+        title, 
+        description, 
+        userId: user.id, 
+        orgId: user.organizationId 
+      });
+      
+      const { data, error } = await supabase
+        .from('projects')
+        .insert({
+          title,
+          description,
+          start_date: startDate,
+          end_date: endDate,
+          budget,
+          manager_id: user.id,
+          organization_id: user.organizationId,
+          team_members: [user.id] // Add creator as team member
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('useProjects: Error creating project:', error);
+        throw error;
+      }
+      
+      console.log('useProjects: Successfully created project:', data);
+      setProjects(prev => [data, ...prev]);
+      toast.success('Project created successfully');
+      return data;
+    } catch (err: any) {
+      console.error('useProjects: Create project error:', err);
+      toast.error(`Failed to create project: ${err.message}`);
+      throw err;
+    }
+  };
+
+  const deleteProject = async (projectId: string) => {
+    if (!user?.id) {
+      toast.error('User not authenticated');
+      return;
+    }
+
+    try {
+      console.log('useProjects: Deleting project:', projectId);
+      
+      const { error } = await supabase
+        .from('projects')
+        .delete()
+        .eq('id', projectId);
+
+      if (error) {
+        console.error('useProjects: Error deleting project:', error);
+        throw error;
+      }
+      
+      setProjects(prev => prev.filter(project => project.id !== projectId));
+      toast.success('Project deleted successfully');
+    } catch (err: any) {
+      console.error('useProjects: Delete project error:', err);
+      toast.error(`Failed to delete project: ${err.message}`);
+      throw err;
+    }
+  };
 
   useEffect(() => {
     fetchProjects();
-  }, [fetchProjects]);
+  }, [user]);
 
-  const mappedProjects = useMemo(() => {
-    return fetchedProjects.map(project => ({
-      ...project,
-      isCompleted: project.isCompleted || false,
-      tasksCount: project.tasksCount || 0
-    }));
-  }, [fetchedProjects]);
+  // Subscribe to real-time updates
+  useEffect(() => {
+    if (!user) return;
 
-  const setProjects = useCallback((updater: React.SetStateAction<Project[]>) => {
-    if (typeof updater === 'function') {
-      setFetchedProjects(prevProjects => updater(prevProjects));
-    } else {
-      setFetchedProjects(updater);
-    }
-  }, []);
+    console.log('useProjects: Setting up real-time subscription');
+    const channel = supabase
+      .channel('projects_changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'projects' },
+        (payload) => {
+          console.log('useProjects: Real-time update received:', payload);
+          fetchProjects(); // Refetch to ensure proper authorization
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log('useProjects: Cleaning up real-time subscription');
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
 
   return {
-    projects: mappedProjects,
-    setProjects,
-    isLoading,
+    projects,
+    loading,
     error,
-    refetch: fetchProjects,
-    refreshProjects: fetchProjects // Add alias for compatibility
+    fetchProjects,
+    createProject,
+    deleteProject,
+    setProjects
   };
 }

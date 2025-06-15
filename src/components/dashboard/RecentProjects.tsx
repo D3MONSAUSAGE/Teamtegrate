@@ -30,7 +30,7 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({
             <FolderKanban className="h-5 w-5 text-blue-600 dark:text-blue-400" />
           </div>
           <h2 className="text-xl font-semibold bg-gradient-to-r from-foreground to-blue-600 bg-clip-text text-transparent">
-            Recent Projects
+            My Projects
           </h2>
         </div>
         <Link to="/dashboard/projects">
@@ -60,12 +60,14 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({
               <FolderKanban className="h-8 w-8 text-muted-foreground" />
             </div>
             <div className="space-y-2">
-              <h3 className="font-semibold text-card-foreground">No projects created yet</h3>
-              <p className="text-muted-foreground text-sm">Start organizing your work by creating your first project</p>
+              <h3 className="font-semibold text-card-foreground">No accessible projects</h3>
+              <p className="text-muted-foreground text-sm">
+                You don't have access to any projects yet. Contact your manager or admin to be added to projects, or create your own if you have permission.
+              </p>
             </div>
             <Link to="/dashboard/projects">
               <Button variant="outline" size={isMobile ? "sm" : "default"} className="mt-2 hover:bg-blue-500/10 hover:border-blue-500 transition-colors">
-                <Plus className="h-4 w-4 mr-2" /> Create Project
+                <Plus className="h-4 w-4 mr-2" /> Explore Projects
               </Button>
             </Link>
           </div>

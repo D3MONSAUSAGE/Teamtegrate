@@ -21,10 +21,13 @@ const TasksPageContent = ({
   onEditTask, 
   onStatusChange 
 }: TasksPageContentProps) => {
-  console.log('🚨 TasksPageContent: Processing tasks array:', tasks);
+  console.log('TasksPageContent: Processing authorized tasks array:', {
+    taskCount: tasks?.length || 0,
+    hasValidArray: tasks && Array.isArray(tasks)
+  });
   
   if (!tasks || !Array.isArray(tasks)) {
-    console.log('🚨 TasksPageContent: Tasks is not a valid array:', tasks);
+    console.log('TasksPageContent: Tasks is not a valid array:', tasks);
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-accent/10 relative overflow-hidden">
         <div className="flex items-center justify-center min-h-screen">
@@ -40,11 +43,12 @@ const TasksPageContent = ({
   const inProgressTasks = tasks.filter((task) => task.status === 'In Progress');
   const completedTasks = tasks.filter((task) => task.status === 'Completed');
   
-  console.log('🚨 TasksPageContent: Filtered tasks:');
-  console.log('🚨  - Todo:', todoTasks.length);
-  console.log('🚨  - InProgress:', inProgressTasks.length);
-  console.log('🚨  - Completed:', completedTasks.length);
-  console.log('🚨  - Sample todo task:', todoTasks[0]);
+  console.log('TasksPageContent: Filtered authorized tasks:', {
+    todo: todoTasks.length,
+    inProgress: inProgressTasks.length,
+    completed: completedTasks.length,
+    total: tasks.length
+  });
   
   const sortTasks = (tasksToSort: Task[]) => {
     return [...tasksToSort].sort((a, b) => {
@@ -75,11 +79,7 @@ const TasksPageContent = ({
   const sortedInProgress = sortTasks(inProgressTasks);
   const sortedCompleted = sortTasks(completedTasks);
 
-  console.log('🚨 TasksPageContent: Sorted tasks:');
-  console.log('🚨  - Todo:', sortedTodo.length);
-  console.log('🚨  - InProgress:', sortedInProgress.length);
-  console.log('🚨  - Completed:', sortedCompleted.length);
-  console.log('🚨 TasksPageContent: About to render main UI');
+  console.log('TasksPageContent: Ready to render authorized tasks UI');
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-accent/10 relative overflow-hidden">

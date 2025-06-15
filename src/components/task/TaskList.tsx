@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Task, TaskStatus } from '@/types';
 import TaskCard from '@/components/task-card';
 import { Button } from "@/components/ui/button";
-import { Plus, Rocket, Sparkles } from 'lucide-react';
+import { Plus, Rocket, Sparkles, Shield } from 'lucide-react';
 import TaskDetailDrawer from './TaskDetailDrawer';
 
 interface TaskListProps {
@@ -39,14 +39,16 @@ const TaskList = ({ tasks, onEdit, onNewTask, onStatusChange, emptyMessage = "No
         <div className="max-w-md mx-auto">
           <div className="relative mb-8">
             <div className="w-24 h-24 mx-auto bg-gradient-to-br from-primary/10 to-accent/10 rounded-3xl flex items-center justify-center backdrop-blur-sm border border-border/30 shadow-xl">
-              <Rocket className="h-12 w-12 text-primary" />
+              <Shield className="h-12 w-12 text-primary" />
             </div>
             <div className="absolute -top-2 -right-2">
               <Sparkles className="h-6 w-6 text-accent animate-pulse" />
             </div>
           </div>
           <h3 className="text-2xl font-bold text-foreground mb-3">{emptyMessage}</h3>
-          <p className="text-muted-foreground mb-8 text-lg leading-relaxed">Ready to boost your productivity? Create your first task and start achieving your goals!</p>
+          <p className="text-muted-foreground mb-8 text-lg leading-relaxed">
+            You can only see tasks that are assigned to you or in projects you have access to. Contact your manager or admin to be assigned to more tasks.
+          </p>
           <Button 
             variant="outline" 
             onClick={onNewTask}

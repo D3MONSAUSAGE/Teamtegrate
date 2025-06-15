@@ -15,59 +15,61 @@ export const fetchTasks = async (
   setTasks: (tasks: Task[]) => void
 ): Promise<void> => {
   try {
-    console.log('Fetching tasks for user:', { id: user?.id, organizationId: user?.organization_id });
+    console.log('fetchTasks: Starting task fetch for user:', { 
+      id: user?.id, 
+      organizationId: user?.organization_id,
+      role: user?.role 
+    });
     
     if (!user) {
-      console.error('User is required for this operation');
+      console.error('fetchTasks: User is required for this operation');
       toast.error('User must be logged in to view tasks');
       return;
     }
     
     if (!user.organization_id) {
-      console.error('User must belong to an organization');
+      console.error('fetchTasks: User must belong to an organization');
       toast.error('User must belong to an organization to view tasks');
       return;
     }
     
     // Check current auth state
     const { data: { session } } = await supabase.auth.getSession();
-    console.log('Current auth session:', { 
+    console.log('fetchTasks: Current auth session:', { 
       userId: session?.user?.id, 
       isAuthenticated: !!session?.user 
     });
     
-    // Test the organization function directly
-    const { data: orgId, error: orgError } = await supabase.rpc('get_current_user_organization_id');
-    console.log('Organization ID from function:', { orgId, orgError });
-    
-    // Fetch tasks with proper organization filtering
-    console.log('Executing tasks query...');
+    // Fetch tasks with new RLS policies - will only return authorized tasks
+    console.log('fetchTasks: Executing tasks query with new RLS policies...');
     const { data: tasksData, error: tasksError } = await supabase
       .from('tasks')
       .select('*')
       .order('created_at', { ascending: false });
 
     if (tasksError) {
-      console.error('Error fetching tasks:', tasksError);
+      console.error('fetchTasks: Error fetching tasks:', tasksError);
       toast.error('Failed to load tasks: ' + tasksError.message);
       return;
     }
 
-    console.log(`Fetched ${tasksData?.length || 0} tasks from database:`, tasksData);
+    console.log(`fetchTasks: Successfully fetched ${tasksData?.length || 0} authorized tasks from database`);
     
-    // If no tasks are returned but we expected some, log additional debug info
-    if (!tasksData || tasksData.length === 0) {
-      console.warn('No tasks returned from database. This could indicate:');
-      console.warn('1. No tasks exist for this organization');
-      console.warn('2. RLS policies are blocking access');
-      console.warn('3. User organization_id is not properly set');
-      
-      // Check if tasks exist at all (this will also be blocked by RLS if there's an issue)
-      const { count, error: countError } = await supabase
-        .from('tasks')
-        .select('*', { count: 'exact', head: true });
-      
-      console.log('Total task count check:', { count, countError });
+    // Log access for security audit
+    if (tasksData && tasksData.length > 0) {
+      console.log('fetchTasks: Access granted to tasks:', {
+        userId: user.id,
+        userRole: user.role,
+        taskCount: tasksData.length,
+        taskIds: tasksData.map(t => t.id).slice(0, 5), // Log first 5 task IDs
+        timestamp: new Date().toISOString()
+      });
+    } else {
+      console.log('fetchTasks: No tasks accessible to user:', {
+        userId: user.id,
+        userRole: user.role,
+        timestamp: new Date().toISOString()
+      });
     }
     
     // Fetch comments with explicit column selection
@@ -76,7 +78,7 @@ export const fetchTasks = async (
       .select('id, user_id, task_id, content, created_at');
 
     if (commentsError) {
-      console.error('Error fetching comments:', commentsError);
+      console.error('fetchTasks: Error fetching comments:', commentsError);
     }
 
     // Fetch user information for proper assignee display
@@ -86,7 +88,7 @@ export const fetchTasks = async (
       .eq('organization_id', user.organization_id);
 
     if (usersError) {
-      console.error('Error fetching users:', usersError);
+      console.error('fetchTasks: Error fetching users:', usersError);
     }
 
     // Create user lookup map
@@ -97,12 +99,17 @@ export const fetchTasks = async (
       });
     }
 
-    // Manual transformation with explicit types and proper assignee handling
+    // Transform tasks with enhanced security logging
     const transformedTasks: Task[] = [];
     
     if (tasksData) {
       for (const dbTask of tasksData) {
-        console.log('Processing task:', dbTask);
+        console.log('fetchTasks: Processing authorized task:', {
+          taskId: dbTask.id,
+          taskTitle: dbTask.title,
+          assignedTo: dbTask.assigned_to_id,
+          projectId: dbTask.project_id
+        });
         
         // Explicit type validation
         let taskPriority: 'Low' | 'Medium' | 'High' = 'Medium';
@@ -187,18 +194,21 @@ export const fetchTasks = async (
       }
     }
 
-    console.log(`Successfully processed ${transformedTasks.length} tasks for display with normalized assignee info`);
+    console.log(`fetchTasks: Successfully processed ${transformedTasks.length} authorized tasks for user ${user.id} (${user.role})`);
     setTasks(transformedTasks);
     
-    // Show success message if tasks were loaded
-    if (transformedTasks.length > 0) {
-      console.log('Tasks loaded successfully');
-    } else {
-      console.log('No tasks found for this organization');
-    }
+    // Final security audit log
+    console.log('fetchTasks: Security audit - Task access summary:', {
+      userId: user.id,
+      userRole: user.role,
+      organizationId: user.organization_id,
+      tasksReturned: transformedTasks.length,
+      timestamp: new Date().toISOString(),
+      message: 'User can only see tasks they are authorized to access'
+    });
     
   } catch (error) {
-    console.error('Error in fetchTasks:', error);
+    console.error('fetchTasks: Error in fetchTasks:', error);
     toast.error('Failed to load tasks');
   }
 };
