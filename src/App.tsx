@@ -21,6 +21,15 @@ import DashboardPage from './pages/DashboardPage';
 import TasksPage from './pages/TasksPage';
 import ProjectsPage from './pages/ProjectsPage';
 import OrganizationDashboard from './pages/OrganizationDashboard';
+import CalendarPage from './pages/CalendarPage';
+import FocusZonePage from './pages/FocusZonePage';
+import ReportsPage from './pages/ReportsPage';
+import ChatPage from './pages/ChatPage';
+import DocumentsPage from './pages/DocumentsPage';
+import FinancePage from './pages/FinancePage';
+import NotebookPage from './pages/NotebookPage';
+import TimeTrackingPage from './pages/TimeTrackingPage';
+import ProfilePage from './pages/ProfilePage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -51,6 +60,15 @@ function App() {
                     <Route path="tasks" element={<TasksPage />} />
                     <Route path="projects" element={<ProjectsPage />} />
                     <Route path="organization" element={<OrganizationDashboard />} />
+                    <Route path="calendar" element={<CalendarPage />} />
+                    <Route path="focus" element={<FocusZonePage />} />
+                    <Route path="reports" element={<ReportsPage />} />
+                    <Route path="chat" element={<ChatPage />} />
+                    <Route path="documents" element={<DocumentsPage />} />
+                    <Route path="finance" element={<FinancePage />} />
+                    <Route path="notebook" element={<NotebookPage />} />
+                    <Route path="time-tracking" element={<TimeTrackingPage />} />
+                    <Route path="profile" element={<ProfilePage />} />
                     {/* Add more nested routes here as needed */}
                   </Route>
 
