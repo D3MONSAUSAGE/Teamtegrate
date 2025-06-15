@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Task, TaskStatus } from '@/types';
 import TaskHeader from '@/components/task/TaskHeader';
 import TaskTabs from '@/components/task/TaskTabs';
@@ -21,13 +21,8 @@ const TasksPageContent = ({
   onEditTask, 
   onStatusChange 
 }: TasksPageContentProps) => {
-  console.log('TasksPageContent: Processing authorized tasks array:', {
-    taskCount: tasks?.length || 0,
-    hasValidArray: tasks && Array.isArray(tasks)
-  });
   
   if (!tasks || !Array.isArray(tasks)) {
-    console.log('TasksPageContent: Tasks is not a valid array:', tasks);
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-accent/10 relative overflow-hidden">
         <div className="flex items-center justify-center min-h-screen">
@@ -39,18 +34,21 @@ const TasksPageContent = ({
     );
   }
   
-  const todoTasks = tasks.filter((task) => task.status === 'To Do');
-  const inProgressTasks = tasks.filter((task) => task.status === 'In Progress');
-  const completedTasks = tasks.filter((task) => task.status === 'Completed');
+  // Memoize filtered tasks to prevent recalculation on every render
+  const { todoTasks, inProgressTasks, completedTasks } = useMemo(() => {
+    const todo = tasks.filter((task) => task.status === 'To Do');
+    const inProgress = tasks.filter((task) => task.status === 'In Progress');
+    const completed = tasks.filter((task) => task.status === 'Completed');
+    
+    return { 
+      todoTasks: todo, 
+      inProgressTasks: inProgress, 
+      completedTasks: completed 
+    };
+  }, [tasks]);
   
-  console.log('TasksPageContent: Filtered authorized tasks:', {
-    todo: todoTasks.length,
-    inProgress: inProgressTasks.length,
-    completed: completedTasks.length,
-    total: tasks.length
-  });
-  
-  const sortTasks = (tasksToSort: Task[]) => {
+  // Memoize sort function to prevent recreation
+  const sortTasks = useMemo(() => (tasksToSort: Task[]) => {
     return [...tasksToSort].sort((a, b) => {
       switch (sortBy) {
         case 'deadline':
@@ -73,21 +71,21 @@ const TasksPageContent = ({
           return 0;
       }
     });
-  };
+  }, [sortBy]);
   
-  const sortedTodo = sortTasks(todoTasks);
-  const sortedInProgress = sortTasks(inProgressTasks);
-  const sortedCompleted = sortTasks(completedTasks);
-
-  console.log('TasksPageContent: Ready to render authorized tasks UI');
+  // Memoize sorted tasks
+  const { sortedTodo, sortedInProgress, sortedCompleted } = useMemo(() => ({
+    sortedTodo: sortTasks(todoTasks),
+    sortedInProgress: sortTasks(inProgressTasks),
+    sortedCompleted: sortTasks(completedTasks)
+  }), [sortTasks, todoTasks, inProgressTasks, completedTasks]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-accent/10 relative overflow-hidden">
-      {/* Animated background elements */}
+      {/* Simplified background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-accent/5 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-secondary/3 rounded-full blur-3xl animate-pulse delay-500"></div>
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/3 rounded-full blur-3xl"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-accent/3 rounded-full blur-3xl"></div>
       </div>
 
       <div className="w-full px-2 sm:px-4 lg:px-6 py-8 space-y-10 relative z-10">
@@ -102,7 +100,7 @@ const TasksPageContent = ({
         
         {/* Enhanced Main Content Area */}
         <div className="animate-fade-in delay-200">
-          <div className="bg-card/60 backdrop-blur-xl border border-border/40 rounded-3xl shadow-2xl shadow-primary/5 overflow-hidden">
+          <div className="bg-card/60 backdrop-blur-sm border border-border/40 rounded-3xl shadow-xl overflow-hidden">
             <TaskTabs
               todoTasks={sortedTodo}
               inProgressTasks={sortedInProgress}

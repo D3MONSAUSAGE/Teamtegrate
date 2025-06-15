@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
 import TaskCard from '@/components/task-card';
 import { Task } from '@/types';
@@ -7,6 +7,7 @@ import { Plus, ChevronRight, Calendar } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import TaskDetailDrawer from '@/components/task/TaskDetailDrawer';
+import { useDebounce } from '@/utils/performanceUtils';
 
 interface DailyTasksSectionProps {
   tasks: Task[];
@@ -23,14 +24,19 @@ const DailyTasksSection: React.FC<DailyTasksSectionProps> = ({
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [showDetails, setShowDetails] = useState(false);
 
-  const handleOpenDetails = (task: Task) => {
+  // Debounced handlers to prevent rapid clicking
+  const debouncedOpenDetails = useDebounce((task: Task) => {
     setSelectedTask(task);
     setShowDetails(true);
-  };
+  }, 200);
 
-  const handleEditTask = (task: Task) => {
+  const debouncedEditTask = useDebounce((task: Task) => {
     onEditTask(task);
-  };
+  }, 200);
+
+  // Memoized handlers
+  const handleOpenDetails = useMemo(() => debouncedOpenDetails, [debouncedOpenDetails]);
+  const handleEditTask = useMemo(() => debouncedEditTask, [debouncedEditTask]);
   
   return (
     <div className="space-y-6">
@@ -53,7 +59,7 @@ const DailyTasksSection: React.FC<DailyTasksSectionProps> = ({
       {tasks.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {tasks.map((task) => (
-            <div key={task.id} className="group transition-all duration-300 hover:scale-[1.02]">
+            <div key={task.id} className="group transition-all duration-200 hover:scale-[1.01]">
               <TaskCard 
                 task={task} 
                 onEdit={() => handleEditTask(task)}
@@ -63,7 +69,7 @@ const DailyTasksSection: React.FC<DailyTasksSectionProps> = ({
           ))}
         </div>
       ) : (
-        <div className="glass-card border shadow-lg bg-gradient-to-br from-white/90 via-white/85 to-white/80 dark:from-card/90 dark:via-card/85 dark:to-card/80 backdrop-blur-xl rounded-2xl p-8 text-center">
+        <div className="bg-card/70 backdrop-blur-sm border rounded-2xl p-8 text-center">
           <div className="flex flex-col items-center gap-4">
             <div className="p-4 rounded-full bg-gradient-to-r from-muted/50 to-muted/30">
               <Calendar className="h-8 w-8 text-muted-foreground" />

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useProjects } from '@/hooks/useProjects';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUsers } from '@/hooks/useUsers';
@@ -13,10 +13,9 @@ import ProjectsLoadingState from './projects/ProjectsLoadingState';
 import ProjectsPageBackground from './projects/ProjectsPageBackground';
 import ProjectsActionToolbar from './projects/ProjectsActionToolbar';
 import { useProjectsPageState } from './projects/hooks/useProjectsPageState';
+import { useDebounce } from '@/utils/performanceUtils';
 
 const ProjectsPage = () => {
-  console.log('ProjectsPage: Component rendering');
-  
   const { user } = useAuth();
   const { projects, isLoading, refetch } = useProjects();
   const { users: allUsers } = useUsers();
@@ -40,72 +39,62 @@ const ProjectsPage = () => {
     filteredAndSortedProjects
   } = useProjectsPageState(projects);
 
-  console.log('ProjectsPage: State values:', {
-    projectsCount: projects?.length || 0,
-    isLoading,
-    searchQuery,
-    isCreateDialogOpen,
-    isCreateTaskOpen,
-    selectedProjectId,
-    user: !!user,
-    viewMode,
-    sortBy,
-    statusFilter
-  });
-
-  // Apply search filter to the already filtered and sorted projects
-  const searchFilteredProjects = filteredAndSortedProjects.filter(project =>
-    project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    project.description?.toLowerCase().includes(searchQuery.toLowerCase())
+  // Memoized search filtering to prevent recalculation on every render
+  const searchFilteredProjects = useMemo(() => 
+    filteredAndSortedProjects.filter(project =>
+      project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      project.description?.toLowerCase().includes(searchQuery.toLowerCase())
+    ), [filteredAndSortedProjects, searchQuery]
   );
 
-  console.log('ProjectsPage: Search filtered projects count:', searchFilteredProjects.length);
+  // Debounced navigation to prevent rapid clicking
+  const debouncedNavigate = useDebounce((path: string) => {
+    navigate(path);
+  }, 200);
 
-  const handleViewTasks = (projectId: string) => {
-    console.log('ProjectsPage: handleViewTasks called for project:', projectId);
+  const debouncedCreateTask = useDebounce((projectId: string) => {
+    setSelectedProjectId(projectId);
+    setIsCreateTaskOpen(true);
+  }, 200);
+
+  // Memoized handlers
+  const handleViewTasks = useMemo(() => (projectId: string) => {
     try {
       const targetUrl = `/dashboard/projects/${projectId}/tasks`;
-      console.log('ProjectsPage: Navigating to:', targetUrl);
-      navigate(targetUrl);
-      console.log('ProjectsPage: Navigation initiated successfully');
+      debouncedNavigate(targetUrl);
     } catch (error) {
-      console.error('ProjectsPage: Navigation error:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('ProjectsPage: Navigation error:', error);
+      }
     }
-  };
+  }, [debouncedNavigate]);
 
-  const handleCreateTask = (projectId: string) => {
-    console.log('ProjectsPage: handleCreateTask called for project:', projectId);
+  const handleCreateTask = useMemo(() => (projectId: string) => {
     try {
-      setSelectedProjectId(projectId);
-      setIsCreateTaskOpen(true);
-      console.log('ProjectsPage: Task dialog state updated');
+      debouncedCreateTask(projectId);
     } catch (error) {
-      console.error('ProjectsPage: Error opening task dialog:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('ProjectsPage: Error opening task dialog:', error);
+      }
     }
-  };
+  }, [debouncedCreateTask]);
 
-  const handleProjectCreated = () => {
-    console.log('ProjectsPage: Project created, refreshing list...');
+  const handleProjectCreated = useMemo(() => () => {
     refetch();
-  };
+  }, [refetch]);
 
-  const handleTaskCreated = () => {
-    console.log('ProjectsPage: Task created, closing dialog...');
+  const handleTaskCreated = useMemo(() => () => {
     setIsCreateTaskOpen(false);
     setSelectedProjectId(undefined);
-  };
+  }, []);
 
-  const handleCreateProject = () => {
-    console.log('ProjectsPage: Create project button clicked');
+  const handleCreateProject = useMemo(() => () => {
     setIsCreateDialogOpen(true);
-  };
+  }, []);
 
   if (isLoading) {
-    console.log('ProjectsPage: Showing loading state');
     return <ProjectsLoadingState />;
   }
-
-  console.log('ProjectsPage: Rendering main content');
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-accent/10 relative overflow-hidden">
