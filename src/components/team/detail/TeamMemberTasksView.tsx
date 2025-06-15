@@ -24,11 +24,29 @@ interface TeamMemberTasksViewProps {
   teamMembers: any[];
 }
 
+// Helper functions moved outside component to avoid scoping issues
+const getPriorityColor = (priority: string) => {
+  switch (priority) {
+    case 'High': return 'destructive';
+    case 'Medium': return 'default';
+    case 'Low': return 'secondary';
+    default: return 'outline';
+  }
+};
+
+const getStatusIcon = (status: string) => {
+  switch (status) {
+    case 'Completed': return <CheckSquare className="h-4 w-4 text-green-500" />;
+    case 'In Progress': return <Clock className="h-4 w-4 text-blue-500" />;
+    default: return <AlertCircle className="h-4 w-4 text-gray-500" />;
+  }
+};
+
 const TeamMemberTasksView: React.FC<TeamMemberTasksViewProps> = ({ teamId, teamMembers }) => {
   const { user } = useAuth();
   const [expandedMembers, setExpandedMembers] = useState<Set<string>>(new Set());
 
-  const { data: memberTasks = [], isLoading } = useQuery({
+  const { data: memberTasksData = [], isLoading } = useQuery({
     queryKey: ['team-member-tasks', teamId, user?.organizationId],
     queryFn: async () => {
       if (!teamId || !user?.organizationId || teamMembers.length === 0) return [];
@@ -69,23 +87,6 @@ const TeamMemberTasksView: React.FC<TeamMemberTasksViewProps> = ({ teamId, teamM
     setExpandedMembers(newExpanded);
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'High': return 'destructive';
-      case 'Medium': return 'default';
-      case 'Low': return 'secondary';
-      default: return 'outline';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'Completed': return <CheckSquare className="h-4 w-4 text-green-500" />;
-      case 'In Progress': return <Clock className="h-4 w-4 text-blue-500" />;
-      default: return <AlertCircle className="h-4 w-4 text-gray-500" />;
-    }
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -104,7 +105,7 @@ const TeamMemberTasksView: React.FC<TeamMemberTasksViewProps> = ({ teamId, teamM
         ) : (
           <div className="space-y-4">
             {teamMembers.map((membership) => {
-              const memberTasks = memberTasks[membership.user_id] || [];
+              const memberTasks = memberTasksData[membership.user_id] || [];
               const isExpanded = expandedMembers.has(membership.user_id);
               const completedTasks = memberTasks.filter(t => t.status === 'Completed').length;
               const inProgressTasks = memberTasks.filter(t => t.status === 'In Progress').length;
@@ -208,23 +209,6 @@ const TeamMemberTasksView: React.FC<TeamMemberTasksViewProps> = ({ teamId, teamM
 
 // Task card component for displaying individual tasks
 const TaskCard: React.FC<{ task: any }> = ({ task }) => {
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'High': return 'destructive';
-      case 'Medium': return 'default';
-      case 'Low': return 'secondary';
-      default: return 'outline';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'Completed': return <CheckSquare className="h-4 w-4 text-green-500" />;
-      case 'In Progress': return <Clock className="h-4 w-4 text-blue-500" />;
-      default: return <AlertCircle className="h-4 w-4 text-gray-500" />;
-    }
-  };
-
   return (
     <div className="border rounded-lg p-3 bg-card">
       <div className="flex items-start justify-between mb-2">
