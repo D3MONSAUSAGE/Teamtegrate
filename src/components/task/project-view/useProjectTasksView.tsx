@@ -83,7 +83,7 @@ export const useProjectTasksView = (projectId: string | null) => {
     inProgressTasksCount: inProgressTasks?.length || 0,
     completedTasksCount: completedTasks?.length || 0,
     teamMembersCount: teamMembers?.length || 0,
-    teamMembersError: teamMembersError?.message || null
+    teamMembersError: teamMembersError || null
   });
 
   return {
