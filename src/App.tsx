@@ -1,22 +1,31 @@
+
+import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider } from './contexts/AuthContext'
 import { TaskProvider } from './contexts/task/TaskContext'
 import { ChatProvider } from './contexts/chat/ChatContext'
-import AppLayout from './components/layout/AppLayout'
-import { Toaster } from '@/components/ui/toaster'
+import { UnifiedDataProvider } from '@/contexts/UnifiedDataContext';
+import NetworkPerformanceMonitor from '@/components/debug/NetworkPerformanceMonitor';
+import { Toaster } from '@/components/ui/toaster';
+
+// Import routes and router provider
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import AppLayout from './components/layout/AppLayout';
+
+// Import page components
+import Index from './pages/Index';
+import LoginPage from './pages/LoginPage';
+import NotFound from './pages/NotFound';
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: false,
       refetchOnMount: false,
-      refetchOnWindowFocus: false
+      refetchOnWindowFocus: false,
     }
   }
-})
-
-import { UnifiedDataProvider } from '@/contexts/UnifiedDataContext';
-import NetworkPerformanceMonitor from '@/components/debug/NetworkPerformanceMonitor';
+});
 
 function App() {
   return (
@@ -25,11 +34,21 @@ function App() {
         <UnifiedDataProvider>
           <TaskProvider>
             <ChatProvider>
-              <div className="min-h-screen bg-background">
-                <AppLayout />
+              <BrowserRouter>
+                <Routes>
+                  {/* Public and authentication routes */}
+                  <Route path="/" element={<Index />} />
+                  <Route path="/login" element={<LoginPage />} />
+                  {/* All protected routes go through AppLayout */}
+                  <Route path="/*" element={
+                    <AppLayout />
+                  } />
+                  {/* Not found */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
                 <NetworkPerformanceMonitor />
                 <Toaster />
-              </div>
+              </BrowserRouter>
             </ChatProvider>
           </TaskProvider>
         </UnifiedDataProvider>
