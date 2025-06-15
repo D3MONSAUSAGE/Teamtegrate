@@ -47,9 +47,12 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
 
     try {
       setIsUploading(true);
+      console.log('Starting upload process for file:', file.name);
 
       const timestamp = new Date().getTime();
       const filePath = `invoices/${user.organizationId}/${user.id}/${timestamp}-${file.name}`;
+      
+      console.log('Uploading to storage path:', filePath);
       
       const { error: storageError } = await supabase.storage
         .from('documents')
@@ -60,8 +63,11 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
 
       if (storageError) {
         console.error('Storage error:', storageError);
-        throw storageError;
+        toast.error(`Storage error: ${storageError.message}`);
+        return;
       }
+
+      console.log('File uploaded successfully, inserting into database...');
 
       const { error: dbError } = await supabase
         .from('invoices')
@@ -80,9 +86,11 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
 
       if (dbError) {
         console.error('Database error:', dbError);
-        throw dbError;
+        toast.error(`Database error: ${dbError.message}`);
+        return;
       }
 
+      console.log('Invoice uploaded successfully');
       toast.success('Invoice uploaded successfully');
       
       // Reset form
@@ -185,40 +193,46 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
   }
 
   return (
-    <Card>
+    <Card className="w-full">
       <CardHeader>
-        <CardTitle>Upload Invoice</CardTitle>
-        <CardDescription>Upload a new invoice document (PDF or Image)</CardDescription>
+        <CardTitle className={isMobile ? "text-xl" : "text-2xl"}>Upload Invoice</CardTitle>
+        <CardDescription className={isMobile ? "text-sm" : "text-base"}>
+          Upload a new invoice document (PDF or Image)
+        </CardDescription>
       </CardHeader>
-      <CardContent className="grid gap-6">
+      <CardContent className="space-y-6">
         {/* Invoice Details Form */}
-        <div className="grid gap-4">
+        <div className={cn("grid gap-4", isMobile ? "gap-4" : "gap-6")}>
           <div className="grid gap-2">
-            <Label htmlFor="invoiceNumber">Invoice Number *</Label>
+            <Label htmlFor="invoiceNumber" className={isMobile ? "text-base font-semibold" : "text-sm font-medium"}>
+              Invoice Number *
+            </Label>
             <Input
               id="invoiceNumber"
               value={invoiceNumber}
               onChange={(e) => setInvoiceNumber(e.target.value)}
               placeholder="Enter invoice number"
-              className={isMobile ? "h-12 text-base" : ""}
+              className={isMobile ? "h-14 text-lg border-2" : "h-10"}
               disabled={isUploading}
             />
           </div>
           
           <div className="grid gap-2">
-            <Label htmlFor="invoiceDate">Invoice Date *</Label>
+            <Label htmlFor="invoiceDate" className={isMobile ? "text-base font-semibold" : "text-sm font-medium"}>
+              Invoice Date *
+            </Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
                   className={cn(
-                    "justify-start text-left font-normal",
-                    isMobile ? "h-12 text-base" : "h-10",
+                    "justify-start text-left font-normal border-2",
+                    isMobile ? "h-14 text-lg" : "h-10",
                     !invoiceDate && "text-muted-foreground"
                   )}
                   disabled={isUploading}
                 >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  <CalendarIcon className={cn("mr-2", isMobile ? "h-5 w-5" : "h-4 w-4")} />
                   {invoiceDate ? format(invoiceDate, "PPP") : <span>Pick a date</span>}
                 </Button>
               </PopoverTrigger>
@@ -235,13 +249,15 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
           </div>
           
           <div className="grid gap-2">
-            <Label htmlFor="branch">Branch/Location *</Label>
+            <Label htmlFor="branch" className={isMobile ? "text-base font-semibold" : "text-sm font-medium"}>
+              Branch/Location *
+            </Label>
             <Input
               id="branch"
               value={branch}
               onChange={(e) => setBranch(e.target.value)}
               placeholder="Enter branch or location"
-              className={isMobile ? "h-12 text-base" : ""}
+              className={isMobile ? "h-14 text-lg border-2" : "h-10"}
               disabled={isUploading}
             />
           </div>
@@ -249,58 +265,60 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
 
         {/* Upload Section */}
         <div className="space-y-4">
-          {/* Mobile Camera & File Buttons */}
-          {(isMobile || isTablet) && (
-            <div className="grid grid-cols-1 gap-3">
-              <Button
-                type="button"
-                onClick={openCamera}
-                disabled={isUploading || !invoiceNumber || !invoiceDate || !branch}
-                className="h-14 text-base bg-blue-600 hover:bg-blue-700"
-              >
-                <Camera className="mr-2 h-5 w-5" />
-                Take Photo with Camera
-              </Button>
-              
-              <Button
-                type="button"
-                variant="outline"
-                onClick={openFileSelect}
-                disabled={isUploading || !invoiceNumber || !invoiceDate || !branch}
-                className="h-14 text-base"
-              >
-                <FileImage className="mr-2 h-5 w-5" />
-                Choose from Gallery
-              </Button>
-            </div>
-          )}
+          {/* Camera & File Selection Buttons - Show on ALL devices */}
+          <div className={cn("grid gap-3", isMobile ? "grid-cols-1" : "grid-cols-2")}>
+            <Button
+              type="button"
+              onClick={openCamera}
+              disabled={isUploading || !invoiceNumber || !invoiceDate || !branch}
+              className={cn(
+                "bg-blue-600 hover:bg-blue-700 text-white",
+                isMobile ? "h-16 text-lg" : "h-12"
+              )}
+            >
+              <Camera className={cn("mr-2", isMobile ? "h-6 w-6" : "h-5 w-5")} />
+              {isMobile ? "Take Photo with Camera" : "Camera"}
+            </Button>
+            
+            <Button
+              type="button"
+              variant="outline"
+              onClick={openFileSelect}
+              disabled={isUploading || !invoiceNumber || !invoiceDate || !branch}
+              className={cn(
+                "border-2",
+                isMobile ? "h-16 text-lg" : "h-12"
+              )}
+            >
+              <FileImage className={cn("mr-2", isMobile ? "h-6 w-6" : "h-5 w-5")} />
+              {isMobile ? "Choose from Gallery" : "Browse Files"}
+            </Button>
+          </div>
 
           {/* Drag & Drop Area */}
           <div
             {...getRootProps()}
             className={cn(
-              "border-2 border-dashed rounded-lg p-6 text-center transition-colors",
+              "border-2 border-dashed rounded-lg text-center transition-colors cursor-pointer",
               isDragActive ? "border-primary bg-primary/5" : "border-muted-foreground/25",
               isUploading && "opacity-50 pointer-events-none",
               (!invoiceNumber || !invoiceDate || !branch) && "opacity-50 pointer-events-none",
-              isMobile ? "p-8" : "p-6"
+              isMobile ? "p-8 min-h-[120px]" : "p-6"
             )}
           >
             <input {...getInputProps()} />
-            <div className="flex flex-col items-center gap-2">
-              <Upload className={`text-muted-foreground ${isMobile ? "h-8 w-8" : "h-6 w-6"}`} />
-              <div className="space-y-1">
-                <p className={`font-medium ${isMobile ? "text-base" : "text-sm"}`}>
+            <div className="flex flex-col items-center gap-3">
+              <Upload className={cn("text-muted-foreground", isMobile ? "h-10 w-10" : "h-8 w-8")} />
+              <div className="space-y-2">
+                <p className={cn("font-medium", isMobile ? "text-lg" : "text-sm")}>
                   {isDragActive ? "Drop the file here..." : "Drag & drop files here"}
                 </p>
-                <p className={`text-muted-foreground ${isMobile ? "text-sm" : "text-xs"}`}>
-                  Supports PDF, PNG, JPG, JPEG
+                <p className={cn("text-muted-foreground", isMobile ? "text-base" : "text-xs")}>
+                  Supports PDF, PNG, JPG, JPEG, WEBP
                 </p>
-                {!(isMobile || isTablet) && (
-                  <p className="text-xs text-muted-foreground">
-                    or click to browse files
-                  </p>
-                )}
+                <p className={cn("text-muted-foreground", isMobile ? "text-sm" : "text-xs")}>
+                  or use the buttons above
+                </p>
               </div>
             </div>
           </div>
@@ -326,16 +344,26 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
 
         {/* Upload Status */}
         {isUploading && (
-          <div className="flex items-center justify-center gap-2 py-4">
-            <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
-            <span className="text-sm text-muted-foreground">Uploading invoice...</span>
+          <div className={cn(
+            "flex items-center justify-center gap-3 py-6 bg-blue-50 dark:bg-blue-950/20 rounded-lg border",
+            isMobile && "py-8"
+          )}>
+            <div className="animate-spin h-6 w-6 border-3 border-current border-t-transparent rounded-full" />
+            <span className={cn("font-medium", isMobile ? "text-lg" : "text-base")}>
+              Uploading invoice...
+            </span>
           </div>
         )}
 
         {/* Requirements Notice */}
         {(!invoiceNumber || !invoiceDate || !branch) && (
-          <div className="text-sm text-amber-600 bg-amber-50 dark:bg-amber-950/20 p-3 rounded-lg">
-            Please fill in all invoice details above before uploading files.
+          <div className={cn(
+            "bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 p-4 rounded-lg",
+            isMobile ? "p-6" : "p-4"
+          )}>
+            <p className={cn("text-amber-700 dark:text-amber-300", isMobile ? "text-base" : "text-sm")}>
+              Please fill in all invoice details above before uploading files.
+            </p>
           </div>
         )}
       </CardContent>
