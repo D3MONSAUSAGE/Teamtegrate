@@ -1,71 +1,87 @@
 
-import { useAuth } from '@/contexts/AuthContext';
+import { useState } from 'react';
 import { useTask } from '@/contexts/task';
+import { useAuth } from '@/contexts/AuthContext';
+import { Task, User } from '@/types';
 import { toast } from '@/components/ui/sonner';
-import { User, Task } from '@/types';
 
 export const useTaskSubmission = () => {
   const { user } = useAuth();
   const { addTask, updateTask } = useTask();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const submitTask = async (
-    data: any,
+    taskData: any,
     selectedUsers: User[],
-    deadlineDate: Date | undefined,
-    timeInput: string,
+    deadline: Date | string,
+    timeInput: string, // This is now optional since deadline can include time
     editingTask?: Task,
     onSuccess?: () => void
-  ) => {
+  ): Promise<boolean> => {
     if (!user?.organizationId) {
       toast.error('Organization context required');
       return false;
     }
 
-    if (!deadlineDate) {
-      toast.error('Please select a deadline');
-      return false;
-    }
-
     try {
-      // Combine date and time
-      const [hours, minutes] = timeInput.split(':').map(Number);
-      const deadline = new Date(deadlineDate);
-      deadline.setHours(hours, minutes, 0, 0);
+      setIsSubmitting(true);
+
+      // Prepare deadline - use provided deadline if it's already a Date with time
+      let finalDeadline: Date;
+      if (deadline instanceof Date) {
+        finalDeadline = deadline;
+      } else {
+        finalDeadline = new Date(deadline);
+        // If timeInput is provided and deadline doesn't have time, add it
+        if (timeInput && finalDeadline.getHours() === 0 && finalDeadline.getMinutes() === 0) {
+          const [hours, minutes] = timeInput.split(':');
+          finalDeadline.setHours(parseInt(hours), parseInt(minutes));
+        }
+      }
 
       // Prepare assignment data
       const assignmentData = selectedUsers.length > 0 ? {
-        assignedToIds: selectedUsers.map(u => u.id),
-        assignedToNames: selectedUsers.map(u => u.name || u.email),
-        // For single assignment, also populate single fields for backward compatibility
-        ...(selectedUsers.length === 1 && {
-          assignedToId: selectedUsers[0].id,
-          assignedToName: selectedUsers[0].name || selectedUsers[0].email
-        })
-      } : {};
+        assignedToIds: selectedUsers.map(user => user.id),
+        assignedToNames: selectedUsers.map(user => user.name || user.email),
+        // For backward compatibility with single assignment
+        assignedToId: selectedUsers.length === 1 ? selectedUsers[0].id : undefined,
+        assignedToName: selectedUsers.length === 1 ? (selectedUsers[0].name || selectedUsers[0].email) : undefined
+      } : {
+        assignedToIds: [],
+        assignedToNames: [],
+        assignedToId: undefined,
+        assignedToName: undefined
+      };
 
-      const taskData = {
-        ...data,
-        deadline,
-        organizationId: user.organizationId,
+      const finalTaskData = {
+        ...taskData,
         ...assignmentData,
+        deadline: finalDeadline,
+        userId: user.id,
+        organizationId: user.organizationId
       };
 
       if (editingTask) {
-        await updateTask(editingTask.id, taskData);
-        toast.success('Task updated successfully!');
+        await updateTask(editingTask.id, finalTaskData);
+        toast.success('Task updated successfully');
       } else {
-        await addTask(taskData);
-        toast.success('Task created successfully!');
+        await addTask(finalTaskData);
+        toast.success('Task created successfully');
       }
 
       onSuccess?.();
       return true;
     } catch (error) {
       console.error('Error saving task:', error);
-      toast.error(editingTask ? 'Failed to update task' : 'Failed to create task');
+      toast.error(`Failed to ${editingTask ? 'update' : 'create'} task`);
       return false;
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  return { submitTask };
+  return {
+    submitTask,
+    isSubmitting
+  };
 };

@@ -1,13 +1,11 @@
 
 import React from 'react';
-import { Dialog } from "@/components/ui/dialog";
 import { Task } from '@/types';
 import { useProjects } from '@/hooks/useProjects';
 import useTeamMembers from '@/hooks/useTeamMembers';
 import { convertTeamMembersToUsers } from '@/utils/teamMemberConverter';
-import { useTaskDialogState } from '@/hooks/useTaskDialogState';
 import { useTaskSubmission } from '@/hooks/useTaskSubmission';
-import TaskDialogContent from './task/dialog/TaskDialogContent';
+import EnhancedCreateTaskDialog from './task/EnhancedCreateTaskDialog';
 
 interface CreateTaskDialogEnhancedProps {
   open: boolean;
@@ -30,33 +28,14 @@ const CreateTaskDialogEnhanced: React.FC<CreateTaskDialogEnhancedProps> = ({
   // Convert TeamMember[] to User[] with required properties
   const users = convertTeamMembersToUsers(teamMembers);
 
-  const {
-    selectedUsers,
-    setSelectedUsers,
-    deadlineDate,
-    setDeadlineDate,
-    timeInput,
-    setTimeInput,
-    isSubmitting,
-    setIsSubmitting,
-    form
-  } = useTaskDialogState({
-    editingTask,
-    currentProjectId,
-    open,
-    users
-  });
-
   const { submitTask } = useTaskSubmission();
 
-  const handleSubmit = async (data: any) => {
-    setIsSubmitting(true);
-    
+  const handleSubmit = async (data: any, selectedUsers: any[]) => {
     const success = await submitTask(
       data,
       selectedUsers,
-      deadlineDate,
-      timeInput,
+      data.deadline, // deadline is already combined with time in EnhancedCreateTaskDialog
+      '', // timeInput not needed as deadline includes time
       editingTask,
       () => {
         onOpenChange(false);
@@ -64,29 +43,23 @@ const CreateTaskDialogEnhanced: React.FC<CreateTaskDialogEnhancedProps> = ({
       }
     );
 
-    setIsSubmitting(false);
+    if (!success) {
+      throw new Error('Failed to submit task');
+    }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <TaskDialogContent
-        editingTask={editingTask}
-        currentProjectId={currentProjectId}
-        projects={projects}
-        users={users}
-        loadingUsers={loadingUsers}
-        selectedUsers={selectedUsers}
-        onSelectionChange={setSelectedUsers}
-        deadlineDate={deadlineDate}
-        timeInput={timeInput}
-        onDateChange={setDeadlineDate}
-        onTimeChange={setTimeInput}
-        isSubmitting={isSubmitting}
-        onSubmit={handleSubmit}
-        onCancel={() => onOpenChange(false)}
-        form={form}
-      />
-    </Dialog>
+    <EnhancedCreateTaskDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      editingTask={editingTask}
+      currentProjectId={currentProjectId}
+      onTaskComplete={onTaskComplete}
+      projects={projects}
+      users={users}
+      loadingUsers={loadingUsers}
+      onSubmit={handleSubmit}
+    />
   );
 };
 
