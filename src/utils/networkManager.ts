@@ -1,4 +1,6 @@
 
+import { requestManager } from './requestManager';
+
 interface NetworkMetrics {
   requestCount: number;
   failureCount: number;

@@ -95,6 +95,28 @@ export const UnifiedDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
     };
   };
 
+  // Transform database project to app Project type
+  const transformDbProjectToAppProject = (dbProject: any): Project => {
+    return {
+      id: String(dbProject.id || ''),
+      title: String(dbProject.title || ''),
+      description: String(dbProject.description || ''),
+      startDate: dbProject.start_date ? new Date(dbProject.start_date) : new Date(),
+      endDate: dbProject.end_date ? new Date(dbProject.end_date) : new Date(),
+      status: (['To Do', 'In Progress', 'Completed'].includes(dbProject.status) ? dbProject.status : 'To Do') as 'To Do' | 'In Progress' | 'Completed',
+      budget: Number(dbProject.budget) || 0,
+      budgetSpent: Number(dbProject.budget_spent) || 0,
+      managerId: String(dbProject.manager_id || ''),
+      teamMemberIds: dbProject.team_members || [],
+      tags: dbProject.tags || [],
+      createdAt: dbProject.created_at ? new Date(dbProject.created_at) : new Date(),
+      updatedAt: dbProject.updated_at ? new Date(dbProject.updated_at) : new Date(),
+      isCompleted: Boolean(dbProject.is_completed) || false,
+      organizationId: String(dbProject.organization_id || user?.organizationId || ''),
+      tasksCount: Number(dbProject.tasks_count) || 0
+    };
+  };
+
   // Unified task fetching
   const {
     data: rawTasks = [],
@@ -141,7 +163,7 @@ export const UnifiedDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   // Unified project fetching
   const {
-    data: projects = [],
+    data: rawProjects = [],
     isLoading: isLoadingProjects,
     error: projectsError,
     refetch: refetchProjectsQuery
@@ -177,6 +199,11 @@ export const UnifiedDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
       return failureCount < 2;
     }
   });
+
+  // Transform raw projects to app format
+  const projects = useMemo(() => {
+    return rawProjects.map(transformDbProjectToAppProject);
+  }, [rawProjects, user?.organizationId]);
 
   // Unified user fetching
   const {
