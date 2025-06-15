@@ -6,7 +6,7 @@ import { Wifi, WifiOff, RefreshCw, AlertTriangle } from 'lucide-react';
 
 interface ConnectionStatusIndicatorProps {
   status: 'unknown' | 'connected' | 'disconnected';
-  onTest: () => Promise<void>;
+  onTest: () => Promise<boolean>;
   isLoading?: boolean;
 }
 
@@ -43,6 +43,10 @@ const ConnectionStatusIndicator: React.FC<ConnectionStatusIndicatorProps> = ({
 
   const config = getStatusConfig();
 
+  const handleTest = async () => {
+    await onTest();
+  };
+
   return (
     <div className="flex items-center gap-2">
       <Badge variant={config.variant} className={`flex items-center gap-1 ${config.className}`}>
@@ -52,7 +56,7 @@ const ConnectionStatusIndicator: React.FC<ConnectionStatusIndicatorProps> = ({
       <Button
         variant="ghost"
         size="sm"
-        onClick={onTest}
+        onClick={handleTest}
         disabled={isLoading}
         className="h-6 px-2"
       >

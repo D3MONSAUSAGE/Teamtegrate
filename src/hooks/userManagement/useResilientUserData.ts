@@ -9,6 +9,16 @@ import { requestManager } from '@/utils/requestManager';
 export const useResilientUserData = () => {
   const { user: currentUser } = useAuth();
 
+  const getRoleLevel = (role: string): number => {
+    switch (role) {
+      case 'superadmin': return 4;
+      case 'admin': return 3;
+      case 'manager': return 2;
+      case 'user': return 1;
+      default: return 0;
+    }
+  };
+
   // Primary data source - enhanced hierarchy view
   const { data: hierarchyUsers, isLoading: hierarchyLoading, error: hierarchyError } = useQuery({
     queryKey: ['enhanced-organization-users', currentUser?.organizationId],
@@ -87,7 +97,7 @@ export const useResilientUserData = () => {
           created_at: user.created_at,
           assigned_tasks_count: 0,
           completed_tasks_count: 0,
-          role_level: this.getRoleLevel(user.role),
+          role_level: getRoleLevel(user.role),
           is_active: true,
           last_activity: user.created_at
         })) || [];
@@ -103,16 +113,6 @@ export const useResilientUserData = () => {
   const isLoading = hierarchyLoading || (hierarchyError && basicLoading);
   const error = hierarchyError && basicError ? 
     `Failed to load user data: ${basicError}` : null;
-
-  const getRoleLevel = (role: string): number => {
-    switch (role) {
-      case 'superadmin': return 4;
-      case 'admin': return 3;
-      case 'manager': return 2;
-      case 'user': return 1;
-      default: return 0;
-    }
-  };
 
   return {
     users,

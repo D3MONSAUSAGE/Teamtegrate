@@ -6,13 +6,19 @@ import { UserRole } from '@/types';
 import { toast } from '@/components/ui/sonner';
 import { edgeFunctionManager } from '@/utils/edgeFunctionManager';
 
+interface EdgeFunctionResponse {
+  success?: boolean;
+  error?: string;
+  user?: any;
+}
+
 export const useEnhancedUserOperations = (refetchUsers: () => void) => {
   const { user: currentUser } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'unknown' | 'connected' | 'disconnected'>('unknown');
 
   // Test Edge Function connectivity
-  const testConnection = async () => {
+  const testConnection = async (): Promise<boolean> => {
     if (!currentUser?.organizationId) return false;
     
     try {
@@ -71,16 +77,18 @@ export const useEnhancedUserOperations = (refetchUsers: () => void) => {
         throw result.error;
       }
 
-      if (!result.data?.success) {
-        console.error('EnhancedUserOperations: Edge Function returned failure:', result.data);
-        throw new Error(result.data?.error || 'Failed to create user');
+      const responseData = result.data as EdgeFunctionResponse;
+      
+      if (!responseData?.success) {
+        console.error('EnhancedUserOperations: Edge Function returned failure:', responseData);
+        throw new Error(responseData?.error || 'Failed to create user');
       }
 
-      console.log('EnhancedUserOperations: User created successfully:', result.data);
+      console.log('EnhancedUserOperations: User created successfully:', responseData);
 
       await refetchUsers();
       toast.success(`User ${name} created successfully`);
-      return result.data.user;
+      return responseData.user;
     } catch (error: any) {
       console.error('EnhancedUserOperations: Error creating user:', error);
       
