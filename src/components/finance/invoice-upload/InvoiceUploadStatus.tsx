@@ -41,7 +41,16 @@ const InvoiceUploadStatus: React.FC<InvoiceUploadStatusProps> = ({
     );
   }
 
-  return null;
+  return (
+    <div className={cn(
+      "bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 p-4 rounded-lg",
+      isMobile ? "p-6" : "p-4"
+    )}>
+      <p className={cn("text-green-700 dark:text-green-300", isMobile ? "text-base" : "text-sm")}>
+        ✓ Ready to upload! Use the buttons above or drag & drop your invoice file.
+      </p>
+    </div>
+  );
 };
 
 export default InvoiceUploadStatus;

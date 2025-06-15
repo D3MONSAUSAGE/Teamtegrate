@@ -20,6 +20,8 @@ export const useInvoiceActions = () => {
 
   const downloadInvoice = async (invoice: Invoice) => {
     try {
+      console.log('Downloading invoice from path:', invoice.file_path);
+      
       const { data, error } = await supabase.storage
         .from('documents')
         .download(invoice.file_path);
@@ -28,7 +30,7 @@ export const useInvoiceActions = () => {
         console.error('Download error:', error);
         toast({
           title: "Error",
-          description: 'Failed to download invoice',
+          description: `Failed to download invoice: ${error.message}`,
           variant: "destructive",
         });
         return;
@@ -65,42 +67,69 @@ export const useInvoiceActions = () => {
     setViewModalOpen: (open: boolean) => void
   ) => {
     try {
-      // For PDFs, get a signed URL and open in new tab
-      if (invoice.file_type === 'application/pdf') {
-        const { data, error } = await supabase.storage
-          .from('documents')
-          .createSignedUrl(invoice.file_path, 3600); // 1 hour expiry
+      console.log('Viewing invoice from path:', invoice.file_path);
+      
+      // Get signed URL for viewing
+      const { data, error } = await supabase.storage
+        .from('documents')
+        .createSignedUrl(invoice.file_path, 3600); // 1 hour expiry
 
-        if (error) {
-          console.error('View error:', error);
-          toast({
-            title: "Error",
-            description: 'Failed to view invoice',
-            variant: "destructive",
-          });
-          return;
+      if (error) {
+        console.error('View error:', error);
+        
+        // Try to handle legacy file paths - check if file exists in old format
+        if (error.message.includes('not found') || error.message.includes('does not exist')) {
+          console.log('File not found, trying legacy path format...');
+          
+          // Try different path formats for backwards compatibility
+          const legacyPaths = [
+            `${invoice.file_name}`, // Just filename
+            `invoices/${invoice.file_name}`, // Simple invoices folder
+            invoice.file_path.replace(/^invoices\/[^\/]+\/[^\/]+\//, 'invoices/') // Remove org/user folders
+          ];
+
+          for (const legacyPath of legacyPaths) {
+            console.log('Trying legacy path:', legacyPath);
+            const { data: legacyData, error: legacyError } = await supabase.storage
+              .from('documents')
+              .createSignedUrl(legacyPath, 3600);
+
+            if (!legacyError && legacyData) {
+              console.log('Found file at legacy path:', legacyPath);
+              
+              if (invoice.file_type === 'application/pdf') {
+                window.open(legacyData.signedUrl, '_blank');
+                return;
+              }
+
+              if (invoice.file_type.startsWith('image/')) {
+                setImageUrl(legacyData.signedUrl);
+                setViewingInvoice(invoice);
+                setViewModalOpen(true);
+                return;
+              }
+            }
+          }
         }
+        
+        toast({
+          title: "Error",
+          description: `Failed to view invoice: ${error.message}`,
+          variant: "destructive",
+        });
+        return;
+      }
 
+      console.log('Successfully got signed URL for viewing');
+
+      // For PDFs, open in new tab
+      if (invoice.file_type === 'application/pdf') {
         window.open(data.signedUrl, '_blank');
         return;
       }
 
-      // For images, get signed URL and show in modal
+      // For images, show in modal
       if (invoice.file_type.startsWith('image/')) {
-        const { data, error } = await supabase.storage
-          .from('documents')
-          .createSignedUrl(invoice.file_path, 3600); // 1 hour expiry
-
-        if (error) {
-          console.error('View error:', error);
-          toast({
-            title: "Error",
-            description: 'Failed to view invoice',
-            variant: "destructive",
-          });
-          return;
-        }
-
         setImageUrl(data.signedUrl);
         setViewingInvoice(invoice);
         setViewModalOpen(true);
@@ -124,6 +153,8 @@ export const useInvoiceActions = () => {
 
   const deleteInvoice = async (invoice: Invoice, onSuccess: () => void) => {
     try {
+      console.log('Deleting invoice from path:', invoice.file_path);
+      
       // Delete file from storage
       const { error: storageError } = await supabase.storage
         .from('documents')
@@ -131,12 +162,16 @@ export const useInvoiceActions = () => {
 
       if (storageError) {
         console.error('Storage deletion error:', storageError);
-        toast({
-          title: "Error",
-          description: 'Failed to delete invoice file from storage',
-          variant: "destructive",
-        });
-        return;
+        // Don't fail deletion if file doesn't exist in storage
+        if (!storageError.message.includes('not found') && !storageError.message.includes('does not exist')) {
+          toast({
+            title: "Error",
+            description: `Failed to delete invoice file from storage: ${storageError.message}`,
+            variant: "destructive",
+          });
+          return;
+        }
+        console.log('File not found in storage, continuing with database deletion...');
       }
 
       // Delete record from database
@@ -149,7 +184,7 @@ export const useInvoiceActions = () => {
         console.error('Database deletion error:', dbError);
         toast({
           title: "Error",
-          description: 'Failed to delete invoice record',
+          description: `Failed to delete invoice record: ${dbError.message}`,
           variant: "destructive",
         });
         return;

@@ -46,8 +46,8 @@ const ImageViewerModal: React.FC<ImageViewerModalProps> = ({
               alt={`Invoice ${invoice?.invoice_number}`}
               className="max-w-full max-h-[70vh] object-contain"
               onLoad={() => console.log('Image loaded successfully')}
-              onError={() => {
-                console.error('Error loading image');
+              onError={(e) => {
+                console.error('Error loading image:', e);
                 toast({
                   title: "Error",
                   description: 'Failed to load image',
