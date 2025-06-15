@@ -72,7 +72,7 @@ const TasksPage = () => {
   
   // Show error state if tasks is null or undefined
   if (!tasks) {
-    return <TasksPageError error="Failed to load tasks" />;
+    return <TasksPageError error={new Error("Failed to load tasks")} />;
   }
 
   return (
