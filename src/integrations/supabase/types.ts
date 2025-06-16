@@ -1662,6 +1662,10 @@ export type Database = {
         Args: { ids: string[] }
         Returns: boolean
       }
+      validate_invite_code_without_consuming: {
+        Args: { code: string }
+        Returns: Json
+      }
       would_leave_org_without_superadmin: {
         Args: { target_user_id: string; target_org_id: string }
         Returns: boolean

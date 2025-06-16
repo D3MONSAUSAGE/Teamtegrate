@@ -156,11 +156,13 @@ export const generateInviteCode = async (
   }
 };
 
+// Updated function to use non-consuming validation for frontend checks
 export const validateInviteCode = async (
   inviteCode: string
 ): Promise<{ success: boolean; error?: string }> => {
   try {
-    const { data, error } = await supabase.rpc('validate_and_use_invite_code', {
+    // Use the new non-consuming validation function for frontend checks
+    const { data, error } = await supabase.rpc('validate_invite_code_without_consuming', {
       code: inviteCode
     });
 
