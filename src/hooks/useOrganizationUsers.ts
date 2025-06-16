@@ -26,19 +26,68 @@ export const useOrganizationUsers = () => {
       throw new Error('User must belong to an organization');
     }
 
-    const { data, error } = await supabase
+    console.log('Fetching organization users for org:', user.organizationId);
+    console.log('Current user role:', user.role);
+
+    // Try the hierarchy view first
+    let { data: hierarchyData, error: hierarchyError } = await supabase
       .from('organization_user_hierarchy')
       .select('*')
       .eq('organization_id', user.organizationId)
       .order('role_level', { ascending: false })
       .order('name');
 
-    if (error) {
-      console.error('Error fetching organization users:', error);
-      throw new Error(error.message);
+    if (!hierarchyError && hierarchyData && hierarchyData.length > 0) {
+      console.log('Using hierarchy view, found users:', hierarchyData.length);
+      return hierarchyData.map(user => ({
+        id: user.id || '',
+        name: user.name || '',
+        email: user.email || '',
+        role: user.role || 'user',
+        organization_id: user.organization_id || '',
+        created_at: user.created_at || '',
+        assigned_tasks_count: user.assigned_tasks_count || 0,
+        completed_tasks_count: user.completed_tasks_count || 0,
+        role_level: user.role_level || 0,
+      }));
     }
 
-    return data || [];
+    // Fallback to direct users table query
+    console.log('Hierarchy view failed or empty, falling back to users table');
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('id, name, email, role, organization_id, created_at')
+      .eq('organization_id', user.organizationId)
+      .order('name');
+
+    if (userError) {
+      console.error('Error fetching users from users table:', userError);
+      throw new Error(userError.message);
+    }
+
+    console.log('Direct users query found:', userData?.length || 0, 'users');
+    
+    return userData?.map(user => ({
+      id: user.id,
+      name: user.name || '',
+      email: user.email || '',
+      role: user.role,
+      organization_id: user.organization_id,
+      created_at: user.created_at,
+      assigned_tasks_count: 0,
+      completed_tasks_count: 0,
+      role_level: getRoleLevel(user.role),
+    })) || [];
+  };
+
+  const getRoleLevel = (role: string): number => {
+    switch (role) {
+      case 'superadmin': return 4;
+      case 'admin': return 3;
+      case 'manager': return 2;
+      case 'user': return 1;
+      default: return 0;
+    }
   };
 
   const updateUserRole = async (userId: string, newRole: UserRole) => {
@@ -55,6 +104,7 @@ export const useOrganizationUsers = () => {
 
       // Invalidate and refetch users data
       queryClient.invalidateQueries({ queryKey: ['organization-users'] });
+      queryClient.invalidateQueries({ queryKey: ['users'] });
       queryClient.invalidateQueries({ queryKey: ['organization-stats'] });
       
       toast.success(`User role updated to ${newRole}`);

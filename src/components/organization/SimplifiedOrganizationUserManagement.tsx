@@ -7,7 +7,8 @@ import { toast } from '@/components/ui/sonner';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Users, Crown, Loader2, Shield, AlertTriangle } from 'lucide-react';
+import { Users, Crown, Loader2, Shield, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Button } from "@/components/ui/button";
 import UserManagementFilters from './user-management/UserManagementFilters';
 import UserList from './user-management/UserList';
 import CreateUserDialog from './CreateUserDialog';
@@ -32,13 +33,31 @@ const SimplifiedOrganizationUserManagement: React.FC = () => {
     try {
       setIsLoading(true);
       
-      // Use the same direct query pattern as AdminUserManagement
-      const { data, error } = await supabase
+      console.log('Fetching users for organization:', currentUser.organizationId);
+      console.log('Current user role:', currentUser.role);
+      
+      // For superadmins, query all users in their organization directly
+      let query = supabase
         .from('users')
-        .select('*')
-        .neq('id', currentUser.id);
+        .select('*');
 
-      if (error) throw error;
+      // If superadmin, get all users in the organization
+      if (currentUser.role === 'superadmin') {
+        query = query.eq('organization_id', currentUser.organizationId);
+      } else {
+        // For non-superadmins, exclude the current user
+        query = query.neq('id', currentUser.id);
+      }
+
+      const { data, error } = await query.order('name');
+
+      if (error) {
+        console.error('Error fetching users:', error);
+        throw error;
+      }
+      
+      console.log('Raw users data received:', data?.length, 'users');
+      console.log('Users data:', data);
       
       // Convert database format to User type with proper date handling
       const formattedUsers: User[] = (data || []).map(dbUser => {
@@ -63,6 +82,7 @@ const SimplifiedOrganizationUserManagement: React.FC = () => {
         };
       });
       
+      console.log('Formatted users:', formattedUsers.length);
       setUsers(formattedUsers);
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -70,7 +90,7 @@ const SimplifiedOrganizationUserManagement: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [currentUser?.organizationId, currentUser?.id]);
+  }, [currentUser?.organizationId, currentUser?.id, currentUser?.role]);
 
   useEffect(() => {
     fetchUsers();
@@ -180,6 +200,14 @@ const SimplifiedOrganizationUserManagement: React.FC = () => {
             <Badge variant="outline" className="ml-auto">
               {filteredUsers.length} Users
             </Badge>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={fetchUsers}
+              className="ml-2"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </Button>
           </CardTitle>
           <div className="flex items-center justify-between">
             {currentSuperadmin && (
@@ -188,6 +216,9 @@ const SimplifiedOrganizationUserManagement: React.FC = () => {
                 <span>Current Superadmin: <strong>{currentSuperadmin.name}</strong></span>
               </div>
             )}
+          </div>
+          <div className="text-sm text-muted-foreground">
+            Organization: {currentUser?.organizationId} | Total Users Found: {users.length}
           </div>
         </CardHeader>
         <CardContent>
