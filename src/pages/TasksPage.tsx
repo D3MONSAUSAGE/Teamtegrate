@@ -1,14 +1,14 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTask } from '@/contexts/task';
 import { Task, TaskStatus } from '@/types';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import TaskCommentsDialog from '@/components/TaskCommentsDialog';
 import CreateTaskDialogEnhanced from '@/components/CreateTaskDialogEnhanced';
 import TasksPageLoading from '@/components/task/TasksPageLoading';
 import TasksPageError from '@/components/task/TasksPageError';
 import TasksPageContent from '@/components/task/TasksPageContent';
-import { toast } from '@/components/ui/sonner';
+import { enhancedNotifications } from '@/utils/enhancedNotifications';
 import { useDebounce } from '@/utils/performanceUtils';
 
 const TasksPage = () => {
@@ -23,12 +23,26 @@ const TasksPage = () => {
   }, []);
 
   // Use TaskContext directly for real-time updates
-  const { tasks, isLoading, updateTaskStatus } = useTask();
+  const { tasks, isLoading, updateTaskStatus, refreshTasks } = useTask();
   
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [sortBy, setSortBy] = useState('deadline');
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [showComments, setShowComments] = useState(false);
+
+  // Setup keyboard shortcuts for this page
+  useKeyboardShortcuts({
+    onNewTask: () => {
+      setEditingTask(undefined);
+      setIsCreateTaskOpen(true);
+    },
+    onRefresh: () => {
+      refreshTasks();
+      enhancedNotifications.info('Tasks refreshed', {
+        description: 'Task list has been updated with latest data'
+      });
+    }
+  });
   
   // Debounced handlers to prevent rapid clicking
   const debouncedEditTask = useDebounce((task: Task) => {

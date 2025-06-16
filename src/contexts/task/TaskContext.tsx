@@ -3,7 +3,7 @@ import { Task, Project, User, TaskStatus, DailyScore } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUnifiedData } from '@/contexts/UnifiedDataContext';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/components/ui/sonner';
+import { enhancedNotifications } from '@/utils/enhancedNotifications';
 import { useQueryClient } from '@tanstack/react-query';
 
 interface TaskContextType {
@@ -124,10 +124,10 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  // Task operations
+  // Task operations with enhanced notifications
   const addTask = async (taskData: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
     if (!user?.organizationId) {
-      toast.error('Organization context required');
+      enhancedNotifications.error('Organization context required');
       return;
     }
 
@@ -167,13 +167,30 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       };
       
       setTasks(prev => [...prev, newTask]);
-      toast.success('Task created successfully');
+      
+      enhancedNotifications.success('Task created successfully', {
+        description: `"${taskData.title}" has been added to your tasks`,
+        actions: [
+          {
+            label: 'View Tasks',
+            onClick: () => window.location.href = '/dashboard/tasks'
+          }
+        ]
+      });
       
       // Invalidate all relevant task queries
       await invalidateTaskQueries(taskData.projectId);
     } catch (error) {
       console.error('Error creating task:', error);
-      toast.error('Failed to create task');
+      enhancedNotifications.error('Failed to create task', {
+        description: 'Please try again or contact support if the issue persists',
+        actions: [
+          {
+            label: 'Retry',
+            onClick: () => addTask(taskData)
+          }
+        ]
+      });
     }
   };
 
@@ -202,23 +219,40 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (error) throw error;
 
       // Update local state immediately for optimistic updates
+      const oldTask = tasks.find(t => t.id === taskId);
       setTasks(prev => prev.map(task => 
         task.id === taskId ? { ...task, ...updates, updatedAt: new Date() } : task
       ));
       
-      toast.success('Task updated successfully');
+      enhancedNotifications.undo('Task updated successfully', () => {
+        if (oldTask) {
+          updateTask(taskId, oldTask);
+        }
+      }, {
+        description: `Changes saved for "${updates.title || oldTask?.title || 'task'}"`
+      });
       
       // Invalidate all relevant task queries
       const task = tasks.find(t => t.id === taskId);
       await invalidateTaskQueries(task?.projectId);
     } catch (error) {
       console.error('Error updating task:', error);
-      toast.error('Failed to update task');
+      enhancedNotifications.error('Failed to update task', {
+        description: 'Your changes could not be saved',
+        actions: [
+          {
+            label: 'Retry',
+            onClick: () => updateTask(taskId, updates)
+          }
+        ]
+      });
     }
   };
 
   const deleteTask = async (taskId: string) => {
     try {
+      const taskToDelete = tasks.find(t => t.id === taskId);
+      
       const { error } = await supabase
         .from('tasks')
         .delete()
@@ -226,20 +260,38 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       if (error) throw error;
 
-      const task = tasks.find(t => t.id === taskId);
       setTasks(prev => prev.filter(task => task.id !== taskId));
-      toast.success('Task deleted successfully');
+      
+      enhancedNotifications.undo('Task deleted successfully', async () => {
+        if (taskToDelete) {
+          await addTask(taskToDelete);
+        }
+      }, {
+        description: `"${taskToDelete?.title || 'Task'}" has been removed`,
+        duration: 8000
+      });
       
       // Invalidate all relevant task queries
-      await invalidateTaskQueries(task?.projectId);
+      await invalidateTaskQueries(taskToDelete?.projectId);
     } catch (error) {
       console.error('Error deleting task:', error);
-      toast.error('Failed to delete task');
+      enhancedNotifications.error('Failed to delete task', {
+        description: 'The task could not be removed',
+        actions: [
+          {
+            label: 'Retry',
+            onClick: () => deleteTask(taskId)
+          }
+        ]
+      });
     }
   };
 
   const updateTaskStatus = async (taskId: string, status: TaskStatus) => {
     try {
+      const task = tasks.find(t => t.id === taskId);
+      const oldStatus = task?.status;
+      
       const now = new Date();
       const updateData: any = {
         status,
@@ -271,14 +323,43 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         } : task
       ));
       
-      toast.success(`Task status updated to ${status}`);
+      if (status === 'Completed') {
+        enhancedNotifications.success('Task completed! 🎉', {
+          description: `"${task?.title || 'Task'}" has been marked as complete`,
+          actions: [
+            {
+              label: 'Undo',
+              onClick: () => oldStatus && updateTaskStatus(taskId, oldStatus),
+              variant: 'outline'
+            }
+          ]
+        });
+      } else {
+        enhancedNotifications.info(`Task status updated to ${status}`, {
+          description: `"${task?.title || 'Task'}" is now ${status.toLowerCase()}`,
+          actions: [
+            {
+              label: 'Undo',
+              onClick: () => oldStatus && updateTaskStatus(taskId, oldStatus),
+              variant: 'outline'
+            }
+          ]
+        });
+      }
       
       // Invalidate all relevant task queries
-      const task = tasks.find(t => t.id === taskId);
       await invalidateTaskQueries(task?.projectId);
     } catch (error) {
       console.error('Error updating task status:', error);
-      toast.error('Failed to update task status');
+      enhancedNotifications.error('Failed to update task status', {
+        description: 'Status change could not be saved',
+        actions: [
+          {
+            label: 'Retry',
+            onClick: () => updateTaskStatus(taskId, status)
+          }
+        ]
+      });
     }
   };
 
@@ -322,10 +403,10 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           : task
       ));
 
-      toast.success('Comment added successfully');
+      enhancedNotifications.success('Comment added successfully');
     } catch (error) {
       console.error('Error adding comment:', error);
-      toast.error('Failed to add comment');
+      enhancedNotifications.error('Failed to add comment');
     }
   };
 
@@ -338,7 +419,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     budget?: number
   ): Promise<Project | undefined> => {
     if (!user?.organizationId) {
-      toast.error('Organization context required');
+      enhancedNotifications.error('Organization context required');
       return;
     }
 
@@ -384,14 +465,14 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       };
 
       setProjects(prev => [...prev, newProject]);
-      toast.success('Project created successfully');
+      enhancedNotifications.success('Project created successfully');
       
       // Trigger refetch to ensure data consistency
       await refetchProjects();
       return newProject;
     } catch (error) {
       console.error('Error creating project:', error);
-      toast.error('Failed to create project');
+      enhancedNotifications.error('Failed to create project');
     }
   };
 
@@ -422,13 +503,13 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         project.id === projectId ? { ...project, ...updates, updatedAt: new Date() } : project
       ));
       
-      toast.success('Project updated successfully');
+      enhancedNotifications.success('Project updated successfully');
       
       // Trigger refetch to ensure data consistency
       await refetchProjects();
     } catch (error) {
       console.error('Error updating project:', error);
-      toast.error('Failed to update project');
+      enhancedNotifications.error('Failed to update project');
     }
   };
 
@@ -442,13 +523,13 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (error) throw error;
 
       setProjects(prev => prev.filter(project => project.id !== projectId));
-      toast.success('Project deleted successfully');
+      enhancedNotifications.success('Project deleted successfully');
       
       // Trigger refetch to ensure data consistency
       await refetchProjects();
     } catch (error) {
       console.error('Error deleting project:', error);
-      toast.error('Failed to delete project');
+      enhancedNotifications.error('Failed to delete project');
     }
   };
 
