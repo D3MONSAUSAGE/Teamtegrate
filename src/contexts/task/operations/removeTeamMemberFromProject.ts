@@ -36,7 +36,7 @@ export const removeTeamMemberFromProject = async (
     }
 
     // Update the projects table team_members array
-    const currentTeamMembers = project.team_members || [];
+    const currentTeamMembers = project.teamMemberIds || [];
     const updatedTeamMembers = currentTeamMembers.filter(id => id !== userId);
     
     const { error: arrayError } = await supabase
@@ -69,8 +69,7 @@ export const removeTeamMemberFromProject = async (
       if (project.id === projectId) {
         return {
           ...project,
-          team_members: updatedTeamMembers,
-          teamMemberIds: updatedTeamMembers, // Also update teamMemberIds for consistency
+          teamMemberIds: updatedTeamMembers,
           updatedAt: new Date()
         };
       }

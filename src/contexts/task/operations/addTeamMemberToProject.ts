@@ -42,8 +42,8 @@ export const addTeamMemberToProject = async (
       return;
     }
 
-    // Check if user is already in the team_members array
-    const currentTeamMembers = project.team_members || [];
+    // Check if user is already in the teamMemberIds array
+    const currentTeamMembers = project.teamMemberIds || [];
     if (currentTeamMembers.includes(userId)) {
       console.log('Team member already exists in project array');
       toast.info('User is already a team member of this project');
@@ -116,8 +116,7 @@ export const addTeamMemberToProject = async (
       if (p.id === projectId) {
         return {
           ...p,
-          team_members: updatedTeamMembers,
-          teamMemberIds: updatedTeamMembers, // Also update teamMemberIds for consistency
+          teamMemberIds: updatedTeamMembers,
           updatedAt: new Date()
         };
       }
