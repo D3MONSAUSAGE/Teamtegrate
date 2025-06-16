@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Plus, UserPlus, Settings, BarChart3 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
+import InviteCodeDialog from './InviteCodeDialog';
 
 const OrganizationQuickActions: React.FC = () => {
   const { user } = useAuth();
@@ -36,10 +37,12 @@ const OrganizationQuickActions: React.FC = () => {
         </Link>
 
         {canCreateUsers && (
-          <Button className="w-full justify-start" variant="outline">
-            <UserPlus className="h-4 w-4 mr-2" />
-            Invite User
-          </Button>
+          <InviteCodeDialog>
+            <Button className="w-full justify-start" variant="outline">
+              <UserPlus className="h-4 w-4 mr-2" />
+              Invite User
+            </Button>
+          </InviteCodeDialog>
         )}
 
         {canViewReports && (
