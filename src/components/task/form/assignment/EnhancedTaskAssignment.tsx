@@ -34,14 +34,10 @@ const EnhancedTaskAssignment: React.FC<EnhancedTaskAssignmentProps> = ({
   const handleToggle = (enabled: boolean) => {
     setMultiAssignMode(enabled);
     
-    // Clear assignments when switching modes
     if (enabled) {
       // Switch to multi-assign: keep current selection if single user is selected
       if (selectedMember && selectedMember !== "unassigned") {
-        const currentUser = users.find(u => u.id === selectedMember);
-        if (currentUser) {
-          onMembersChange([selectedMember]);
-        }
+        onMembersChange([selectedMember]);
       }
       onAssign("unassigned"); // Clear single assignment
     } else {
@@ -55,14 +51,8 @@ const EnhancedTaskAssignment: React.FC<EnhancedTaskAssignmentProps> = ({
 
   const selectedUsers = users.filter(user => selectedMembers.includes(user.id));
 
-  const handleUserAdd = (user: User) => {
-    if (!selectedMembers.includes(user.id)) {
-      onMembersChange([...selectedMembers, user.id]);
-    }
-  };
-
-  const handleUserRemove = (userId: string) => {
-    onMembersChange(selectedMembers.filter(id => id !== userId));
+  const handleUsersChange = (newUsers: User[]) => {
+    onMembersChange(newUsers.map(u => u.id));
   };
 
   return (
@@ -84,9 +74,7 @@ const EnhancedTaskAssignment: React.FC<EnhancedTaskAssignmentProps> = ({
           <>
             <TeamAssignmentCard
               selectedUsers={selectedUsers}
-              setSelectedUsers={(users) => onMembersChange(users.map(u => u.id))}
-              userSearchQuery=""
-              setUserSearchQuery={() => {}}
+              setSelectedUsers={handleUsersChange}
               users={users}
               loadingUsers={isLoading}
             />

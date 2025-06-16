@@ -2,8 +2,7 @@
 import React from 'react';
 import { Task } from '@/types';
 import { useProjects } from '@/hooks/useProjects';
-import useTeamMembers from '@/hooks/useTeamMembers';
-import { convertTeamMembersToUsers } from '@/utils/teamMemberConverter';
+import { useOrganizationTeamMembers } from '@/hooks/useOrganizationTeamMembers';
 import { useTaskSubmission } from '@/hooks/useTaskSubmission';
 import EnhancedCreateTaskDialog from './task/EnhancedCreateTaskDialog';
 
@@ -23,11 +22,8 @@ const CreateTaskDialogEnhanced: React.FC<CreateTaskDialogEnhancedProps> = ({
   onTaskComplete,
 }) => {
   const { projects } = useProjects();
-  const { teamMembers, isLoading: loadingUsers } = useTeamMembers();
+  const { users, isLoading: loadingUsers } = useOrganizationTeamMembers();
   
-  // Convert TeamMember[] to User[] with required properties
-  const users = convertTeamMembersToUsers(teamMembers);
-
   const { submitTask } = useTaskSubmission();
 
   const handleSubmit = async (data: any, selectedUsers: any[]) => {

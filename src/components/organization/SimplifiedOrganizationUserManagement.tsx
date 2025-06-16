@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { User, UserRole } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
+import { useOrganizationTeamMembers } from '@/hooks/useOrganizationTeamMembers';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,8 +18,7 @@ import SimpleDeleteUserDialog from './SimpleDeleteUserDialog';
 
 const SimplifiedOrganizationUserManagement: React.FC = () => {
   const { user: currentUser } = useAuth();
-  const [users, setUsers] = useState<User[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { users, isLoading, refetch } = useOrganizationTeamMembers();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRole, setSelectedRole] = useState<UserRole | 'all'>('all');
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
@@ -26,75 +26,6 @@ const SimplifiedOrganizationUserManagement: React.FC = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
-
-  const fetchUsers = useCallback(async () => {
-    if (!currentUser?.organizationId) return;
-
-    try {
-      setIsLoading(true);
-      
-      console.log('Fetching users for organization:', currentUser.organizationId);
-      console.log('Current user role:', currentUser.role);
-      
-      // For superadmins, query all users in their organization directly
-      let query = supabase
-        .from('users')
-        .select('*');
-
-      // If superadmin, get all users in the organization
-      if (currentUser.role === 'superadmin') {
-        query = query.eq('organization_id', currentUser.organizationId);
-      } else {
-        // For non-superadmins, exclude the current user
-        query = query.neq('id', currentUser.id);
-      }
-
-      const { data, error } = await query.order('name');
-
-      if (error) {
-        console.error('Error fetching users:', error);
-        throw error;
-      }
-      
-      console.log('Raw users data received:', data?.length, 'users');
-      console.log('Users data:', data);
-      
-      // Convert database format to User type with proper date handling
-      const formattedUsers: User[] = (data || []).map(dbUser => {
-        // Safely handle date conversion
-        let createdAt = new Date();
-        if (dbUser.created_at) {
-          const parsedDate = new Date(dbUser.created_at);
-          if (!isNaN(parsedDate.getTime())) {
-            createdAt = parsedDate;
-          }
-        }
-
-        return {
-          id: dbUser.id,
-          email: dbUser.email,
-          name: dbUser.name,
-          role: dbUser.role as UserRole,
-          organizationId: dbUser.organization_id,
-          timezone: dbUser.timezone || 'UTC',
-          avatar_url: dbUser.avatar_url,
-          createdAt: createdAt
-        };
-      });
-      
-      console.log('Formatted users:', formattedUsers.length);
-      setUsers(formattedUsers);
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      toast.error('Failed to load users');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [currentUser?.organizationId, currentUser?.id, currentUser?.role]);
-
-  useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
 
   const handleQuickRoleChange = async (userId: string, newRole: UserRole) => {
     setUpdatingUserId(userId);
@@ -107,7 +38,7 @@ const SimplifiedOrganizationUserManagement: React.FC = () => {
       if (error) throw error;
 
       toast.success('User role updated successfully');
-      await fetchUsers(); // Refresh the list
+      await refetch(); // Refresh the list
     } catch (error) {
       console.error('Role change failed:', error);
       toast.error('Failed to update user role');
@@ -128,21 +59,21 @@ const SimplifiedOrganizationUserManagement: React.FC = () => {
 
   const onUserCreated = () => {
     setCreateDialogOpen(false);
-    fetchUsers();
+    refetch();
     toast.success('User created successfully');
   };
 
   const onUserUpdated = () => {
     setEditDialogOpen(false);
     setSelectedUser(null);
-    fetchUsers();
+    refetch();
     toast.success('User updated successfully');
   };
 
   const onUserDeleted = () => {
     setDeleteDialogOpen(false);
     setSelectedUser(null);
-    fetchUsers();
+    refetch();
     toast.success('User deleted successfully');
   };
 
@@ -203,7 +134,7 @@ const SimplifiedOrganizationUserManagement: React.FC = () => {
             <Button
               variant="outline"
               size="sm"
-              onClick={fetchUsers}
+              onClick={refetch}
               className="ml-2"
             >
               <RefreshCw className="h-4 w-4" />

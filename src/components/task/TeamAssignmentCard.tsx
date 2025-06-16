@@ -12,8 +12,6 @@ import { User } from '@/types';
 interface TeamAssignmentCardProps {
   selectedUsers: User[];
   setSelectedUsers: (users: User[]) => void;
-  userSearchQuery: string;
-  setUserSearchQuery: (query: string) => void;
   users: User[];
   loadingUsers: boolean;
 }
@@ -21,11 +19,10 @@ interface TeamAssignmentCardProps {
 const TeamAssignmentCard: React.FC<TeamAssignmentCardProps> = ({
   selectedUsers,
   setSelectedUsers,
-  userSearchQuery,
-  setUserSearchQuery,
   users,
   loadingUsers
 }) => {
+  const [userSearchQuery, setUserSearchQuery] = useState('');
   const [showSearchResults, setShowSearchResults] = useState(false);
 
   const addUser = (user: User) => {
@@ -57,7 +54,6 @@ const TeamAssignmentCard: React.FC<TeamAssignmentCardProps> = ({
 
   // Hide search results when clicking outside (simplified)
   const handleSearchInputBlur = () => {
-    // Small delay to allow clicking on search results
     setTimeout(() => setShowSearchResults(false), 200);
   };
 

@@ -89,38 +89,56 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
     setSelectedMembers(memberIds);
   };
 
-  const handleSubmit = async (data: any) => {
+  const handleDateChange = (date: Date | undefined) => {
+    setDeadlineDate(date);
+  };
+
+  const handleTimeChange = (time: string) => {
+    setTimeInput(time);
+  };
+
+  const handleSubmit = async () => {
     if (!deadlineDate) {
-      toast.error('Please select a deadline');
+      toast.error('Please select a deadline date');
+      return;
+    }
+
+    if (!form.getValues('title')?.trim()) {
+      toast.error('Please enter a task title');
       return;
     }
 
     setIsSubmitting(true);
-    
+
     try {
       // Combine date and time
       const [hours, minutes] = timeInput.split(':');
-      const finalDeadline = new Date(deadlineDate);
-      finalDeadline.setHours(parseInt(hours), parseInt(minutes));
+      const deadline = new Date(deadlineDate);
+      deadline.setHours(parseInt(hours, 10), parseInt(minutes, 10));
+
+      const formData = form.getValues();
+      
+      // Get assigned users based on current selection
+      let assignedUsers: User[] = [];
+      if (selectedMembers.length > 0) {
+        assignedUsers = users.filter(user => selectedMembers.includes(user.id));
+      } else if (selectedMember && selectedMember !== "unassigned") {
+        const user = users.find(u => u.id === selectedMember);
+        if (user) assignedUsers = [user];
+      }
 
       const taskData = {
-        ...data,
-        deadline: finalDeadline,
-        cost: data.cost ? parseFloat(data.cost) : 0,
-        projectId: data.projectId === 'none' ? undefined : data.projectId
+        ...formData,
+        deadline,
+        cost: formData.cost ? parseFloat(formData.cost) : 0,
+        projectId: formData.projectId === 'none' ? undefined : formData.projectId,
       };
-
-      // Determine which users are selected based on assignment mode
-      const assignedUsers = selectedMembers.length > 0 
-        ? users.filter(user => selectedMembers.includes(user.id))
-        : selectedMember && selectedMember !== "unassigned" 
-          ? users.filter(user => user.id === selectedMember)
-          : [];
 
       await onSubmit(taskData, assignedUsers);
       onTaskComplete?.();
     } catch (error) {
       console.error('Error submitting task:', error);
+      toast.error('Failed to save task');
     } finally {
       setIsSubmitting(false);
     }
@@ -128,25 +146,24 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-gradient-to-br from-background via-muted/5 to-background">
-        <DialogHeader className="space-y-3">
-          <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent flex items-center gap-2">
-            <Target className="h-6 w-6 text-primary" />
+      <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Target className="h-5 w-5" />
             {editingTask ? 'Edit Task' : 'Create New Task'}
           </DialogTitle>
         </DialogHeader>
-
-        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <TaskDetailsCard
             form={form}
-            deadlineDate={deadlineDate}
-            setDeadlineDate={setDeadlineDate}
-            timeInput={timeInput}
-            setTimeInput={setTimeInput}
             projects={projects}
-            currentProjectId={currentProjectId}
+            deadlineDate={deadlineDate}
+            timeInput={timeInput}
+            onDateChange={handleDateChange}
+            onTimeChange={handleTimeChange}
           />
-
+          
           <EnhancedTaskAssignment
             selectedMember={selectedMember}
             selectedMembers={selectedMembers}
@@ -156,13 +173,14 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
             isLoading={loadingUsers}
             editingTask={editingTask}
           />
+        </div>
 
-          <TaskDialogActions
-            isSubmitting={isSubmitting}
-            editingTask={editingTask}
-            onCancel={() => onOpenChange(false)}
-          />
-        </form>
+        <TaskDialogActions
+          isSubmitting={isSubmitting}
+          editingTask={editingTask}
+          onSubmit={handleSubmit}
+          onCancel={() => onOpenChange(false)}
+        />
       </DialogContent>
     </Dialog>
   );
