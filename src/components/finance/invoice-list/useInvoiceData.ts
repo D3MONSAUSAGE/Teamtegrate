@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from '@/components/ui/sonner';
 
 interface Invoice {
   id: string;
@@ -19,11 +19,12 @@ interface Invoice {
 export const useInvoiceData = (refreshTrigger: number) => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
 
   const fetchInvoices = async () => {
     try {
       setIsLoading(true);
+      console.log('Fetching invoices for organization...');
+      
       const { data, error } = await supabase
         .from('invoices')
         .select('*')
@@ -31,22 +32,15 @@ export const useInvoiceData = (refreshTrigger: number) => {
 
       if (error) {
         console.error('Error fetching invoices:', error);
-        toast({
-          title: "Error",
-          description: 'Failed to load invoices',
-          variant: "destructive",
-        });
+        toast.error('Failed to load invoices');
         return;
       }
 
+      console.log(`Successfully loaded ${data?.length || 0} invoices`);
       setInvoices(data || []);
     } catch (error) {
       console.error('Error fetching invoices:', error);
-      toast({
-        title: "Error",
-        description: 'Failed to load invoices',
-        variant: "destructive",
-      });
+      toast.error('Failed to load invoices');
     } finally {
       setIsLoading(false);
     }
