@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { Task, Project, User, TaskStatus, DailyScore } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
@@ -106,6 +105,25 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     await refetchProjects();
   };
 
+  // Helper function to invalidate all task-related queries
+  const invalidateTaskQueries = async (taskProjectId?: string) => {
+    if (user?.organizationId) {
+      // Invalidate unified tasks queries
+      await queryClient.invalidateQueries({ queryKey: ['unified-my-tasks', user.organizationId, user.id] });
+      await queryClient.invalidateQueries({ queryKey: ['tasks-my-tasks', user.organizationId, user.id] });
+      
+      // Invalidate project-specific task queries if project ID is available
+      if (taskProjectId) {
+        await queryClient.invalidateQueries({ queryKey: ['project-tasks', taskProjectId] });
+      }
+      
+      // Invalidate all project task queries for this organization
+      await queryClient.invalidateQueries({ queryKey: ['project-tasks'] });
+      
+      await refetchTasks();
+    }
+  };
+
   // Task operations
   const addTask = async (taskData: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
     if (!user?.organizationId) {
@@ -151,10 +169,8 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setTasks(prev => [...prev, newTask]);
       toast.success('Task created successfully');
       
-      // Invalidate queries and trigger refetch to ensure data consistency
-      await queryClient.invalidateQueries({ queryKey: ['unified-tasks', user.organizationId] });
-      await queryClient.invalidateQueries({ queryKey: ['tasks', user.organizationId, user.id] });
-      await refetchTasks();
+      // Invalidate all relevant task queries
+      await invalidateTaskQueries(taskData.projectId);
     } catch (error) {
       console.error('Error creating task:', error);
       toast.error('Failed to create task');
@@ -192,12 +208,9 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       
       toast.success('Task updated successfully');
       
-      // Invalidate queries and trigger refetch to ensure data consistency
-      if (user?.organizationId) {
-        await queryClient.invalidateQueries({ queryKey: ['unified-tasks', user.organizationId] });
-        await queryClient.invalidateQueries({ queryKey: ['tasks', user.organizationId, user.id] });
-        await refetchTasks();
-      }
+      // Invalidate all relevant task queries
+      const task = tasks.find(t => t.id === taskId);
+      await invalidateTaskQueries(task?.projectId);
     } catch (error) {
       console.error('Error updating task:', error);
       toast.error('Failed to update task');
@@ -213,15 +226,12 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       if (error) throw error;
 
+      const task = tasks.find(t => t.id === taskId);
       setTasks(prev => prev.filter(task => task.id !== taskId));
       toast.success('Task deleted successfully');
       
-      // Invalidate queries and trigger refetch to ensure data consistency
-      if (user?.organizationId) {
-        await queryClient.invalidateQueries({ queryKey: ['unified-tasks', user.organizationId] });
-        await queryClient.invalidateQueries({ queryKey: ['tasks', user.organizationId, user.id] });
-        await refetchTasks();
-      }
+      // Invalidate all relevant task queries
+      await invalidateTaskQueries(task?.projectId);
     } catch (error) {
       console.error('Error deleting task:', error);
       toast.error('Failed to delete task');
@@ -263,12 +273,9 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       
       toast.success(`Task status updated to ${status}`);
       
-      // Invalidate queries and trigger refetch to ensure data consistency
-      if (user?.organizationId) {
-        await queryClient.invalidateQueries({ queryKey: ['unified-tasks', user.organizationId] });
-        await queryClient.invalidateQueries({ queryKey: ['tasks', user.organizationId, user.id] });
-        await refetchTasks();
-      }
+      // Invalidate all relevant task queries
+      const task = tasks.find(t => t.id === taskId);
+      await invalidateTaskQueries(task?.projectId);
     } catch (error) {
       console.error('Error updating task status:', error);
       toast.error('Failed to update task status');

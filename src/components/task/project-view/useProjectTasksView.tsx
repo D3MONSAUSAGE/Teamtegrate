@@ -1,6 +1,6 @@
 
 import { useMemo } from 'react';
-import { useTask } from '@/contexts/task';
+import { useProjectTasks } from '@/hooks/useProjectTasks';
 import { useProjects } from '@/hooks/useProjects';
 import { useProjectAccess } from './hooks/useProjectAccess';
 import { useProjectTasksFilters } from './hooks/useProjectTasksFilters';
@@ -11,43 +11,22 @@ import { Task } from '@/types';
 export const useProjectTasksView = (projectId: string | null) => {
   console.log('useProjectTasksView: Called with projectId:', projectId);
 
-  const { tasks, updateTaskStatus } = useTask();
+  // Use the new project-specific tasks query instead of the "My Tasks" focused one
+  const { tasks: projectTasks, isLoading: isLoadingTasks, error: tasksError, refetch: refetchTasks } = useProjectTasks(projectId);
   const { projects } = useProjects();
 
   console.log('useProjectTasksView: Got data from hooks:', {
-    tasksCount: tasks?.length || 0,
+    tasksCount: projectTasks?.length || 0,
     projectsCount: projects?.length || 0
   });
 
-  // Get project tasks with STRICT RLS enforcement
-  const projectTasks = useMemo(() => {
-    if (!projectId || !tasks) {
-      console.log('useProjectTasksView: No projectId or tasks, returning empty array');
-      return [];
-    }
-    const filtered = tasks.filter(task => task.projectId === projectId);
-    console.log('useProjectTasksView: Filtered tasks for project with STRICT RLS:', projectId, 'count:', filtered.length);
-    
-    // Additional security check: ensure all tasks belong to current user's accessible data
-    const secureFiltered = filtered.filter(task => {
-      // This filter is redundant with RLS but adds client-side security validation
-      return task.organizationId && task.projectId === projectId;
-    });
-    
-    if (secureFiltered.length !== filtered.length) {
-      console.warn('useProjectTasksView: Some tasks were filtered out due to security checks');
-    }
-    
-    return secureFiltered;
-  }, [tasks, projectId]);
-
-  // Convert to Task[] if needed - but since we're using unified types, this should be direct
+  // Convert to Task[] - the new hook already returns the correct format
   const convertedProjectTasks = useMemo(() => {
     return projectTasks as Task[];
   }, [projectTasks]);
 
   // Use the separated hooks
-  const { project, isLoading, loadError } = useProjectAccess(projectId, projects || []);
+  const { project, isLoading: isLoadingProject, loadError } = useProjectAccess(projectId, projects || []);
   
   const {
     searchQuery,
@@ -73,11 +52,22 @@ export const useProjectTasksView = (projectId: string | null) => {
     handleManualRefresh,
     handleTaskStatusChange,
     handleTaskDialogComplete
-  } = useProjectTasksActions({ updateTaskStatus });
+  } = useProjectTasksActions({ updateTaskStatus: async () => {
+    // Trigger refetch of project tasks when status changes
+    await refetchTasks();
+  }});
 
-  console.log('useProjectTasksView: Returning data with STRICT RLS enforcement:', {
+  // Override handleManualRefresh to use project tasks refetch
+  const handleProjectRefresh = async () => {
+    await refetchTasks();
+  };
+
+  const isLoading = isLoadingProject || isLoadingTasks;
+  const combinedError = loadError || (tasksError ? tasksError.message : null);
+
+  console.log('useProjectTasksView: Returning data for PROJECT tasks (not My Tasks):', {
     isLoading,
-    hasLoadError: !!loadError,
+    hasLoadError: !!combinedError,
     hasProject: !!project,
     todoTasksCount: todoTasks?.length || 0,
     inProgressTasksCount: inProgressTasks?.length || 0,
@@ -88,7 +78,7 @@ export const useProjectTasksView = (projectId: string | null) => {
 
   return {
     isLoading,
-    loadError,
+    loadError: combinedError,
     project,
     searchQuery,
     sortBy,
@@ -106,7 +96,7 @@ export const useProjectTasksView = (projectId: string | null) => {
     handleSearchChange,
     handleEditTask,
     handleCreateTask,
-    handleManualRefresh,
+    handleManualRefresh: handleProjectRefresh,
     handleTaskStatusChange,
     onSortByChange,
     handleTaskDialogComplete
