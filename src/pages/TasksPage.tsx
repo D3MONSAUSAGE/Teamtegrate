@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTask } from '@/contexts/task';
@@ -10,6 +11,7 @@ import TasksPageError from '@/components/task/TasksPageError';
 import TasksPageContent from '@/components/task/TasksPageContent';
 import { enhancedNotifications } from '@/utils/enhancedNotifications';
 import { useDebounce } from '@/utils/performanceUtils';
+import { toast } from '@/components/ui/sonner';
 
 const TasksPage = () => {
   const navigate = useNavigate();
