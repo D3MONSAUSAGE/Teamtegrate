@@ -49,8 +49,8 @@ function App() {
         <UnifiedDataProvider>
           <TaskProvider>
             <ChatProvider>
-              <KeyboardShortcutsProvider>
-                <BrowserRouter>
+              <BrowserRouter>
+                <KeyboardShortcutsProvider>
                   <Routes>
                     {/* Public / general routes */}
                     <Route path="/" element={<Index />} />
@@ -80,8 +80,8 @@ function App() {
                   </Routes>
                   <NetworkPerformanceMonitor />
                   <Toaster />
-                </BrowserRouter>
-              </KeyboardShortcutsProvider>
+                </KeyboardShortcutsProvider>
+              </BrowserRouter>
             </ChatProvider>
           </TaskProvider>
         </UnifiedDataProvider>
