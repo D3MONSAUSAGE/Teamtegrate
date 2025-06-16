@@ -7,7 +7,7 @@ import { Task, User, Project, TaskPriority } from '@/types';
 import { useForm } from 'react-hook-form';
 import { toast } from '@/components/ui/sonner';
 import TaskDetailsCard from './TaskDetailsCard';
-import TeamAssignmentCard from './TeamAssignmentCard';
+import EnhancedTaskAssignment from './form/assignment/EnhancedTaskAssignment';
 import TaskDialogActions from './TaskDialogActions';
 
 interface EnhancedCreateTaskDialogProps {
@@ -33,11 +33,11 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
   loadingUsers,
   onSubmit
 }) => {
-  const [selectedUsers, setSelectedUsers] = useState<User[]>([]);
+  const [selectedMember, setSelectedMember] = useState<string | undefined>("unassigned");
+  const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const [deadlineDate, setDeadlineDate] = useState<Date | undefined>(undefined);
   const [timeInput, setTimeInput] = useState('09:00');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [userSearchQuery, setUserSearchQuery] = useState('');
 
   const form = useForm({
     defaultValues: {
@@ -61,22 +61,33 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
       setDeadlineDate(new Date(editingTask.deadline));
       setTimeInput(format(new Date(editingTask.deadline), 'HH:mm'));
       
-      // Set assigned users
+      // Set assigned users based on assignment type
       if (editingTask.assignedToIds && editingTask.assignedToIds.length > 0) {
-        const assignedUsers = users.filter(user => 
-          editingTask.assignedToIds?.includes(user.id)
-        );
-        setSelectedUsers(assignedUsers);
+        setSelectedMembers(editingTask.assignedToIds);
+        if (editingTask.assignedToIds.length === 1) {
+          setSelectedMember(editingTask.assignedToIds[0]);
+        }
+      } else if (editingTask.assignedToId) {
+        setSelectedMember(editingTask.assignedToId);
+        setSelectedMembers([editingTask.assignedToId]);
       }
     } else if (!editingTask && open) {
       // Reset form for new task
       form.reset();
-      setSelectedUsers([]);
+      setSelectedMember("unassigned");
+      setSelectedMembers([]);
       setDeadlineDate(undefined);
       setTimeInput('09:00');
-      setUserSearchQuery('');
     }
   }, [editingTask, open, users, form, currentProjectId]);
+
+  const handleAssign = (userId: string) => {
+    setSelectedMember(userId);
+  };
+
+  const handleMembersChange = (memberIds: string[]) => {
+    setSelectedMembers(memberIds);
+  };
 
   const handleSubmit = async (data: any) => {
     if (!deadlineDate) {
@@ -99,7 +110,14 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
         projectId: data.projectId === 'none' ? undefined : data.projectId
       };
 
-      await onSubmit(taskData, selectedUsers);
+      // Determine which users are selected based on assignment mode
+      const assignedUsers = selectedMembers.length > 0 
+        ? users.filter(user => selectedMembers.includes(user.id))
+        : selectedMember && selectedMember !== "unassigned" 
+          ? users.filter(user => user.id === selectedMember)
+          : [];
+
+      await onSubmit(taskData, assignedUsers);
       onTaskComplete?.();
     } catch (error) {
       console.error('Error submitting task:', error);
@@ -129,13 +147,14 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
             currentProjectId={currentProjectId}
           />
 
-          <TeamAssignmentCard
-            selectedUsers={selectedUsers}
-            setSelectedUsers={setSelectedUsers}
-            userSearchQuery={userSearchQuery}
-            setUserSearchQuery={setUserSearchQuery}
+          <EnhancedTaskAssignment
+            selectedMember={selectedMember}
+            selectedMembers={selectedMembers}
+            onAssign={handleAssign}
+            onMembersChange={handleMembersChange}
             users={users}
-            loadingUsers={loadingUsers}
+            isLoading={loadingUsers}
+            editingTask={editingTask}
           />
 
           <TaskDialogActions
