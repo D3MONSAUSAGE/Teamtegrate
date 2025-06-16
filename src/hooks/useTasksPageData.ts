@@ -1,3 +1,4 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -10,7 +11,7 @@ export const useTasksPageData = () => {
   const { user } = useAuth();
 
   const { data: tasks = [], isLoading, error } = useQuery({
-    queryKey: ['tasks', user?.organizationId, user?.id],
+    queryKey: ['tasks-my-tasks', user?.organizationId, user?.id],
     queryFn: async (): Promise<Task[]> => {
       if (!user?.organizationId || !user?.id) {
         if (process.env.NODE_ENV === 'development') {
@@ -19,18 +20,19 @@ export const useTasksPageData = () => {
         throw new Error('User must be authenticated and belong to an organization');
       }
 
-      const cacheKey = `tasks-${user.organizationId}-${user.id}`;
+      const cacheKey = `my-tasks-${user.organizationId}-${user.id}`;
       
       return requestManager.dedupe(cacheKey, async () => {
         if (process.env.NODE_ENV === 'development') {
-          console.log('useTasksPageData: Fetching tasks for user:', {
+          console.log('useTasksPageData: Fetching MY TASKS (directly assigned only) for user:', {
             userId: user.id,
             organizationId: user.organizationId,
             role: user.role
           });
         }
 
-        // Fetch tasks using RLS policies with timeout
+        // FOCUSED QUERY: Only fetch tasks directly assigned to the user
+        // Remove broad admin/creator access for My Tasks page
         const timeoutPromise = new Promise((_, reject) => 
           setTimeout(() => reject(new Error('Request timeout')), 10000)
         );
@@ -38,6 +40,8 @@ export const useTasksPageData = () => {
         const taskPromise = supabase
           .from('tasks')
           .select('*')
+          .eq('organization_id', user.organizationId)
+          .or(`assigned_to_id.eq.${user.id},assigned_to_ids.cs.{${user.id}}`)
           .order('created_at', { ascending: false });
 
         const { data: tasksData, error: tasksError } = await Promise.race([
@@ -47,7 +51,7 @@ export const useTasksPageData = () => {
 
         if (tasksError) {
           if (process.env.NODE_ENV === 'development') {
-            console.error('useTasksPageData: Error fetching tasks:', tasksError);
+            console.error('useTasksPageData: Error fetching my tasks:', tasksError);
           }
           
           // Handle specific error types
@@ -69,11 +73,11 @@ export const useTasksPageData = () => {
             throw new Error('Network connection issue. Please check your connection and try again.');
           }
           
-          throw new Error(`Failed to fetch authorized tasks: ${tasksError.message}`);
+          throw new Error(`Failed to fetch my assigned tasks: ${tasksError.message}`);
         }
 
         if (process.env.NODE_ENV === 'development') {
-          console.log(`useTasksPageData: Retrieved ${tasksData?.length || 0} tasks`);
+          console.log(`useTasksPageData: Retrieved ${tasksData?.length || 0} directly assigned tasks`);
         }
 
         if (!tasksData || tasksData.length === 0) {
@@ -103,7 +107,7 @@ export const useTasksPageData = () => {
           });
         }
 
-        // Process tasks with optimized filtering and validation
+        // Process tasks with FOCUSED filtering for My Tasks
         const processedTasks = tasksData
           .filter(task => {
             // Security check: Ensure task belongs to user's organization
@@ -113,7 +117,13 @@ export const useTasksPageData = () => {
               }
               return false;
             }
-            return true;
+
+            // FOCUSED FILTERING: Only tasks directly assigned to the user
+            const isDirectlyAssigned = 
+              task.assigned_to_id === user.id || // Single assignee
+              (task.assigned_to_ids && Array.isArray(task.assigned_to_ids) && task.assigned_to_ids.includes(user.id)); // Multi assignee
+
+            return isDirectlyAssigned;
           })
           .map(task => {
             // Optimized assignment data processing
@@ -183,7 +193,7 @@ export const useTasksPageData = () => {
           });
 
         if (process.env.NODE_ENV === 'development') {
-          console.log('useTasksPageData: Successfully processed tasks:', {
+          console.log('useTasksPageData: Successfully processed MY TASKS:', {
             originalCount: tasksData.length,
             processedCount: processedTasks.length,
             userId: user.id,
@@ -227,7 +237,7 @@ export const useTasksPageData = () => {
 
   // Enhanced error logging and user feedback
   if (error && process.env.NODE_ENV === 'development') {
-    console.error('useTasksPageData: Tasks query error:', error);
+    console.error('useTasksPageData: My tasks query error:', error);
   }
 
   return memoizedResult;

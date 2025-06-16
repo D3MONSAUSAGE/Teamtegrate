@@ -1,3 +1,4 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { networkManager } from '@/utils/networkManager';
@@ -20,21 +21,22 @@ export const useTasksQuery = ({ user, networkStatus, setRequestsInFlight }: Quer
     error: tasksError,
     refetch: refetchTasksQuery
   } = useQuery({
-    queryKey: ['unified-tasks', user?.organizationId, user?.id],
+    queryKey: ['unified-my-tasks', user?.organizationId, user?.id],
     queryFn: async () => {
       if (!user?.organizationId || !user?.id) return [];
       
       return await networkManager.withNetworkResilience(
-        'fetch-tasks',
+        'fetch-my-tasks',
         async () => {
           setRequestsInFlight(prev => prev + 1);
           try {
-            // Filter tasks to only show those created by or assigned to the current user
+            // FOCUSED QUERY: Only fetch tasks directly assigned to the user
+            // This is for the "My Tasks" view - not all organizational tasks
             const { data, error } = await supabase
               .from('tasks')
               .select('*')
               .eq('organization_id', user.organizationId)
-              .or(`user_id.eq.${user.id},assigned_to_id.eq.${user.id},assigned_to_ids.cs.{${user.id}}`)
+              .or(`assigned_to_id.eq.${user.id},assigned_to_ids.cs.{${user.id}}`)
               .order('created_at', { ascending: false });
 
             if (error) throw error;
@@ -56,9 +58,18 @@ export const useTasksQuery = ({ user, networkStatus, setRequestsInFlight }: Quer
     }
   });
 
-  // Transform raw tasks to app format
+  // Transform raw tasks to app format with focused filtering
   const tasks = useMemo(() => {
-    return rawTasks.map(task => transformDbTaskToAppTask(task, user));
+    return rawTasks
+      .filter(task => {
+        // Additional client-side validation for My Tasks focus
+        const isDirectlyAssigned = 
+          task.assigned_to_id === user?.id || // Single assignee
+          (task.assigned_to_ids && Array.isArray(task.assigned_to_ids) && task.assigned_to_ids.includes(user?.id)); // Multi assignee
+
+        return isDirectlyAssigned;
+      })
+      .map(task => transformDbTaskToAppTask(task, user));
   }, [rawTasks, user?.id, user?.organizationId]);
 
   return {
