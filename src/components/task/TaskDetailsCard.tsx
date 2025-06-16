@@ -22,9 +22,9 @@ import { UseFormReturn } from 'react-hook-form';
 interface TaskDetailsCardProps {
   form: UseFormReturn<any>;
   deadlineDate: Date | undefined;
-  setDeadlineDate: (date: Date | undefined) => void;
+  onDateChange: (date: Date | undefined) => void;
   timeInput: string;
-  setTimeInput: (time: string) => void;
+  onTimeChange: (time: string) => void;
   projects: Project[];
   currentProjectId?: string;
 }
@@ -32,9 +32,9 @@ interface TaskDetailsCardProps {
 const TaskDetailsCard: React.FC<TaskDetailsCardProps> = ({
   form,
   deadlineDate,
-  setDeadlineDate,
+  onDateChange,
   timeInput,
-  setTimeInput,
+  onTimeChange,
   projects,
   currentProjectId
 }) => {
@@ -153,7 +153,7 @@ const TaskDetailsCard: React.FC<TaskDetailsCardProps> = ({
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => setDeadlineDate(preset.date)}
+                    onClick={() => onDateChange(preset.date)}
                     className="text-xs"
                   >
                     {preset.label}
@@ -178,7 +178,7 @@ const TaskDetailsCard: React.FC<TaskDetailsCardProps> = ({
                       <Calendar
                         mode="single"
                         selected={deadlineDate}
-                        onSelect={setDeadlineDate}
+                        onSelect={onDateChange}
                         initialFocus
                       />
                     </PopoverContent>
@@ -187,7 +187,7 @@ const TaskDetailsCard: React.FC<TaskDetailsCardProps> = ({
                 <div>
                   <TimeSelector
                     value={timeInput}
-                    onChange={setTimeInput}
+                    onChange={onTimeChange}
                     placeholder="Select time"
                   />
                 </div>

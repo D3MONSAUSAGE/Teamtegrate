@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, User as UserIcon } from 'lucide-react';
@@ -56,7 +57,7 @@ const EnhancedTaskAssignment: React.FC<EnhancedTaskAssignmentProps> = ({
   };
 
   return (
-    <Card className="border-2 border-blue-100">
+    <Card className="border-2 border-blue-100 h-fit">
       <CardHeader className="pb-4">
         <CardTitle className="flex items-center gap-2 text-lg">
           {multiAssignMode ? <Users className="h-5 w-5" /> : <UserIcon className="h-5 w-5" />}
@@ -64,14 +65,14 @@ const EnhancedTaskAssignment: React.FC<EnhancedTaskAssignmentProps> = ({
         </CardTitle>
       </CardHeader>
       
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-4">
         <AssignmentToggle
           multiAssignMode={multiAssignMode}
           onToggle={handleToggle}
         />
 
         {multiAssignMode ? (
-          <>
+          <div className="space-y-4">
             <TeamAssignmentCard
               selectedUsers={selectedUsers}
               setSelectedUsers={handleUsersChange}
@@ -79,7 +80,7 @@ const EnhancedTaskAssignment: React.FC<EnhancedTaskAssignmentProps> = ({
               loadingUsers={isLoading}
             />
             <AssignmentSummary selectedMembersCount={selectedMembers.length} />
-          </>
+          </div>
         ) : (
           <TaskAssigneeSelect
             selectedMember={selectedMember || "unassigned"}

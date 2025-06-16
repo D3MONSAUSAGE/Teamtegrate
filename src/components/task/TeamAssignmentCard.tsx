@@ -57,135 +57,121 @@ const TeamAssignmentCard: React.FC<TeamAssignmentCardProps> = ({
     setTimeout(() => setShowSearchResults(false), 200);
   };
 
-  console.log('TeamAssignmentCard - Total users:', users.length);
-  console.log('TeamAssignmentCard - Search query:', userSearchQuery);
-  console.log('TeamAssignmentCard - Filtered users:', filteredUsers.length);
-  console.log('TeamAssignmentCard - Selected users:', selectedUsers.length);
-
   return (
-    <Card className="border-2 border-emerald-500/10 shadow-lg">
-      <CardContent className="p-6 space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-lg font-semibold text-emerald-600">
-            <Users className="h-5 w-5" />
-            Team Assignment
-          </div>
-          <Badge variant="secondary" className="text-xs">
-            {selectedUsers.length} member{selectedUsers.length !== 1 ? 's' : ''} assigned
-          </Badge>
-        </div>
-
-        {/* Selected Users */}
-        {selectedUsers.length > 0 && (
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">Assigned Team Members</Label>
-            <div className="flex flex-wrap gap-2">
-              {selectedUsers.map((user) => (
-                <div
-                  key={user.id}
-                  className="flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-lg px-3 py-2"
-                >
-                  <Avatar className="h-6 w-6">
-                    <AvatarFallback className="text-xs">
-                      {user.name?.charAt(0) || user.email.charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="text-sm font-medium">
-                    {user.name || user.email}
-                  </span>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeUser(user.id)}
-                    className="h-4 w-4 p-0 hover:bg-destructive hover:text-destructive-foreground"
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Add Team Members */}
+    <div className="space-y-4">
+      {/* Selected Users */}
+      {selectedUsers.length > 0 && (
         <div className="space-y-2">
-          <Label className="text-sm font-medium">Add Team Members</Label>
-          <div className="relative">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search team members by name or email..."
-                value={userSearchQuery}
-                onChange={(e) => setUserSearchQuery(e.target.value)}
-                onFocus={() => userSearchQuery.trim() && setShowSearchResults(true)}
-                onBlur={handleSearchInputBlur}
-                className="pl-10 border-2 focus:border-emerald-500"
-              />
-            </div>
-            
-            {showSearchResults && (
-              <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-48 overflow-y-auto border rounded-lg bg-background shadow-lg">
-                {loadingUsers ? (
-                  <div className="p-3 text-center text-muted-foreground">
-                    <Search className="h-4 w-4 animate-pulse mx-auto mb-1" />
-                    Searching...
-                  </div>
-                ) : filteredUsers.length > 0 ? (
-                  filteredUsers.slice(0, 8).map((user) => (
-                    <button
-                      key={user.id}
-                      type="button"
-                      onClick={() => addUser(user)}
-                      className="w-full flex items-center gap-3 p-3 hover:bg-muted transition-colors text-left"
-                    >
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback>
-                          {user.name?.charAt(0) || user.email.charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium truncate">{user.name || user.email}</div>
-                        {user.name && (
-                          <div className="text-xs text-muted-foreground truncate">{user.email}</div>
-                        )}
-                      </div>
-                      <Badge variant="outline" className="text-xs">
-                        {user.role}
-                      </Badge>
-                    </button>
-                  ))
-                ) : userSearchQuery.trim() ? (
-                  <div className="p-3 text-center text-muted-foreground">
-                    <AlertCircle className="h-4 w-4 mx-auto mb-1" />
-                    <div className="text-sm">No team members found for "{userSearchQuery}"</div>
-                    <div className="text-xs">Try different search terms</div>
-                  </div>
-                ) : users.length === 0 ? (
-                  <div className="p-3 text-center text-muted-foreground">
-                    <Users className="h-4 w-4 mx-auto mb-1" />
-                    <div className="text-sm">No team members available</div>
-                    <div className="text-xs">Add users to your organization first</div>
-                  </div>
-                ) : (
-                  <div className="p-3 text-center text-muted-foreground">
-                    <Users className="h-4 w-4 mx-auto mb-1" />
-                    <div className="text-sm">All users already assigned</div>
-                  </div>
-                )}
+          <Label className="text-sm font-medium">Assigned Team Members</Label>
+          <div className="flex flex-wrap gap-2">
+            {selectedUsers.map((user) => (
+              <div
+                key={user.id}
+                className="flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-lg px-3 py-2"
+              >
+                <Avatar className="h-6 w-6">
+                  <AvatarFallback className="text-xs">
+                    {user.name?.charAt(0) || user.email.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="text-sm font-medium">
+                  {user.name || user.email}
+                </span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => removeUser(user.id)}
+                  className="h-4 w-4 p-0 hover:bg-destructive hover:text-destructive-foreground"
+                >
+                  <X className="h-3 w-3" />
+                </Button>
               </div>
-            )}
+            ))}
           </div>
+        </div>
+      )}
 
-          {/* Debug info in development */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="text-xs text-muted-foreground p-2 bg-muted rounded">
-              Debug: Total users: {users.length}, Available: {filteredUsers.length}, Query: "{userSearchQuery}"
+      {/* Add Team Members */}
+      <div className="space-y-2">
+        <Label className="text-sm font-medium">Add Team Members</Label>
+        <div className="relative">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search team members by name or email..."
+              value={userSearchQuery}
+              onChange={(e) => setUserSearchQuery(e.target.value)}
+              onFocus={() => userSearchQuery.trim() && setShowSearchResults(true)}
+              onBlur={handleSearchInputBlur}
+              className="pl-10 border-2 focus:border-emerald-500"
+            />
+          </div>
+          
+          {showSearchResults && (
+            <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-48 overflow-y-auto border rounded-lg bg-background shadow-lg">
+              {loadingUsers ? (
+                <div className="p-3 text-center text-muted-foreground">
+                  <Search className="h-4 w-4 animate-pulse mx-auto mb-1" />
+                  Searching...
+                </div>
+              ) : filteredUsers.length > 0 ? (
+                filteredUsers.slice(0, 8).map((user) => (
+                  <button
+                    key={user.id}
+                    type="button"
+                    onClick={() => addUser(user)}
+                    className="w-full flex items-center gap-3 p-3 hover:bg-muted transition-colors text-left"
+                  >
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback>
+                        {user.name?.charAt(0) || user.email.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium truncate">{user.name || user.email}</div>
+                      {user.name && (
+                        <div className="text-xs text-muted-foreground truncate">{user.email}</div>
+                      )}
+                    </div>
+                    <Badge variant="outline" className="text-xs">
+                      {user.role}
+                    </Badge>
+                  </button>
+                ))
+              ) : userSearchQuery.trim() ? (
+                <div className="p-3 text-center text-muted-foreground">
+                  <AlertCircle className="h-4 w-4 mx-auto mb-1" />
+                  <div className="text-sm">No team members found for "{userSearchQuery}"</div>
+                  <div className="text-xs">Try different search terms</div>
+                </div>
+              ) : users.length === 0 ? (
+                <div className="p-3 text-center text-muted-foreground">
+                  <Users className="h-4 w-4 mx-auto mb-1" />
+                  <div className="text-sm">No team members available</div>
+                  <div className="text-xs">Add users to your organization first</div>
+                </div>
+              ) : (
+                <div className="p-3 text-center text-muted-foreground">
+                  <Users className="h-4 w-4 mx-auto mb-1" />
+                  <div className="text-sm">All users already assigned</div>
+                </div>
+              )}
             </div>
           )}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+
+      {/* Stats */}
+      <div className="flex items-center justify-between text-sm text-muted-foreground">
+        <span>
+          {selectedUsers.length} member{selectedUsers.length !== 1 ? 's' : ''} assigned
+        </span>
+        <span>
+          {users.length} total available
+        </span>
+      </div>
+    </div>
   );
 };
 

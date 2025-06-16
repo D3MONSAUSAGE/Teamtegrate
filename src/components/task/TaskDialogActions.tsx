@@ -6,16 +6,18 @@ import { Plus } from 'lucide-react';
 interface TaskDialogActionsProps {
   isSubmitting: boolean;
   editingTask?: any;
+  onSubmit: () => Promise<void>;
   onCancel: () => void;
 }
 
 const TaskDialogActions: React.FC<TaskDialogActionsProps> = ({
   isSubmitting,
   editingTask,
+  onSubmit,
   onCancel
 }) => {
   return (
-    <div className="flex justify-end gap-3 pt-4">
+    <div className="flex justify-end gap-3 pt-6 border-t">
       <Button
         type="button"
         variant="outline"
@@ -26,7 +28,8 @@ const TaskDialogActions: React.FC<TaskDialogActionsProps> = ({
         Cancel
       </Button>
       <Button
-        type="submit"
+        type="button"
+        onClick={onSubmit}
         disabled={isSubmitting}
         className="px-6 bg-gradient-to-r from-primary to-emerald-500 hover:shadow-lg transition-all duration-200"
       >
