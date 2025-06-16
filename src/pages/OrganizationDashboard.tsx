@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -5,8 +6,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Shield, AlertCircle, Loader2 } from 'lucide-react';
 import OrganizationHeader from '@/components/organization/OrganizationHeader';
 import OrganizationStatsCards from '@/components/organization/OrganizationStatsCards';
-import UserRoleManagement from '@/components/organization/UserRoleManagement';
-import SuperadminUserManagement from '@/components/organization/SuperadminUserManagement';
+import SimplifiedOrganizationUserManagement from '@/components/organization/SimplifiedOrganizationUserManagement';
 import RoleDistributionChart from '@/components/organization/RoleDistributionChart';
 import OrganizationQuickActions from '@/components/organization/OrganizationQuickActions';
 import TeamManagementSection from '@/components/organization/team/TeamManagementSection';
@@ -72,11 +72,7 @@ const OrganizationDashboard = () => {
         {/* User Management Section */}
         <div className="lg:grid lg:grid-cols-3 lg:gap-6 space-y-6 lg:space-y-0">
           <div className="lg:col-span-2">
-            {user.role === 'superadmin' ? (
-              <SuperadminUserManagement />
-            ) : (
-              <UserRoleManagement />
-            )}
+            <SimplifiedOrganizationUserManagement />
           </div>
           <div className="space-y-6">
             <RoleDistributionChart />
