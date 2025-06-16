@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -69,11 +68,11 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
   const { createProject, isLoading } = useProjectOperations();
   const { users, isLoading: usersLoading } = useUsers();
 
-  // Transform users into options for MultiSelect
-  const userOptions = users.map(user => ({
+  // Transform users into options for MultiSelect with proper null checks
+  const userOptions = Array.isArray(users) ? users.map(user => ({
     value: user.id,
     label: `${user.name} (${user.email})`
-  }));
+  })) : [];
 
   const onSubmit = async (data: any) => {
     try {
