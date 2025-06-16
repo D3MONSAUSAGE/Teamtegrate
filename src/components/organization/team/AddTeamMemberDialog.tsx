@@ -60,29 +60,76 @@ const AddTeamMemberDialog: React.FC<AddTeamMemberDialogProps> = ({
   const [memberRole, setMemberRole] = useState<'manager' | 'member'>('member');
   const [isAdding, setIsAdding] = useState(false);
 
-  // Fetch available users
-  const { data: availableUsers = [], isLoading } = useQuery({
-    queryKey: ['available-users', user?.organizationId, existingMemberIds],
+  // Fetch available users with improved query and debugging
+  const { data: availableUsers = [], isLoading, error } = useQuery({
+    queryKey: ['available-users', user?.organizationId, team?.id],
     queryFn: async (): Promise<User[]> => {
-      if (!user?.organizationId) return [];
+      if (!user?.organizationId) {
+        console.log('No organization ID found for user');
+        return [];
+      }
       
-      const { data, error } = await supabase
-        .from('users')
-        .select('id, name, email, role')
-        .eq('organization_id', user.organizationId)
-        .not('id', 'in', `(${existingMemberIds.join(',')})`)
-        .order('name');
+      console.log('Fetching users for organization:', user.organizationId);
+      console.log('Team ID:', team?.id);
+      console.log('Existing member IDs:', existingMemberIds);
+      
+      try {
+        // First, get all users in the organization
+        const { data: allUsers, error: usersError } = await supabase
+          .from('users')
+          .select('id, name, email, role')
+          .eq('organization_id', user.organizationId)
+          .order('name');
 
-      if (error) throw error;
-      return data || [];
+        if (usersError) {
+          console.error('Error fetching users:', usersError);
+          throw usersError;
+        }
+
+        console.log('All users in organization:', allUsers?.length || 0);
+
+        if (!allUsers || allUsers.length === 0) {
+          console.log('No users found in organization');
+          return [];
+        }
+
+        // If we have a team, get existing team members to exclude them
+        let teamMemberIds: string[] = [];
+        if (team?.id) {
+          const { data: teamMembers, error: teamError } = await supabase
+            .from('team_memberships')
+            .select('user_id')
+            .eq('team_id', team.id);
+
+          if (teamError) {
+            console.error('Error fetching team members:', teamError);
+          } else {
+            teamMemberIds = teamMembers?.map(tm => tm.user_id) || [];
+            console.log('Existing team member IDs from database:', teamMemberIds);
+          }
+        }
+
+        // Filter out existing team members
+        const filteredUsers = allUsers.filter(user => !teamMemberIds.includes(user.id));
+        console.log('Available users after filtering:', filteredUsers.length);
+
+        return filteredUsers || [];
+      } catch (error) {
+        console.error('Error in available-users query:', error);
+        throw error;
+      }
     },
     enabled: !!user?.organizationId && open,
   });
 
+  // Filter users based on search term
   const filteredUsers = availableUsers.filter(user =>
     user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  console.log('Search term:', searchTerm);
+  console.log('Filtered users count:', filteredUsers.length);
 
   const handleUserToggle = (user: User, checked: boolean) => {
     if (checked) {
@@ -188,6 +235,14 @@ const AddTeamMemberDialog: React.FC<AddTeamMemberDialogProps> = ({
             </div>
           </div>
 
+          {/* Debug Information */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="text-xs text-muted-foreground p-2 bg-muted rounded">
+              Debug: Available users: {availableUsers.length}, Filtered: {filteredUsers.length}, 
+              Organization: {user?.organizationId}, Team: {team.id}
+            </div>
+          )}
+
           {/* Users List */}
           <div className="space-y-2">
             <Label>Available Users</Label>
@@ -195,10 +250,28 @@ const AddTeamMemberDialog: React.FC<AddTeamMemberDialogProps> = ({
               {isLoading ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-6 w-6 animate-spin" />
+                  <span className="ml-2">Loading users...</span>
+                </div>
+              ) : error ? (
+                <div className="text-center py-8 text-red-500">
+                  Error loading users: {error.message}
+                </div>
+              ) : availableUsers.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p>No users available in your organization.</p>
+                  <p className="text-xs mt-1">Make sure users are properly registered.</p>
+                </div>
+              ) : filteredUsers.length === 0 && searchTerm ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p>No users found matching "{searchTerm}"</p>
+                  <p className="text-xs mt-1">Try different search terms</p>
                 </div>
               ) : filteredUsers.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  {searchTerm ? 'No users found matching your search.' : 'No available users to add.'}
+                  <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p>All users are already team members.</p>
                 </div>
               ) : (
                 <div className="space-y-1 p-2">

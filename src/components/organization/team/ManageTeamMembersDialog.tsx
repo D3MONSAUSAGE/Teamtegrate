@@ -25,7 +25,8 @@ import {
   Crown,
   User,
   Search,
-  Loader2 
+  Loader2,
+  AlertCircle
 } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import { useQuery } from '@tanstack/react-query';
@@ -62,33 +63,51 @@ const ManageTeamMembersDialog: React.FC<ManageTeamMembersDialogProps> = ({
   const [memberToRemove, setMemberToRemove] = useState<TeamMember | null>(null);
   const [isRemoving, setIsRemoving] = useState(false);
 
-  // Fetch team members
-  const { data: teamMembers = [], isLoading, refetch } = useQuery({
+  // Fetch team members with improved error handling
+  const { data: teamMembers = [], isLoading, error, refetch } = useQuery({
     queryKey: ['team-members', team?.id],
     queryFn: async (): Promise<TeamMember[]> => {
-      if (!team?.id) return [];
+      if (!team?.id) {
+        console.log('No team ID provided');
+        return [];
+      }
       
-      const { data, error } = await supabase
-        .from('team_memberships')
-        .select(`
-          id,
-          user_id,
-          role,
-          joined_at,
-          users!inner(name, email)
-        `)
-        .eq('team_id', team.id);
+      console.log('Fetching team members for team:', team.id);
+      
+      try {
+        const { data, error } = await supabase
+          .from('team_memberships')
+          .select(`
+            id,
+            user_id,
+            role,
+            joined_at,
+            users!inner(name, email)
+          `)
+          .eq('team_id', team.id);
 
-      if (error) throw error;
-      
-      return (data || []).map(membership => ({
-        id: membership.id,
-        user_id: membership.user_id,
-        role: membership.role as 'manager' | 'member',
-        joined_at: membership.joined_at,
-        user_name: (membership.users as any).name,
-        user_email: (membership.users as any).email,
-      }));
+        if (error) {
+          console.error('Error fetching team members:', error);
+          throw error;
+        }
+        
+        console.log('Raw team memberships data:', data);
+        
+        const formattedMembers = (data || []).map(membership => ({
+          id: membership.id,
+          user_id: membership.user_id,
+          role: membership.role as 'manager' | 'member',
+          joined_at: membership.joined_at,
+          user_name: (membership.users as any)?.name || 'Unknown',
+          user_email: (membership.users as any)?.email || 'Unknown',
+        }));
+        
+        console.log('Formatted team members:', formattedMembers);
+        return formattedMembers;
+      } catch (error) {
+        console.error('Error in team members query:', error);
+        throw error;
+      }
     },
     enabled: !!team?.id && open,
   });
@@ -153,21 +172,56 @@ const ManageTeamMembersDialog: React.FC<ManageTeamMembersDialogProps> = ({
               )}
             </div>
 
+            {/* Debug Information */}
+            {process.env.NODE_ENV === 'development' && (
+              <div className="text-xs text-muted-foreground p-2 bg-muted rounded">
+                Debug: Total members: {teamMembers.length}, Filtered: {filteredMembers.length}, 
+                Team: {team.id}, Loading: {isLoading.toString()}, Error: {error?.message || 'none'}
+              </div>
+            )}
+
             {/* Members List */}
             <div className="max-h-[400px] overflow-y-auto space-y-2">
               {isLoading ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-6 w-6 animate-spin" />
+                  <span className="ml-2">Loading team members...</span>
+                </div>
+              ) : error ? (
+                <div className="text-center py-8 text-red-500">
+                  <AlertCircle className="h-8 w-8 mx-auto mb-2" />
+                  <p>Error loading team members</p>
+                  <p className="text-xs mt-1">{error.message}</p>
+                  <Button variant="outline" size="sm" onClick={() => refetch()} className="mt-2">
+                    Try Again
+                  </Button>
+                </div>
+              ) : teamMembers.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p>No members in this team yet.</p>
+                  {canManage && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setAddMemberDialogOpen(true)}
+                      className="mt-2"
+                    >
+                      Add First Member
+                    </Button>
+                  )}
                 </div>
               ) : filteredMembers.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  {searchTerm ? 'No members found matching your search.' : 'No members in this team yet.'}
+                  <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p>No members found matching "{searchTerm}"</p>
+                  <p className="text-xs mt-1">Try different search terms</p>
                 </div>
               ) : (
                 filteredMembers.map((member) => (
                   <div
                     key={member.id}
-                    className="flex items-center justify-between p-3 border rounded-lg"
+                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
                   >
                     <div className="flex items-center gap-3">
                       <div className="p-2 rounded-full bg-muted">

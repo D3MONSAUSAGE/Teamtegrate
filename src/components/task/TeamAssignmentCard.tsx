@@ -1,12 +1,12 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, X } from 'lucide-react';
+import { Users, X, Search, AlertCircle } from 'lucide-react';
 import { User } from '@/types';
 
 interface TeamAssignmentCardProps {
@@ -26,22 +26,45 @@ const TeamAssignmentCard: React.FC<TeamAssignmentCardProps> = ({
   users,
   loadingUsers
 }) => {
+  const [showSearchResults, setShowSearchResults] = useState(false);
+
   const addUser = (user: User) => {
     if (!selectedUsers.find(u => u.id === user.id)) {
       setSelectedUsers([...selectedUsers, user]);
     }
     setUserSearchQuery('');
+    setShowSearchResults(false);
   };
 
   const removeUser = (userId: string) => {
     setSelectedUsers(selectedUsers.filter(u => u.id !== userId));
   };
 
-  const filteredUsers = users.filter(user => 
-    !selectedUsers.find(u => u.id === user.id) &&
-    (user.name?.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
-     user.email?.toLowerCase().includes(userSearchQuery.toLowerCase()))
-  );
+  // Filter users based on search query and exclude already selected users
+  const filteredUsers = users.filter(user => {
+    const isAlreadySelected = selectedUsers.find(u => u.id === user.id);
+    const matchesSearch = userSearchQuery.trim() === '' || 
+      user.name?.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
+      user.email?.toLowerCase().includes(userSearchQuery.toLowerCase());
+    
+    return !isAlreadySelected && matchesSearch;
+  });
+
+  // Show search results when user types
+  useEffect(() => {
+    setShowSearchResults(userSearchQuery.trim().length > 0);
+  }, [userSearchQuery]);
+
+  // Hide search results when clicking outside (simplified)
+  const handleSearchInputBlur = () => {
+    // Small delay to allow clicking on search results
+    setTimeout(() => setShowSearchResults(false), 200);
+  };
+
+  console.log('TeamAssignmentCard - Total users:', users.length);
+  console.log('TeamAssignmentCard - Search query:', userSearchQuery);
+  console.log('TeamAssignmentCard - Filtered users:', filteredUsers.length);
+  console.log('TeamAssignmentCard - Selected users:', selectedUsers.length);
 
   return (
     <Card className="border-2 border-emerald-500/10 shadow-lg">
@@ -92,41 +115,76 @@ const TeamAssignmentCard: React.FC<TeamAssignmentCardProps> = ({
         {/* Add Team Members */}
         <div className="space-y-2">
           <Label className="text-sm font-medium">Add Team Members</Label>
-          <Input
-            placeholder="Search team members..."
-            value={userSearchQuery}
-            onChange={(e) => setUserSearchQuery(e.target.value)}
-            className="border-2 focus:border-emerald-500"
-          />
-          
-          {userSearchQuery && (
-            <div className="max-h-40 overflow-y-auto border rounded-lg bg-background">
-              {filteredUsers.length > 0 ? (
-                filteredUsers.slice(0, 5).map((user) => (
-                  <button
-                    key={user.id}
-                    type="button"
-                    onClick={() => addUser(user)}
-                    className="w-full flex items-center gap-3 p-3 hover:bg-muted transition-colors"
-                  >
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback>
-                        {user.name?.charAt(0) || user.email.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="text-left">
-                      <div className="font-medium">{user.name || user.email}</div>
-                      {user.name && (
-                        <div className="text-xs text-muted-foreground">{user.email}</div>
-                      )}
-                    </div>
-                  </button>
-                ))
-              ) : (
-                <div className="p-3 text-center text-muted-foreground">
-                  No team members found
-                </div>
-              )}
+          <div className="relative">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search team members by name or email..."
+                value={userSearchQuery}
+                onChange={(e) => setUserSearchQuery(e.target.value)}
+                onFocus={() => userSearchQuery.trim() && setShowSearchResults(true)}
+                onBlur={handleSearchInputBlur}
+                className="pl-10 border-2 focus:border-emerald-500"
+              />
+            </div>
+            
+            {showSearchResults && (
+              <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-48 overflow-y-auto border rounded-lg bg-background shadow-lg">
+                {loadingUsers ? (
+                  <div className="p-3 text-center text-muted-foreground">
+                    <Search className="h-4 w-4 animate-pulse mx-auto mb-1" />
+                    Searching...
+                  </div>
+                ) : filteredUsers.length > 0 ? (
+                  filteredUsers.slice(0, 8).map((user) => (
+                    <button
+                      key={user.id}
+                      type="button"
+                      onClick={() => addUser(user)}
+                      className="w-full flex items-center gap-3 p-3 hover:bg-muted transition-colors text-left"
+                    >
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback>
+                          {user.name?.charAt(0) || user.email.charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium truncate">{user.name || user.email}</div>
+                        {user.name && (
+                          <div className="text-xs text-muted-foreground truncate">{user.email}</div>
+                        )}
+                      </div>
+                      <Badge variant="outline" className="text-xs">
+                        {user.role}
+                      </Badge>
+                    </button>
+                  ))
+                ) : userSearchQuery.trim() ? (
+                  <div className="p-3 text-center text-muted-foreground">
+                    <AlertCircle className="h-4 w-4 mx-auto mb-1" />
+                    <div className="text-sm">No team members found for "{userSearchQuery}"</div>
+                    <div className="text-xs">Try different search terms</div>
+                  </div>
+                ) : users.length === 0 ? (
+                  <div className="p-3 text-center text-muted-foreground">
+                    <Users className="h-4 w-4 mx-auto mb-1" />
+                    <div className="text-sm">No team members available</div>
+                    <div className="text-xs">Add users to your organization first</div>
+                  </div>
+                ) : (
+                  <div className="p-3 text-center text-muted-foreground">
+                    <Users className="h-4 w-4 mx-auto mb-1" />
+                    <div className="text-sm">All users already assigned</div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Debug info in development */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="text-xs text-muted-foreground p-2 bg-muted rounded">
+              Debug: Total users: {users.length}, Available: {filteredUsers.length}, Query: "{userSearchQuery}"
             </div>
           )}
         </div>
