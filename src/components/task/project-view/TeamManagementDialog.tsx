@@ -20,7 +20,8 @@ import {
   Crown,
   Shield,
   User,
-  UserMinus
+  UserMinus,
+  X
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -51,19 +52,24 @@ const TeamManagementDialog: React.FC<TeamManagementDialogProps> = ({
   onAddTeamMember,
   onRemoveTeamMember
 }) => {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [teamMemberSearchQuery, setTeamMemberSearchQuery] = useState('');
+  const [availableUserSearchQuery, setAvailableUserSearchQuery] = useState('');
   const [showAddMember, setShowAddMember] = useState(false);
   const { users: allUsers, isLoading: isLoadingUsers } = useUsers();
 
+  // Filter current team members based on their own search
   const filteredTeamMembers = teamMembers.filter(member =>
-    member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    member.email.toLowerCase().includes(searchQuery.toLowerCase())
+    member.name.toLowerCase().includes(teamMemberSearchQuery.toLowerCase()) ||
+    member.email.toLowerCase().includes(teamMemberSearchQuery.toLowerCase())
   );
 
-  const availableUsers = allUsers.filter(user => 
-    !teamMembers.some(member => member.id === user.id) &&
-    user.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Filter available users (excluding current team members) based on their own search
+  const availableUsers = allUsers.filter(user => {
+    const isAlreadyTeamMember = teamMembers.some(member => member.id === user.id);
+    const matchesSearch = user.name.toLowerCase().includes(availableUserSearchQuery.toLowerCase()) ||
+                         user.email.toLowerCase().includes(availableUserSearchQuery.toLowerCase());
+    return !isAlreadyTeamMember && matchesSearch;
+  });
 
   const getRoleIcon = (userId: string) => {
     if (project.managerId === userId) {
@@ -77,6 +83,12 @@ const TeamManagementDialog: React.FC<TeamManagementDialogProps> = ({
       return 'Project Manager';
     }
     return 'Team Member';
+  };
+
+  const handleAddMember = (userId: string) => {
+    onAddTeamMember(userId);
+    setShowAddMember(false);
+    setAvailableUserSearchQuery('');
   };
 
   return (
@@ -93,37 +105,51 @@ const TeamManagementDialog: React.FC<TeamManagementDialogProps> = ({
         </DialogHeader>
 
         <div className="flex flex-col gap-4 max-h-[60vh] overflow-hidden">
-          {/* Search and Add Controls */}
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search team members..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            <Button
-              variant="outline"
-              onClick={() => setShowAddMember(!showAddMember)}
-              className="gap-2"
-            >
-              <UserPlus className="h-4 w-4" />
-              Add Member
-            </Button>
-          </div>
-
           {/* Add Member Section */}
-          {showAddMember && (
+          {!showAddMember ? (
+            <div className="flex justify-end">
+              <Button
+                variant="outline"
+                onClick={() => setShowAddMember(true)}
+                className="gap-2"
+              >
+                <UserPlus className="h-4 w-4" />
+                Add Member
+              </Button>
+            </div>
+          ) : (
             <div className="border rounded-lg p-4 bg-muted/20">
-              <h4 className="font-medium mb-3">Available Users</h4>
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-medium">Add Team Members</h4>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setShowAddMember(false);
+                    setAvailableUserSearchQuery('');
+                  }}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              
+              {/* Search for available users */}
+              <div className="relative mb-3">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search available users..."
+                  value={availableUserSearchQuery}
+                  onChange={(e) => setAvailableUserSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+
               <div className="max-h-32 overflow-y-auto space-y-2">
                 {isLoadingUsers ? (
                   <div className="text-center py-4">Loading available users...</div>
                 ) : availableUsers.length === 0 ? (
                   <div className="text-center py-4 text-muted-foreground">
-                    No available users found
+                    {availableUserSearchQuery ? 'No users found matching your search' : 'No available users to add'}
                   </div>
                 ) : (
                   availableUsers.map((user) => (
@@ -144,11 +170,7 @@ const TeamManagementDialog: React.FC<TeamManagementDialogProps> = ({
                       </div>
                       <Button
                         size="sm"
-                        onClick={() => {
-                          onAddTeamMember(user.id);
-                          setShowAddMember(false);
-                          setSearchQuery('');
-                        }}
+                        onClick={() => handleAddMember(user.id)}
                       >
                         Add
                       </Button>
@@ -161,14 +183,28 @@ const TeamManagementDialog: React.FC<TeamManagementDialogProps> = ({
 
           {/* Current Team Members */}
           <div className="flex-1 overflow-y-auto">
-            <h4 className="font-medium mb-3">
-              Team Members ({teamMembers.length})
-            </h4>
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="font-medium">
+                Team Members ({teamMembers.length})
+              </h4>
+              
+              {/* Search current team members */}
+              <div className="relative flex-1 max-w-xs ml-4">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search members..."
+                  value={teamMemberSearchQuery}
+                  onChange={(e) => setTeamMemberSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+            </div>
+
             {isLoadingTeamMembers ? (
               <div className="text-center py-8">Loading team members...</div>
             ) : filteredTeamMembers.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                {searchQuery ? 'No team members match your search' : 'No team members found'}
+                {teamMemberSearchQuery ? 'No team members match your search' : 'No team members found'}
               </div>
             ) : (
               <div className="space-y-3">

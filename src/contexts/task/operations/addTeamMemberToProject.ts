@@ -4,7 +4,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { playSuccessSound, playErrorSound } from '@/utils/sounds';
 import { createProjectTeamAdditionNotification } from './assignment/createProjectNotification';
-import { safeProjectAccess } from '@/utils/typeCompatibility';
 
 export const addTeamMemberToProject = async (
   projectId: string,
@@ -23,7 +22,7 @@ export const addTeamMemberToProject = async (
       return;
     }
 
-    // Check if team member already exists to avoid duplicates
+    // Check if team member already exists in the separate table
     const { data: existingMember, error: checkError } = await supabase
       .from('project_team_members')
       .select('*')
@@ -43,19 +42,52 @@ export const addTeamMemberToProject = async (
       return;
     }
 
-    console.log('Adding new team member to database');
+    // Check if user is already in the team_members array
+    const currentTeamMembers = project.team_members || [];
+    if (currentTeamMembers.includes(userId)) {
+      console.log('Team member already exists in project array');
+      toast.info('User is already a team member of this project');
+      return;
+    }
 
-    const { error } = await supabase
+    console.log('Adding new team member to database and project array');
+
+    // Add to project_team_members table
+    const { error: tableError } = await supabase
       .from('project_team_members')
       .insert({
         project_id: projectId,
         user_id: userId
       });
 
-    if (error) {
-      console.error('Error adding team member:', error);
+    if (tableError) {
+      console.error('Error adding team member to table:', tableError);
       playErrorSound();
       toast.error('Failed to add team member to project');
+      return;
+    }
+
+    // Update the projects table team_members array
+    const updatedTeamMembers = [...currentTeamMembers, userId];
+    const { error: arrayError } = await supabase
+      .from('projects')
+      .update({ 
+        team_members: updatedTeamMembers,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', projectId);
+
+    if (arrayError) {
+      console.error('Error updating project team_members array:', arrayError);
+      // Try to rollback the table insert
+      await supabase
+        .from('project_team_members')
+        .delete()
+        .eq('project_id', projectId)
+        .eq('user_id', userId);
+      
+      playErrorSound();
+      toast.error('Failed to update project team members');
       return;
     }
 
@@ -79,16 +111,14 @@ export const addTeamMemberToProject = async (
       );
     }
 
+    // Update local state with both the array and ensure consistency
     const updatedProjects = projects.map((p) => {
       if (p.id === projectId) {
-        const teamMemberIds = safeProjectAccess.getTeamMembers(p);
-        if (!teamMemberIds.includes(userId)) {
-          return {
-            ...p,
-            teamMemberIds: [...teamMemberIds, userId], // Use correct property name
-            updatedAt: new Date()
-          };
-        }
+        return {
+          ...p,
+          team_members: updatedTeamMembers,
+          updatedAt: new Date()
+        };
       }
       return p;
     });
