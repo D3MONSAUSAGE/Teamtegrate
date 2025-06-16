@@ -27,6 +27,7 @@ import { toast } from '@/components/ui/sonner';
 import MultiSelect from './MultiSelect';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProjectOperations } from '@/hooks/useProjectOperations';
+import { useUsers } from '@/hooks/useUsers';
 
 const FormSchema = z.object({
   title: z.string().min(2, {
@@ -66,6 +67,13 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const { user } = useAuth();
   const { createProject, isLoading } = useProjectOperations();
+  const { users, isLoading: usersLoading } = useUsers();
+
+  // Transform users into options for MultiSelect
+  const userOptions = users.map(user => ({
+    value: user.id,
+    label: `${user.name} (${user.email})`
+  }));
 
   const onSubmit = async (data: any) => {
     try {
@@ -267,7 +275,15 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
             </div>
             
             <div className="pl-6">
-              <MultiSelect onChange={onMemberChange} />
+              {usersLoading ? (
+                <div className="text-sm text-muted-foreground">Loading team members...</div>
+              ) : (
+                <MultiSelect 
+                  onChange={onMemberChange} 
+                  options={userOptions}
+                  placeholder="Select team members..."
+                />
+              )}
             </div>
           </div>
 
