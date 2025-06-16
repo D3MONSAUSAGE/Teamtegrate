@@ -38,6 +38,20 @@ const UserCard: React.FC<UserCardProps> = ({
   onEditUser,
   onDeleteUser
 }) => {
+  // Safely format the date
+  const formatJoinDate = (date: Date | string) => {
+    try {
+      const dateObj = typeof date === 'string' ? new Date(date) : date;
+      if (isNaN(dateObj.getTime())) {
+        return 'Unknown';
+      }
+      return format(dateObj, 'MMM yyyy');
+    } catch (error) {
+      console.warn('Error formatting date:', error);
+      return 'Unknown';
+    }
+  };
+
   return (
     <Card className="p-4">
       <div className="flex items-center justify-between">
@@ -68,7 +82,7 @@ const UserCard: React.FC<UserCardProps> = ({
             <div className="flex items-center gap-4 text-xs text-muted-foreground">
               <span className="truncate">{user.email}</span>
               <span>{user.assigned_tasks_count || 0} tasks</span>
-              <span>Joined {format(new Date(user.created_at), 'MMM yyyy')}</span>
+              <span>Joined {formatJoinDate(user.createdAt || user.created_at)}</span>
             </div>
           </div>
         </div>

@@ -40,17 +40,28 @@ const SimplifiedOrganizationUserManagement: React.FC = () => {
 
       if (error) throw error;
       
-      // Convert database format to User type
-      const formattedUsers: User[] = (data || []).map(dbUser => ({
-        id: dbUser.id,
-        email: dbUser.email,
-        name: dbUser.name,
-        role: dbUser.role as UserRole,
-        organizationId: dbUser.organization_id,
-        timezone: dbUser.timezone || 'UTC',
-        avatar_url: dbUser.avatar_url,
-        createdAt: new Date(dbUser.created_at)
-      }));
+      // Convert database format to User type with proper date handling
+      const formattedUsers: User[] = (data || []).map(dbUser => {
+        // Safely handle date conversion
+        let createdAt = new Date();
+        if (dbUser.created_at) {
+          const parsedDate = new Date(dbUser.created_at);
+          if (!isNaN(parsedDate.getTime())) {
+            createdAt = parsedDate;
+          }
+        }
+
+        return {
+          id: dbUser.id,
+          email: dbUser.email,
+          name: dbUser.name,
+          role: dbUser.role as UserRole,
+          organizationId: dbUser.organization_id,
+          timezone: dbUser.timezone || 'UTC',
+          avatar_url: dbUser.avatar_url,
+          createdAt: createdAt
+        };
+      });
       
       setUsers(formattedUsers);
     } catch (error) {
