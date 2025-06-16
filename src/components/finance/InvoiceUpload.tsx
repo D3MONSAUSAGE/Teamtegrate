@@ -45,7 +45,8 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
       console.log('Starting upload process for file:', file.name);
 
       const timestamp = new Date().getTime();
-      const filePath = `invoices/${user.organizationId}/${user.id}/${timestamp}-${file.name}`;
+      // Updated file path structure: organizationId/invoices/userId/timestamp-filename
+      const filePath = `${user.organizationId}/invoices/${user.id}/${timestamp}-${file.name}`;
       
       console.log('Uploading to storage path:', filePath);
       
