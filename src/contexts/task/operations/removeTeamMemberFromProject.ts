@@ -21,7 +21,7 @@ export const removeTeamMemberFromProject = async (
       return;
     }
 
-    // Remove from project_team_members table
+    // Remove from project_team_members table first
     const { error: tableError } = await supabase
       .from('project_team_members')
       .delete()
@@ -70,6 +70,7 @@ export const removeTeamMemberFromProject = async (
         return {
           ...project,
           team_members: updatedTeamMembers,
+          teamMemberIds: updatedTeamMembers, // Also update teamMemberIds for consistency
           updatedAt: new Date()
         };
       }

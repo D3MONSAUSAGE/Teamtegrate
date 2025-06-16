@@ -57,13 +57,13 @@ const TeamManagementDialog: React.FC<TeamManagementDialogProps> = ({
   const [showAddMember, setShowAddMember] = useState(false);
   const { users: allUsers, isLoading: isLoadingUsers } = useUsers();
 
-  // Filter current team members based on their own search
+  // Filter current team members based on team member search
   const filteredTeamMembers = teamMembers.filter(member =>
     member.name.toLowerCase().includes(teamMemberSearchQuery.toLowerCase()) ||
     member.email.toLowerCase().includes(teamMemberSearchQuery.toLowerCase())
   );
 
-  // Filter available users (excluding current team members) based on their own search
+  // Filter available users (excluding current team members) based on available user search
   const availableUsers = allUsers.filter(user => {
     const isAlreadyTeamMember = teamMembers.some(member => member.id === user.id);
     const matchesSearch = user.name.toLowerCase().includes(availableUserSearchQuery.toLowerCase()) ||
@@ -89,6 +89,10 @@ const TeamManagementDialog: React.FC<TeamManagementDialogProps> = ({
     onAddTeamMember(userId);
     setShowAddMember(false);
     setAvailableUserSearchQuery('');
+  };
+
+  const handleRemoveMember = (userId: string) => {
+    onRemoveTeamMember(userId);
   };
 
   return (
@@ -254,7 +258,7 @@ const TeamManagementDialog: React.FC<TeamManagementDialogProps> = ({
                         {project.managerId !== member.id && (
                           <DropdownMenuItem 
                             className="text-destructive"
-                            onClick={() => onRemoveTeamMember(member.id)}
+                            onClick={() => handleRemoveMember(member.id)}
                           >
                             <UserMinus className="h-4 w-4 mr-2" />
                             Remove from Project

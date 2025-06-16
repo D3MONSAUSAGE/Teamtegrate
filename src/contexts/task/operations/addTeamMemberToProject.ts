@@ -52,7 +52,7 @@ export const addTeamMemberToProject = async (
 
     console.log('Adding new team member to database and project array');
 
-    // Add to project_team_members table
+    // Add to project_team_members table first
     const { error: tableError } = await supabase
       .from('project_team_members')
       .insert({
@@ -111,12 +111,13 @@ export const addTeamMemberToProject = async (
       );
     }
 
-    // Update local state with both the array and ensure consistency
+    // Update local state with the updated array
     const updatedProjects = projects.map((p) => {
       if (p.id === projectId) {
         return {
           ...p,
           team_members: updatedTeamMembers,
+          teamMemberIds: updatedTeamMembers, // Also update teamMemberIds for consistency
           updatedAt: new Date()
         };
       }
