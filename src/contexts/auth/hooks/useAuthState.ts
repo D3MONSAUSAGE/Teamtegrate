@@ -15,11 +15,19 @@ export const useAuthState = () => {
     refreshUserSession
   } = useAuthSession();
 
-  // Wrap updateSession to handle loading state
+  // Create a wrapper that handles loading state properly
   const updateSessionWithLoading = async (newSession: any) => {
+    console.log('AuthState: Processing session update, loading:', loading);
+    
+    // Always update session first
     await updateSession(newSession);
-    // Set loading to false after session is updated (successful login/logout)
-    setLoading(false);
+    
+    // Set loading to false once we have processed the session
+    // Don't wait for profile enhancement to complete
+    if (loading) {
+      console.log('AuthState: Setting loading to false');
+      setLoading(false);
+    }
   };
 
   useAuthInitialization({ 

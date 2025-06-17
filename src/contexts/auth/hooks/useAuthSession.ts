@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -49,15 +48,61 @@ export const useAuthSession = () => {
     };
   }, [fetchUserProfile]);
 
-  const updateSession = useCallback(async (newSession: Session | null) => {
+  // Synchronous session update - sets session immediately
+  const updateSessionSync = useCallback((newSession: Session | null) => {
+    console.log('AuthSession: Setting session synchronously:', !!newSession);
     setSession(newSession);
+    
     if (newSession?.user) {
-      const completeUser = await createUserFromSession(newSession);
-      setUser(completeUser);
+      // Create basic user object from session data immediately
+      const authUser = newSession.user;
+      const metadata = authUser.user_metadata || {};
+      
+      const basicUser: User = {
+        id: authUser.id,
+        email: authUser.email || '',
+        name: metadata.name || 'User',
+        role: (metadata.role as UserRole) || 'user',
+        organizationId: metadata.organization_id || '',
+        avatar_url: metadata.avatar_url || null,
+        timezone: metadata.timezone || null,
+        createdAt: new Date(authUser.created_at),
+      };
+      
+      setUser(basicUser);
+      console.log('AuthSession: Basic user set:', basicUser.email);
     } else {
       setUser(null);
+      console.log('AuthSession: User cleared');
+    }
+  }, []);
+
+  // Asynchronous profile enhancement - fetches full profile data
+  const enhanceUserProfile = useCallback(async (session: Session) => {
+    try {
+      console.log('AuthSession: Enhancing user profile...');
+      const completeUser = await createUserFromSession(session);
+      setUser(completeUser);
+      console.log('AuthSession: Enhanced user profile set:', completeUser.email);
+    } catch (error) {
+      console.error('AuthSession: Profile enhancement failed:', error);
+      // Don't clear the user, keep the basic version
     }
   }, [createUserFromSession]);
+
+  // Combined update function that works in two phases
+  const updateSession = useCallback(async (newSession: Session | null) => {
+    // Phase 1: Set session and basic user data synchronously
+    updateSessionSync(newSession);
+    
+    // Phase 2: Enhance user profile asynchronously (only if session exists)
+    if (newSession?.user) {
+      // Use setTimeout to defer this to next tick
+      setTimeout(() => {
+        enhanceUserProfile(newSession);
+      }, 0);
+    }
+  }, [updateSessionSync, enhanceUserProfile]);
 
   const refreshUserSession = useCallback(async (): Promise<void> => {
     try {

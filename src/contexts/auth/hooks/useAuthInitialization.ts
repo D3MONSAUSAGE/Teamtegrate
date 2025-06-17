@@ -17,6 +17,7 @@ export const useAuthInitialization = ({ updateSession, setLoading }: UseAuthInit
         
         if (error) {
           console.error('AuthInitialization: Session error:', error);
+          setLoading(false);
         } else {
           console.log('AuthInitialization: Initial session check:', !!session);
           await updateSession(session);
@@ -24,31 +25,34 @@ export const useAuthInitialization = ({ updateSession, setLoading }: UseAuthInit
       } catch (error) {
         console.error('AuthInitialization: Init error:', error);
         await updateSession(null);
-      } finally {
         setLoading(false);
-        console.log('AuthInitialization: Loading complete');
       }
     };
 
-    // Set up auth state listener - MUST NOT be async to prevent deadlocks
+    // Set up auth state listener - MUST be synchronous to prevent deadlocks
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         console.log('AuthInitialization: Auth state change:', event);
+        
+        // Only handle non-initial session changes
         if (event !== 'INITIAL_SESSION') {
-          // Use setTimeout(0) to defer async operations and prevent deadlock
+          // Use setTimeout to defer async operations and prevent deadlock
           setTimeout(() => {
-            updateSession(session);
+            updateSession(session).catch(error => {
+              console.error('AuthInitialization: Update session error:', error);
+              setLoading(false);
+            });
           }, 0);
         }
       }
     );
 
-    // Initialize auth
+    // Initialize auth after setting up listener
     initializeAuth();
 
     return () => {
       console.log('AuthInitialization: Cleaning up');
       subscription.unsubscribe();
     };
-  }, [updateSession, setLoading]);
+  }, []); // Remove dependencies to prevent re-initialization
 };
