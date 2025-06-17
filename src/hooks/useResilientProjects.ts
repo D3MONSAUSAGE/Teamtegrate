@@ -93,7 +93,7 @@ export const useResilientProjects = (options: UseResilientProjectsOptions = {}) 
     setIsShowingCached(false);
     
     // Clear request cache
-    requestManager.clearAllCache();
+    requestManager.clearCache();
     
     try {
       await refetch();

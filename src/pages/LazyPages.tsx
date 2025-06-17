@@ -4,14 +4,14 @@ import LoadingFallback from '@/components/LoadingFallback';
 
 // Lazy load heavy components
 const CalendarPage = React.lazy(() => import('./CalendarPage'));
-const FocusPage = React.lazy(() => import('./FocusPage'));
+const FocusZonePage = React.lazy(() => import('./FocusZonePage'));
 const ReportsPage = React.lazy(() => import('./ReportsPage'));
 const DocumentsPage = React.lazy(() => import('./DocumentsPage'));
 const ChatPage = React.lazy(() => import('./ChatPage'));
 const TeamPage = React.lazy(() => import('./TeamPage'));
 const ProfilePage = React.lazy(() => import('./ProfilePage'));
 const SettingsPage = React.lazy(() => import('./SettingsPage'));
-const OrganizationPage = React.lazy(() => import('./OrganizationPage'));
+const OrganizationDashboard = React.lazy(() => import('./OrganizationDashboard'));
 const FinancePage = React.lazy(() => import('./FinancePage'));
 const NotebookPage = React.lazy(() => import('./NotebookPage'));
 const JournalPage = React.lazy(() => import('./JournalPage'));
@@ -25,7 +25,7 @@ export const LazyCalendarPage = () => (
 
 export const LazyFocusPage = () => (
   <Suspense fallback={<LoadingFallback />}>
-    <FocusPage />
+    <FocusZonePage />
   </Suspense>
 );
 
@@ -67,7 +67,7 @@ export const LazySettingsPage = () => (
 
 export const LazyOrganizationPage = () => (
   <Suspense fallback={<LoadingFallback />}>
-    <OrganizationPage />
+    <OrganizationDashboard />
   </Suspense>
 );
 

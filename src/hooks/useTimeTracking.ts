@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -408,7 +407,7 @@ export function useTimeTracking() {
   // Cleanup cache periodically
   useEffect(() => {
     const interval = setInterval(() => {
-      requestManager.clearExpiredCache();
+      requestManager.cleanupExpiredCache();
     }, 60000); // Every minute
 
     return () => clearInterval(interval);

@@ -146,27 +146,14 @@ export const useVirtualScrolling = (
   };
 };
 
-// Component performance wrapper with React.memo
-export const withPerformanceOptimization = <P extends object>(
+// Component performance wrapper with React.memo - simplified version
+export const withPerformanceOptimization = <P extends Record<string, any>>(
   Component: React.ComponentType<P>,
   componentName: string,
   areEqual?: (prevProps: P, nextProps: P) => boolean
 ) => {
   const MemoizedComponent = React.memo(Component, areEqual);
   MemoizedComponent.displayName = `Optimized(${componentName})`;
-  
-  if (process.env.NODE_ENV === 'development') {
-    return (props: P) => {
-      const startTime = performance.now();
-      
-      React.useEffect(() => {
-        const endTime = performance.now();
-        console.log(`🔥 ${componentName} render took ${(endTime - startTime).toFixed(2)}ms`);
-      });
-      
-      return React.createElement(MemoizedComponent, props);
-    };
-  }
   
   return MemoizedComponent;
 };

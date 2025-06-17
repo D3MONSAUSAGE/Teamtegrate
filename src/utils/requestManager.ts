@@ -198,7 +198,7 @@ export const debounce = <T extends (...args: any[]) => any>(
   func: T,
   wait: number,
   options: { leading?: boolean; trailing?: boolean; maxWait?: number } = {}
-): T => {
+) => {
   let lastCallTime: number | undefined;
   let lastInvokeTime = 0;
   let timerId: NodeJS.Timeout | undefined;
@@ -302,8 +302,8 @@ export const debounce = <T extends (...args: any[]) => any>(
   debounced.cancel = cancel;
   debounced.flush = flush;
 
-  return debounced as T;
-};
+  return debounced as unknown as T;
+}
 
 export const requestManager = new RequestManager();
 
