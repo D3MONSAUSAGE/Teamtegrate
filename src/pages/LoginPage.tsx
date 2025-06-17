@@ -14,7 +14,6 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { toast } from '@/components/ui/sonner';
-import { UserRole } from '@/types';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import BrandLogo from '@/components/shared/BrandLogo';
 import MultiTenantSignupForm from '@/components/auth/MultiTenantSignupForm';
@@ -25,16 +24,16 @@ const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { login, isAuthenticated, loading } = useAuth();
+  const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   
   // Redirect if already logged in
   useEffect(() => {
-    if (isAuthenticated && !loading) {
+    if (isAuthenticated) {
       console.log('LoginPage: User already authenticated, redirecting to dashboard');
       navigate('/dashboard');
     }
-  }, [isAuthenticated, loading, navigate]);
+  }, [isAuthenticated, navigate]);
 
   // Handle signup parameter from URL
   useEffect(() => {
@@ -47,7 +46,6 @@ const LoginPage = () => {
     e.preventDefault();
     
     if (!isLogin) {
-      // This shouldn't happen as signup is handled by MultiTenantSignupForm
       return;
     }
 
@@ -66,7 +64,6 @@ const LoginPage = () => {
     } catch (error: any) {
       console.error('LoginPage: Authentication error:', error);
       
-      // Provide user-friendly error messages
       let errorMessage = 'Login failed. Please try again.';
       
       if (error?.message) {
@@ -90,24 +87,11 @@ const LoginPage = () => {
   const handleBackToLogin = () => {
     setIsLogin(true);
   };
-
-  // Show loading state while checking authentication
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">Checking authentication...</p>
-        </div>
-      </div>
-    );
-  }
   
   if (!isLogin) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
         <div className="w-full max-w-md">
-          {/* Back to landing page link */}
           <div className="mb-6">
             <Link to="/" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors">
               <ArrowLeft className="h-4 w-4 mr-2" />
@@ -117,7 +101,6 @@ const LoginPage = () => {
 
           <MultiTenantSignupForm onBack={handleBackToLogin} />
 
-          {/* Additional marketing copy for signup */}
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground mb-2">
               Join thousands of teams already using TeamTegrate
@@ -136,7 +119,6 @@ const LoginPage = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
       <div className="w-full max-w-md">
-        {/* Back to landing page link */}
         <div className="mb-6">
           <Link to="/" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -185,7 +167,7 @@ const LoginPage = () => {
               <Button 
                 type="submit" 
                 className="w-full" 
-                disabled={isSubmitting || loading}
+                disabled={isSubmitting}
               >
                 {isSubmitting ? (
                   <>
@@ -203,7 +185,7 @@ const LoginPage = () => {
               variant="link"
               className="w-full"
               onClick={() => setIsLogin(false)}
-              disabled={isSubmitting || loading}
+              disabled={isSubmitting}
             >
               Don't have an account? Sign up for free
             </Button>
