@@ -34,14 +34,13 @@ export default defineConfig(({ mode }) => ({
           'chart-vendor': ['recharts'],
           'form-vendor': ['react-hook-form', '@hookform/resolvers', 'zod'],
           
-          // Feature chunks
-          'dashboard': ['src/pages/DashboardPage.tsx', 'src/components/dashboard'],
-          'tasks': ['src/pages/TasksPage.tsx', 'src/components/task'],
-          'projects': ['src/pages/ProjectsPage.tsx', 'src/components/project'],
-          'calendar': ['src/pages/CalendarPage.tsx', 'src/components/calendar'],
-          'chat': ['src/pages/ChatPage.tsx', 'src/components/chat'],
-          'reports': ['src/pages/ReportsPage.tsx', 'src/components/reports'],
-          'settings': ['src/pages/SettingsPage.tsx', 'src/components/settings'],
+          // Feature chunks - using actual file paths that exist
+          'tasks': ['src/pages/TasksPage.tsx'],
+          'projects': ['src/pages/ProjectsPage.tsx'],
+          'calendar': ['src/pages/CalendarPage.tsx'],
+          'chat': ['src/pages/ChatPage.tsx'],
+          'reports': ['src/pages/ReportsPage.tsx'],
+          'settings': ['src/pages/SettingsPage.tsx'],
         },
         // Optimize chunk file names
         chunkFileNames: (chunkInfo) => {
