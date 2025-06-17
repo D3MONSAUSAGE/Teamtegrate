@@ -27,16 +27,15 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return;
     setLoading(true);
     try {
-      const fetchedTasks = await fetchTasksAPI(user.organizationId || '');
-      setTasks(fetchedTasks);
+      const fetchedTasks = await fetchTasksAPI(user, setTasks);
       // Calculate daily score here after tasks are fetched
-      calculateDailyScore(fetchedTasks);
+      calculateDailyScore(tasks);
     } catch (err: any) {
       setError(err.message || 'Failed to fetch tasks');
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, tasks]);
 
   const calculateDailyScore = (tasks: Task[]) => {
     if (!user) return;
@@ -85,10 +84,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const updateTask = useCallback(async (taskId: string, task: Partial<Task>) => {
     setLoading(true);
     try {
-      await updateTaskAPI(taskId, task);
-      setTasks(prevTasks =>
-        prevTasks.map(t => (t.id === taskId ? { ...t, ...task, updatedAt: new Date() } : t))
-      );
+      await updateTaskAPI(taskId, task, user, setTasks, tasks, setProjects, projects);
       toast.success('Task updated successfully');
     } catch (err: any) {
       setError(err.message || 'Failed to update task');
@@ -96,13 +92,12 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user, tasks, projects]);
 
   const deleteTask = useCallback(async (taskId: string) => {
     setLoading(true);
     try {
-      await deleteTaskAPI(taskId);
-      setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
+      await deleteTaskAPI(taskId, user, tasks, setTasks, projects, setProjects);
       toast.success('Task deleted successfully');
     } catch (err: any) {
       setError(err.message || 'Failed to delete task');
@@ -110,7 +105,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user, tasks, projects]);
 
   const updateTaskStatus = useCallback(async (taskId: string, status: Task['status']) => {
     setLoading(true);
@@ -119,12 +114,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (status === 'Completed') {
         updates.completedAt = new Date();
       }
-      await updateTaskStatusAPI(taskId, updates);
-      setTasks(prevTasks =>
-        prevTasks.map(task =>
-          task.id === taskId ? { ...task, status, completedAt: updates.completedAt, updatedAt: new Date() } : task
-        )
-      );
+      await updateTaskStatusAPI(taskId, updates, user, setTasks, tasks, setProjects, projects, status);
       toast.success('Task status updated successfully');
     } catch (err: any) {
       setError(err.message || 'Failed to update task status');
@@ -132,17 +122,12 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user, tasks, projects]);
 
   const assignTaskToUser = useCallback(async (taskId: string, userId: string, userName: string) => {
     setLoading(true);
     try {
-      await assignTaskToUserAPI(taskId, userId, userName);
-      setTasks(prevTasks =>
-        prevTasks.map(task =>
-          task.id === taskId ? { ...task, assignedToId: userId, assignedToName: userName, updatedAt: new Date() } : task
-        )
-      );
+      await assignTaskToUserAPI(taskId, userId, userName, user, setTasks, tasks, setProjects, projects);
       toast.success('Task assigned successfully');
     } catch (err: any) {
       setError(err.message || 'Failed to assign task');
@@ -150,7 +135,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user, tasks, projects]);
 
   const addCommentToTask = useCallback(async (taskId: string, commentText: string) => {
     if (!user) return;
