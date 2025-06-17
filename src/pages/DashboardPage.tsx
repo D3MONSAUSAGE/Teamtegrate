@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { useTask } from '@/contexts/task';
@@ -7,16 +8,17 @@ import { Task, Project } from '@/types';
 import { Plus, Sparkles, TrendingUp, Calendar } from 'lucide-react';
 import CreateTaskDialogEnhanced from '@/components/CreateTaskDialogEnhanced';
 import { format } from 'date-fns';
-import TasksSummary from '@/components/dashboard/TasksSummary';
-import DailyTasksSection from '@/components/dashboard/DailyTasksSection';
-import UpcomingTasksSection from '@/components/dashboard/UpcomingTasksSection';
-import RecentProjects from '@/components/dashboard/RecentProjects';
-import TeamManagement from '@/components/dashboard/TeamManagement';
 import { useIsMobile } from '@/hooks/use-mobile';
-import AnalyticsSection from '@/components/dashboard/AnalyticsSection';
-import TimeTracking from '@/components/dashboard/TimeTracking';
 import ConnectionStatus from '@/components/dashboard/ConnectionStatus';
 import { useTasksPageData } from '@/hooks/useTasksPageData';
+
+// Compact Components
+import CompactTimeTracking from '@/components/dashboard/CompactTimeTracking';
+import CompactTasksSummary from '@/components/dashboard/CompactTasksSummary';
+import CompactTasksWidget from '@/components/dashboard/CompactTasksWidget';
+import CompactAnalytics from '@/components/dashboard/CompactAnalytics';
+import CompactProjects from '@/components/dashboard/CompactProjects';
+import TeamManagement from '@/components/dashboard/TeamManagement';
 
 const DashboardPage = () => {
   const { user } = useAuth();
@@ -111,12 +113,6 @@ const DashboardPage = () => {
     setSelectedProject(null);
   }, []);
 
-  const handleViewTasks = useCallback((project: any) => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log("View tasks for project:", project.title);
-    }
-  }, []);
-
   const handleCreateTaskForProject = useCallback((project: any) => {
     const convertedProject: Project = {
       id: project.id,
@@ -148,7 +144,7 @@ const DashboardPage = () => {
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/5 to-background">
-      <div className="relative space-y-8 no-scrollbar">
+      <div className="relative space-y-6 no-scrollbar">
         {/* Connection Status Alert */}
         <ConnectionStatus 
           lastError={lastError}
@@ -156,21 +152,21 @@ const DashboardPage = () => {
           isLoading={isLoading}
         />
 
-        {/* Simplified Welcome Header */}
+        {/* Compact Welcome Header */}
         <div className="relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-r from-primary/3 via-emerald-500/3 to-primary/3" />
           
-          <div className="relative bg-card/80 backdrop-blur-sm border shadow-lg rounded-2xl p-6 md:p-8">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-              <div className="space-y-3">
+          <div className="relative bg-card/80 backdrop-blur-sm border shadow-lg rounded-2xl p-4 md:p-6">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div className="space-y-2">
                 <div className="flex items-center gap-3">
-                  <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-foreground via-primary to-emerald-600 bg-clip-text text-transparent">
+                  <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-foreground via-primary to-emerald-600 bg-clip-text text-transparent">
                     Welcome back, {user?.name}!
                   </h1>
-                  <Sparkles className="h-5 w-5 text-primary" />
+                  <Sparkles className="h-4 w-4 text-primary" />
                 </div>
                 
-                <div className="flex items-center gap-4 text-base">
+                <div className="flex items-center gap-4 text-sm">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Calendar className="h-4 w-4" />
                     <span className="font-medium">{format(new Date(), "EEEE, MMMM d")}</span>
@@ -183,17 +179,17 @@ const DashboardPage = () => {
                 </div>
 
                 {/* Quick Stats */}
-                <div className="flex items-center gap-6 pt-2">
+                <div className="flex items-center gap-6 pt-1">
                   <div className="text-center">
-                    <div className="text-xl font-bold text-primary">{headerStats.todaysCount}</div>
+                    <div className="text-lg font-bold text-primary">{headerStats.todaysCount}</div>
                     <div className="text-xs text-muted-foreground">Today's Tasks</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-xl font-bold text-emerald-600">{headerStats.upcomingCount}</div>
+                    <div className="text-lg font-bold text-emerald-600">{headerStats.upcomingCount}</div>
                     <div className="text-xs text-muted-foreground">Upcoming</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-xl font-bold text-amber-600">{headerStats.projectsCount}</div>
+                    <div className="text-lg font-bold text-amber-600">{headerStats.projectsCount}</div>
                     <div className="text-xs text-muted-foreground">Projects</div>
                   </div>
                 </div>
@@ -212,75 +208,45 @@ const DashboardPage = () => {
           </div>
         </div>
         
-        {/* Enhanced Quick Stats Summary */}
-        <div className="animate-fade-in">
-          <TasksSummary 
-            dailyScore={dailyScore}
-            todaysTasks={todaysTasks}
-            upcomingTasks={upcomingTasks}
-          />
-        </div>
-
-        {/* Time Tracking Section */}
-        <div className="bg-card/70 backdrop-blur-sm border rounded-2xl">
-          <div className="p-4 border-b border-border/50">
-            <h2 className="text-lg font-semibold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
-              Time Tracking
-            </h2>
-          </div>
-          <div className="p-4">
-            <TimeTracking />
-          </div>
-        </div>
-
-        {/* Analytics Overview */}
-        <div className="bg-card/70 backdrop-blur-sm border rounded-2xl">
-          <div className="p-4 border-b border-border/50">
-            <h2 className="text-lg font-semibold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
-              Analytics & Insights
-            </h2>
-          </div>
-          <div className="p-4">
-            <AnalyticsSection />
-          </div>
-        </div>
-        
-        {/* Tasks Sections */}
-        <div className="space-y-6">
-          <div className="bg-card/70 backdrop-blur-sm border rounded-2xl p-4">
-            <DailyTasksSection 
-              tasks={todaysTasks}
-              onCreateTask={() => handleCreateTask()}
-              onEditTask={handleEditTask}
+        {/* Compact Grid Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* Left Column */}
+          <div className="space-y-4">
+            <CompactTasksSummary 
+              dailyScore={dailyScore}
+              todaysTasks={todaysTasks}
+              upcomingTasks={upcomingTasks}
             />
-          </div>
-          
-          <div className="bg-card/70 backdrop-blur-sm border rounded-2xl p-4">
-            <UpcomingTasksSection 
-              tasks={upcomingTasks}
-              onCreateTask={() => handleCreateTask()}
-              onEditTask={handleEditTask}
-            />
-          </div>
-        </div>
-        
-        {/* Manager-only sections */}
-        {user?.role === 'manager' && (
-          <div className="space-y-6">
-            <div className="bg-card/70 backdrop-blur-sm border rounded-2xl p-4">
-              <RecentProjects 
+            <CompactTimeTracking />
+            {user?.role === 'manager' && (
+              <CompactProjects 
                 projects={recentProjects}
-                onViewTasks={handleViewTasks}
                 onCreateTask={handleCreateTaskForProject}
                 onRefresh={refreshProjects}
               />
-            </div>
-            
-            <div className="bg-card/70 backdrop-blur-sm border rounded-2xl">
-              <TeamManagement />
-            </div>
+            )}
           </div>
-        )}
+
+          {/* Center Column */}
+          <div className="space-y-4">
+            <CompactTasksWidget 
+              todaysTasks={todaysTasks}
+              upcomingTasks={upcomingTasks}
+              onCreateTask={() => handleCreateTask()}
+              onEditTask={handleEditTask}
+            />
+          </div>
+
+          {/* Right Column */}
+          <div className="space-y-4">
+            <CompactAnalytics />
+            {user?.role === 'manager' && (
+              <div className="bg-card/70 backdrop-blur-sm border rounded-2xl">
+                <TeamManagement />
+              </div>
+            )}
+          </div>
+        </div>
         
         <CreateTaskDialogEnhanced 
           open={isCreateTaskOpen} 
