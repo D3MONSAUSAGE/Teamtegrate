@@ -19,11 +19,11 @@ export const updateTaskStatus = async (
 
     const updatedTask: Partial<Task> = { 
       status,
-      updatedAt: new Date()
+      updatedAt: new Date().toISOString()
     };
 
     if (status === 'Completed') {
-      updatedTask.completedAt = new Date();
+      updatedTask.completedAt = new Date().toISOString();
     }
 
     console.log('Updating task status:', { taskId, status, updatedTask });

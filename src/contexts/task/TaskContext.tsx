@@ -2,7 +2,19 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Task, Project, DailyScore } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
-import { createTask as createTaskAPI, fetchTasks as fetchTasksAPI, updateTask as updateTaskAPI, deleteTask as deleteTaskAPI, updateTaskStatus as updateTaskStatusAPI, assignTaskToUser as assignTaskToUserAPI, fetchProjects as fetchProjectsAPI, createProject as createProjectAPI, updateProject as updateProjectAPI, deleteProject as deleteProjectAPI, fetchTeamPerformance, } from './api';
+import { 
+  createTask as createTaskAPI, 
+  fetchTasks as fetchTasksAPI, 
+  updateTask as updateTaskAPI, 
+  deleteTask as deleteTaskAPI, 
+  updateTaskStatus as updateTaskStatusAPI, 
+  assignTaskToUser as assignTaskToUserAPI, 
+  fetchProjects as fetchProjectsAPI, 
+  createProject as createProjectAPI, 
+  updateProject as updateProjectAPI, 
+  deleteProject as deleteProjectAPI, 
+  fetchTeamPerformance 
+} from './api';
 import { addTaskComment as addTaskCommentAPI } from './api/comments';
 import { toast } from 'sonner';
 import { addProjectComment, fetchProjectComments } from './api/comments';
@@ -14,6 +26,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { user } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [projectsLoading, setProjectsLoading] = useState(false);
@@ -28,17 +41,22 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const fetchTasks = useCallback(async () => {
     if (!user) return;
     setLoading(true);
+    setIsLoading(true);
     try {
       const fetchedTasks = await fetchTasksAPI(user.organizationId || '');
       setTasks(fetchedTasks);
-      // Calculate daily score here after tasks are fetched
       calculateDailyScore(fetchedTasks);
     } catch (err: any) {
       setError(err.message || 'Failed to fetch tasks');
     } finally {
       setLoading(false);
+      setIsLoading(false);
     }
   }, [user]);
+
+  const refreshTasks = useCallback(async () => {
+    await fetchTasks();
+  }, [fetchTasks]);
 
   const calculateDailyScore = (tasks: Task[]) => {
     if (!user) return;
@@ -69,6 +87,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const newTask = await createTaskAPI({ ...task, organizationId: user.organizationId || '' });
       setTasks(prevTasks => [...prevTasks, newTask]);
       toast.success('Task created successfully');
+      return newTask;
     } catch (err: any) {
       setError(err.message || 'Failed to create task');
       toast.error('Failed to create task');
@@ -83,10 +102,11 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const newTask: Task = { 
       ...task, 
       id: Date.now().toString(), 
-      createdAt: new Date(), 
-      updatedAt: new Date() 
+      createdAt: new Date().toISOString(), 
+      updatedAt: new Date().toISOString() 
     };
     setTasks(prevTasks => [...prevTasks, newTask]);
+    return newTask;
   }, [user]);
 
   const updateTask = useCallback(async (taskId: string, task: Partial<Task>) => {
@@ -94,7 +114,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await updateTaskAPI(taskId, task);
       setTasks(prevTasks =>
-        prevTasks.map(t => (t.id === taskId ? { ...t, ...task, updatedAt: new Date() } : t))
+        prevTasks.map(t => (t.id === taskId ? { ...t, ...task, updatedAt: new Date().toISOString() } : t))
       );
       toast.success('Task updated successfully');
     } catch (err: any) {
@@ -124,12 +144,12 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const updates: Partial<Task> = { status };
       if (status === 'Completed') {
-        updates.completedAt = new Date();
+        updates.completedAt = new Date().toISOString();
       }
       await updateTaskStatusAPI(taskId, updates);
       setTasks(prevTasks =>
         prevTasks.map(task =>
-          task.id === taskId ? { ...task, status, completedAt: updates.completedAt, updatedAt: new Date() } : task
+          task.id === taskId ? { ...task, status, completedAt: updates.completedAt, updatedAt: new Date().toISOString() } : task
         )
       );
       toast.success('Task status updated successfully');
@@ -147,7 +167,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await assignTaskToUserAPI(taskId, userId, userName);
       setTasks(prevTasks =>
         prevTasks.map(task =>
-          task.id === taskId ? { ...task, assignedToId: userId, assignedToName: userName, updatedAt: new Date() } : task
+          task.id === taskId ? { ...task, assignedToId: userId, assignedToName: userName, updatedAt: new Date().toISOString() } : task
         )
       );
       toast.success('Task assigned successfully');
@@ -170,14 +190,13 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         organizationId: user.organizationId || ''
       });
 
-      // Optimistically update the task in the local state
       setTasks(prevTasks =>
         prevTasks.map(task =>
           task.id === taskId
             ? {
                 ...task,
                 comments: [...(task.comments || []), newComment],
-                updatedAt: new Date()
+                updatedAt: new Date().toISOString()
               }
             : task
         )
@@ -201,7 +220,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         organizationId: user.organizationId || ''
       });
 
-      // Update projects to include the new comment
       setProjects(prevProjects => 
         prevProjects.map(project => 
           project.id === projectId 
@@ -225,10 +243,9 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setProjectsLoading(true);
     try {
       const fetchedProjects = await fetchProjectsAPI(user.organizationId || '');
-       // Ensure each project has a comments property
-       const projectsWithComments = fetchedProjects.map(project => ({
+      const projectsWithComments = fetchedProjects.map(project => ({
         ...project,
-        comments: project.comments || [] // Initialize comments if undefined
+        comments: project.comments || []
       }));
       setProjects(projectsWithComments);
     } catch (err: any) {
@@ -242,10 +259,9 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return;
     try {
       const fetchedProjects = await fetchProjectsAPI(user.organizationId || '');
-      // Ensure each project has a comments property
       const projectsWithComments = fetchedProjects.map(project => ({
         ...project,
-        comments: project.comments || [] // Initialize comments if undefined
+        comments: project.comments || []
       }));
       setProjects(projectsWithComments);
     } catch (err: any) {
@@ -316,8 +332,10 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const value: TaskContextType = {
     tasks,
     loading,
+    isLoading,
     error,
     fetchTasks,
+    refreshTasks,
     createTask,
     addTask,
     updateTask,
