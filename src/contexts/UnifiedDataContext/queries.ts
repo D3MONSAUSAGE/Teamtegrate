@@ -30,14 +30,14 @@ export const useTasksQuery = ({ user, networkStatus, setRequestsInFlight }: Quer
         async () => {
           setRequestsInFlight(prev => prev + 1);
           try {
-            // FOCUSED QUERY: Only fetch tasks directly assigned to the user
-            // This is for the "My Tasks" view - not all organizational tasks
+            // OPTIMIZED QUERY: Only fetch essential fields and use indexes
             const { data, error } = await supabase
               .from('tasks')
-              .select('*')
+              .select('id, title, description, status, priority, deadline, assigned_to_id, assigned_to_ids, project_id, organization_id, created_at, updated_at')
               .eq('organization_id', user.organizationId)
               .or(`assigned_to_id.eq.${user.id},assigned_to_ids.cs.{${user.id}}`)
-              .order('created_at', { ascending: false });
+              .order('created_at', { ascending: false })
+              .limit(100); // Limit initial load
 
             if (error) throw error;
             return data || [];
@@ -48,10 +48,10 @@ export const useTasksQuery = ({ user, networkStatus, setRequestsInFlight }: Quer
       );
     },
     enabled: !!user?.organizationId && !!user?.id,
-    staleTime: 0, // Always consider data stale for real-time updates
-    gcTime: 60000, // Keep in cache for 1 minute
-    refetchOnWindowFocus: true,
-    refetchInterval: 10000, // Refetch every 10 seconds for real-time feel
+    staleTime: 30000, // Increased to 30 seconds for better performance
+    gcTime: 300000, // Keep in cache for 5 minutes
+    refetchOnWindowFocus: false, // Reduced aggressive refetching
+    refetchInterval: 30000, // Reduced from 10s to 30s for performance
     retry: (failureCount, error) => {
       if (networkStatus === 'offline') return false;
       return failureCount < 2;
@@ -96,13 +96,14 @@ export const useProjectsQuery = ({ user, networkStatus, setRequestsInFlight }: Q
         async () => {
           setRequestsInFlight(prev => prev + 1);
           try {
-            // Filter projects to only show those managed by user or where user is a team member
+            // OPTIMIZED QUERY: Only fetch essential fields
             const { data, error } = await supabase
               .from('projects')
-              .select('*')
+              .select('id, title, description, status, manager_id, team_members, organization_id, created_at, updated_at, budget, budget_spent, tasks_count')
               .eq('organization_id', user.organizationId)
               .or(`manager_id.eq.${user.id},team_members.cs.{${user.id}}`)
-              .order('created_at', { ascending: false });
+              .order('created_at', { ascending: false })
+              .limit(50); // Limit initial load
 
             if (error) throw error;
             return data || [];
@@ -113,9 +114,10 @@ export const useProjectsQuery = ({ user, networkStatus, setRequestsInFlight }: Q
       );
     },
     enabled: !!user?.organizationId && !!user?.id,
-    staleTime: 30000, // 30 seconds
-    gcTime: 300000, // 5 minutes
-    refetchOnWindowFocus: true,
+    staleTime: 60000, // 1 minute - projects change less frequently
+    gcTime: 600000, // 10 minutes
+    refetchOnWindowFocus: false,
+    refetchInterval: false, // No automatic polling for projects
     retry: (failureCount, error) => {
       if (networkStatus === 'offline') return false;
       return failureCount < 2;
@@ -151,9 +153,10 @@ export const useUsersQuery = ({ user, networkStatus, setRequestsInFlight }: Quer
         async () => {
           setRequestsInFlight(prev => prev + 1);
           try {
+            // OPTIMIZED QUERY: Only fetch essential user fields
             const { data, error } = await supabase
               .from('users')
-              .select('*')
+              .select('id, email, name, role, organization_id, avatar_url')
               .eq('organization_id', user.organizationId)
               .order('name');
 
@@ -166,8 +169,10 @@ export const useUsersQuery = ({ user, networkStatus, setRequestsInFlight }: Quer
       );
     },
     enabled: !!user?.organizationId,
-    staleTime: 1000 * 60 * 3, // 3 minutes
+    staleTime: 1000 * 60 * 5, // 5 minutes - users change infrequently
+    gcTime: 1000 * 60 * 10, // 10 minutes
     refetchOnWindowFocus: false,
+    refetchInterval: false, // No automatic polling for users
     retry: (failureCount, error) => {
       if (networkStatus === 'offline') return false;
       return failureCount < 2;
