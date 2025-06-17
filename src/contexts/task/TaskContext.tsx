@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { Task, Project, DailyScore } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
@@ -5,6 +6,7 @@ import { createTask as createTaskAPI, fetchTasks as fetchTasksAPI, updateTask as
 import { addTaskComment as addTaskCommentAPI } from './api/comments';
 import { toast } from 'sonner';
 import { addProjectComment, fetchProjectComments } from './api/comments';
+import { TaskContext, TaskContextType } from './index';
 
 export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
@@ -14,7 +16,12 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [projects, setProjects] = useState<Project[]>([]);
   const [projectsLoading, setProjectsLoading] = useState(false);
   const [projectsError, setProjectsError] = useState<string | null>(null);
-  const [dailyScore, setDailyScore] = useState<DailyScore>({ score: 0, streak: 0 });
+  const [dailyScore, setDailyScore] = useState<DailyScore>({ 
+    completedTasks: 0, 
+    totalTasks: 0, 
+    percentage: 0, 
+    date: new Date() 
+  });
 
   const fetchTasks = useCallback(async () => {
     if (!user) return;
@@ -35,19 +42,19 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const completedToday = tasks.filter(task => {
-      if (task.status === 'Completed' && task.completedAt) {
-        const completedDate = new Date(task.completedAt);
-        completedDate.setHours(0, 0, 0, 0);
-        return completedDate.getTime() === today.getTime();
-      }
-      return false;
+    const todayTasks = tasks.filter(task => {
+      const taskDate = new Date(task.createdAt);
+      taskDate.setHours(0, 0, 0, 0);
+      return taskDate.getTime() === today.getTime();
     });
-    const newScore = completedToday.length;
-    setDailyScore(prev => ({
-      score: newScore,
-      streak: newScore > 0 ? prev.streak + 1 : 0,
-    }));
+    const completedToday = todayTasks.filter(task => task.status === 'Completed');
+    
+    setDailyScore({
+      completedTasks: completedToday.length,
+      totalTasks: todayTasks.length,
+      percentage: todayTasks.length > 0 ? (completedToday.length / todayTasks.length) * 100 : 0,
+      date: today
+    });
   };
 
   const createTask = useCallback(async (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -66,7 +73,13 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [user]);
 
   const addTask = useCallback(async (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
-    setTasks(prevTasks => [...prevTasks, { ...task, id: Date.now().toString(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }]);
+    const newTask: Task = { 
+      ...task, 
+      id: Date.now().toString(), 
+      createdAt: new Date(), 
+      updatedAt: new Date() 
+    };
+    setTasks(prevTasks => [...prevTasks, newTask]);
   }, []);
 
   const updateTask = useCallback(async (taskId: string, task: Partial<Task>) => {
@@ -74,7 +87,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await updateTaskAPI(taskId, task);
       setTasks(prevTasks =>
-        prevTasks.map(t => (t.id === taskId ? { ...t, ...task, updatedAt: new Date().toISOString() } : t))
+        prevTasks.map(t => (t.id === taskId ? { ...t, ...task, updatedAt: new Date() } : t))
       );
       toast.success('Task updated successfully');
     } catch (err: any) {
@@ -104,12 +117,12 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const updates: Partial<Task> = { status };
       if (status === 'Completed') {
-        updates.completedAt = new Date().toISOString();
+        updates.completedAt = new Date();
       }
       await updateTaskStatusAPI(taskId, updates);
       setTasks(prevTasks =>
         prevTasks.map(task =>
-          task.id === taskId ? { ...task, status, completedAt: updates.completedAt, updatedAt: new Date().toISOString() } : task
+          task.id === taskId ? { ...task, status, completedAt: updates.completedAt, updatedAt: new Date() } : task
         )
       );
       toast.success('Task status updated successfully');
@@ -127,7 +140,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await assignTaskToUserAPI(taskId, userId, userName);
       setTasks(prevTasks =>
         prevTasks.map(task =>
-          task.id === taskId ? { ...task, assignedTo: userId, assignedToName: userName, updatedAt: new Date().toISOString() } : task
+          task.id === taskId ? { ...task, assignedToId: userId, assignedToName: userName, updatedAt: new Date() } : task
         )
       );
       toast.success('Task assigned successfully');
@@ -145,7 +158,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const newComment = await addTaskCommentAPI(taskId, {
         userId: user.id,
-        userName: user.name,
+        userName: user.name || user.email,
         text: commentText,
         organizationId: user.organizationId || ''
       });
@@ -157,7 +170,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
             ? {
                 ...task,
                 comments: [...(task.comments || []), newComment],
-                updatedAt: new Date().toISOString()
+                updatedAt: new Date()
               }
             : task
         )
@@ -176,7 +189,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const newComment = await addProjectComment(projectId, {
         userId: user.id,
-        userName: user.name,
+        userName: user.name || user.email,
         text: commentText,
         organizationId: user.organizationId || ''
       });
@@ -319,4 +332,12 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return <TaskContext.Provider value={value}>{children}</TaskContext.Provider>;
+};
+
+export const useTask = () => {
+  const context = React.useContext(TaskContext);
+  if (!context) {
+    throw new Error('useTask must be used within a TaskProvider');
+  }
+  return context;
 };

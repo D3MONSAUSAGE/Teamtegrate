@@ -8,3 +8,7 @@ export * from './taskAssignment';
 export * from './projects';
 export * from './comments';
 export * from './teamPerformance';
+
+// Re-export specific functions to ensure they're available
+export { createTask } from './taskCreate';
+export { fetchProjects, createProject, updateProject, deleteProject } from './projects';
