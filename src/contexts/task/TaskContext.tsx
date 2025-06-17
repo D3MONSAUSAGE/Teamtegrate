@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { Task, Project, DailyScore } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
@@ -5,6 +6,9 @@ import { createTask as createTaskAPI, fetchTasks as fetchTasksAPI, updateTask as
 import { addTaskComment as addTaskCommentAPI } from './api/comments';
 import { toast } from 'sonner';
 import { addProjectComment, fetchProjectComments } from './api/comments';
+import { TaskContextType } from './index';
+
+export const TaskContext = React.createContext<TaskContextType | undefined>(undefined);
 
 export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
@@ -15,11 +19,10 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [projectsLoading, setProjectsLoading] = useState(false);
   const [projectsError, setProjectsError] = useState<string | null>(null);
   const [dailyScore, setDailyScore] = useState<DailyScore>({ 
-    score: 0, 
     completedTasks: 0, 
     totalTasks: 0, 
     percentage: 0, 
-    date: new Date().toISOString().split('T')[0]
+    date: new Date()
   });
 
   const fetchTasks = useCallback(async () => {
@@ -52,11 +55,10 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const newScore = completedToday.length;
     const totalTasks = tasks.length;
     setDailyScore({
-      score: newScore,
       completedTasks: newScore,
       totalTasks: totalTasks,
       percentage: totalTasks > 0 ? Math.round((newScore / totalTasks) * 100) : 0,
-      date: new Date().toISOString().split('T')[0]
+      date: new Date()
     });
   };
 
@@ -335,4 +337,12 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return <TaskContext.Provider value={value}>{children}</TaskContext.Provider>;
+};
+
+export const useTask = () => {
+  const context = React.useContext(TaskContext);
+  if (!context) {
+    throw new Error('useTask must be used within a TaskProvider');
+  }
+  return context;
 };

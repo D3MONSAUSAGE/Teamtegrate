@@ -9,8 +9,8 @@ export const createProject = async (projectData: Omit<Project, 'id' | 'createdAt
     title: projectData.title,
     description: projectData.description,
     status: projectData.status,
-    startDate: projectData.startDate,
-    endDate: projectData.endDate,
+    startDate: projectData.startDate || new Date().toISOString().split('T')[0],
+    endDate: projectData.endDate || new Date().toISOString().split('T')[0],
     managerId: projectData.managerId,
     teamMemberIds: projectData.teamMemberIds || [],
     budget: projectData.budget,
@@ -19,8 +19,8 @@ export const createProject = async (projectData: Omit<Project, 'id' | 'createdAt
     isCompleted: false,
     tags: projectData.tags || [],
     organizationId: projectData.organizationId,
-    createdAt: new Date(),
-    updatedAt: new Date()
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   };
 
   return fixProjectProperties(newProject);
@@ -33,8 +33,8 @@ export const updateProject = async (projectId: string, updates: Partial<Project>
     title: updates.title || '',
     description: updates.description,
     status: updates.status || 'To Do',
-    startDate: updates.startDate || new Date(),
-    endDate: updates.endDate || new Date(),
+    startDate: updates.startDate || new Date().toISOString().split('T')[0],
+    endDate: updates.endDate || new Date().toISOString().split('T')[0],
     managerId: updates.managerId || '',
     teamMemberIds: updates.teamMemberIds || [],
     budget: updates.budget || 0,
@@ -43,8 +43,8 @@ export const updateProject = async (projectId: string, updates: Partial<Project>
     isCompleted: updates.isCompleted || false,
     tags: updates.tags || [],
     organizationId: updates.organizationId || '',
-    createdAt: updates.createdAt || new Date(),
-    updatedAt: new Date()
+    createdAt: updates.createdAt || new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   };
 
   return fixProjectProperties(updatedProject);
