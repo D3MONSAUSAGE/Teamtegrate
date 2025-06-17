@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -26,7 +25,7 @@ const MainContent = ({ children }: { children: React.ReactNode }) => {
       onClick={handleMainContentClick}
     >
       <Navbar />
-      <main className="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar smooth-scroll">
+      <main className="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar smooth-scroll px-6 lg:px-12">
         <div className="space-y-6 animate-fade-in">
           {children}
         </div>
