@@ -1,5 +1,5 @@
 
-import { Project, User } from '@/types';
+import { User, Project } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { playSuccessSound, playErrorSound } from '@/utils/sounds';
@@ -11,35 +11,34 @@ export const removeTeamMemberFromProject = async (
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
 ) => {
   try {
-    console.log(`Removing team member ${userId} from project ${projectId}`);
+    console.log('Removing team member from project:', { projectId, userId });
 
-    // Find the project to update
-    const project = projects.find(p => p.id === projectId);
-    if (!project) {
-      console.error('Project not found:', projectId);
-      toast.error('Project not found');
-      return;
-    }
-
-    // Remove from project_team_members table first
-    const { error: tableError } = await supabase
+    // Remove team member from project_team_members table
+    const { error: teamMemberError } = await supabase
       .from('project_team_members')
       .delete()
       .eq('project_id', projectId)
       .eq('user_id', userId);
 
-    if (tableError) {
-      console.error('Error removing team member from table:', tableError);
+    if (teamMemberError) {
+      console.error('Error removing team member:', teamMemberError);
       playErrorSound();
       toast.error('Failed to remove team member from project');
       return;
     }
 
-    // Update the projects table team_members array
+    // Get the current project to update team_members array
+    const project = projects.find(p => p.id === projectId);
+    if (!project) {
+      console.error('Project not found:', projectId);
+      return;
+    }
+
     const currentTeamMembers = project.teamMemberIds || [];
     const updatedTeamMembers = currentTeamMembers.filter(id => id !== userId);
-    
-    const { error: arrayError } = await supabase
+
+    // Update the projects table with the updated team members
+    const { error: updateError } = await supabase
       .from('projects')
       .update({ 
         team_members: updatedTeamMembers,
@@ -47,38 +46,28 @@ export const removeTeamMemberFromProject = async (
       })
       .eq('id', projectId);
 
-    if (arrayError) {
-      console.error('Error updating project team_members array:', arrayError);
-      // Try to rollback the table deletion by re-inserting
-      await supabase
-        .from('project_team_members')
-        .insert({
-          project_id: projectId,
-          user_id: userId
-        });
-      
+    if (updateError) {
+      console.error('Error updating project team members:', updateError);
       playErrorSound();
       toast.error('Failed to update project team members');
       return;
     }
 
-    console.log('Team member removed successfully, updating local state');
+    // Update local state
+    setProjects(prevProjects => 
+      prevProjects.map(project => 
+        project.id === projectId 
+          ? { 
+              ...project, 
+              teamMemberIds: updatedTeamMembers,
+              updatedAt: new Date().toISOString()
+            }
+          : project
+      )
+    );
 
-    // Update local state with the updated array
-    const updatedProjects = projects.map((project) => {
-      if (project.id === projectId) {
-        return {
-          ...project,
-          teamMemberIds: updatedTeamMembers,
-          updatedAt: new Date()
-        };
-      }
-      return project;
-    });
-
-    setProjects(updatedProjects);
+    toast.success('Team member removed successfully!');
     playSuccessSound();
-    toast.success('Team member removed from project successfully!');
   } catch (error) {
     console.error('Error in removeTeamMemberFromProject:', error);
     playErrorSound();

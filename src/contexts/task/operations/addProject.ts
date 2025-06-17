@@ -1,70 +1,83 @@
 
-import { Project, User } from '@/types';
+import { User, Project } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
-import { getUserOrganizationId, fixProjectProperties } from '@/utils/typeCompatibility';
+import { playSuccessSound, playErrorSound } from '@/utils/sounds';
 
 export const addProject = async (
-  projectData: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>,
-  user: User,
+  title: string, 
+  description: string, 
+  startDate: string, 
+  endDate: string, 
+  budget: number,
+  user: User | null,
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
-): Promise<void> => {
+) => {
   try {
-    if (!getUserOrganizationId(user)) {
-      toast.error('Organization context required');
+    if (!user) {
+      toast.error('You must be logged in to create a project');
       return;
     }
-
-    const projectId = `project_${Date.now()}`;
+    
+    console.log('Adding project:', title, description, startDate, endDate, budget);
+    
+    const now = new Date();
+    const projectId = crypto.randomUUID();
     
     const { error } = await supabase
       .from('projects')
-      .insert([{
+      .insert({
         id: projectId,
-        title: projectData.title,
-        description: projectData.description,
-        status: projectData.status,
-        start_date: projectData.startDate.toISOString(),
-        end_date: projectData.endDate.toISOString(),
+        title,
+        description,
+        start_date: startDate,
+        end_date: endDate,
         manager_id: user.id,
-        team_members: projectData.teamMemberIds || [],
-        budget: projectData.budget,
+        budget: budget,
         budget_spent: 0,
         is_completed: false,
-        tags: projectData.tags || [],
+        team_members: [],
         tasks_count: 0,
-        organization_id: getUserOrganizationId(user)
-      }]);
+        status: 'To Do',
+        tags: [],
+        created_at: now.toISOString(),
+        updated_at: now.toISOString(),
+        organization_id: user.organizationId
+      });
 
     if (error) {
-      console.error('Error creating project:', error);
-      toast.error('Failed to create project');
+      console.error('Error adding project:', error);
+      playErrorSound();
+      toast.error('Failed to add project');
       return;
     }
 
     const newProject: Project = {
       id: projectId,
-      title: projectData.title,
-      description: projectData.description,
-      status: projectData.status,
-      startDate: projectData.startDate,
-      endDate: projectData.endDate,
+      title,
+      description,
+      startDate: startDate,
+      endDate: endDate,
       managerId: user.id,
-      teamMemberIds: projectData.teamMemberIds || [],
-      budget: projectData.budget,
+      budget,
       budgetSpent: 0,
-      tasksCount: 0,
       isCompleted: false,
-      tags: projectData.tags || [],
-      organizationId: getUserOrganizationId(user),
-      createdAt: new Date(),
-      updatedAt: new Date()
+      teamMemberIds: [],
+      tasksCount: 0,
+      status: 'To Do',
+      tags: [],
+      createdAt: now.toISOString(),
+      updatedAt: now.toISOString(),
+      organizationId: user.organizationId || ''
     };
 
-    setProjects(prev => [fixProjectProperties(newProject), ...prev]);
-    toast.success('Project created successfully!');
+    setProjects(prevProjects => [...prevProjects, newProject]);
+    
+    toast.success('Project added successfully!');
+    playSuccessSound();
   } catch (error) {
     console.error('Error adding project:', error);
-    toast.error('Failed to create project');
+    playErrorSound();
+    toast.error('Failed to add project');
   }
 };

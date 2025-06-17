@@ -25,8 +25,8 @@ export const updateProject = async (
     
     if (updates.title !== undefined) updatedFields.title = updates.title;
     if (updates.description !== undefined) updatedFields.description = updates.description;
-    if (updates.startDate !== undefined) updatedFields.start_date = updates.startDate.toISOString();
-    if (updates.endDate !== undefined) updatedFields.end_date = updates.endDate.toISOString();
+    if (updates.startDate !== undefined) updatedFields.start_date = updates.startDate;
+    if (updates.endDate !== undefined) updatedFields.end_date = updates.endDate;
     if (updates.budget !== undefined) updatedFields.budget = updates.budget;
     if (updates.tags !== undefined) updatedFields.tags = updates.tags;
     
@@ -118,7 +118,7 @@ export const updateProject = async (
     // Update the local state with proper synchronization of status and isCompleted
     setProjects(prevProjects => prevProjects.map(project => {
       if (project.id === projectId) {
-        const updatedProject = { ...project, ...updates, updatedAt: now };
+        const updatedProject = { ...project, ...updates, updatedAt: now.toISOString() };
         
         // Ensure status and isCompleted are always in sync in local state
         if (updatedFields.status === 'Completed') {

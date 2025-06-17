@@ -46,8 +46,8 @@ const EditProjectDialog: React.FC<EditProjectDialogProps> = ({
     defaultValues: {
       title: project?.title || '',
       description: project?.description || '',
-      startDate: project?.startDate ? format(new Date(project.startDate), 'yyyy-MM-dd') : '',
-      endDate: project?.endDate ? format(new Date(project.endDate), 'yyyy-MM-dd') : '',
+      startDate: project?.startDate || '',
+      endDate: project?.endDate || '',
       budget: project?.budget,
       teamMembers: project?.teamMemberIds?.map(memberId => ({ memberId })) || []
     }
@@ -65,8 +65,8 @@ const EditProjectDialog: React.FC<EditProjectDialogProps> = ({
       reset({
         title: project.title || '',
         description: project.description || '',
-        startDate: project.startDate ? format(new Date(project.startDate), 'yyyy-MM-dd') : '',
-        endDate: project.endDate ? format(new Date(project.endDate), 'yyyy-MM-dd') : '',
+        startDate: project.startDate || '',
+        endDate: project.endDate || '',
         budget: project.budget,
         teamMembers: project.teamMemberIds?.map(memberId => ({ memberId })) || []
       });
@@ -83,8 +83,8 @@ const EditProjectDialog: React.FC<EditProjectDialogProps> = ({
       await updateProject(project.id, {
         title: data.title,
         description: data.description,
-        startDate: new Date(data.startDate),
-        endDate: new Date(data.endDate),
+        startDate: data.startDate,
+        endDate: data.endDate,
         budget: data.budget,
         teamMemberIds: teamMemberIds
       });

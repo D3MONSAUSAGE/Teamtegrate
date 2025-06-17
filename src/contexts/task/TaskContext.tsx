@@ -22,7 +22,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     completedTasks: 0, 
     totalTasks: 0, 
     percentage: 0, 
-    date: new Date()
+    date: new Date().toISOString()
   });
 
   const fetchTasks = useCallback(async () => {
@@ -58,7 +58,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       completedTasks: newScore,
       totalTasks: totalTasks,
       percentage: totalTasks > 0 ? Math.round((newScore / totalTasks) * 100) : 0,
-      date: new Date()
+      date: new Date().toISOString()
     });
   };
 
@@ -78,6 +78,8 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [user]);
 
   const addTask = useCallback(async (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
+    if (!user) return;
+    
     const newTask: Task = { 
       ...task, 
       id: Date.now().toString(), 
@@ -85,7 +87,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       updatedAt: new Date() 
     };
     setTasks(prevTasks => [...prevTasks, newTask]);
-  }, []);
+  }, [user]);
 
   const updateTask = useCallback(async (taskId: string, task: Partial<Task>) => {
     setLoading(true);
