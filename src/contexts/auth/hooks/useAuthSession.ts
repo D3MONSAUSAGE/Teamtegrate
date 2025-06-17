@@ -8,24 +8,52 @@ export const useAuthSession = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
 
-  const createUserFromSession = useCallback((session: Session): User => {
-    return {
-      id: session.user.id,
-      email: session.user.email || '',
-      name: session.user.user_metadata?.name || 'User',
-      role: (session.user.user_metadata?.role as UserRole) || 'user',
-      organizationId: session.user.user_metadata?.organization_id || null,
-      avatar_url: session.user.user_metadata?.avatar_url || null,
-      timezone: session.user.user_metadata?.timezone || null,
-      createdAt: new Date(session.user.created_at),
-    };
+  const fetchUserProfile = useCallback(async (userId: string) => {
+    try {
+      const { data: profileData, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        console.error('AuthSession: Profile fetch error:', error);
+        return null;
+      }
+
+      return profileData;
+    } catch (error) {
+      console.error('AuthSession: Profile fetch failed:', error);
+      return null;
+    }
   }, []);
 
-  const updateSession = useCallback((newSession: Session | null) => {
+  const createUserFromSession = useCallback(async (session: Session): Promise<User> => {
+    // Get basic user data from auth session
+    const authUser = session.user;
+    const metadata = authUser.user_metadata || {};
+
+    // Fetch complete profile from database
+    const profileData = await fetchUserProfile(authUser.id);
+
+    // Merge data, prioritizing database values over metadata
+    return {
+      id: authUser.id,
+      email: authUser.email || '',
+      name: profileData?.name || metadata.name || 'User',
+      role: (profileData?.role as UserRole) || (metadata.role as UserRole) || 'user',
+      organizationId: profileData?.organization_id || metadata.organization_id || '',
+      avatar_url: metadata.avatar_url || profileData?.avatar_url || null,
+      timezone: metadata.timezone || profileData?.timezone || null,
+      createdAt: new Date(authUser.created_at),
+    };
+  }, [fetchUserProfile]);
+
+  const updateSession = useCallback(async (newSession: Session | null) => {
     setSession(newSession);
     if (newSession?.user) {
-      const basicUser = createUserFromSession(newSession);
-      setUser(basicUser);
+      const completeUser = await createUserFromSession(newSession);
+      setUser(completeUser);
     } else {
       setUser(null);
     }
@@ -35,7 +63,7 @@ export const useAuthSession = () => {
     try {
       const { data: { session }, error } = await supabase.auth.getSession();
       if (!error && session) {
-        updateSession(session);
+        await updateSession(session);
       }
     } catch (error) {
       console.error('AuthSession: Refresh error:', error);

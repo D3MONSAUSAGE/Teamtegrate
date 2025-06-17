@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface UseAuthInitializationProps {
-  updateSession: (session: any) => void;
+  updateSession: (session: any) => Promise<void>;
   setLoading: (loading: boolean) => void;
 }
 
@@ -19,11 +19,11 @@ export const useAuthInitialization = ({ updateSession, setLoading }: UseAuthInit
           console.error('AuthInitialization: Session error:', error);
         } else {
           console.log('AuthInitialization: Initial session check:', !!session);
-          updateSession(session);
+          await updateSession(session);
         }
       } catch (error) {
         console.error('AuthInitialization: Init error:', error);
-        updateSession(null);
+        await updateSession(null);
       } finally {
         setLoading(false);
         console.log('AuthInitialization: Loading complete');
@@ -32,10 +32,10 @@ export const useAuthInitialization = ({ updateSession, setLoading }: UseAuthInit
 
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         console.log('AuthInitialization: Auth state change:', event);
         if (event !== 'INITIAL_SESSION') {
-          updateSession(session);
+          await updateSession(session);
         }
       }
     );
