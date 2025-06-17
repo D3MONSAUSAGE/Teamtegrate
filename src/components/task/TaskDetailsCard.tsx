@@ -38,12 +38,6 @@ const TaskDetailsCard: React.FC<TaskDetailsCardProps> = ({
   projects,
   currentProjectId
 }) => {
-  const quickDatePresets = [
-    { label: 'Today', date: new Date() },
-    { label: 'Tomorrow', date: new Date(Date.now() + 24 * 60 * 60 * 1000) },
-    { label: 'Next Week', date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) }
-  ];
-
   return (
     <Card className="border-2 border-primary/10 shadow-lg">
       <CardContent className="p-6 space-y-6">
@@ -138,76 +132,56 @@ const TaskDetailsCard: React.FC<TaskDetailsCardProps> = ({
           </div>
         </div>
 
-        {/* Deadline and Cost Row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <Label className="text-base font-medium">
-              Deadline <span className="text-red-500">*</span>
-            </Label>
-            <div className="space-y-3">
-              {/* Quick Presets */}
-              <div className="flex gap-2">
-                {quickDatePresets.map((preset) => (
+        {/* Deadline Section */}
+        <div className="space-y-2">
+          <Label className="text-base font-medium">
+            Deadline <span className="text-red-500">*</span>
+          </Label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Popover>
+                <PopoverTrigger asChild>
                   <Button
-                    key={preset.label}
-                    type="button"
                     variant="outline"
-                    size="sm"
-                    onClick={() => onDateChange(preset.date)}
-                    className="text-xs"
+                    className="w-full justify-start text-left h-12 border-2 focus:border-primary"
                   >
-                    {preset.label}
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {deadlineDate ? format(deadlineDate, "PPP") : "Pick a date"}
                   </Button>
-                ))}
-              </div>
-              
-              {/* Date and Time Picker */}
-              <div className="grid grid-cols-1 gap-4">
-                <div>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="w-full justify-start text-left h-12 border-2 focus:border-primary"
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {deadlineDate ? format(deadlineDate, "PPP") : "Pick a date"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 bg-background border-2" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={deadlineDate}
-                        onSelect={onDateChange}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                <div>
-                  <TimeSelector
-                    value={timeInput}
-                    onChange={onTimeChange}
-                    placeholder="Select time"
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 bg-background border-2" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={deadlineDate}
+                    onSelect={onDateChange}
+                    initialFocus
                   />
-                </div>
-              </div>
+                </PopoverContent>
+              </Popover>
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="cost" className="text-base font-medium">Cost (Optional)</Label>
-            <div className="relative">
-              <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                id="cost"
-                type="number"
-                step="0.01"
-                placeholder="0.00"
-                className="pl-10 h-12 border-2 focus:border-primary"
-                {...form.register('cost')}
+            <div>
+              <TimeSelector
+                value={timeInput}
+                onChange={onTimeChange}
+                placeholder="Select time"
               />
             </div>
+          </div>
+        </div>
+
+        {/* Cost Section - Moved to its own row */}
+        <div className="space-y-2">
+          <Label htmlFor="cost" className="text-base font-medium">Cost (Optional)</Label>
+          <div className="relative">
+            <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input
+              id="cost"
+              type="number"
+              step="0.01"
+              placeholder="0.00"
+              className="pl-10 h-12 border-2 focus:border-primary"
+              {...form.register('cost')}
+            />
           </div>
         </div>
       </CardContent>
