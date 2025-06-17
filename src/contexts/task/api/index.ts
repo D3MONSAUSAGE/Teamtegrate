@@ -62,8 +62,8 @@ export const createTask = async (task: Omit<Task, 'id' | 'createdAt' | 'updatedA
     id: data.id,
     title: data.title,
     description: data.description,
-    priority: data.priority,
-    status: data.status,
+    priority: data.priority as Task['priority'],
+    status: data.status as Task['status'],
     deadline: data.deadline ? new Date(data.deadline) : new Date(),
     userId: data.user_id,
     projectId: data.project_id,
@@ -194,7 +194,7 @@ export const createProject = async (projectData: {
       budget: projectData.budget,
       budget_spent: 0,
       is_completed: false,
-      status: 'To Do',
+      status: 'To Do' as Project['status'],
       tasks_count: 0,
       team_members: [],
       tags: [],
@@ -261,4 +261,9 @@ export const deleteProject = async (projectId: string): Promise<void> => {
 export const fetchTeamPerformance = async (): Promise<any[]> => {
   // Mock implementation for now
   return [];
+};
+
+export const fetchTeamMemberPerformance = async (userId: string): Promise<any> => {
+  // Mock implementation for now
+  return null;
 };

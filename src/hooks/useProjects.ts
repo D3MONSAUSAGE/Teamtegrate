@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -97,11 +98,11 @@ export function useProjects() {
           id: dbProject.id,
           title: dbProject.title || '',
           description: dbProject.description || '',
-          startDate: new Date(dbProject.start_date || dbProject.created_at),
-          endDate: new Date(dbProject.end_date || dbProject.updated_at),
+          startDate: dbProject.start_date || dbProject.created_at,
+          endDate: dbProject.end_date || dbProject.updated_at,
           managerId: dbProject.manager_id || '',
-          createdAt: new Date(dbProject.created_at),
-          updatedAt: new Date(dbProject.updated_at),
+          createdAt: dbProject.created_at,
+          updatedAt: dbProject.updated_at,
           teamMemberIds: dbProject.team_members || [],
           budget: dbProject.budget || 0,
           budgetSpent: dbProject.budget_spent || 0,
@@ -192,11 +193,11 @@ export function useProjects() {
         id: data.id,
         title: data.title || '',
         description: data.description || '',
-        startDate: new Date(data.start_date || data.created_at),
-        endDate: new Date(data.end_date || data.updated_at),
+        startDate: data.start_date || data.created_at,
+        endDate: data.end_date || data.updated_at,
         managerId: data.manager_id || '',
-        createdAt: new Date(data.created_at),
-        updatedAt: new Date(data.updated_at),
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
         teamMemberIds: data.team_members || [],
         budget: data.budget || 0,
         budgetSpent: data.budget_spent || 0,
