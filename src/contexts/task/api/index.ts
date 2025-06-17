@@ -9,7 +9,25 @@ export const fetchTasks = async (organizationId: string): Promise<Task[]> => {
     .eq('organization_id', organizationId);
   
   if (error) throw error;
-  return data || [];
+  
+  return (data || []).map(task => ({
+    id: task.id,
+    title: task.title,
+    description: task.description,
+    priority: task.priority as Task['priority'],
+    status: task.status as Task['status'],
+    deadline: task.deadline ? new Date(task.deadline) : new Date(),
+    userId: task.user_id,
+    projectId: task.project_id,
+    assignedToId: task.assigned_to_id,
+    assignedToIds: task.assigned_to_ids,
+    assignedToNames: task.assigned_to_names,
+    cost: task.cost,
+    organizationId: task.organization_id,
+    createdAt: new Date(task.created_at),
+    updatedAt: new Date(task.updated_at),
+    completedAt: task.completed_at ? new Date(task.completed_at) : undefined
+  }));
 };
 
 export const createTask = async (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>): Promise<Task> => {
@@ -24,7 +42,7 @@ export const createTask = async (task: Omit<Task, 'id' | 'createdAt' | 'updatedA
       description: task.description,
       priority: task.priority,
       status: task.status || 'To Do',
-      deadline: task.deadline ? new Date(task.deadline).toISOString() : null,
+      deadline: task.deadline ? task.deadline.toISOString() : null,
       user_id: task.userId,
       project_id: task.projectId,
       assigned_to_id: task.assignedToId,
@@ -46,7 +64,7 @@ export const createTask = async (task: Omit<Task, 'id' | 'createdAt' | 'updatedA
     description: data.description,
     priority: data.priority,
     status: data.status,
-    deadline: data.deadline ? new Date(data.deadline) : undefined,
+    deadline: data.deadline ? new Date(data.deadline) : new Date(),
     userId: data.user_id,
     projectId: data.project_id,
     assignedToId: data.assigned_to_id,
@@ -69,7 +87,7 @@ export const updateTask = async (taskId: string, updates: Partial<Task>): Promis
   if (updates.priority !== undefined) updateData.priority = updates.priority;
   if (updates.status !== undefined) updateData.status = updates.status;
   if (updates.deadline !== undefined) {
-    updateData.deadline = updates.deadline ? new Date(updates.deadline).toISOString() : null;
+    updateData.deadline = updates.deadline ? updates.deadline.toISOString() : null;
   }
   if (updates.assignedToId !== undefined) updateData.assigned_to_id = updates.assignedToId;
   if (updates.assignedToIds !== undefined) updateData.assigned_to_ids = updates.assignedToIds;
@@ -100,7 +118,7 @@ export const updateTaskStatus = async (taskId: string, updates: Partial<Task>): 
   };
 
   if (updates.status === 'Completed' && updates.completedAt) {
-    updateData.completed_at = new Date(updates.completedAt).toISOString();
+    updateData.completed_at = updates.completedAt.toISOString();
   }
 
   const { error } = await supabase
@@ -138,7 +156,7 @@ export const fetchProjects = async (organizationId: string): Promise<Project[]> 
     id: project.id,
     title: project.title,
     description: project.description,
-    status: project.status,
+    status: project.status as Project['status'],
     startDate: project.start_date,
     endDate: project.end_date,
     managerId: project.manager_id,
@@ -193,7 +211,7 @@ export const createProject = async (projectData: {
     id: data.id,
     title: data.title,
     description: data.description,
-    status: data.status,
+    status: data.status as Project['status'],
     startDate: data.start_date,
     endDate: data.end_date,
     managerId: data.manager_id,

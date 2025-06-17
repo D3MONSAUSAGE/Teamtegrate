@@ -35,7 +35,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     completedTasks: 0, 
     totalTasks: 0, 
     percentage: 0, 
-    date: new Date().toISOString()
+    date: new Date()
   });
 
   const fetchTasks = useCallback(async () => {
@@ -76,11 +76,11 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       completedTasks: newScore,
       totalTasks: totalTasks,
       percentage: totalTasks > 0 ? Math.round((newScore / totalTasks) * 100) : 0,
-      date: new Date().toISOString()
+      date: new Date()
     });
   };
 
-  const createTask = useCallback(async (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const createTask = useCallback(async (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>): Promise<Task | undefined> => {
     if (!user) return;
     setLoading(true);
     try {
@@ -96,14 +96,14 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [user]);
 
-  const addTask = useCallback(async (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const addTask = useCallback(async (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>): Promise<Task | undefined> => {
     if (!user) return;
     
     const newTask: Task = { 
       ...task, 
       id: Date.now().toString(), 
-      createdAt: new Date().toISOString(), 
-      updatedAt: new Date().toISOString() 
+      createdAt: new Date(), 
+      updatedAt: new Date() 
     };
     setTasks(prevTasks => [...prevTasks, newTask]);
     return newTask;
@@ -114,7 +114,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await updateTaskAPI(taskId, task);
       setTasks(prevTasks =>
-        prevTasks.map(t => (t.id === taskId ? { ...t, ...task, updatedAt: new Date().toISOString() } : t))
+        prevTasks.map(t => (t.id === taskId ? { ...t, ...task, updatedAt: new Date() } : t))
       );
       toast.success('Task updated successfully');
     } catch (err: any) {
@@ -144,12 +144,12 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const updates: Partial<Task> = { status };
       if (status === 'Completed') {
-        updates.completedAt = new Date().toISOString();
+        updates.completedAt = new Date();
       }
       await updateTaskStatusAPI(taskId, updates);
       setTasks(prevTasks =>
         prevTasks.map(task =>
-          task.id === taskId ? { ...task, status, completedAt: updates.completedAt, updatedAt: new Date().toISOString() } : task
+          task.id === taskId ? { ...task, status, completedAt: updates.completedAt, updatedAt: new Date() } : task
         )
       );
       toast.success('Task status updated successfully');
@@ -167,7 +167,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await assignTaskToUserAPI(taskId, userId, userName);
       setTasks(prevTasks =>
         prevTasks.map(task =>
-          task.id === taskId ? { ...task, assignedToId: userId, assignedToName: userName, updatedAt: new Date().toISOString() } : task
+          task.id === taskId ? { ...task, assignedToId: userId, assignedToName: userName, updatedAt: new Date() } : task
         )
       );
       toast.success('Task assigned successfully');
@@ -196,7 +196,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
             ? {
                 ...task,
                 comments: [...(task.comments || []), newComment],
-                updatedAt: new Date().toISOString()
+                updatedAt: new Date()
               }
             : task
         )
