@@ -16,10 +16,9 @@ const Index = () => {
     return <Navigate to="/dashboard" replace />;
   }
 
-  // Show loading only if we're in the middle of an authentication process
-  // (when there's a session being processed)
-  if (loading && user === undefined) {
-    console.log('Index: Showing loading state during auth process');
+  // Show loading only while auth is initializing
+  if (loading) {
+    console.log('Index: Showing loading state during auth initialization');
     return (
       <div className="h-screen flex items-center justify-center bg-background">
         <div className="text-center">
@@ -30,7 +29,7 @@ const Index = () => {
     );
   }
 
-  // For all other cases (unauthenticated users, or no loading), show landing page immediately
+  // For all other cases (unauthenticated users), show landing page
   console.log('Index: Showing landing page');
   return <LandingPage />;
 };

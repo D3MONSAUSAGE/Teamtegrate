@@ -33,85 +33,23 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
   }
 });
 
-// Enhanced session debugging with error handling
+// Simple auth state logging
 supabase.auth.onAuthStateChange((event, session) => {
   console.log('Supabase Auth state change:', event, 'Session:', session ? 'exists' : 'null');
   
-  try {
-    if (event === 'TOKEN_REFRESHED') {
-      console.log('Supabase: Token successfully refreshed');
-    }
-    
-    if (event === 'SIGNED_OUT') {
-      console.log('Supabase: User signed out, clearing local storage');
-      // Clear any cached data
-      try {
-        localStorage.removeItem('sb-zlfpiovyodiyecdueiig-auth-token');
-      } catch (storageError) {
-        console.warn('Supabase: Error clearing localStorage:', storageError);
-      }
-    }
-    
-    if (session) {
-      console.log('Supabase: User ID:', session.user?.id);
-      if (session.expires_at) {
-        console.log('Supabase: Session expires at:', new Date(session.expires_at * 1000));
-      }
-    }
-    
-    if (event === 'SIGNED_IN') {
-      console.log('Supabase: User successfully signed in');
-    }
-    
-    if (event === 'TOKEN_REFRESH_FAILED') {
-      console.error('Supabase: Token refresh failed');
-    }
-  } catch (error) {
-    console.error('Supabase: Error in auth state change handler:', error);
+  if (event === 'TOKEN_REFRESHED') {
+    console.log('Supabase: Token successfully refreshed');
+  }
+  
+  if (event === 'SIGNED_OUT') {
+    console.log('Supabase: User signed out');
+  }
+  
+  if (session) {
+    console.log('Supabase: User ID:', session.user?.id);
+  }
+  
+  if (event === 'SIGNED_IN') {
+    console.log('Supabase: User successfully signed in');
   }
 });
-
-// Add connection error monitoring
-let connectionRetryCount = 0;
-const maxConnectionRetries = 3;
-
-const originalQuery = supabase.from.bind(supabase);
-supabase.from = (...args) => {
-  const query = originalQuery(...args);
-  
-  // Add retry logic for connection errors
-  const originalSelect = query.select.bind(query);
-  query.select = (...selectArgs) => {
-    const selectQuery = originalSelect(...selectArgs);
-    
-    const originalExecute = selectQuery.then.bind(selectQuery);
-    selectQuery.then = (onFulfilled, onRejected) => {
-      return originalExecute(
-        onFulfilled,
-        (error) => {
-          if (error && error.message && error.message.includes('Failed to fetch') && connectionRetryCount < maxConnectionRetries) {
-            connectionRetryCount++;
-            console.warn(`Supabase: Connection retry ${connectionRetryCount}/${maxConnectionRetries} for query`);
-            
-            // Retry after a delay
-            return new Promise((resolve, reject) => {
-              setTimeout(() => {
-                originalExecute(resolve, reject);
-              }, 1000 * connectionRetryCount);
-            });
-          } else {
-            connectionRetryCount = 0; // Reset on success or max retries reached
-            if (onRejected) {
-              return onRejected(error);
-            }
-            throw error;
-          }
-        }
-      );
-    };
-    
-    return selectQuery;
-  };
-  
-  return query;
-};

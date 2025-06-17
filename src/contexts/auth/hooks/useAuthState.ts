@@ -7,7 +7,7 @@ import { User as AppUser, UserRole } from '@/types';
 export const useAuthState = () => {
   const [user, setUser] = useState<AppUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Start with true, ensure it gets set to false
 
   const fetchUserProfile = async (userId: string, retryCount = 0): Promise<AppUser | null> => {
     try {
@@ -90,33 +90,8 @@ export const useAuthState = () => {
       try {
         console.log('AuthProvider: Starting auth initialization...');
         
-        // Get initial session with retry logic
-        let sessionResult;
-        let retryCount = 0;
-        const maxRetries = 2;
-        
-        while (retryCount <= maxRetries) {
-          try {
-            sessionResult = await supabase.auth.getSession();
-            break;
-          } catch (error) {
-            console.warn(`AuthProvider: Session fetch attempt ${retryCount + 1} failed:`, error);
-            retryCount++;
-            if (retryCount <= maxRetries) {
-              await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
-            }
-          }
-        }
-        
-        if (!sessionResult) {
-          console.error('AuthProvider: Failed to get session after retries');
-          if (isMounted) {
-            setLoading(false);
-          }
-          return;
-        }
-        
-        const { data: { session }, error } = sessionResult;
+        // Get initial session
+        const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
           console.error('AuthProvider: Error getting session:', error);
@@ -132,7 +107,6 @@ export const useAuthState = () => {
           setSession(session);
 
           if (session?.user) {
-            setLoading(true);
             console.log('AuthProvider: User found in session, fetching profile:', session.user.id);
             
             try {
@@ -146,16 +120,14 @@ export const useAuthState = () => {
               if (isMounted) {
                 setUser(null);
               }
-            } finally {
-              if (isMounted) {
-                setLoading(false);
-              }
             }
           } else {
             console.log('AuthProvider: No session - showing landing page');
             setUser(null);
-            setLoading(false);
           }
+          
+          // Always set loading to false after initialization
+          setLoading(false);
         }
       } catch (error) {
         console.error('AuthProvider: Error in initializeAuth:', error);
@@ -167,7 +139,7 @@ export const useAuthState = () => {
       }
     };
 
-    // Set up auth state listener with improved error handling
+    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!isMounted) return;
@@ -179,17 +151,18 @@ export const useAuthState = () => {
           
           if (session?.user) {
             console.log('AuthProvider: User authenticated, fetching profile:', session.user.id);
-            setLoading(true);
             
-            // Remove the setTimeout(0) - this was causing race conditions
             const userData = await fetchUserProfile(session.user.id);
             if (isMounted) {
               setUser(userData);
-              setLoading(false);
             }
           } else {
             console.log('AuthProvider: User signed out');
             setUser(null);
+          }
+          
+          // Ensure loading is false after any auth state change
+          if (isMounted) {
             setLoading(false);
           }
         } catch (error) {
