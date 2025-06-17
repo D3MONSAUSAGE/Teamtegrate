@@ -104,11 +104,6 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
     handleSearchChange(mockEvent);
   };
 
-  // Explicitly type the task status change handler to ensure Promise<void>
-  const handleTaskStatusChangeAsync = async (taskId: string, status: TaskStatus): Promise<void> => {
-    return await handleTaskStatusChange(taskId, status);
-  };
-
   // Handle editing project
   const handleEditProject = () => {
     setIsEditProjectOpen(true);
@@ -160,7 +155,7 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
         isRefreshing={isRefreshing}
         onEditTask={handleEditTask}
         onCreateTask={handleCreateTask}
-        onTaskStatusChange={handleTaskStatusChangeAsync}
+        onTaskStatusChange={handleTaskStatusChange}
         onEditProject={handleEditProject}
         onAddTeamMember={handleAddTeamMember}
         onRemoveTeamMember={handleRemoveTeamMember}

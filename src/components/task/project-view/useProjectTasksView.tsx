@@ -13,7 +13,7 @@ export const useProjectTasksView = (projectId: string | null) => {
 
   // Use the new project-specific tasks query instead of the "My Tasks" focused one
   const { tasks: projectTasks, isLoading: isLoadingTasks, error: tasksError, refetch: refetchTasks } = useProjectTasks(projectId);
-  const { projects } = useProjects();
+  const { projects, refreshProjects } = useProjects();
 
   console.log('useProjectTasksView: Got data from hooks:', {
     tasksCount: projectTasks?.length || 0,
@@ -42,6 +42,19 @@ export const useProjectTasksView = (projectId: string | null) => {
   // Fetch team members for the project with error handling
   const { teamMembers, isLoading: isLoadingTeamMembers, error: teamMembersError } = useProjectTeamMembers(projectId);
 
+  // Create a comprehensive refresh function that updates both tasks and projects
+  const handleDataRefresh = async () => {
+    console.log('Refreshing project tasks and projects data');
+    try {
+      await Promise.all([
+        refetchTasks(),
+        refreshProjects()
+      ]);
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+    }
+  };
+
   const {
     isRefreshing,
     isCreateTaskOpen,
@@ -52,15 +65,9 @@ export const useProjectTasksView = (projectId: string | null) => {
     handleManualRefresh,
     handleTaskStatusChange,
     handleTaskDialogComplete
-  } = useProjectTasksActions({ updateTaskStatus: async () => {
-    // Trigger refetch of project tasks when status changes
-    await refetchTasks();
-  }});
-
-  // Override handleManualRefresh to use project tasks refetch
-  const handleProjectRefresh = async () => {
-    await refetchTasks();
-  };
+  } = useProjectTasksActions({ 
+    onDataRefresh: handleDataRefresh
+  });
 
   const isLoading = isLoadingProject || isLoadingTasks;
   const combinedError = loadError || (tasksError ? tasksError.message : null);
@@ -96,7 +103,7 @@ export const useProjectTasksView = (projectId: string | null) => {
     handleSearchChange,
     handleEditTask,
     handleCreateTask,
-    handleManualRefresh: handleProjectRefresh,
+    handleManualRefresh,
     handleTaskStatusChange,
     onSortByChange,
     handleTaskDialogComplete
