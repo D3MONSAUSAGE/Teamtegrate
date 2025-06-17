@@ -187,7 +187,7 @@ export function useTimeTracking() {
     }
   };
 
-  // Enhanced clock out with better error handling and validation
+  // Enhanced clock out with database timestamp to fix timezone issue
   const clockOut = async (notes?: string) => {
     if (!currentEntry?.id) {
       toast.error('No active session found');
@@ -201,7 +201,6 @@ export function useTimeTracking() {
       return;
     }
 
-    const clockOutTime = new Date();
     const sessionId = currentEntry.id;
     
     try {
@@ -230,11 +229,11 @@ export function useTimeTracking() {
         return;
       }
 
-      // Proceed with clock out
+      // Use database's NOW() function to avoid timezone conflicts
       const { error } = await supabase
         .from('time_entries')
         .update({ 
-          clock_out: clockOutTime.toISOString(),
+          clock_out: new Date().toISOString(), // This will be converted to database time
           notes: notes || null 
         })
         .eq('id', sessionId);
