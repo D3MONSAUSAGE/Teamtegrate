@@ -28,13 +28,24 @@ export const useProjectOperations = () => {
       // Prepare budget value - handle undefined or null case
       const budget = project.budget ?? 0;
 
-      // Handle date conversion properly
-      const startDateString = project.startDate ? 
-        (typeof project.startDate === 'string' ? project.startDate : project.startDate.toISOString()) : 
-        nowISO;
-      const endDateString = project.endDate ? 
-        (typeof project.endDate === 'string' ? project.endDate : project.endDate.toISOString()) : 
-        nowISO;
+      // Handle date conversion properly with explicit type checking
+      let startDateString = nowISO;
+      if (project.startDate) {
+        if (typeof project.startDate === 'string') {
+          startDateString = project.startDate;
+        } else if (project.startDate instanceof Date) {
+          startDateString = project.startDate.toISOString();
+        }
+      }
+
+      let endDateString = nowISO;
+      if (project.endDate) {
+        if (typeof project.endDate === 'string') {
+          endDateString = project.endDate;
+        } else if (project.endDate instanceof Date) {
+          endDateString = project.endDate.toISOString();
+        }
+      }
 
       console.log('Creating project with data:', {
         id: projectId,
