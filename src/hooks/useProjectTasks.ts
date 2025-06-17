@@ -12,10 +12,11 @@ export const useProjectTasks = (projectId: string | null) => {
     queryKey: ['project-tasks', projectId, user?.organizationId],
     queryFn: async (): Promise<Task[]> => {
       if (!projectId || !user?.organizationId || !user?.id) {
+        console.log('❌ useProjectTasks: Missing required data', { projectId, orgId: user?.organizationId, userId: user?.id });
         return [];
       }
 
-      console.log('useProjectTasks: Fetching ALL tasks for project:', projectId);
+      console.log('🔍 useProjectTasks: Fetching ALL tasks for project:', projectId);
 
       // Fetch ALL tasks for this specific project (not just assigned to current user)
       const { data: tasksData, error: tasksError } = await supabase
@@ -26,13 +27,14 @@ export const useProjectTasks = (projectId: string | null) => {
         .order('created_at', { ascending: false });
 
       if (tasksError) {
-        console.error('useProjectTasks: Error fetching project tasks:', tasksError);
+        console.error('❌ useProjectTasks: Error fetching project tasks:', tasksError);
         throw new Error(`Failed to fetch project tasks: ${tasksError.message}`);
       }
 
-      console.log(`useProjectTasks: Retrieved ${tasksData?.length || 0} tasks for project`);
+      console.log(`📊 useProjectTasks: Retrieved ${tasksData?.length || 0} tasks for project`);
 
       if (!tasksData || tasksData.length === 0) {
+        console.log('📭 useProjectTasks: No tasks found for project');
         return [];
       }
 
@@ -43,7 +45,7 @@ export const useProjectTasks = (projectId: string | null) => {
         .eq('organization_id', user.organizationId);
 
       if (usersError) {
-        console.error('useProjectTasks: Error fetching users:', usersError);
+        console.error('⚠️ useProjectTasks: Error fetching users:', usersError);
       }
 
       // Create user lookup map
@@ -84,7 +86,7 @@ export const useProjectTasks = (projectId: string | null) => {
           assignedToNames = [assignedToName];
         }
 
-        return {
+        const transformedTask = {
           id: task.id || 'unknown',
           userId: task.user_id || '',
           projectId: task.project_id,
@@ -104,14 +106,17 @@ export const useProjectTasks = (projectId: string | null) => {
           tags: [],
           comments: []
         };
+
+        console.log('📋 Transformed task:', { id: transformedTask.id, title: transformedTask.title, status: transformedTask.status });
+        return transformedTask;
       });
 
-      console.log('useProjectTasks: Successfully processed project tasks:', transformedTasks.length);
+      console.log('✅ useProjectTasks: Successfully processed project tasks:', transformedTasks.length);
       return transformedTasks;
     },
     enabled: !!projectId && !!user?.organizationId && !!user?.id,
-    staleTime: 30000,
-    gcTime: 300000,
+    staleTime: 1000, // Reduced stale time for quicker updates
+    gcTime: 30000, // Reduced cache time
     retry: (failureCount, error: any) => {
       if (failureCount >= 3) return false;
       if (error.message.includes('organization') || error.message.includes('permission')) return false;
@@ -120,12 +125,19 @@ export const useProjectTasks = (projectId: string | null) => {
     retryDelay: (attemptIndex) => Math.min(1000 * Math.pow(2, attemptIndex), 5000),
   });
 
-  const memoizedResult = useMemo(() => ({
-    tasks,
-    isLoading,
-    error,
-    refetch
-  }), [tasks, isLoading, error, refetch]);
+  const memoizedResult = useMemo(() => {
+    console.log('🎯 useProjectTasks: Memoized result updated', { 
+      tasksCount: tasks.length, 
+      isLoading, 
+      hasError: !!error 
+    });
+    return {
+      tasks,
+      isLoading,
+      error,
+      refetch
+    };
+  }, [tasks, isLoading, error, refetch]);
 
   return memoizedResult;
 };

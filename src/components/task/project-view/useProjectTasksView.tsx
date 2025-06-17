@@ -9,19 +9,22 @@ import { useProjectTeamMembers } from '@/hooks/useProjectTeamMembers';
 import { Task } from '@/types';
 
 export const useProjectTasksView = (projectId: string | null) => {
-  console.log('useProjectTasksView: Called with projectId:', projectId);
+  console.log('🏗️ useProjectTasksView: Called with projectId:', projectId);
 
   // Use the new project-specific tasks query instead of the "My Tasks" focused one
   const { tasks: projectTasks, isLoading: isLoadingTasks, error: tasksError, refetch: refetchTasks } = useProjectTasks(projectId);
   const { projects, refreshProjects } = useProjects();
 
-  console.log('useProjectTasksView: Got data from hooks:', {
+  console.log('📊 useProjectTasksView: Got data from hooks:', {
     tasksCount: projectTasks?.length || 0,
-    projectsCount: projects?.length || 0
+    projectsCount: projects?.length || 0,
+    isLoadingTasks,
+    hasTasksError: !!tasksError
   });
 
   // Convert to Task[] - the new hook already returns the correct format
   const convertedProjectTasks = useMemo(() => {
+    console.log('🔄 useProjectTasksView: Converting project tasks:', projectTasks?.length || 0);
     return projectTasks as Task[];
   }, [projectTasks]);
 
@@ -44,14 +47,19 @@ export const useProjectTasksView = (projectId: string | null) => {
 
   // Create a comprehensive refresh function that updates both tasks and projects
   const handleDataRefresh = async () => {
-    console.log('Refreshing project tasks and projects data');
+    console.log('🔄 useProjectTasksView: Starting comprehensive data refresh');
     try {
-      await Promise.all([
-        refetchTasks(),
-        refreshProjects()
-      ]);
+      console.log('📡 Refreshing project tasks...');
+      await refetchTasks();
+      console.log('✅ Project tasks refreshed');
+      
+      console.log('📡 Refreshing projects...');
+      await refreshProjects();
+      console.log('✅ Projects refreshed');
+      
+      console.log('✅ useProjectTasksView: Data refresh completed successfully');
     } catch (error) {
-      console.error('Error refreshing data:', error);
+      console.error('❌ useProjectTasksView: Error refreshing data:', error);
     }
   };
 
@@ -72,7 +80,7 @@ export const useProjectTasksView = (projectId: string | null) => {
   const isLoading = isLoadingProject || isLoadingTasks;
   const combinedError = loadError || (tasksError ? tasksError.message : null);
 
-  console.log('useProjectTasksView: Returning data for PROJECT tasks (not My Tasks):', {
+  console.log('📈 useProjectTasksView: Final data summary:', {
     isLoading,
     hasLoadError: !!combinedError,
     hasProject: !!project,

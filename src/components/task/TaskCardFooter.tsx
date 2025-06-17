@@ -37,8 +37,11 @@ const TaskCardFooter: React.FC<TaskCardFooterProps> = ({
   };
 
   const handleStatusChange = (newStatus: TaskStatus) => {
+    console.log('🎯 TaskCardFooter: Status change requested', { from: status, to: newStatus });
     if (onStatusChange) {
       onStatusChange(newStatus);
+    } else {
+      console.log('⚠️ TaskCardFooter: No onStatusChange handler provided');
     }
   };
 

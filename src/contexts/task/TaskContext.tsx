@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
 import { Task, Project, DailyScore } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
@@ -140,22 +139,38 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const updateTaskStatus = useCallback(async (taskId: string, status: Task['status']) => {
+    console.log('🎯 TaskContext.updateTaskStatus called', { taskId, status });
+    console.log('🔗 User context:', { userId: user?.id, orgId: user?.organizationId });
+    
     setLoading(true);
     try {
       const updates: Partial<Task> = { status };
       if (status === 'Completed') {
         updates.completedAt = new Date();
+        console.log('📅 Setting completedAt for completed task');
       }
+      
+      console.log('📡 Calling updateTaskStatusAPI with:', { taskId, updates });
       await updateTaskStatusAPI(taskId, updates);
-      setTasks(prevTasks =>
-        prevTasks.map(task =>
+      console.log('✅ Database update completed');
+      
+      // Update local state immediately
+      console.log('🔄 Updating local task state');
+      setTasks(prevTasks => {
+        const updatedTasks = prevTasks.map(task =>
           task.id === taskId ? { ...task, status, completedAt: updates.completedAt, updatedAt: new Date() } : task
-        )
-      );
+        );
+        console.log('📊 Local tasks updated:', updatedTasks.find(t => t.id === taskId));
+        return updatedTasks;
+      });
+      
       toast.success('Task status updated successfully');
+      console.log('✅ TaskContext.updateTaskStatus completed successfully');
     } catch (err: any) {
+      console.error('❌ Error in TaskContext.updateTaskStatus:', err);
       setError(err.message || 'Failed to update task status');
       toast.error('Failed to update task status');
+      throw err; // Re-throw to let calling code handle it
     } finally {
       setLoading(false);
     }

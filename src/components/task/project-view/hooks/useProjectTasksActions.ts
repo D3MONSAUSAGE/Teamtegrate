@@ -25,13 +25,18 @@ export const useProjectTasksActions = ({ onDataRefresh }: UseProjectTasksActions
   }, []);
 
   const handleManualRefresh = useCallback(async () => {
+    console.log('🔄 Manual refresh triggered');
     setIsRefreshing(true);
     try {
       if (onDataRefresh) {
+        console.log('🔄 Calling onDataRefresh');
         await onDataRefresh();
+        console.log('✅ onDataRefresh completed');
+      } else {
+        console.log('⚠️ No onDataRefresh function provided');
       }
     } catch (error) {
-      console.error('Error refreshing data:', error);
+      console.error('❌ Error refreshing data:', error);
       toast.error('Failed to refresh data');
     } finally {
       setTimeout(() => setIsRefreshing(false), 1000);
@@ -39,26 +44,36 @@ export const useProjectTasksActions = ({ onDataRefresh }: UseProjectTasksActions
   }, [onDataRefresh]);
 
   const handleTaskStatusChange = useCallback(async (taskId: string, status: TaskStatus): Promise<void> => {
+    console.log('🎯 handleTaskStatusChange called', { taskId, status });
+    console.log('🔗 contextUpdateTaskStatus available:', !!contextUpdateTaskStatus);
+    
     try {
-      console.log('Updating task status:', { taskId, status });
+      console.log('📡 Starting task status update via context...');
       
       // Use the task context's updateTaskStatus method which handles database updates
       await contextUpdateTaskStatus(taskId, status);
       
+      console.log('✅ Context updateTaskStatus completed');
+      
       // Refresh the project data after status update
       if (onDataRefresh) {
+        console.log('🔄 Refreshing project data after status update');
         await onDataRefresh();
+        console.log('✅ Project data refresh completed');
+      } else {
+        console.log('⚠️ No onDataRefresh function for post-update refresh');
       }
       
-      console.log('Task status updated successfully');
+      console.log('✅ Task status update flow completed successfully');
     } catch (error) {
-      console.error('Error updating task status:', error);
+      console.error('❌ Error in handleTaskStatusChange:', error);
       toast.error('Failed to update task status');
       throw error;
     }
   }, [contextUpdateTaskStatus, onDataRefresh]);
 
   const handleTaskDialogComplete = useCallback(async () => {
+    console.log('📝 Task dialog completed, refreshing data');
     setIsCreateTaskOpen(false);
     setEditingTask(undefined);
     
