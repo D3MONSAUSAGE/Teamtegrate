@@ -15,7 +15,17 @@ export const useAuthState = () => {
     refreshUserSession
   } = useAuthSession();
 
-  useAuthInitialization({ updateSession, setLoading });
+  // Wrap updateSession to handle loading state
+  const updateSessionWithLoading = async (newSession: any) => {
+    await updateSession(newSession);
+    // Set loading to false after session is updated (successful login/logout)
+    setLoading(false);
+  };
+
+  useAuthInitialization({ 
+    updateSession: updateSessionWithLoading, 
+    setLoading 
+  });
 
   return {
     user,

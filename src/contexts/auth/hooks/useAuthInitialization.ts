@@ -30,12 +30,15 @@ export const useAuthInitialization = ({ updateSession, setLoading }: UseAuthInit
       }
     };
 
-    // Set up auth state listener
+    // Set up auth state listener - MUST NOT be async to prevent deadlocks
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         console.log('AuthInitialization: Auth state change:', event);
         if (event !== 'INITIAL_SESSION') {
-          await updateSession(session);
+          // Use setTimeout(0) to defer async operations and prevent deadlock
+          setTimeout(() => {
+            updateSession(session);
+          }, 0);
         }
       }
     );

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { login as authLogin, signup as authSignup, logout as authLogout, updateUserProfile as updateProfile } from '../authOperations';
 import { User as SupabaseUser, Session } from '@supabase/supabase-js';
@@ -17,9 +16,11 @@ export const useAuthOperations = (
       console.log('AuthOperations: Starting login for:', email);
       await authLogin(email, password);
       console.log('AuthOperations: Login successful');
+      // Don't set loading to false here - let the auth state change handle it
+      // The onAuthStateChange listener will trigger updateSession which will handle the loading state
     } catch (error) {
       console.error('AuthOperations: Login failed:', error);
-      setLoading(false);
+      setLoading(false); // Only set loading to false on error
       throw error;
     }
   };
