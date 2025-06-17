@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { useTask } from '@/contexts/task';
@@ -38,6 +37,13 @@ const DashboardPage = () => {
   
   // Combined error state
   const lastError = tasksError?.message || projectsError || null;
+  
+  // Get numeric daily score
+  const numericDailyScore = typeof dailyScore === 'object' && dailyScore?.score !== undefined 
+    ? dailyScore.score 
+    : typeof dailyScore === 'number' 
+    ? dailyScore 
+    : 75; // Default fallback
   
   // Memoize expensive calculations to prevent re-computation on every render
   const { todaysTasks, upcomingTasks, flatProjects, recentProjects } = useMemo(() => {
@@ -144,7 +150,7 @@ const DashboardPage = () => {
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/5 to-background">
-      <div className="relative space-y-6 no-scrollbar">
+      <div className="relative space-y-8 no-scrollbar p-4 md:p-6">
         {/* Connection Status Alert */}
         <ConnectionStatus 
           lastError={lastError}
@@ -152,83 +158,76 @@ const DashboardPage = () => {
           isLoading={isLoading}
         />
 
-        {/* Compact Welcome Header */}
+        {/* Enhanced Welcome Header */}
         <div className="relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-r from-primary/3 via-emerald-500/3 to-primary/3" />
           
-          <div className="relative bg-card/80 backdrop-blur-sm border shadow-lg rounded-2xl p-4 md:p-6">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-              <div className="space-y-2">
+          <div className="relative bg-card/80 backdrop-blur-sm border shadow-lg rounded-2xl p-6 md:p-8">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+              <div className="space-y-3">
                 <div className="flex items-center gap-3">
-                  <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-foreground via-primary to-emerald-600 bg-clip-text text-transparent">
+                  <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-foreground via-primary to-emerald-600 bg-clip-text text-transparent">
                     Welcome back, {user?.name}!
                   </h1>
-                  <Sparkles className="h-4 w-4 text-primary" />
+                  <Sparkles className="h-6 w-6 text-primary" />
                 </div>
                 
-                <div className="flex items-center gap-4 text-sm">
+                <div className="flex items-center gap-4 text-base">
                   <div className="flex items-center gap-2 text-muted-foreground">
-                    <Calendar className="h-4 w-4" />
+                    <Calendar className="h-5 w-5" />
                     <span className="font-medium">{format(new Date(), "EEEE, MMMM d")}</span>
                   </div>
-                  <div className="hidden sm:block w-px h-4 bg-border" />
+                  <div className="hidden sm:block w-px h-5 bg-border" />
                   <div className="flex items-center gap-2 text-muted-foreground">
-                    <TrendingUp className="h-4 w-4" />
-                    <span>Your productivity overview</span>
+                    <TrendingUp className="h-5 w-5" />
+                    <span>Your productivity dashboard</span>
                   </div>
                 </div>
 
                 {/* Quick Stats */}
-                <div className="flex items-center gap-6 pt-1">
+                <div className="flex items-center gap-8 pt-2">
                   <div className="text-center">
-                    <div className="text-lg font-bold text-primary">{headerStats.todaysCount}</div>
-                    <div className="text-xs text-muted-foreground">Today's Tasks</div>
+                    <div className="text-2xl font-bold text-primary">{headerStats.todaysCount}</div>
+                    <div className="text-sm text-muted-foreground">Today's Tasks</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-lg font-bold text-emerald-600">{headerStats.upcomingCount}</div>
-                    <div className="text-xs text-muted-foreground">Upcoming</div>
+                    <div className="text-2xl font-bold text-emerald-600">{headerStats.upcomingCount}</div>
+                    <div className="text-sm text-muted-foreground">Upcoming</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-lg font-bold text-amber-600">{headerStats.projectsCount}</div>
-                    <div className="text-xs text-muted-foreground">Projects</div>
+                    <div className="text-2xl font-bold text-amber-600">{headerStats.projectsCount}</div>
+                    <div className="text-sm text-muted-foreground">Projects</div>
                   </div>
                 </div>
               </div>
               
               <Button 
                 onClick={() => handleCreateTask()} 
-                size={isMobile ? "default" : "lg"} 
-                className="bg-gradient-to-r from-primary to-emerald-500 hover:shadow-lg transition-all duration-200"
+                size="lg" 
+                className="bg-gradient-to-r from-primary to-emerald-500 hover:shadow-lg transition-all duration-200 h-12 px-6 text-base"
                 disabled={isLoading}
               >
-                <Plus className="h-4 w-4 mr-2" /> 
+                <Plus className="h-5 w-5 mr-2" /> 
                 Create Task
               </Button>
             </div>
           </div>
         </div>
         
-        {/* Compact Grid Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Improved Grid Layout with Better Spacing */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
           {/* Left Column */}
-          <div className="space-y-4">
+          <div className="space-y-6">
             <CompactTasksSummary 
-              dailyScore={dailyScore}
+              dailyScore={numericDailyScore}
               todaysTasks={todaysTasks}
               upcomingTasks={upcomingTasks}
             />
             <CompactTimeTracking />
-            {user?.role === 'manager' && (
-              <CompactProjects 
-                projects={recentProjects}
-                onCreateTask={handleCreateTaskForProject}
-                onRefresh={refreshProjects}
-              />
-            )}
           </div>
 
           {/* Center Column */}
-          <div className="space-y-4">
+          <div className="space-y-6">
             <CompactTasksWidget 
               todaysTasks={todaysTasks}
               upcomingTasks={upcomingTasks}
@@ -238,12 +237,19 @@ const DashboardPage = () => {
           </div>
 
           {/* Right Column */}
-          <div className="space-y-4">
+          <div className="space-y-6">
             <CompactAnalytics />
             {user?.role === 'manager' && (
-              <div className="bg-card/70 backdrop-blur-sm border rounded-2xl">
-                <TeamManagement />
-              </div>
+              <>
+                <CompactProjects 
+                  projects={recentProjects}
+                  onCreateTask={handleCreateTaskForProject}
+                  onRefresh={refreshProjects}
+                />
+                <div className="bg-card/70 backdrop-blur-sm border rounded-2xl shadow-lg">
+                  <TeamManagement />
+                </div>
+              </>
             )}
           </div>
         </div>
