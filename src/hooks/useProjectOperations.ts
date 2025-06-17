@@ -28,12 +28,20 @@ export const useProjectOperations = () => {
       // Prepare budget value - handle undefined or null case
       const budget = project.budget ?? 0;
 
+      // Handle date conversion properly
+      const startDateString = project.startDate ? 
+        (typeof project.startDate === 'string' ? project.startDate : project.startDate.toISOString()) : 
+        nowISO;
+      const endDateString = project.endDate ? 
+        (typeof project.endDate === 'string' ? project.endDate : project.endDate.toISOString()) : 
+        nowISO;
+
       console.log('Creating project with data:', {
         id: projectId,
         title: project.title,
         description: project.description,
-        start_date: typeof project.startDate === 'string' ? project.startDate : project.startDate?.toISOString(),
-        end_date: typeof project.endDate === 'string' ? project.endDate : project.endDate?.toISOString(),
+        start_date: startDateString,
+        end_date: endDateString,
         manager_id: user.id,
         budget: budget,
         is_completed: false,
@@ -51,8 +59,8 @@ export const useProjectOperations = () => {
           id: projectId,
           title: project.title,
           description: project.description,
-          start_date: typeof project.startDate === 'string' ? project.startDate : project.startDate?.toISOString(),
-          end_date: typeof project.endDate === 'string' ? project.endDate : project.endDate?.toISOString(),
+          start_date: startDateString,
+          end_date: endDateString,
           manager_id: user.id,
           budget: budget,
           is_completed: false,
@@ -76,8 +84,8 @@ export const useProjectOperations = () => {
         id: projectId,
         title: project.title,
         description: project.description,
-        startDate: typeof project.startDate === 'string' ? project.startDate : project.startDate?.toISOString(),
-        endDate: typeof project.endDate === 'string' ? project.endDate : project.endDate?.toISOString(),
+        startDate: startDateString,
+        endDate: endDateString,
         managerId: user.id,
         budget: budget,
         createdAt: nowISO,
