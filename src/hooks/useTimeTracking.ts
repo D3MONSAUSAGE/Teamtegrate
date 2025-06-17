@@ -39,34 +39,7 @@ export function useTimeTracking() {
     return params ? `${baseKey}-${JSON.stringify(params)}` : baseKey;
   }, [user?.id, user?.organizationId]);
 
-  // Simple active session check without debounce
-  const checkActiveSession = useCallback(async (): Promise<boolean> => {
-    if (!user?.organizationId) return false;
-
-    const requestKey = createRequestKey('check-active');
-
-    try {
-      const result = await requestManager.dedupe(requestKey, async () => {
-        const { data, error } = await supabase
-          .from('time_entries')
-          .select('id, clock_in, created_at')
-          .eq('user_id', user.id)
-          .eq('organization_id', user.organizationId)
-          .is('clock_out', null)
-          .limit(1);
-
-        if (error) throw error;
-        return data || [];
-      });
-
-      return result.length > 0;
-    } catch (error) {
-      console.error('Error checking active session:', error);
-      return false;
-    }
-  }, [user?.id, user?.organizationId, createRequestKey]);
-
-  // Enhanced fetch with deduplication and error handling
+  // Enhanced fetch with better error handling
   const fetchTimeEntries = useCallback(async (showLoading = true) => {
     if (!user?.organizationId || fetchingRef.current) return;
 
@@ -109,7 +82,7 @@ export function useTimeTracking() {
 
       setTimeEntries(entries);
       
-      // Find current active entry with better validation
+      // Find current active entry
       const activeEntry = entries.find(entry => !entry.clock_out);
       if (activeEntry) {
         setCurrentEntry({
@@ -117,24 +90,17 @@ export function useTimeTracking() {
           clock_in: activeEntry.clock_in,
           id: activeEntry.id
         });
+        console.log('Active session found:', activeEntry.id);
       } else {
         setCurrentEntry({ isClocked: false });
+        console.log('No active session found');
       }
 
       console.log(`Successfully loaded ${entries.length} time entries`);
     } catch (error) {
       console.error('Error fetching time entries:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load time entries';
       setLastError(errorMessage);
-      
-      // Use cached data if available
-      const cachedData = requestManager.getCachedData<any[]>(requestKey);
-      if (cachedData && cachedData.length > 0) {
-        console.log('Using cached time entries data');
-        toast.warning('Using cached data due to connection issues');
-      } else {
-        toast.error('Failed to load time entries. Please check your connection.');
-      }
       
       // Reset current entry state on error to prevent stuck state
       setCurrentEntry({ isClocked: false });
@@ -145,7 +111,7 @@ export function useTimeTracking() {
     }
   }, [user?.id, user?.organizationId, createRequestKey, setConnecting]);
 
-  // Enhanced clock in with simplified validation
+  // Enhanced clock in with better validation
   const clockIn = async (notes?: string) => {
     if (!user?.organizationId) {
       toast.error('Organization not found');
@@ -157,21 +123,17 @@ export function useTimeTracking() {
       return;
     }
 
+    if (currentEntry.isClocked) {
+      toast.error('You are already clocked in');
+      return;
+    }
+
     try {
       setIsLoading(true);
-      
-      // Simple check for active session - don't block if check fails
-      try {
-        const hasActive = await checkActiveSession();
-        if (hasActive) {
-          toast.error('You already have an active time tracking session. Please clock out first.');
-          await fetchTimeEntries(false);
-          return;
-        }
-      } catch (checkError) {
-        console.warn('Active session check failed, proceeding with clock in:', checkError);
-      }
+      setLastError(null);
 
+      console.log('Attempting to clock in...');
+      
       const { data, error } = await supabase
         .from('time_entries')
         .insert([{
@@ -182,7 +144,12 @@ export function useTimeTracking() {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Clock in error:', error);
+        throw error;
+      }
+
+      console.log('Clock in successful:', data);
 
       const newEntry: TimeEntry = {
         id: data.id,
@@ -211,6 +178,8 @@ export function useTimeTracking() {
       setTimeout(() => fetchTimeEntries(false), 1000);
     } catch (error) {
       console.error('Error clocking in:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to clock in';
+      setLastError(errorMessage);
       toast.error('Failed to clock in. Please try again.');
       setCurrentEntry({ isClocked: false });
     } finally {
@@ -218,11 +187,12 @@ export function useTimeTracking() {
     }
   };
 
-  // Enhanced clock out with better error handling
+  // Enhanced clock out with better error handling and validation
   const clockOut = async (notes?: string) => {
     if (!currentEntry?.id) {
-      toast.error('No active clock-in found');
-      await fetchTimeEntries(false);
+      toast.error('No active session found');
+      console.warn('Clock out attempted but no active session ID');
+      await fetchTimeEntries(false); // Refresh to sync state
       return;
     }
 
@@ -232,19 +202,49 @@ export function useTimeTracking() {
     }
 
     const clockOutTime = new Date();
+    const sessionId = currentEntry.id;
     
     try {
       setIsLoading(true);
+      setLastError(null);
       
+      console.log('Attempting to clock out session:', sessionId);
+      
+      // Verify the session exists and is still active
+      const { data: checkData, error: checkError } = await supabase
+        .from('time_entries')
+        .select('id, clock_out')
+        .eq('id', sessionId)
+        .single();
+
+      if (checkError) {
+        console.error('Session verification failed:', checkError);
+        throw new Error('Session not found or already ended');
+      }
+
+      if (checkData.clock_out) {
+        console.warn('Session already clocked out');
+        setCurrentEntry({ isClocked: false });
+        toast.warning('Session was already ended');
+        await fetchTimeEntries(false);
+        return;
+      }
+
+      // Proceed with clock out
       const { error } = await supabase
         .from('time_entries')
         .update({ 
           clock_out: clockOutTime.toISOString(),
           notes: notes || null 
         })
-        .eq('id', currentEntry.id);
+        .eq('id', sessionId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Clock out update failed:', error);
+        throw error;
+      }
+
+      console.log('Clock out successful for session:', sessionId);
 
       // Optimistic update
       setCurrentEntry({ isClocked: false });
@@ -258,14 +258,13 @@ export function useTimeTracking() {
       setTimeout(() => fetchTimeEntries(false), 1000);
     } catch (error) {
       console.error('Error in clockOut:', error);
-      toast.error('Failed to clock out. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to clock out';
+      setLastError(errorMessage);
+      toast.error(`Failed to clock out: ${errorMessage}`);
       
-      // Revert optimistic update on error
-      setCurrentEntry({
-        isClocked: true,
-        clock_in: currentEntry.clock_in,
-        id: currentEntry.id
-      });
+      // Don't revert optimistic update on error - let user retry
+      // But refresh to get current state
+      setTimeout(() => fetchTimeEntries(false), 2000);
     } finally {
       setIsLoading(false);
     }
@@ -288,7 +287,7 @@ export function useTimeTracking() {
     }
   };
 
-  // Enhanced weekly entries fetch
+  // Keep existing weekly entries function
   const getWeeklyTimeEntries = async (weekStart?: Date) => {
     if (!user) return [];
     
@@ -323,7 +322,7 @@ export function useTimeTracking() {
     }
   };
 
-  // Enhanced team member entries fetch
+  // Keep existing team member entries function
   const getTeamMemberTimeEntries = async (teamMemberId: string, weekStart: Date) => {
     if (!user) return [];
     
@@ -415,6 +414,7 @@ export function useTimeTracking() {
 
   // Force refresh function for manual retry
   const forceRefresh = useCallback(() => {
+    setLastError(null);
     requestManager.clearCache(createRequestKey('fetch-entries'));
     fetchTimeEntries();
   }, [createRequestKey, fetchTimeEntries]);

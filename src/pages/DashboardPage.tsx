@@ -221,11 +221,11 @@ const DashboardPage = () => {
           />
         </div>
 
-        {/* Time Tracking Section */}
+        {/* Time Tracking Section - Simplified */}
         <div className="bg-card/70 backdrop-blur-sm border rounded-2xl">
           <div className="p-4 border-b border-border/50">
             <h2 className="text-lg font-semibold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
-              Time Tracking
+              Quick Time Tracking
             </h2>
           </div>
           <div className="p-4">
@@ -233,7 +233,7 @@ const DashboardPage = () => {
           </div>
         </div>
 
-        {/* Analytics Overview */}
+        {/* Analytics Overview - Keep existing */}
         <div className="bg-card/70 backdrop-blur-sm border rounded-2xl">
           <div className="p-4 border-b border-border/50">
             <h2 className="text-lg font-semibold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
@@ -245,7 +245,7 @@ const DashboardPage = () => {
           </div>
         </div>
         
-        {/* Tasks Sections */}
+        {/* Tasks Sections - Keep existing */}
         <div className="space-y-6">
           <div className="bg-card/70 backdrop-blur-sm border rounded-2xl p-4">
             <DailyTasksSection 
@@ -264,7 +264,7 @@ const DashboardPage = () => {
           </div>
         </div>
         
-        {/* Manager-only sections */}
+        {/* Manager-only sections - Keep existing */}
         {user?.role === 'manager' && (
           <div className="space-y-6">
             <div className="bg-card/70 backdrop-blur-sm border rounded-2xl p-4">
