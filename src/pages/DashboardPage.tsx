@@ -166,8 +166,8 @@ const DashboardPage = () => {
           isLoading={isLoading}
         />
 
-        {/* Enhanced Welcome Header */}
-        <div className="relative overflow-hidden">
+        {/* Enhanced Welcome Header - Made Sticky */}
+        <div className="relative overflow-hidden sticky top-0 z-10 bg-background/80 backdrop-blur-sm">
           <div className="absolute inset-0 bg-gradient-to-r from-primary/3 via-emerald-500/3 to-primary/3" />
           
           <div className="relative bg-card/80 backdrop-blur-sm border shadow-lg rounded-2xl p-6 md:p-8">
@@ -222,114 +222,66 @@ const DashboardPage = () => {
           </div>
         </div>
 
-        {/* Enhanced Grid Layout - Role-based */}
-        {isManagerOrAdmin ? (
-          /* Manager/Admin Layout with Rich Project Information */
-          <div className="space-y-8">
-            {/* Project Overview Section */}
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-foreground">Project Overview</h2>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                  <span>Live Data</span>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <ProjectHealthOverview projects={flatProjects} />
-                <div className="lg:col-span-2">
-                  <ProjectBudgetMonitor projects={flatProjects} />
-                </div>
-              </div>
-            </div>
-
-            {/* Active Projects Grid */}
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-foreground">Active Projects</h2>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={refreshProjects}
-                  disabled={isLoading}
-                >
-                  Refresh
-                </Button>
-              </div>
-              
-              <ProjectProgressCards 
-                projects={recentProjects}
-                onCreateTask={handleCreateTaskForProject}
-              />
-            </div>
-
-            {/* Secondary Grid - Tasks and Analytics */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <CompactTasksSummary 
-                dailyScore={numericDailyScore}
-                todaysTasks={todaysTasks}
-                upcomingTasks={upcomingTasks}
-              />
-              
-              <CompactTasksWidget 
-                todaysTasks={todaysTasks}
-                upcomingTasks={upcomingTasks}
-                onCreateTask={() => handleCreateTask()}
-                onEditTask={handleEditTask}
-              />
-              
-              <div className="space-y-6">
-                <CompactTimeTracking />
-                <CompactAnalytics />
-              </div>
-            </div>
-
-            {/* Team Management */}
-            <div className="bg-card/70 backdrop-blur-sm border rounded-2xl shadow-lg">
-              <TeamManagement />
-            </div>
-          </div>
-        ) : (
-          /* Regular User Layout - Focused on Personal Tasks */
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-            {/* Left Column */}
-            <div className="space-y-6">
-              <CompactTasksSummary 
-                dailyScore={numericDailyScore}
-                todaysTasks={todaysTasks}
-                upcomingTasks={upcomingTasks}
-              />
+        {/* Redesigned Layout */}
+        <div className="space-y-8">
+          {/* Top Row - Performance Overview (Sticky) */}
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <CompactTasksSummary 
+              dailyScore={numericDailyScore}
+              todaysTasks={todaysTasks}
+              upcomingTasks={upcomingTasks}
+            />
+            
+            <div className="lg:col-span-2">
               <CompactTimeTracking />
             </div>
-
-            {/* Center Column */}
-            <div className="space-y-6">
-              <CompactTasksWidget 
-                todaysTasks={todaysTasks}
-                upcomingTasks={upcomingTasks}
-                onCreateTask={() => handleCreateTask()}
-                onEditTask={handleEditTask}
-              />
-            </div>
-
-            {/* Right Column */}
-            <div className="space-y-6">
-              <CompactAnalytics />
-              
-              {/* User's Project Overview */}
-              {flatProjects.length > 0 && (
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-foreground">My Projects</h3>
-                  <ProjectProgressCards 
-                    projects={flatProjects.slice(0, 2)}
-                    onCreateTask={handleCreateTaskForProject}
-                  />
-                </div>
-              )}
-            </div>
+            
+            <CompactAnalytics />
           </div>
-        )}
+
+          {/* Main Content Row - Tasks */}
+          <CompactTasksWidget 
+            todaysTasks={todaysTasks}
+            upcomingTasks={upcomingTasks}
+            onCreateTask={() => handleCreateTask()}
+            onEditTask={handleEditTask}
+          />
+
+          {/* Projects Section */}
+          <ProjectProgressCards 
+            projects={recentProjects}
+            onCreateTask={handleCreateTaskForProject}
+            showHeader={true}
+          />
+
+          {/* Manager/Admin Only Sections */}
+          {isManagerOrAdmin && (
+            <div className="space-y-8">
+              {/* Project Overview Section */}
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-2xl font-bold text-foreground">Project Health</h2>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                    <span>Live Data</span>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <ProjectHealthOverview projects={flatProjects} />
+                  <div className="lg:col-span-2">
+                    <ProjectBudgetMonitor projects={flatProjects} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Team Management */}
+              <div className="bg-card/70 backdrop-blur-sm border rounded-2xl shadow-lg">
+                <TeamManagement />
+              </div>
+            </div>
+          )}
+        </div>
         
         <CreateTaskDialogEnhanced 
           open={isCreateTaskOpen} 

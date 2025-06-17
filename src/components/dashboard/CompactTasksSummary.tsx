@@ -50,9 +50,15 @@ const CompactTasksSummary: React.FC<CompactTasksSummaryProps> = ({
   ];
 
   return (
-    <Card className="bg-card/70 backdrop-blur-sm border shadow-lg">
+    <Card className="bg-card/70 backdrop-blur-sm border shadow-lg sticky top-4">
       <CardContent className="p-6">
-        <h3 className="text-lg font-semibold mb-4 text-foreground">Task Overview</h3>
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 rounded-full bg-gradient-to-r from-emerald-500/20 to-emerald-600/20">
+            <TrendingUp className="h-5 w-5 text-emerald-600" />
+          </div>
+          <h3 className="text-lg font-semibold text-foreground">Performance Overview</h3>
+        </div>
+        
         <div className="grid grid-cols-2 gap-4">
           {stats.map((stat) => {
             const Icon = stat.icon;
