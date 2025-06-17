@@ -14,8 +14,11 @@ export const useAuthOperations = (
   const login = async (email: string, password: string) => {
     setLoading(true);
     try {
+      console.log('AuthOperations: Starting login for:', email);
       await authLogin(email, password);
+      console.log('AuthOperations: Login successful');
     } catch (error) {
+      console.error('AuthOperations: Login failed:', error);
       setLoading(false);
       throw error;
     }
@@ -34,8 +37,11 @@ export const useAuthOperations = (
   ) => {
     setLoading(true);
     try {
+      console.log('AuthOperations: Starting signup for:', email, 'with role:', role);
       await authSignup(email, password, name, role, organizationData);
+      console.log('AuthOperations: Signup successful');
     } catch (error) {
+      console.error('AuthOperations: Signup failed:', error);
       setLoading(false);
       throw error;
     }
@@ -43,10 +49,15 @@ export const useAuthOperations = (
 
   const logout = async () => {
     try {
+      console.log('AuthOperations: Starting logout, has session:', !!session);
       await authLogout(!!session);
+      console.log('AuthOperations: Logout successful, clearing state');
+      
+      // Always clear state, even if logout API call fails
       setSession(null);
       setUser(null);
     } catch (error) {
+      console.error('AuthOperations: Logout error (clearing state anyway):', error);
       // Still clear local state even if logout fails
       setSession(null);
       setUser(null);
@@ -56,15 +67,19 @@ export const useAuthOperations = (
   
   const updateUserProfile = async (data: { name?: string }) => {
     try {
+      console.log('AuthOperations: Updating user profile:', data);
       await updateProfile(data);
       
       if (user) {
+        console.log('AuthOperations: Updating local user state');
         setUser({
           ...user,
           name: data.name || user.name,
         });
       }
+      console.log('AuthOperations: Profile update successful');
     } catch (error) {
+      console.error('AuthOperations: Profile update failed:', error);
       throw error;
     }
   };

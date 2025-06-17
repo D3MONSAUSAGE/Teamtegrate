@@ -15,7 +15,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { toast } from '@/components/ui/sonner';
 import { UserRole } from '@/types';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import BrandLogo from '@/components/shared/BrandLogo';
 import MultiTenantSignupForm from '@/components/auth/MultiTenantSignupForm';
 
@@ -24,12 +24,14 @@ const LoginPage = () => {
   const [isLogin, setIsLogin] = useState(!searchParams.get('signup'));
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { login, isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
   
   // Redirect if already logged in
   useEffect(() => {
     if (isAuthenticated && !loading) {
+      console.log('LoginPage: User already authenticated, redirecting to dashboard');
       navigate('/dashboard');
     }
   }, [isAuthenticated, loading, navigate]);
@@ -48,18 +50,58 @@ const LoginPage = () => {
       // This shouldn't happen as signup is handled by MultiTenantSignupForm
       return;
     }
+
+    if (!email || !password) {
+      toast.error('Please enter both email and password');
+      return;
+    }
+    
+    setIsSubmitting(true);
     
     try {
+      console.log('LoginPage: Attempting login for:', email);
       await login(email, password);
+      console.log('LoginPage: Login successful');
       toast.success('Welcome back!');
-    } catch (error) {
-      console.error('Authentication error:', error);
+    } catch (error: any) {
+      console.error('LoginPage: Authentication error:', error);
+      
+      // Provide user-friendly error messages
+      let errorMessage = 'Login failed. Please try again.';
+      
+      if (error?.message) {
+        if (error.message.includes('Invalid login credentials')) {
+          errorMessage = 'Invalid email or password. Please check your credentials and try again.';
+        } else if (error.message.includes('Email not confirmed')) {
+          errorMessage = 'Please confirm your email address before signing in.';
+        } else if (error.message.includes('Too many requests')) {
+          errorMessage = 'Too many login attempts. Please wait a moment and try again.';
+        } else if (error.message.includes('network') || error.message.includes('fetch')) {
+          errorMessage = 'Connection error. Please check your internet connection and try again.';
+        }
+      }
+      
+      toast.error(errorMessage);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleBackToLogin = () => {
     setIsLogin(true);
   };
+
+  // Show loading state while checking authentication
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Checking authentication...</p>
+        </div>
+      </div>
+    );
+  }
   
   if (!isLogin) {
     return (
@@ -122,6 +164,7 @@ const LoginPage = () => {
                   placeholder="Enter your email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  disabled={isSubmitting}
                   required
                 />
               </div>
@@ -134,12 +177,24 @@ const LoginPage = () => {
                   placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  disabled={isSubmitting}
                   required
                 />
               </div>
 
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? 'Signing in...' : 'Sign In'}
+              <Button 
+                type="submit" 
+                className="w-full" 
+                disabled={isSubmitting || loading}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Signing in...
+                  </>
+                ) : (
+                  'Sign In'
+                )}
               </Button>
             </form>
           </CardContent>
@@ -148,7 +203,7 @@ const LoginPage = () => {
               variant="link"
               className="w-full"
               onClick={() => setIsLogin(false)}
-              disabled={loading}
+              disabled={isSubmitting || loading}
             >
               Don't have an account? Sign up for free
             </Button>
