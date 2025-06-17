@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { useTask } from '@/contexts/task';
@@ -16,8 +17,12 @@ import CompactTimeTracking from '@/components/dashboard/CompactTimeTracking';
 import CompactTasksSummary from '@/components/dashboard/CompactTasksSummary';
 import CompactTasksWidget from '@/components/dashboard/CompactTasksWidget';
 import CompactAnalytics from '@/components/dashboard/CompactAnalytics';
-import CompactProjects from '@/components/dashboard/CompactProjects';
 import TeamManagement from '@/components/dashboard/TeamManagement';
+
+// Enhanced Project Components
+import ProjectHealthOverview from '@/components/dashboard/ProjectHealthOverview';
+import ProjectProgressCards from '@/components/dashboard/ProjectProgressCards';
+import ProjectBudgetMonitor from '@/components/dashboard/ProjectBudgetMonitor';
 
 const DashboardPage = () => {
   const { user } = useAuth();
@@ -41,8 +46,8 @@ const DashboardPage = () => {
   // Get numeric daily score - handle both number and object types
   const numericDailyScore = typeof dailyScore === 'number' 
     ? dailyScore 
-    : typeof dailyScore === 'object' && dailyScore !== null && 'value' in dailyScore
-    ? (dailyScore as any).value
+    : typeof dailyScore === 'object' && dailyScore !== null && 'percentage' in dailyScore
+    ? (dailyScore as any).percentage
     : 75; // Default fallback
   
   // Memoize expensive calculations to prevent re-computation on every render
@@ -83,7 +88,7 @@ const DashboardPage = () => {
       organizationId: project.organizationId || user?.organizationId || ''
     }));
     
-    const recentProjects = flatProjects.slice(0, 3);
+    const recentProjects = flatProjects.slice(0, 6); // Show more projects for better overview
     
     return { todaysTasks, upcomingTasks, flatProjects, recentProjects };
   }, [tasks, projects, user?.organizationId]);
@@ -147,6 +152,9 @@ const DashboardPage = () => {
     upcomingCount: upcomingTasks.length,
     projectsCount: isLoading ? '...' : flatProjects.length
   }), [todaysTasks.length, upcomingTasks.length, isLoading, flatProjects.length]);
+
+  // Determine layout based on role and screen size
+  const isManagerOrAdmin = user?.role === 'manager' || user?.role === 'admin' || user?.role === 'superadmin';
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/5 to-background">
@@ -213,46 +221,115 @@ const DashboardPage = () => {
             </div>
           </div>
         </div>
-        
-        {/* Improved Grid Layout with Better Spacing */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {/* Left Column */}
-          <div className="space-y-6">
-            <CompactTasksSummary 
-              dailyScore={numericDailyScore}
-              todaysTasks={todaysTasks}
-              upcomingTasks={upcomingTasks}
-            />
-            <CompactTimeTracking />
-          </div>
 
-          {/* Center Column */}
-          <div className="space-y-6">
-            <CompactTasksWidget 
-              todaysTasks={todaysTasks}
-              upcomingTasks={upcomingTasks}
-              onCreateTask={() => handleCreateTask()}
-              onEditTask={handleEditTask}
-            />
-          </div>
-
-          {/* Right Column */}
-          <div className="space-y-6">
-            <CompactAnalytics />
-            {user?.role === 'manager' && (
-              <>
-                <CompactProjects 
-                  projects={recentProjects}
-                  onCreateTask={handleCreateTaskForProject}
-                  onRefresh={refreshProjects}
-                />
-                <div className="bg-card/70 backdrop-blur-sm border rounded-2xl shadow-lg">
-                  <TeamManagement />
+        {/* Enhanced Grid Layout - Role-based */}
+        {isManagerOrAdmin ? (
+          /* Manager/Admin Layout with Rich Project Information */
+          <div className="space-y-8">
+            {/* Project Overview Section */}
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-foreground">Project Overview</h2>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                  <span>Live Data</span>
                 </div>
-              </>
-            )}
+              </div>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <ProjectHealthOverview projects={flatProjects} />
+                <div className="lg:col-span-2">
+                  <ProjectBudgetMonitor projects={flatProjects} />
+                </div>
+              </div>
+            </div>
+
+            {/* Active Projects Grid */}
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-foreground">Active Projects</h2>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={refreshProjects}
+                  disabled={isLoading}
+                >
+                  Refresh
+                </Button>
+              </div>
+              
+              <ProjectProgressCards 
+                projects={recentProjects}
+                onCreateTask={handleCreateTaskForProject}
+              />
+            </div>
+
+            {/* Secondary Grid - Tasks and Analytics */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <CompactTasksSummary 
+                dailyScore={numericDailyScore}
+                todaysTasks={todaysTasks}
+                upcomingTasks={upcomingTasks}
+              />
+              
+              <CompactTasksWidget 
+                todaysTasks={todaysTasks}
+                upcomingTasks={upcomingTasks}
+                onCreateTask={() => handleCreateTask()}
+                onEditTask={handleEditTask}
+              />
+              
+              <div className="space-y-6">
+                <CompactTimeTracking />
+                <CompactAnalytics />
+              </div>
+            </div>
+
+            {/* Team Management */}
+            <div className="bg-card/70 backdrop-blur-sm border rounded-2xl shadow-lg">
+              <TeamManagement />
+            </div>
           </div>
-        </div>
+        ) : (
+          /* Regular User Layout - Focused on Personal Tasks */
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            {/* Left Column */}
+            <div className="space-y-6">
+              <CompactTasksSummary 
+                dailyScore={numericDailyScore}
+                todaysTasks={todaysTasks}
+                upcomingTasks={upcomingTasks}
+              />
+              <CompactTimeTracking />
+            </div>
+
+            {/* Center Column */}
+            <div className="space-y-6">
+              <CompactTasksWidget 
+                todaysTasks={todaysTasks}
+                upcomingTasks={upcomingTasks}
+                onCreateTask={() => handleCreateTask()}
+                onEditTask={handleEditTask}
+              />
+            </div>
+
+            {/* Right Column */}
+            <div className="space-y-6">
+              <CompactAnalytics />
+              
+              {/* User's Project Overview */}
+              {flatProjects.length > 0 && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-foreground">My Projects</h3>
+                  <ProjectProgressCards 
+                    projects={flatProjects.slice(0, 2)}
+                    onCreateTask={handleCreateTaskForProject}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        )}
         
         <CreateTaskDialogEnhanced 
           open={isCreateTaskOpen} 
