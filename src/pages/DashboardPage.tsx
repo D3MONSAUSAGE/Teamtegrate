@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { useTask } from '@/contexts/task';
@@ -8,21 +7,16 @@ import { Task, Project } from '@/types';
 import { Plus, Sparkles, TrendingUp, Calendar } from 'lucide-react';
 import CreateTaskDialogEnhanced from '@/components/CreateTaskDialogEnhanced';
 import { format } from 'date-fns';
+import TasksSummary from '@/components/dashboard/TasksSummary';
+import DailyTasksSection from '@/components/dashboard/DailyTasksSection';
+import UpcomingTasksSection from '@/components/dashboard/UpcomingTasksSection';
+import RecentProjects from '@/components/dashboard/RecentProjects';
+import TeamManagement from '@/components/dashboard/TeamManagement';
 import { useIsMobile } from '@/hooks/use-mobile';
+import AnalyticsSection from '@/components/dashboard/AnalyticsSection';
+import TimeTracking from '@/components/dashboard/TimeTracking';
 import ConnectionStatus from '@/components/dashboard/ConnectionStatus';
 import { useTasksPageData } from '@/hooks/useTasksPageData';
-
-// Compact Components
-import CompactTimeTracking from '@/components/dashboard/CompactTimeTracking';
-import CompactTasksSummary from '@/components/dashboard/CompactTasksSummary';
-import CompactTasksWidget from '@/components/dashboard/CompactTasksWidget';
-import CompactAnalytics from '@/components/dashboard/CompactAnalytics';
-import TeamManagement from '@/components/dashboard/TeamManagement';
-
-// Enhanced Project Components
-import ProjectHealthOverview from '@/components/dashboard/ProjectHealthOverview';
-import ProjectProgressCards from '@/components/dashboard/ProjectProgressCards';
-import ProjectBudgetMonitor from '@/components/dashboard/ProjectBudgetMonitor';
 
 const DashboardPage = () => {
   const { user } = useAuth();
@@ -42,13 +36,6 @@ const DashboardPage = () => {
   
   // Combined error state
   const lastError = tasksError?.message || projectsError || null;
-  
-  // Get numeric daily score - handle both number and object types
-  const numericDailyScore = typeof dailyScore === 'number' 
-    ? dailyScore 
-    : typeof dailyScore === 'object' && dailyScore !== null && 'percentage' in dailyScore
-    ? (dailyScore as any).percentage
-    : 75; // Default fallback
   
   // Memoize expensive calculations to prevent re-computation on every render
   const { todaysTasks, upcomingTasks, flatProjects, recentProjects } = useMemo(() => {
@@ -88,7 +75,7 @@ const DashboardPage = () => {
       organizationId: project.organizationId || user?.organizationId || ''
     }));
     
-    const recentProjects = flatProjects.slice(0, 6); // Show more projects for better overview
+    const recentProjects = flatProjects.slice(0, 3);
     
     return { todaysTasks, upcomingTasks, flatProjects, recentProjects };
   }, [tasks, projects, user?.organizationId]);
@@ -124,6 +111,12 @@ const DashboardPage = () => {
     setSelectedProject(null);
   }, []);
 
+  const handleViewTasks = useCallback((project: any) => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log("View tasks for project:", project.title);
+    }
+  }, []);
+
   const handleCreateTaskForProject = useCallback((project: any) => {
     const convertedProject: Project = {
       id: project.id,
@@ -152,13 +145,10 @@ const DashboardPage = () => {
     upcomingCount: upcomingTasks.length,
     projectsCount: isLoading ? '...' : flatProjects.length
   }), [todaysTasks.length, upcomingTasks.length, isLoading, flatProjects.length]);
-
-  // Determine layout based on role and screen size
-  const isManagerOrAdmin = user?.role === 'manager' || user?.role === 'admin' || user?.role === 'superadmin';
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/5 to-background">
-      <div className="relative space-y-8 no-scrollbar p-4 md:p-6">
+      <div className="relative space-y-8 no-scrollbar">
         {/* Connection Status Alert */}
         <ConnectionStatus 
           lastError={lastError}
@@ -166,8 +156,8 @@ const DashboardPage = () => {
           isLoading={isLoading}
         />
 
-        {/* Enhanced Welcome Header - Made Sticky */}
-        <div className="relative overflow-hidden sticky top-0 z-10 bg-background/80 backdrop-blur-sm">
+        {/* Simplified Welcome Header */}
+        <div className="relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-r from-primary/3 via-emerald-500/3 to-primary/3" />
           
           <div className="relative bg-card/80 backdrop-blur-sm border shadow-lg rounded-2xl p-6 md:p-8">
@@ -177,111 +167,120 @@ const DashboardPage = () => {
                   <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-foreground via-primary to-emerald-600 bg-clip-text text-transparent">
                     Welcome back, {user?.name}!
                   </h1>
-                  <Sparkles className="h-6 w-6 text-primary" />
+                  <Sparkles className="h-5 w-5 text-primary" />
                 </div>
                 
                 <div className="flex items-center gap-4 text-base">
                   <div className="flex items-center gap-2 text-muted-foreground">
-                    <Calendar className="h-5 w-5" />
+                    <Calendar className="h-4 w-4" />
                     <span className="font-medium">{format(new Date(), "EEEE, MMMM d")}</span>
                   </div>
-                  <div className="hidden sm:block w-px h-5 bg-border" />
+                  <div className="hidden sm:block w-px h-4 bg-border" />
                   <div className="flex items-center gap-2 text-muted-foreground">
-                    <TrendingUp className="h-5 w-5" />
-                    <span>Your productivity dashboard</span>
+                    <TrendingUp className="h-4 w-4" />
+                    <span>Your productivity overview</span>
                   </div>
                 </div>
 
                 {/* Quick Stats */}
-                <div className="flex items-center gap-8 pt-2">
+                <div className="flex items-center gap-6 pt-2">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-primary">{headerStats.todaysCount}</div>
-                    <div className="text-sm text-muted-foreground">Today's Tasks</div>
+                    <div className="text-xl font-bold text-primary">{headerStats.todaysCount}</div>
+                    <div className="text-xs text-muted-foreground">Today's Tasks</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-emerald-600">{headerStats.upcomingCount}</div>
-                    <div className="text-sm text-muted-foreground">Upcoming</div>
+                    <div className="text-xl font-bold text-emerald-600">{headerStats.upcomingCount}</div>
+                    <div className="text-xs text-muted-foreground">Upcoming</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-amber-600">{headerStats.projectsCount}</div>
-                    <div className="text-sm text-muted-foreground">Projects</div>
+                    <div className="text-xl font-bold text-amber-600">{headerStats.projectsCount}</div>
+                    <div className="text-xs text-muted-foreground">Projects</div>
                   </div>
                 </div>
               </div>
               
               <Button 
                 onClick={() => handleCreateTask()} 
-                size="lg" 
-                className="bg-gradient-to-r from-primary to-emerald-500 hover:shadow-lg transition-all duration-200 h-12 px-6 text-base"
+                size={isMobile ? "default" : "lg"} 
+                className="bg-gradient-to-r from-primary to-emerald-500 hover:shadow-lg transition-all duration-200"
                 disabled={isLoading}
               >
-                <Plus className="h-5 w-5 mr-2" /> 
+                <Plus className="h-4 w-4 mr-2" /> 
                 Create Task
               </Button>
             </div>
           </div>
         </div>
-
-        {/* Redesigned Layout */}
-        <div className="space-y-8">
-          {/* Top Row - Performance Overview (Sticky) */}
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            <CompactTasksSummary 
-              dailyScore={numericDailyScore}
-              todaysTasks={todaysTasks}
-              upcomingTasks={upcomingTasks}
-            />
-            
-            <div className="lg:col-span-2">
-              <CompactTimeTracking />
-            </div>
-            
-            <CompactAnalytics />
-          </div>
-
-          {/* Main Content Row - Tasks */}
-          <CompactTasksWidget 
+        
+        {/* Enhanced Quick Stats Summary */}
+        <div className="animate-fade-in">
+          <TasksSummary 
+            dailyScore={dailyScore}
             todaysTasks={todaysTasks}
             upcomingTasks={upcomingTasks}
-            onCreateTask={() => handleCreateTask()}
-            onEditTask={handleEditTask}
           />
-
-          {/* Projects Section */}
-          <ProjectProgressCards 
-            projects={recentProjects}
-            onCreateTask={handleCreateTaskForProject}
-            showHeader={true}
-          />
-
-          {/* Manager/Admin Only Sections */}
-          {isManagerOrAdmin && (
-            <div className="space-y-8">
-              {/* Project Overview Section */}
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-2xl font-bold text-foreground">Project Health</h2>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                    <span>Live Data</span>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  <ProjectHealthOverview projects={flatProjects} />
-                  <div className="lg:col-span-2">
-                    <ProjectBudgetMonitor projects={flatProjects} />
-                  </div>
-                </div>
-              </div>
-
-              {/* Team Management */}
-              <div className="bg-card/70 backdrop-blur-sm border rounded-2xl shadow-lg">
-                <TeamManagement />
-              </div>
-            </div>
-          )}
         </div>
+
+        {/* Time Tracking Section */}
+        <div className="bg-card/70 backdrop-blur-sm border rounded-2xl">
+          <div className="p-4 border-b border-border/50">
+            <h2 className="text-lg font-semibold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
+              Time Tracking
+            </h2>
+          </div>
+          <div className="p-4">
+            <TimeTracking />
+          </div>
+        </div>
+
+        {/* Analytics Overview */}
+        <div className="bg-card/70 backdrop-blur-sm border rounded-2xl">
+          <div className="p-4 border-b border-border/50">
+            <h2 className="text-lg font-semibold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
+              Analytics & Insights
+            </h2>
+          </div>
+          <div className="p-4">
+            <AnalyticsSection />
+          </div>
+        </div>
+        
+        {/* Tasks Sections */}
+        <div className="space-y-6">
+          <div className="bg-card/70 backdrop-blur-sm border rounded-2xl p-4">
+            <DailyTasksSection 
+              tasks={todaysTasks}
+              onCreateTask={() => handleCreateTask()}
+              onEditTask={handleEditTask}
+            />
+          </div>
+          
+          <div className="bg-card/70 backdrop-blur-sm border rounded-2xl p-4">
+            <UpcomingTasksSection 
+              tasks={upcomingTasks}
+              onCreateTask={() => handleCreateTask()}
+              onEditTask={handleEditTask}
+            />
+          </div>
+        </div>
+        
+        {/* Manager-only sections */}
+        {user?.role === 'manager' && (
+          <div className="space-y-6">
+            <div className="bg-card/70 backdrop-blur-sm border rounded-2xl p-4">
+              <RecentProjects 
+                projects={recentProjects}
+                onViewTasks={handleViewTasks}
+                onCreateTask={handleCreateTaskForProject}
+                onRefresh={refreshProjects}
+              />
+            </div>
+            
+            <div className="bg-card/70 backdrop-blur-sm border rounded-2xl">
+              <TeamManagement />
+            </div>
+          </div>
+        )}
         
         <CreateTaskDialogEnhanced 
           open={isCreateTaskOpen} 
