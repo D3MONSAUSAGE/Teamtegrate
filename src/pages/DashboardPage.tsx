@@ -38,11 +38,11 @@ const DashboardPage = () => {
   // Combined error state
   const lastError = tasksError?.message || projectsError || null;
   
-  // Get numeric daily score
-  const numericDailyScore = typeof dailyScore === 'object' && dailyScore?.score !== undefined 
-    ? dailyScore.score 
-    : typeof dailyScore === 'number' 
+  // Get numeric daily score - handle both number and object types
+  const numericDailyScore = typeof dailyScore === 'number' 
     ? dailyScore 
+    : typeof dailyScore === 'object' && dailyScore !== null && 'value' in dailyScore
+    ? (dailyScore as any).value
     : 75; // Default fallback
   
   // Memoize expensive calculations to prevent re-computation on every render
