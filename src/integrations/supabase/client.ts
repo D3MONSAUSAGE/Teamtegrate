@@ -33,23 +33,7 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
   }
 });
 
-// Simple auth state logging
+// Minimal auth state logging (only for debugging)
 supabase.auth.onAuthStateChange((event, session) => {
-  console.log('Supabase Auth state change:', event, 'Session:', session ? 'exists' : 'null');
-  
-  if (event === 'TOKEN_REFRESHED') {
-    console.log('Supabase: Token successfully refreshed');
-  }
-  
-  if (event === 'SIGNED_OUT') {
-    console.log('Supabase: User signed out');
-  }
-  
-  if (session) {
-    console.log('Supabase: User ID:', session.user?.id);
-  }
-  
-  if (event === 'SIGNED_IN') {
-    console.log('Supabase: User successfully signed in');
-  }
+  console.log('Supabase Auth event:', event, 'Has session:', !!session);
 });

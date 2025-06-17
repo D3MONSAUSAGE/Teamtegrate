@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { User as AppUser, UserRole } from '@/types';
@@ -7,7 +7,8 @@ import { User as AppUser, UserRole } from '@/types';
 export const useAuthState = () => {
   const [user, setUser] = useState<AppUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true); // Start with true, ensure it gets set to false
+  const [loading, setLoading] = useState(true);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const fetchUserProfile = async (userId: string, retryCount = 0): Promise<AppUser | null> => {
     try {
@@ -86,6 +87,14 @@ export const useAuthState = () => {
     
     console.log('AuthProvider: Setting up auth initialization');
     
+    // Set up timeout protection - force loading to false after 5 seconds
+    timeoutRef.current = setTimeout(() => {
+      if (isMounted) {
+        console.log('AuthProvider: Timeout reached, forcing loading to false');
+        setLoading(false);
+      }
+    }, 5000);
+    
     const initializeAuth = async () => {
       try {
         console.log('AuthProvider: Starting auth initialization...');
@@ -109,25 +118,31 @@ export const useAuthState = () => {
           if (session?.user) {
             console.log('AuthProvider: User found in session, fetching profile:', session.user.id);
             
-            try {
-              const userProfile = await fetchUserProfile(session.user.id);
+            // Fetch profile but don't let it block the loading state
+            fetchUserProfile(session.user.id).then(userProfile => {
               if (isMounted) {
                 setUser(userProfile);
                 console.log('AuthProvider: Profile fetch completed:', !!userProfile);
               }
-            } catch (profileError) {
+            }).catch(profileError => {
               console.error('AuthProvider: Profile fetch failed:', profileError);
               if (isMounted) {
                 setUser(null);
               }
-            }
+            });
           } else {
             console.log('AuthProvider: No session - showing landing page');
             setUser(null);
           }
           
-          // Always set loading to false after initialization
+          // Always set loading to false after session check, regardless of profile fetch
           setLoading(false);
+          
+          // Clear timeout since we completed initialization
+          if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
+            timeoutRef.current = null;
+          }
         }
       } catch (error) {
         console.error('AuthProvider: Error in initializeAuth:', error);
@@ -139,37 +154,35 @@ export const useAuthState = () => {
       }
     };
 
-    // Set up auth state listener
+    // Set up auth state listener (only for subsequent changes, not initial load)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!isMounted) return;
         
         console.log('AuthProvider: Auth state change:', event, !!session);
         
+        // Skip INITIAL_SESSION event to avoid race conditions
+        if (event === 'INITIAL_SESSION') {
+          console.log('AuthProvider: Skipping INITIAL_SESSION event to avoid race conditions');
+          return;
+        }
+        
         try {
           setSession(session);
           
           if (session?.user) {
-            console.log('AuthProvider: User authenticated, fetching profile:', session.user.id);
+            console.log('AuthProvider: User authenticated via state change, fetching profile:', session.user.id);
             
             const userData = await fetchUserProfile(session.user.id);
             if (isMounted) {
               setUser(userData);
             }
           } else {
-            console.log('AuthProvider: User signed out');
+            console.log('AuthProvider: User signed out via state change');
             setUser(null);
-          }
-          
-          // Ensure loading is false after any auth state change
-          if (isMounted) {
-            setLoading(false);
           }
         } catch (error) {
           console.error('AuthProvider: Error in auth state change handler:', error);
-          if (isMounted) {
-            setLoading(false);
-          }
         }
       }
     );
@@ -181,6 +194,10 @@ export const useAuthState = () => {
       isMounted = false;
       console.log('AuthProvider: Cleaning up auth listener');
       subscription.unsubscribe();
+      
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
     };
   }, []);
 

@@ -10,12 +10,6 @@ const Index = () => {
 
   console.log('Index page - Loading:', loading, 'User:', !!user, 'IsAuthenticated:', isAuthenticated);
 
-  // If user is already authenticated, redirect to dashboard immediately
-  if (isAuthenticated && user) {
-    console.log('Index: User is authenticated, redirecting to dashboard');
-    return <Navigate to="/dashboard" replace />;
-  }
-
   // Show loading only while auth is initializing
   if (loading) {
     console.log('Index: Showing loading state during auth initialization');
@@ -24,9 +18,16 @@ const Index = () => {
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
           <p className="text-muted-foreground">Checking authentication...</p>
+          <p className="text-xs text-muted-foreground/60 mt-2">If this takes too long, try refreshing the page</p>
         </div>
       </div>
     );
+  }
+
+  // If user is authenticated, redirect to dashboard
+  if (isAuthenticated && user) {
+    console.log('Index: User is authenticated, redirecting to dashboard');
+    return <Navigate to="/dashboard" replace />;
   }
 
   // For all other cases (unauthenticated users), show landing page
