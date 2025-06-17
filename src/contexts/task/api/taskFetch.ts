@@ -33,13 +33,16 @@ export const fetchTasks = async (
       return;
     }
     
-    // Fetch tasks with RLS policies - FOCUSED QUERY for My Tasks page
-    // Only fetch tasks that are directly assigned to the user
+    // Fetch tasks with RLS policies - UPDATED QUERY for My Tasks page
+    // Include tasks that are:
+    // 1. Created by the user (user_id = user.id)
+    // 2. Assigned to the user (assigned_to_id = user.id)
+    // 3. Assigned to the user in a group (assigned_to_ids contains user.id)
     const { data: tasksData, error: tasksError } = await supabase
       .from('tasks')
       .select('*')
       .eq('organization_id', user.organization_id)
-      .or(`assigned_to_id.eq.${user.id},assigned_to_ids.cs.{${user.id}}`)
+      .or(`user_id.eq.${user.id},assigned_to_id.eq.${user.id},assigned_to_ids.cs.{${user.id}}`)
       .order('created_at', { ascending: false });
 
     if (tasksError) {
@@ -57,10 +60,10 @@ export const fetchTasks = async (
     }
 
     if (process.env.NODE_ENV === 'development') {
-      console.log(`fetchTasks: Retrieved ${tasksData?.length || 0} directly assigned tasks`);
+      console.log(`fetchTasks: Retrieved ${tasksData?.length || 0} tasks (created by user OR assigned to user)`);
     }
     
-    // Security validation: Ensure all returned tasks are directly assigned to this user
+    // Security validation: Ensure all returned tasks belong to this user
     const validatedTasks = tasksData?.filter(dbTask => {
       // Check organization match
       if (dbTask.organization_id !== user.organization_id) {
@@ -70,12 +73,13 @@ export const fetchTasks = async (
         return false;
       }
 
-      // FOCUSED FILTERING: Only tasks directly assigned to the user
+      // UPDATED FILTERING: Include tasks created by user OR assigned to user
+      const isCreatedByUser = dbTask.user_id === user.id;
       const isDirectlyAssigned = 
         dbTask.assigned_to_id === user.id || // Single assignee
         (dbTask.assigned_to_ids && dbTask.assigned_to_ids.includes(user.id)); // Multi assignee
 
-      return isDirectlyAssigned;
+      return isCreatedByUser || isDirectlyAssigned;
     }) || [];
     
     // Fetch comments and users data in parallel for better performance
@@ -178,7 +182,7 @@ export const fetchTasks = async (
     });
 
     if (process.env.NODE_ENV === 'development') {
-      console.log(`fetchTasks: Successfully processed ${transformedTasks.length} directly assigned tasks`);
+      console.log(`fetchTasks: Successfully processed ${transformedTasks.length} tasks (created by user OR assigned to user)`);
     }
     
     setTasks(transformedTasks);
