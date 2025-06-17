@@ -5,7 +5,6 @@ import { AuthProvider } from './contexts/AuthContext'
 import { TaskProvider } from './contexts/task/TaskContext'
 import { ChatProvider } from './contexts/chat/ChatContext'
 import { UnifiedDataProvider } from '@/contexts/UnifiedDataContext';
-import { KeyboardShortcutsProvider } from '@/components/shared/KeyboardShortcutsProvider';
 import NetworkPerformanceMonitor from '@/components/debug/NetworkPerformanceMonitor';
 import { Toaster } from '@/components/ui/toaster';
 
@@ -50,37 +49,35 @@ function App() {
           <TaskProvider>
             <ChatProvider>
               <BrowserRouter>
-                <KeyboardShortcutsProvider>
-                  <Routes>
-                    {/* Public / general routes */}
-                    <Route path="/" element={<Index />} />
-                    <Route path="/login" element={<LoginPage />} />
+                <Routes>
+                  {/* Public / general routes */}
+                  <Route path="/" element={<Index />} />
+                  <Route path="/login" element={<LoginPage />} />
 
-                    {/* All protected routes - nested inside AppLayout */}
-                    <Route path="/dashboard" element={<AppLayout />}>
-                      <Route index element={<DashboardPage />} />
-                      <Route path="tasks" element={<TasksPage />} />
-                      <Route path="projects" element={<ProjectsPage />} />
-                      <Route path="projects/:projectId/tasks" element={<ProjectTasksPage />} />
-                      <Route path="organization" element={<OrganizationDashboard />} />
-                      <Route path="calendar" element={<CalendarPage />} />
-                      <Route path="focus" element={<FocusZonePage />} />
-                      <Route path="reports" element={<ReportsPage />} />
-                      <Route path="chat" element={<ChatPage />} />
-                      <Route path="documents" element={<DocumentsPage />} />
-                      <Route path="finance" element={<FinancePage />} />
-                      <Route path="notebook" element={<NotebookPage />} />
-                      <Route path="time-tracking" element={<TimeTrackingPage />} />
-                      <Route path="profile" element={<ProfilePage />} />
-                      {/* Add more nested routes here as needed */}
-                    </Route>
+                  {/* All protected routes - nested inside AppLayout */}
+                  <Route path="/dashboard" element={<AppLayout />}>
+                    <Route index element={<DashboardPage />} />
+                    <Route path="tasks" element={<TasksPage />} />
+                    <Route path="projects" element={<ProjectsPage />} />
+                    <Route path="projects/:projectId/tasks" element={<ProjectTasksPage />} />
+                    <Route path="organization" element={<OrganizationDashboard />} />
+                    <Route path="calendar" element={<CalendarPage />} />
+                    <Route path="focus" element={<FocusZonePage />} />
+                    <Route path="reports" element={<ReportsPage />} />
+                    <Route path="chat" element={<ChatPage />} />
+                    <Route path="documents" element={<DocumentsPage />} />
+                    <Route path="finance" element={<FinancePage />} />
+                    <Route path="notebook" element={<NotebookPage />} />
+                    <Route path="time-tracking" element={<TimeTrackingPage />} />
+                    <Route path="profile" element={<ProfilePage />} />
+                    {/* Add more nested routes here as needed */}
+                  </Route>
 
-                    {/* Not found */}
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                  <NetworkPerformanceMonitor />
-                  <Toaster />
-                </KeyboardShortcutsProvider>
+                  {/* Not found */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+                <NetworkPerformanceMonitor />
+                <Toaster />
               </BrowserRouter>
             </ChatProvider>
           </TaskProvider>

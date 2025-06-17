@@ -35,7 +35,6 @@ export default defineConfig(({ mode }) => ({
           'form-vendor': ['react-hook-form', '@hookform/resolvers', 'zod'],
           
           // Feature chunks
-          'auth': ['src/contexts/auth', 'src/pages/LoginPage.tsx', 'src/pages/SignupPage.tsx'],
           'dashboard': ['src/pages/DashboardPage.tsx', 'src/components/dashboard'],
           'tasks': ['src/pages/TasksPage.tsx', 'src/components/task'],
           'projects': ['src/pages/ProjectsPage.tsx', 'src/components/project'],

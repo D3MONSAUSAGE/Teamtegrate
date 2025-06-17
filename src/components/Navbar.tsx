@@ -3,12 +3,9 @@ import React, { useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { enhancedNotifications } from '@/utils/enhancedNotifications';
-import { useKeyboardShortcutsContext } from '@/components/shared/KeyboardShortcutsProvider';
 import { useNotifications } from '@/hooks/use-notifications';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { SidebarTrigger } from '@/components/ui/sidebar';
-import { Button } from '@/components/ui/button';
-import { Keyboard } from 'lucide-react';
 import NavbarBrand from './navbar/NavbarBrand';
 import NotificationButton from './navbar/NotificationButton';
 import UserMenu from './navbar/UserMenu';
@@ -17,7 +14,6 @@ const Navbar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { markAsRead, fetchNotifications } = useNotifications();
-  const { showShortcutsHelp } = useKeyboardShortcutsContext();
   const isMobile = useIsMobile();
 
   // Refresh notifications when component mounts
@@ -83,19 +79,6 @@ const Navbar = () => {
       </div>
 
       <div className="flex items-center space-x-4">
-        {!isMobile && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={showShortcutsHelp}
-            className="flex items-center gap-2"
-            title="Keyboard Shortcuts (Press ? for help)"
-          >
-            <Keyboard className="h-4 w-4" />
-            <span className="hidden md:inline">Shortcuts</span>
-          </Button>
-        )}
-
         <NotificationButton 
           onNotificationsOpen={handleNotificationsOpen}
           onNotificationClick={handleNotificationClick}
