@@ -2,30 +2,30 @@
 import React from 'react';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { AlertCircle } from 'lucide-react';
+import { UseFormReturn } from 'react-hook-form';
 
 interface TaskTitleFieldProps {
-  register: any;
-  errors: any;
-  setValue: (name: string, value: any) => void;
+  form: UseFormReturn<any>;
 }
 
-const TaskTitleField: React.FC<TaskTitleFieldProps> = ({
-  register,
-  errors,
-  setValue
-}) => {
+const TaskTitleField: React.FC<TaskTitleFieldProps> = ({ form }) => {
   return (
-    <div className="space-y-1">
-      <Label htmlFor="title">Task Title <span className="text-red-500">*</span></Label>
+    <div className="space-y-2">
+      <Label htmlFor="title" className="text-base font-medium">
+        Title <span className="text-red-500">*</span>
+      </Label>
       <Input
         id="title"
-        placeholder="Enter task title"
-        {...register('title', { 
-          required: "Title is required" 
-        })}
+        placeholder="Enter a clear, descriptive task title..."
+        className="text-base h-12 border-2 focus:border-primary"
+        {...form.register('title', { required: "Title is required" })}
       />
-      {errors.title && (
-        <p className="text-sm font-medium text-destructive">{errors.title.message}</p>
+      {form.formState.errors.title && (
+        <p className="text-sm text-destructive flex items-center gap-1">
+          <AlertCircle className="h-4 w-4" />
+          {String(form.formState.errors.title.message || 'Title is required')}
+        </p>
       )}
     </div>
   );
