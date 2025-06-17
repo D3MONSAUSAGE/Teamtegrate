@@ -7,7 +7,7 @@ import { User as AppUser, UserRole } from '@/types';
 export const useAuthState = () => {
   const [user, setUser] = useState<AppUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Start with loading true
 
   const fetchUserProfile = async (userId: string, retryCount = 0): Promise<AppUser | null> => {
     try {
@@ -132,7 +132,6 @@ export const useAuthState = () => {
           setSession(session);
 
           if (session?.user) {
-            setLoading(true);
             console.log('AuthProvider: User found in session, fetching profile:', session.user.id);
             
             try {
@@ -146,16 +145,14 @@ export const useAuthState = () => {
               if (isMounted) {
                 setUser(null);
               }
-            } finally {
-              if (isMounted) {
-                setLoading(false);
-              }
             }
           } else {
             console.log('AuthProvider: No session - showing landing page');
             setUser(null);
-            setLoading(false);
           }
+          
+          // Always clear loading after initialization
+          setLoading(false);
         }
       } catch (error) {
         console.error('AuthProvider: Error in initializeAuth:', error);
@@ -179,17 +176,18 @@ export const useAuthState = () => {
           
           if (session?.user) {
             console.log('AuthProvider: User authenticated, fetching profile:', session.user.id);
-            setLoading(true);
             
-            // Remove the setTimeout(0) - this was causing race conditions
             const userData = await fetchUserProfile(session.user.id);
             if (isMounted) {
               setUser(userData);
-              setLoading(false);
             }
           } else {
             console.log('AuthProvider: User signed out');
             setUser(null);
+          }
+          
+          // Clear loading state after auth change is processed
+          if (isMounted) {
             setLoading(false);
           }
         } catch (error) {
