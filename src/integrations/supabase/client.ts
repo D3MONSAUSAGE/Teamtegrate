@@ -63,15 +63,16 @@ supabase.auth.onAuthStateChange((event, session) => {
       console.log('Supabase: User successfully signed in');
     }
     
-    if (event === 'TOKEN_REFRESH_FAILED') {
-      console.error('Supabase: Token refresh failed');
+    // Handle any auth errors that might occur
+    if (event === 'SIGNED_OUT' && !session) {
+      console.log('Supabase: Authentication session ended');
     }
   } catch (error) {
     console.error('Supabase: Error in auth state change handler:', error);
   }
 });
 
-// Add connection error monitoring
+// Add connection error monitoring with retry logic
 let connectionRetryCount = 0;
 const maxConnectionRetries = 3;
 
