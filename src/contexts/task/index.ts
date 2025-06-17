@@ -14,6 +14,7 @@ export interface TaskContextType {
   updateTaskStatus: (taskId: string, status: Task['status']) => Promise<void>;
   assignTaskToUser: (taskId: string, userId: string, userName: string) => Promise<void>;
   addCommentToTask: (taskId: string, comment: string) => Promise<void>;
+  addCommentToProject: (projectId: string, comment: string) => Promise<void>;
   dailyScore: DailyScore;
   
   projects: Project[];

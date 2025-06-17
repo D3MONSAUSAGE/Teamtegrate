@@ -2,13 +2,15 @@
 import React, { useState } from 'react';
 import { Project, Task, TaskStatus, User } from '@/types';
 import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, MessageSquare } from 'lucide-react';
 import ProjectOverview from './ProjectOverview';
 import ProjectTasksFilters from './ProjectTasksFilters';
 import ProjectTasksTabs from './ProjectTasksTabs';
 import ProjectActionToolbar from './ProjectActionToolbar';
 import TeamManagementDialog from './TeamManagementDialog';
 import ViewControlsPanel from './ViewControlsPanel';
+import ProjectLogDialog from '../../project/ProjectLogDialog';
+import ProjectLogSection from '../../project/ProjectLogSection';
 import { useProjectViewState } from './hooks/useProjectViewState';
 
 interface ProjectTasksContentProps {
@@ -79,6 +81,7 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
   } = useProjectViewState(allTasks);
 
   const [showTeamManagement, setShowTeamManagement] = useState(false);
+  const [showProjectLog, setShowProjectLog] = useState(false);
 
   // Filter tasks by the view state
   const filteredTodoTasks = filteredTasks.filter(task => task.status === 'To Do');
@@ -107,6 +110,10 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
     if (onRemoveTeamMember) {
       onRemoveTeamMember(userId);
     }
+  };
+
+  const handleOpenProjectLog = () => {
+    setShowProjectLog(true);
   };
 
   return (
@@ -153,6 +160,15 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
           <Button
             variant="outline"
             size="sm"
+            onClick={handleOpenProjectLog}
+            className="flex items-center gap-2"
+          >
+            <MessageSquare className="h-4 w-4" />
+            Updates ({project.comments?.length || 0})
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={onRefresh}
             disabled={isRefreshing}
           >
@@ -175,6 +191,14 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
         />
       </div>
 
+      {/* Project Log Section - Inline */}
+      <div className="px-4 sm:px-6 lg:px-8">
+        <ProjectLogSection 
+          projectId={project.id}
+          projectComments={project.comments || []}
+        />
+      </div>
+
       {/* Tasks Display - Now with Filtered Data */}
       <ProjectTasksTabs
         todoTasks={filteredTodoTasks || []}
@@ -193,6 +217,15 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
         isLoadingTeamMembers={isLoadingTeamMembers}
         onAddTeamMember={handleAddTeamMember}
         onRemoveTeamMember={handleRemoveTeamMember}
+      />
+
+      {/* Project Log Dialog */}
+      <ProjectLogDialog
+        open={showProjectLog}
+        onOpenChange={setShowProjectLog}
+        projectId={project.id}
+        projectTitle={project.title}
+        projectComments={project.comments || []}
       />
     </div>
   );

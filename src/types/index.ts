@@ -1,4 +1,3 @@
-
 export type UserRole = 'superadmin' | 'admin' | 'manager' | 'user';
 
 export interface User {
@@ -57,19 +56,21 @@ export interface Project {
   id: string;
   title: string;
   description?: string;
-  startDate: Date;
-  endDate: Date;
-  managerId: string;
-  createdAt: Date;
-  updatedAt: Date;
-  teamMemberIds: string[]; // Unified naming - use teamMemberIds consistently
-  budget: number;
-  budgetSpent: number; // Made required, defaulting to 0
-  isCompleted: boolean; // Changed from is_completed to isCompleted
-  status: ProjectStatus;
-  tasksCount: number; // Changed from tasks_count to tasksCount
-  tags: string[]; // Made required, defaulting to empty array
-  organizationId: string; // Made required
+  startDate?: string;
+  endDate?: string;
+  managerId?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  teamMemberIds?: string[];
+  budget?: number;
+  budgetSpent?: number;
+  isCompleted?: boolean;
+  status?: 'To Do' | 'In Progress' | 'Completed' | 'On Hold';
+  tasksCount?: number;
+  tags?: string[];
+  organizationId?: string;
+  teamMembers?: string[];
+  comments?: TaskComment[];
 }
 
 export interface DailyScore {
