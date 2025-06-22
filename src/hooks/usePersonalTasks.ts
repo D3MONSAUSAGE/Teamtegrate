@@ -34,32 +34,195 @@ export const usePersonalTasks = () => {
           setTimeout(() => reject(new Error('Request timeout')), 10000)
         );
 
-        // Fetch tasks with refined personal filtering:
-        // 1. Tasks created by user AND unassigned (no assigned_to_id and empty assigned_to_ids)
-        // 2. Tasks assigned to user (assigned_to_id = user.id OR user.id in assigned_to_ids)
-        const taskPromise = supabase
-          .from('tasks')
-          .select('*')
-          .eq('organization_id', user.organizationId)
-          .or(`and(user_id.eq.${user.id},assigned_to_id.is.null,assigned_to_ids.eq.{}),assigned_to_id.eq.${user.id},assigned_to_ids.cs.{${user.id}}`)
-          .order('created_at', { ascending: false });
+        try {
+          // Strategy: Use multiple simpler queries and combine results client-side
+          // This avoids the complex malformed .or() query that was causing issues
+          
+          // Query 1: Tasks created by user (for potential personal tasks)
+          const createdTasksPromise = supabase
+            .from('tasks')
+            .select('*')
+            .eq('organization_id', user.organizationId)
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false });
 
-        const { data: tasksData, error: tasksError } = await Promise.race([
-          taskPromise,
-          timeoutPromise
-        ]) as any;
+          // Query 2: Tasks assigned to user (single assignment)
+          const singleAssignedPromise = supabase
+            .from('tasks')
+            .select('*')
+            .eq('organization_id', user.organizationId)
+            .eq('assigned_to_id', user.id)
+            .order('created_at', { ascending: false });
 
-        if (tasksError) {
+          // Query 3: Tasks where user is in the assigned_to_ids array
+          const multiAssignedPromise = supabase
+            .from('tasks')
+            .select('*')
+            .eq('organization_id', user.organizationId)
+            .contains('assigned_to_ids', [user.id])
+            .order('created_at', { ascending: false });
+
+          // Execute all queries in parallel with timeout
+          const [createdResult, singleAssignedResult, multiAssignedResult] = await Promise.race([
+            Promise.all([createdTasksPromise, singleAssignedPromise, multiAssignedPromise]),
+            timeoutPromise
+          ]) as any;
+
+          // Check for errors in any of the queries
+          if (createdResult.error) {
+            console.error('usePersonalTasks: Error fetching created tasks:', createdResult.error);
+            throw new Error(`Failed to fetch created tasks: ${createdResult.error.message}`);
+          }
+          if (singleAssignedResult.error) {
+            console.error('usePersonalTasks: Error fetching single assigned tasks:', singleAssignedResult.error);
+            throw new Error(`Failed to fetch assigned tasks: ${singleAssignedResult.error.message}`);
+          }
+          if (multiAssignedResult.error) {
+            console.error('usePersonalTasks: Error fetching multi assigned tasks:', multiAssignedResult.error);
+            throw new Error(`Failed to fetch multi-assigned tasks: ${multiAssignedResult.error.message}`);
+          }
+
+          // Combine all tasks and remove duplicates using a Map keyed by task ID
+          const allTasksMap = new Map();
+          
+          // Add created tasks
+          (createdResult.data || []).forEach(task => {
+            allTasksMap.set(task.id, task);
+          });
+          
+          // Add single assigned tasks
+          (singleAssignedResult.data || []).forEach(task => {
+            allTasksMap.set(task.id, task);
+          });
+          
+          // Add multi assigned tasks
+          (multiAssignedResult.data || []).forEach(task => {
+            allTasksMap.set(task.id, task);
+          });
+
+          const combinedTasks = Array.from(allTasksMap.values());
+
           if (process.env.NODE_ENV === 'development') {
-            console.error('usePersonalTasks: Error fetching personal tasks:', tasksError);
+            console.log(`usePersonalTasks: Combined ${combinedTasks.length} tasks from all queries`);
+            console.log('Query results:', {
+              created: createdResult.data?.length || 0,
+              singleAssigned: singleAssignedResult.data?.length || 0,
+              multiAssigned: multiAssignedResult.data?.length || 0,
+              combined: combinedTasks.length
+            });
+          }
+
+          if (combinedTasks.length === 0) {
+            return [];
+          }
+
+          // Client-side filtering to ensure strict personal task access
+          const filteredTasks = combinedTasks.filter(task => {
+            const isCreatedByUser = task.user_id === user.id;
+            const isUnassigned = (!task.assigned_to_id || task.assigned_to_id === '') && 
+                                (!task.assigned_to_ids || task.assigned_to_ids.length === 0);
+            const isAssignedToUser = task.assigned_to_id === user.id || 
+                                    (task.assigned_to_ids && task.assigned_to_ids.includes(user.id));
+            
+            // Show task if: (created by user AND unassigned) OR (assigned to user)
+            return (isCreatedByUser && isUnassigned) || isAssignedToUser;
+          });
+
+          // Fetch users data for name lookup with timeout
+          const usersPromise = supabase
+            .from('users')
+            .select('id, name, email')
+            .eq('organization_id', user.organizationId);
+
+          const { data: usersData, error: usersError } = await Promise.race([
+            usersPromise,
+            timeoutPromise
+          ]) as any;
+
+          if (usersError && process.env.NODE_ENV === 'development') {
+            console.error('usePersonalTasks: Error fetching organization users:', usersError);
+          }
+
+          // Create optimized user lookup map
+          const userLookup = new Map();
+          if (usersData) {
+            usersData.forEach(userData => {
+              userLookup.set(userData.id, userData.name || userData.email);
+            });
+          }
+
+          // Transform tasks to app format
+          const transformedTasks: Task[] = filteredTasks.map(task => {
+            let assignedToId = undefined;
+            let assignedToName = undefined;
+            let assignedToIds = [];
+            let assignedToNames = [];
+
+            if (task.assigned_to_ids && Array.isArray(task.assigned_to_ids) && task.assigned_to_ids.length > 0) {
+              assignedToIds = task.assigned_to_ids
+                .filter(id => id && id.toString().trim() !== '')
+                .map(id => id.toString());
+
+              if (assignedToIds.length > 0) {
+                assignedToNames = assignedToIds.map(id => {
+                  return userLookup.get(id) || 'Unknown User';
+                });
+
+                if (assignedToIds.length === 1) {
+                  assignedToId = assignedToIds[0];
+                  assignedToName = assignedToNames[0];
+                }
+              }
+            } else if (task.assigned_to_id && task.assigned_to_id.toString().trim() !== '') {
+              assignedToId = task.assigned_to_id.toString();
+              assignedToIds = [assignedToId];
+              assignedToName = userLookup.get(assignedToId) || 'Assigned User';
+              assignedToNames = [assignedToName];
+            }
+
+            return {
+              id: task.id || 'unknown',
+              userId: task.user_id || '',
+              projectId: task.project_id,
+              title: task.title || 'Untitled Task',
+              description: task.description || '',
+              deadline: task.deadline ? new Date(task.deadline) : new Date(),
+              priority: (task.priority as 'Low' | 'Medium' | 'High') || 'Medium',
+              status: (task.status as 'To Do' | 'In Progress' | 'Completed') || 'To Do',
+              createdAt: task.created_at ? new Date(task.created_at) : new Date(),
+              updatedAt: task.updated_at ? new Date(task.updated_at) : new Date(),
+              assignedToId,
+              assignedToName,
+              assignedToIds,
+              assignedToNames,
+              cost: Number(task.cost) || 0,
+              organizationId: task.organization_id,
+              tags: [],
+              comments: []
+            };
+          });
+
+          if (process.env.NODE_ENV === 'development') {
+            console.log('usePersonalTasks: Successfully processed PERSONAL TASKS ONLY:', {
+              processedCount: transformedTasks.length,
+              userId: user.id,
+              role: user.role
+            });
+          }
+
+          return transformedTasks;
+
+        } catch (error: any) {
+          if (process.env.NODE_ENV === 'development') {
+            console.error('usePersonalTasks: Error in query execution:', error);
           }
           
           // Handle specific error types
-          if (tasksError.message?.includes('invalid input syntax for type uuid')) {
+          if (error.message?.includes('invalid input syntax for type uuid')) {
             throw new Error('Data validation error. Please refresh the page and try again.');
           }
           
-          if (tasksError.message?.includes('set-returning functions are not allowed in WHERE')) {
+          if (error.message?.includes('set-returning functions are not allowed in WHERE')) {
             if (process.env.NODE_ENV === 'development') {
               console.warn('usePersonalTasks: RLS function transition in progress, returning empty tasks array');
             }
@@ -67,118 +230,14 @@ export const usePersonalTasks = () => {
           }
 
           // Network-related errors
-          if (tasksError.message?.includes('Failed to fetch') || 
-              tasksError.message?.includes('Network Error') ||
-              tasksError.message?.includes('timeout')) {
+          if (error.message?.includes('Failed to fetch') || 
+              error.message?.includes('Network Error') ||
+              error.message?.includes('timeout')) {
             throw new Error('Network connection issue. Please check your connection and try again.');
           }
           
-          throw new Error(`Failed to fetch personal tasks: ${tasksError.message}`);
+          throw new Error(`Failed to fetch personal tasks: ${error.message}`);
         }
-
-        if (process.env.NODE_ENV === 'development') {
-          console.log(`usePersonalTasks: Retrieved ${tasksData?.length || 0} personal tasks`);
-        }
-
-        if (!tasksData || tasksData.length === 0) {
-          return [];
-        }
-
-        // Additional client-side filtering to ensure strict personal task access
-        const filteredTasks = tasksData.filter(task => {
-          const isCreatedByUser = task.user_id === user.id;
-          const isUnassigned = (!task.assigned_to_id || task.assigned_to_id === '') && 
-                              (!task.assigned_to_ids || task.assigned_to_ids.length === 0);
-          const isAssignedToUser = task.assigned_to_id === user.id || 
-                                  (task.assigned_to_ids && task.assigned_to_ids.includes(user.id));
-          
-          // Show task if: (created by user AND unassigned) OR (assigned to user)
-          return (isCreatedByUser && isUnassigned) || isAssignedToUser;
-        });
-
-        // Fetch users data for name lookup with timeout
-        const usersPromise = supabase
-          .from('users')
-          .select('id, name, email')
-          .eq('organization_id', user.organizationId);
-
-        const { data: usersData, error: usersError } = await Promise.race([
-          usersPromise,
-          timeoutPromise
-        ]) as any;
-
-        if (usersError && process.env.NODE_ENV === 'development') {
-          console.error('usePersonalTasks: Error fetching organization users:', usersError);
-        }
-
-        // Create optimized user lookup map
-        const userLookup = new Map();
-        if (usersData) {
-          usersData.forEach(userData => {
-            userLookup.set(userData.id, userData.name || userData.email);
-          });
-        }
-
-        // Transform tasks to app format
-        const transformedTasks: Task[] = filteredTasks.map(task => {
-          let assignedToId = undefined;
-          let assignedToName = undefined;
-          let assignedToIds = [];
-          let assignedToNames = [];
-
-          if (task.assigned_to_ids && Array.isArray(task.assigned_to_ids) && task.assigned_to_ids.length > 0) {
-            assignedToIds = task.assigned_to_ids
-              .filter(id => id && id.toString().trim() !== '')
-              .map(id => id.toString());
-
-            if (assignedToIds.length > 0) {
-              assignedToNames = assignedToIds.map(id => {
-                return userLookup.get(id) || 'Unknown User';
-              });
-
-              if (assignedToIds.length === 1) {
-                assignedToId = assignedToIds[0];
-                assignedToName = assignedToNames[0];
-              }
-            }
-          } else if (task.assigned_to_id && task.assigned_to_id.toString().trim() !== '') {
-            assignedToId = task.assigned_to_id.toString();
-            assignedToIds = [assignedToId];
-            assignedToName = userLookup.get(assignedToId) || 'Assigned User';
-            assignedToNames = [assignedToName];
-          }
-
-          return {
-            id: task.id || 'unknown',
-            userId: task.user_id || '',
-            projectId: task.project_id,
-            title: task.title || 'Untitled Task',
-            description: task.description || '',
-            deadline: task.deadline ? new Date(task.deadline) : new Date(),
-            priority: (task.priority as 'Low' | 'Medium' | 'High') || 'Medium',
-            status: (task.status as 'To Do' | 'In Progress' | 'Completed') || 'To Do',
-            createdAt: task.created_at ? new Date(task.created_at) : new Date(),
-            updatedAt: task.updated_at ? new Date(task.updated_at) : new Date(),
-            assignedToId,
-            assignedToName,
-            assignedToIds,
-            assignedToNames,
-            cost: Number(task.cost) || 0,
-            organizationId: task.organization_id,
-            tags: [],
-            comments: []
-          };
-        });
-
-        if (process.env.NODE_ENV === 'development') {
-          console.log('usePersonalTasks: Successfully processed PERSONAL TASKS ONLY:', {
-            processedCount: transformedTasks.length,
-            userId: user.id,
-            role: user.role
-          });
-        }
-
-        return transformedTasks;
       });
     },
     enabled: !!user?.organizationId && !!user?.id,
