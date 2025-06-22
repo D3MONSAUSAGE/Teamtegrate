@@ -1,25 +1,45 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { RefreshCw, UserPlus, Users, Shield, Crown } from 'lucide-react';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { RefreshCw, UserPlus, Users, Shield, Crown, AlertTriangle, Database } from 'lucide-react';
 import { useOrganizationTeamMembers } from '@/hooks/useOrganizationTeamMembers';
+import { useOrganizations } from '@/hooks/useOrganizations';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDataSync } from '@/hooks/useDataSync';
 import UserCard from './user-management/UserCard';
 import UserManagementFilters from './user-management/UserManagementFilters';
+import OrganizationSelector from './OrganizationSelector';
 import CreateUserDialog from './CreateUserDialog';
 import { toast } from '@/components/ui/sonner';
 import { UserRole } from '@/types';
 
 const SimplifiedOrganizationUserManagement = () => {
   const { user: currentUser } = useAuth();
-  const { users, isLoading, error, refetch } = useOrganizationTeamMembers();
-  
-  const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
+  const [selectedOrganizationId, setSelectedOrganizationId] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRole, setSelectedRole] = useState<UserRole | 'all'>('all');
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
+  const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
+
+  // Data sync hook for checking missing users
+  const { isChecking, checkMissingUsers } = useDataSync();
+
+  // Get organizations (only for superadmin)
+  const { organizations, isLoading: loadingOrgs } = useOrganizations();
+
+  // Get users for the selected organization (or current user's org)
+  const targetOrgId = selectedOrganizationId || currentUser?.organizationId;
+  const { users, isLoading, error, refetch } = useOrganizationTeamMembers();
+
+  // Initialize organization selection for superadmin
+  useEffect(() => {
+    if (currentUser?.role === 'superadmin' && !selectedOrganizationId && currentUser.organizationId) {
+      setSelectedOrganizationId(currentUser.organizationId);
+    }
+  }, [currentUser, selectedOrganizationId]);
 
   // Filter users based on search and role
   const filteredUsers = users.filter(user => {
@@ -44,6 +64,10 @@ const SimplifiedOrganizationUserManagement = () => {
     } catch (error) {
       toast.error('Failed to refresh user list');
     }
+  };
+
+  const handleDataSyncCheck = async () => {
+    await checkMissingUsers();
   };
 
   const handleRoleChange = async (userId: string, newRole: UserRole) => {
@@ -74,7 +98,14 @@ const SimplifiedOrganizationUserManagement = () => {
     toast.success('User created successfully');
   };
 
-  if (isLoading) {
+  const handleOrganizationChange = (orgId: string) => {
+    setSelectedOrganizationId(orgId);
+    // Reset filters when changing organization
+    setSearchTerm('');
+    setSelectedRole('all');
+  };
+
+  if (isLoading && !users.length) {
     return (
       <Card>
         <CardHeader>
@@ -104,11 +135,18 @@ const SimplifiedOrganizationUserManagement = () => {
         </CardHeader>
         <CardContent>
           <div className="text-center py-8">
-            <p className="text-destructive mb-4">Failed to load team members: {error}</p>
-            <Button onClick={handleRefresh} variant="outline">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Try Again
-            </Button>
+            <Alert>
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                Failed to load team members: {error}
+                <div className="mt-4">
+                  <Button onClick={handleRefresh} variant="outline">
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Try Again
+                  </Button>
+                </div>
+              </AlertDescription>
+            </Alert>
           </div>
         </CardContent>
       </Card>
@@ -124,6 +162,19 @@ const SimplifiedOrganizationUserManagement = () => {
             Team Members ({users.length})
           </CardTitle>
           <div className="flex items-center gap-2">
+            {currentUser?.role === 'superadmin' && (
+              <>
+                <Button 
+                  onClick={handleDataSyncCheck}
+                  variant="outline" 
+                  size="sm"
+                  disabled={isChecking}
+                >
+                  <Database className={`h-4 w-4 mr-2 ${isChecking ? 'animate-spin' : ''}`} />
+                  Check Sync
+                </Button>
+              </>
+            )}
             <Button 
               onClick={handleRefresh}
               variant="outline" 
@@ -146,6 +197,18 @@ const SimplifiedOrganizationUserManagement = () => {
         </CardHeader>
         
         <CardContent className="space-y-4">
+          {/* Organization Selector for Superadmin */}
+          {currentUser?.role === 'superadmin' && (
+            <OrganizationSelector
+              organizations={organizations}
+              isLoading={loadingOrgs}
+              selectedOrganization={selectedOrganizationId}
+              onOrganizationChange={handleOrganizationChange}
+              label="View Organization Users"
+              placeholder="Select organization to manage"
+            />
+          )}
+
           {/* Role Summary Badges */}
           <div className="flex flex-wrap gap-2">
             <Badge variant="outline" className="flex items-center gap-1">
@@ -166,6 +229,16 @@ const SimplifiedOrganizationUserManagement = () => {
             </Badge>
           </div>
 
+          {/* Current Organization Info */}
+          {selectedOrganizationId && (
+            <Alert>
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                Viewing users from: {organizations.find(o => o.id === selectedOrganizationId)?.name || 'Selected Organization'}
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Filters */}
           <UserManagementFilters
             searchTerm={searchTerm}
@@ -185,6 +258,14 @@ const SimplifiedOrganizationUserManagement = () => {
                   : 'No team members found'
                 }
               </p>
+              {!searchTerm && selectedRole === 'all' && currentUser?.role === 'superadmin' && (
+                <div className="mt-4">
+                  <Button onClick={handleDataSyncCheck} variant="outline" size="sm">
+                    <Database className="h-4 w-4 mr-2" />
+                    Check for Missing Users
+                  </Button>
+                </div>
+              )}
             </div>
           ) : (
             <div className="grid gap-4">

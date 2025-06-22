@@ -11,7 +11,7 @@ import AssignmentToggle from './AssignmentToggle';
 import TaskAssigneeSelect from '../TaskAssigneeSelect';
 import TeamAssignmentCard from '../../TeamAssignmentCard';
 import AssignmentSummary from './AssignmentSummary';
-import OrganizationSelect from '@/components/ui/organization-select';
+import OrganizationSelector from '@/components/organization/OrganizationSelector';
 import TeamSelect from '@/components/ui/team-select';
 
 interface EnhancedTaskAssignmentProps {
@@ -50,12 +50,29 @@ const EnhancedTaskAssignment: React.FC<EnhancedTaskAssignmentProps> = ({
     selectedTeam === 'all' ? undefined : selectedTeam
   );
 
-  // Initialize organization selection for super admin
+  // Enhanced initialization for superadmins
   useEffect(() => {
-    if (currentUser?.role === 'superadmin' && !selectedOrganization && currentUser.organizationId) {
-      setSelectedOrganization(currentUser.organizationId);
+    if (currentUser?.role === 'superadmin') {
+      // Auto-select current user's organization if not selected
+      if (!selectedOrganization && currentUser.organizationId) {
+        console.log('Auto-selecting superadmin organization:', currentUser.organizationId);
+        setSelectedOrganization(currentUser.organizationId);
+      }
     }
   }, [currentUser, selectedOrganization]);
+
+  // Log user loading for debugging
+  useEffect(() => {
+    console.log('EnhancedTaskAssignment: User data state', {
+      currentUserRole: currentUser?.role,
+      selectedOrganization,
+      selectedTeam,
+      contextUsersCount: contextUsers.length,
+      fallbackUsersCount: fallbackUsers.length,
+      loadingUsers,
+      fallbackLoading
+    });
+  }, [currentUser?.role, selectedOrganization, selectedTeam, contextUsers.length, fallbackUsers.length, loadingUsers, fallbackLoading]);
 
   // Determine which users to show based on role and context
   const users = currentUser?.role === 'manager' ? fallbackUsers : contextUsers;
@@ -80,6 +97,7 @@ const EnhancedTaskAssignment: React.FC<EnhancedTaskAssignmentProps> = ({
   };
 
   const handleOrganizationChange = (orgId: string) => {
+    console.log('Organization changed to:', orgId);
     setSelectedOrganization(orgId);
     setSelectedTeam(''); // Reset team selection
     onAssign("unassigned"); // Reset assignment
@@ -87,6 +105,7 @@ const EnhancedTaskAssignment: React.FC<EnhancedTaskAssignmentProps> = ({
   };
 
   const handleTeamChange = (teamId: string) => {
+    console.log('Team changed to:', teamId);
     setSelectedTeam(teamId);
     onAssign("unassigned"); // Reset assignment
     onMembersChange([]); // Reset multi-assignment
@@ -107,17 +126,24 @@ const EnhancedTaskAssignment: React.FC<EnhancedTaskAssignmentProps> = ({
         <CardTitle className="flex items-center gap-2 text-lg">
           <Building2 className="h-5 w-5" />
           Task Assignment
+          {users.length > 0 && (
+            <span className="text-sm font-normal text-muted-foreground">
+              ({users.length} available)
+            </span>
+          )}
         </CardTitle>
       </CardHeader>
       
       <CardContent className="space-y-4">
         {/* Organization Selection (Super Admin Only) */}
         {showOrganizationSelect && (
-          <OrganizationSelect
+          <OrganizationSelector
             organizations={organizations}
             isLoading={loadingOrgs}
             selectedOrganization={selectedOrganization}
             onOrganizationChange={handleOrganizationChange}
+            label="Select Organization"
+            placeholder="Choose organization for task assignment"
           />
         )}
 
@@ -172,6 +198,17 @@ const EnhancedTaskAssignment: React.FC<EnhancedTaskAssignmentProps> = ({
               <div>Team: All Teams</div>
             )}
             <div>Available assignees: {users.length}</div>
+          </div>
+        )}
+
+        {/* No Users Available Warning */}
+        {!isLoading && users.length === 0 && (
+          <div className="text-center py-4 text-muted-foreground">
+            <UserIcon className="h-8 w-8 mx-auto mb-2" />
+            <p className="text-sm">No users available for assignment</p>
+            {showOrganizationSelect && !selectedOrganization && (
+              <p className="text-xs mt-1">Select an organization to see available users</p>
+            )}
           </div>
         )}
       </CardContent>

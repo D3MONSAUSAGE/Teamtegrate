@@ -1262,6 +1262,15 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      find_missing_users: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          auth_user_id: string
+          auth_email: string
+          auth_created_at: string
+          missing_from_public: boolean
+        }[]
+      }
       generate_invite_code: {
         Args: {
           org_id: string
