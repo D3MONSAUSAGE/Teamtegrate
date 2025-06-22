@@ -26,7 +26,8 @@ import {
   LazyOrganizationPage,
   LazyFinancePage,
   LazyNotebookPage,
-  LazyJournalPage
+  LazyJournalPage,
+  LazyTeamDetailPage
 } from '@/pages/LazyPages';
 
 // Lazy load project view components
@@ -121,6 +122,10 @@ export const router = createBrowserRouter([
           {
             path: "organization",
             element: <LazyOrganizationPage />,
+          },
+          {
+            path: "organization/teams/:teamId",
+            element: <LazyTeamDetailPage />,
           },
           {
             path: "finance",

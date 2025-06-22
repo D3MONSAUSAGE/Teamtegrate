@@ -15,6 +15,7 @@ const OrganizationDashboard = React.lazy(() => import('./OrganizationDashboard')
 const FinancePage = React.lazy(() => import('./FinancePage'));
 const NotebookPage = React.lazy(() => import('./NotebookPage'));
 const JournalPage = React.lazy(() => import('./JournalPage'));
+const TeamDetailPage = React.lazy(() => import('./TeamDetailPage'));
 
 // Wrapper components with suspense
 export const LazyCalendarPage = () => (
@@ -86,5 +87,11 @@ export const LazyNotebookPage = () => (
 export const LazyJournalPage = () => (
   <Suspense fallback={<LoadingFallback />}>
     <JournalPage />
+  </Suspense>
+);
+
+export const LazyTeamDetailPage = () => (
+  <Suspense fallback={<LoadingFallback />}>
+    <TeamDetailPage />
   </Suspense>
 );
