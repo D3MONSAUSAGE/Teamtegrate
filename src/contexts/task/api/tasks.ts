@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Task } from '@/types';
 
@@ -105,9 +106,28 @@ export const fetchTasks = async (organizationId: string): Promise<Task[]> => {
 
 export const createTask = async (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>): Promise<Task> => {
   try {
+    // Transform app Task to database format
+    const dbTask = {
+      id: `task_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      user_id: task.userId,
+      project_id: task.projectId || null,
+      title: task.title,
+      description: task.description,
+      deadline: task.deadline.toISOString(),
+      priority: task.priority,
+      status: task.status,
+      assigned_to_id: task.assignedToId || null,
+      assigned_to_ids: task.assignedToIds || [],
+      assigned_to_names: task.assignedToNames || [],
+      cost: task.cost || 0,
+      organization_id: task.organizationId,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
     const { data, error } = await supabase
       .from('tasks')
-      .insert([task])
+      .insert([dbTask])
       .select()
       .single();
 
@@ -115,7 +135,27 @@ export const createTask = async (task: Omit<Task, 'id' | 'createdAt' | 'updatedA
       throw new Error(`Failed to create task: ${error.message}`);
     }
 
-    return data as Task;
+    // Transform back to app format
+    return {
+      id: data.id,
+      userId: data.user_id,
+      projectId: data.project_id,
+      title: data.title,
+      description: data.description,
+      deadline: new Date(data.deadline),
+      priority: data.priority as Task['priority'],
+      status: data.status as Task['status'],
+      createdAt: new Date(data.created_at),
+      updatedAt: new Date(data.updated_at),
+      assignedToId: data.assigned_to_id,
+      assignedToName: data.assigned_to_names?.[0],
+      assignedToIds: data.assigned_to_ids || [],
+      assignedToNames: data.assigned_to_names || [],
+      cost: Number(data.cost) || 0,
+      organizationId: data.organization_id,
+      tags: [],
+      comments: []
+    };
   } catch (error: any) {
     throw new Error(`Failed to create task: ${error.message}`);
   }
@@ -123,9 +163,27 @@ export const createTask = async (task: Omit<Task, 'id' | 'createdAt' | 'updatedA
 
 export const updateTask = async (taskId: string, task: Partial<Task>): Promise<void> => {
   try {
+    // Transform app fields to database fields
+    const dbUpdate: any = {};
+    
+    if (task.userId !== undefined) dbUpdate.user_id = task.userId;
+    if (task.projectId !== undefined) dbUpdate.project_id = task.projectId;
+    if (task.title !== undefined) dbUpdate.title = task.title;
+    if (task.description !== undefined) dbUpdate.description = task.description;
+    if (task.deadline !== undefined) dbUpdate.deadline = task.deadline.toISOString();
+    if (task.priority !== undefined) dbUpdate.priority = task.priority;
+    if (task.status !== undefined) dbUpdate.status = task.status;
+    if (task.assignedToId !== undefined) dbUpdate.assigned_to_id = task.assignedToId;
+    if (task.assignedToIds !== undefined) dbUpdate.assigned_to_ids = task.assignedToIds;
+    if (task.assignedToNames !== undefined) dbUpdate.assigned_to_names = task.assignedToNames;
+    if (task.cost !== undefined) dbUpdate.cost = task.cost;
+    if (task.organizationId !== undefined) dbUpdate.organization_id = task.organizationId;
+    
+    dbUpdate.updated_at = new Date().toISOString();
+
     const { error } = await supabase
       .from('tasks')
-      .update(task)
+      .update(dbUpdate)
       .eq('id', taskId);
 
     if (error) {
@@ -153,9 +211,18 @@ export const deleteTask = async (taskId: string): Promise<void> => {
 
 export const updateTaskStatus = async (taskId: string, updates: Partial<Task>): Promise<void> => {
   try {
+    // Transform app fields to database fields
+    const dbUpdate: any = {};
+    
+    if (updates.status !== undefined) dbUpdate.status = updates.status;
+    if (updates.priority !== undefined) dbUpdate.priority = updates.priority;
+    if (updates.deadline !== undefined) dbUpdate.deadline = updates.deadline.toISOString();
+    
+    dbUpdate.updated_at = new Date().toISOString();
+
     const { error } = await supabase
       .from('tasks')
-      .update(updates)
+      .update(dbUpdate)
       .eq('id', taskId);
 
     if (error) {
@@ -170,7 +237,11 @@ export const assignTaskToUser = async (taskId: string, userId: string, userName:
   try {
     const { error } = await supabase
       .from('tasks')
-      .update({ assignedToId: userId, assignedToName: userName })
+      .update({ 
+        assigned_to_id: userId, 
+        assigned_to_names: [userName],
+        updated_at: new Date().toISOString()
+      })
       .eq('id', taskId);
 
     if (error) {

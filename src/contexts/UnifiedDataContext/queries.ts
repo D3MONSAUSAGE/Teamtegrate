@@ -1,3 +1,4 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Task, Project, User } from '@/types';
@@ -120,9 +121,9 @@ export const useTasksQuery = ({ user, networkStatus, setRequestsInFlight }: Quer
 
   return {
     tasks,
-    isLoading,
-    error,
-    refetch
+    isLoadingTasks: isLoading,
+    tasksError: error,
+    refetchTasksQuery: refetch
   };
 };
 
@@ -151,7 +152,28 @@ export const useProjectsQuery = ({ user, networkStatus, setRequestsInFlight }: Q
         }
 
         console.log(`📊 UnifiedDataContext: Retrieved ${projectsData?.length || 0} projects`);
-        return projectsData || [];
+        
+        // Transform projects to app format
+        const transformedProjects: Project[] = (projectsData || []).map(project => ({
+          id: project.id,
+          title: project.title || 'Untitled Project',
+          description: project.description || '',
+          startDate: project.start_date || new Date().toISOString().split('T')[0],
+          endDate: project.end_date || new Date().toISOString().split('T')[0],
+          status: (project.status as 'To Do' | 'In Progress' | 'Completed' | 'On Hold') || 'To Do',
+          budget: Number(project.budget) || 0,
+          budgetSpent: Number(project.budget_spent) || 0,
+          managerId: project.manager_id || '',
+          teamMemberIds: project.team_members || [],
+          tags: project.tags || [],
+          createdAt: project.created_at || new Date().toISOString(),
+          updatedAt: project.updated_at || new Date().toISOString(),
+          isCompleted: Boolean(project.is_completed) || false,
+          organizationId: project.organization_id,
+          tasksCount: Number(project.tasks_count) || 0
+        }));
+
+        return transformedProjects;
       } finally {
         setRequestsInFlight(count => count - 1);
       }
@@ -165,9 +187,9 @@ export const useProjectsQuery = ({ user, networkStatus, setRequestsInFlight }: Q
 
   return {
     projects,
-    isLoading,
-    error,
-    refetch
+    isLoadingProjects: isLoading,
+    projectsError: error,
+    refetchProjectsQuery: refetch
   };
 };
 
@@ -186,7 +208,7 @@ export const useUsersQuery = ({ user, networkStatus, setRequestsInFlight }: Quer
       try {
         const { data: usersData, error: usersError } = await supabase
           .from('users')
-          .select('id, name, email, role')
+          .select('id, name, email, role, organization_id, created_at')
           .eq('organization_id', user.organizationId)
           .order('created_at', { ascending: false });
 
@@ -196,7 +218,19 @@ export const useUsersQuery = ({ user, networkStatus, setRequestsInFlight }: Quer
         }
 
         console.log(`📊 UnifiedDataContext: Retrieved ${usersData?.length || 0} users`);
-        return usersData || [];
+        
+        // Transform users to app format
+        const transformedUsers: User[] = (usersData || []).map(userData => ({
+          id: userData.id,
+          name: userData.name || 'User',
+          email: userData.email || '',
+          role: userData.role as User['role'],
+          organizationId: userData.organization_id,
+          createdAt: new Date(userData.created_at || new Date()),
+          timezone: 'UTC'
+        }));
+
+        return transformedUsers;
       } finally {
         setRequestsInFlight(count => count - 1);
       }
@@ -210,8 +244,8 @@ export const useUsersQuery = ({ user, networkStatus, setRequestsInFlight }: Quer
 
   return {
     users,
-    isLoading,
-    error,
-    refetch
+    isLoadingUsers: isLoading,
+    usersError: error,
+    refetchUsersQuery: refetch
   };
 };
