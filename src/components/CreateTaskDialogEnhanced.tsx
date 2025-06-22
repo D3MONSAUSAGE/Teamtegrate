@@ -4,6 +4,7 @@ import { Task } from '@/types';
 import { useProjects } from '@/hooks/useProjects';
 import { useOrganizationTeamMembers } from '@/hooks/useOrganizationTeamMembers';
 import { useTaskSubmission } from '@/hooks/useTaskSubmission';
+import { useAuth } from '@/contexts/AuthContext';
 import EnhancedCreateTaskDialog from './task/EnhancedCreateTaskDialog';
 
 interface CreateTaskDialogEnhancedProps {
@@ -21,7 +22,11 @@ const CreateTaskDialogEnhanced: React.FC<CreateTaskDialogEnhancedProps> = ({
   currentProjectId,
   onTaskComplete,
 }) => {
+  const { user: currentUser } = useAuth();
   const { projects } = useProjects();
+  
+  // For managers, use organization team members (current behavior)
+  // For admins and superadmins, the enhanced assignment component will handle user loading
   const { users, isLoading: loadingUsers, refetch: refetchUsers } = useOrganizationTeamMembers();
   
   const { submitTask } = useTaskSubmission();
@@ -63,6 +68,7 @@ const CreateTaskDialogEnhanced: React.FC<CreateTaskDialogEnhancedProps> = ({
       users={users}
       loadingUsers={loadingUsers}
       onSubmit={handleSubmit}
+      currentUserRole={currentUser?.role}
     />
   );
 };

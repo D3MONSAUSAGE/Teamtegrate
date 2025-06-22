@@ -1,105 +1,57 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { User, UserRole } from '@/types';
-import { useAuth } from '@/contexts/AuthContext';
-import { useOrganizationTeamMembers } from '@/hooks/useOrganizationTeamMembers';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/components/ui/sonner';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Users, Crown, Loader2, Shield, AlertTriangle, RefreshCw } from 'lucide-react';
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { RefreshCw, UserPlus, Users, Shield, Crown } from 'lucide-react';
+import { useOrganizationTeamMembers } from '@/hooks/useOrganizationTeamMembers';
+import { useAuth } from '@/contexts/AuthContext';
+import UserCard from './user-management/UserCard';
 import UserManagementFilters from './user-management/UserManagementFilters';
-import UserList from './user-management/UserList';
 import CreateUserDialog from './CreateUserDialog';
-import EditUserDialog from './EditUserDialog';
-import SimpleDeleteUserDialog from './SimpleDeleteUserDialog';
+import { toast } from '@/components/ui/sonner';
 
-const SimplifiedOrganizationUserManagement: React.FC = () => {
+const SimplifiedOrganizationUserManagement = () => {
   const { user: currentUser } = useAuth();
-  const { users, isLoading, refetch } = useOrganizationTeamMembers();
+  const { users, isLoading, error, refetch } = useOrganizationTeamMembers();
+  
+  const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedRole, setSelectedRole] = useState<UserRole | 'all'>('all');
-  const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<any>(null);
-
-  const handleQuickRoleChange = async (userId: string, newRole: UserRole) => {
-    setUpdatingUserId(userId);
-    try {
-      const { error } = await supabase
-        .from('users')
-        .update({ role: newRole })
-        .eq('id', userId);
-
-      if (error) throw error;
-
-      toast.success('User role updated successfully');
-      await refetch(); // Refresh the list
-    } catch (error) {
-      console.error('Role change failed:', error);
-      toast.error('Failed to update user role');
-    } finally {
-      setUpdatingUserId(null);
-    }
-  };
-
-  const handleEditUser = (user: any) => {
-    setSelectedUser(user);
-    setEditDialogOpen(true);
-  };
-
-  const handleDeleteUser = (user: any) => {
-    setSelectedUser(user);
-    setDeleteDialogOpen(true);
-  };
-
-  const onUserCreated = () => {
-    setCreateDialogOpen(false);
-    refetch();
-    toast.success('User created successfully');
-  };
-
-  const onUserUpdated = () => {
-    setEditDialogOpen(false);
-    setSelectedUser(null);
-    refetch();
-    toast.success('User updated successfully');
-  };
-
-  const onUserDeleted = () => {
-    setDeleteDialogOpen(false);
-    setSelectedUser(null);
-    refetch();
-    toast.success('User deleted successfully');
-  };
+  const [roleFilter, setRoleFilter] = useState('all');
 
   // Filter users based on search and role
   const filteredUsers = users.filter(user => {
-    const matchesSearch = searchTerm === '' || 
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesRole = selectedRole === 'all' || user.role === selectedRole;
-    
+    const matchesSearch = user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesRole = roleFilter === 'all' || user.role === roleFilter;
     return matchesSearch && matchesRole;
   });
 
-  const isSuperadmin = currentUser?.role === 'superadmin';
+  // Role counts for badges
+  const roleCounts = {
+    superadmin: users.filter(u => u.role === 'superadmin').length,
+    admin: users.filter(u => u.role === 'admin').length,
+    manager: users.filter(u => u.role === 'manager').length,
+    user: users.filter(u => u.role === 'user').length,
+  };
 
-  if (!isSuperadmin) {
-    return (
-      <Card>
-        <CardContent className="p-6 text-center">
-          <Shield className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground">Only superadmins can access user management.</p>
-        </CardContent>
-      </Card>
-    );
-  }
+  const handleRefresh = async () => {
+    try {
+      await refetch();
+      toast.success('User list refreshed');
+    } catch (error) {
+      toast.error('Failed to refresh user list');
+    }
+  };
+
+  const getRoleIcon = (role: string) => {
+    switch (role) {
+      case 'superadmin': return <Crown className="h-4 w-4 text-yellow-500" />;
+      case 'admin': return <Shield className="h-4 w-4 text-blue-500" />;
+      case 'manager': return <Users className="h-4 w-4 text-green-500" />;
+      default: return <Users className="h-4 w-4 text-gray-500" />;
+    }
+  };
 
   if (isLoading) {
     return (
@@ -107,91 +59,128 @@ const SimplifiedOrganizationUserManagement: React.FC = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            User Management
+            Team Members
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin" />
+            <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
+            <span className="ml-2 text-muted-foreground">Loading team members...</span>
           </div>
         </CardContent>
       </Card>
     );
   }
 
-  const currentSuperadmin = users.find(user => user.role === 'superadmin');
-
-  return (
-    <>
+  if (error) {
+    return (
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            User Management
-            <Badge variant="outline" className="ml-auto">
-              {filteredUsers.length} Users
-            </Badge>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={refetch}
-              className="ml-2"
-            >
-              <RefreshCw className="h-4 w-4" />
-            </Button>
+            Team Members
           </CardTitle>
-          <div className="flex items-center justify-between">
-            {currentSuperadmin && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Crown className="h-4 w-4 text-yellow-500" />
-                <span>Current Superadmin: <strong>{currentSuperadmin.name}</strong></span>
-              </div>
-            )}
-          </div>
-          <div className="text-sm text-muted-foreground">
-            Organization: {currentUser?.organizationId} | Total Users Found: {users.length}
-          </div>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <UserManagementFilters
-              searchTerm={searchTerm}
-              setSearchTerm={setSearchTerm}
-              selectedRole={selectedRole}
-              setSelectedRole={setSelectedRole}
-              onCreateUser={() => setCreateDialogOpen(true)}
-            />
-
-            <UserList
-              users={filteredUsers}
-              updatingUserId={updatingUserId}
-              onRoleChange={handleQuickRoleChange}
-              onEditUser={handleEditUser}
-              onDeleteUser={handleDeleteUser}
-            />
+          <div className="text-center py-8">
+            <p className="text-destructive mb-4">Failed to load team members: {error}</p>
+            <Button onClick={handleRefresh} variant="outline">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Try Again
+            </Button>
           </div>
         </CardContent>
       </Card>
+    );
+  }
 
-      {/* Dialogs */}
-      <CreateUserDialog
-        open={createDialogOpen}
-        onOpenChange={setCreateDialogOpen}
-        onUserCreated={onUserCreated}
-      />
+  return (
+    <>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Team Members ({users.length})
+          </CardTitle>
+          <div className="flex items-center gap-2">
+            <Button 
+              onClick={handleRefresh}
+              variant="outline" 
+              size="sm"
+              disabled={isLoading}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+            {currentUser?.role === 'superadmin' && (
+              <Button 
+                onClick={() => setIsCreateUserOpen(true)}
+                size="sm"
+              >
+                <UserPlus className="h-4 w-4 mr-2" />
+                Add User
+              </Button>
+            )}
+          </div>
+        </CardHeader>
+        
+        <CardContent className="space-y-4">
+          {/* Role Summary Badges */}
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="outline" className="flex items-center gap-1">
+              <Crown className="h-3 w-3 text-yellow-500" />
+              Super Admins: {roleCounts.superadmin}
+            </Badge>
+            <Badge variant="outline" className="flex items-center gap-1">
+              <Shield className="h-3 w-3 text-blue-500" />
+              Admins: {roleCounts.admin}
+            </Badge>
+            <Badge variant="outline" className="flex items-center gap-1">
+              <Users className="h-3 w-3 text-green-500" />
+              Managers: {roleCounts.manager}
+            </Badge>
+            <Badge variant="outline" className="flex items-center gap-1">
+              <Users className="h-3 w-3 text-gray-500" />
+              Users: {roleCounts.user}
+            </Badge>
+          </div>
 
-      <EditUserDialog
-        open={editDialogOpen}
-        onOpenChange={setEditDialogOpen}
-        user={selectedUser}
-        onUserUpdated={onUserUpdated}
-      />
+          {/* Filters */}
+          <UserManagementFilters
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            roleFilter={roleFilter}
+            setRoleFilter={setRoleFilter}
+          />
 
-      <SimpleDeleteUserDialog
-        open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
-        user={selectedUser}
-        onUserDeleted={onUserDeleted}
+          {/* User List */}
+          {filteredUsers.length === 0 ? (
+            <div className="text-center py-8">
+              <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">
+                {searchTerm || roleFilter !== 'all' 
+                  ? 'No users match your filters' 
+                  : 'No team members found'
+                }
+              </p>
+            </div>
+          ) : (
+            <div className="grid gap-4">
+              {filteredUsers.map((user) => (
+                <UserCard 
+                  key={user.id} 
+                  user={user} 
+                  currentUser={currentUser}
+                />
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <CreateUserDialog 
+        open={isCreateUserOpen}
+        onOpenChange={setIsCreateUserOpen}
       />
     </>
   );

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Target } from 'lucide-react';
 import { format } from "date-fns";
-import { Task, User, Project, TaskPriority } from '@/types';
+import { Task, User, Project, TaskPriority, UserRole } from '@/types';
 import { useForm } from 'react-hook-form';
 import { toast } from '@/components/ui/sonner';
 import TaskDetailsCard from './TaskDetailsCard';
@@ -20,6 +20,7 @@ interface EnhancedCreateTaskDialogProps {
   users: User[];
   loadingUsers: boolean;
   onSubmit: (data: any, selectedUsers: User[]) => Promise<void>;
+  currentUserRole?: UserRole;
 }
 
 const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
@@ -31,7 +32,8 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
   projects,
   users,
   loadingUsers,
-  onSubmit
+  onSubmit,
+  currentUserRole
 }) => {
   const [selectedMember, setSelectedMember] = useState<string | undefined>("unassigned");
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
@@ -151,6 +153,11 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
           <DialogTitle className="flex items-center gap-2">
             <Target className="h-5 w-5" />
             {editingTask ? 'Edit Task' : 'Create New Task'}
+            {currentUserRole && (
+              <span className="text-sm text-muted-foreground">
+                ({currentUserRole} view)
+              </span>
+            )}
           </DialogTitle>
         </DialogHeader>
         
