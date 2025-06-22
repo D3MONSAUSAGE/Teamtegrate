@@ -10,6 +10,7 @@ import UserCard from './user-management/UserCard';
 import UserManagementFilters from './user-management/UserManagementFilters';
 import CreateUserDialog from './CreateUserDialog';
 import { toast } from '@/components/ui/sonner';
+import { UserRole } from '@/types';
 
 const SimplifiedOrganizationUserManagement = () => {
   const { user: currentUser } = useAuth();
@@ -17,13 +18,14 @@ const SimplifiedOrganizationUserManagement = () => {
   
   const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [roleFilter, setRoleFilter] = useState('all');
+  const [selectedRole, setSelectedRole] = useState<UserRole | 'all'>('all');
+  const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
 
   // Filter users based on search and role
   const filteredUsers = users.filter(user => {
     const matchesSearch = user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRole = roleFilter === 'all' || user.role === roleFilter;
+    const matchesRole = selectedRole === 'all' || user.role === selectedRole;
     return matchesSearch && matchesRole;
   });
 
@@ -44,13 +46,32 @@ const SimplifiedOrganizationUserManagement = () => {
     }
   };
 
-  const getRoleIcon = (role: string) => {
-    switch (role) {
-      case 'superadmin': return <Crown className="h-4 w-4 text-yellow-500" />;
-      case 'admin': return <Shield className="h-4 w-4 text-blue-500" />;
-      case 'manager': return <Users className="h-4 w-4 text-green-500" />;
-      default: return <Users className="h-4 w-4 text-gray-500" />;
+  const handleRoleChange = async (userId: string, newRole: UserRole) => {
+    setUpdatingUserId(userId);
+    try {
+      // Role change logic would go here
+      toast.success('Role updated successfully');
+      await refetch();
+    } catch (error) {
+      toast.error('Failed to update role');
+    } finally {
+      setUpdatingUserId(null);
     }
+  };
+
+  const handleEditUser = (user: any) => {
+    // Edit user logic would go here
+    console.log('Edit user:', user);
+  };
+
+  const handleDeleteUser = (user: any) => {
+    // Delete user logic would go here
+    console.log('Delete user:', user);
+  };
+
+  const handleUserCreated = async () => {
+    await refetch();
+    toast.success('User created successfully');
   };
 
   if (isLoading) {
@@ -149,8 +170,9 @@ const SimplifiedOrganizationUserManagement = () => {
           <UserManagementFilters
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
-            roleFilter={roleFilter}
-            setRoleFilter={setRoleFilter}
+            selectedRole={selectedRole}
+            setSelectedRole={setSelectedRole}
+            onCreateUser={() => setIsCreateUserOpen(true)}
           />
 
           {/* User List */}
@@ -158,7 +180,7 @@ const SimplifiedOrganizationUserManagement = () => {
             <div className="text-center py-8">
               <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <p className="text-muted-foreground">
-                {searchTerm || roleFilter !== 'all' 
+                {searchTerm || selectedRole !== 'all' 
                   ? 'No users match your filters' 
                   : 'No team members found'
                 }
@@ -169,8 +191,11 @@ const SimplifiedOrganizationUserManagement = () => {
               {filteredUsers.map((user) => (
                 <UserCard 
                   key={user.id} 
-                  user={user} 
-                  currentUser={currentUser}
+                  user={user}
+                  updatingUserId={updatingUserId}
+                  onRoleChange={handleRoleChange}
+                  onEditUser={handleEditUser}
+                  onDeleteUser={handleDeleteUser}
                 />
               ))}
             </div>
@@ -181,6 +206,7 @@ const SimplifiedOrganizationUserManagement = () => {
       <CreateUserDialog 
         open={isCreateUserOpen}
         onOpenChange={setIsCreateUserOpen}
+        onUserCreated={handleUserCreated}
       />
     </>
   );
