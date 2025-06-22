@@ -24,15 +24,15 @@ export const useTasksPageData = () => {
       
       return requestManager.dedupe(cacheKey, async () => {
         if (process.env.NODE_ENV === 'development') {
-          console.log('useTasksPageData: Fetching MY TASKS (directly assigned only) for user:', {
+          console.log('useTasksPageData: Fetching MY TASKS ONLY (directly assigned or created) for user:', {
             userId: user.id,
             organizationId: user.organizationId,
             role: user.role
           });
         }
 
-        // FOCUSED QUERY: Only fetch tasks directly assigned to the user
-        // Remove broad admin/creator access for My Tasks page
+        // FOCUSED QUERY: Only fetch tasks directly related to this specific user
+        // This is for the "My Tasks" page - personal task view only
         const timeoutPromise = new Promise((_, reject) => 
           setTimeout(() => reject(new Error('Request timeout')), 10000)
         );
@@ -41,7 +41,7 @@ export const useTasksPageData = () => {
           .from('tasks')
           .select('*')
           .eq('organization_id', user.organizationId)
-          .or(`assigned_to_id.eq.${user.id},assigned_to_ids.cs.{${user.id}}`)
+          .or(`user_id.eq.${user.id},assigned_to_id.eq.${user.id},assigned_to_ids.cs.{${user.id}}`)
           .order('created_at', { ascending: false });
 
         const { data: tasksData, error: tasksError } = await Promise.race([
@@ -77,7 +77,7 @@ export const useTasksPageData = () => {
         }
 
         if (process.env.NODE_ENV === 'development') {
-          console.log(`useTasksPageData: Retrieved ${tasksData?.length || 0} directly assigned tasks`);
+          console.log(`useTasksPageData: Retrieved ${tasksData?.length || 0} tasks for personal task view`);
         }
 
         if (!tasksData || tasksData.length === 0) {
@@ -107,7 +107,7 @@ export const useTasksPageData = () => {
           });
         }
 
-        // Process tasks with FOCUSED filtering for My Tasks
+        // Process tasks with STRICT filtering for My Tasks page
         const processedTasks = tasksData
           .filter(task => {
             // Security check: Ensure task belongs to user's organization
@@ -118,12 +118,13 @@ export const useTasksPageData = () => {
               return false;
             }
 
-            // FOCUSED FILTERING: Only tasks directly assigned to the user
+            // STRICT FILTERING: Only tasks directly related to this user
+            const isCreatedByUser = task.user_id === user.id;
             const isDirectlyAssigned = 
               task.assigned_to_id === user.id || // Single assignee
               (task.assigned_to_ids && Array.isArray(task.assigned_to_ids) && task.assigned_to_ids.includes(user.id)); // Multi assignee
 
-            return isDirectlyAssigned;
+            return isCreatedByUser || isDirectlyAssigned;
           })
           .map(task => {
             // Optimized assignment data processing
@@ -193,7 +194,7 @@ export const useTasksPageData = () => {
           });
 
         if (process.env.NODE_ENV === 'development') {
-          console.log('useTasksPageData: Successfully processed MY TASKS:', {
+          console.log('useTasksPageData: Successfully processed PERSONAL TASKS ONLY:', {
             originalCount: tasksData.length,
             processedCount: processedTasks.length,
             userId: user.id,

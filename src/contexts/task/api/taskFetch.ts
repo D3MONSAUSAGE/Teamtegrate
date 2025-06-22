@@ -33,7 +33,8 @@ export const fetchTasks = async (
       return;
     }
     
-    // Fetch tasks with RLS policies - UPDATED QUERY for My Tasks page
+    // STRICT QUERY: Only fetch tasks that are directly related to the user
+    // The RLS policy will handle the filtering, but we're being explicit here
     // Include tasks that are:
     // 1. Created by the user (user_id = user.id)
     // 2. Assigned to the user (assigned_to_id = user.id)
@@ -63,7 +64,7 @@ export const fetchTasks = async (
       console.log(`fetchTasks: Retrieved ${tasksData?.length || 0} tasks (created by user OR assigned to user)`);
     }
     
-    // Security validation: Ensure all returned tasks belong to this user
+    // Security validation: The RLS policy should handle this, but double-check
     const validatedTasks = tasksData?.filter(dbTask => {
       // Check organization match
       if (dbTask.organization_id !== user.organization_id) {
@@ -73,7 +74,7 @@ export const fetchTasks = async (
         return false;
       }
 
-      // UPDATED FILTERING: Include tasks created by user OR assigned to user
+      // STRICT FILTERING: Only include tasks created by user OR assigned to user
       const isCreatedByUser = dbTask.user_id === user.id;
       const isDirectlyAssigned = 
         dbTask.assigned_to_id === user.id || // Single assignee
@@ -182,7 +183,7 @@ export const fetchTasks = async (
     });
 
     if (process.env.NODE_ENV === 'development') {
-      console.log(`fetchTasks: Successfully processed ${transformedTasks.length} tasks (created by user OR assigned to user)`);
+      console.log(`fetchTasks: Successfully processed ${transformedTasks.length} tasks (created by user OR assigned to user ONLY)`);
     }
     
     setTasks(transformedTasks);
