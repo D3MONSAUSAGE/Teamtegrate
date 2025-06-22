@@ -1,193 +1,217 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { networkManager } from '@/utils/networkManager';
-import { transformDbTaskToAppTask, transformDbProjectToAppProject, transformDbUserToAppUser } from './transformers';
-import { useMemo } from 'react';
+import { Task, Project, User } from '@/types';
 
 interface QueryOptions {
-  user?: {
-    id?: string;
-    organizationId?: string;
-  };
-  networkStatus: 'healthy' | 'degraded' | 'offline';
-  setRequestsInFlight: (fn: (prev: number) => number) => void;
+  user: any;
+  networkStatus: string;
+  setRequestsInFlight: (fn: (count: number) => number) => void;
 }
 
 export const useTasksQuery = ({ user, networkStatus, setRequestsInFlight }: QueryOptions) => {
-  const {
-    data: rawTasks = [],
-    isLoading: isLoadingTasks,
-    error: tasksError,
-    refetch: refetchTasksQuery
-  } = useQuery({
-    queryKey: ['unified-my-tasks', user?.organizationId, user?.id],
-    queryFn: async () => {
-      if (!user?.organizationId || !user?.id) return [];
-      
-      return await networkManager.withNetworkResilience(
-        'fetch-my-tasks',
-        async () => {
-          setRequestsInFlight(prev => prev + 1);
-          try {
-            // OPTIMIZED QUERY: Only fetch essential fields and use indexes
-            const { data, error } = await supabase
-              .from('tasks')
-              .select('id, title, description, status, priority, deadline, assigned_to_id, assigned_to_ids, project_id, organization_id, created_at, updated_at')
-              .eq('organization_id', user.organizationId)
-              .or(`assigned_to_id.eq.${user.id},assigned_to_ids.cs.{${user.id}}`)
-              .order('created_at', { ascending: false })
-              .limit(100); // Limit initial load
+  const { data: tasks = [], isLoading, error, refetch } = useQuery({
+    queryKey: ['unified-tasks', user?.organizationId, user?.id],
+    queryFn: async (): Promise<Task[]> => {
+      if (!user?.organizationId || !user?.id) {
+        console.log('🚫 UnifiedDataContext: Missing user data for tasks query');
+        return [];
+      }
 
-            if (error) throw error;
-            return data || [];
-          } finally {
-            setRequestsInFlight(prev => prev - 1);
-          }
+      console.log('🔄 UnifiedDataContext: Fetching MY TASKS via RLS filtering');
+      setRequestsInFlight(count => count + 1);
+
+      try {
+        // Let RLS policies handle all the filtering - this will only return tasks the user can access
+        const { data: tasksData, error: tasksError } = await supabase
+          .from('tasks')
+          .select('*')
+          .eq('organization_id', user.organizationId)
+          .order('created_at', { ascending: false });
+
+        if (tasksError) {
+          console.error('❌ UnifiedDataContext: Tasks query error:', tasksError);
+          throw new Error(tasksError.message);
         }
-      );
+
+        console.log(`📊 UnifiedDataContext: Retrieved ${tasksData?.length || 0} tasks (RLS filtered)`);
+
+        if (!tasksData || tasksData.length === 0) {
+          return [];
+        }
+
+        // Fetch users for name lookup
+        const { data: usersData } = await supabase
+          .from('users')
+          .select('id, name, email')
+          .eq('organization_id', user.organizationId);
+
+        // Create user lookup map
+        const userLookup = new Map();
+        if (usersData) {
+          usersData.forEach(userData => {
+            userLookup.set(userData.id, userData.name || userData.email);
+          });
+        }
+
+        // Transform tasks to app format
+        const transformedTasks: Task[] = tasksData.map(task => {
+          // Handle assignment data
+          let assignedToId = undefined;
+          let assignedToName = undefined;
+          let assignedToIds = [];
+          let assignedToNames = [];
+
+          if (task.assigned_to_ids && Array.isArray(task.assigned_to_ids) && task.assigned_to_ids.length > 0) {
+            assignedToIds = task.assigned_to_ids
+              .filter(id => id && id.toString().trim() !== '')
+              .map(id => id.toString());
+
+            if (assignedToIds.length > 0) {
+              assignedToNames = assignedToIds.map(id => {
+                return userLookup.get(id) || 'Unknown User';
+              });
+
+              if (assignedToIds.length === 1) {
+                assignedToId = assignedToIds[0];
+                assignedToName = assignedToNames[0];
+              }
+            }
+          } else if (task.assigned_to_id && task.assigned_to_id.toString().trim() !== '') {
+            assignedToId = task.assigned_to_id.toString();
+            assignedToIds = [assignedToId];
+            assignedToName = userLookup.get(assignedToId) || 'Assigned User';
+            assignedToNames = [assignedToName];
+          }
+
+          return {
+            id: task.id || 'unknown',
+            userId: task.user_id || '',
+            projectId: task.project_id,
+            title: task.title || 'Untitled Task',
+            description: task.description || '',
+            deadline: task.deadline ? new Date(task.deadline) : new Date(),
+            priority: (task.priority as 'Low' | 'Medium' | 'High') || 'Medium',
+            status: (task.status as 'To Do' | 'In Progress' | 'Completed') || 'To Do',
+            createdAt: task.created_at ? new Date(task.created_at) : new Date(),
+            updatedAt: task.updated_at ? new Date(task.updated_at) : new Date(),
+            assignedToId,
+            assignedToName,
+            assignedToIds,
+            assignedToNames,
+            cost: Number(task.cost) || 0,
+            organizationId: task.organization_id,
+            tags: [],
+            comments: []
+          };
+        });
+
+        console.log('✅ UnifiedDataContext: Successfully processed tasks:', transformedTasks.length);
+        return transformedTasks;
+      } finally {
+        setRequestsInFlight(count => count - 1);
+      }
     },
-    enabled: !!user?.organizationId && !!user?.id,
-    staleTime: 30000, // Increased to 30 seconds for better performance
-    gcTime: 300000, // Keep in cache for 5 minutes
-    refetchOnWindowFocus: false, // Reduced aggressive refetching
-    refetchInterval: 30000, // Reduced from 10s to 30s for performance
-    retry: (failureCount, error) => {
-      if (networkStatus === 'offline') return false;
-      return failureCount < 2;
-    }
+    enabled: !!user?.organizationId && !!user?.id && networkStatus !== 'offline',
+    staleTime: 30000,
+    gcTime: 300000,
+    retry: networkStatus === 'healthy' ? 3 : 1,
+    retryDelay: (attemptIndex) => Math.min(1000 * Math.pow(2, attemptIndex), 5000),
   });
-
-  // Transform raw tasks to app format with focused filtering
-  const tasks = useMemo(() => {
-    return rawTasks
-      .filter(task => {
-        // Additional client-side validation for My Tasks focus
-        const isDirectlyAssigned = 
-          task.assigned_to_id === user?.id || // Single assignee
-          (task.assigned_to_ids && Array.isArray(task.assigned_to_ids) && task.assigned_to_ids.includes(user?.id)); // Multi assignee
-
-        return isDirectlyAssigned;
-      })
-      .map(task => transformDbTaskToAppTask(task, user));
-  }, [rawTasks, user?.id, user?.organizationId]);
 
   return {
     tasks,
-    isLoadingTasks,
-    tasksError,
-    refetchTasksQuery
+    isLoading,
+    error,
+    refetch
   };
 };
 
 export const useProjectsQuery = ({ user, networkStatus, setRequestsInFlight }: QueryOptions) => {
-  const {
-    data: rawProjects = [],
-    isLoading: isLoadingProjects,
-    error: projectsError,
-    refetch: refetchProjectsQuery
-  } = useQuery({
-    queryKey: ['unified-projects', user?.organizationId, user?.id],
-    queryFn: async () => {
-      if (!user?.organizationId || !user?.id) return [];
-      
-      return await networkManager.withNetworkResilience(
-        'fetch-projects',
-        async () => {
-          setRequestsInFlight(prev => prev + 1);
-          try {
-            // OPTIMIZED QUERY: Only fetch essential fields
-            const { data, error } = await supabase
-              .from('projects')
-              .select('id, title, description, status, manager_id, team_members, organization_id, created_at, updated_at, budget, budget_spent, tasks_count')
-              .eq('organization_id', user.organizationId)
-              .or(`manager_id.eq.${user.id},team_members.cs.{${user.id}}`)
-              .order('created_at', { ascending: false })
-              .limit(50); // Limit initial load
+  const { data: projects = [], isLoading, error, refetch } = useQuery({
+    queryKey: ['unified-projects', user?.organizationId],
+    queryFn: async (): Promise<Project[]> => {
+      if (!user?.organizationId) {
+        console.log('🚫 UnifiedDataContext: Missing organization data for projects query');
+        return [];
+      }
 
-            if (error) throw error;
-            return data || [];
-          } finally {
-            setRequestsInFlight(prev => prev - 1);
-          }
+      console.log('🔄 UnifiedDataContext: Fetching projects');
+      setRequestsInFlight(count => count + 1);
+
+      try {
+        const { data: projectsData, error: projectsError } = await supabase
+          .from('projects')
+          .select('*')
+          .eq('organization_id', user.organizationId)
+          .order('created_at', { ascending: false });
+
+        if (projectsError) {
+          console.error('❌ UnifiedDataContext: Projects query error:', projectsError);
+          throw new Error(projectsError.message);
         }
-      );
-    },
-    enabled: !!user?.organizationId && !!user?.id,
-    staleTime: 60000, // 1 minute - projects change less frequently
-    gcTime: 600000, // 10 minutes
-    refetchOnWindowFocus: false,
-    refetchInterval: false, // No automatic polling for projects
-    retry: (failureCount, error) => {
-      if (networkStatus === 'offline') return false;
-      return failureCount < 2;
-    }
-  });
 
-  // Transform raw projects to app format
-  const projects = useMemo(() => {
-    return rawProjects.map(project => transformDbProjectToAppProject(project, user));
-  }, [rawProjects, user?.organizationId]);
+        console.log(`📊 UnifiedDataContext: Retrieved ${projectsData?.length || 0} projects`);
+        return projectsData || [];
+      } finally {
+        setRequestsInFlight(count => count - 1);
+      }
+    },
+    enabled: !!user?.organizationId && networkStatus !== 'offline',
+    staleTime: 30000,
+    gcTime: 300000,
+    retry: networkStatus === 'healthy' ? 3 : 1,
+    retryDelay: (attemptIndex) => Math.min(1000 * Math.pow(2, attemptIndex), 5000),
+  });
 
   return {
     projects,
-    isLoadingProjects,
-    projectsError,
-    refetchProjectsQuery
+    isLoading,
+    error,
+    refetch
   };
 };
 
 export const useUsersQuery = ({ user, networkStatus, setRequestsInFlight }: QueryOptions) => {
-  const {
-    data: rawUsers = [],
-    isLoading: isLoadingUsers,
-    error: usersError,
-    refetch: refetchUsersQuery
-  } = useQuery({
+  const { data: users = [], isLoading, error, refetch } = useQuery({
     queryKey: ['unified-users', user?.organizationId],
-    queryFn: async () => {
-      if (!user?.organizationId) return [];
-      
-      return await networkManager.withNetworkResilience(
-        'fetch-users',
-        async () => {
-          setRequestsInFlight(prev => prev + 1);
-          try {
-            // OPTIMIZED QUERY: Only fetch essential user fields
-            const { data, error } = await supabase
-              .from('users')
-              .select('id, email, name, role, organization_id, avatar_url')
-              .eq('organization_id', user.organizationId)
-              .order('name');
+    queryFn: async (): Promise<User[]> => {
+      if (!user?.organizationId) {
+        console.log('🚫 UnifiedDataContext: Missing organization data for users query');
+        return [];
+      }
 
-            if (error) throw error;
-            return data || [];
-          } finally {
-            setRequestsInFlight(prev => prev - 1);
-          }
+      console.log('🔄 UnifiedDataContext: Fetching users');
+      setRequestsInFlight(count => count + 1);
+
+      try {
+        const { data: usersData, error: usersError } = await supabase
+          .from('users')
+          .select('id, name, email, role')
+          .eq('organization_id', user.organizationId)
+          .order('created_at', { ascending: false });
+
+        if (usersError) {
+          console.error('❌ UnifiedDataContext: Users query error:', usersError);
+          throw new Error(usersError.message);
         }
-      );
-    },
-    enabled: !!user?.organizationId,
-    staleTime: 1000 * 60 * 5, // 5 minutes - users change infrequently
-    gcTime: 1000 * 60 * 10, // 10 minutes
-    refetchOnWindowFocus: false,
-    refetchInterval: false, // No automatic polling for users
-    retry: (failureCount, error) => {
-      if (networkStatus === 'offline') return false;
-      return failureCount < 2;
-    }
-  });
 
-  // Transform raw users to app format
-  const users = useMemo(() => {
-    return rawUsers.map(transformDbUserToAppUser);
-  }, [rawUsers]);
+        console.log(`📊 UnifiedDataContext: Retrieved ${usersData?.length || 0} users`);
+        return usersData || [];
+      } finally {
+        setRequestsInFlight(count => count - 1);
+      }
+    },
+    enabled: !!user?.organizationId && networkStatus !== 'offline',
+    staleTime: 30000,
+    gcTime: 300000,
+    retry: networkStatus === 'healthy' ? 3 : 1,
+    retryDelay: (attemptIndex) => Math.min(1000 * Math.pow(2, attemptIndex), 5000),
+  });
 
   return {
     users,
-    isLoadingUsers,
-    usersError,
-    refetchUsersQuery
+    isLoading,
+    error,
+    refetch
   };
 };

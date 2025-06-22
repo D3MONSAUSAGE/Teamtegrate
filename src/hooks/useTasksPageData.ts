@@ -24,24 +24,23 @@ export const useTasksPageData = () => {
       
       return requestManager.dedupe(cacheKey, async () => {
         if (process.env.NODE_ENV === 'development') {
-          console.log('useTasksPageData: Fetching MY TASKS ONLY (directly assigned or created) for user:', {
+          console.log('useTasksPageData: Fetching MY TASKS ONLY for user:', {
             userId: user.id,
             organizationId: user.organizationId,
             role: user.role
           });
         }
 
-        // FOCUSED QUERY: Only fetch tasks directly related to this specific user
-        // This is for the "My Tasks" page - personal task view only
         const timeoutPromise = new Promise((_, reject) => 
           setTimeout(() => reject(new Error('Request timeout')), 10000)
         );
 
+        // Updated query: Let RLS policies handle the filtering
+        // This query will only return tasks the user has access to based on our new strict RLS policies
         const taskPromise = supabase
           .from('tasks')
           .select('*')
           .eq('organization_id', user.organizationId)
-          .or(`user_id.eq.${user.id},assigned_to_id.eq.${user.id},assigned_to_ids.cs.{${user.id}}`)
           .order('created_at', { ascending: false });
 
         const { data: tasksData, error: tasksError } = await Promise.race([
@@ -77,7 +76,7 @@ export const useTasksPageData = () => {
         }
 
         if (process.env.NODE_ENV === 'development') {
-          console.log(`useTasksPageData: Retrieved ${tasksData?.length || 0} tasks for personal task view`);
+          console.log(`useTasksPageData: Retrieved ${tasksData?.length || 0} tasks (filtered by RLS)`);
         }
 
         if (!tasksData || tasksData.length === 0) {
@@ -107,95 +106,76 @@ export const useTasksPageData = () => {
           });
         }
 
-        // Process tasks with STRICT filtering for My Tasks page
-        const processedTasks = tasksData
-          .filter(task => {
-            // Security check: Ensure task belongs to user's organization
-            if (task.organization_id !== user.organizationId) {
-              if (process.env.NODE_ENV === 'development') {
-                console.error('useTasksPageData: Task from different organization filtered out');
+        // Process tasks - RLS has already filtered them appropriately
+        const processedTasks = tasksData.map(task => {
+          // Optimized assignment data processing
+          let assignedToId = undefined;
+          let assignedToName = undefined;
+          let assignedToIds = [];
+          let assignedToNames = [];
+
+          // Handle assigned_to_ids array with enhanced validation
+          if (task.assigned_to_ids && Array.isArray(task.assigned_to_ids) && task.assigned_to_ids.length > 0) {
+            assignedToIds = task.assigned_to_ids
+              .filter(id => id && id.toString().trim() !== '')
+              .map(id => id.toString());
+
+            if (assignedToIds.length > 0) {
+              // Use cached names or lookup
+              if (task.assigned_to_names && Array.isArray(task.assigned_to_names) && task.assigned_to_names.length > 0) {
+                assignedToNames = task.assigned_to_names
+                  .filter(name => name && name.toString().trim() !== '')
+                  .map(name => name.toString());
               }
-              return false;
-            }
 
-            // STRICT FILTERING: Only tasks directly related to this user
-            const isCreatedByUser = task.user_id === user.id;
-            const isDirectlyAssigned = 
-              task.assigned_to_id === user.id || // Single assignee
-              (task.assigned_to_ids && Array.isArray(task.assigned_to_ids) && task.assigned_to_ids.includes(user.id)); // Multi assignee
+              // Fill missing names from lookup
+              if (assignedToNames.length < assignedToIds.length) {
+                assignedToNames = assignedToIds.map((id, index) => {
+                  if (index < assignedToNames.length && assignedToNames[index]) {
+                    return assignedToNames[index];
+                  }
+                  return userLookup.get(id) || 'Unknown User';
+                });
+              }
 
-            return isCreatedByUser || isDirectlyAssigned;
-          })
-          .map(task => {
-            // Optimized assignment data processing
-            let assignedToId = undefined;
-            let assignedToName = undefined;
-            let assignedToIds = [];
-            let assignedToNames = [];
-
-            // Handle assigned_to_ids array with enhanced validation
-            if (task.assigned_to_ids && Array.isArray(task.assigned_to_ids) && task.assigned_to_ids.length > 0) {
-              assignedToIds = task.assigned_to_ids
-                .filter(id => id && id.toString().trim() !== '')
-                .map(id => id.toString());
-
-              if (assignedToIds.length > 0) {
-                // Use cached names or lookup
-                if (task.assigned_to_names && Array.isArray(task.assigned_to_names) && task.assigned_to_names.length > 0) {
-                  assignedToNames = task.assigned_to_names
-                    .filter(name => name && name.toString().trim() !== '')
-                    .map(name => name.toString());
-                }
-
-                // Fill missing names from lookup
-                if (assignedToNames.length < assignedToIds.length) {
-                  assignedToNames = assignedToIds.map((id, index) => {
-                    if (index < assignedToNames.length && assignedToNames[index]) {
-                      return assignedToNames[index];
-                    }
-                    return userLookup.get(id) || 'Unknown User';
-                  });
-                }
-
-                // Single assignment compatibility
-                if (assignedToIds.length === 1) {
-                  assignedToId = assignedToIds[0];
-                  assignedToName = assignedToNames[0];
-                }
+              // Single assignment compatibility
+              if (assignedToIds.length === 1) {
+                assignedToId = assignedToIds[0];
+                assignedToName = assignedToNames[0];
               }
             }
-            // Fallback to single assignment with validation
-            else if (task.assigned_to_id && task.assigned_to_id.toString().trim() !== '') {
-              assignedToId = task.assigned_to_id.toString();
-              assignedToIds = [assignedToId];
-              
-              assignedToName = userLookup.get(assignedToId) || 'Assigned User';
-              assignedToNames = [assignedToName];
-            }
+          }
+          // Fallback to single assignment with validation
+          else if (task.assigned_to_id && task.assigned_to_id.toString().trim() !== '') {
+            assignedToId = task.assigned_to_id.toString();
+            assignedToIds = [assignedToId];
+            
+            assignedToName = userLookup.get(assignedToId) || 'Assigned User';
+            assignedToNames = [assignedToName];
+          }
 
-            return {
-              id: task.id || 'unknown',
-              userId: task.user_id || '',
-              projectId: task.project_id,
-              title: task.title || 'Untitled Task',
-              description: task.description || '',
-              deadline: task.deadline ? new Date(task.deadline) : new Date(),
-              priority: (task.priority as 'Low' | 'Medium' | 'High') || 'Medium',
-              status: (task.status as 'To Do' | 'In Progress' | 'Completed') || 'To Do',
-              createdAt: task.created_at ? new Date(task.created_at) : new Date(),
-              updatedAt: task.updated_at ? new Date(task.updated_at) : new Date(),
-              assignedToId,
-              assignedToName,
-              assignedToIds,
-              assignedToNames,
-              cost: Number(task.cost) || 0,
-              organizationId: task.organization_id
-            };
-          });
+          return {
+            id: task.id || 'unknown',
+            userId: task.user_id || '',
+            projectId: task.project_id,
+            title: task.title || 'Untitled Task',
+            description: task.description || '',
+            deadline: task.deadline ? new Date(task.deadline) : new Date(),
+            priority: (task.priority as 'Low' | 'Medium' | 'High') || 'Medium',
+            status: (task.status as 'To Do' | 'In Progress' | 'Completed') || 'To Do',
+            createdAt: task.created_at ? new Date(task.created_at) : new Date(),
+            updatedAt: task.updated_at ? new Date(task.updated_at) : new Date(),
+            assignedToId,
+            assignedToName,
+            assignedToIds,
+            assignedToNames,
+            cost: Number(task.cost) || 0,
+            organizationId: task.organization_id
+          };
+        });
 
         if (process.env.NODE_ENV === 'development') {
-          console.log('useTasksPageData: Successfully processed PERSONAL TASKS ONLY:', {
-            originalCount: tasksData.length,
+          console.log('useTasksPageData: Successfully processed MY TASKS ONLY:', {
             processedCount: processedTasks.length,
             userId: user.id,
             role: user.role
