@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
-import { useTask } from '@/contexts/task';
+import { usePersonalTasks } from '@/hooks/usePersonalTasks';
 import { useProjects } from '@/hooks/useProjects';
 import { useAuth } from '@/contexts/AuthContext';
 import { Task, Project } from '@/types';
@@ -16,20 +17,23 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import AnalyticsSection from '@/components/dashboard/AnalyticsSection';
 import TimeTracking from '@/components/dashboard/TimeTracking';
 import ConnectionStatus from '@/components/dashboard/ConnectionStatus';
-import { useTasksPageData } from '@/hooks/useTasksPageData';
+import { useTask } from '@/contexts/task';
 
 const DashboardPage = () => {
   const { user } = useAuth();
-  const { tasks: contextTasks, dailyScore } = useTask();
-  const { tasks: hookTasks, isLoading: tasksLoading, error: tasksError } = useTasksPageData();
+  const { dailyScore } = useTask();
+  
+  // Use personal tasks hook for refined personal task filtering
+  const { tasks: personalTasks, isLoading: tasksLoading, error: tasksError } = usePersonalTasks();
   const { projects, isLoading: projectsLoading, refreshProjects, error: projectsError } = useProjects();
+  
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const isMobile = useIsMobile();
   
-  // Use hook tasks if available and context tasks as fallback
-  const tasks = hookTasks.length > 0 ? hookTasks : contextTasks;
+  // Use personal tasks for dashboard display
+  const tasks = personalTasks;
   
   // Combined loading state
   const isLoading = tasksLoading || projectsLoading;
@@ -84,7 +88,7 @@ const DashboardPage = () => {
   const handleManualRefresh = useCallback(async () => {
     try {
       await refreshProjects();
-      // Force refetch of tasks through context
+      // Force refetch of personal tasks
       if (window.location) {
         window.location.reload();
       }
@@ -178,19 +182,19 @@ const DashboardPage = () => {
                   <div className="hidden sm:block w-px h-4 bg-border" />
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <TrendingUp className="h-4 w-4" />
-                    <span>Your productivity overview</span>
+                    <span>Your personal productivity overview</span>
                   </div>
                 </div>
 
-                {/* Quick Stats */}
+                {/* Quick Stats - Updated text to clarify personal tasks */}
                 <div className="flex items-center gap-6 pt-2">
                   <div className="text-center">
                     <div className="text-xl font-bold text-primary">{headerStats.todaysCount}</div>
-                    <div className="text-xs text-muted-foreground">Today's Tasks</div>
+                    <div className="text-xs text-muted-foreground">My Tasks Today</div>
                   </div>
                   <div className="text-center">
                     <div className="text-xl font-bold text-emerald-600">{headerStats.upcomingCount}</div>
-                    <div className="text-xs text-muted-foreground">Upcoming</div>
+                    <div className="text-xs text-muted-foreground">My Upcoming</div>
                   </div>
                   <div className="text-center">
                     <div className="text-xl font-bold text-amber-600">{headerStats.projectsCount}</div>

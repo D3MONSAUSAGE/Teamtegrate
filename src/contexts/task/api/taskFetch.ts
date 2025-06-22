@@ -16,7 +16,7 @@ export const fetchTasks = async (
   try {
     // Only log in development mode to reduce production overhead
     if (process.env.NODE_ENV === 'development') {
-      console.log('fetchTasks: Starting task fetch for user:', { 
+      console.log('fetchTasks: Starting PERSONAL task fetch for user:', { 
         id: user?.id, 
         organizationId: user?.organization_id,
         role: user?.role 
@@ -33,22 +33,19 @@ export const fetchTasks = async (
       return;
     }
     
-    // STRICT QUERY: Only fetch tasks that are directly related to the user
-    // The RLS policy will handle the filtering, but we're being explicit here
-    // Include tasks that are:
-    // 1. Created by the user (user_id = user.id)
-    // 2. Assigned to the user (assigned_to_id = user.id)
-    // 3. Assigned to the user in a group (assigned_to_ids contains user.id)
+    // REFINED PERSONAL TASK QUERY: Only fetch tasks that are truly personal:
+    // 1. Tasks created by the user AND left unassigned (no assigned_to_id and empty assigned_to_ids)
+    // 2. Tasks assigned to the user (assigned_to_id = user.id OR user.id in assigned_to_ids)
     const { data: tasksData, error: tasksError } = await supabase
       .from('tasks')
       .select('*')
       .eq('organization_id', user.organization_id)
-      .or(`user_id.eq.${user.id},assigned_to_id.eq.${user.id},assigned_to_ids.cs.{${user.id}}`)
+      .or(`and(user_id.eq.${user.id},assigned_to_id.is.null,assigned_to_ids.eq.{}),assigned_to_id.eq.${user.id},assigned_to_ids.cs.{${user.id}}`)
       .order('created_at', { ascending: false });
 
     if (tasksError) {
       if (process.env.NODE_ENV === 'development') {
-        console.error('fetchTasks: Error fetching tasks:', tasksError);
+        console.error('fetchTasks: Error fetching personal tasks:', tasksError);
       }
       // For "set-returning functions" error, silently return empty array
       if (tasksError.message?.includes('set-returning functions are not allowed in WHERE')) {
@@ -61,10 +58,10 @@ export const fetchTasks = async (
     }
 
     if (process.env.NODE_ENV === 'development') {
-      console.log(`fetchTasks: Retrieved ${tasksData?.length || 0} tasks (created by user OR assigned to user)`);
+      console.log(`fetchTasks: Retrieved ${tasksData?.length || 0} personal tasks (created unassigned OR assigned to user)`);
     }
     
-    // Security validation: The RLS policy should handle this, but double-check
+    // Enhanced client-side validation for personal tasks
     const validatedTasks = tasksData?.filter(dbTask => {
       // Check organization match
       if (dbTask.organization_id !== user.organization_id) {
@@ -74,13 +71,16 @@ export const fetchTasks = async (
         return false;
       }
 
-      // STRICT FILTERING: Only include tasks created by user OR assigned to user
+      // REFINED PERSONAL FILTERING: Only include truly personal tasks
       const isCreatedByUser = dbTask.user_id === user.id;
+      const isUnassigned = (!dbTask.assigned_to_id || dbTask.assigned_to_id === '') && 
+                          (!dbTask.assigned_to_ids || dbTask.assigned_to_ids.length === 0);
       const isDirectlyAssigned = 
         dbTask.assigned_to_id === user.id || // Single assignee
         (dbTask.assigned_to_ids && dbTask.assigned_to_ids.includes(user.id)); // Multi assignee
 
-      return isCreatedByUser || isDirectlyAssigned;
+      // Show task if: (created by user AND unassigned) OR (assigned to user)
+      return (isCreatedByUser && isUnassigned) || isDirectlyAssigned;
     }) || [];
     
     // Fetch comments and users data in parallel for better performance
@@ -183,14 +183,14 @@ export const fetchTasks = async (
     });
 
     if (process.env.NODE_ENV === 'development') {
-      console.log(`fetchTasks: Successfully processed ${transformedTasks.length} tasks (created by user OR assigned to user ONLY)`);
+      console.log(`fetchTasks: Successfully processed ${transformedTasks.length} PERSONAL tasks (created unassigned OR assigned to user ONLY)`);
     }
     
     setTasks(transformedTasks);
     
   } catch (error: any) {
     if (process.env.NODE_ENV === 'development') {
-      console.error('fetchTasks: Critical error during task fetch:', error);
+      console.error('fetchTasks: Critical error during personal task fetch:', error);
     }
     // Silently handle errors in production
     setTasks([]);

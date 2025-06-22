@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useTask } from '@/contexts/task';
+import { usePersonalTasks } from '@/hooks/usePersonalTasks';
 import { Task, TaskStatus } from '@/types';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import TaskCommentsDialog from '@/components/TaskCommentsDialog';
@@ -12,6 +12,7 @@ import TasksPageContent from '@/components/task/TasksPageContent';
 import { enhancedNotifications } from '@/utils/enhancedNotifications';
 import { useDebounce } from '@/utils/performanceUtils';
 import { toast } from '@/components/ui/sonner';
+import { useTask } from '@/contexts/task';
 
 const TasksPage = () => {
   const navigate = useNavigate();
@@ -24,8 +25,11 @@ const TasksPage = () => {
     }
   }, []);
 
-  // Use TaskContext directly for real-time updates
-  const { tasks, isLoading, updateTaskStatus, refreshTasks } = useTask();
+  // Use new personal tasks hook for refined filtering
+  const { tasks, isLoading, error, refetch } = usePersonalTasks();
+  
+  // Use TaskContext for mutations (update, delete operations)
+  const { updateTaskStatus } = useTask();
   
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [sortBy, setSortBy] = useState('deadline');
@@ -39,9 +43,9 @@ const TasksPage = () => {
       setIsCreateTaskOpen(true);
     },
     onRefresh: () => {
-      refreshTasks();
-      enhancedNotifications.info('Tasks refreshed', {
-        description: 'Task list has been updated with latest data'
+      refetch();
+      enhancedNotifications.info('Personal tasks refreshed', {
+        description: 'Your personal task list has been updated with latest data'
       });
     }
   });
@@ -55,6 +59,8 @@ const TasksPage = () => {
   const debouncedStatusChange = useDebounce(async (taskId: string, status: TaskStatus) => {
     try {
       await updateTaskStatus(taskId, status);
+      // Refresh personal tasks after status change
+      refetch();
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
         console.error('TasksPage: Error updating task status:', error);
@@ -74,7 +80,9 @@ const TasksPage = () => {
   const handleTaskDialogComplete = useMemo(() => () => {
     setIsCreateTaskOpen(false);
     setEditingTask(undefined);
-  }, []);
+    // Refresh personal tasks after task creation/update
+    refetch();
+  }, [refetch]);
 
   const handleNewTask = useMemo(() => () => {
     setEditingTask(undefined);
@@ -87,8 +95,8 @@ const TasksPage = () => {
   }
   
   // Show error state if tasks is null or undefined
-  if (!tasks) {
-    return <TasksPageError error={new Error("Failed to load tasks")} />;
+  if (!tasks || error) {
+    return <TasksPageError error={error || new Error("Failed to load personal tasks")} />;
   }
 
   return (
