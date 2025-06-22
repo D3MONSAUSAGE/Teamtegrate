@@ -3,12 +3,13 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, UserRole } from '@/types';
 import { toast } from '@/components/ui/sonner';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { mapDbUserToApp } from '@/utils/typeCompatibility';
 import { useAuth } from '@/contexts/AuthContext';
 
 export const useUsers = () => {
   const { user: currentUser } = useAuth();
+  const queryClient = useQueryClient();
 
   const fetchUsers = async (): Promise<User[]> => {
     console.log('Fetching users from Supabase...');
@@ -53,8 +54,11 @@ export const useUsers = () => {
   } = useQuery({
     queryKey: ['users', currentUser?.organizationId, currentUser?.role],
     queryFn: fetchUsers,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 10000, // Reduced from 5 minutes to 10 seconds for immediate updates
+    gcTime: 60000, // Reduced cache time to 1 minute
     enabled: !!currentUser?.organizationId,
+    refetchOnWindowFocus: true, // Refetch when window regains focus
+    refetchOnMount: true, // Always refetch on mount
     meta: {
       onError: (err: Error) => {
         console.error('Error in useUsers hook:', err);
@@ -62,11 +66,55 @@ export const useUsers = () => {
       }
     }
   });
+
+  // Set up real-time subscription for user changes
+  useEffect(() => {
+    if (!currentUser?.organizationId) return;
+
+    console.log('Setting up real-time subscription for users...');
+    
+    const channel = supabase
+      .channel('users-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'users',
+          filter: `organization_id=eq.${currentUser.organizationId}`
+        },
+        (payload) => {
+          console.log('Real-time user change detected:', payload);
+          
+          // Invalidate and refetch users data
+          queryClient.invalidateQueries({ queryKey: ['users'] });
+          
+          // Show toast notification for new users
+          if (payload.eventType === 'INSERT' && payload.new) {
+            toast.success(`New user ${payload.new.name || payload.new.email} joined your organization`);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log('Cleaning up users real-time subscription');
+      supabase.removeChannel(channel);
+    };
+  }, [currentUser?.organizationId, queryClient]);
+
+  // Manual refresh function
+  const refreshUsers = async () => {
+    console.log('Manually refreshing users...');
+    await queryClient.invalidateQueries({ queryKey: ['users'] });
+    return refetch();
+  };
   
   return { 
     users, 
     isLoading, 
     error: error ? (error as Error).message : null,
-    refetchUsers: refetch
+    refetchUsers: refetch,
+    refreshUsers
   };
 };

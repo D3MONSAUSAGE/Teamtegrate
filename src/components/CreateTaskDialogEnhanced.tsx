@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Task } from '@/types';
 import { useProjects } from '@/hooks/useProjects';
 import { useOrganizationTeamMembers } from '@/hooks/useOrganizationTeamMembers';
@@ -22,9 +22,17 @@ const CreateTaskDialogEnhanced: React.FC<CreateTaskDialogEnhancedProps> = ({
   onTaskComplete,
 }) => {
   const { projects } = useProjects();
-  const { users, isLoading: loadingUsers } = useOrganizationTeamMembers();
+  const { users, isLoading: loadingUsers, refetch: refetchUsers } = useOrganizationTeamMembers();
   
   const { submitTask } = useTaskSubmission();
+
+  // Force refresh users when dialog opens to ensure latest data
+  useEffect(() => {
+    if (open) {
+      console.log('CreateTaskDialogEnhanced: Dialog opened, refreshing users...');
+      refetchUsers();
+    }
+  }, [open, refetchUsers]);
 
   const handleSubmit = async (data: any, selectedUsers: any[]) => {
     const success = await submitTask(

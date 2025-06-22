@@ -1,7 +1,8 @@
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Task, Project, User } from '@/types';
+import { useEffect } from 'react';
 
 interface QueryOptions {
   user: any;
@@ -14,7 +15,9 @@ export const useTasksQuery = ({ user, networkStatus, setRequestsInFlight }: Quer
     queryKey: ['unified-tasks', user?.organizationId, user?.id],
     queryFn: async (): Promise<Task[]> => {
       if (!user?.organizationId || !user?.id) {
-        console.log('🚫 UnifiedDataContext: Missing user data for tasks query');
+        if (process.env.NODE_ENV === 'development') {
+          console.log('🚫 UnifiedDataContext: Missing user data for tasks query');
+        }
         return [];
       }
 
@@ -194,6 +197,8 @@ export const useProjectsQuery = ({ user, networkStatus, setRequestsInFlight }: Q
 };
 
 export const useUsersQuery = ({ user, networkStatus, setRequestsInFlight }: QueryOptions) => {
+  const queryClient = useQueryClient();
+  
   const { data: users = [], isLoading, error, refetch } = useQuery({
     queryKey: ['unified-users', user?.organizationId],
     queryFn: async (): Promise<User[]> => {
@@ -236,11 +241,43 @@ export const useUsersQuery = ({ user, networkStatus, setRequestsInFlight }: Quer
       }
     },
     enabled: !!user?.organizationId && networkStatus !== 'offline',
-    staleTime: 30000,
-    gcTime: 300000,
+    staleTime: 10000, // Reduced to 10 seconds for immediate updates
+    gcTime: 60000, // Reduced cache time
+    refetchOnWindowFocus: true,
     retry: networkStatus === 'healthy' ? 3 : 1,
     retryDelay: (attemptIndex) => Math.min(1000 * Math.pow(2, attemptIndex), 5000),
   });
+
+  // Set up real-time subscription for users in UnifiedDataContext
+  useEffect(() => {
+    if (!user?.organizationId) return;
+
+    console.log('🔄 UnifiedDataContext: Setting up real-time users subscription');
+    
+    const channel = supabase
+      .channel('unified-users-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'users',
+          filter: `organization_id=eq.${user.organizationId}`
+        },
+        (payload) => {
+          console.log('🔄 UnifiedDataContext: Real-time user change:', payload);
+          // Invalidate both unified and regular user queries
+          queryClient.invalidateQueries({ queryKey: ['unified-users'] });
+          queryClient.invalidateQueries({ queryKey: ['users'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log('🧹 UnifiedDataContext: Cleaning up users real-time subscription');
+      supabase.removeChannel(channel);
+    };
+  }, [user?.organizationId, queryClient]);
 
   return {
     users,
