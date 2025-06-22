@@ -38,11 +38,11 @@ export const useEnhancedUserManagement = () => {
     error,
     isSuperadmin,
     
-    // CRUD operations
+    // CRUD operations - Fixed function signatures
     createUser: (email: string, name: string, role: any, temporaryPassword: string) => 
-      createUser(email, name, role, temporaryPassword, users),
+      createUser(email, name, role, temporaryPassword),
     updateUserProfile: (userId: string, updates: { name?: string; email?: string }) =>
-      updateUserProfile(userId, updates, users),
+      updateUserProfile(userId, updates),
     
     // Role management
     changeUserRole,
