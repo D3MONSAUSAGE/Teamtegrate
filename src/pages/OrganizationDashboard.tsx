@@ -20,7 +20,7 @@ const OrganizationDashboard = () => {
       <div className="p-6 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
-          <p className="text-muted-foreground">Loading organization dashboard...</p>
+          <p className="text-muted-foreground">Loading organization page...</p>
         </div>
       </div>
     );
@@ -33,14 +33,14 @@ const OrganizationDashboard = () => {
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            Please log in to access the organization dashboard.
+            Please log in to access the organization page.
           </AlertDescription>
         </Alert>
       </div>
     );
   }
 
-  // Check if user has permission to access organization dashboard
+  // Check if user has permission to access organization page
   const hasOrganizationAccess = ['superadmin', 'admin', 'manager'].includes(user.role);
   
   if (!hasOrganizationAccess) {
@@ -49,7 +49,7 @@ const OrganizationDashboard = () => {
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            You don't have permission to access the organization dashboard. 
+            You don't have permission to access the organization page. 
             Contact your administrator for access. Your current role is: {user.role}
           </AlertDescription>
         </Alert>
@@ -63,7 +63,7 @@ const OrganizationDashboard = () => {
       
       <div className="flex items-center gap-2 mb-6">
         <Shield className="h-6 w-6 text-primary" />
-        <h1 className="text-2xl font-bold">Organization Dashboard</h1>
+        <h1 className="text-2xl font-bold">Organization Page</h1>
       </div>
 
       <OrganizationStatsCards />

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { usePersonalTasks } from '@/hooks/usePersonalTasks';
@@ -16,7 +15,6 @@ import TeamManagement from '@/components/dashboard/TeamManagement';
 import { useIsMobile } from '@/hooks/use-mobile';
 import AnalyticsSection from '@/components/dashboard/AnalyticsSection';
 import TimeTracking from '@/components/dashboard/TimeTracking';
-import ConnectionStatus from '@/components/dashboard/ConnectionStatus';
 import { useTask } from '@/contexts/task';
 
 const DashboardPage = () => {
@@ -37,9 +35,6 @@ const DashboardPage = () => {
   
   // Combined loading state
   const isLoading = tasksLoading || projectsLoading;
-  
-  // Combined error state
-  const lastError = tasksError?.message || projectsError || null;
   
   // Memoize expensive calculations to prevent re-computation on every render
   const { todaysTasks, upcomingTasks, flatProjects, recentProjects } = useMemo(() => {
@@ -153,13 +148,6 @@ const DashboardPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/5 to-background">
       <div className="relative space-y-8 no-scrollbar">
-        {/* Connection Status Alert */}
-        <ConnectionStatus 
-          lastError={lastError}
-          onRetry={handleManualRefresh}
-          isLoading={isLoading}
-        />
-
         {/* Simplified Welcome Header */}
         <div className="relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-r from-primary/3 via-emerald-500/3 to-primary/3" />

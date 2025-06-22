@@ -19,8 +19,16 @@ const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
 }) => {
   const { isOnline, isConnecting, lastConnected, retryCount } = useConnectionStatus();
 
-  // Show status when there are issues or when explicitly needed
-  const shouldShow = !isOnline || lastError || isConnecting || retryCount > 0;
+  // Only show status for actual network connectivity issues, not query/database errors
+  const isNetworkError = lastError && (
+    lastError.includes('Network connection issue') ||
+    lastError.includes('Failed to fetch') ||
+    lastError.includes('timeout') ||
+    lastError.includes('connection')
+  );
+
+  // Show status when there are real network issues or when explicitly needed
+  const shouldShow = !isOnline || isConnecting || (retryCount > 0 && isNetworkError);
 
   if (!shouldShow) {
     return null;
@@ -28,7 +36,7 @@ const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
 
   const getStatusColor = () => {
     if (!isOnline) return 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/20';
-    if (lastError) return 'border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/20';
+    if (isNetworkError) return 'border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/20';
     if (isConnecting) return 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/20';
     return 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/20';
   };
@@ -42,13 +50,13 @@ const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
   const getStatusText = () => {
     if (isConnecting) return 'Reconnecting...';
     if (!isOnline) return 'Connection Lost';
-    if (lastError) return 'Network Issues Detected';
+    if (isNetworkError) return 'Network Issues Detected';
     return 'Connected';
   };
 
   const getStatusVariant = () => {
     if (!isOnline) return 'destructive' as const;
-    if (lastError) return 'secondary' as const;
+    if (isNetworkError) return 'secondary' as const;
     if (isConnecting) return 'secondary' as const;
     return 'default' as const;
   };
@@ -73,14 +81,11 @@ const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
                 )}
               </div>
               
-              {lastError && (
+              {isNetworkError && (
                 <div className="flex items-center gap-1 text-sm text-amber-700 dark:text-amber-300">
                   <AlertCircle className="h-3 w-3" />
                   <span>
-                    {lastError.includes('Network connection issue') 
-                      ? 'Poor network connection - retrying automatically'
-                      : lastError
-                    }
+                    Poor network connection - retrying automatically
                   </span>
                 </div>
               )}
@@ -91,7 +96,7 @@ const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
                 </span>
               )}
               
-              {isOnline && !lastError && retryCount === 0 && (
+              {isOnline && !isNetworkError && retryCount === 0 && (
                 <div className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
                   <CheckCircle className="h-3 w-3" />
                   <span>Connection restored</span>
@@ -100,7 +105,7 @@ const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
             </div>
           </div>
 
-          {onRetry && (isConnecting || !isOnline || lastError) && (
+          {onRetry && (isConnecting || !isOnline || isNetworkError) && (
             <Button 
               variant="outline" 
               size="sm"
