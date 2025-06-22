@@ -111,16 +111,6 @@ const SimpleDeleteUserDialog: React.FC<SimpleDeleteUserDialogProps> = ({
         })
         .eq('assigned_to_id', userId);
 
-      // Clean up project tasks - unassign user
-      await supabase
-        .from('project_tasks')
-        .update({ 
-          assigned_to_id: null,
-          assigned_to_ids: [],
-          assigned_to_names: []
-        })
-        .eq('assigned_to_id', userId);
-
       // Remove from project team members
       await supabase
         .from('project_team_members')

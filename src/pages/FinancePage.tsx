@@ -4,7 +4,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useIsMobile } from '@/hooks/use-mobile';
 import ProfitAndLoss from '@/components/finance/ProfitAndLoss';
 import DailySales from '@/components/finance/DailySales';
-import BranchBudgets from '@/components/finance/BranchBudgets/BranchBudgets';
 import InvoiceManager from '@/components/finance/InvoiceManager';
 import {
   Drawer,
@@ -33,7 +32,6 @@ const FinancePage: React.FC = () => {
           <TabsTrigger value="transactions" className="flex-1 md:flex-none" onClick={() => setTransactionsOpen(true)}>
             Transactions
           </TabsTrigger>
-          <TabsTrigger value="budgets" className="flex-1 md:flex-none">Budgets</TabsTrigger>
         </TabsList>
         <TabsContent value="pnl" className="space-y-4">
           <ProfitAndLoss />
@@ -52,9 +50,6 @@ const FinancePage: React.FC = () => {
               Open Transactions Preview
             </Button>
           </div>
-        </TabsContent>
-        <TabsContent value="budgets" className="space-y-4">
-          <BranchBudgets />
         </TabsContent>
       </Tabs>
 
