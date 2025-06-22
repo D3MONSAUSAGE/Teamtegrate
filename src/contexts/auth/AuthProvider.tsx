@@ -37,7 +37,7 @@ const AuthProviderInner: React.FC<AuthProviderProps> = ({ children }) => {
 
   const { hasRoleAccess, canManageUser } = useRoleAccess(user);
 
-  // Get auth operations
+  // Get auth operations with error handling
   const {
     login,
     signup,
@@ -49,8 +49,9 @@ const AuthProviderInner: React.FC<AuthProviderProps> = ({ children }) => {
 
   console.log('AuthProvider: Current state - loading:', loading, 'user:', !!user, 'isAuthenticated:', isAuthenticated);
 
+  // Add null check for safety
   const value: AuthContextType = {
-    user,
+    user: user || null,
     loading,
     isLoading: loading,
     login,

@@ -47,7 +47,7 @@ const EnhancedTaskAssignment: React.FC<EnhancedTaskAssignmentProps> = ({
   const { teams, isLoading: loadingTeams } = useTeamsByOrganization(selectedOrganization);
   const { users: contextUsers, isLoading: loadingUsers } = useUsersByContext(
     selectedOrganization, 
-    selectedTeam
+    selectedTeam === 'all' ? undefined : selectedTeam
   );
 
   // Initialize organization selection for super admin
@@ -165,8 +165,11 @@ const EnhancedTaskAssignment: React.FC<EnhancedTaskAssignmentProps> = ({
             {selectedOrganization && (
               <div>Organization: {organizations.find(o => o.id === selectedOrganization)?.name}</div>
             )}
-            {selectedTeam && (
+            {selectedTeam && selectedTeam !== 'all' && (
               <div>Team: {teams.find(t => t.id === selectedTeam)?.name}</div>
+            )}
+            {selectedTeam === 'all' && (
+              <div>Team: All Teams</div>
             )}
             <div>Available assignees: {users.length}</div>
           </div>

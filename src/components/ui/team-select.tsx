@@ -55,7 +55,7 @@ const TeamSelect: React.FC<TeamSelectProps> = ({
           ) : (
             <>
               {optional && (
-                <SelectItem value="">
+                <SelectItem value="all">
                   <div className="flex items-center gap-2">
                     <Users className="h-4 w-4 text-gray-400" />
                     All Teams
