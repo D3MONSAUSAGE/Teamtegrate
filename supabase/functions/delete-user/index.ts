@@ -128,7 +128,7 @@ Deno.serve(async (req) => {
 
     // 1. Remove user from all chat room participations
     const { error: chatParticipantError } = await supabaseAdmin
-      .from('chat_room_participants')
+      .from('chat_participants')
       .delete()
       .eq('user_id', targetUserId);
 
@@ -236,23 +236,7 @@ Deno.serve(async (req) => {
       console.log('Updated tasks assigned to user');
     }
 
-    // 10. Unassign user from project tasks
-    const { error: projectTaskUpdateError } = await supabaseAdmin
-      .from('project_tasks')
-      .update({ 
-        assigned_to_id: null,
-        assigned_to_ids: [],
-        assigned_to_names: []
-      })
-      .or(`assigned_to_id.eq.${targetUserId},assigned_to_ids.cs.{${targetUserId}}`);
-
-    if (projectTaskUpdateError) {
-      console.error('Error updating project tasks:', projectTaskUpdateError);
-    } else {
-      console.log('Updated project tasks assigned to user');
-    }
-
-    // 11. Delete all documents belonging to the user
+    // 10. Delete all documents belonging to the user
     const { error: documentsDeleteError } = await supabaseAdmin
       .from('documents')
       .delete()
@@ -264,7 +248,7 @@ Deno.serve(async (req) => {
       console.log('Deleted all user documents');
     }
 
-    // 12. Delete comments by the user
+    // 11. Delete comments by the user
     const { error: commentsDeleteError } = await supabaseAdmin
       .from('comments')
       .delete()
@@ -276,7 +260,7 @@ Deno.serve(async (req) => {
       console.log('Deleted user comments');
     }
 
-    // 13. Create audit log entry
+    // 12. Create audit log entry
     const { error: auditError } = await supabaseAdmin
       .from('user_deletion_audit')
       .insert({
@@ -299,7 +283,7 @@ Deno.serve(async (req) => {
       console.log('Created audit log entry');
     }
 
-    // 14. Delete from custom users table
+    // 13. Delete from custom users table
     const { error: dbDeleteError } = await supabaseAdmin
       .from('users')
       .delete()
@@ -312,7 +296,7 @@ Deno.serve(async (req) => {
 
     console.log('Deleted user from custom users table');
 
-    // 15. Finally, delete from auth.users using admin client
+    // 14. Finally, delete from auth.users using admin client
     const { error: authDeleteError } = await supabaseAdmin.auth.admin.deleteUser(
       targetUserId
     );

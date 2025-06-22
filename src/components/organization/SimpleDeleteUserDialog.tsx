@@ -59,98 +59,44 @@ const SimpleDeleteUserDialog: React.FC<SimpleDeleteUserDialogProps> = ({
     try {
       console.log('Starting user deletion process for:', user.email);
       
-      // Clean up related data first
-      await cleanupUserData(user.id);
-      
-      // Delete from users table (this will also handle auth cleanup via RLS/triggers)
-      const { error: dbError } = await supabase
-        .from('users')
-        .delete()
-        .eq('id', user.id);
+      // Use the consolidated edge function for deletion
+      const { data, error } = await supabase.functions.invoke('delete-user', {
+        body: {
+          targetUserId: user.id,
+          deletionReason: 'User deleted by admin'
+        }
+      });
 
-      if (dbError) {
-        console.error('Database deletion error:', dbError);
-        throw new Error(`Failed to delete user: ${dbError.message}`);
+      if (error) {
+        console.error('Edge Function error:', error);
+        throw error;
       }
 
-      // Also delete from auth if still exists
-      try {
-        const { error: authError } = await supabase.auth.admin.deleteUser(user.id);
-        if (authError && !authError.message.includes('not found')) {
-          console.error('Auth deletion error:', authError);
-          // Don't throw here - user is already deleted from users table
-        }
-      } catch (authError) {
-        console.error('Auth deletion error:', authError);
-        // Don't throw - user is already deleted from main table
+      if (!data?.success) {
+        console.error('Edge Function returned failure:', data);
+        throw new Error(data?.error || 'Failed to delete user');
       }
 
       console.log('User deletion completed successfully');
       toast.success(`User ${user.name} has been deleted successfully`);
       onUserDeleted();
       onOpenChange(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting user:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to delete user');
+      
+      let errorMessage = error.message || 'Failed to delete user';
+      
+      if (errorMessage.includes('timeout')) {
+        errorMessage = 'User deletion timed out. Please try again.';
+      } else if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
+        errorMessage = 'Network connection issue. Please check your connection and try again.';
+      } else if (errorMessage.includes('Edge Function')) {
+        errorMessage = 'User deletion service error. Please try again.';
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setIsDeleting(false);
-    }
-  };
-
-  const cleanupUserData = async (userId: string) => {
-    console.log('Cleaning up user data for:', userId);
-    
-    try {
-      // Clean up tasks - unassign user
-      await supabase
-        .from('tasks')
-        .update({ 
-          assigned_to_id: null,
-          assigned_to_ids: [],
-          assigned_to_names: []
-        })
-        .eq('assigned_to_id', userId);
-
-      // Remove from project team members
-      await supabase
-        .from('project_team_members')
-        .delete()
-        .eq('user_id', userId);
-
-      // Remove from chat participants
-      await supabase
-        .from('chat_participants')
-        .delete()
-        .eq('user_id', userId);
-
-      // Delete user's chat messages
-      await supabase
-        .from('chat_messages')
-        .delete()
-        .eq('user_id', userId);
-
-      // Delete user's time entries
-      await supabase
-        .from('time_entries')
-        .delete()
-        .eq('user_id', userId);
-
-      // Delete user's notifications
-      await supabase
-        .from('notifications')
-        .delete()
-        .eq('user_id', userId);
-
-      // Delete user's documents
-      await supabase
-        .from('documents')
-        .delete()
-        .eq('user_id', userId);
-
-      console.log('User data cleanup completed');
-    } catch (error) {
-      console.error('Error during cleanup:', error);
-      // Don't throw - we still want to try to delete the user
     }
   };
 

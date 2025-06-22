@@ -1,6 +1,6 @@
 
-import { useEnhancedUserOperations } from './useEnhancedUserOperations';
+import { useConsolidatedUserOperations } from './useConsolidatedUserOperations';
 
 export const useUserOperations = (refetchUsers: () => void) => {
-  return useEnhancedUserOperations(refetchUsers);
+  return useConsolidatedUserOperations(refetchUsers);
 };
