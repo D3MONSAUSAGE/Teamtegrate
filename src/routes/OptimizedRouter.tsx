@@ -1,4 +1,3 @@
-
 import React, { Suspense } from 'react';
 import { createBrowserRouter } from 'react-router-dom';
 import LoadingFallback from '@/components/LoadingFallback';
@@ -12,6 +11,7 @@ import SignupPage from '@/pages/SignupPage';
 import DashboardPage from '@/pages/DashboardPage';
 import TasksPage from '@/pages/TasksPage';
 import ProjectsPage from '@/pages/ProjectsPage';
+import ProjectTasksPage from '@/pages/ProjectTasksPage';
 
 // Lazy load non-critical pages
 import {
@@ -73,11 +73,7 @@ export const router = createBrowserRouter([
           },
           {
             path: "projects/:projectId/tasks",
-            element: (
-              <Suspense fallback={<LoadingFallback />}>
-                <ProjectTasksView projectId={undefined} />
-              </Suspense>
-            ),
+            element: <ProjectTasksPage />,
           },
           {
             path: "calendar",
