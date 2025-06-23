@@ -1,113 +1,144 @@
 
-import { useMemo } from 'react';
-import { useProjectTasks } from '@/hooks/useProjectTasks';
-import { useProjects } from '@/hooks/useProjects';
+import { useState, useEffect, useCallback } from 'react';
+import { Task, TaskStatus } from '@/types';
 import { useProjectAccess } from './hooks/useProjectAccess';
-import { useProjectTasksFilters } from './hooks/useProjectTasksFilters';
-import { useProjectTasksActions } from './hooks/useProjectTasksActions';
+import { useProjectTasks } from './useProjectTasks';
 import { useProjectTeamMembers } from '@/hooks/useProjectTeamMembers';
-import { Task } from '@/types';
 
-export const useProjectTasksView = (projectId: string | null) => {
-  console.log('🏗️ useProjectTasksView: Called with projectId:', projectId);
-
-  // Use the new project-specific tasks query instead of the "My Tasks" focused one
-  const { tasks: projectTasks, isLoading: isLoadingTasks, error: tasksError, refetch: refetchTasks } = useProjectTasks(projectId);
-  const { projects, refreshProjects } = useProjects();
-
-  console.log('📊 useProjectTasksView: Got data from hooks:', {
-    tasksCount: projectTasks?.length || 0,
-    projectsCount: projects?.length || 0,
-    isLoadingTasks,
-    hasTasksError: !!tasksError
-  });
-
-  // Convert to Task[] - the new hook already returns the correct format
-  const convertedProjectTasks = useMemo(() => {
-    console.log('🔄 useProjectTasksView: Converting project tasks:', projectTasks?.length || 0);
-    return projectTasks as Task[];
-  }, [projectTasks]);
-
-  // Use the separated hooks
-  const { project, isLoading: isLoadingProject, loadError } = useProjectAccess(projectId, projects || []);
+export function useProjectTasksView(projectId: string | null) {
+  console.log('useProjectTasksView: Hook called with projectId:', projectId);
   
-  const {
-    searchQuery,
-    sortBy,
-    todoTasks,
-    inProgressTasks,
-    completedTasks,
-    progress,
-    handleSearchChange,
-    onSortByChange
-  } = useProjectTasksFilters(convertedProjectTasks);
+  // Project access with proper loading handling
+  const { project, isLoading: projectLoading, loadError: projectError } = useProjectAccess(projectId);
+  
+  // Tasks data
+  const { 
+    tasks, 
+    loading: tasksLoading, 
+    error: tasksError, 
+    refetch: refetchTasks 
+  } = useProjectTasks(projectId);
+  
+  // Team members data
+  const { 
+    teamMembers, 
+    loading: isLoadingTeamMembers, 
+    error: teamMembersError, 
+    refetch: refetchTeamMembers 
+  } = useProjectTeamMembers(projectId || '');
 
-  // Fetch team members for the project with error handling
-  const { teamMembers, isLoading: isLoadingTeamMembers, error: teamMembersError } = useProjectTeamMembers(projectId);
+  // Local state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState('deadline');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
 
-  // Create a comprehensive refresh function that updates both tasks and projects
-  const handleDataRefresh = async () => {
-    console.log('🔄 useProjectTasksView: Starting comprehensive data refresh');
+  // Derived state
+  const isLoading = projectLoading || tasksLoading;
+  const loadError = projectError || tasksError;
+
+  // Filter and organize tasks
+  const filteredTasks = tasks?.filter(task => {
+    if (!searchQuery) return true;
+    return task.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+           task.description?.toLowerCase().includes(searchQuery.toLowerCase());
+  }) || [];
+
+  const todoTasks = filteredTasks.filter(task => task.status === 'To Do');
+  const inProgressTasks = filteredTasks.filter(task => task.status === 'In Progress');
+  const completedTasks = filteredTasks.filter(task => task.status === 'Completed');
+
+  // Calculate progress
+  const totalTasks = filteredTasks.length;
+  const completedCount = completedTasks.length;
+  const progress = totalTasks > 0 ? (completedCount / totalTasks) * 100 : 0;
+
+  // Event handlers
+  const handleSearchChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(event.target.value);
+  }, []);
+
+  const handleEditTask = useCallback((task: Task) => {
+    setEditingTask(task);
+    setIsCreateTaskOpen(true);
+  }, []);
+
+  const handleCreateTask = useCallback(() => {
+    setEditingTask(null);
+    setIsCreateTaskOpen(true);
+  }, []);
+
+  const handleManualRefresh = useCallback(async () => {
+    setIsRefreshing(true);
     try {
-      console.log('📡 Refreshing project tasks...');
-      await refetchTasks();
-      console.log('✅ Project tasks refreshed');
-      
-      console.log('📡 Refreshing projects...');
-      await refreshProjects();
-      console.log('✅ Projects refreshed');
-      
-      console.log('✅ useProjectTasksView: Data refresh completed successfully');
-    } catch (error) {
-      console.error('❌ useProjectTasksView: Error refreshing data:', error);
+      await Promise.all([
+        refetchTasks(),
+        refetchTeamMembers()
+      ]);
+    } finally {
+      setIsRefreshing(false);
     }
-  };
+  }, [refetchTasks, refetchTeamMembers]);
 
-  const {
-    isRefreshing,
-    isCreateTaskOpen,
-    editingTask,
-    setIsCreateTaskOpen,
-    handleEditTask,
-    handleCreateTask,
-    handleManualRefresh,
-    handleTaskStatusChange,
-    handleTaskDialogComplete
-  } = useProjectTasksActions({ 
-    onDataRefresh: handleDataRefresh
-  });
+  const handleTaskStatusChange = useCallback(async (taskId: string, status: TaskStatus) => {
+    // Implementation would go here
+    console.log('Status change requested:', { taskId, status });
+  }, []);
 
-  const isLoading = isLoadingProject || isLoadingTasks;
-  const combinedError = loadError || (tasksError ? tasksError.message : null);
+  const onSortByChange = useCallback((newSortBy: string) => {
+    setSortBy(newSortBy);
+  }, []);
 
-  console.log('📈 useProjectTasksView: Final data summary:', {
-    isLoading,
-    hasLoadError: !!combinedError,
-    hasProject: !!project,
-    todoTasksCount: todoTasks?.length || 0,
-    inProgressTasksCount: inProgressTasks?.length || 0,
-    completedTasksCount: completedTasks?.length || 0,
-    teamMembersCount: teamMembers?.length || 0,
-    teamMembersError: teamMembersError || null
-  });
+  const handleTaskDialogComplete = useCallback(() => {
+    setIsCreateTaskOpen(false);
+    setEditingTask(null);
+    refetchTasks();
+  }, [refetchTasks]);
+
+  // Debug logging
+  useEffect(() => {
+    console.log('useProjectTasksView: State update', {
+      projectId,
+      hasProject: !!project,
+      projectLoading,
+      projectError,
+      tasksCount: tasks?.length || 0,
+      tasksLoading,
+      tasksError,
+      teamMembersCount: teamMembers?.length || 0,
+      isLoadingTeamMembers,
+      teamMembersError
+    });
+  }, [project, projectLoading, projectError, tasks, tasksLoading, tasksError, teamMembers, isLoadingTeamMembers, teamMembersError, projectId]);
 
   return {
-    isLoading,
-    loadError: combinedError,
+    // Project data
     project,
-    searchQuery,
-    sortBy,
+    isLoading,
+    loadError,
+    
+    // Tasks data
+    tasks: filteredTasks,
     todoTasks,
     inProgressTasks,
     completedTasks,
     progress,
-    teamMembers: teamMembers || [],
+    
+    // Team data
+    teamMembers,
     isLoadingTeamMembers,
     teamMembersError,
+    
+    // UI state
+    searchQuery,
+    sortBy,
     isRefreshing,
     isCreateTaskOpen,
     editingTask,
     setIsCreateTaskOpen,
+    
+    // Event handlers
     handleSearchChange,
     handleEditTask,
     handleCreateTask,
@@ -116,4 +147,4 @@ export const useProjectTasksView = (projectId: string | null) => {
     onSortByChange,
     handleTaskDialogComplete
   };
-};
+}

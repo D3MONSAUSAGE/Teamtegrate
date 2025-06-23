@@ -18,7 +18,7 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
   console.log('ProjectTasksView: Rendering with projectId:', projectId);
 
   const [isEditProjectOpen, setIsEditProjectOpen] = useState(false);
-  const { projects, setProjects } = useProjects();
+  const { setProjects } = useProjects();
 
   // Add error boundary for the hook
   let hookData;
@@ -114,7 +114,7 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
     if (!projectId) return;
     
     try {
-      await addTeamMemberToProject(projectId, userId, projects, setProjects);
+      await addTeamMemberToProject(projectId, userId, [], setProjects);
       // Refresh team members after adding
       handleManualRefresh();
     } catch (error) {
@@ -127,7 +127,7 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
     if (!projectId) return;
     
     try {
-      await removeTeamMemberFromProject(projectId, userId, projects, setProjects);
+      await removeTeamMemberFromProject(projectId, userId, [], setProjects);
       // Refresh team members after removing
       handleManualRefresh();
     } catch (error) {
