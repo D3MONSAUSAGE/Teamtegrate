@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Task, TaskStatus } from '@/types';
 import { useProjectAccess } from './hooks/useProjectAccess';
-import { useProjectTasks } from './useProjectTasks';
+import { useProjectTasks } from '@/hooks/useProjectTasks';
 import { useProjectTeamMembers } from '@/hooks/useProjectTeamMembers';
 
 export function useProjectTasksView(projectId: string | null) {
@@ -11,10 +11,10 @@ export function useProjectTasksView(projectId: string | null) {
   // Project access with proper loading handling
   const { project, isLoading: projectLoading, loadError: projectError } = useProjectAccess(projectId);
   
-  // Tasks data
+  // Tasks data - using the correct hook
   const { 
     tasks, 
-    loading: tasksLoading, 
+    isLoading: tasksLoading, 
     error: tasksError, 
     refetch: refetchTasks 
   } = useProjectTasks(projectId);
@@ -22,7 +22,7 @@ export function useProjectTasksView(projectId: string | null) {
   // Team members data
   const { 
     teamMembers, 
-    loading: isLoadingTeamMembers, 
+    isLoading: isLoadingTeamMembers, 
     error: teamMembersError, 
     refetch: refetchTeamMembers 
   } = useProjectTeamMembers(projectId || '');
