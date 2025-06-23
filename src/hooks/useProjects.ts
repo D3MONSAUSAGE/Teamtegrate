@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -26,25 +25,38 @@ export function useProjects() {
       
       const cacheKey = `projects-${user.organizationId}-${user.id}`;
       
-      console.log('useProjects: Fetching user-specific projects for user:', {
+      console.log('useProjects: Fetching projects for user:', {
         userId: user.id,
         userRole: user.role,
         organizationId: user.organizationId
       });
       
       const data = await requestManager.dedupe(cacheKey, async () => {
-        // Extended timeout from 20s to 30s for better reliability
         const timeoutPromise = new Promise((_, reject) => 
           setTimeout(() => reject(new Error('Request timeout after 30 seconds')), 30000)
         );
 
-        // Filter projects to only show those managed by user or where user is a team member
-        const projectPromise = supabase
-          .from('projects')
-          .select('*')
-          .eq('organization_id', user.organizationId)
-          .or(`manager_id.eq.${user.id},team_members.cs.{${user.id}}`)
-          .order('updated_at', { ascending: false });
+        let projectPromise;
+
+        // Role-based access logic
+        if (user.role === 'superadmin' || user.role === 'admin') {
+          // Superadmins and admins can see ALL projects in their organization
+          console.log('useProjects: Fetching ALL projects for superadmin/admin');
+          projectPromise = supabase
+            .from('projects')
+            .select('*')
+            .eq('organization_id', user.organizationId)
+            .order('updated_at', { ascending: false });
+        } else {
+          // Regular users and managers see only projects they manage or are team members of
+          console.log('useProjects: Fetching user-specific projects for regular user/manager');
+          projectPromise = supabase
+            .from('projects')
+            .select('*')
+            .eq('organization_id', user.organizationId)
+            .or(`manager_id.eq.${user.id},team_members.cs.{${user.id}}`)
+            .order('updated_at', { ascending: false });
+        }
 
         const { data, error } = await Promise.race([
           projectPromise,
@@ -69,17 +81,18 @@ export function useProjects() {
           throw error;
         }
 
-        console.log('useProjects: Retrieved user-specific projects from database:', {
+        console.log('useProjects: Retrieved projects from database:', {
           userId: user.id,
           userRole: user.role,
           projectCount: data?.length || 0,
+          projects: data?.map(p => ({ id: p.id, title: p.title, manager_id: p.manager_id, team_members: p.team_members })),
           timestamp: new Date().toISOString()
         });
 
         return data;
       });
 
-      // Since we're now filtering at the database level, we only need basic validation
+      // Validate projects belong to user's organization
       const validatedProjects = data?.filter(dbProject => {
         if (dbProject.organization_id !== user.organizationId) {
           console.error('useProjects: SECURITY VIOLATION - Project from different organization:', {
@@ -117,12 +130,13 @@ export function useProjects() {
       setProjects(transformedProjects);
       setError(null);
       
-      console.log('useProjects: Successfully processed user-specific projects:', {
+      console.log('useProjects: Successfully processed projects:', {
         originalCount: data?.length || 0,
         validatedCount: validatedProjects.length,
         transformedCount: transformedProjects.length,
         userId: user.id,
-        role: user.role
+        role: user.role,
+        userCanSeeAll: user.role === 'superadmin' || user.role === 'admin'
       });
       
     } catch (err: any) {
@@ -254,7 +268,7 @@ export function useProjects() {
   useEffect(() => {
     if (!user) return;
 
-    console.log('useProjects: Setting up real-time subscription for user-specific projects');
+    console.log('useProjects: Setting up real-time subscription for projects');
     const channel = supabase
       .channel('projects_changes')
       .on('postgres_changes', 
