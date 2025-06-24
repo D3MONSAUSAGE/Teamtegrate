@@ -1,4 +1,3 @@
-
 import { Task, Project, TaskComment } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -106,24 +105,6 @@ export const deleteTask = async (taskId: string): Promise<void> => {
   const { error } = await supabase
     .from('tasks')
     .delete()
-    .eq('id', taskId);
-
-  if (error) throw error;
-};
-
-export const updateTaskStatus = async (taskId: string, updates: Partial<Task>): Promise<void> => {
-  const updateData: any = {
-    status: updates.status,
-    updated_at: new Date().toISOString()
-  };
-
-  if (updates.status === 'Completed' && updates.completedAt) {
-    updateData.completed_at = updates.completedAt.toISOString();
-  }
-
-  const { error } = await supabase
-    .from('tasks')
-    .update(updateData)
     .eq('id', taskId);
 
   if (error) throw error;

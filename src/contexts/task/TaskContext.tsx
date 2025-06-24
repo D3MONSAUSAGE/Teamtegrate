@@ -6,7 +6,6 @@ import {
   fetchTasks as fetchTasksAPI, 
   updateTask as updateTaskAPI, 
   deleteTask as deleteTaskAPI, 
-  updateTaskStatus as updateTaskStatusAPI, 
   assignTaskToUser as assignTaskToUserAPI, 
   fetchProjects as fetchProjectsAPI, 
   createProject as createProjectAPI, 
@@ -14,6 +13,7 @@ import {
   deleteProject as deleteProjectAPI, 
   fetchTeamPerformance 
 } from './api';
+import { updateTaskStatus as updateTaskStatusAPI } from './operations/taskStatus';
 import { addTaskComment as addTaskCommentAPI } from './api/comments';
 import { toast } from 'sonner';
 import { addProjectComment, fetchProjectComments } from './api/comments';
@@ -144,27 +144,18 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     setLoading(true);
     try {
-      const updates: Partial<Task> = { status };
-      if (status === 'Completed') {
-        updates.completedAt = new Date();
-        console.log('📅 Setting completedAt for completed task');
-      }
+      // Use the proper API function with full user context and organization validation
+      await updateTaskStatusAPI(
+        taskId, 
+        status, 
+        { 
+          id: user?.id, 
+          organizationId: user?.organizationId 
+        }, 
+        setTasks, 
+        setProjects
+      );
       
-      console.log('📡 Calling updateTaskStatusAPI with:', { taskId, updates });
-      await updateTaskStatusAPI(taskId, updates);
-      console.log('✅ Database update completed');
-      
-      // Update local state immediately
-      console.log('🔄 Updating local task state');
-      setTasks(prevTasks => {
-        const updatedTasks = prevTasks.map(task =>
-          task.id === taskId ? { ...task, status, completedAt: updates.completedAt, updatedAt: new Date() } : task
-        );
-        console.log('📊 Local tasks updated:', updatedTasks.find(t => t.id === taskId));
-        return updatedTasks;
-      });
-      
-      toast.success('Task status updated successfully');
       console.log('✅ TaskContext.updateTaskStatus completed successfully');
     } catch (err: any) {
       console.error('❌ Error in TaskContext.updateTaskStatus:', err);
@@ -174,7 +165,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user]);
 
   const assignTaskToUser = useCallback(async (taskId: string, userId: string, userName: string) => {
     setLoading(true);
