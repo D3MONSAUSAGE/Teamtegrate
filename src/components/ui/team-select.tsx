@@ -20,13 +20,23 @@ interface TeamSelectProps {
 }
 
 const TeamSelect: React.FC<TeamSelectProps> = ({
-  teams,
+  teams = [], // Safe default
   isLoading,
   selectedTeam,
   onTeamChange,
   disabled = false,
   optional = false,
 }) => {
+  // Ensure teams is always an array
+  const safeTeams = Array.isArray(teams) ? teams : [];
+
+  console.log('TeamSelect: Rendering with', {
+    teamsCount: safeTeams.length,
+    isLoading,
+    selectedTeam,
+    disabled
+  });
+
   return (
     <div className="space-y-2">
       <Label className="flex items-center gap-2">
@@ -62,12 +72,12 @@ const TeamSelect: React.FC<TeamSelectProps> = ({
                   </div>
                 </SelectItem>
               )}
-              {teams.length === 0 ? (
+              {safeTeams.length === 0 ? (
                 <div className="text-center p-2 text-muted-foreground">
                   No teams found
                 </div>
               ) : (
-                teams.map((team) => (
+                safeTeams.map((team) => (
                   <SelectItem key={team.id} value={team.id}>
                     <div className="flex flex-col">
                       <span>{team.name}</span>

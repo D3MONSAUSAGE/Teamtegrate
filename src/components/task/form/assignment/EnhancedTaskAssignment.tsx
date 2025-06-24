@@ -13,6 +13,7 @@ import TeamAssignmentCard from '../../TeamAssignmentCard';
 import AssignmentSummary from './AssignmentSummary';
 import OrganizationSelector from '@/components/organization/OrganizationSelector';
 import TeamSelect from '@/components/ui/team-select';
+import AssignmentErrorBoundary from './AssignmentErrorBoundary';
 
 interface EnhancedTaskAssignmentProps {
   selectedMember?: string;
@@ -42,10 +43,10 @@ const EnhancedTaskAssignment: React.FC<EnhancedTaskAssignmentProps> = ({
     editingTask?.assignedToIds?.length > 1 || selectedMembers.length > 1
   );
 
-  // Data hooks based on user role
-  const { organizations, isLoading: loadingOrgs } = useOrganizations();
-  const { teams, isLoading: loadingTeams } = useTeamsByOrganization(selectedOrganization);
-  const { users: contextUsers, isLoading: loadingUsers } = useUsersByContext(
+  // Data hooks based on user role - with safe defaults
+  const { organizations = [], isLoading: loadingOrgs } = useOrganizations();
+  const { teams = [], isLoading: loadingTeams } = useTeamsByOrganization(selectedOrganization);
+  const { users: contextUsers = [], isLoading: loadingUsers } = useUsersByContext(
     selectedOrganization, 
     selectedTeam === 'all' ? undefined : selectedTeam
   );
@@ -70,12 +71,16 @@ const EnhancedTaskAssignment: React.FC<EnhancedTaskAssignmentProps> = ({
       contextUsersCount: contextUsers.length,
       fallbackUsersCount: fallbackUsers.length,
       loadingUsers,
-      fallbackLoading
+      fallbackLoading,
+      organizationsCount: organizations.length,
+      teamsCount: teams.length
     });
-  }, [currentUser?.role, selectedOrganization, selectedTeam, contextUsers.length, fallbackUsers.length, loadingUsers, fallbackLoading]);
+  }, [currentUser?.role, selectedOrganization, selectedTeam, contextUsers.length, fallbackUsers.length, loadingUsers, fallbackLoading, organizations.length, teams.length]);
 
-  // Determine which users to show based on role and context
-  const users = currentUser?.role === 'manager' ? fallbackUsers : contextUsers;
+  // Determine which users to show based on role and context - with safe fallbacks
+  const users = Array.isArray(currentUser?.role === 'manager' ? fallbackUsers : contextUsers) 
+    ? (currentUser?.role === 'manager' ? fallbackUsers : contextUsers)
+    : [];
   const isLoading = currentUser?.role === 'manager' ? fallbackLoading : loadingUsers;
 
   const handleToggle = (enabled: boolean) => {
@@ -121,98 +126,106 @@ const EnhancedTaskAssignment: React.FC<EnhancedTaskAssignmentProps> = ({
   const showTeamSelect = currentUser?.role === 'superadmin' || currentUser?.role === 'admin';
 
   return (
-    <Card className="border-2 border-blue-100 h-fit">
-      <CardHeader className="pb-4">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Building2 className="h-5 w-5" />
-          Task Assignment
-          {users.length > 0 && (
-            <span className="text-sm font-normal text-muted-foreground">
-              ({users.length} available)
-            </span>
+    <AssignmentErrorBoundary>
+      <Card className="border-2 border-blue-100 h-fit">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Building2 className="h-5 w-5" />
+            Task Assignment
+            {users.length > 0 && (
+              <span className="text-sm font-normal text-muted-foreground">
+                ({users.length} available)
+              </span>
+            )}
+          </CardTitle>
+        </CardHeader>
+        
+        <CardContent className="space-y-4">
+          {/* Organization Selection (Super Admin Only) */}
+          {showOrganizationSelect && (
+            <AssignmentErrorBoundary>
+              <OrganizationSelector
+                organizations={organizations || []}
+                isLoading={loadingOrgs}
+                selectedOrganization={selectedOrganization}
+                onOrganizationChange={handleOrganizationChange}
+                label="Select Organization"
+                placeholder="Choose organization for task assignment"
+              />
+            </AssignmentErrorBoundary>
           )}
-        </CardTitle>
-      </CardHeader>
-      
-      <CardContent className="space-y-4">
-        {/* Organization Selection (Super Admin Only) */}
-        {showOrganizationSelect && (
-          <OrganizationSelector
-            organizations={organizations}
-            isLoading={loadingOrgs}
-            selectedOrganization={selectedOrganization}
-            onOrganizationChange={handleOrganizationChange}
-            label="Select Organization"
-            placeholder="Choose organization for task assignment"
+
+          {/* Team Selection (Super Admin & Admin) */}
+          {showTeamSelect && (
+            <AssignmentErrorBoundary>
+              <TeamSelect
+                teams={teams || []}
+                isLoading={loadingTeams}
+                selectedTeam={selectedTeam}
+                onTeamChange={handleTeamChange}
+                disabled={showOrganizationSelect && !selectedOrganization}
+                optional={currentUser?.role === 'superadmin'}
+              />
+            </AssignmentErrorBoundary>
+          )}
+
+          {/* Assignment Toggle */}
+          <AssignmentToggle
+            multiAssignMode={multiAssignMode}
+            onToggle={handleToggle}
           />
-        )}
 
-        {/* Team Selection (Super Admin & Admin) */}
-        {showTeamSelect && (
-          <TeamSelect
-            teams={teams}
-            isLoading={loadingTeams}
-            selectedTeam={selectedTeam}
-            onTeamChange={handleTeamChange}
-            disabled={showOrganizationSelect && !selectedOrganization}
-            optional={currentUser?.role === 'superadmin'}
-          />
-        )}
-
-        {/* Assignment Toggle */}
-        <AssignmentToggle
-          multiAssignMode={multiAssignMode}
-          onToggle={handleToggle}
-        />
-
-        {/* User Assignment */}
-        {multiAssignMode ? (
-          <div className="space-y-4">
-            <TeamAssignmentCard
-              selectedUsers={selectedUsers}
-              setSelectedUsers={handleUsersChange}
-              users={users}
-              loadingUsers={isLoading}
-            />
-            <AssignmentSummary selectedMembersCount={selectedMembers.length} />
-          </div>
-        ) : (
-          <TaskAssigneeSelect
-            selectedMember={selectedMember || "unassigned"}
-            onAssign={onAssign}
-            users={users}
-            isLoading={isLoading}
-          />
-        )}
-
-        {/* Context Info */}
-        {(selectedOrganization || selectedTeam) && (
-          <div className="text-xs text-muted-foreground p-2 bg-muted/50 rounded">
-            {selectedOrganization && (
-              <div>Organization: {organizations.find(o => o.id === selectedOrganization)?.name}</div>
+          {/* User Assignment */}
+          <AssignmentErrorBoundary>
+            {multiAssignMode ? (
+              <div className="space-y-4">
+                <TeamAssignmentCard
+                  selectedUsers={selectedUsers}
+                  setSelectedUsers={handleUsersChange}
+                  users={users}
+                  loadingUsers={isLoading}
+                />
+                <AssignmentSummary selectedMembersCount={selectedMembers.length} />
+              </div>
+            ) : (
+              <TaskAssigneeSelect
+                selectedMember={selectedMember || "unassigned"}
+                onAssign={onAssign}
+                users={users}
+                isLoading={isLoading}
+              />
             )}
-            {selectedTeam && selectedTeam !== 'all' && (
-              <div>Team: {teams.find(t => t.id === selectedTeam)?.name}</div>
-            )}
-            {selectedTeam === 'all' && (
-              <div>Team: All Teams</div>
-            )}
-            <div>Available assignees: {users.length}</div>
-          </div>
-        )}
+          </AssignmentErrorBoundary>
 
-        {/* No Users Available Warning */}
-        {!isLoading && users.length === 0 && (
-          <div className="text-center py-4 text-muted-foreground">
-            <UserIcon className="h-8 w-8 mx-auto mb-2" />
-            <p className="text-sm">No users available for assignment</p>
-            {showOrganizationSelect && !selectedOrganization && (
-              <p className="text-xs mt-1">Select an organization to see available users</p>
-            )}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+          {/* Context Info */}
+          {(selectedOrganization || selectedTeam) && (
+            <div className="text-xs text-muted-foreground p-2 bg-muted/50 rounded">
+              {selectedOrganization && (
+                <div>Organization: {organizations.find(o => o.id === selectedOrganization)?.name || 'Unknown'}</div>
+              )}
+              {selectedTeam && selectedTeam !== 'all' && (
+                <div>Team: {teams.find(t => t.id === selectedTeam)?.name || 'Unknown'}</div>
+              )}
+              {selectedTeam === 'all' && (
+                <div>Team: All Teams</div>
+              )}
+              <div>Available assignees: {users.length}</div>
+            </div>
+          )}
+
+          {/* No Users Available Warning */}
+          {!isLoading && users.length === 0 && (
+            <div className="text-center py-4 text-muted-foreground">
+              <UserIcon className="h-8 w-8 mx-auto mb-2" />
+              <p className="text-sm">No users available for assignment</p>
+              {showOrganizationSelect && !selectedOrganization && (
+                <p className="text-xs mt-1">Select an organization to see available users</p>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </AssignmentErrorBoundary>
   );
 };
 

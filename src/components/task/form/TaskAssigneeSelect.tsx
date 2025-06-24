@@ -25,13 +25,22 @@ const TaskAssigneeSelect: React.FC<TaskAssigneeSelectProps> = ({
   selectedMember, // Accept but use selectedUser as primary
   onUserSelect,
   onAssign, // Accept but use onUserSelect as primary
-  users,
+  users = [], // Safe default
   isLoading = false,
   placeholder = "Select assignee"
 }) => {
   // Use compatibility props
   const currentSelection = selectedMember || selectedUser;
   const handleSelection = onAssign || onUserSelect || (() => {});
+
+  // Ensure users is always an array
+  const safeUsers = Array.isArray(users) ? users : [];
+
+  console.log('TaskAssigneeSelect: Rendering with', {
+    usersCount: safeUsers.length,
+    currentSelection,
+    isLoading
+  });
 
   return (
     <div className="space-y-2">
@@ -42,7 +51,7 @@ const TaskAssigneeSelect: React.FC<TaskAssigneeSelectProps> = ({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="unassigned">Unassigned</SelectItem>
-          {users.map((user) => (
+          {safeUsers.map((user) => (
             <SelectItem key={user.id} value={user.id}>
               {user.name || user.email}
             </SelectItem>

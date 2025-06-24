@@ -19,13 +19,22 @@ interface OrganizationSelectorProps {
 }
 
 const OrganizationSelector: React.FC<OrganizationSelectorProps> = ({
-  organizations,
+  organizations = [], // Safe default
   isLoading,
   selectedOrganization,
   onOrganizationChange,
   label = "Select Organization",
   placeholder = "Choose an organization"
 }) => {
+  // Ensure organizations is always an array
+  const safeOrganizations = Array.isArray(organizations) ? organizations : [];
+
+  console.log('OrganizationSelector: Rendering with', {
+    organizationsCount: safeOrganizations.length,
+    isLoading,
+    selectedOrganization
+  });
+
   return (
     <div className="space-y-2">
       <Label className="flex items-center gap-2">
@@ -46,12 +55,12 @@ const OrganizationSelector: React.FC<OrganizationSelectorProps> = ({
               <Loader2 className="h-4 w-4 animate-spin mr-2" />
               Loading...
             </div>
-          ) : organizations.length === 0 ? (
+          ) : safeOrganizations.length === 0 ? (
             <div className="text-center p-2 text-muted-foreground">
               No organizations found
             </div>
           ) : (
-            organizations.map((org) => (
+            safeOrganizations.map((org) => (
               <SelectItem key={org.id} value={org.id}>
                 {org.name}
               </SelectItem>
