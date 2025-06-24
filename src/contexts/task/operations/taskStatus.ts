@@ -11,9 +11,13 @@ export const updateTaskStatus = async (
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>,
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
 ): Promise<void> => {
+  console.log('🔧 updateTaskStatus: Starting update', { taskId, status, user });
+  
   try {
-    if (!user) {
+    if (!user || !user.id || !user.organizationId) {
+      console.error('❌ updateTaskStatus: Missing user context', user);
       toast.error('You must be logged in to update task status');
+      playErrorSound();
       return;
     }
 
@@ -26,7 +30,7 @@ export const updateTaskStatus = async (
       updatedTask.completedAt = new Date();
     }
 
-    console.log('Updating task status:', { taskId, status, updatedTask });
+    console.log('🔧 updateTaskStatus: Updating task in database', { taskId, status, organizationId: user.organizationId });
 
     // Prepare data for database update
     const dbUpdateData: any = {
@@ -38,7 +42,7 @@ export const updateTaskStatus = async (
       dbUpdateData.completed_at = new Date().toISOString();
     }
 
-    // Update task in database
+    // Update task in database - using correct table name and organization validation
     const { error } = await supabase
       .from('tasks')
       .update(dbUpdateData)
@@ -46,11 +50,13 @@ export const updateTaskStatus = async (
       .eq('organization_id', user.organizationId);
 
     if (error) {
-      console.error('Error updating task status:', error);
+      console.error('❌ updateTaskStatus: Database error', error);
       playErrorSound();
-      toast.error('Failed to update task status');
+      toast.error(`Failed to update task status: ${error.message}`);
       return;
     }
+
+    console.log('✅ updateTaskStatus: Database update successful');
 
     // Update local task state
     setTasks(prevTasks =>
@@ -60,28 +66,36 @@ export const updateTaskStatus = async (
     );
 
     // Get the task to check if it belongs to a project
-    const { data: taskData } = await supabase
+    const { data: taskData, error: taskFetchError } = await supabase
       .from('tasks')
       .select('project_id')
       .eq('id', taskId)
       .single();
 
-    if (taskData?.project_id) {
-      // Update project status based on all its tasks
-      const { data: projectTasks } = await supabase
+    if (taskFetchError) {
+      console.warn('⚠️ updateTaskStatus: Could not fetch task project info', taskFetchError);
+      // Don't fail the whole operation for this
+    } else if (taskData?.project_id) {
+      console.log('🔧 updateTaskStatus: Updating project status based on tasks');
+      
+      // Update project status based on all its tasks - using correct table name
+      const { data: projectTasks, error: projectTasksError } = await supabase
         .from('tasks')
         .select('status')
         .eq('project_id', taskData.project_id)
         .eq('organization_id', user.organizationId);
 
-      if (projectTasks) {
+      if (projectTasksError) {
+        console.warn('⚠️ updateTaskStatus: Could not fetch project tasks', projectTasksError);
+        // Don't fail the whole operation for this
+      } else if (projectTasks && projectTasks.length > 0) {
         const allCompleted = projectTasks.every(task => task.status === 'Completed');
         const hasInProgress = projectTasks.some(task => task.status === 'In Progress');
         
         let projectStatus = 'To Do';
         let isCompleted = false;
         
-        if (allCompleted && projectTasks.length > 0) {
+        if (allCompleted) {
           projectStatus = 'Completed';
           isCompleted = true;
         } else if (hasInProgress || projectTasks.some(task => task.status === 'Completed')) {
@@ -100,8 +114,10 @@ export const updateTaskStatus = async (
           .eq('organization_id', user.organizationId);
 
         if (projectError) {
-          console.error('Error updating project status:', projectError);
+          console.error('❌ updateTaskStatus: Error updating project status', projectError);
         } else {
+          console.log('✅ updateTaskStatus: Project status updated', { projectStatus, isCompleted });
+          
           // Update local project state
           setProjects(prevProjects =>
             prevProjects.map(project =>
@@ -119,11 +135,14 @@ export const updateTaskStatus = async (
       }
     }
 
+    console.log('✅ updateTaskStatus: Complete success');
     toast.success('Task status updated successfully!');
     playSuccessSound();
+    
   } catch (error) {
-    console.error('Error in updateTaskStatus:', error);
+    console.error('❌ updateTaskStatus: Unexpected error', error);
     playErrorSound();
     toast.error('Failed to update task status');
+    throw error; // Re-throw to let calling code handle it
   }
 };
