@@ -9,7 +9,7 @@ import { isTaskOverdue } from "@/utils/taskUtils";
 
 interface TaskCardContentProps {
   task: Task;
-  handleStatusChange: (status: TaskStatus) => void;
+  handleStatusChange: (status: TaskStatus) => Promise<void>;
   commentCount: number;
   onShowComments: () => void;
 }

@@ -11,7 +11,7 @@ interface TaskTabsProps {
   completedTasks: Task[];
   onEdit: (task: Task) => void;
   onNewTask: () => void;
-  onStatusChange?: (taskId: string, status: TaskStatus) => void;
+  onStatusChange?: (taskId: string, status: TaskStatus) => Promise<void>;
 }
 
 const TaskTabs: React.FC<TaskTabsProps> = ({

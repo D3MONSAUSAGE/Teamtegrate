@@ -10,7 +10,7 @@ interface ProjectTasksTabsProps {
   inProgressTasks: Task[];
   completedTasks: Task[];
   onEdit: (task: Task) => void;
-  onStatusChange?: (taskId: string, status: TaskStatus) => void;
+  onStatusChange?: (taskId: string, status: TaskStatus) => Promise<void>;
 }
 
 const ProjectTasksTabs: React.FC<ProjectTasksTabsProps> = ({
