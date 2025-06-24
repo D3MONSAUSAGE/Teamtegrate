@@ -45,11 +45,12 @@ const TaskCard: React.FC<TaskCardProps> = ({
     }
   };
 
-  const handleStatusChange = (status: TaskStatus) => {
+  const handleStatusChange = async (status: TaskStatus): Promise<void> => {
     if (onStatusChange) {
-      onStatusChange(task.id, status);
+      // Convert the sync function to async by wrapping in Promise.resolve
+      await Promise.resolve(onStatusChange(task.id, status));
     } else {
-      internalHandleStatusChange(status);
+      await internalHandleStatusChange(status);
     }
   };
 
@@ -75,7 +76,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
         return {
           glow: 'shadow-amber-200/50 dark:shadow-amber-900/30 hover:shadow-amber-300/60 dark:hover:shadow-amber-800/40',
           border: 'hover:border-amber-300/60 dark:hover:border-amber-700/50',
-          accent: 'before:bg-gradient-to-r before:from-amber-500/15 before:to-transparent'
+          accent: 'before:bg-gradient-to-r before:from-amber-500/15 before:to-transparent'  
         };
       case 'Low': 
         return {
