@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { login as authLogin, signup as authSignup, logout as authLogout, updateUserProfile as updateProfile } from '../authOperations';
 import { User as SupabaseUser, Session } from '@supabase/supabase-js';

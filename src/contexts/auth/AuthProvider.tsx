@@ -58,13 +58,33 @@ const AuthProviderInner: React.FC<AuthProviderProps> = ({ children }) => {
     isLoading: loading,
     profileLoading,
     isReady,
-    login,
-    signup,
+    login: async (email: string, password: string) => {
+      try {
+        await login(email, password);
+        return { error: null };
+      } catch (error) {
+        return { error };
+      }
+    },
+    signup: async (email: string, password: string, name: string, organizationType?: string, organizationName?: string, inviteCode?: string) => {
+      try {
+        const organizationData = organizationType === 'create' 
+          ? { type: 'create' as const, organizationName }
+          : organizationType === 'join'
+          ? { type: 'join' as const, inviteCode }
+          : undefined;
+        
+        await signup(email, password, name, 'user', organizationData);
+        return { error: null };
+      } catch (error) {
+        return { error };
+      }
+    },
     logout,
     isAuthenticated,
     updateUserProfile,
     hasRoleAccess,
-    canManageUser,
+    canManageUser: (targetUser) => canManageUser(targetUser.role),
     refreshUserSession
   };
 

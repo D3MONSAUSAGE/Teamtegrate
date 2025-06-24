@@ -79,19 +79,18 @@ export const useSignupForm = () => {
 
     setIsSubmitting(true);
     try {
-      const organizationData = {
-        type: signupType,
-        organizationName: signupType === 'create' ? formData.organizationName : undefined,
-        inviteCode: signupType === 'join' ? formData.inviteCode : undefined
-      };
-
-      await signup(
+      const { error } = await signup(
         formData.email.trim(),
         formData.password,
         formData.name.trim(),
-        'user', // This will be overridden in the signup function based on organization type
-        organizationData
+        signupType,
+        signupType === 'create' ? formData.organizationName : undefined,
+        signupType === 'join' ? formData.inviteCode : undefined
       );
+
+      if (error) {
+        throw error;
+      }
 
       // Success message is shown in the signup function
       // User will be redirected after email verification
