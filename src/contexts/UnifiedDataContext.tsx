@@ -45,19 +45,27 @@ export const useUnifiedData = () => {
 };
 
 export const UnifiedDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user } = useAuth();
+  const { user, isReady } = useAuth();
   
   // Network monitoring
   const { networkStatus, requestsInFlight, setRequestsInFlight } = useNetworkMonitoring();
   
-  // Query options
+  // Query options - now includes isReady flag
   const queryOptions = {
     user,
     networkStatus,
-    setRequestsInFlight
+    setRequestsInFlight,
+    isReady
   };
   
-  // Data queries
+  console.log('UnifiedDataContext: Query options', {
+    hasUser: !!user,
+    organizationId: user?.organizationId,
+    isReady,
+    networkStatus
+  });
+  
+  // Data queries - will wait for isReady before executing
   const { tasks, isLoadingTasks, tasksError, refetchTasksQuery } = useTasksQuery(queryOptions);
   const { projects, isLoadingProjects, projectsError, refetchProjectsQuery } = useProjectsQuery(queryOptions);
   const { users, isLoadingUsers, usersError, refetchUsersQuery } = useUsersQuery(queryOptions);

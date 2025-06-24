@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -8,14 +7,18 @@ import { useMemo } from 'react';
 import { requestManager } from '@/utils/requestManager';
 
 export const useTasksPageData = () => {
-  const { user } = useAuth();
+  const { user, isReady } = useAuth();
 
   const { data: tasks = [], isLoading, error } = useQuery({
     queryKey: ['tasks-my-tasks', user?.organizationId, user?.id],
     queryFn: async (): Promise<Task[]> => {
       if (!user?.organizationId || !user?.id) {
         if (process.env.NODE_ENV === 'development') {
-          console.log('useTasksPageData: Missing user data, cannot fetch tasks');
+          console.log('useTasksPageData: Missing user data, cannot fetch tasks', {
+            hasUser: !!user,
+            organizationId: user?.organizationId,
+            userId: user?.id
+          });
         }
         throw new Error('User must be authenticated and belong to an organization');
       }
@@ -185,19 +188,16 @@ export const useTasksPageData = () => {
         return flatTasksToTasks(processedTasks);
       });
     },
-    enabled: !!user?.organizationId && !!user?.id,
-    staleTime: 30000, // 30 seconds
-    gcTime: 300000, // 5 minutes
+    enabled: !!user?.organizationId && !!user?.id && isReady,
+    staleTime: 30000,
+    gcTime: 300000,
     retry: (failureCount, error: any) => {
-      // More aggressive retry for network issues
       if (failureCount >= 3) return false;
       
-      // Don't retry on auth/permission errors
       if (error.message.includes('organization') || error.message.includes('permission')) return false;
       if (error.message.includes('invalid input syntax for type uuid')) return false;
       if (error.message.includes('set-returning functions are not allowed in WHERE')) return false;
       
-      // Retry on network errors
       if (error.message.includes('Network connection issue') || 
           error.message.includes('timeout') ||
           error.message.includes('Failed to fetch')) {
@@ -209,14 +209,12 @@ export const useTasksPageData = () => {
     retryDelay: (attemptIndex) => Math.min(1000 * Math.pow(2, attemptIndex), 5000),
   });
 
-  // Memoize the return value to prevent unnecessary re-renders
   const memoizedResult = useMemo(() => ({
     tasks,
     isLoading,
     error
   }), [tasks, isLoading, error]);
 
-  // Enhanced error logging and user feedback
   if (error && process.env.NODE_ENV === 'development') {
     console.error('useTasksPageData: My tasks query error:', error);
   }

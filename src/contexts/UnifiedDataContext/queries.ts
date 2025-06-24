@@ -1,4 +1,3 @@
-
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Task, Project, User } from '@/types';
@@ -8,16 +7,19 @@ interface QueryOptions {
   user: any;
   networkStatus: string;
   setRequestsInFlight: (fn: (count: number) => number) => void;
+  isReady?: boolean;
 }
 
-export const useTasksQuery = ({ user, networkStatus, setRequestsInFlight }: QueryOptions) => {
+export const useTasksQuery = ({ user, networkStatus, setRequestsInFlight, isReady = true }: QueryOptions) => {
   const { data: tasks = [], isLoading, error, refetch } = useQuery({
     queryKey: ['unified-tasks', user?.organizationId, user?.id],
     queryFn: async (): Promise<Task[]> => {
       if (!user?.organizationId || !user?.id) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('🚫 UnifiedDataContext: Missing user data for tasks query');
-        }
+        console.log('🚫 UnifiedDataContext: Missing user data for tasks query', {
+          hasUser: !!user,
+          organizationId: user?.organizationId,
+          userId: user?.id
+        });
         return [];
       }
 
@@ -115,7 +117,7 @@ export const useTasksQuery = ({ user, networkStatus, setRequestsInFlight }: Quer
         setRequestsInFlight(count => count - 1);
       }
     },
-    enabled: !!user?.organizationId && !!user?.id && networkStatus !== 'offline',
+    enabled: !!user?.organizationId && !!user?.id && networkStatus !== 'offline' && isReady,
     staleTime: 30000,
     gcTime: 300000,
     retry: networkStatus === 'healthy' ? 3 : 1,
@@ -130,7 +132,7 @@ export const useTasksQuery = ({ user, networkStatus, setRequestsInFlight }: Quer
   };
 };
 
-export const useProjectsQuery = ({ user, networkStatus, setRequestsInFlight }: QueryOptions) => {
+export const useProjectsQuery = ({ user, networkStatus, setRequestsInFlight, isReady = true }: QueryOptions) => {
   const { data: projects = [], isLoading, error, refetch } = useQuery({
     queryKey: ['unified-projects', user?.organizationId],
     queryFn: async (): Promise<Project[]> => {
@@ -181,7 +183,7 @@ export const useProjectsQuery = ({ user, networkStatus, setRequestsInFlight }: Q
         setRequestsInFlight(count => count - 1);
       }
     },
-    enabled: !!user?.organizationId && networkStatus !== 'offline',
+    enabled: !!user?.organizationId && networkStatus !== 'offline' && isReady,
     staleTime: 30000,
     gcTime: 300000,
     retry: networkStatus === 'healthy' ? 3 : 1,
@@ -196,7 +198,7 @@ export const useProjectsQuery = ({ user, networkStatus, setRequestsInFlight }: Q
   };
 };
 
-export const useUsersQuery = ({ user, networkStatus, setRequestsInFlight }: QueryOptions) => {
+export const useUsersQuery = ({ user, networkStatus, setRequestsInFlight, isReady = true }: QueryOptions) => {
   const queryClient = useQueryClient();
   
   const { data: users = [], isLoading, error, refetch } = useQuery({
@@ -240,9 +242,9 @@ export const useUsersQuery = ({ user, networkStatus, setRequestsInFlight }: Quer
         setRequestsInFlight(count => count - 1);
       }
     },
-    enabled: !!user?.organizationId && networkStatus !== 'offline',
-    staleTime: 10000, // Reduced to 10 seconds for immediate updates
-    gcTime: 60000, // Reduced cache time
+    enabled: !!user?.organizationId && networkStatus !== 'offline' && isReady,
+    staleTime: 10000,
+    gcTime: 60000,
     refetchOnWindowFocus: true,
     retry: networkStatus === 'healthy' ? 3 : 1,
     retryDelay: (attemptIndex) => Math.min(1000 * Math.pow(2, attemptIndex), 5000),
@@ -250,7 +252,7 @@ export const useUsersQuery = ({ user, networkStatus, setRequestsInFlight }: Quer
 
   // Set up real-time subscription for users in UnifiedDataContext
   useEffect(() => {
-    if (!user?.organizationId) return;
+    if (!user?.organizationId || !isReady) return;
 
     console.log('🔄 UnifiedDataContext: Setting up real-time users subscription');
     
@@ -277,7 +279,7 @@ export const useUsersQuery = ({ user, networkStatus, setRequestsInFlight }: Quer
       console.log('🧹 UnifiedDataContext: Cleaning up users real-time subscription');
       supabase.removeChannel(channel);
     };
-  }, [user?.organizationId, queryClient]);
+  }, [user?.organizationId, queryClient, isReady]);
 
   return {
     users,

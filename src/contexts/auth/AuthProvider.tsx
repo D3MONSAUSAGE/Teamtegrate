@@ -29,6 +29,8 @@ const AuthProviderInner: React.FC<AuthProviderProps> = ({ children }) => {
     user,
     session,
     loading,
+    profileLoading,
+    isReady,
     setUser,
     setSession,
     setLoading,
@@ -47,13 +49,15 @@ const AuthProviderInner: React.FC<AuthProviderProps> = ({ children }) => {
 
   const isAuthenticated = !!user && !!session;
 
-  console.log('AuthProvider: Current state - loading:', loading, 'user:', !!user, 'isAuthenticated:', isAuthenticated);
+  console.log('AuthProvider: Current state - loading:', loading, 'profileLoading:', profileLoading, 'user:', !!user, 'isAuthenticated:', isAuthenticated, 'isReady:', isReady);
 
   // Add null check for safety
   const value: AuthContextType = {
     user: user || null,
     loading,
     isLoading: loading,
+    profileLoading,
+    isReady,
     login,
     signup,
     logout,
