@@ -43,7 +43,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(true);
     setIsLoading(true);
     try {
-      const fetchedTasks = await fetchTasksAPI(user.organization_id || '');
+      const fetchedTasks = await fetchTasksAPI(user.organizationId || '');
       setTasks(fetchedTasks);
       calculateDailyScore(fetchedTasks);
     } catch (err: any) {
@@ -84,7 +84,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return;
     setLoading(true);
     try {
-      const newTask = await createTaskAPI({ ...task, organizationId: user.organization_id || '' });
+      const newTask = await createTaskAPI({ ...task, organizationId: user.organizationId || '' });
       setTasks(prevTasks => [...prevTasks, newTask]);
       toast.success('Task created successfully');
       return newTask;
@@ -141,7 +141,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateTaskStatus = useCallback(async (taskId: string, status: Task['status']) => {
     console.log('🎯 TaskContext.updateTaskStatus called', { taskId, status });
-    console.log('🔗 User context:', { userId: user?.id, orgId: user?.organization_id });
+    console.log('🔗 User context:', { userId: user?.id, orgId: user?.organizationId });
     
     setLoading(true);
     try {
@@ -151,7 +151,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         status, 
         { 
           id: user?.id, 
-          organizationId: user?.organization_id 
+          organizationId: user?.organizationId 
         }, 
         setTasks, 
         setProjects
@@ -194,7 +194,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         userId: user.id,
         userName: user.name,
         text: commentText,
-        organizationId: user.organization_id || ''
+        organizationId: user.organizationId || ''
       });
 
       setTasks(prevTasks =>
@@ -224,7 +224,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         userId: user.id,
         userName: user.name,
         text: commentText,
-        organizationId: user.organization_id || ''
+        organizationId: user.organizationId || ''
       });
 
       setProjects(prevProjects => 
@@ -249,7 +249,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return;
     setProjectsLoading(true);
     try {
-      const fetchedProjects = await fetchProjectsAPI(user.organization_id || '');
+      const fetchedProjects = await fetchProjectsAPI(user.organizationId || '');
       const projectsWithComments = fetchedProjects.map(project => ({
         ...project,
         comments: project.comments || []
@@ -265,7 +265,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const refreshProjects = useCallback(async () => {
     if (!user) return;
     try {
-      const fetchedProjects = await fetchProjectsAPI(user.organization_id || '');
+      const fetchedProjects = await fetchProjectsAPI(user.organizationId || '');
       const projectsWithComments = fetchedProjects.map(project => ({
         ...project,
         comments: project.comments || []
@@ -286,7 +286,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         startDate,
         endDate,
         budget,
-        organizationId: user.organization_id || ''
+        organizationId: user.organizationId || ''
       });
       setProjects(prevProjects => [...prevProjects, newProject]);
       toast.success('Project created successfully');
