@@ -10,7 +10,7 @@ interface TaskListProps {
   tasks: Task[];
   onEdit: (task: Task) => void;
   onNewTask: () => void;
-  onStatusChange?: (taskId: string, status: TaskStatus) => void;
+  onStatusChange?: (taskId: string, status: TaskStatus) => Promise<void>;
   emptyMessage?: string;
 }
 
@@ -24,12 +24,13 @@ const TaskList = ({ tasks, onEdit, onNewTask, onStatusChange, emptyMessage = "No
     setShowDetails(true);
   };
 
-  const handleStatusChange = (taskId: string, status: TaskStatus) => {
+  const handleStatusChange = async (taskId: string, status: TaskStatus): Promise<void> => {
     if (onStatusChange) {
-      console.log(`TaskList: Changing task ${taskId} status to ${status}`);
-      onStatusChange(taskId, status);
+      console.log(`🎯 TaskList: Changing task ${taskId} status to ${status}`);
+      await onStatusChange(taskId, status);
     } else {
-      console.warn("Status change handler not provided to TaskList");
+      console.warn("❌ TaskList: Status change handler not provided");
+      throw new Error("Status change handler not available");
     }
   };
 

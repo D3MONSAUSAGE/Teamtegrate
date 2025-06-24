@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { MessageCircle, CheckCircle, Clock, Play, Sparkles } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { TaskStatus } from '@/types';
@@ -11,13 +11,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from '@/lib/utils';
+import { toast } from '@/components/ui/sonner';
 
 interface TaskCardFooterProps {
   status: TaskStatus;
   isOverdue: boolean;
   commentCount: number;
   onShowComments: () => void;
-  onStatusChange?: (status: TaskStatus) => void;
+  onStatusChange?: (status: TaskStatus) => Promise<void>;
 }
 
 const TaskCardFooter: React.FC<TaskCardFooterProps> = ({
@@ -27,6 +28,8 @@ const TaskCardFooter: React.FC<TaskCardFooterProps> = ({
   onShowComments,
   onStatusChange
 }) => {
+  const [isUpdating, setIsUpdating] = useState(false);
+
   const getStatusConfig = (status: TaskStatus) => {
     switch(status) {
       case 'To Do': 
@@ -63,17 +66,38 @@ const TaskCardFooter: React.FC<TaskCardFooterProps> = ({
   const statusConfig = getStatusConfig(status);
   const StatusIcon = statusConfig.icon;
 
-  const handleStatusChange = (newStatus: TaskStatus) => {
-    if (onStatusChange) {
-      onStatusChange(newStatus);
+  const handleStatusChange = async (newStatus: TaskStatus) => {
+    if (!onStatusChange || isUpdating) {
+      return;
+    }
+
+    console.log('🎯 TaskCardFooter: Status change requested', { from: status, to: newStatus });
+    
+    setIsUpdating(true);
+    
+    try {
+      await onStatusChange(newStatus);
+      console.log('✅ TaskCardFooter: Status change successful');
+    } catch (error) {
+      console.error('❌ TaskCardFooter: Status change failed', error);
+      toast.error('Failed to update task status. Please try again.');
+    } finally {
+      setIsUpdating(false);
     }
   };
 
   return (
     <div className="flex items-center justify-between pt-3 gap-3">
       {/* Enhanced Status Selector with modern styling */}
-      <Select value={status} onValueChange={handleStatusChange}>
-        <SelectTrigger className="w-[140px] h-11 border-2 border-border/50 bg-gradient-to-r from-background/95 to-background/80 backdrop-blur-lg rounded-xl hover:border-primary/50 transition-all duration-300 shadow-lg hover:shadow-xl transform-gpu hover:scale-[1.02]">
+      <Select 
+        value={status} 
+        onValueChange={handleStatusChange}
+        disabled={isUpdating}
+      >
+        <SelectTrigger className={cn(
+          "w-[140px] h-11 border-2 border-border/50 bg-gradient-to-r from-background/95 to-background/80 backdrop-blur-lg rounded-xl hover:border-primary/50 transition-all duration-300 shadow-lg hover:shadow-xl transform-gpu hover:scale-[1.02]",
+          isUpdating && "opacity-50 cursor-not-allowed"
+        )}>
           <SelectValue>
             <Badge className={cn(
               "px-3 py-1.5 text-xs border-2 font-bold rounded-lg shadow-md ring-1",
@@ -81,10 +105,13 @@ const TaskCardFooter: React.FC<TaskCardFooterProps> = ({
               "hover:scale-105",
               statusConfig.color,
               statusConfig.shadowColor,
-              statusConfig.ringColor
+              statusConfig.ringColor,
+              isUpdating && "animate-pulse"
             )}>
               <StatusIcon className="h-3.5 w-3.5 flex-shrink-0 drop-shadow-sm" />
-              <span className="truncate tracking-wide">{status}</span>
+              <span className="truncate tracking-wide">
+                {isUpdating ? 'Updating...' : status}
+              </span>
             </Badge>
           </SelectValue>
         </SelectTrigger>

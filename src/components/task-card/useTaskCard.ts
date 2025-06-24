@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Task, TaskStatus } from "@/types";
 import { useTask } from "@/contexts/task";
@@ -25,23 +26,25 @@ export const useTaskCard = (task: Task) => {
     return task.status !== "Completed" && task.deadline < now;
   };
 
-  const handleStatusChange = (newStatus: TaskStatus) => {
+  const handleStatusChange = async (newStatus: TaskStatus): Promise<void> => {
     try {
-      console.log(`TaskCard: Changing status to ${newStatus} for task ${task.id}`);
-      updateTaskStatus(task.id, newStatus);
+      console.log(`🎯 useTaskCard: Changing status to ${newStatus} for task ${task.id}`);
+      await updateTaskStatus(task.id, newStatus);
+      console.log('✅ useTaskCard: Status change successful');
     } catch (error) {
-      console.error('Error updating task status:', error);
+      console.error('❌ useTaskCard: Error updating task status:', error);
       toast.error('Failed to update task status');
+      throw error; // Re-throw to let the component handle it
     }
   };
 
   const handleDeleteTask = async (taskId: string) => {
     try {
-      console.log('TaskCard: Deleting task', taskId);
+      console.log('🎯 useTaskCard: Deleting task', taskId);
       await deleteTask(taskId);
       // Toast is handled in the deleteTask function
     } catch (error) {
-      console.error('Error deleting task:', error);
+      console.error('❌ useTaskCard: Error deleting task:', error);
       toast.error('Failed to delete task');
     }
   };

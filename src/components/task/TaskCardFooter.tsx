@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { MessageCircle } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { TaskStatus } from '@/types';
@@ -11,13 +11,14 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { cn } from '@/lib/utils';
+import { toast } from '@/components/ui/sonner';
 
 interface TaskCardFooterProps {
   status: TaskStatus;
   isOverdue: boolean;
   commentCount: number;
   onShowComments: () => void;
-  onStatusChange?: (status: TaskStatus) => void;
+  onStatusChange?: (status: TaskStatus) => Promise<void>;
 }
 
 const TaskCardFooter: React.FC<TaskCardFooterProps> = ({
@@ -27,6 +28,8 @@ const TaskCardFooter: React.FC<TaskCardFooterProps> = ({
   onShowComments,
   onStatusChange
 }) => {
+  const [isUpdating, setIsUpdating] = useState(false);
+
   const getStatusColor = (status: TaskStatus) => {
     switch(status) {
       case 'To Do': return 'bg-slate-500 dark:bg-slate-600';
@@ -36,12 +39,24 @@ const TaskCardFooter: React.FC<TaskCardFooterProps> = ({
     }
   };
 
-  const handleStatusChange = (newStatus: TaskStatus) => {
+  const handleStatusChange = async (newStatus: TaskStatus) => {
+    if (!onStatusChange || isUpdating) {
+      console.log('⚠️ TaskCardFooter: No onStatusChange handler provided or already updating');
+      return;
+    }
+
     console.log('🎯 TaskCardFooter: Status change requested', { from: status, to: newStatus });
-    if (onStatusChange) {
-      onStatusChange(newStatus);
-    } else {
-      console.log('⚠️ TaskCardFooter: No onStatusChange handler provided');
+    
+    setIsUpdating(true);
+    
+    try {
+      await onStatusChange(newStatus);
+      console.log('✅ TaskCardFooter: Status change successful');
+    } catch (error) {
+      console.error('❌ TaskCardFooter: Status change failed', error);
+      toast.error('Failed to update task status. Please try again.');
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -50,11 +65,19 @@ const TaskCardFooter: React.FC<TaskCardFooterProps> = ({
       <Select 
         value={status} 
         onValueChange={handleStatusChange}
+        disabled={isUpdating}
       >
-        <SelectTrigger className="w-[140px] dark:bg-card">
+        <SelectTrigger className={cn(
+          "w-[140px] dark:bg-card",
+          isUpdating && "opacity-50 cursor-not-allowed"
+        )}>
           <SelectValue>
-            <Badge className={cn("px-2 py-1", getStatusColor(status))}>
-              {status}
+            <Badge className={cn(
+              "px-2 py-1", 
+              getStatusColor(status),
+              isUpdating && "animate-pulse"
+            )}>
+              {isUpdating ? 'Updating...' : status}
             </Badge>
           </SelectValue>
         </SelectTrigger>
