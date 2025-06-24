@@ -7,7 +7,7 @@ import { toast } from '@/components/ui/sonner';
 
 export const useTaskSubmission = () => {
   const { user } = useAuth();
-  const { addTask, updateTask } = useTask();
+  const { createTask, updateTask } = useTask(); // Use createTask instead of addTask
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const submitTask = async (
@@ -65,7 +65,8 @@ export const useTaskSubmission = () => {
         await updateTask(editingTask.id, finalTaskData);
         toast.success('Task updated successfully');
       } else {
-        await addTask(finalTaskData);
+        // Use createTask which saves to database, not addTask which is just local state
+        await createTask(finalTaskData);
         toast.success('Task created successfully');
       }
 
