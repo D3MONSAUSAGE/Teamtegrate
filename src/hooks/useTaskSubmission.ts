@@ -7,14 +7,14 @@ import { toast } from '@/components/ui/sonner';
 
 export const useTaskSubmission = () => {
   const { user } = useAuth();
-  const { createTask, updateTask } = useTask(); // Use createTask instead of addTask
+  const { createTask, updateTask } = useTask();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const submitTask = async (
     taskData: any,
     selectedUsers: User[],
     deadline: Date | string,
-    timeInput: string, // This is now optional since deadline can include time
+    timeInput: string,
     editingTask?: Task,
     onSuccess?: () => void
   ): Promise<boolean> => {
@@ -33,6 +33,9 @@ export const useTaskSubmission = () => {
     }
 
     console.log('✅ submitTask: User organization check passed');
+
+    // Declare finalTaskData outside try block to make it accessible in catch
+    let finalTaskData: any;
 
     try {
       setIsSubmitting(true);
@@ -69,7 +72,7 @@ export const useTaskSubmission = () => {
 
       console.log('👥 submitTask: Assignment data prepared:', assignmentData);
 
-      const finalTaskData = {
+      finalTaskData = {
         ...taskData,
         ...assignmentData,
         deadline: finalDeadline,
@@ -86,7 +89,6 @@ export const useTaskSubmission = () => {
         toast.success('Task updated successfully');
       } else {
         console.log('🆕 submitTask: Creating new task...');
-        // Use createTask which saves to database, not addTask which is just local state
         await createTask(finalTaskData);
         console.log('✅ submitTask: Task created successfully');
         toast.success('Task created successfully');
@@ -96,15 +98,17 @@ export const useTaskSubmission = () => {
       onSuccess?.();
       console.log('✅ submitTask: Task submission completed successfully');
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error('💥 submitTask: Error saving task:', error);
       console.error('💥 submitTask: Error details:', {
-        message: error.message,
-        stack: error.stack,
+        message: error?.message,
+        stack: error?.stack,
         taskData: finalTaskData
       });
       
-      // Don't show duplicate toast - the createTask function already shows appropriate error messages
+      // Show error toast with specific message
+      const errorMessage = error?.message || 'Failed to save task';
+      toast.error(errorMessage);
       console.log('❌ submitTask: Task submission failed');
       return false;
     } finally {
