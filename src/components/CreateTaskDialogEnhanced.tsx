@@ -40,20 +40,37 @@ const CreateTaskDialogEnhanced: React.FC<CreateTaskDialogEnhancedProps> = ({
   }, [open, refetchUsers]);
 
   const handleSubmit = async (data: any, selectedUsers: any[]) => {
-    const success = await submitTask(
+    console.log('🎯 CreateTaskDialogEnhanced: handleSubmit called with:', {
       data,
-      selectedUsers,
-      data.deadline, // deadline is already combined with time in EnhancedCreateTaskDialog
-      '', // timeInput not needed as deadline includes time
-      editingTask,
-      () => {
-        onOpenChange(false);
-        onTaskComplete?.();
-      }
-    );
+      selectedUsers: selectedUsers.map(u => ({ id: u.id, name: u.name })),
+      editingTask: !!editingTask,
+      currentProjectId
+    });
 
-    if (!success) {
-      throw new Error('Failed to submit task');
+    try {
+      console.log('🚀 CreateTaskDialogEnhanced: Calling submitTask...');
+      const success = await submitTask(
+        data,
+        selectedUsers,
+        data.deadline, // deadline is already combined with time in EnhancedCreateTaskDialog
+        '', // timeInput not needed as deadline includes time
+        editingTask,
+        () => {
+          console.log('✅ CreateTaskDialogEnhanced: Task submission success callback');
+          onOpenChange(false);
+          onTaskComplete?.();
+        }
+      );
+
+      if (!success) {
+        console.error('❌ CreateTaskDialogEnhanced: Task submission failed');
+        throw new Error('Failed to submit task');
+      }
+
+      console.log('🎉 CreateTaskDialogEnhanced: Task submission completed successfully');
+    } catch (error) {
+      console.error('💥 CreateTaskDialogEnhanced: Error in handleSubmit:', error);
+      throw error; // Re-throw to let the dialog handle it
     }
   };
 

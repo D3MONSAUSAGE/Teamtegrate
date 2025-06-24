@@ -11,21 +11,26 @@ export const createTask = async (
   setTasks: (tasks: Task[]) => void,
   tasks: Task[]
 ): Promise<void> => {
+  console.log('🚀 createTask: Starting task creation with data:', taskData);
+  console.log('🚀 createTask: User context:', { userId: user.id, organizationId: user.organization_id });
+  
   try {
-    console.log('createTask: Starting task creation with enhanced validation');
-    
     if (!user?.organization_id) {
-      console.error('createTask: User must belong to an organization to create tasks');
+      console.error('❌ createTask: User must belong to an organization to create tasks');
       toast.error('User must belong to an organization to create tasks');
       throw new Error('User must belong to an organization to create tasks');
     }
 
+    console.log('✅ createTask: User organization check passed');
+
     // Validate assignment data before processing
     if (!validateTaskAssignment(taskData.assignedToId, taskData.assignedToIds)) {
-      console.error('createTask: Invalid task assignment data');
+      console.error('❌ createTask: Invalid task assignment data');
       toast.error('Invalid task assignment: empty strings not allowed in UUID fields');
       throw new Error('Invalid task assignment: empty strings not allowed in UUID fields');
     }
+
+    console.log('✅ createTask: Assignment validation passed');
 
     // Prepare task data with proper UUID validation
     const sanitizedData = sanitizeTaskAssignment({
@@ -46,9 +51,10 @@ export const createTask = async (
       updated_at: new Date().toISOString()
     });
 
-    console.log('createTask: Sanitized task data:', sanitizedData);
+    console.log('📝 createTask: Sanitized task data:', sanitizedData);
 
     // Insert task with enhanced validation
+    console.log('📡 createTask: Attempting database insert...');
     const { data: insertedTask, error } = await supabase
       .from('tasks')
       .insert([sanitizedData])
@@ -56,7 +62,8 @@ export const createTask = async (
       .single();
 
     if (error) {
-      console.error('createTask: Database error:', error);
+      console.error('❌ createTask: Database error:', error);
+      
       if (error.message.includes('invalid input syntax for type uuid')) {
         toast.error('Invalid user assignment. Please ensure all selected users are valid.');
         throw new Error('Invalid user assignment. Please ensure all selected users are valid.');
@@ -69,18 +76,20 @@ export const createTask = async (
         toast.error('Task assignments cannot contain empty values. Please select valid users only.');
         throw new Error('Task assignments cannot contain empty values. Please select valid users only.');
       }
-      // For other errors, just log them and throw without user-facing message
-      console.error('createTask: Unexpected database error:', error.message);
+      
+      // For other errors, show user-friendly message but throw original error
+      console.error('❌ createTask: Unexpected database error:', error.message);
+      toast.error('Failed to create task. Please try again.');
       throw error;
     }
 
     if (!insertedTask) {
-      console.error('createTask: Failed to create task - no data returned');
+      console.error('❌ createTask: Failed to create task - no data returned');
       toast.error('Failed to create task - no data returned');
       throw new Error('Failed to create task - no data returned');
     }
 
-    console.log('createTask: Successfully created task:', insertedTask.id);
+    console.log('✅ createTask: Successfully created task:', insertedTask.id);
 
     // Transform database task to Task type with proper handling
     const newTask: Task = {
@@ -104,14 +113,17 @@ export const createTask = async (
       organizationId: insertedTask.organization_id
     };
 
+    console.log('🔄 createTask: Updating local state with new task');
     // Update local state
     const updatedTasks = [...tasks, newTask];
     setTasks(updatedTasks);
 
+    console.log('🎉 createTask: Task creation completed successfully');
     toast.success('Task created successfully');
     
   } catch (error: any) {
-    console.error('createTask: Error creating task:', error);
+    console.error('💥 createTask: Error creating task:', error);
+    console.error('💥 createTask: Error stack:', error.stack);
     
     // Enhanced error messages for UUID validation issues
     if (error.message?.includes('invalid input syntax for type uuid')) {
@@ -123,10 +135,17 @@ export const createTask = async (
     } else if (error.message?.includes('User must belong to an organization')) {
       // Already handled above, don't show duplicate toast
     } else {
-      // For unexpected errors, only show generic message
-      toast.error('Failed to create task. Please try again.');
+      // For unexpected errors, show generic message with more details in console
+      console.error('💥 createTask: Unexpected error details:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      });
+      toast.error('Failed to create task. Please check the console for details and try again.');
     }
     
+    // Always rethrow to ensure error propagates up the chain
     throw error;
   }
 };
