@@ -7,9 +7,7 @@ import { playSuccessSound, playErrorSound } from '@/utils/sounds';
 export const updateTaskStatus = async (
   taskId: string,
   status: TaskStatus,
-  user: { id?: string; organizationId?: string } | null,
-  setTasks: React.Dispatch<React.SetStateAction<Task[]>>,
-  setProjects: React.Dispatch<React.SetStateAction<Project[]>>
+  user: { id?: string; organizationId?: string } | null
 ): Promise<void> => {
   console.log('🔧 updateTaskStatus: Starting update', { taskId, status, user });
   
@@ -18,7 +16,7 @@ export const updateTaskStatus = async (
       console.error('❌ updateTaskStatus: Missing user context', user);
       toast.error('You must be logged in to update task status');
       playErrorSound();
-      return;
+      throw new Error('Authentication required');
     }
 
     const updatedTask: Partial<Task> = { 
@@ -53,17 +51,10 @@ export const updateTaskStatus = async (
       console.error('❌ updateTaskStatus: Database error', error);
       playErrorSound();
       toast.error(`Failed to update task status: ${error.message}`);
-      return;
+      throw new Error(error.message);
     }
 
     console.log('✅ updateTaskStatus: Database update successful');
-
-    // Update local task state
-    setTasks(prevTasks =>
-      prevTasks.map(task =>
-        task.id === taskId ? { ...task, ...updatedTask } : task
-      )
-    );
 
     // Get the task to check if it belongs to a project
     const { data: taskData, error: taskFetchError } = await supabase
@@ -117,20 +108,6 @@ export const updateTaskStatus = async (
           console.error('❌ updateTaskStatus: Error updating project status', projectError);
         } else {
           console.log('✅ updateTaskStatus: Project status updated', { projectStatus, isCompleted });
-          
-          // Update local project state
-          setProjects(prevProjects =>
-            prevProjects.map(project =>
-              project.id === taskData.project_id
-                ? {
-                    ...project,
-                    status: projectStatus as any,
-                    isCompleted: isCompleted,
-                    updatedAt: new Date().toISOString()
-                  }
-                : project
-            )
-          );
         }
       }
     }

@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
 import { Task, Project, DailyScore } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
@@ -139,22 +138,34 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  const updateTaskStatus = useCallback(async (taskId: string, status: Task['status']) => {
+  const updateTaskStatus = useCallback(async (taskId: string, status: Task['status']): Promise<void> => {
     console.log('🎯 TaskContext.updateTaskStatus called', { taskId, status });
     console.log('🔗 User context:', { userId: user?.id, orgId: user?.organizationId });
     
     setLoading(true);
     try {
-      // Use the proper API function with full user context and organization validation
+      // Use the simplified API function with correct user context
       await updateTaskStatusAPI(
         taskId, 
         status, 
         { 
           id: user?.id, 
           organizationId: user?.organizationId 
-        }, 
-        setTasks, 
-        setProjects
+        }
+      );
+      
+      // Update local state after successful API call
+      setTasks(prevTasks =>
+        prevTasks.map(task =>
+          task.id === taskId 
+            ? { 
+                ...task, 
+                status: status, 
+                updatedAt: new Date(),
+                completedAt: status === 'Completed' ? new Date() : task.completedAt
+              } 
+            : task
+        )
       );
       
       console.log('✅ TaskContext.updateTaskStatus completed successfully');

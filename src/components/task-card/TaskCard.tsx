@@ -12,7 +12,7 @@ interface TaskCardProps {
   task: Task;
   onEdit?: (task: Task) => void;
   onAssign?: (task: Task) => void;
-  onStatusChange?: (taskId: string, status: TaskStatus) => void;
+  onStatusChange?: (taskId: string, status: TaskStatus) => Promise<void>;
   onDelete?: () => void;
   onClick?: () => void;
   showProjectInfo?: boolean;
@@ -47,9 +47,10 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
   const handleStatusChange = async (status: TaskStatus): Promise<void> => {
     if (onStatusChange) {
-      // Convert the sync function to async by wrapping in Promise.resolve
-      await Promise.resolve(onStatusChange(task.id, status));
+      // External status change handler is already async
+      await onStatusChange(task.id, status);
     } else {
+      // Use internal async handler
       await internalHandleStatusChange(status);
     }
   };
