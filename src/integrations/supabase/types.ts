@@ -1258,6 +1258,10 @@ export type Database = {
         }
         Returns: Json
       }
+      debug_auth_status: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       end_of_day_auto_close: {
         Args: Record<PropertyKey, never>
         Returns: undefined

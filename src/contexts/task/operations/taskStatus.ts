@@ -19,6 +19,16 @@ export const updateTaskStatus = async (
       throw new Error('Authentication required');
     }
 
+    // Debug: Check auth status before attempting update
+    console.log('🔍 updateTaskStatus: Checking auth status...');
+    const { data: authStatus, error: authError } = await supabase.rpc('debug_auth_status');
+    
+    if (authError) {
+      console.error('❌ updateTaskStatus: Auth status check failed', authError);
+    } else {
+      console.log('🔍 updateTaskStatus: Auth status', authStatus);
+    }
+
     const updatedTask: Partial<Task> = { 
       status,
       updatedAt: new Date()
@@ -50,7 +60,20 @@ export const updateTaskStatus = async (
     if (error) {
       console.error('❌ updateTaskStatus: Database error', error);
       playErrorSound();
-      toast.error(`Failed to update task status: ${error.message}`);
+      
+      // Provide more specific error messages based on error type
+      let errorMessage = 'Failed to update task status';
+      if (error.message.includes('row-level security')) {
+        errorMessage = 'Access denied - you may not have permission to update this task';
+      } else if (error.message.includes('invalid input syntax')) {
+        errorMessage = 'Invalid data format - please try again';
+      } else if (error.message.includes('not found')) {
+        errorMessage = 'Task not found or no longer exists';
+      } else {
+        errorMessage = `Failed to update task status: ${error.message}`;
+      }
+      
+      toast.error(errorMessage);
       throw new Error(error.message);
     }
 
