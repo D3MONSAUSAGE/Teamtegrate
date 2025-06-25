@@ -122,8 +122,8 @@ const WorkingRoleManagement: React.FC<WorkingRoleManagementProps> = ({
 
         if (error) throw error;
 
-        // Properly type cast the response
-        const validation = data as RoleChangeValidation;
+        // Properly type cast the response using unknown as intermediate
+        const validation = data as unknown as RoleChangeValidation;
 
         if (validation?.requires_transfer) {
           setRequiresTransfer(true);
