@@ -14,6 +14,7 @@ import RecentProjects from '@/components/dashboard/RecentProjects';
 import TeamManagement from '@/components/dashboard/TeamManagement';
 import { useIsMobile } from '@/hooks/use-mobile';
 import AnalyticsSection from '@/components/dashboard/AnalyticsSection';
+import EnhancedAnalyticsSection from '@/components/dashboard/EnhancedAnalyticsSection';
 import TimeTracking from '@/components/dashboard/TimeTracking';
 import { useTask } from '@/contexts/task';
 
@@ -225,15 +226,15 @@ const DashboardPage = () => {
           </div>
         </div>
 
-        {/* Analytics Overview - Keep existing */}
+        {/* Enhanced Analytics Overview - Replaced the basic section */}
         <div className="bg-card/70 backdrop-blur-sm border rounded-2xl">
           <div className="p-4 border-b border-border/50">
             <h2 className="text-lg font-semibold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
-              Analytics & Insights
+              Analytics & Performance Insights
             </h2>
           </div>
           <div className="p-4">
-            <AnalyticsSection />
+            <EnhancedAnalyticsSection />
           </div>
         </div>
         
