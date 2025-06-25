@@ -71,12 +71,10 @@ const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({ task, isOverdue }) 
         </div>
       )}
 
-      {/* Cost info if available */}
-      {task.cost && task.cost > 0 && (
-        <div className="flex items-center gap-1.5 text-xs bg-gradient-to-r from-green-50 to-green-100 text-green-700 dark:from-green-950/50 dark:to-green-900/50 dark:text-green-300 px-2 py-1 rounded-md">
-          <span className="font-medium">${task.cost}</span>
-        </div>
-      )}
+      {/* Cost info - now always displayed */}
+      <div className="flex items-center gap-1.5 text-xs bg-gradient-to-r from-green-50 to-green-100 text-green-700 dark:from-green-950/50 dark:to-green-900/50 dark:text-green-300 px-2 py-1 rounded-md">
+        <span className="font-medium">Cost: ${task.cost || 0}</span>
+      </div>
     </div>
   );
 };
