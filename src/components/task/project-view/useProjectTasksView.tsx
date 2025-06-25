@@ -4,6 +4,7 @@ import { Task, TaskStatus } from '@/types';
 import { useProjectAccess } from './hooks/useProjectAccess';
 import { useProjectTasks } from '@/hooks/useProjectTasks';
 import { useProjectTeamMembers } from '@/hooks/useProjectTeamMembers';
+import { useProjectTasksActions } from './hooks/useProjectTasksActions';
 
 export function useProjectTasksView(projectId: string | null) {
   console.log('useProjectTasksView: Hook called with projectId:', projectId);
@@ -27,12 +28,30 @@ export function useProjectTasksView(projectId: string | null) {
     refetch: refetchTeamMembers 
   } = useProjectTeamMembers(projectId || '');
 
+  // Data refresh function for actions hook
+  const onDataRefresh = useCallback(async () => {
+    await Promise.all([
+      refetchTasks(),
+      refetchTeamMembers()
+    ]);
+  }, [refetchTasks, refetchTeamMembers]);
+
+  // Use the actions hook to get properly implemented handlers
+  const {
+    isRefreshing,
+    isCreateTaskOpen,
+    editingTask,
+    setIsCreateTaskOpen,
+    handleEditTask,
+    handleCreateTask,
+    handleManualRefresh,
+    handleTaskStatusChange,
+    handleTaskDialogComplete
+  } = useProjectTasksActions({ onDataRefresh });
+
   // Local state
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('deadline');
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
-  const [editingTask, setEditingTask] = useState<Task | null>(null);
 
   // Derived state
   const isLoading = projectLoading || tasksLoading;
@@ -59,42 +78,9 @@ export function useProjectTasksView(projectId: string | null) {
     setSearchQuery(event.target.value);
   }, []);
 
-  const handleEditTask = useCallback((task: Task) => {
-    setEditingTask(task);
-    setIsCreateTaskOpen(true);
-  }, []);
-
-  const handleCreateTask = useCallback(() => {
-    setEditingTask(null);
-    setIsCreateTaskOpen(true);
-  }, []);
-
-  const handleManualRefresh = useCallback(async () => {
-    setIsRefreshing(true);
-    try {
-      await Promise.all([
-        refetchTasks(),
-        refetchTeamMembers()
-      ]);
-    } finally {
-      setIsRefreshing(false);
-    }
-  }, [refetchTasks, refetchTeamMembers]);
-
-  const handleTaskStatusChange = useCallback(async (taskId: string, status: TaskStatus) => {
-    // Implementation would go here
-    console.log('Status change requested:', { taskId, status });
-  }, []);
-
   const onSortByChange = useCallback((newSortBy: string) => {
     setSortBy(newSortBy);
   }, []);
-
-  const handleTaskDialogComplete = useCallback(() => {
-    setIsCreateTaskOpen(false);
-    setEditingTask(null);
-    refetchTasks();
-  }, [refetchTasks]);
 
   // Debug logging
   useEffect(() => {
@@ -130,7 +116,7 @@ export function useProjectTasksView(projectId: string | null) {
     isLoadingTeamMembers,
     teamMembersError,
     
-    // UI state
+    // UI state from actions hook
     searchQuery,
     sortBy,
     isRefreshing,
@@ -143,7 +129,7 @@ export function useProjectTasksView(projectId: string | null) {
     handleEditTask,
     handleCreateTask,
     handleManualRefresh,
-    handleTaskStatusChange,
+    handleTaskStatusChange, // Now properly implemented
     onSortByChange,
     handleTaskDialogComplete
   };
