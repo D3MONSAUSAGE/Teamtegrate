@@ -59,22 +59,25 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const calculateDailyScore = (tasks: Task[]) => {
     if (!user) return;
+    
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const completedToday = tasks.filter(task => {
-      if (task.status === 'Completed' && task.completedAt) {
-        const completedDate = new Date(task.completedAt);
-        completedDate.setHours(0, 0, 0, 0);
-        return completedDate.getTime() === today.getTime();
-      }
-      return false;
+    
+    // Filter tasks that are due today
+    const todaysTasks = tasks.filter((task) => {
+      const taskDate = new Date(task.deadline);
+      taskDate.setHours(0, 0, 0, 0);
+      return taskDate.getTime() === today.getTime();
     });
-    const newScore = completedToday.length;
-    const totalTasks = tasks.length;
+
+    // Count completed tasks from today's due tasks
+    const completedToday = todaysTasks.filter((task) => task.status === 'Completed').length;
+    const totalTasksToday = todaysTasks.length;
+    
     setDailyScore({
-      completedTasks: newScore,
-      totalTasks: totalTasks,
-      percentage: totalTasks > 0 ? Math.round((newScore / totalTasks) * 100) : 0,
+      completedTasks: completedToday,
+      totalTasks: totalTasksToday,
+      percentage: totalTasksToday > 0 ? Math.round((completedToday / totalTasksToday) * 100) : 0,
       date: new Date()
     });
   };
