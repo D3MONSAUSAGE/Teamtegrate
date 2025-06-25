@@ -219,9 +219,9 @@ const DashboardPage = () => {
             <h2 className="text-xl font-semibold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
               Time Tracking
             </h2>
-            <p className="text-sm text-muted-foreground mt-1">Track your work hours and stay productive</p>
+            <p className="text-sm text-muted-foreground mt-1">Track your work hours and view today's activity</p>
           </div>
-          <div className="p-6">
+          <div className="p-4">
             <TimeTracking />
           </div>
         </div>
