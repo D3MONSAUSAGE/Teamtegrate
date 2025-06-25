@@ -19,7 +19,7 @@ import WorkingRoleManagement from './WorkingRoleManagement';
 interface UserCardProps {
   user: {
     id: string;
-    name: string;
+    name?: string; // Made optional to match User type
     email: string;
     role: UserRole;
     createdAt?: Date;
@@ -40,7 +40,8 @@ const UserCard: React.FC<UserCardProps> = ({
   onDeleteUser
 }) => {
   const isUpdating = updatingUserId === user.id;
-  const userInitials = user.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
+  const userName = user.name || user.email.split('@')[0]; // Fallback if name is undefined
+  const userInitials = userName.split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
 
   const handleRoleChanged = () => {
     // Trigger a refresh of the user data
@@ -53,7 +54,7 @@ const UserCard: React.FC<UserCardProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3 flex-1">
             <Avatar className="h-10 w-10">
-              <AvatarImage src={user.avatar_url} alt={user.name} />
+              <AvatarImage src={user.avatar_url} alt={userName} />
               <AvatarFallback className="bg-primary/10 text-primary font-medium">
                 {userInitials}
               </AvatarFallback>
@@ -62,7 +63,7 @@ const UserCard: React.FC<UserCardProps> = ({
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
                 <h3 className="font-medium text-sm truncate">
-                  {user.name}
+                  {userName}
                 </h3>
                 {isUpdating && (
                   <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />

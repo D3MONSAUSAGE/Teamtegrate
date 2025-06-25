@@ -28,11 +28,19 @@ import { toast } from '@/components/ui/sonner';
 interface WorkingRoleManagementProps {
   targetUser: {
     id: string;
-    name: string;
+    name?: string;
     email: string;
     role: string;
   };
   onRoleChanged: () => void;
+}
+
+// Define proper types for the database response
+interface RoleChangeValidation {
+  allowed: boolean;
+  requires_transfer?: boolean;
+  current_superadmin_name?: string;
+  reason?: string;
 }
 
 const WorkingRoleManagement: React.FC<WorkingRoleManagementProps> = ({ 
@@ -47,6 +55,7 @@ const WorkingRoleManagement: React.FC<WorkingRoleManagementProps> = ({
   const [currentSuperadminName, setCurrentSuperadminName] = useState<string>('');
 
   const currentTargetRole = targetUser.role as UserRole;
+  const userName = targetUser.name || targetUser.email.split('@')[0];
 
   // Enhanced role management permissions
   const canManageThisUser = currentUser && (() => {
@@ -113,9 +122,12 @@ const WorkingRoleManagement: React.FC<WorkingRoleManagementProps> = ({
 
         if (error) throw error;
 
-        if (data?.requires_transfer) {
+        // Properly type cast the response
+        const validation = data as RoleChangeValidation;
+
+        if (validation?.requires_transfer) {
           setRequiresTransfer(true);
-          setCurrentSuperadminName(data.current_superadmin_name || 'Current Superadmin');
+          setCurrentSuperadminName(validation.current_superadmin_name || 'Current Superadmin');
         }
       } catch (error) {
         console.error('Error checking role change requirements:', error);
@@ -177,7 +189,7 @@ const WorkingRoleManagement: React.FC<WorkingRoleManagementProps> = ({
       
       let successMessage = `Role updated to ${newRole} successfully`;
       if (requiresTransfer) {
-        successMessage = `${targetUser.name} promoted to superadmin. ${currentSuperadminName} has been demoted to admin.`;
+        successMessage = `${userName} promoted to superadmin. ${currentSuperadminName} has been demoted to admin.`;
       }
       
       toast.success(successMessage);
@@ -262,7 +274,7 @@ const WorkingRoleManagement: React.FC<WorkingRoleManagementProps> = ({
               {requiresTransfer ? (
                 <div className="space-y-2">
                   <p>
-                    You are about to promote <strong>{targetUser.name}</strong> to <strong>superadmin</strong>.
+                    You are about to promote <strong>{userName}</strong> to <strong>superadmin</strong>.
                   </p>
                   <p className="text-yellow-600 font-medium">
                     This will automatically demote <strong>{currentSuperadminName}</strong> to <strong>admin</strong> 
@@ -272,7 +284,7 @@ const WorkingRoleManagement: React.FC<WorkingRoleManagementProps> = ({
                 </div>
               ) : (
                 <>
-                  Are you sure you want to change <strong>{targetUser.name}</strong>'s role 
+                  Are you sure you want to change <strong>{userName}</strong>'s role 
                   from <strong>{currentTargetRole}</strong> to <strong>{newRole}</strong>?
                 </>
               )}
