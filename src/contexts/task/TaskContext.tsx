@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Task, Project, DailyScore } from '@/types';
@@ -131,18 +132,36 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const deleteTask = useCallback(async (taskId: string) => {
+    console.log('🎯 TaskContext.deleteTask called', { taskId });
+    console.log('🔗 User context:', { userId: user?.id, orgId: user?.organizationId });
+    
     setLoading(true);
     try {
       await deleteTaskAPI(taskId);
-      setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
+      
+      // Update local state after successful API call
+      setTasks(prevTasks => {
+        const filteredTasks = prevTasks.filter(task => task.id !== taskId);
+        console.log(`Removed task from local tasks. Before: ${prevTasks.length}, After: ${filteredTasks.length}`);
+        return filteredTasks;
+      });
+
+      // Invalidate React Query caches to force UI refresh
+      await queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      await queryClient.invalidateQueries({ queryKey: ['personal-tasks'] });
+      await queryClient.invalidateQueries({ queryKey: ['project-tasks'] });
+      
       toast.success('Task deleted successfully');
+      console.log('✅ TaskContext.deleteTask completed successfully');
     } catch (err: any) {
+      console.error('❌ Error in TaskContext.deleteTask:', err);
       setError(err.message || 'Failed to delete task');
       toast.error('Failed to delete task');
+      throw err; // Re-throw to let calling code handle it
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user, queryClient]);
 
   const updateTaskStatus = useCallback(async (taskId: string, status: Task['status']): Promise<void> => {
     console.log('🎯 TaskContext.updateTaskStatus called', { taskId, status });
