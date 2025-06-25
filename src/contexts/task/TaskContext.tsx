@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Task, Project, DailyScore } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
@@ -23,6 +24,8 @@ export const TaskContext = React.createContext<TaskContextType | undefined>(unde
 
 export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+  
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -170,6 +173,11 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
             : task
         )
       );
+
+      // Invalidate React Query caches to force UI refresh
+      await queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      await queryClient.invalidateQueries({ queryKey: ['personal-tasks'] });
+      await queryClient.invalidateQueries({ queryKey: ['project-tasks'] });
       
       console.log('✅ TaskContext.updateTaskStatus completed successfully');
     } catch (err: any) {
@@ -180,7 +188,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, queryClient]);
 
   const assignTaskToUser = useCallback(async (taskId: string, userId: string, userName: string) => {
     setLoading(true);
