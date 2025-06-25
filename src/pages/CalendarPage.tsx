@@ -1,9 +1,8 @@
-
 import React, { useState } from 'react';
 import { useTask } from '@/contexts/task';
 import { Task } from '@/types';
 import { isSameDay, addMonths, subMonths } from 'date-fns';
-import TaskDetailDrawer from '@/components/calendar/TaskDetailDrawer';
+import TaskDetailDialog from '@/components/calendar/TaskDetailDialog';
 import CreateTaskDialogEnhanced from '@/components/CreateTaskDialogEnhanced';
 import CalendarHeader from '@/components/calendar/CalendarHeader';
 import CalendarViewSelector from '@/components/calendar/CalendarViewSelector';
@@ -16,15 +15,15 @@ const CalendarPage = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [viewType, setViewType] = useState<'day' | 'week' | 'month'>('month');
-  const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
+  const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState<boolean>(false);
   const [quickCreateDate, setQuickCreateDate] = useState<Date>(new Date());
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
 
-  // Handle task click to open drawer with details
+  // Handle task click to open dialog with details
   const handleTaskClick = (task: Task) => {
     setSelectedTask(task);
-    setIsDrawerOpen(true);
+    setIsDialogOpen(true);
   };
 
   const goToPreviousMonth = () => {
@@ -105,9 +104,9 @@ const CalendarPage = () => {
         onDateCreate={handleDateCreate}
       />
       
-      <TaskDetailDrawer
-        open={isDrawerOpen}
-        onOpenChange={setIsDrawerOpen}
+      <TaskDetailDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
         task={selectedTask}
       />
 
