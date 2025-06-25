@@ -156,6 +156,36 @@ export const generateInviteCode = async (
   }
 };
 
+// Enhanced function to generate invite code with role and team
+export const generateEnhancedInviteCode = async (
+  organizationId: string,
+  role: UserRole,
+  teamId?: string,
+  expiryDays: number = 7,
+  maxUses?: number
+): Promise<{ success: boolean; inviteCode?: string; error?: string }> => {
+  try {
+    const { data, error } = await supabase.rpc('generate_invite_code_with_role', {
+      org_id: organizationId,
+      created_by_id: (await supabase.auth.getUser()).data.user?.id,
+      invited_role: role,
+      invited_team_id: teamId || null,
+      expires_days: expiryDays,
+      max_uses_param: maxUses || null
+    });
+
+    if (error) {
+      console.error('Error generating enhanced invite code:', error);
+      return { success: false, error: 'Failed to generate invite code' };
+    }
+
+    return { success: true, inviteCode: data };
+  } catch (error) {
+    console.error('Error in generateEnhancedInviteCode:', error);
+    return { success: false, error: 'Failed to generate invite code' };
+  }
+};
+
 // Updated function to use non-consuming validation for frontend checks
 export const validateInviteCode = async (
   inviteCode: string

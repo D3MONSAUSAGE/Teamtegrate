@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { UserPlus } from 'lucide-react';
-import InviteCodeGenerator from '@/components/auth/InviteCodeGenerator';
+import EnhancedInviteCodeGenerator from '@/components/auth/EnhancedInviteCodeGenerator';
 
 interface InviteCodeDialogProps {
   children?: React.ReactNode;
@@ -28,11 +28,11 @@ const InviteCodeDialog: React.FC<InviteCodeDialogProps> = ({ children }) => {
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle>Invite Users to Organization</DialogTitle>
         </DialogHeader>
-        <InviteCodeGenerator />
+        <EnhancedInviteCodeGenerator />
       </DialogContent>
     </Dialog>
   );

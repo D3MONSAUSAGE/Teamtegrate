@@ -519,6 +519,8 @@ export type Database = {
           expires_at: string
           id: string
           invite_code: string
+          invited_role: string | null
+          invited_team_id: string | null
           is_active: boolean
           max_uses: number | null
           organization_id: string
@@ -530,6 +532,8 @@ export type Database = {
           expires_at?: string
           id?: string
           invite_code: string
+          invited_role?: string | null
+          invited_team_id?: string | null
           is_active?: boolean
           max_uses?: number | null
           organization_id: string
@@ -541,6 +545,8 @@ export type Database = {
           expires_at?: string
           id?: string
           invite_code?: string
+          invited_role?: string | null
+          invited_team_id?: string | null
           is_active?: boolean
           max_uses?: number | null
           organization_id?: string
@@ -558,6 +564,20 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_invites_invited_team_id_fkey"
+            columns: ["invited_team_id"]
+            isOneToOne: false
+            referencedRelation: "team_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_invites_invited_team_id_fkey"
+            columns: ["invited_team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
             referencedColumns: ["id"]
           },
           {
@@ -1279,6 +1299,17 @@ export type Database = {
         Args: {
           org_id: string
           created_by_id: string
+          expires_days?: number
+          max_uses_param?: number
+        }
+        Returns: string
+      }
+      generate_invite_code_with_role: {
+        Args: {
+          org_id: string
+          created_by_id: string
+          invited_role?: string
+          invited_team_id?: string
           expires_days?: number
           max_uses_param?: number
         }

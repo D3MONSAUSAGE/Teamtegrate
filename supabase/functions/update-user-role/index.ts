@@ -1,213 +1,179 @@
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-interface UpdateRoleRequest {
-  targetUserId: string;
-  newRole: string;
-}
-
-Deno.serve(async (req) => {
+serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    console.log('Update user role function called');
+    // Create supabase client
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
+    )
+
+    // Get the authorization header from the request
+    const authHeader = req.headers.get('Authorization')!
+    const token = authHeader.replace('Bearer ', '')
     
-    // Validate environment variables
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
-
-    if (!supabaseUrl || !serviceRoleKey || !anonKey) {
-      console.error('Missing environment variables');
-      throw new Error('Server configuration error');
+    // Get the user making the request
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token)
+    
+    if (userError || !user) {
+      console.error('Authentication error:', userError)
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
-    // Get the authorization header
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      console.error('No authorization header provided');
-      throw new Error('No authorization header');
-    }
-
-    // Create Supabase client with service role key for admin operations
-    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
-
-    // Create regular client to verify the requesting user
-    const supabaseClient = createClient(supabaseUrl, anonKey, {
-      global: {
-        headers: { Authorization: authHeader },
-      },
-    });
-
-    // Verify the requesting user
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
-    if (authError || !user) {
-      console.error('Auth error:', authError);
-      throw new Error('Unauthorized - invalid token');
-    }
-
-    console.log('Request from user:', user.id);
-
-    // Parse request body
-    let requestBody: UpdateRoleRequest;
-    try {
-      requestBody = await req.json();
-    } catch (error) {
-      console.error('Failed to parse request body:', error);
-      throw new Error('Invalid request body');
-    }
-
-    const { targetUserId, newRole } = requestBody;
+    // Get request data
+    const { targetUserId, newRole } = await req.json()
 
     if (!targetUserId || !newRole) {
-      console.error('Missing required fields:', { targetUserId: !!targetUserId, newRole: !!newRole });
-      throw new Error('Missing targetUserId or newRole');
+      return new Response(
+        JSON.stringify({ error: 'Missing required parameters: targetUserId and newRole' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
-    console.log('Attempting to update user:', targetUserId, 'to role:', newRole);
+    console.log('Processing role change request:', {
+      requestingUserId: user.id,
+      targetUserId,
+      newRole
+    })
 
-    // Get the requesting user's role and organization from the database using service role
-    const { data: requestingUserData, error: userError } = await supabaseAdmin
+    // Get the requesting user's details from the database
+    const { data: requestingUser, error: requestingUserError } = await supabaseClient
       .from('users')
       .select('role, organization_id')
       .eq('id', user.id)
-      .single();
+      .single()
 
-    if (userError || !requestingUserData) {
-      console.error('Error fetching requesting user:', userError);
-      throw new Error('Could not verify requesting user permissions');
+    if (requestingUserError || !requestingUser) {
+      console.error('Error fetching requesting user:', requestingUserError)
+      return new Response(
+        JSON.stringify({ error: 'User not found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
-    const requestingUserRole = requestingUserData.role;
-    const requestingUserOrgId = requestingUserData.organization_id;
-    console.log('Requesting user role from DB:', requestingUserRole);
-    console.log('Requesting user organization:', requestingUserOrgId);
-
-    // Get the target user's current role and organization using service role
-    const { data: targetUserData, error: targetError } = await supabaseAdmin
+    // Get the target user's details
+    const { data: targetUser, error: targetUserError } = await supabaseClient
       .from('users')
-      .select('role, name, email, organization_id')
+      .select('role, organization_id, name, email')
       .eq('id', targetUserId)
-      .single();
+      .single()
 
-    if (targetError || !targetUserData) {
-      console.error('Error fetching target user:', targetError);
-      throw new Error('Target user not found');
+    if (targetUserError || !targetUser) {
+      console.error('Error fetching target user:', targetUserError)
+      return new Response(
+        JSON.stringify({ error: 'Target user not found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
-    const currentTargetRole = targetUserData.role;
-    const targetUserOrgId = targetUserData.organization_id;
-    console.log('Target user current role:', currentTargetRole);
-    console.log('Target user organization:', targetUserOrgId);
-
-    // Organization isolation check - users can only manage users within their organization
-    if (requestingUserOrgId !== targetUserOrgId) {
-      console.error('Organization mismatch - requesting user org:', requestingUserOrgId, 'target user org:', targetUserOrgId);
-      throw new Error('Permission denied - users can only manage users within their organization');
+    // Validate that users are in the same organization
+    if (requestingUser.organization_id !== targetUser.organization_id) {
+      return new Response(
+        JSON.stringify({ error: 'Users must be in the same organization' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
-    // Permission validation within the same organization
-    const canUpdate = (() => {
-      // Superadmin can update everyone except themselves within their organization
-      if (requestingUserRole === 'superadmin' && targetUserId !== user.id) {
-        return true;
-      }
+    // Validate permissions using the database function
+    const { data: canChangeRole, error: permissionError } = await supabaseClient
+      .rpc('can_change_user_role', {
+        manager_user_id: user.id,
+        target_user_id: targetUserId,
+        new_role: newRole
+      })
+
+    if (permissionError) {
+      console.error('Permission check error:', permissionError)
+      return new Response(
+        JSON.stringify({ error: 'Permission check failed' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    if (!canChangeRole.allowed) {
+      return new Response(
+        JSON.stringify({ error: canChangeRole.reason || 'Permission denied' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Handle superadmin role transfer if needed
+    if (canChangeRole.requires_transfer) {
+      console.log('Performing superadmin role transfer')
       
-      // Admin can update managers and users (but not superadmins or other admins) within their organization
-      if (requestingUserRole === 'admin' && 
-          ['manager', 'user'].includes(currentTargetRole) && 
-          targetUserId !== user.id) {
-        return true;
+      const { data: transferResult, error: transferError } = await supabaseClient
+        .rpc('transfer_superadmin_role', {
+          current_superadmin_id: canChangeRole.current_superadmin_id,
+          new_superadmin_id: targetUserId,
+          organization_id: targetUser.organization_id
+        })
+
+      if (transferError || !transferResult.success) {
+        console.error('Transfer error:', transferError, transferResult)
+        return new Response(
+          JSON.stringify({ error: transferResult?.error || 'Failed to transfer superadmin role' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
       }
-      
-      return false;
-    })();
 
-    if (!canUpdate) {
-      console.error('Permission denied for role update');
-      throw new Error('Permission denied - insufficient privileges');
-    }
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: `Role transferred successfully. ${targetUser.name} is now superadmin.`,
+          transfer_performed: true
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    } else {
+      // Simple role update
+      const { error: updateError } = await supabaseClient
+        .from('users')
+        .update({ role: newRole })
+        .eq('id', targetUserId)
 
-    // Validate the new role
-    const validRoles = ['user', 'manager', 'admin', 'superadmin'];
-    if (!validRoles.includes(newRole)) {
-      console.error('Invalid role provided:', newRole);
-      throw new Error('Invalid role specified');
-    }
-
-    console.log('Permission check passed, proceeding with role update');
-
-    // Update in auth metadata using admin client
-    const { error: authUpdateError } = await supabaseAdmin.auth.admin.updateUserById(
-      targetUserId,
-      {
-        user_metadata: { role: newRole }
+      if (updateError) {
+        console.error('Role update error:', updateError)
+        return new Response(
+          JSON.stringify({ error: 'Failed to update role' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
       }
-    );
 
-    if (authUpdateError) {
-      console.error('Auth update error:', authUpdateError);
-      throw new Error(`Failed to update authentication: ${authUpdateError.message}`);
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: `Role updated to ${newRole} successfully` 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
-
-    console.log('Auth metadata updated successfully');
-
-    // Update in users table using service role
-    const { error: dbUpdateError } = await supabaseAdmin
-      .from('users')
-      .update({ role: newRole })
-      .eq('id', targetUserId);
-
-    if (dbUpdateError) {
-      console.error('Database update error:', dbUpdateError);
-      throw new Error(`Failed to update user database: ${dbUpdateError.message}`);
-    }
-
-    console.log('Database updated successfully');
-
-    // Log the successful role change
-    console.log(`Role change successful: User ${targetUserData.name} (${targetUserData.email}) changed from ${currentTargetRole} to ${newRole} by ${user.id} within organization ${requestingUserOrgId}`);
-
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: `Role updated to ${newRole} successfully`,
-        previousRole: currentTargetRole,
-        newRole: newRole,
-        targetUser: {
-          name: targetUserData.name,
-          email: targetUserData.email
-        }
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      }
-    );
 
   } catch (error) {
-    console.error('Error in update-user-role function:', error);
-    
-    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
-    
+    console.error('Unexpected error:', error)
     return new Response(
-      JSON.stringify({ 
-        error: errorMessage,
-        success: false,
-        timestamp: new Date().toISOString()
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400,
-      }
-    );
+      JSON.stringify({ error: 'Internal server error' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
   }
-});
+})
