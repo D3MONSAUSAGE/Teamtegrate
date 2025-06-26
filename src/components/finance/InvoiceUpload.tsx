@@ -27,6 +27,8 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
   const [invoiceDate, setInvoiceDate] = useState<Date | undefined>(undefined);
   const [branch, setBranch] = useState('');
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStatus, setUploadStatus] = useState<string>('');
   const { user } = useAuth();
   const isMobile = useIsMobile();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -43,15 +45,28 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
 
     try {
       setIsUploading(true);
-      console.log('Starting invoice upload process for file:', file.name);
+      setUploadProgress(0);
+      setUploadStatus('Preparing upload...');
+      console.log('Starting enhanced invoice upload process for file:', file.name);
 
-      // Use the new upload helper
+      // Use the enhanced upload system with retry logic
       const uploadResult = await uploadInvoiceFile(file, user.organizationId, user.id);
       
+      setUploadProgress(50);
+      setUploadStatus('Verifying upload...');
+      
       if (!uploadResult.success) {
-        toast.error(uploadResult.error || 'Upload failed');
+        const errorMessage = uploadResult.error || 'Upload failed';
+        toast.error(errorMessage, {
+          description: uploadResult.retryAttempt ? `Failed after ${uploadResult.retryAttempt + 1} attempts` : undefined,
+          duration: 6000,
+        });
+        setUploadStatus('Upload failed');
         return;
       }
+
+      setUploadProgress(75);
+      setUploadStatus('Saving to database...');
 
       console.log('File uploaded successfully, inserting into database...');
 
@@ -84,16 +99,23 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
         }
         
         toast.error(`Database error: ${dbError.message}`);
+        setUploadStatus('Database save failed');
         return;
       }
 
+      setUploadProgress(100);
+      setUploadStatus('Upload complete!');
+
       console.log('Invoice uploaded and saved successfully');
       
-      // Enhanced success feedback
+      // Enhanced success feedback with upload metrics
+      const uploadTime = uploadResult.uploadDuration ? `${(uploadResult.uploadDuration / 1000).toFixed(1)}s` : 'unknown';
+      const retryInfo = uploadResult.retryAttempt && uploadResult.retryAttempt > 0 ? ` (${uploadResult.retryAttempt + 1} attempts)` : '';
+      
       toast.success(
         `Invoice "${metadata.invoiceNumber}" uploaded successfully!`,
         {
-          description: `File: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`,
+          description: `File: ${file.name} (${(file.size / 1024).toFixed(1)} KB) - Upload time: ${uploadTime}${retryInfo}`,
           duration: 4000,
         }
       );
@@ -103,10 +125,20 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
       setInvoiceDate(undefined);
       setBranch('');
       
+      // Reset upload status after a delay
+      setTimeout(() => {
+        setUploadProgress(0);
+        setUploadStatus('');
+      }, 2000);
+      
       onUploadSuccess?.();
     } catch (error) {
       console.error('Upload error:', error);
-      toast.error('Upload failed - please try again');
+      toast.error('Upload failed - please try again', {
+        description: error instanceof Error ? error.message : 'Unknown error occurred',
+        duration: 6000,
+      });
+      setUploadStatus('Upload failed');
     } finally {
       setIsUploading(false);
     }
@@ -236,10 +268,12 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
           />
         </div>
 
-        {/* Upload Status */}
+        {/* Enhanced Upload Status */}
         <InvoiceUploadStatus
           isUploading={isUploading}
           hasRequiredFields={hasRequiredFields}
+          uploadProgress={uploadProgress}
+          uploadStatus={uploadStatus}
         />
       </CardContent>
     </Card>
