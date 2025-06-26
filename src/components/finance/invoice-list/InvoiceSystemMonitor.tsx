@@ -154,7 +154,7 @@ const InvoiceSystemMonitor: React.FC = () => {
       const responseTime = Date.now() - startTime;
       
       return {
-        accessible: response.success,
+        accessible: response.ok,
         responseTime,
         lastChecked: new Date()
       };
