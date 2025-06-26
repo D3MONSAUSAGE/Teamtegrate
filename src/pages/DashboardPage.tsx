@@ -165,7 +165,7 @@ const DashboardPage = () => {
         {/* Interactive Stats Grid */}
         <div className="animate-fade-in delay-100">
           <InteractiveStatsGrid 
-            dailyScore={dailyScore}
+            dailyScore={dailyScore.percentage}
             todaysTasks={todaysTasks}
             upcomingTasks={upcomingTasks}
           />
