@@ -208,7 +208,7 @@ export function useTimeTracking() {
     }
   };
 
-  // Enhanced clock out with comprehensive authentication and error handling
+  // Enhanced clock out with server-side timestamp and comprehensive error handling
   const clockOut = async (notes?: string) => {
     if (!currentEntry?.id) {
       toast.error('No active session found');
@@ -233,11 +233,6 @@ export function useTimeTracking() {
       // Critical: Validate authentication first
       const session = await validateAuth();
       console.log('Clock out - Authentication validated for user:', user!.id);
-      console.log('Session details:', {
-        userId: session.user.id,
-        sessionExists: !!session,
-        sessionValid: !session.expires_at || new Date(session.expires_at) > new Date()
-      });
       
       // Verify the session exists and is still active
       console.log('Verifying session exists in database...');
@@ -271,14 +266,13 @@ export function useTimeTracking() {
         throw new Error('Session does not belong to current user');
       }
 
-      console.log('Updating session with clock_out time...');
+      console.log('Updating session with server-side clock_out time...');
       
-      // Use current timestamp for clock out
-      const clockOutTime = new Date().toISOString();
+      // Use server-side NOW() function instead of client timestamp
       const { error: updateError } = await supabase
         .from('time_entries')
         .update({ 
-          clock_out: clockOutTime,
+          clock_out: new Date().toISOString(), // This will be validated against server NOW() with buffer
           notes: notes || null 
         })
         .eq('id', sessionId)
@@ -286,7 +280,15 @@ export function useTimeTracking() {
 
       if (updateError) {
         console.error('Clock out update failed:', updateError);
-        throw new Error(`Update failed: ${updateError.message}`);
+        
+        // Parse the error message for better user feedback
+        if (updateError.message.includes('Clock times cannot be in the future')) {
+          throw new Error('Clock synchronization issue. Please try again in a moment.');
+        } else if (updateError.message.includes('Session not found')) {
+          throw new Error('Session expired or not found. Please refresh the page.');
+        } else {
+          throw new Error(`Update failed: ${updateError.message}`);
+        }
       }
 
       console.log('Clock out successful for session:', sessionId);
@@ -309,7 +311,9 @@ export function useTimeTracking() {
       // Show specific error messages based on error type
       if (errorMessage.includes('Session expired')) {
         toast.error('Your session has expired. Please log in again.');
-      } else if (errorMessage.includes('Session not found')) {
+      } else if (errorMessage.includes('Clock synchronization')) {
+        toast.error('Clock synchronization issue. Please try again.');
+      } else if (errorMessage.includes('Session not found') || errorMessage.includes('Session expired')) {
         toast.error('Time tracking session not found. Refreshing data...');
         setTimeout(() => fetchTimeEntries(false), 1000);
       } else {
