@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -141,10 +140,10 @@ const InvoiceSystemMonitor: React.FC = () => {
     const startTime = Date.now();
     
     try {
-      const { data, error } = await networkManager.withNetworkResilience(
+      const response = await networkManager.withNetworkResilience(
         'storage-health-check',
         async () => {
-          return await fetch('/api/storage-health', { 
+          return await fetch('/api/health', { 
             method: 'HEAD',
             signal: AbortSignal.timeout(5000)
           });
@@ -155,7 +154,7 @@ const InvoiceSystemMonitor: React.FC = () => {
       const responseTime = Date.now() - startTime;
       
       return {
-        accessible: true,
+        accessible: response.success,
         responseTime,
         lastChecked: new Date()
       };

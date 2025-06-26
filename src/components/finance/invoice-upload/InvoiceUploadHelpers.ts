@@ -286,12 +286,12 @@ class InvoiceUploadManager {
         };
       }
 
-      // Method 3: Try to get file info
-      const { data: infoData, error: infoError } = await supabase.storage
+      // Method 3: Try to get file info - Fix: Remove destructuring of non-existent properties
+      const urlResult = supabase.storage
         .from('documents')
         .getPublicUrl(filePath);
 
-      if (infoError || !infoData?.publicUrl) {
+      if (!urlResult?.data?.publicUrl) {
         return { success: false, error: 'File accessibility verification failed' };
       }
 
