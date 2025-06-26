@@ -42,15 +42,15 @@ const DailyTasksSection: React.FC<DailyTasksSectionProps> = ({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-full bg-gradient-to-r from-primary/20 to-emerald-500/20">
-            <Calendar className="h-5 w-5 text-primary" />
+          <div className="p-2 rounded-full bg-gradient-to-r from-blue-500/20 to-purple-500/20">
+            <Calendar className="h-5 w-5 text-blue-600 dark:text-blue-400" />
           </div>
-          <h2 className="text-xl font-semibold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
+          <h2 className="text-xl font-semibold bg-gradient-to-r from-foreground to-blue-600 bg-clip-text text-transparent">
             Today's Tasks
           </h2>
         </div>
         <Link to="/dashboard/tasks">
-          <Button variant="ghost" size="sm" className="text-primary hover:bg-primary/10 transition-colors">
+          <Button variant="ghost" size="sm" className="text-blue-600 hover:bg-blue-500/10 transition-colors">
             View all <ChevronRight className="h-4 w-4 ml-1" />
           </Button>
         </Link>
@@ -69,10 +69,10 @@ const DailyTasksSection: React.FC<DailyTasksSectionProps> = ({
           ))}
         </div>
       ) : (
-        <div className="bg-card/70 backdrop-blur-sm border rounded-2xl p-8 text-center">
+        <div className="bg-gradient-to-br from-blue-50/70 via-blue-50/50 to-purple-50/70 dark:from-blue-950/20 dark:via-blue-950/15 dark:to-purple-950/20 backdrop-blur-sm border rounded-2xl p-8 text-center">
           <div className="flex flex-col items-center gap-4">
-            <div className="p-4 rounded-full bg-gradient-to-r from-muted/50 to-muted/30">
-              <Calendar className="h-8 w-8 text-muted-foreground" />
+            <div className="p-4 rounded-full bg-gradient-to-r from-blue-500/20 to-purple-500/20">
+              <Calendar className="h-8 w-8 text-blue-600 dark:text-blue-400" />
             </div>
             <div className="space-y-2">
               <h3 className="font-semibold text-card-foreground">No tasks scheduled for today</h3>
@@ -81,7 +81,7 @@ const DailyTasksSection: React.FC<DailyTasksSectionProps> = ({
             <Button 
               variant="outline" 
               size={isMobile ? "sm" : "default"}
-              className="mt-2 hover:bg-primary/10 hover:border-primary transition-colors" 
+              className="mt-2 hover:bg-blue-500/10 hover:border-blue-500 transition-colors" 
               onClick={onCreateTask}
             >
               <Plus className="h-4 w-4 mr-2" /> Add Task

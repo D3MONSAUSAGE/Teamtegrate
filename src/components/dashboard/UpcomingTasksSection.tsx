@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import TaskCard from '@/components/task-card';
@@ -77,10 +78,10 @@ const UpcomingTasksSection: React.FC<UpcomingTasksSectionProps> = ({
           ))}
         </div>
       ) : (
-        <div className="glass-card border shadow-lg bg-gradient-to-br from-white/90 via-white/85 to-white/80 dark:from-card/90 dark:via-card/85 dark:to-card/80 backdrop-blur-xl rounded-2xl p-8 text-center">
+        <div className="bg-gradient-to-br from-emerald-50/70 via-emerald-50/50 to-teal-50/70 dark:from-emerald-950/20 dark:via-emerald-950/15 dark:to-teal-950/20 backdrop-blur-sm border rounded-2xl p-8 text-center">
           <div className="flex flex-col items-center gap-4">
-            <div className="p-4 rounded-full bg-gradient-to-r from-muted/50 to-muted/30">
-              <CalendarDays className="h-8 w-8 text-muted-foreground" />
+            <div className="p-4 rounded-full bg-gradient-to-r from-emerald-500/20 to-teal-500/20">
+              <CalendarDays className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
             </div>
             <div className="space-y-2">
               <h3 className="font-semibold text-card-foreground">No upcoming tasks for the next 7 days</h3>

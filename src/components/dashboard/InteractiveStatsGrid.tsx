@@ -11,9 +11,10 @@ import {
   TrendingUp, 
   Calendar,
   Trophy,
-  Timer
+  AlertTriangle
 } from 'lucide-react';
 import { Task } from '@/types';
+import { isTaskOverdue } from '@/utils/taskUtils';
 
 interface InteractiveStatsGridProps {
   dailyScore: number;
@@ -27,8 +28,9 @@ const InteractiveStatsGrid: React.FC<InteractiveStatsGridProps> = ({
   upcomingTasks
 }) => {
   const completedToday = todaysTasks.filter(task => task.status === 'Completed').length;
-  const inProgressToday = todaysTasks.filter(task => task.status === 'In Progress').length;
-  const highPriorityTasks = [...todaysTasks, ...upcomingTasks].filter(task => task.priority === 'High').length;
+  const allTasks = [...todaysTasks, ...upcomingTasks];
+  const overdueTasks = allTasks.filter(task => isTaskOverdue(task)).length;
+  const highPriorityTasks = allTasks.filter(task => task.priority === 'High').length;
   const completionRate = todaysTasks.length > 0 ? Math.round((completedToday / todaysTasks.length) * 100) : 0;
 
   const stats = [
@@ -53,13 +55,13 @@ const InteractiveStatsGrid: React.FC<InteractiveStatsGridProps> = ({
       maxValue: 100
     },
     {
-      title: 'In Progress',
-      value: inProgressToday,
-      subtitle: 'Active tasks',
-      icon: Timer,
-      color: 'from-blue-500 to-cyan-500',
-      bgColor: 'bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20',
-      progress: inProgressToday > 0 ? 75 : 0,
+      title: 'Overdue Tasks',
+      value: overdueTasks,
+      subtitle: 'Need attention',
+      icon: AlertTriangle,
+      color: 'from-red-500 to-orange-500',
+      bgColor: 'bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-950/20 dark:to-orange-950/20',
+      progress: overdueTasks > 0 ? 100 : 0,
       maxValue: 100
     },
     {
@@ -67,8 +69,8 @@ const InteractiveStatsGrid: React.FC<InteractiveStatsGridProps> = ({
       value: highPriorityTasks,
       subtitle: 'Urgent tasks',
       icon: Zap,
-      color: 'from-red-500 to-pink-500',
-      bgColor: 'bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-950/20 dark:to-pink-950/20',
+      color: 'from-purple-500 to-pink-500',
+      bgColor: 'bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20',
       progress: highPriorityTasks > 0 ? 90 : 0,
       maxValue: 100
     }
