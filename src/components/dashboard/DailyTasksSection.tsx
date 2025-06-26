@@ -39,7 +39,7 @@ const DailyTasksSection: React.FC<DailyTasksSectionProps> = ({
   const handleEditTask = useMemo(() => debouncedEditTask, [debouncedEditTask]);
   
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6 bg-gradient-to-br from-blue-50/40 via-blue-50/20 to-purple-50/40 dark:from-blue-950/20 dark:via-blue-950/10 dark:to-purple-950/20 rounded-2xl backdrop-blur-sm">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-full bg-gradient-to-r from-blue-500/20 to-purple-500/20">
@@ -69,7 +69,7 @@ const DailyTasksSection: React.FC<DailyTasksSectionProps> = ({
           ))}
         </div>
       ) : (
-        <div className="bg-gradient-to-br from-blue-50/70 via-blue-50/50 to-purple-50/70 dark:from-blue-950/20 dark:via-blue-950/15 dark:to-purple-950/20 backdrop-blur-sm border rounded-2xl p-8 text-center">
+        <div className="bg-gradient-to-br from-blue-100/70 via-blue-100/50 to-purple-100/70 dark:from-blue-900/30 dark:via-blue-900/20 dark:to-purple-900/30 backdrop-blur-sm border rounded-2xl p-8 text-center">
           <div className="flex flex-col items-center gap-4">
             <div className="p-4 rounded-full bg-gradient-to-r from-blue-500/20 to-purple-500/20">
               <Calendar className="h-8 w-8 text-blue-600 dark:text-blue-400" />

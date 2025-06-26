@@ -48,7 +48,7 @@ const UpcomingTasksSection: React.FC<UpcomingTasksSectionProps> = ({
   };
   
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6 bg-gradient-to-br from-emerald-50/50 via-emerald-50/30 to-teal-50/50 dark:from-emerald-950/25 dark:via-emerald-950/15 dark:to-teal-950/25 rounded-2xl backdrop-blur-sm">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-full bg-gradient-to-r from-emerald-500/20 to-teal-500/20">
@@ -78,7 +78,7 @@ const UpcomingTasksSection: React.FC<UpcomingTasksSectionProps> = ({
           ))}
         </div>
       ) : (
-        <div className="bg-gradient-to-br from-emerald-50/70 via-emerald-50/50 to-teal-50/70 dark:from-emerald-950/20 dark:via-emerald-950/15 dark:to-teal-950/20 backdrop-blur-sm border rounded-2xl p-8 text-center">
+        <div className="bg-gradient-to-br from-emerald-100/70 via-emerald-100/50 to-teal-100/70 dark:from-emerald-900/30 dark:via-emerald-900/20 dark:to-teal-900/30 backdrop-blur-sm border rounded-2xl p-8 text-center">
           <div className="flex flex-col items-center gap-4">
             <div className="p-4 rounded-full bg-gradient-to-r from-emerald-500/20 to-teal-500/20">
               <CalendarDays className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />

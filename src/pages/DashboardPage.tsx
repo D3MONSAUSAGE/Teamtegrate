@@ -151,8 +151,8 @@ const DashboardPage = () => {
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/5 to-background">
-      <div className="relative space-y-8 no-scrollbar">
-        {/* Enhanced Welcome Header */}
+      <div className="relative pt-6 px-4 md:px-6 lg:px-8 space-y-8 no-scrollbar">
+        {/* Enhanced Welcome Header with proper spacing */}
         <div className="animate-fade-in">
           <EnhancedDashboardHeader
             userName={user?.name || 'User'}
@@ -202,8 +202,8 @@ const DashboardPage = () => {
           </ModernSectionCard>
         </div>
         
-        {/* Tasks Sections */}
-        <div className="space-y-6 animate-fade-in delay-400">
+        {/* Tasks Sections with improved spacing */}
+        <div className="space-y-8 animate-fade-in delay-400">
           <ModernSectionCard
             title="Today's Focus"
             subtitle="Tasks scheduled for today"
@@ -237,7 +237,7 @@ const DashboardPage = () => {
         
         {/* Manager-only sections */}
         {user?.role === 'manager' && (
-          <div className="space-y-6 animate-fade-in delay-500">
+          <div className="space-y-8 animate-fade-in delay-500">
             <ModernSectionCard
               title="Active Projects"
               subtitle="Your recent projects and progress"
@@ -263,6 +263,9 @@ const DashboardPage = () => {
             </ModernSectionCard>
           </div>
         )}
+        
+        {/* Add bottom padding for proper spacing */}
+        <div className="pb-8" />
         
         <CreateTaskDialogEnhanced 
           open={isCreateTaskOpen} 
