@@ -8,7 +8,6 @@ import { Task, Project } from '@/types';
 import { Plus, Sparkles, TrendingUp, Calendar } from 'lucide-react';
 import CreateTaskDialogEnhanced from '@/components/CreateTaskDialogEnhanced';
 import { format } from 'date-fns';
-import TasksSummary from '@/components/dashboard/TasksSummary';
 import DailyTasksSection from '@/components/dashboard/DailyTasksSection';
 import UpcomingTasksSection from '@/components/dashboard/UpcomingTasksSection';
 import RecentProjects from '@/components/dashboard/RecentProjects';
@@ -16,6 +15,11 @@ import TeamManagement from '@/components/dashboard/TeamManagement';
 import { useIsMobile } from '@/hooks/use-mobile';
 import TimeTracking from '@/components/dashboard/TimeTracking';
 import { useTask } from '@/contexts/task';
+import EnhancedDashboardHeader from '@/components/dashboard/EnhancedDashboardHeader';
+import InteractiveStatsGrid from '@/components/dashboard/InteractiveStatsGrid';
+import ModernSectionCard from '@/components/dashboard/ModernSectionCard';
+import QuickActionsPanel from '@/components/dashboard/QuickActionsPanel';
+import { Clock, FileText, Users, Target } from 'lucide-react';
 
 const DashboardPage = () => {
   const { user } = useAuth();
@@ -149,86 +153,63 @@ const DashboardPage = () => {
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/5 to-background">
       <div className="relative space-y-8 no-scrollbar">
         {/* Enhanced Welcome Header */}
-        <div className="relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-emerald-500/5 to-primary/5" />
-          
-          <div className="relative bg-card/90 backdrop-blur-sm border shadow-lg rounded-2xl p-6 md:p-8">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-foreground via-primary to-emerald-600 bg-clip-text text-transparent">
-                    Welcome back, {user?.name}!
-                  </h1>
-                  <Sparkles className="h-6 w-6 text-primary animate-pulse" />
-                </div>
-                
-                <div className="flex items-center gap-4 text-lg">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Calendar className="h-5 w-5" />
-                    <span className="font-medium">{format(new Date(), "EEEE, MMMM d")}</span>
-                  </div>
-                  <div className="hidden sm:block w-px h-5 bg-border" />
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <TrendingUp className="h-5 w-5" />
-                    <span>Stay focused and productive</span>
-                  </div>
-                </div>
-
-                {/* Enhanced Quick Stats */}
-                <div className="flex items-center gap-8 pt-3">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-primary">{headerStats.todaysCount}</div>
-                    <div className="text-sm text-muted-foreground">Tasks Today</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-emerald-600">{headerStats.upcomingCount}</div>
-                    <div className="text-sm text-muted-foreground">Upcoming</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-amber-600">{headerStats.projectsCount}</div>
-                    <div className="text-sm text-muted-foreground">Projects</div>
-                  </div>
-                </div>
-              </div>
-              
-              <Button 
-                onClick={() => handleCreateTask()} 
-                size={isMobile ? "default" : "lg"} 
-                className="bg-gradient-to-r from-primary to-emerald-500 hover:shadow-lg transition-all duration-200 shadow-md"
-                disabled={isLoading}
-              >
-                <Plus className="h-5 w-5 mr-2" /> 
-                Create New Task
-              </Button>
-            </div>
-          </div>
+        <div className="animate-fade-in">
+          <EnhancedDashboardHeader
+            userName={user?.name || 'User'}
+            onCreateTask={() => handleCreateTask()}
+            isLoading={isLoading}
+            stats={headerStats}
+          />
         </div>
         
-        {/* Enhanced Quick Stats Summary */}
-        <div className="animate-fade-in">
-          <TasksSummary 
+        {/* Interactive Stats Grid */}
+        <div className="animate-fade-in delay-100">
+          <InteractiveStatsGrid 
             dailyScore={dailyScore}
             todaysTasks={todaysTasks}
             upcomingTasks={upcomingTasks}
           />
         </div>
 
-        {/* Simplified Time Tracking Section */}
-        <div className="bg-card/80 backdrop-blur-sm border rounded-xl shadow-sm">
-          <div className="p-6 border-b border-border/50">
-            <h2 className="text-xl font-semibold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
-              Time Tracking
-            </h2>
-            <p className="text-sm text-muted-foreground mt-1">Track your work hours and view today's activity</p>
-          </div>
-          <div className="p-4">
-            <TimeTracking />
-          </div>
+        {/* Quick Actions Panel */}
+        <div className="animate-fade-in delay-200">
+          <ModernSectionCard
+            title="Quick Actions"
+            subtitle="Fast access to common tasks"
+            icon={Target}
+            noPadding
+          >
+            <div className="p-6">
+              <QuickActionsPanel
+                onCreateTask={() => handleCreateTask()}
+                userRole={user?.role || 'user'}
+              />
+            </div>
+          </ModernSectionCard>
+        </div>
+
+        {/* Time Tracking Section */}
+        <div className="animate-fade-in delay-300">
+          <ModernSectionCard
+            title="Time Tracking"
+            subtitle="Track your work hours and view today's activity"
+            icon={Clock}
+            noPadding
+          >
+            <div className="p-4">
+              <TimeTracking />
+            </div>
+          </ModernSectionCard>
         </div>
         
-        {/* Tasks Sections with improved styling */}
-        <div className="space-y-6">
-          <div className="bg-card/80 backdrop-blur-sm border rounded-xl shadow-sm">
+        {/* Tasks Sections */}
+        <div className="space-y-6 animate-fade-in delay-400">
+          <ModernSectionCard
+            title="Today's Focus"
+            subtitle="Tasks scheduled for today"
+            icon={Target}
+            noPadding
+          >
             <div className="p-1">
               <DailyTasksSection 
                 tasks={todaysTasks}
@@ -236,9 +217,14 @@ const DashboardPage = () => {
                 onEditTask={handleEditTask}
               />
             </div>
-          </div>
+          </ModernSectionCard>
           
-          <div className="bg-card/80 backdrop-blur-sm border rounded-xl shadow-sm">
+          <ModernSectionCard
+            title="Upcoming Work"
+            subtitle="Tasks coming up this week"
+            icon={Calendar}
+            noPadding
+          >
             <div className="p-1">
               <UpcomingTasksSection 
                 tasks={upcomingTasks}
@@ -246,13 +232,18 @@ const DashboardPage = () => {
                 onEditTask={handleEditTask}
               />
             </div>
-          </div>
+          </ModernSectionCard>
         </div>
         
-        {/* Manager-only sections with improved styling */}
+        {/* Manager-only sections */}
         {user?.role === 'manager' && (
-          <div className="space-y-6">
-            <div className="bg-card/80 backdrop-blur-sm border rounded-xl shadow-sm">
+          <div className="space-y-6 animate-fade-in delay-500">
+            <ModernSectionCard
+              title="Active Projects"
+              subtitle="Your recent projects and progress"
+              icon={FileText}
+              noPadding
+            >
               <div className="p-1">
                 <RecentProjects 
                   projects={recentProjects}
@@ -261,11 +252,15 @@ const DashboardPage = () => {
                   onRefresh={refreshProjects}
                 />
               </div>
-            </div>
+            </ModernSectionCard>
             
-            <div className="bg-card/80 backdrop-blur-sm border rounded-xl shadow-sm">
+            <ModernSectionCard
+              title="Team Management"
+              subtitle="Manage your team and assignments"
+              icon={Users}
+            >
               <TeamManagement />
-            </div>
+            </ModernSectionCard>
           </div>
         )}
         
