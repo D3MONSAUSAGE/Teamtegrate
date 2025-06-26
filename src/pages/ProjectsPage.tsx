@@ -6,22 +6,19 @@ import CreateProjectDialog from '@/components/CreateProjectDialog';
 import CreateTaskDialogEnhanced from '@/components/CreateTaskDialogEnhanced';
 import { useNavigate } from 'react-router-dom';
 import ProjectsPageHeader from './projects/ProjectsPageHeader';
-import ProjectsSearchSection from './projects/ProjectsSearchSection';
-import ProjectsGridSection from './projects/ProjectsGridSection';
 import ProjectsPageBackground from './projects/ProjectsPageBackground';
-import ProjectsActionToolbar from './projects/ProjectsActionToolbar';
-import { useProjectsPageState } from './projects/hooks/useProjectsPageState';
+import ProjectTabs from '@/components/project/ProjectTabs';
 import { useDebounce } from '@/utils/performanceUtils';
 import { useResilientProjects } from '@/hooks/useResilientProjects';
 import ProjectsErrorBoundary from '@/components/ErrorBoundary/ProjectsErrorBoundary';
 import ProjectsSkeletonGrid from '@/components/projects/ProjectsSkeletonGrid';
 import ProjectsStatusIndicator from '@/components/projects/ProjectsStatusIndicator';
 import ConnectionStatus from '@/components/dashboard/ConnectionStatus';
+import { Project } from '@/types';
 
 const ProjectsPage = () => {
   const { user } = useAuth();
   const { users: allUsers } = useUsers();
-  const [searchQuery, setSearchQuery] = useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>();
@@ -42,27 +39,28 @@ const ProjectsPage = () => {
     deleteProject: resilientDeleteProject
   } = useResilientProjects();
 
-  const {
-    viewMode,
-    setViewMode,
-    sortBy,
-    setSortBy,
-    statusFilter,
-    setStatusFilter,
-    selectedAssignee,
-    handleAssigneeFilter,
-    showCompleted,
-    toggleCompleted,
-    filteredAndSortedProjects
-  } = useProjectsPageState(projects);
+  // Categorize projects by status
+  const { todoProjects, inProgressProjects, completedProjects } = useMemo(() => {
+    const todo: Project[] = [];
+    const inProgress: Project[] = [];
+    const completed: Project[] = [];
 
-  // Memoized search filtering to prevent recalculation on every render
-  const searchFilteredProjects = useMemo(() => 
-    filteredAndSortedProjects.filter(project =>
-      project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      project.description?.toLowerCase().includes(searchQuery.toLowerCase())
-    ), [filteredAndSortedProjects, searchQuery]
-  );
+    projects.forEach(project => {
+      if (project.status === 'Completed' || project.isCompleted) {
+        completed.push(project);
+      } else if (project.status === 'In Progress') {
+        inProgress.push(project);
+      } else {
+        todo.push(project);
+      }
+    });
+
+    return {
+      todoProjects: todo,
+      inProgressProjects: inProgress,
+      completedProjects: completed
+    };
+  }, [projects]);
 
   // Debounced navigation to prevent rapid clicking
   const debouncedNavigate = useDebounce((path: string) => {
@@ -134,31 +132,14 @@ const ProjectsPage = () => {
             </div>
           )}
 
-          {/* Enhanced Action Toolbar */}
+          {/* Page Header */}
           <div className="animate-fade-in">
-            <ProjectsActionToolbar
-              viewMode={viewMode}
-              onViewModeChange={setViewMode}
-              sortBy={sortBy}
-              onSortByChange={setSortBy}
-              statusFilter={statusFilter}
-              onStatusFilterChange={setStatusFilter}
-              teamMembers={allUsers}
-              selectedAssignee={selectedAssignee}
-              onAssigneeFilter={handleAssigneeFilter}
-              showCompleted={showCompleted}
-              onToggleCompleted={toggleCompleted}
+            <ProjectsPageHeader
+              totalProjects={projects.length}
+              todoCount={todoProjects.length}
+              inProgressCount={inProgressProjects.length}
+              completedCount={completedProjects.length}
               onCreateProject={handleCreateProject}
-              projectsCount={searchFilteredProjects.length}
-            />
-          </div>
-          
-          {/* Enhanced Search Section */}
-          <div className="animate-fade-in delay-200">
-            <ProjectsSearchSection
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-              resultsCount={searchFilteredProjects.length}
             />
           </div>
 
@@ -179,13 +160,14 @@ const ProjectsPage = () => {
                   <ProjectsSkeletonGrid count={6} showHeader={false} />
                 </div>
               ) : (
-                <ProjectsGridSection
-                  projects={searchFilteredProjects}
-                  searchQuery={searchQuery}
-                  onCreateProject={handleCreateProject}
+                <ProjectTabs
+                  todoProjects={todoProjects}
+                  inProgressProjects={inProgressProjects}
+                  completedProjects={completedProjects}
                   onViewTasks={handleViewTasks}
                   onCreateTask={handleCreateTask}
                   onProjectDeleted={handleProjectDeleted}
+                  onCreateProject={handleCreateProject}
                 />
               )}
             </div>

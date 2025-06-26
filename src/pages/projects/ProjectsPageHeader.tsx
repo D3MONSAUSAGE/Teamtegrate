@@ -1,42 +1,96 @@
 
 import React from 'react';
-import { Button } from "@/components/ui/button";
-import { Plus, Sparkles, Zap, FolderKanban } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Plus, Folder, Clock, CheckCircle } from 'lucide-react';
 
 interface ProjectsPageHeaderProps {
+  totalProjects: number;
+  todoCount: number;
+  inProgressCount: number;
+  completedCount: number;
   onCreateProject: () => void;
 }
 
-const ProjectsPageHeader: React.FC<ProjectsPageHeaderProps> = ({ onCreateProject }) => {
+const ProjectsPageHeader: React.FC<ProjectsPageHeaderProps> = ({
+  totalProjects,
+  todoCount,
+  inProgressCount,
+  completedCount,
+  onCreateProject
+}) => {
   return (
-    <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
-      <div className="space-y-6">
-        <div className="flex items-center gap-6">
-          <div className="relative">
-            <h1 className="text-6xl md:text-7xl font-black bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent animate-gradient leading-tight">
-              My Projects
-            </h1>
-            <div className="absolute -top-3 -right-3 flex space-x-2">
-              <Sparkles className="h-8 w-8 text-primary animate-pulse" />
-              <Zap className="h-6 w-6 text-accent animate-bounce" style={{ animationDelay: '0.5s' }} />
+    <div className="space-y-6">
+      {/* Header Section */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="space-y-2">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent">
+            Projects
+          </h1>
+          <p className="text-muted-foreground text-lg">
+            Manage and track your project portfolio
+          </p>
+        </div>
+        
+        <Button 
+          onClick={onCreateProject}
+          size="lg"
+          className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+        >
+          <Plus className="h-5 w-5 mr-2" />
+          New Project
+        </Button>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="bg-card/60 backdrop-blur-sm border border-border/40 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-primary/10">
+              <Folder className="h-5 w-5 text-primary" />
             </div>
-            <div className="absolute -bottom-2 left-0 w-full h-1 bg-gradient-to-r from-primary/50 via-accent/30 to-transparent rounded-full" />
+            <div>
+              <p className="text-2xl font-bold text-foreground">{totalProjects}</p>
+              <p className="text-sm text-muted-foreground">Total Projects</p>
+            </div>
           </div>
         </div>
-        <p className="text-xl text-muted-foreground max-w-2xl leading-relaxed">
-          Organize your ideas into actionable projects. Track progress, manage tasks, and collaborate with your team to achieve your goals.
-        </p>
+
+        <div className="bg-card/60 backdrop-blur-sm border border-border/40 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
+              <Folder className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-foreground">{todoCount}</p>
+              <p className="text-sm text-muted-foreground">To Do</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-card/60 backdrop-blur-sm border border-border/40 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/30">
+              <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-foreground">{inProgressCount}</p>
+              <p className="text-sm text-muted-foreground">In Progress</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-card/60 backdrop-blur-sm border border-border/40 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/30">
+              <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-foreground">{completedCount}</p>
+              <p className="text-sm text-muted-foreground">Completed</p>
+            </div>
+          </div>
+        </div>
       </div>
-      
-      <Button 
-        onClick={onCreateProject}
-        size="lg"
-        className="h-16 px-10 rounded-2xl bg-gradient-to-r from-primary via-primary/90 to-accent hover:from-primary/90 hover:via-primary/80 hover:to-accent/90 text-primary-foreground font-bold shadow-2xl hover:shadow-3xl hover:scale-105 transition-all duration-500 border-2 border-primary/30 hover:border-primary/50 group relative overflow-hidden"
-      >
-        <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        <Plus className="h-6 w-6 mr-3 group-hover:rotate-90 transition-transform duration-300" />
-        <span className="relative z-10">Create Project</span>
-      </Button>
     </div>
   );
 };
