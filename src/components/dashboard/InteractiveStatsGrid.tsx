@@ -40,7 +40,7 @@ const InteractiveStatsGrid: React.FC<InteractiveStatsGridProps> = ({
       subtitle: 'Productivity Score',
       icon: Trophy,
       color: 'from-yellow-500 to-orange-500',
-      bgColor: 'bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-950/20 dark:to-orange-950/20',
+      bgColor: 'bg-gradient-to-br from-blue-50/30 to-purple-50/30 dark:from-blue-950/10 dark:to-purple-950/10',
       progress: dailyScore,
       maxValue: 100
     },
