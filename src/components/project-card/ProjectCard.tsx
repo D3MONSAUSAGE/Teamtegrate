@@ -88,9 +88,26 @@ const ProjectCard = ({ project, onViewTasks, onCreateTask, onDeleted }: ProjectC
     }
   };
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Only trigger if clicking on the card itself, not on buttons or interactive elements
+    const target = e.target as HTMLElement;
+    const isInteractiveElement = target.closest('button, a, [role="button"]');
+    
+    if (!isInteractiveElement && onViewTasks) {
+      console.log('ProjectCard: Card clicked, opening project');
+      handleViewTasks();
+    }
+  };
+
   return (
     <>
-      <Card className="overflow-hidden relative z-10">
+      <Card 
+        className="overflow-hidden relative z-10 cursor-pointer hover:shadow-lg hover:scale-[1.02] transition-all duration-300 hover:border-primary/20 group"
+        onClick={handleCardClick}
+      >
+        {/* Subtle hover overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+        
         <ProjectCardHeader 
           project={project} 
           onDeleteClick={handleDeleteClick}
