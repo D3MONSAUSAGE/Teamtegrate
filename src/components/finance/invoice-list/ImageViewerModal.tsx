@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 
@@ -31,8 +31,25 @@ const ImageViewerModal: React.FC<ImageViewerModalProps> = ({
 }) => {
   const { toast } = useToast();
 
+  // Clean up blob URLs when modal closes
+  useEffect(() => {
+    return () => {
+      if (imageUrl && imageUrl.startsWith('blob:')) {
+        window.URL.revokeObjectURL(imageUrl);
+      }
+    };
+  }, [imageUrl]);
+
+  const handleClose = () => {
+    // Clean up blob URL before closing
+    if (imageUrl && imageUrl.startsWith('blob:')) {
+      window.URL.revokeObjectURL(imageUrl);
+    }
+    onClose();
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
         <DialogHeader>
           <DialogTitle>

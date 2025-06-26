@@ -46,6 +46,28 @@ export const useInvoiceActions = () => {
     }
   };
 
+  const verifyFileExists = async (filePath: string): Promise<boolean> => {
+    try {
+      const pathParts = filePath.split('/');
+      const fileName = pathParts.pop();
+      const folderPath = pathParts.join('/');
+      
+      const { data, error } = await supabase.storage
+        .from('documents')
+        .list(folderPath);
+
+      if (error) {
+        console.error('File verification error:', error);
+        return false;
+      }
+
+      return data?.some(file => file.name === fileName) || false;
+    } catch (error) {
+      console.error('File verification failed:', error);
+      return false;
+    }
+  };
+
   const viewInvoice = async (
     invoice: Invoice, 
     setImageUrl: (url: string) => void,
@@ -55,22 +77,85 @@ export const useInvoiceActions = () => {
     try {
       console.log('Viewing invoice with file path:', invoice.file_path);
       
-      const { data, error } = await supabase.storage
-        .from('documents')
-        .download(invoice.file_path);
-
-      if (error) {
-        console.error('View error:', error);
-        throw error;
+      // First, verify the file exists
+      const fileExists = await verifyFileExists(invoice.file_path);
+      if (!fileExists) {
+        console.error('File does not exist:', invoice.file_path);
+        toast.error('Invoice file not found. It may have been moved or deleted.');
+        return;
       }
 
-      const url = window.URL.createObjectURL(data);
-      setImageUrl(url);
-      setViewingInvoice(invoice);
-      setViewModalOpen(true);
+      // Method 1: Try createSignedUrl (most reliable for viewing)
+      try {
+        console.log('Attempting signed URL method...');
+        const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+          .from('documents')
+          .createSignedUrl(invoice.file_path, 3600); // 1 hour expiry
+
+        if (!signedUrlError && signedUrlData?.signedUrl) {
+          console.log('Signed URL created successfully');
+          setImageUrl(signedUrlData.signedUrl);
+          setViewingInvoice(invoice);
+          setViewModalOpen(true);
+          return;
+        } else {
+          console.warn('Signed URL failed:', signedUrlError);
+        }
+      } catch (signedUrlError) {
+        console.warn('Signed URL method failed:', signedUrlError);
+      }
+
+      // Method 2: Try getPublicUrl (faster if bucket allows public access)
+      try {
+        console.log('Attempting public URL method...');
+        const { data: publicUrlData } = supabase.storage
+          .from('documents')
+          .getPublicUrl(invoice.file_path);
+
+        if (publicUrlData?.publicUrl) {
+          console.log('Public URL created successfully');
+          // Test if the public URL is accessible
+          const testResponse = await fetch(publicUrlData.publicUrl, { method: 'HEAD' });
+          if (testResponse.ok) {
+            setImageUrl(publicUrlData.publicUrl);
+            setViewingInvoice(invoice);
+            setViewModalOpen(true);
+            return;
+          } else {
+            console.warn('Public URL not accessible:', testResponse.status);
+          }
+        }
+      } catch (publicUrlError) {
+        console.warn('Public URL method failed:', publicUrlError);
+      }
+
+      // Method 3: Fallback to download method (original approach)
+      try {
+        console.log('Attempting download method as fallback...');
+        const { data, error } = await supabase.storage
+          .from('documents')
+          .download(invoice.file_path);
+
+        if (error) {
+          console.error('Download method error:', error);
+          throw error;
+        }
+
+        const url = window.URL.createObjectURL(data);
+        setImageUrl(url);
+        setViewingInvoice(invoice);
+        setViewModalOpen(true);
+        return;
+      } catch (downloadError) {
+        console.error('Download method failed:', downloadError);
+      }
+
+      // If all methods fail, show a detailed error
+      throw new Error('All viewing methods failed. Please check file permissions and try again.');
+
     } catch (error) {
-      console.error('View failed:', error);
-      toast.error('Failed to view invoice. Please try again.');
+      console.error('View failed with all methods:', error);
+      toast.error(`Failed to view invoice: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
