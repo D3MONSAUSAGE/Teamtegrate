@@ -10,6 +10,7 @@ import InvoiceUploadButtons from './invoice-upload/InvoiceUploadButtons';
 import InvoiceUploadDropzone from './invoice-upload/InvoiceUploadDropzone';
 import InvoiceUploadStatus from './invoice-upload/InvoiceUploadStatus';
 import InvoiceAccessRestriction from './invoice-upload/InvoiceAccessRestriction';
+import { uploadInvoiceFile } from './invoice-upload/InvoiceUploadHelpers';
 
 interface InvoiceMetadata {
   invoiceNumber: string;
@@ -42,29 +43,19 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
 
     try {
       setIsUploading(true);
-      console.log('Starting upload process for file:', file.name);
+      console.log('Starting invoice upload process for file:', file.name);
 
-      const timestamp = new Date().getTime();
-      // FIXED: Use organization-first path format: organizationId/invoices/userId/timestamp-filename
-      const filePath = `${user.organizationId}/invoices/${user.id}/${timestamp}-${file.name}`;
+      // Use the new upload helper
+      const uploadResult = await uploadInvoiceFile(file, user.organizationId, user.id);
       
-      console.log('Uploading to storage path:', filePath);
-      
-      const { error: storageError } = await supabase.storage
-        .from('documents')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
-
-      if (storageError) {
-        console.error('Storage error:', storageError);
-        toast.error(`Storage error: ${storageError.message}`);
+      if (!uploadResult.success) {
+        toast.error(uploadResult.error || 'Upload failed');
         return;
       }
 
       console.log('File uploaded successfully, inserting into database...');
 
+      // Only insert into database if file upload was successful
       const { error: dbError } = await supabase
         .from('invoices')
         .insert({
@@ -74,7 +65,7 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
           uploader_name: user.name || user.email,
           file_name: file.name,
           file_type: file.type,
-          file_path: filePath,
+          file_path: uploadResult.filePath!,
           file_size: file.size,
           user_id: user.id,
           organization_id: user.organizationId
@@ -82,11 +73,21 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
 
       if (dbError) {
         console.error('Database error:', dbError);
+        
+        // If database insert fails, try to clean up the uploaded file
+        try {
+          await supabase.storage
+            .from('documents')
+            .remove([uploadResult.filePath!]);
+        } catch (cleanupError) {
+          console.error('Failed to cleanup file after database error:', cleanupError);
+        }
+        
         toast.error(`Database error: ${dbError.message}`);
         return;
       }
 
-      console.log('Invoice uploaded successfully');
+      console.log('Invoice uploaded and saved successfully');
       
       // Enhanced success feedback
       toast.success(

@@ -26,7 +26,14 @@ export const useInvoiceActions = () => {
 
       if (error) {
         console.error('Download error:', error);
-        throw error;
+        
+        // Provide more specific error messages
+        if (error.message.includes('not found') || error.message.includes('does not exist')) {
+          toast.error(`File not found: ${invoice.file_name}. The file may have been moved or deleted.`);
+        } else {
+          toast.error(`Download failed: ${error.message}`);
+        }
+        return;
       }
 
       // Create download link
@@ -81,7 +88,10 @@ export const useInvoiceActions = () => {
       const fileExists = await verifyFileExists(invoice.file_path);
       if (!fileExists) {
         console.error('File does not exist:', invoice.file_path);
-        toast.error('Invoice file not found. It may have been moved or deleted.');
+        toast.error(`Invoice file not found: ${invoice.file_name}. The file may have been moved, deleted, or failed to upload properly.`, {
+          description: 'Try re-uploading the invoice if you have the original file.',
+          duration: 6000,
+        });
         return;
       }
 
@@ -150,12 +160,18 @@ export const useInvoiceActions = () => {
         console.error('Download method failed:', downloadError);
       }
 
-      // If all methods fail, show a detailed error
-      throw new Error('All viewing methods failed. Please check file permissions and try again.');
+      // If all methods fail, show a detailed error with suggestions
+      toast.error(`Unable to view invoice: ${invoice.file_name}`, {
+        description: 'All viewing methods failed. The file may be corrupted or inaccessible. Try downloading instead or contact support.',
+        duration: 8000,
+      });
 
     } catch (error) {
       console.error('View failed with all methods:', error);
-      toast.error(`Failed to view invoice: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toast.error(`Failed to view invoice: ${error instanceof Error ? error.message : 'Unknown error'}`, {
+        description: 'Please try again or contact support if the issue persists.',
+        duration: 6000,
+      });
     }
   };
 
@@ -167,14 +183,22 @@ export const useInvoiceActions = () => {
     try {
       console.log('Deleting invoice with file path:', invoice.file_path);
       
-      // Delete from storage first
-      const { error: storageError } = await supabase.storage
-        .from('documents')
-        .remove([invoice.file_path]);
+      // Check if file exists before attempting to delete
+      const fileExists = await verifyFileExists(invoice.file_path);
+      
+      if (fileExists) {
+        // Delete from storage first
+        const { error: storageError } = await supabase.storage
+          .from('documents')
+          .remove([invoice.file_path]);
 
-      if (storageError) {
-        console.error('Storage deletion error:', storageError);
-        throw storageError;
+        if (storageError) {
+          console.error('Storage deletion error:', storageError);
+          // Don't throw error here - proceed with database deletion even if file doesn't exist
+          console.warn('File may have already been deleted from storage');
+        }
+      } else {
+        console.warn('File does not exist in storage, proceeding with database cleanup');
       }
 
       // Then delete from database
