@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -39,6 +40,21 @@ export function useTimeTracking() {
     return params ? `${baseKey}-${JSON.stringify(params)}` : baseKey;
   }, [user?.id, user?.organizationId]);
 
+  // Validate authentication before operations
+  const validateAuth = useCallback(async () => {
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+
+    // Check if session is still valid
+    const { data: { session }, error } = await supabase.auth.getSession();
+    if (error || !session) {
+      throw new Error('Session expired. Please log in again.');
+    }
+
+    return session;
+  }, [user]);
+
   // Enhanced fetch with better error handling
   const fetchTimeEntries = useCallback(async (showLoading = true) => {
     if (!user?.organizationId || fetchingRef.current) return;
@@ -50,6 +66,9 @@ export function useTimeTracking() {
       if (showLoading) setIsLoading(true);
       setConnecting(true);
       setLastError(null);
+
+      // Validate authentication first
+      await validateAuth();
 
       const data = await requestManager.dedupe(requestKey, async () => {
         console.log('Fetching time entries...');
@@ -109,7 +128,7 @@ export function useTimeTracking() {
       setIsLoading(false);
       setConnecting(false);
     }
-  }, [user?.id, user?.organizationId, createRequestKey, setConnecting]);
+  }, [user?.id, user?.organizationId, createRequestKey, setConnecting, validateAuth]);
 
   // Enhanced clock in with better validation
   const clockIn = async (notes?: string) => {
@@ -132,8 +151,10 @@ export function useTimeTracking() {
       setIsLoading(true);
       setLastError(null);
 
-      console.log('Attempting to clock in...');
-      
+      // Validate authentication
+      const session = await validateAuth();
+      console.log('Clock in - Authentication validated for user:', user.id);
+
       const { data, error } = await supabase
         .from('time_entries')
         .insert([{
@@ -180,14 +201,14 @@ export function useTimeTracking() {
       console.error('Error clocking in:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to clock in';
       setLastError(errorMessage);
-      toast.error('Failed to clock in. Please try again.');
+      toast.error(`Failed to clock in: ${errorMessage}`);
       setCurrentEntry({ isClocked: false });
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Enhanced clock out with database timestamp to fix timezone issue
+  // Enhanced clock out with comprehensive authentication and error handling
   const clockOut = async (notes?: string) => {
     if (!currentEntry?.id) {
       toast.error('No active session found');
@@ -209,17 +230,29 @@ export function useTimeTracking() {
       
       console.log('Attempting to clock out session:', sessionId);
       
+      // Critical: Validate authentication first
+      const session = await validateAuth();
+      console.log('Clock out - Authentication validated for user:', user!.id);
+      console.log('Session details:', {
+        userId: session.user.id,
+        sessionExists: !!session,
+        sessionValid: !session.expires_at || new Date(session.expires_at) > new Date()
+      });
+      
       // Verify the session exists and is still active
+      console.log('Verifying session exists in database...');
       const { data: checkData, error: checkError } = await supabase
         .from('time_entries')
-        .select('id, clock_out')
+        .select('id, clock_out, user_id')
         .eq('id', sessionId)
         .single();
 
       if (checkError) {
         console.error('Session verification failed:', checkError);
-        throw new Error('Session not found or already ended');
+        throw new Error(`Session not found: ${checkError.message}`);
       }
+
+      console.log('Session verification result:', checkData);
 
       if (checkData.clock_out) {
         console.warn('Session already clocked out');
@@ -229,18 +262,31 @@ export function useTimeTracking() {
         return;
       }
 
-      // Use database's NOW() function to avoid timezone conflicts
-      const { error } = await supabase
+      // Ensure the session belongs to the current user
+      if (checkData.user_id !== user!.id) {
+        console.error('Session user mismatch:', {
+          sessionUserId: checkData.user_id,
+          currentUserId: user!.id
+        });
+        throw new Error('Session does not belong to current user');
+      }
+
+      console.log('Updating session with clock_out time...');
+      
+      // Use current timestamp for clock out
+      const clockOutTime = new Date().toISOString();
+      const { error: updateError } = await supabase
         .from('time_entries')
         .update({ 
-          clock_out: new Date().toISOString(), // This will be converted to database time
+          clock_out: clockOutTime,
           notes: notes || null 
         })
-        .eq('id', sessionId);
+        .eq('id', sessionId)
+        .eq('user_id', user!.id); // Double verification for security
 
-      if (error) {
-        console.error('Clock out update failed:', error);
-        throw error;
+      if (updateError) {
+        console.error('Clock out update failed:', updateError);
+        throw new Error(`Update failed: ${updateError.message}`);
       }
 
       console.log('Clock out successful for session:', sessionId);
@@ -259,7 +305,16 @@ export function useTimeTracking() {
       console.error('Error in clockOut:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to clock out';
       setLastError(errorMessage);
-      toast.error(`Failed to clock out: ${errorMessage}`);
+      
+      // Show specific error messages based on error type
+      if (errorMessage.includes('Session expired')) {
+        toast.error('Your session has expired. Please log in again.');
+      } else if (errorMessage.includes('Session not found')) {
+        toast.error('Time tracking session not found. Refreshing data...');
+        setTimeout(() => fetchTimeEntries(false), 1000);
+      } else {
+        toast.error(`Failed to clock out: ${errorMessage}`);
+      }
       
       // Don't revert optimistic update on error - let user retry
       // But refresh to get current state
