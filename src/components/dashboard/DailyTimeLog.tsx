@@ -1,8 +1,9 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import { 
   Clock, 
   Coffee, 
@@ -23,58 +24,14 @@ interface TimeLogEntry {
 }
 
 const DailyTimeLog: React.FC = () => {
-  const { timeEntries, currentEntry } = useTimeTracking();
+  const { timeEntries, currentEntry, isLoading } = useTimeTracking();
   const [todaysEntries, setTodaysEntries] = useState<TimeLogEntry[]>([]);
   const [totalMinutes, setTotalMinutes] = useState(0);
+  const mountedRef = useRef(true);
+  const processingRef = useRef(false);
 
-  useEffect(() => {
-    // Filter today's entries and convert to log format
-    const today = new Date();
-    const todaysTimeEntries = timeEntries.filter(entry => 
-      isToday(entry.clock_in)
-    );
-
-    const logEntries: TimeLogEntry[] = [];
-    let totalWorkMinutes = 0;
-
-    todaysTimeEntries.forEach(entry => {
-      // Clock in entry
-      logEntries.push({
-        id: `${entry.id}-in`,
-        type: 'clock_in',
-        time: entry.clock_in,
-        notes: entry.notes || undefined
-      });
-
-      // Clock out entry (if exists)
-      if (entry.clock_out) {
-        const duration = differenceInMinutes(entry.clock_out, entry.clock_in);
-        const isBreak = entry.notes?.toLowerCase().includes('break') || 
-                       entry.notes?.toLowerCase().includes('lunch') ||
-                       entry.notes?.toLowerCase().includes('coffee');
-        
-        logEntries.push({
-          id: `${entry.id}-out`,
-          type: 'clock_out',
-          time: entry.clock_out,
-          notes: entry.notes || undefined,
-          duration
-        });
-
-        if (!isBreak) {
-          totalWorkMinutes += duration;
-        }
-      }
-    });
-
-    // Sort by time
-    logEntries.sort((a, b) => a.time.getTime() - b.time.getTime());
-    
-    setTodaysEntries(logEntries);
-    setTotalMinutes(totalWorkMinutes);
-  }, [timeEntries]);
-
-  const getEntryIcon = (type: string, notes?: string) => {
+  // Memoized helper functions
+  const getEntryIcon = useCallback((type: string, notes?: string) => {
     switch (type) {
       case 'clock_in':
         return <PlayCircle className="h-4 w-4 text-green-600" />;
@@ -90,9 +47,9 @@ const DailyTimeLog: React.FC = () => {
       default:
         return <Clock className="h-4 w-4 text-gray-600" />;
     }
-  };
+  }, []);
 
-  const getEntryLabel = (type: string, notes?: string) => {
+  const getEntryLabel = useCallback((type: string, notes?: string) => {
     switch (type) {
       case 'clock_in':
         return 'Clocked In';
@@ -108,22 +65,137 @@ const DailyTimeLog: React.FC = () => {
       default:
         return 'Unknown';
     }
-  };
+  }, []);
 
-  const formatDuration = (minutes: number) => {
+  const formatDuration = useCallback((minutes: number) => {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     if (hours > 0) {
       return `${hours}h ${mins}m`;
     }
     return `${mins}m`;
-  };
+  }, []);
 
-  const formatTotalTime = (minutes: number) => {
+  const formatTotalTime = useCallback((minutes: number) => {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
-  };
+  }, []);
+
+  // Memoized entries processing
+  const processedData = useMemo(() => {
+    if (!timeEntries || timeEntries.length === 0) {
+      return { entries: [], totalMinutes: 0 };
+    }
+
+    try {
+      const today = new Date();
+      const todaysTimeEntries = timeEntries.filter(entry => 
+        entry.clock_in && isToday(entry.clock_in)
+      );
+
+      const logEntries: TimeLogEntry[] = [];
+      let totalWorkMinutes = 0;
+
+      todaysTimeEntries.forEach(entry => {
+        if (!entry.clock_in) return;
+
+        // Clock in entry
+        logEntries.push({
+          id: `${entry.id}-in`,
+          type: 'clock_in',
+          time: entry.clock_in,
+          notes: entry.notes || undefined
+        });
+
+        // Clock out entry (if exists)
+        if (entry.clock_out) {
+          const duration = differenceInMinutes(entry.clock_out, entry.clock_in);
+          const isBreak = entry.notes?.toLowerCase().includes('break') || 
+                         entry.notes?.toLowerCase().includes('lunch') ||
+                         entry.notes?.toLowerCase().includes('coffee');
+          
+          logEntries.push({
+            id: `${entry.id}-out`,
+            type: 'clock_out',
+            time: entry.clock_out,
+            notes: entry.notes || undefined,
+            duration
+          });
+
+          if (!isBreak && duration > 0) {
+            totalWorkMinutes += duration;
+          }
+        }
+      });
+
+      // Sort by time
+      logEntries.sort((a, b) => a.time.getTime() - b.time.getTime());
+      
+      return { entries: logEntries, totalMinutes: totalWorkMinutes };
+    } catch (error) {
+      console.error('Error processing time entries:', error);
+      return { entries: [], totalMinutes: 0 };
+    }
+  }, [timeEntries]);
+
+  // Effect with proper cleanup
+  useEffect(() => {
+    if (!mountedRef.current || processingRef.current) {
+      return;
+    }
+
+    processingRef.current = true;
+
+    try {
+      const { entries, totalMinutes: total } = processedData;
+      
+      if (mountedRef.current) {
+        setTodaysEntries(entries);
+        setTotalMinutes(total);
+      }
+    } catch (error) {
+      console.error('Error updating time log state:', error);
+    } finally {
+      processingRef.current = false;
+    }
+  }, [processedData]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <Card className="w-full">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center justify-between text-lg">
+            <div className="flex items-center gap-2">
+              <Clock className="h-5 w-5 text-primary" />
+              Today's Time Log
+            </div>
+            <Skeleton className="h-8 w-16" />
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="flex items-center gap-3">
+              <Skeleton className="h-4 w-4 rounded-full" />
+              <div className="flex-1">
+                <Skeleton className="h-4 w-24 mb-1" />
+                <Skeleton className="h-3 w-16" />
+              </div>
+              <Skeleton className="h-6 w-12" />
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full">
@@ -172,7 +244,7 @@ const DailyTimeLog: React.FC = () => {
                       </div>
                       
                       <div className="text-right">
-                        {entry.duration && (
+                        {entry.duration && entry.duration > 0 && (
                           <Badge variant="secondary" className="text-xs">
                             {formatDuration(entry.duration)}
                           </Badge>
@@ -180,7 +252,10 @@ const DailyTimeLog: React.FC = () => {
                       </div>
                     </div>
                     
-                    {entry.notes && !entry.notes.toLowerCase().includes('break') && !entry.notes.toLowerCase().includes('lunch') && (
+                    {entry.notes && 
+                     !entry.notes.toLowerCase().includes('break') && 
+                     !entry.notes.toLowerCase().includes('lunch') && 
+                     !entry.notes.toLowerCase().includes('coffee') && (
                       <div className="text-xs text-muted-foreground mt-1 truncate">
                         {entry.notes}
                       </div>
