@@ -23,13 +23,22 @@ const ModernRoomList: React.FC<ModernRoomListProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const { rooms, loading } = useRooms();
+  const { rooms, loading, createRoom } = useRooms();
   const { user } = useAuth();
 
   const filteredRooms = rooms.filter(room =>
     room.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     room.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleCreateRoom = async (name: string, description?: string, isPublic = false) => {
+    try {
+      await createRoom(name, description, isPublic);
+      setShowCreateDialog(false);
+    } catch (error) {
+      console.error('Failed to create room:', error);
+    }
+  };
 
   return (
     <Card className="h-full border-0 rounded-3xl bg-gradient-to-br from-card/50 via-card/80 to-card/50 backdrop-blur-sm shadow-lg">
@@ -130,7 +139,6 @@ const ModernRoomList: React.FC<ModernRoomListProps> = ({
                         <span>
                           {new Date(room.updated_at).toLocaleDateString()}
                         </span>
-                        {/* Placeholder for unread count - would need additional data */}
                         <div className="flex items-center gap-1">
                           <div className="w-2 h-2 rounded-full bg-green-500" />
                           <span>Active</span>
@@ -148,6 +156,7 @@ const ModernRoomList: React.FC<ModernRoomListProps> = ({
       <CreateRoomDialog
         open={showCreateDialog}
         onOpenChange={setShowCreateDialog}
+        onCreateRoom={handleCreateRoom}
       />
     </Card>
   );

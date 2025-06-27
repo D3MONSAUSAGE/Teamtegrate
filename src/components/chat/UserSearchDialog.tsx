@@ -13,7 +13,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Search, UserPlus, Check } from 'lucide-react';
+import { Search, UserPlus, Check, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import ChatMessageAvatar from './ChatMessageAvatar';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -42,18 +42,36 @@ const UserSearchDialog: React.FC<UserSearchDialogProps> = ({
   const [loading, setLoading] = useState(false);
   const { user: currentUser } = useAuth();
 
-  const { data: users = [], isLoading } = useQuery({
-    queryKey: ['organization-users', currentUser?.organizationId],
+  const { data: users = [], isLoading, error: usersError } = useQuery({
+    queryKey: ['organization-users', currentUser?.organizationId, searchTerm],
     queryFn: async () => {
-      if (!currentUser?.organizationId) return [];
+      if (!currentUser?.organizationId) {
+        console.log('UserSearchDialog: No organization ID available');
+        return [];
+      }
       
-      const { data, error } = await supabase
+      console.log('UserSearchDialog: Searching for users in org:', currentUser.organizationId);
+      console.log('UserSearchDialog: Search term:', searchTerm);
+      
+      let query = supabase
         .from('users')
         .select('id, name, email')
         .eq('organization_id', currentUser.organizationId)
         .neq('id', currentUser.id);
 
-      if (error) throw error;
+      // Add search filtering if there's a search term
+      if (searchTerm.trim()) {
+        query = query.or(`name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
+      }
+
+      const { data, error } = await query.limit(50);
+
+      if (error) {
+        console.error('UserSearchDialog: Error fetching users:', error);
+        throw error;
+      }
+      
+      console.log('UserSearchDialog: Found users:', data);
       return data as User[];
     },
     enabled: open && !!currentUser?.organizationId,
@@ -63,22 +81,25 @@ const UserSearchDialog: React.FC<UserSearchDialogProps> = ({
   const { data: existingMembers = [] } = useQuery({
     queryKey: ['room-members-ids', roomId],
     queryFn: async () => {
+      console.log('UserSearchDialog: Fetching existing members for room:', roomId);
+      
       const { data, error } = await supabase
         .from('chat_participants')
         .select('user_id')
         .eq('room_id', roomId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('UserSearchDialog: Error fetching room members:', error);
+        throw error;
+      }
+      
+      console.log('UserSearchDialog: Existing members:', data);
       return data.map(m => m.user_id);
     },
     enabled: open,
   });
 
-  const filteredUsers = users.filter(user =>
-    !existingMembers.includes(user.id) &&
-    (user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-     user.email.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const filteredUsers = users.filter(user => !existingMembers.includes(user.id));
 
   const handleUserToggle = (userId: string) => {
     setSelectedUsers(prev =>
@@ -89,10 +110,14 @@ const UserSearchDialog: React.FC<UserSearchDialogProps> = ({
   };
 
   const handleAddUsers = async () => {
-    if (selectedUsers.length === 0) return;
+    if (selectedUsers.length === 0) {
+      toast.error('Please select at least one user to add');
+      return;
+    }
 
     try {
       setLoading(true);
+      console.log('UserSearchDialog: Adding users to room:', { roomId, selectedUsers });
       
       const participantsToAdd = selectedUsers.map(userId => ({
         room_id: roomId,
@@ -100,24 +125,46 @@ const UserSearchDialog: React.FC<UserSearchDialogProps> = ({
         role: 'member' as const
       }));
 
+      console.log('UserSearchDialog: Participants to add:', participantsToAdd);
+
       const { error } = await supabase
         .from('chat_participants')
         .insert(participantsToAdd);
 
-      if (error) throw error;
+      if (error) {
+        console.error('UserSearchDialog: Error adding participants:', error);
+        toast.error(`Failed to add users: ${error.message}`);
+        throw error;
+      }
 
+      console.log('UserSearchDialog: Successfully added participants');
       toast.success(`Added ${selectedUsers.length} member(s) to the room`);
       setSelectedUsers([]);
       setSearchTerm('');
       onOpenChange(false);
       onUsersAdded?.();
-    } catch (error) {
-      console.error('Error adding users:', error);
-      toast.error('Failed to add users to room');
+    } catch (error: any) {
+      console.error('UserSearchDialog: Failed to add users:', error);
+      toast.error(`Failed to add users to room: ${error.message || 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
   };
+
+  // Debug info
+  React.useEffect(() => {
+    if (open) {
+      console.log('UserSearchDialog: Dialog opened with state:', {
+        currentUser: currentUser?.email,
+        organizationId: currentUser?.organizationId,
+        roomId,
+        searchTerm,
+        usersFound: users.length,
+        existingMembers: existingMembers.length,
+        filteredUsers: filteredUsers.length
+      });
+    }
+  }, [open, currentUser, roomId, searchTerm, users.length, existingMembers.length, filteredUsers.length]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -141,6 +188,21 @@ const UserSearchDialog: React.FC<UserSearchDialogProps> = ({
             />
           </div>
 
+          {/* Debug info for troubleshooting */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="text-xs text-muted-foreground bg-muted/30 p-2 rounded">
+              Debug: Org ID: {currentUser?.organizationId}, Users: {users.length}, Existing: {existingMembers.length}, Filtered: {filteredUsers.length}
+            </div>
+          )}
+
+          {/* Error display */}
+          {usersError && (
+            <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 p-2 rounded">
+              <AlertCircle className="h-4 w-4" />
+              <span>Error loading users: {usersError.message}</span>
+            </div>
+          )}
+
           {/* Selected Count */}
           {selectedUsers.length > 0 && (
             <div className="text-sm text-muted-foreground">
@@ -157,8 +219,19 @@ const UserSearchDialog: React.FC<UserSearchDialogProps> = ({
             ) : filteredUsers.length === 0 ? (
               <div className="text-center py-4">
                 <p className="text-sm text-muted-foreground">
-                  {searchTerm ? 'No users found' : 'All organization members are already in this room'}
+                  {searchTerm ? (
+                    <>No users found matching "{searchTerm}"</>
+                  ) : users.length === 0 ? (
+                    'No organization members found'
+                  ) : (
+                    'All organization members are already in this room'
+                  )}
                 </p>
+                {searchTerm && users.length > 0 && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Try searching for part of the name or email
+                  </p>
+                )}
               </div>
             ) : (
               <div className="p-2 space-y-1">
