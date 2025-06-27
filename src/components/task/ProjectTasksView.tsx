@@ -18,12 +18,12 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
   console.log('ProjectTasksView: Rendering with projectId:', projectId);
 
   const [isEditProjectOpen, setIsEditProjectOpen] = useState(false);
-  const { setProjects } = useProjects();
+  const { setProjects, refetch: refetchProjects } = useProjects();
 
   // Add error boundary for the hook
   let hookData;
   try {
-    hookData = useProjectTasksView(projectId || null);
+    hookData = useProjectTasksView(projectId || null, refetchProjects);
   } catch (error) {
     console.error('ProjectTasksView: Error in useProjectTasksView hook:', error);
     return (

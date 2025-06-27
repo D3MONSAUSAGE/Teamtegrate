@@ -6,7 +6,7 @@ import { useProjectTasks } from '@/hooks/useProjectTasks';
 import { useProjectTeamMembers } from '@/hooks/useProjectTeamMembers';
 import { useProjectTasksActions } from './hooks/useProjectTasksActions';
 
-export function useProjectTasksView(projectId: string | null) {
+export function useProjectTasksView(projectId: string | null, refetchProjects?: () => Promise<void>) {
   console.log('useProjectTasksView: Hook called with projectId:', projectId);
   
   // Project access with proper loading handling
@@ -32,9 +32,10 @@ export function useProjectTasksView(projectId: string | null) {
   const onDataRefresh = useCallback(async () => {
     await Promise.all([
       refetchTasks(),
-      refetchTeamMembers()
+      refetchTeamMembers(),
+      refetchProjects?.()
     ]);
-  }, [refetchTasks, refetchTeamMembers]);
+  }, [refetchTasks, refetchTeamMembers, refetchProjects]);
 
   // Use the actions hook to get properly implemented handlers
   const {
