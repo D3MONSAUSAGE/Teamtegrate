@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +17,6 @@ const EnhancedInviteCodeGenerator: React.FC = () => {
   const [inviteCode, setInviteCode] = useState<string>('');
   const [generating, setGenerating] = useState(false);
   const [expiryDays, setExpiryDays] = useState<string>('7');
-  const [maxUses, setMaxUses] = useState<string>('');
   const [selectedRole, setSelectedRole] = useState<UserRole>('user');
   const [selectedTeam, setSelectedTeam] = useState<string>('none');
   const [connectionError, setConnectionError] = useState<string>('');
@@ -116,12 +114,12 @@ const EnhancedInviteCodeGenerator: React.FC = () => {
         selectedRole,
         selectedTeam !== 'none' ? selectedTeam : undefined,
         parseInt(expiryDays),
-        maxUses ? parseInt(maxUses) : undefined
+        1 // Always single-use
       );
 
       if (result.success && result.inviteCode) {
         setInviteCode(result.inviteCode);
-        toast.success('Enhanced invite code generated successfully!');
+        toast.success('Single-use invite code generated successfully!');
       } else {
         toast.error(result.error || 'Failed to generate invite code');
       }
@@ -168,12 +166,12 @@ const EnhancedInviteCodeGenerator: React.FC = () => {
             <UserPlus className="h-5 w-5 text-primary" />
           </div>
           <span className="bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
-            Generate Enhanced Invite Code
+            Generate Single-Use Invite Code
           </span>
           <Sparkles className="h-4 w-4 text-accent animate-pulse" />
         </CardTitle>
         <CardDescription>
-          Create invite codes with specific roles and optional team assignments for new users
+          Create single-use invite codes with specific roles and optional team assignments for new users
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -240,36 +238,21 @@ const EnhancedInviteCodeGenerator: React.FC = () => {
           </div>
         </div>
 
-        {/* Expiry and Usage Settings */}
-        <div className="grid grid-cols-2 gap-6">
-          <div className="space-y-3">
-            <Label htmlFor="expiryDays" className="text-sm font-medium">Expires in (days)</Label>
-            <Select value={expiryDays} onValueChange={setExpiryDays}>
-              <SelectTrigger className="h-12 border-2 border-border/50 hover:border-primary/30 transition-colors">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1">1 day</SelectItem>
-                <SelectItem value="3">3 days</SelectItem>
-                <SelectItem value="7">7 days</SelectItem>
-                <SelectItem value="14">14 days</SelectItem>
-                <SelectItem value="30">30 days</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-3">
-            <Label htmlFor="maxUses" className="text-sm font-medium">Max uses (optional)</Label>
-            <Input
-              id="maxUses"
-              type="number"
-              placeholder="Unlimited"
-              value={maxUses}
-              onChange={(e) => setMaxUses(e.target.value)}
-              min="1"
-              className="h-12 border-2 border-border/50 hover:border-primary/30 focus:border-primary transition-colors"
-            />
-          </div>
+        {/* Expiry Settings */}
+        <div className="space-y-3">
+          <Label htmlFor="expiryDays" className="text-sm font-medium">Expires in (days)</Label>
+          <Select value={expiryDays} onValueChange={setExpiryDays}>
+            <SelectTrigger className="h-12 border-2 border-border/50 hover:border-primary/30 transition-colors">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="1">1 day</SelectItem>
+              <SelectItem value="3">3 days</SelectItem>
+              <SelectItem value="7">7 days</SelectItem>
+              <SelectItem value="14">14 days</SelectItem>
+              <SelectItem value="30">30 days</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Generate Button */}
@@ -281,12 +264,12 @@ const EnhancedInviteCodeGenerator: React.FC = () => {
           {generating ? (
             <div className="flex items-center gap-2">
               <Loader2 className="h-4 w-4 animate-spin" />
-              Generating Enhanced Code...
+              Generating Single-Use Code...
             </div>
           ) : (
             <div className="flex items-center gap-2">
               <UserPlus className="h-4 w-4" />
-              Generate Enhanced Invite Code
+              Generate Single-Use Invite Code
             </div>
           )}
         </Button>
@@ -296,7 +279,7 @@ const EnhancedInviteCodeGenerator: React.FC = () => {
           <div className="space-y-4 p-6 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 rounded-xl border border-green-200 dark:border-green-800">
             <div className="flex items-center gap-2 text-green-700 dark:text-green-400">
               <CheckCircle className="h-5 w-5" />
-              <span className="font-semibold">Invite Code Generated Successfully!</span>
+              <span className="font-semibold">Single-Use Invite Code Generated Successfully!</span>
             </div>
             
             <div className="space-y-3">
@@ -328,7 +311,7 @@ const EnhancedInviteCodeGenerator: React.FC = () => {
                 </div>
               )}
               <div className="flex items-center gap-2">
-                <strong>Valid for:</strong> {expiryDays} days{maxUses ? ` with maximum ${maxUses} uses` : ' with unlimited uses'}
+                <strong>Valid for:</strong> {expiryDays} days (single-use only)
               </div>
             </div>
           </div>
