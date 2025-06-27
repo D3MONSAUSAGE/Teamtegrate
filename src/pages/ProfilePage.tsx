@@ -3,11 +3,12 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProjects } from '@/hooks/useProjects';
-import ProfileHeader from '@/components/profile/ProfileHeader';
-import ProfileStats from '@/components/profile/ProfileStats';
-import ProfileActivity from '@/components/profile/ProfileActivity';
+import ProfessionalProfileHeader from '@/components/profile/ProfessionalProfileHeader';
+import ProfessionalProfileStats from '@/components/profile/ProfessionalProfileStats';
+import ProfessionalActivity from '@/components/profile/ProfessionalActivity';
 import ProfileTeamOverview from '@/components/profile/ProfileTeamOverview';
-import ProfileQuickActions from '@/components/profile/ProfileQuickActions';
+import ProfessionalQuickActions from '@/components/profile/ProfessionalQuickActions';
+import SkillsCompetenciesSection from '@/components/profile/SkillsCompetenciesSection';
 import AccountSecuritySection from '@/components/profile/AccountSecuritySection';
 
 const ProfilePage = () => {
@@ -29,25 +30,34 @@ const ProfilePage = () => {
   }
 
   return (
-    <div className="p-3 sm:p-6 max-w-7xl mx-auto">
-      <div className="space-y-6">
-        {/* Profile Header with consolidated profile info */}
-        <ProfileHeader />
+    <div className="p-3 sm:p-6 max-w-7xl mx-auto bg-gray-50 dark:bg-background min-h-screen">
+      <div className="space-y-8">
+        {/* Professional Profile Header */}
+        <ProfessionalProfileHeader />
         
-        {/* Statistics Dashboard */}
-        <ProfileStats />
+        {/* Performance Dashboard */}
+        <ProfessionalProfileStats />
         
-        {/* Quick Actions Panel */}
-        <ProfileQuickActions />
+        {/* Skills & Competencies */}
+        <div className="space-y-6">
+          <h2 className="text-xl font-semibold text-foreground">Skills & Development</h2>
+          <SkillsCompetenciesSection />
+        </div>
         
-        {/* Account Security Section - moved from Settings */}
-        <AccountSecuritySection />
+        {/* Professional Actions */}
+        <ProfessionalQuickActions />
         
         {/* Team & Project Overview */}
         <ProfileTeamOverview projects={projects} user={user} />
         
-        {/* Recent Activity Feed */}
-        <ProfileActivity />
+        {/* Professional Activity Feed */}
+        <ProfessionalActivity />
+        
+        {/* Account Security Section */}
+        <div className="space-y-6">
+          <h2 className="text-xl font-semibold text-foreground">Security & Privacy</h2>
+          <AccountSecuritySection />
+        </div>
       </div>
     </div>
   );
