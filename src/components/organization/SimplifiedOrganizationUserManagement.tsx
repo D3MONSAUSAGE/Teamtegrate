@@ -2,25 +2,22 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { RefreshCw, UserPlus, Users, Shield, Crown, AlertTriangle, Database } from 'lucide-react';
+import { RefreshCw, UserPlus, Users, AlertTriangle, Database } from 'lucide-react';
 import { useOrganizationTeamMembers } from '@/hooks/useOrganizationTeamMembers';
 import { useOrganizations } from '@/hooks/useOrganizations';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDataSync } from '@/hooks/useDataSync';
-import UserCard from './user-management/UserCard';
-import UserManagementFilters from './user-management/UserManagementFilters';
+import PaginatedUserList from './user-management/PaginatedUserList';
 import OrganizationSelector from './OrganizationSelector';
 import CreateUserDialog from './CreateUserDialog';
 import { toast } from '@/components/ui/sonner';
 import { UserRole } from '@/types';
+import { supabase } from '@/integrations/supabase/client';
 
 const SimplifiedOrganizationUserManagement = () => {
   const { user: currentUser } = useAuth();
   const [selectedOrganizationId, setSelectedOrganizationId] = useState<string>('');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedRole, setSelectedRole] = useState<UserRole | 'all'>('all');
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
   const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
 
@@ -41,22 +38,6 @@ const SimplifiedOrganizationUserManagement = () => {
     }
   }, [currentUser, selectedOrganizationId]);
 
-  // Filter users based on search and role
-  const filteredUsers = users.filter(user => {
-    const matchesSearch = user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRole = selectedRole === 'all' || user.role === selectedRole;
-    return matchesSearch && matchesRole;
-  });
-
-  // Role counts for badges
-  const roleCounts = {
-    superadmin: users.filter(u => u.role === 'superadmin').length,
-    admin: users.filter(u => u.role === 'admin').length,
-    manager: users.filter(u => u.role === 'manager').length,
-    user: users.filter(u => u.role === 'user').length,
-  };
-
   const handleRefresh = async () => {
     try {
       await refetch();
@@ -73,11 +54,54 @@ const SimplifiedOrganizationUserManagement = () => {
   const handleRoleChange = async (userId: string, newRole: UserRole) => {
     setUpdatingUserId(userId);
     try {
-      // Role change logic would go here
-      toast.success('Role updated successfully');
+      console.log('Calling update-user-role function with:', {
+        targetUserId: userId,
+        newRole: newRole
+      });
+
+      const { data, error } = await supabase.functions.invoke('update-user-role', {
+        body: {
+          targetUserId: userId,
+          newRole: newRole
+        }
+      });
+
+      console.log('Edge function response:', { data, error });
+
+      if (error) {
+        console.error('Edge function error:', error);
+        
+        let userMessage = 'Failed to update role';
+        if (error.message?.includes('Failed to fetch')) {
+          userMessage = 'Connection error. Please check your internet connection and try again.';
+        } else if (error.message?.includes('Unauthorized')) {
+          userMessage = 'You do not have permission to change this user\'s role.';
+        } else if (error.message?.includes('not found')) {
+          userMessage = 'User not found. They may have been deleted.';
+        } else if (error.message) {
+          userMessage = error.message;
+        }
+        
+        throw new Error(userMessage);
+      }
+
+      if (data?.error) {
+        console.error('Edge function returned error:', data.error);
+        throw new Error(data.error);
+      }
+
+      if (!data?.success) {
+        console.error('Edge function did not return success');
+        throw new Error('Role update failed - please try again');
+      }
+
+      console.log('Role update successful:', data);
+      toast.success(data?.message || `Role updated to ${newRole} successfully`);
       await refetch();
     } catch (error) {
-      toast.error('Failed to update role');
+      console.error('Error updating role:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update role';
+      toast.error(errorMessage);
     } finally {
       setUpdatingUserId(null);
     }
@@ -86,11 +110,13 @@ const SimplifiedOrganizationUserManagement = () => {
   const handleEditUser = (user: any) => {
     // Edit user logic would go here
     console.log('Edit user:', user);
+    toast.info('Edit user functionality coming soon');
   };
 
   const handleDeleteUser = (user: any) => {
     // Delete user logic would go here
     console.log('Delete user:', user);
+    toast.info('Delete user functionality coming soon');
   };
 
   const handleUserCreated = async () => {
@@ -100,9 +126,6 @@ const SimplifiedOrganizationUserManagement = () => {
 
   const handleOrganizationChange = (orgId: string) => {
     setSelectedOrganizationId(orgId);
-    // Reset filters when changing organization
-    setSearchTerm('');
-    setSelectedRole('all');
   };
 
   if (isLoading && !users.length) {
@@ -209,26 +232,6 @@ const SimplifiedOrganizationUserManagement = () => {
             />
           )}
 
-          {/* Role Summary Badges */}
-          <div className="flex flex-wrap gap-2">
-            <Badge variant="outline" className="flex items-center gap-1">
-              <Crown className="h-3 w-3 text-yellow-500" />
-              Super Admins: {roleCounts.superadmin}
-            </Badge>
-            <Badge variant="outline" className="flex items-center gap-1">
-              <Shield className="h-3 w-3 text-blue-500" />
-              Admins: {roleCounts.admin}
-            </Badge>
-            <Badge variant="outline" className="flex items-center gap-1">
-              <Users className="h-3 w-3 text-green-500" />
-              Managers: {roleCounts.manager}
-            </Badge>
-            <Badge variant="outline" className="flex items-center gap-1">
-              <Users className="h-3 w-3 text-gray-500" />
-              Users: {roleCounts.user}
-            </Badge>
-          </div>
-
           {/* Current Organization Info */}
           {selectedOrganizationId && (
             <Alert>
@@ -239,48 +242,14 @@ const SimplifiedOrganizationUserManagement = () => {
             </Alert>
           )}
 
-          {/* Filters */}
-          <UserManagementFilters
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
-            selectedRole={selectedRole}
-            setSelectedRole={setSelectedRole}
-            onCreateUser={() => setIsCreateUserOpen(true)}
+          {/* Paginated User List */}
+          <PaginatedUserList
+            users={users}
+            updatingUserId={updatingUserId}
+            onRoleChange={handleRoleChange}
+            onEditUser={handleEditUser}
+            onDeleteUser={handleDeleteUser}
           />
-
-          {/* User List */}
-          {filteredUsers.length === 0 ? (
-            <div className="text-center py-8">
-              <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">
-                {searchTerm || selectedRole !== 'all' 
-                  ? 'No users match your filters' 
-                  : 'No team members found'
-                }
-              </p>
-              {!searchTerm && selectedRole === 'all' && currentUser?.role === 'superadmin' && (
-                <div className="mt-4">
-                  <Button onClick={handleDataSyncCheck} variant="outline" size="sm">
-                    <Database className="h-4 w-4 mr-2" />
-                    Check for Missing Users
-                  </Button>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="grid gap-4">
-              {filteredUsers.map((user) => (
-                <UserCard 
-                  key={user.id} 
-                  user={user}
-                  updatingUserId={updatingUserId}
-                  onRoleChange={handleRoleChange}
-                  onEditUser={handleEditUser}
-                  onDeleteUser={handleDeleteUser}
-                />
-              ))}
-            </div>
-          )}
         </CardContent>
       </Card>
 

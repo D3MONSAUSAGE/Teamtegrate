@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -57,37 +56,59 @@ const WorkingRoleManagement: React.FC<WorkingRoleManagementProps> = ({
   const currentTargetRole = targetUser.role as UserRole;
   const userName = targetUser.name || targetUser.email.split('@')[0];
 
-  // Enhanced role management permissions
+  // Enhanced role management permissions - Fixed logic
   const canManageThisUser = currentUser && (() => {
+    console.log('Checking permissions:', {
+      currentUserRole: currentUser.role,
+      targetUserRole: currentTargetRole,
+      targetUserId: targetUser.id,
+      currentUserId: currentUser.id
+    });
+
+    // Users cannot manage themselves
+    if (targetUser.id === currentUser.id) {
+      console.log('Cannot manage self');
+      return false;
+    }
+    
     // Superadmin can manage everyone except themselves
-    if (currentUser.role === 'superadmin' && targetUser.id !== currentUser.id) {
+    if (currentUser.role === 'superadmin') {
+      console.log('Superadmin can manage this user');
       return true;
     }
     
     // Admin can manage managers and users (but not superadmins or other admins)
-    if (currentUser.role === 'admin' && 
-        ['manager', 'user'].includes(currentTargetRole) && 
-        targetUser.id !== currentUser.id) {
+    if (currentUser.role === 'admin' && ['manager', 'user'].includes(currentTargetRole)) {
+      console.log('Admin can manage this user');
       return true;
     }
     
+    console.log('No permission to manage this user');
     return false;
   })();
 
   const getAvailableRoles = (): UserRole[] => {
-    if (!currentUser || !canManageThisUser) return [];
+    if (!currentUser || !canManageThisUser) {
+      console.log('No available roles - no permission');
+      return [];
+    }
     
     const roles: UserRole[] = [];
     
     if (currentUser.role === 'superadmin') {
-      // Superadmin can assign any role except to themselves
+      // Superadmin can assign any role
       roles.push('user', 'manager', 'admin', 'superadmin');
+      console.log('Superadmin available roles:', roles);
     } else if (currentUser.role === 'admin') {
       // Admin can only assign user and manager roles
       roles.push('user', 'manager');
+      console.log('Admin available roles:', roles);
     }
     
-    return roles.filter(role => role !== currentTargetRole);
+    // Filter out current role
+    const filteredRoles = roles.filter(role => role !== currentTargetRole);
+    console.log('Final available roles:', filteredRoles);
+    return filteredRoles;
   };
 
   const getRoleIcon = (role: UserRole) => {
@@ -109,25 +130,31 @@ const WorkingRoleManagement: React.FC<WorkingRoleManagementProps> = ({
   };
 
   const handleRoleSelect = async (role: UserRole) => {
+    console.log('Role selected:', role);
     setNewRole(role);
     
     // Check if this requires superadmin transfer
     if (role === 'superadmin' && currentTargetRole !== 'superadmin') {
       try {
+        console.log('Checking if superadmin transfer is required');
         const { data, error } = await supabase.rpc('can_change_user_role', {
           manager_user_id: currentUser?.id,
           target_user_id: targetUser.id,
           new_role: role
         });
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error checking role change requirements:', error);
+          throw error;
+        }
 
-        // Properly type cast the response using unknown as intermediate
+        console.log('Role change validation result:', data);
         const validation = data as unknown as RoleChangeValidation;
 
         if (validation?.requires_transfer) {
           setRequiresTransfer(true);
           setCurrentSuperadminName(validation.current_superadmin_name || 'Current Superadmin');
+          console.log('Transfer required, current superadmin:', validation.current_superadmin_name);
         }
       } catch (error) {
         console.error('Error checking role change requirements:', error);
@@ -140,13 +167,17 @@ const WorkingRoleManagement: React.FC<WorkingRoleManagementProps> = ({
   };
 
   const handleRoleChange = async () => {
-    if (!newRole || !currentUser || !canManageThisUser) return;
+    if (!newRole || !currentUser || !canManageThisUser) {
+      console.log('Cannot proceed with role change:', { newRole, currentUser: !!currentUser, canManage: canManageThisUser });
+      return;
+    }
 
     setIsChangingRole(true);
     try {
-      console.log('Calling update-user-role function with:', {
+      console.log('Starting role change process:', {
         targetUserId: targetUser.id,
-        newRole: newRole
+        newRole: newRole,
+        requiresTransfer
       });
 
       const { data, error } = await supabase.functions.invoke('update-user-role', {
@@ -215,6 +246,7 @@ const WorkingRoleManagement: React.FC<WorkingRoleManagementProps> = ({
   };
 
   if (!canManageThisUser) {
+    console.log('Rendering read-only role badge');
     return (
       <div className="flex items-center gap-2">
         <Badge variant="outline" className={getRoleColor(currentTargetRole)}>
@@ -228,6 +260,7 @@ const WorkingRoleManagement: React.FC<WorkingRoleManagementProps> = ({
   const availableRoles = getAvailableRoles();
 
   if (availableRoles.length === 0) {
+    console.log('No available roles to change to');
     return (
       <div className="flex items-center gap-2">
         <Badge variant="outline" className={getRoleColor(currentTargetRole)}>
@@ -237,6 +270,8 @@ const WorkingRoleManagement: React.FC<WorkingRoleManagementProps> = ({
       </div>
     );
   }
+
+  console.log('Rendering role management interface with', availableRoles.length, 'available roles');
 
   return (
     <>
