@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Project, Task, TaskStatus, User } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -164,7 +163,7 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
             className="flex items-center gap-2"
           >
             <MessageSquare className="h-4 w-4" />
-            Updates ({project.comments?.length || 0})
+            Updates
           </Button>
           <Button
             variant="outline"
@@ -195,7 +194,6 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
       <div className="px-4 sm:px-6 lg:px-8">
         <ProjectLogSection 
           projectId={project.id}
-          projectComments={project.comments || []}
         />
       </div>
 
@@ -225,7 +223,6 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
         onOpenChange={setShowProjectLog}
         projectId={project.id}
         projectTitle={project.title}
-        projectComments={project.comments || []}
       />
     </div>
   );

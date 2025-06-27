@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Task, Project, DailyScore } from '@/types';
@@ -261,6 +260,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return;
     
     try {
+      const { addProjectComment } = await import('@/contexts/task/api/comments');
       const newComment = await addProjectComment(projectId, {
         userId: user.id,
         userName: user.name,
@@ -273,7 +273,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
           project.id === projectId 
             ? { 
                 ...project, 
-                comments: [...(project.comments || []), newComment]
+                comments: [newComment, ...(project.comments || [])]
               }
             : project
         )

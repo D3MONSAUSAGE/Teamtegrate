@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -107,27 +106,34 @@ export function useProjects() {
         return true;
       }) || [];
 
-      // Transform database projects to match Project type
-      const transformedProjects: Project[] = validatedProjects.map(dbProject => {
-        return {
-          id: dbProject.id,
-          title: dbProject.title || '',
-          description: dbProject.description || '',
-          startDate: dbProject.start_date || dbProject.created_at,
-          endDate: dbProject.end_date || dbProject.updated_at,
-          managerId: dbProject.manager_id || '',
-          createdAt: dbProject.created_at,
-          updatedAt: dbProject.updated_at,
-          teamMemberIds: dbProject.team_members || [],
-          budget: dbProject.budget || 0,
-          budgetSpent: dbProject.budget_spent || 0,
-          isCompleted: dbProject.is_completed || false,
-          status: dbProject.status as Project['status'] || 'To Do',
-          tasksCount: dbProject.tasks_count || 0,
-          tags: dbProject.tags || [],
-          organizationId: dbProject.organization_id
-        };
-      });
+      // Transform database projects to match Project type and fetch comments for each
+      const transformedProjects: Project[] = await Promise.all(
+        validatedProjects.map(async (dbProject) => {
+          // Fetch comments for this project
+          const { fetchProjectComments } = await import('@/contexts/task/api/comments');
+          const comments = await fetchProjectComments(dbProject.id);
+
+          return {
+            id: dbProject.id,
+            title: dbProject.title || '',
+            description: dbProject.description || '',
+            startDate: dbProject.start_date || dbProject.created_at,
+            endDate: dbProject.end_date || dbProject.updated_at,
+            managerId: dbProject.manager_id || '',
+            createdAt: dbProject.created_at,
+            updatedAt: dbProject.updated_at,
+            teamMemberIds: dbProject.team_members || [],
+            budget: dbProject.budget || 0,
+            budgetSpent: dbProject.budget_spent || 0,
+            isCompleted: dbProject.is_completed || false,
+            status: dbProject.status as Project['status'] || 'To Do',
+            tasksCount: dbProject.tasks_count || 0,
+            tags: dbProject.tags || [],
+            organizationId: dbProject.organization_id,
+            comments: comments
+          };
+        })
+      );
 
       setProjects(transformedProjects);
       setError(null);
@@ -221,7 +227,8 @@ export function useProjects() {
         status: data.status as Project['status'] || 'To Do',
         tasksCount: data.tasks_count || 0,
         tags: data.tags || [],
-        organizationId: data.organization_id
+        organizationId: data.organization_id,
+        comments: [] // New projects start with no comments
       };
       
       setProjects(prev => [transformedProject, ...prev]);

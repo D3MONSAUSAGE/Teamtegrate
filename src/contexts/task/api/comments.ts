@@ -1,62 +1,124 @@
 
 import { TaskComment } from '@/types';
+import { supabase } from '@/integrations/supabase/client';
 
 export const fetchTaskComments = async (taskId: string): Promise<TaskComment[]> => {
-  // Mock implementation - replace with actual API call
-  return [
-    {
-      id: '1',
-      userId: 'user1',
-      userName: 'John Doe', 
-      text: 'This is a sample comment',
-      createdAt: new Date(),
-      organizationId: 'org1'
+  try {
+    const { data, error } = await supabase
+      .from('comments')
+      .select('*')
+      .eq('task_id', taskId)
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching task comments:', error);
+      throw error;
     }
-  ];
+
+    return data?.map(comment => ({
+      id: comment.id,
+      userId: comment.user_id,
+      userName: comment.user_id, // We'll need to join with users table or store user name
+      text: comment.content,
+      createdAt: new Date(comment.created_at),
+      organizationId: comment.organization_id
+    })) || [];
+  } catch (error) {
+    console.error('Error in fetchTaskComments:', error);
+    return [];
+  }
 };
 
 export const fetchProjectComments = async (projectId: string): Promise<TaskComment[]> => {
-  // Mock implementation - replace with actual API call
-  return [
-    {
-      id: '1',
-      userId: 'user1',
-      userName: 'John Doe', 
-      text: 'Project kickoff meeting completed. All team members are aligned on objectives.',
-      createdAt: new Date(Date.now() - 86400000), // 1 day ago
-      organizationId: 'org1'
-    },
-    {
-      id: '2',
-      userId: 'user2',
-      userName: 'Jane Smith', 
-      text: 'Initial design phase is 50% complete. On track for milestone delivery.',
-      createdAt: new Date(Date.now() - 43200000), // 12 hours ago
-      organizationId: 'org1'
+  try {
+    const { data, error } = await supabase
+      .from('comments')
+      .select(`
+        *,
+        users!inner(name, email)
+      `)
+      .eq('project_id', projectId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching project comments:', error);
+      throw error;
     }
-  ];
+
+    return data?.map(comment => ({
+      id: comment.id,
+      userId: comment.user_id,
+      userName: comment.users?.name || comment.users?.email || 'Unknown User',
+      text: comment.content,
+      createdAt: new Date(comment.created_at),
+      organizationId: comment.organization_id
+    })) || [];
+  } catch (error) {
+    console.error('Error in fetchProjectComments:', error);
+    return [];
+  }
 };
 
 export const addTaskComment = async (taskId: string, comment: { userId: string; userName: string; text: string; organizationId: string }): Promise<TaskComment> => {
-  // Mock implementation - replace with actual API call
-  return {
-    id: Date.now().toString(),
-    userId: comment.userId,
-    userName: comment.userName,
-    text: comment.text,
-    createdAt: new Date(),
-    organizationId: comment.organizationId
-  };
+  try {
+    const { data, error } = await supabase
+      .from('comments')
+      .insert({
+        user_id: comment.userId,
+        task_id: taskId,
+        content: comment.text,
+        organization_id: comment.organizationId
+      })
+      .select('*')
+      .single();
+
+    if (error) {
+      console.error('Error adding task comment:', error);
+      throw error;
+    }
+
+    return {
+      id: data.id,
+      userId: data.user_id,
+      userName: comment.userName,
+      text: data.content,
+      createdAt: new Date(data.created_at),
+      organizationId: data.organization_id
+    };
+  } catch (error) {
+    console.error('Error in addTaskComment:', error);
+    throw error;
+  }
 };
 
 export const addProjectComment = async (projectId: string, comment: { userId: string; userName: string; text: string; organizationId: string }): Promise<TaskComment> => {
-  // Mock implementation - replace with actual API call
-  return {
-    id: Date.now().toString(),
-    userId: comment.userId,
-    userName: comment.userName,
-    text: comment.text,
-    createdAt: new Date(),
-    organizationId: comment.organizationId
-  };
+  try {
+    const { data, error } = await supabase
+      .from('comments')
+      .insert({
+        user_id: comment.userId,
+        project_id: projectId,
+        content: comment.text,
+        organization_id: comment.organizationId
+      })
+      .select('*')
+      .single();
+
+    if (error) {
+      console.error('Error adding project comment:', error);
+      throw error;
+    }
+
+    return {
+      id: data.id,
+      userId: data.user_id,
+      userName: comment.userName,
+      text: data.content,
+      createdAt: new Date(data.created_at),
+      organizationId: data.organization_id
+    };
+  } catch (error) {
+    console.error('Error in addProjectComment:', error);
+    throw error;
+  }
 };

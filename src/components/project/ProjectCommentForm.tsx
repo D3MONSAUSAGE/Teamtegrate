@@ -2,27 +2,37 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { useAuth } from '@/contexts/AuthContext';
-import { useTask } from '@/contexts/task';
 import { MessageCirclePlus } from 'lucide-react';
 
 interface ProjectCommentFormProps {
   projectId: string;
+  onCommentAdded?: (commentText: string) => Promise<void>;
 }
 
-const ProjectCommentForm: React.FC<ProjectCommentFormProps> = ({ projectId }) => {
+const ProjectCommentForm: React.FC<ProjectCommentFormProps> = ({ 
+  projectId, 
+  onCommentAdded 
+}) => {
   const [comment, setComment] = useState('');
-  const { user } = useAuth();
-  const { addCommentToProject } = useTask();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const handleSubmitComment = (e: React.FormEvent) => {
+  const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!comment.trim() || !user) return;
+    if (!comment.trim() || isSubmitting) return;
     
-    addCommentToProject(projectId, comment);
+    setIsSubmitting(true);
     
-    setComment('');
+    try {
+      if (onCommentAdded) {
+        await onCommentAdded(comment.trim());
+      }
+      setComment('');
+    } catch (error) {
+      console.error('Error submitting comment:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   
   return (
@@ -33,15 +43,16 @@ const ProjectCommentForm: React.FC<ProjectCommentFormProps> = ({ projectId }) =>
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           className="h-20 resize-none"
+          disabled={isSubmitting}
         />
       </div>
       <Button 
         type="submit"
-        disabled={!comment.trim()}
+        disabled={!comment.trim() || isSubmitting}
         className="flex items-center gap-2"
       >
         <MessageCirclePlus className="h-4 w-4" />
-        Add Update
+        {isSubmitting ? 'Adding...' : 'Add Update'}
       </Button>
     </form>
   );
