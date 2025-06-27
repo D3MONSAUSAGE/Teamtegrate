@@ -1,15 +1,16 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { RefreshCw, UserPlus, Users, AlertTriangle, Database } from 'lucide-react';
+import { RefreshCw, Users, AlertTriangle } from 'lucide-react';
 import { useOrganizationTeamMembers } from '@/hooks/useOrganizationTeamMembers';
 import { useOrganizations } from '@/hooks/useOrganizations';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDataSync } from '@/hooks/useDataSync';
 import PaginatedUserList from './user-management/PaginatedUserList';
-import OrganizationSelector from './OrganizationSelector';
+import OrganizationUserManagementHeader from './user-management/OrganizationUserManagementHeader';
+import OrganizationUserStats from './user-management/OrganizationUserStats';
 import CreateUserDialog from './CreateUserDialog';
 import { toast } from '@/components/ui/sonner';
 import { UserRole } from '@/types';
@@ -131,12 +132,15 @@ const SimplifiedOrganizationUserManagement = () => {
   if (isLoading && !users.length) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Team Members
-          </CardTitle>
-        </CardHeader>
+        <OrganizationUserManagementHeader
+          userCount={0}
+          currentUserRole={currentUser?.role}
+          isLoading={isLoading}
+          isChecking={isChecking}
+          onRefresh={handleRefresh}
+          onDataSyncCheck={handleDataSyncCheck}
+          onCreateUser={() => setIsCreateUserOpen(true)}
+        />
         <CardContent>
           <div className="flex items-center justify-center py-8">
             <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -150,12 +154,15 @@ const SimplifiedOrganizationUserManagement = () => {
   if (error) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Team Members
-          </CardTitle>
-        </CardHeader>
+        <OrganizationUserManagementHeader
+          userCount={0}
+          currentUserRole={currentUser?.role}
+          isLoading={isLoading}
+          isChecking={isChecking}
+          onRefresh={handleRefresh}
+          onDataSyncCheck={handleDataSyncCheck}
+          onCreateUser={() => setIsCreateUserOpen(true)}
+        />
         <CardContent>
           <div className="text-center py-8">
             <Alert>
@@ -179,68 +186,24 @@ const SimplifiedOrganizationUserManagement = () => {
   return (
     <>
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Team Members ({users.length})
-          </CardTitle>
-          <div className="flex items-center gap-2">
-            {currentUser?.role === 'superadmin' && (
-              <>
-                <Button 
-                  onClick={handleDataSyncCheck}
-                  variant="outline" 
-                  size="sm"
-                  disabled={isChecking}
-                >
-                  <Database className={`h-4 w-4 mr-2 ${isChecking ? 'animate-spin' : ''}`} />
-                  Check Sync
-                </Button>
-              </>
-            )}
-            <Button 
-              onClick={handleRefresh}
-              variant="outline" 
-              size="sm"
-              disabled={isLoading}
-            >
-              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
-            {currentUser?.role === 'superadmin' && (
-              <Button 
-                onClick={() => setIsCreateUserOpen(true)}
-                size="sm"
-              >
-                <UserPlus className="h-4 w-4 mr-2" />
-                Add User
-              </Button>
-            )}
-          </div>
-        </CardHeader>
+        <OrganizationUserManagementHeader
+          userCount={users.length}
+          currentUserRole={currentUser?.role}
+          isLoading={isLoading}
+          isChecking={isChecking}
+          onRefresh={handleRefresh}
+          onDataSyncCheck={handleDataSyncCheck}
+          onCreateUser={() => setIsCreateUserOpen(true)}
+        />
         
         <CardContent className="space-y-4">
-          {/* Organization Selector for Superadmin */}
-          {currentUser?.role === 'superadmin' && (
-            <OrganizationSelector
-              organizations={organizations}
-              isLoading={loadingOrgs}
-              selectedOrganization={selectedOrganizationId}
-              onOrganizationChange={handleOrganizationChange}
-              label="View Organization Users"
-              placeholder="Select organization to manage"
-            />
-          )}
-
-          {/* Current Organization Info */}
-          {selectedOrganizationId && (
-            <Alert>
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>
-                Viewing users from: {organizations.find(o => o.id === selectedOrganizationId)?.name || 'Selected Organization'}
-              </AlertDescription>
-            </Alert>
-          )}
+          <OrganizationUserStats
+            currentUserRole={currentUser?.role}
+            organizations={organizations}
+            loadingOrgs={loadingOrgs}
+            selectedOrganizationId={selectedOrganizationId}
+            onOrganizationChange={handleOrganizationChange}
+          />
 
           {/* Paginated User List */}
           <PaginatedUserList
