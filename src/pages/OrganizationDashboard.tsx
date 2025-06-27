@@ -1,18 +1,20 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Shield, AlertCircle, Loader2, Sparkles } from 'lucide-react';
-import OrganizationHeader from '@/components/organization/OrganizationHeader';
+import { Shield, AlertCircle, Loader2, Sparkles, Users, BarChart3, Settings } from 'lucide-react';
+import OrganizationEnhancedHeader from '@/components/organization/OrganizationEnhancedHeader';
 import OrganizationStatsCards from '@/components/organization/OrganizationStatsCards';
 import SimplifiedOrganizationUserManagement from '@/components/organization/SimplifiedOrganizationUserManagement';
 import RoleDistributionChart from '@/components/organization/RoleDistributionChart';
 import OrganizationQuickActions from '@/components/organization/OrganizationQuickActions';
 import TeamManagementSection from '@/components/organization/team/TeamManagementSection';
+import InviteCodeDialog from '@/components/organization/InviteCodeDialog';
+import ModernSectionCard from '@/components/dashboard/ModernSectionCard';
 
 const OrganizationDashboard = () => {
   const { user, loading } = useAuth();
+  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
 
   // Show loading state while auth is loading
   if (loading) {
@@ -71,17 +73,16 @@ const OrganizationDashboard = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       <div className="p-3 sm:p-6 space-y-8 max-w-7xl mx-auto">
         {/* Enhanced Header */}
-        <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 rounded-3xl blur-xl opacity-50" />
-          <div className="relative">
-            <OrganizationHeader />
-          </div>
+        <div className="animate-fade-in">
+          <OrganizationEnhancedHeader 
+            onInviteUsers={() => setIsInviteDialogOpen(true)}
+          />
         </div>
         
         {/* Page Title with Modern Design */}
-        <div className="text-center space-y-4">
+        <div className="text-center space-y-4 animate-fade-in" style={{ animationDelay: '100ms' }}>
           <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="p-3 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 backdrop-blur-sm">
+            <div className="p-3 rounded-2xl bg-gradient-to-br from-primary/20 to-purple-500/20 backdrop-blur-sm">
               <Shield className="h-8 w-8 text-primary" />
             </div>
             <div className="flex items-center gap-2">
@@ -97,50 +98,79 @@ const OrganizationDashboard = () => {
         </div>
 
         {/* Enhanced Stats Cards */}
-        <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-purple-100/50 via-blue-100/50 to-indigo-100/50 dark:from-purple-900/20 dark:via-blue-900/20 dark:to-indigo-900/20 rounded-2xl blur-xl" />
-          <div className="relative">
-            <OrganizationStatsCards />
-          </div>
+        <div className="animate-fade-in" style={{ animationDelay: '200ms' }}>
+          <ModernSectionCard
+            title="Organization Statistics"
+            subtitle="Real-time metrics and performance indicators"
+            icon={BarChart3}
+            gradient="from-blue-500/10 via-purple-500/10 to-indigo-500/10"
+            noPadding
+          >
+            <div className="p-6">
+              <OrganizationStatsCards />
+            </div>
+          </ModernSectionCard>
         </div>
         
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 gap-8">
           {/* User Management Section */}
           <div className="lg:grid lg:grid-cols-3 lg:gap-8 space-y-8 lg:space-y-0">
-            <div className="lg:col-span-2">
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-100/50 via-indigo-100/50 to-purple-100/50 dark:from-blue-900/20 dark:via-indigo-900/20 dark:to-purple-900/20 rounded-2xl blur-xl" />
-                <div className="relative">
-                  <SimplifiedOrganizationUserManagement />
-                </div>
-              </div>
+            <div className="lg:col-span-2 animate-fade-in" style={{ animationDelay: '300ms' }}>
+              <ModernSectionCard
+                title="User Management"
+                subtitle="Manage organization members and their roles"
+                icon={Users}
+                gradient="from-blue-500/10 via-indigo-500/10 to-purple-500/10"
+              >
+                <SimplifiedOrganizationUserManagement />
+              </ModernSectionCard>
             </div>
+            
             <div className="space-y-8">
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-green-100/50 via-emerald-100/50 to-teal-100/50 dark:from-green-900/20 dark:via-emerald-900/20 dark:to-teal-900/20 rounded-2xl blur-xl" />
-                <div className="relative">
+              <div className="animate-fade-in" style={{ animationDelay: '400ms' }}>
+                <ModernSectionCard
+                  title="Role Distribution"
+                  subtitle="Visual breakdown of user roles"
+                  icon={BarChart3}
+                  gradient="from-green-500/10 via-emerald-500/10 to-teal-500/10"
+                >
                   <RoleDistributionChart />
-                </div>
+                </ModernSectionCard>
               </div>
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-orange-100/50 via-red-100/50 to-pink-100/50 dark:from-orange-900/20 dark:via-red-900/20 dark:to-pink-900/20 rounded-2xl blur-xl" />
-                <div className="relative">
+              
+              <div className="animate-fade-in" style={{ animationDelay: '500ms' }}>
+                <ModernSectionCard
+                  title="Quick Actions"
+                  subtitle="Shortcuts to common tasks"
+                  icon={Settings}
+                  gradient="from-orange-500/10 via-red-500/10 to-pink-500/10"
+                >
                   <OrganizationQuickActions />
-                </div>
+                </ModernSectionCard>
               </div>
             </div>
           </div>
 
           {/* Team Management Section */}
-          <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-cyan-100/50 via-sky-100/50 to-blue-100/50 dark:from-cyan-900/20 dark:via-sky-900/20 dark:to-blue-900/20 rounded-2xl blur-xl" />
-            <div className="relative">
+          <div className="animate-fade-in" style={{ animationDelay: '600ms' }}>
+            <ModernSectionCard
+              title="Team Management"
+              subtitle="Organize and manage your teams"
+              icon={Users}
+              gradient="from-cyan-500/10 via-sky-500/10 to-blue-500/10"
+            >
               <TeamManagementSection />
-            </div>
+            </ModernSectionCard>
           </div>
         </div>
       </div>
+
+      {/* Invite Code Dialog */}
+      <InviteCodeDialog 
+        open={isInviteDialogOpen}
+        onOpenChange={setIsInviteDialogOpen}
+      />
     </div>
   );
 };

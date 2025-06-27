@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Plus, UserPlus, Settings, BarChart3, Zap, Sparkles } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
-import InviteCodeDialog from './InviteCodeDialog';
 
 const OrganizationQuickActions: React.FC = () => {
   const { user } = useAuth();
@@ -41,50 +40,31 @@ const OrganizationQuickActions: React.FC = () => {
   ];
 
   return (
-    <Card className="border-0 shadow-lg bg-gradient-to-br from-white/90 via-white/80 to-white/70 dark:from-card/90 dark:via-card/80 dark:to-card/70 backdrop-blur-xl hover:shadow-xl transition-all duration-300">
-      <CardHeader className="pb-4">
-        <CardTitle className="flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20">
-            <Zap className="h-5 w-5 text-primary" />
-          </div>
-          <span className="bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
-            Quick Actions
-          </span>
-          <Sparkles className="h-4 w-4 text-accent animate-pulse" />
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {actions.map((action, index) => 
-          action.available ? (
-            <Link key={action.label} to={action.to}>
-              <Button 
-                className={`w-full justify-start bg-gradient-to-r ${action.gradient} ${action.hoverGradient} text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 border-0 group`}
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <action.icon className="h-4 w-4 mr-3 group-hover:rotate-12 transition-transform duration-300" />
-                <span className="font-medium">{action.label}</span>
-              </Button>
-            </Link>
-          ) : null
-        )}
-
-        {canCreateUsers && (
-          <InviteCodeDialog>
-            <Button className="w-full justify-start bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 border-0 group">
-              <UserPlus className="h-4 w-4 mr-3 group-hover:rotate-12 transition-transform duration-300" />
-              <span className="font-medium">Invite User</span>
+    <div className="space-y-4">
+      {actions.map((action, index) => 
+        action.available ? (
+          <Link key={action.label} to={action.to} className="block">
+            <Button 
+              className={`w-full justify-start bg-gradient-to-r ${action.gradient} ${action.hoverGradient} text-white shadow-md hover:shadow-lg transform hover:scale-[1.02] transition-all duration-300 border-0 group h-12`}
+              style={{ animationDelay: `${index * 100}ms` }}
+            >
+              <action.icon className="h-5 w-5 mr-3 group-hover:rotate-12 transition-transform duration-300" />
+              <span className="font-medium">{action.label}</span>
             </Button>
-          </InviteCodeDialog>
-        )}
+          </Link>
+        ) : null
+      )}
 
-        {/* Additional Quick Stats */}
-        <div className="pt-4 border-t border-border/50">
-          <div className="text-xs text-muted-foreground text-center">
-            <span className="font-medium">Quick Access</span> • Manage your organization efficiently
-          </div>
+      {/* Additional Info */}
+      <div className="pt-4 border-t border-border/50">
+        <div className="text-xs text-muted-foreground text-center flex items-center justify-center gap-2">
+          <Zap className="h-3 w-3" />
+          <span className="font-medium">Quick Access</span>
+          <span>•</span>
+          <span>Manage efficiently</span>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
 

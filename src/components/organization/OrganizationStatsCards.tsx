@@ -1,7 +1,8 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Shield, UserCheck, Briefcase, CheckCircle, Clock, TrendingUp, Activity } from 'lucide-react';
+import { Card, CardContent } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Users, Shield, UserCheck, Briefcase, CheckCircle, TrendingUp, Activity } from 'lucide-react';
 import { useOrganizationStats } from '@/hooks/useOrganizationStats';
 
 const OrganizationStatsCards: React.FC = () => {
@@ -9,9 +10,9 @@ const OrganizationStatsCards: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         {Array.from({ length: 6 }).map((_, i) => (
-          <Card key={i} className="border-0 shadow-lg bg-gradient-to-br from-white/80 to-white/60 dark:from-card/80 dark:to-card/60">
+          <Card key={i} className="group relative overflow-hidden border-0 shadow-md bg-gradient-to-br from-white/80 to-white/60 dark:from-card/80 dark:to-card/60">
             <CardContent className="p-6">
               <div className="animate-pulse space-y-4">
                 <div className="flex items-center justify-between">
@@ -49,91 +50,107 @@ const OrganizationStatsCards: React.FC = () => {
     {
       title: "Total Users",
       value: stats.total_users,
+      subtitle: "Organization members",
       icon: Users,
-      gradient: "from-blue-500 to-blue-600",
-      bgGradient: "from-blue-50 to-blue-100/50 dark:from-blue-950/30 dark:to-blue-900/20",
-      iconBg: "bg-blue-100 dark:bg-blue-900/30",
-      textColor: "text-blue-600 dark:text-blue-400"
+      color: "from-blue-500 to-blue-600",
+      bgColor: "bg-gradient-to-br from-blue-50/30 to-purple-50/30 dark:from-blue-950/10 dark:to-purple-950/10",
+      progress: Math.min((stats.total_users / 50) * 100, 100),
+      maxValue: 100
     },
     {
       title: "Admins",
       value: stats.admins + stats.superadmins,
+      subtitle: `${stats.superadmins} super • ${stats.admins} admin`,
       icon: Shield,
-      gradient: "from-purple-500 to-purple-600",
-      bgGradient: "from-purple-50 to-purple-100/50 dark:from-purple-950/30 dark:to-purple-900/20",
-      iconBg: "bg-purple-100 dark:bg-purple-900/30",
-      textColor: "text-purple-600 dark:text-purple-400",
-      subtitle: `${stats.superadmins} super, ${stats.admins} admin`
+      color: "from-purple-500 to-purple-600",
+      bgColor: "bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20",
+      progress: Math.min(((stats.admins + stats.superadmins) / stats.total_users) * 100, 100),
+      maxValue: 100
     },
     {
       title: "Managers",
       value: stats.managers,
+      subtitle: "Team leaders",
       icon: UserCheck,
-      gradient: "from-green-500 to-green-600",
-      bgGradient: "from-green-50 to-green-100/50 dark:from-green-950/30 dark:to-green-900/20",
-      iconBg: "bg-green-100 dark:bg-green-900/30",
-      textColor: "text-green-600 dark:text-green-400"
+      color: "from-green-500 to-green-600",
+      bgColor: "bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20",
+      progress: Math.min((stats.managers / stats.total_users) * 100, 100),
+      maxValue: 100
     },
     {
       title: "Active Projects",
       value: stats.active_projects,
+      subtitle: "In progress",
       icon: Briefcase,
-      gradient: "from-orange-500 to-orange-600",
-      bgGradient: "from-orange-50 to-orange-100/50 dark:from-orange-950/30 dark:to-orange-900/20",
-      iconBg: "bg-orange-100 dark:bg-orange-900/30",
-      textColor: "text-orange-600 dark:text-orange-400"
+      color: "from-orange-500 to-orange-600",
+      bgColor: "bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/20 dark:to-amber-950/20",
+      progress: Math.min((stats.active_projects / 20) * 100, 100),
+      maxValue: 100
     },
     {
       title: "Tasks Completed",
       value: stats.completed_tasks,
+      subtitle: `of ${stats.total_tasks} total`,
       icon: CheckCircle,
-      gradient: "from-emerald-500 to-emerald-600",
-      bgGradient: "from-emerald-50 to-emerald-100/50 dark:from-emerald-950/30 dark:to-emerald-900/20",
-      iconBg: "bg-emerald-100 dark:bg-emerald-900/30",
-      textColor: "text-emerald-600 dark:text-emerald-400",
-      subtitle: `of ${stats.total_tasks} total`
+      color: "from-emerald-500 to-emerald-600",
+      bgColor: "bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/20 dark:to-green-950/20",
+      progress: completionRate,
+      maxValue: 100
     },
     {
       title: "Completion Rate",
       value: `${completionRate}%`,
+      subtitle: "Overall progress",
       icon: TrendingUp,
-      gradient: "from-indigo-500 to-indigo-600",
-      bgGradient: "from-indigo-50 to-indigo-100/50 dark:from-indigo-950/30 dark:to-indigo-900/20",
-      iconBg: "bg-indigo-100 dark:bg-indigo-900/30",
-      textColor: "text-indigo-600 dark:text-indigo-400"
+      color: "from-indigo-500 to-indigo-600",
+      bgColor: "bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-950/20 dark:to-blue-950/20",
+      progress: completionRate,
+      maxValue: 100
     }
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
       {statsData.map((stat, index) => {
-        const IconComponent = stat.icon;
+        const Icon = stat.icon;
         return (
           <Card 
             key={stat.title}
-            className={`border-0 shadow-lg hover:shadow-xl bg-gradient-to-br ${stat.bgGradient} backdrop-blur-sm transition-all duration-300 hover:scale-105 group cursor-pointer`}
+            className={`group relative overflow-hidden border-0 shadow-md hover:shadow-xl transition-all duration-300 hover:scale-[1.02] cursor-pointer ${stat.bgColor}`}
             style={{ animationDelay: `${index * 100}ms` }}
           >
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
-                {stat.title}
-              </CardTitle>
-              <div className={`p-2 rounded-lg ${stat.iconBg} group-hover:scale-110 transition-transform duration-300`}>
-                <IconComponent className={`h-4 w-4 ${stat.textColor}`} />
-              </div>
-            </CardHeader>
-            <CardContent className="pb-4">
-              <div className="space-y-1">
-                <div className={`text-2xl font-bold bg-gradient-to-r ${stat.gradient} bg-clip-text text-transparent group-hover:scale-110 transition-transform duration-300 inline-block`}>
-                  {stat.value}
+            <CardContent className="p-6">
+              <div className="flex items-start justify-between mb-4">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-muted-foreground">{stat.title}</p>
+                  <div className="flex items-baseline gap-2">
+                    <span className={`text-3xl font-bold bg-gradient-to-r ${stat.color} bg-clip-text text-transparent group-hover:scale-110 transition-transform`}>
+                      {stat.value}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">{stat.subtitle}</p>
                 </div>
-                {stat.subtitle && (
-                  <p className="text-xs text-muted-foreground group-hover:text-foreground/80 transition-colors">
-                    {stat.subtitle}
-                  </p>
-                )}
+                <div className={`p-2 rounded-full bg-gradient-to-r ${stat.color} group-hover:rotate-12 transition-transform`}>
+                  <Icon className="h-4 w-4 text-white" />
+                </div>
               </div>
+              
+              {stat.progress !== undefined && (
+                <div className="space-y-2">
+                  <Progress 
+                    value={stat.progress} 
+                    className="h-2 group-hover:h-3 transition-all duration-300" 
+                  />
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>Progress</span>
+                    <span>{Math.round(stat.progress)}%</span>
+                  </div>
+                </div>
+              )}
             </CardContent>
+            
+            {/* Hover effect overlay */}
+            <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
           </Card>
         );
       })}
