@@ -1,28 +1,12 @@
+
 import React, { useState } from 'react';
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Shield, Crown, Users, AlertTriangle } from 'lucide-react';
 import { UserRole } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
+import RoleDisplay from './RoleDisplay';
+import RoleSelector from './RoleSelector';
+import RoleChangeConfirmationDialog from './RoleChangeConfirmationDialog';
 
 interface WorkingRoleManagementProps {
   targetUser: {
@@ -109,24 +93,6 @@ const WorkingRoleManagement: React.FC<WorkingRoleManagementProps> = ({
     const filteredRoles = roles.filter(role => role !== currentTargetRole);
     console.log('Final available roles:', filteredRoles);
     return filteredRoles;
-  };
-
-  const getRoleIcon = (role: UserRole) => {
-    switch (role) {
-      case 'superadmin': return <Crown className="h-3 w-3" />;
-      case 'admin': return <Shield className="h-3 w-3" />;
-      case 'manager': return <Users className="h-3 w-3" />;
-      default: return <Users className="h-3 w-3" />;
-    }
-  };
-
-  const getRoleColor = (role: UserRole) => {
-    switch (role) {
-      case 'superadmin': return 'bg-yellow-100 text-yellow-800 border-yellow-300';
-      case 'admin': return 'bg-blue-100 text-blue-800 border-blue-300';
-      case 'manager': return 'bg-green-100 text-green-800 border-green-300';
-      default: return 'bg-gray-100 text-gray-800 border-gray-300';
-    }
   };
 
   const handleRoleSelect = async (role: UserRole) => {
@@ -225,10 +191,7 @@ const WorkingRoleManagement: React.FC<WorkingRoleManagementProps> = ({
       
       toast.success(successMessage);
       onRoleChanged();
-      setConfirmDialogOpen(false);
-      setNewRole(null);
-      setRequiresTransfer(false);
-      setCurrentSuperadminName('');
+      handleDialogClose();
     } catch (error) {
       console.error('Error updating role:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to update role';
@@ -245,94 +208,30 @@ const WorkingRoleManagement: React.FC<WorkingRoleManagementProps> = ({
     setCurrentSuperadminName('');
   };
 
-  if (!canManageThisUser) {
-    console.log('Rendering read-only role badge');
-    return (
-      <div className="flex items-center gap-2">
-        <Badge variant="outline" className={getRoleColor(currentTargetRole)}>
-          {getRoleIcon(currentTargetRole)}
-          <span className="ml-1 capitalize">{currentTargetRole}</span>
-        </Badge>
-      </div>
-    );
-  }
-
   const availableRoles = getAvailableRoles();
-
-  if (availableRoles.length === 0) {
-    console.log('No available roles to change to');
-    return (
-      <div className="flex items-center gap-2">
-        <Badge variant="outline" className={getRoleColor(currentTargetRole)}>
-          {getRoleIcon(currentTargetRole)}
-          <span className="ml-1 capitalize">{currentTargetRole}</span>
-        </Badge>
-      </div>
-    );
-  }
-
-  console.log('Rendering role management interface with', availableRoles.length, 'available roles');
 
   return (
     <>
       <div className="flex items-center gap-2">
-        <Badge variant="outline" className={getRoleColor(currentTargetRole)}>
-          {getRoleIcon(currentTargetRole)}
-          <span className="ml-1 capitalize">{currentTargetRole}</span>
-        </Badge>
-        
-        <Select onValueChange={handleRoleSelect} disabled={isChangingRole}>
-          <SelectTrigger className="w-32">
-            <SelectValue placeholder="Change" />
-          </SelectTrigger>
-          <SelectContent>
-            {availableRoles.map((role) => (
-              <SelectItem key={role} value={role}>
-                <div className="flex items-center gap-2">
-                  {getRoleIcon(role)}
-                  <span className="capitalize">{role}</span>
-                </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <RoleDisplay role={currentTargetRole} />
+        <RoleSelector
+          availableRoles={availableRoles}
+          isChangingRole={isChangingRole}
+          onRoleSelect={handleRoleSelect}
+        />
       </div>
 
-      <AlertDialog open={confirmDialogOpen} onOpenChange={handleDialogClose}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              {requiresTransfer && <AlertTriangle className="h-5 w-5 text-yellow-500" />}
-              Confirm Role Change
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {requiresTransfer ? (
-                <div className="space-y-2">
-                  <p>
-                    You are about to promote <strong>{userName}</strong> to <strong>superadmin</strong>.
-                  </p>
-                  <p className="text-yellow-600 font-medium">
-                    This will automatically demote <strong>{currentSuperadminName}</strong> to <strong>admin</strong> 
-                    since each organization can only have one superadmin.
-                  </p>
-                  <p>Are you sure you want to proceed?</p>
-                </div>
-              ) : (
-                <>
-                  Are you sure you want to change <strong>{userName}</strong>'s role 
-                  from <strong>{currentTargetRole}</strong> to <strong>{newRole}</strong>?
-                </>
-              )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleDialogClose}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleRoleChange} disabled={isChangingRole}>
-              {isChangingRole ? 'Updating...' : 'Confirm Change'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <RoleChangeConfirmationDialog
+        isOpen={confirmDialogOpen}
+        onClose={handleDialogClose}
+        onConfirm={handleRoleChange}
+        isChangingRole={isChangingRole}
+        userName={userName}
+        currentRole={currentTargetRole}
+        newRole={newRole}
+        requiresTransfer={requiresTransfer}
+        currentSuperadminName={currentSuperadminName}
+      />
     </>
   );
 };
