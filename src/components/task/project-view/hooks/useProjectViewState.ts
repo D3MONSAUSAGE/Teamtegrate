@@ -6,8 +6,6 @@ export const useProjectViewState = (tasks: Task[]) => {
   const [viewMode, setViewMode] = useState<'compact' | 'detailed' | 'board' | 'list'>('compact');
   const [selectedAssignee, setSelectedAssignee] = useState<string | undefined>();
   const [selectedPriority, setSelectedPriority] = useState<string | undefined>();
-  const [showCompleted, setShowCompleted] = useState(true);
-  const [showOverview, setShowOverview] = useState(true);
 
   const filteredTasks = useMemo(() => {
     return tasks.filter(task => {
@@ -23,14 +21,9 @@ export const useProjectViewState = (tasks: Task[]) => {
         return false;
       }
 
-      // Filter by completion status
-      if (!showCompleted && task.status === 'Completed') {
-        return false;
-      }
-
       return true;
     });
-  }, [tasks, selectedAssignee, selectedPriority, showCompleted]);
+  }, [tasks, selectedAssignee, selectedPriority]);
 
   const handleAssigneeFilter = (assigneeId: string | undefined) => {
     setSelectedAssignee(assigneeId);
@@ -40,18 +33,9 @@ export const useProjectViewState = (tasks: Task[]) => {
     setSelectedPriority(priority);
   };
 
-  const toggleCompleted = () => {
-    setShowCompleted(!showCompleted);
-  };
-
-  const toggleOverview = () => {
-    setShowOverview(!showOverview);
-  };
-
   const clearFilters = () => {
     setSelectedAssignee(undefined);
     setSelectedPriority(undefined);
-    setShowCompleted(true);
   };
 
   return {
@@ -60,12 +44,8 @@ export const useProjectViewState = (tasks: Task[]) => {
     filteredTasks,
     selectedAssignee,
     selectedPriority,
-    showCompleted,
-    showOverview,
     handleAssigneeFilter,
     handlePriorityFilter,
-    toggleCompleted,
-    toggleOverview,
     clearFilters
   };
 };

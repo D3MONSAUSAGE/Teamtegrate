@@ -73,23 +73,17 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
     filteredTasks,
     selectedAssignee,
     selectedPriority,
-    showCompleted,
-    showOverview,
     handleAssigneeFilter,
-    handlePriorityFilter,
-    toggleCompleted,
-    toggleOverview
+    handlePriorityFilter
   } = useProjectViewState(allTasks);
 
   const [showTeamManagement, setShowTeamManagement] = useState(false);
   const [showProjectLog, setShowProjectLog] = useState(false);
 
-  // Filter tasks by the view state
+  // Filter tasks by the view state - show all tasks including completed
   const filteredTodoTasks = filteredTasks.filter(task => task.status === 'To Do');
   const filteredInProgressTasks = filteredTasks.filter(task => task.status === 'In Progress');
-  const filteredCompletedTasks = showCompleted 
-    ? filteredTasks.filter(task => task.status === 'Completed')
-    : [];
+  const filteredCompletedTasks = filteredTasks.filter(task => task.status === 'Completed');
 
   const handleEditProject = () => {
     if (onEditProject) {
@@ -128,30 +122,12 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
         onViewModeChange={setViewMode}
       />
 
-      {/* Project Overview - Conditionally Rendered */}
-      {showOverview && (
-        <ProjectOverview
-          project={project}
-          tasks={allTasks}
-          teamMembers={teamMembers || []}
-          progress={progress || 0}
-        />
-      )}
-
-      {/* Enhanced View Controls Panel */}
-      <ViewControlsPanel
-        viewMode={viewMode}
-        sortBy={sortBy || 'deadline'}
-        onSortByChange={onSortByChange}
+      {/* Project Overview - Always shown */}
+      <ProjectOverview
+        project={project}
+        tasks={allTasks}
         teamMembers={teamMembers || []}
-        selectedAssignee={selectedAssignee}
-        onAssigneeFilter={handleAssigneeFilter}
-        selectedPriority={selectedPriority}
-        onPriorityFilter={handlePriorityFilter}
-        showCompleted={showCompleted}
-        onToggleCompleted={toggleCompleted}
-        showOverview={showOverview}
-        onToggleOverview={toggleOverview}
+        progress={progress || 0}
       />
 
       {/* Simplified Header Actions */}
@@ -173,7 +149,7 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
         />
       </div>
 
-      {/* Team Members Section with View All functionality */}
+      {/* Team Members Section */}
       <div className="px-4 sm:px-6 lg:px-8">
         <ProjectTeamMembersSection
           teamMembers={teamMembers || []}
@@ -188,6 +164,19 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
         <CollapsibleProjectLogSection 
           projectId={project.id}
           onViewAllClick={handleOpenProjectLog}
+        />
+      </div>
+
+      {/* Filter Controls positioned right above task tabs */}
+      <div className="px-4 sm:px-6 lg:px-8">
+        <ViewControlsPanel
+          sortBy={sortBy || 'deadline'}
+          onSortByChange={onSortByChange}
+          teamMembers={teamMembers || []}
+          selectedAssignee={selectedAssignee}
+          onAssigneeFilter={handleAssigneeFilter}
+          selectedPriority={selectedPriority}
+          onPriorityFilter={handlePriorityFilter}
         />
       </div>
 

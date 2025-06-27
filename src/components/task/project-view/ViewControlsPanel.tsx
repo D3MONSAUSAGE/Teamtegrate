@@ -1,7 +1,5 @@
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import {
   Select,
   SelectContent,
@@ -12,18 +10,15 @@ import {
 import { 
   Filter, 
   SortAsc, 
-  SortDesc, 
   Users, 
   Calendar,
   Tag,
-  BarChart3,
-  Eye,
-  EyeOff
+  BarChart3
 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { User } from '@/types';
 
 interface ViewControlsPanelProps {
-  viewMode: 'compact' | 'detailed' | 'board' | 'list';
   sortBy: string;
   onSortByChange: (sortBy: string) => void;
   teamMembers: User[];
@@ -31,25 +26,16 @@ interface ViewControlsPanelProps {
   onAssigneeFilter: (assigneeId: string | undefined) => void;
   selectedPriority?: string;
   onPriorityFilter: (priority: string | undefined) => void;
-  showCompleted: boolean;
-  onToggleCompleted: () => void;
-  showOverview: boolean;
-  onToggleOverview: () => void;
 }
 
 const ViewControlsPanel: React.FC<ViewControlsPanelProps> = ({
-  viewMode,
   sortBy,
   onSortByChange,
   teamMembers,
   selectedAssignee,
   onAssigneeFilter,
   selectedPriority,
-  onPriorityFilter,
-  showCompleted,
-  onToggleCompleted,
-  showOverview,
-  onToggleOverview
+  onPriorityFilter
 }) => {
   const activeFiltersCount = [
     selectedAssignee,
@@ -158,31 +144,6 @@ const ViewControlsPanel: React.FC<ViewControlsPanelProps> = ({
           </SelectItem>
         </SelectContent>
       </Select>
-
-      <div className="h-6 w-px bg-border" />
-
-      {/* View Toggle Controls */}
-      <div className="flex items-center gap-2">
-        <Button
-          variant={showCompleted ? "default" : "outline"}
-          size="sm"
-          onClick={onToggleCompleted}
-          className="gap-2"
-        >
-          {showCompleted ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-          Completed
-        </Button>
-
-        <Button
-          variant={showOverview ? "default" : "outline"}
-          size="sm"
-          onClick={onToggleOverview}
-          className="gap-2"
-        >
-          {showOverview ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-          Overview
-        </Button>
-      </div>
     </div>
   );
 };
