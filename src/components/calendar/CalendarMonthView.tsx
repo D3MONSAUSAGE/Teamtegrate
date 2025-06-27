@@ -125,7 +125,7 @@ const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
                     getTaskDensity(dayTasks)
                   )} />
                   
-                  {/* Day number - Enhanced styling */}
+                  {/* Day number and persistent add button */}
                   <div className="relative flex justify-between items-start mb-1 z-10">
                     <span className={cn(
                       "inline-flex h-7 w-7 md:h-8 md:w-8 items-center justify-center rounded-full text-sm md:text-base font-bold transition-all duration-200 relative",
@@ -138,16 +138,29 @@ const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
                         <div className="absolute -inset-1 bg-primary/20 rounded-full animate-pulse" />
                       )}
                     </span>
-                    {dayTasks.length > 0 && (
-                      <div className="relative">
-                        <div className="text-xs text-primary font-bold bg-gradient-to-r from-primary/20 to-secondary/20 backdrop-blur-sm rounded-full h-5 w-5 flex items-center justify-center border border-primary/30">
-                          {dayTasks.length}
+                    
+                    <div className="flex items-center gap-1">
+                      {/* Task count badge */}
+                      {dayTasks.length > 0 && (
+                        <div className="relative">
+                          <div className="text-xs text-primary font-bold bg-gradient-to-r from-primary/20 to-secondary/20 backdrop-blur-sm rounded-full h-5 w-5 flex items-center justify-center border border-primary/30">
+                            {dayTasks.length}
+                          </div>
+                          {dayTasks.some(task => task.priority === 'High') && (
+                            <div className="absolute -top-0.5 -right-0.5 h-2 w-2 bg-rose-500 rounded-full animate-pulse" />
+                          )}
                         </div>
-                        {dayTasks.some(task => task.priority === 'High') && (
-                          <div className="absolute -top-0.5 -right-0.5 h-2 w-2 bg-rose-500 rounded-full animate-pulse" />
-                        )}
-                      </div>
-                    )}
+                      )}
+                      
+                      {/* Persistent add button */}
+                      <button
+                        onClick={() => onDateCreate(day)}
+                        className="group/add opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 rounded-full hover:bg-primary/20 hover:scale-110"
+                        title="Add task"
+                      >
+                        <Plus className="h-3 w-3 text-primary group-hover/add:scale-110 transition-transform" />
+                      </button>
+                    </div>
                   </div>
                   
                   {/* Enhanced Tasks */}

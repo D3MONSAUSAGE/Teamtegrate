@@ -45,23 +45,33 @@ const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
-        {/* Enhanced Day headers */}
+        {/* Enhanced Day headers with persistent add buttons */}
         <div className="grid grid-cols-7 flex-shrink-0 border-b bg-gradient-to-r from-muted/20 via-muted/30 to-muted/20">
           {weekDays.map((day, i) => (
             <div key={i} className={cn(
-              "text-center p-3 md:p-4 border-r last:border-r-0 font-semibold transition-colors duration-200",
+              "text-center p-3 md:p-4 border-r last:border-r-0 font-semibold transition-colors duration-200 relative group",
               isWeekend(day) && "bg-gradient-to-b from-muted/20 to-transparent text-muted-foreground",
               isToday(day) && "bg-gradient-to-b from-primary/20 to-primary/5"
             )}>
               <div className="mb-1 text-xs md:text-sm text-muted-foreground font-medium">
                 {format(day, 'EEE')}
               </div>
-              <div className={cn(
-                "h-7 w-7 md:h-8 md:w-8 rounded-full flex items-center justify-center mx-auto text-sm md:text-base font-bold transition-all duration-200",
-                isToday(day) && "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg scale-110 ring-2 ring-primary/30",
-                !isToday(day) && "hover:bg-gradient-to-br hover:from-primary/20 hover:to-secondary/20 hover:scale-105"
-              )}>
-                {format(day, 'd')}
+              <div className="flex items-center justify-center gap-2">
+                <div className={cn(
+                  "h-7 w-7 md:h-8 md:w-8 rounded-full flex items-center justify-center text-sm md:text-base font-bold transition-all duration-200",
+                  isToday(day) && "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg scale-110 ring-2 ring-primary/30",
+                  !isToday(day) && "hover:bg-gradient-to-br hover:from-primary/20 hover:to-secondary/20 hover:scale-105"
+                )}>
+                  {format(day, 'd')}
+                </div>
+                {/* Persistent add button in header */}
+                <button
+                  onClick={() => onDateCreate(day)}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 rounded-full hover:bg-primary/20 hover:scale-110"
+                  title="Add task"
+                >
+                  <Plus className="h-3 w-3 text-primary" />
+                </button>
               </div>
             </div>
           ))}
@@ -111,10 +121,10 @@ const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
                       ))
                     ) : (
                       <div 
-                        className="group py-3 md:py-4 text-xs text-center text-muted-foreground cursor-pointer hover:bg-gradient-to-br hover:from-primary/10 hover:to-secondary/10 rounded-lg flex items-center justify-center gap-1 border-2 border-dashed border-muted-foreground/20 hover:border-primary/40 transition-all duration-200 min-h-[50px] hover:scale-105"
+                        className="group/empty py-3 md:py-4 text-xs text-center text-muted-foreground cursor-pointer hover:bg-gradient-to-br hover:from-primary/10 hover:to-secondary/10 rounded-lg flex items-center justify-center gap-1 border-2 border-dashed border-muted-foreground/20 hover:border-primary/40 transition-all duration-200 min-h-[50px] hover:scale-105"
                         onClick={() => onDateCreate(day)}
                       >
-                        <Plus className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                        <Plus className="h-4 w-4 group-hover/empty:scale-110 transition-transform" />
                         <span className="hidden sm:inline font-medium">Add task</span>
                       </div>
                     )}

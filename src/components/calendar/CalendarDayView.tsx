@@ -107,14 +107,24 @@ const CalendarDayView: React.FC<CalendarDayViewProps> = ({
                   <div className="flex items-center gap-2 text-sm md:text-base font-semibold text-foreground">
                     <TimeIcon className="h-4 w-4 text-primary" />
                     {formatTimeLabel(block.hour)}
-                    {block.tasks.length > 0 && (
-                      <div className="ml-auto flex items-center gap-1">
-                        <Clock className="h-3 w-3 text-muted-foreground" />
-                        <span className="text-xs text-muted-foreground font-medium">
-                          {block.tasks.length} task{block.tasks.length !== 1 ? 's' : ''}
-                        </span>
-                      </div>
-                    )}
+                    <div className="ml-auto flex items-center gap-2">
+                      {block.tasks.length > 0 && (
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground font-medium">
+                            {block.tasks.length} task{block.tasks.length !== 1 ? 's' : ''}
+                          </span>
+                        </div>
+                      )}
+                      {/* Persistent add button for each time block */}
+                      <button
+                        onClick={() => onDateCreate(selectedDate)}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 rounded-full hover:bg-primary/20 hover:scale-110"
+                        title="Add task to this time"
+                      >
+                        <Plus className="h-3 w-3 text-primary" />
+                      </button>
+                    </div>
                   </div>
                 </div>
                 <div className="px-4 py-3 min-h-[80px] md:min-h-[100px] relative">
