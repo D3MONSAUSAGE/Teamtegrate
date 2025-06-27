@@ -4,13 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
   Settings, 
-  Users, 
-  Eye, 
   Edit3, 
-  MoreHorizontal,
-  Layout,
-  List,
-  Grid3X3
+  MoreHorizontal
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -36,16 +31,6 @@ const ProjectActionToolbar: React.FC<ProjectActionToolbarProps> = ({
   viewMode,
   onViewModeChange
 }) => {
-  const getViewIcon = (mode: string) => {
-    switch (mode) {
-      case 'compact': return <Grid3X3 className="h-4 w-4" />;
-      case 'detailed': return <Layout className="h-4 w-4" />;
-      case 'board': return <Layout className="h-4 w-4" />;
-      case 'list': return <List className="h-4 w-4" />;
-      default: return <Grid3X3 className="h-4 w-4" />;
-    }
-  };
-
   return (
     <div className="flex items-center justify-between bg-card/50 backdrop-blur-sm border border-border/40 rounded-xl p-4 mb-6">
       <div className="flex items-center gap-4">
@@ -74,45 +59,6 @@ const ProjectActionToolbar: React.FC<ProjectActionToolbarProps> = ({
       </div>
 
       <div className="flex items-center gap-2">
-        {/* View Mode Selector */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="gap-2">
-              {getViewIcon(viewMode)}
-              View
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => onViewModeChange('compact')}>
-              <Grid3X3 className="h-4 w-4 mr-2" />
-              Compact
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onViewModeChange('detailed')}>
-              <Layout className="h-4 w-4 mr-2" />
-              Detailed
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onViewModeChange('board')}>
-              <Layout className="h-4 w-4 mr-2" />
-              Board View
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onViewModeChange('list')}>
-              <List className="h-4 w-4 mr-2" />
-              List View
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        {/* Team Management */}
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={onManageTeam}
-          className="gap-2"
-        >
-          <Users className="h-4 w-4" />
-          Team
-        </Button>
-
         {/* Edit Project */}
         <Button 
           variant="outline" 
@@ -121,7 +67,7 @@ const ProjectActionToolbar: React.FC<ProjectActionToolbarProps> = ({
           className="gap-2"
         >
           <Edit3 className="h-4 w-4" />
-          Edit
+          Edit Project
         </Button>
 
         {/* More Options */}
@@ -135,10 +81,6 @@ const ProjectActionToolbar: React.FC<ProjectActionToolbarProps> = ({
             <DropdownMenuItem>
               <Settings className="h-4 w-4 mr-2" />
               Project Settings
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Eye className="h-4 w-4 mr-2" />
-              View Details
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="text-destructive">

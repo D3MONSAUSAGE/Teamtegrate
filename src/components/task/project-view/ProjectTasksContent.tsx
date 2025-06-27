@@ -1,7 +1,8 @@
+
 import React, { useState } from 'react';
 import { Project, Task, TaskStatus, User } from '@/types';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, MessageSquare } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import ProjectOverview from './ProjectOverview';
 import ProjectTasksFilters from './ProjectTasksFilters';
 import ProjectTasksTabs from './ProjectTasksTabs';
@@ -10,6 +11,7 @@ import TeamManagementDialog from './TeamManagementDialog';
 import ViewControlsPanel from './ViewControlsPanel';
 import ProjectLogDialog from '../../project/ProjectLogDialog';
 import CollapsibleProjectLogSection from '../../project/CollapsibleProjectLogSection';
+import ProjectTeamMembersSection from './ProjectTeamMembersSection';
 import { useProjectViewState } from './hooks/useProjectViewState';
 
 interface ProjectTasksContentProps {
@@ -152,32 +154,13 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
         onToggleOverview={toggleOverview}
       />
 
-      {/* Header Actions */}
+      {/* Simplified Header Actions */}
       <div className="flex justify-between items-center px-4 sm:px-6 lg:px-8">
         <h2 className="text-xl font-semibold">Project Tasks</h2>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleOpenProjectLog}
-            className="flex items-center gap-2"
-          >
-            <MessageSquare className="h-4 w-4" />
-            Updates
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onRefresh}
-            disabled={isRefreshing}
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
-          <Button onClick={onCreateTask}>
-            Add Task
-          </Button>
-        </div>
+        <Button onClick={onCreateTask}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Task
+        </Button>
       </div>
 
       {/* Filters */}
@@ -190,7 +173,17 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
         />
       </div>
 
-      {/* Collapsible Project Log Section - Now much more compact */}
+      {/* Team Members Section with View All functionality */}
+      <div className="px-4 sm:px-6 lg:px-8">
+        <ProjectTeamMembersSection
+          teamMembers={teamMembers || []}
+          isLoading={isLoadingTeamMembers}
+          onRetry={onRefresh}
+          onManageTeam={handleManageTeam}
+        />
+      </div>
+
+      {/* Collapsible Project Log Section */}
       <div className="px-4 sm:px-6 lg:px-8">
         <CollapsibleProjectLogSection 
           projectId={project.id}
