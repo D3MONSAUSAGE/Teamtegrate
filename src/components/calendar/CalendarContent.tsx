@@ -21,34 +21,36 @@ const CalendarContent: React.FC<CalendarContentProps> = ({
   onDateCreate
 }) => {
   return (
-    <div className="flex-1 p-4 md:p-6 min-h-0 overflow-hidden">
-      <div className="h-full w-full">
-        {viewType === 'day' && (
-          <CalendarDayView 
-            selectedDate={selectedDate} 
-            tasks={tasks}
-            onTaskClick={onTaskClick}
-            onDateCreate={onDateCreate}
-          />
-        )}
-        
-        {viewType === 'week' && (
-          <CalendarWeekView 
-            selectedDate={selectedDate} 
-            tasks={tasks}
-            onTaskClick={onTaskClick}
-            onDateCreate={onDateCreate}
-          />
-        )}
-        
-        {viewType === 'month' && (
-          <CalendarMonthView 
-            selectedDate={selectedDate} 
-            tasks={tasks}
-            onTaskClick={onTaskClick}
-            onDateCreate={onDateCreate}
-          />
-        )}
+    <div className="h-full w-full p-6">
+      <div className="h-full w-full glass-card bg-gradient-to-br from-white/50 via-white/30 to-white/10 dark:from-card/50 dark:via-card/30 dark:to-card/10 backdrop-blur-sm rounded-2xl border border-white/20 shadow-xl">
+        <div className="h-full w-full p-4">
+          {viewType === 'day' && (
+            <CalendarDayView 
+              selectedDate={selectedDate} 
+              tasks={tasks}
+              onTaskClick={onTaskClick}
+              onDateCreate={onDateCreate}
+            />
+          )}
+          
+          {viewType === 'week' && (
+            <CalendarWeekView 
+              selectedDate={selectedDate} 
+              tasks={tasks}
+              onTaskClick={onTaskClick}
+              onDateCreate={onDateCreate}
+            />
+          )}
+          
+          {viewType === 'month' && (
+            <CalendarMonthView 
+              selectedDate={selectedDate} 
+              tasks={tasks}
+              onTaskClick={onTaskClick}
+              onDateCreate={onDateCreate}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

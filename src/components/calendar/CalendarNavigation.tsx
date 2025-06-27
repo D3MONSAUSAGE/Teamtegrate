@@ -20,20 +20,20 @@ const CalendarNavigation: React.FC<CalendarNavigationProps> = ({
   onAddTask
 }) => {
   return (
-    <div className="flex items-center justify-between gap-4 p-4 md:p-6 glass-card border shadow-xl bg-gradient-to-br from-white/90 via-white/85 to-white/80 dark:from-card/90 dark:via-card/85 dark:to-card/80 backdrop-blur-xl rounded-2xl mb-6">
-      <div className="flex items-center gap-3">
+    <div className="flex items-center justify-between gap-4 p-6 glass-card border shadow-xl bg-gradient-to-br from-white/90 via-white/85 to-white/80 dark:from-card/90 dark:via-card/85 dark:to-card/80 backdrop-blur-xl rounded-2xl">
+      <div className="flex items-center gap-4">
         <Button
           variant="outline"
           size="sm"
           onClick={onPreviousMonth}
-          className="h-10 w-10 p-0 rounded-full hover:scale-110 transition-all duration-200 shadow-md hover:shadow-lg hover:bg-primary/10 hover:border-primary/40"
+          className="h-10 w-10 p-0 rounded-full hover:scale-110 transition-all duration-200 shadow-md hover:shadow-lg hover:bg-primary/10 hover:border-primary/40 bg-white/80 backdrop-blur-sm"
         >
           <ChevronLeft className="h-4 w-4" />
         </Button>
         
-        <div className="flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-primary/10 to-emerald-500/10 rounded-xl border border-primary/20">
+        <div className="flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-primary/10 to-purple-500/10 rounded-xl border border-primary/20 backdrop-blur-sm">
           <CalendarIcon className="h-5 w-5 text-primary" />
-          <h2 className="text-lg md:text-xl font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
+          <h2 className="text-xl font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
             {format(selectedDate, 'MMMM yyyy')}
           </h2>
         </div>
@@ -42,18 +42,18 @@ const CalendarNavigation: React.FC<CalendarNavigationProps> = ({
           variant="outline"
           size="sm"
           onClick={onNextMonth}
-          className="h-10 w-10 p-0 rounded-full hover:scale-110 transition-all duration-200 shadow-md hover:shadow-lg hover:bg-primary/10 hover:border-primary/40"
+          className="h-10 w-10 p-0 rounded-full hover:scale-110 transition-all duration-200 shadow-md hover:shadow-lg hover:bg-primary/10 hover:border-primary/40 bg-white/80 backdrop-blur-sm"
         >
           <ChevronRight className="h-4 w-4" />
         </Button>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
         <Button
           variant="outline"
           size="sm"
           onClick={onToday}
-          className="px-4 py-2 rounded-xl hover:scale-105 transition-all duration-200 shadow-md hover:shadow-lg hover:bg-primary/10 hover:border-primary/40"
+          className="px-4 py-2 rounded-xl hover:scale-105 transition-all duration-200 shadow-md hover:shadow-lg hover:bg-primary/10 hover:border-primary/40 bg-white/80 backdrop-blur-sm font-medium"
         >
           Today
         </Button>
@@ -61,12 +61,14 @@ const CalendarNavigation: React.FC<CalendarNavigationProps> = ({
         <Button
           size="sm"
           onClick={onAddTask}
-          className="group relative overflow-hidden px-4 py-2 rounded-xl bg-gradient-to-r from-primary via-emerald-500 to-primary bg-size-200 animate-gradient hover:shadow-xl hover:shadow-primary/25 transition-all duration-300 hover:scale-105"
+          className="group relative overflow-hidden px-6 py-2 rounded-xl bg-gradient-to-r from-primary via-purple-500 to-primary hover:shadow-xl hover:shadow-primary/25 transition-all duration-300 hover:scale-105 border-0"
         >
           <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          <Plus className="h-4 w-4 mr-2 group-hover:rotate-90 transition-transform duration-300" />
-          <span className="hidden sm:inline">Add Task</span>
-          <Sparkles className="h-3 w-3 ml-1 animate-pulse" />
+          <div className="relative flex items-center gap-2">
+            <Plus className="h-4 w-4 group-hover:rotate-90 transition-transform duration-300" />
+            <span>Add Task</span>
+            <Sparkles className="h-3 w-3 animate-pulse" />
+          </div>
         </Button>
       </div>
     </div>
