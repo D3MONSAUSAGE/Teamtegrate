@@ -9,7 +9,7 @@ import ProjectActionToolbar from './ProjectActionToolbar';
 import TeamManagementDialog from './TeamManagementDialog';
 import ViewControlsPanel from './ViewControlsPanel';
 import ProjectLogDialog from '../../project/ProjectLogDialog';
-import ProjectLogSection from '../../project/ProjectLogSection';
+import CollapsibleProjectLogSection from '../../project/CollapsibleProjectLogSection';
 import { useProjectViewState } from './hooks/useProjectViewState';
 
 interface ProjectTasksContentProps {
@@ -190,10 +190,11 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
         />
       </div>
 
-      {/* Project Log Section - Inline */}
+      {/* Collapsible Project Log Section - Now much more compact */}
       <div className="px-4 sm:px-6 lg:px-8">
-        <ProjectLogSection 
+        <CollapsibleProjectLogSection 
           projectId={project.id}
+          onViewAllClick={handleOpenProjectLog}
         />
       </div>
 

@@ -35,7 +35,7 @@ export const fetchProjectComments = async (projectId: string): Promise<TaskComme
       .from('comments')
       .select(`
         *,
-        users!inner(name, email)
+        users!comments_user_id_fkey(name, email)
       `)
       .eq('project_id', projectId)
       .order('created_at', { ascending: false });
