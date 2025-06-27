@@ -1,3 +1,4 @@
+
 import React, { useCallback, useState, useRef } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +11,7 @@ import InvoiceUploadButtons from './invoice-upload/InvoiceUploadButtons';
 import InvoiceUploadDropzone from './invoice-upload/InvoiceUploadDropzone';
 import InvoiceUploadStatus from './invoice-upload/InvoiceUploadStatus';
 import InvoiceAccessRestriction from './invoice-upload/InvoiceAccessRestriction';
-import { uploadInvoiceFile } from './invoice-upload/InvoiceUploadHelpers';
+import { uploadInvoiceFileSimple } from './invoice-upload/SimpleInvoiceUpload';
 
 interface InvoiceMetadata {
   invoiceNumber: string;
@@ -46,31 +47,25 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
     try {
       setIsUploading(true);
       setUploadProgress(0);
-      setUploadStatus('Preparing upload...');
-      console.log('Starting enhanced invoice upload process for file:', file.name);
+      setUploadStatus('Uploading file...');
+      console.log('Starting invoice upload process for file:', file.name);
 
-      // Use the enhanced upload system with retry logic
-      const uploadResult = await uploadInvoiceFile(file, user.organizationId, user.id);
+      // Use simplified upload
+      const uploadResult = await uploadInvoiceFileSimple(file, user.organizationId, user.id);
       
       setUploadProgress(50);
-      setUploadStatus('Verifying upload...');
+      setUploadStatus('File uploaded, saving to database...');
       
       if (!uploadResult.success) {
-        const errorMessage = uploadResult.error || 'Upload failed';
-        toast.error(errorMessage, {
-          description: uploadResult.retryAttempt ? `Failed after ${uploadResult.retryAttempt + 1} attempts` : undefined,
-          duration: 6000,
-        });
+        console.error('Upload failed:', uploadResult.error);
+        toast.error(uploadResult.error || 'Upload failed');
         setUploadStatus('Upload failed');
         return;
       }
 
-      setUploadProgress(75);
-      setUploadStatus('Saving to database...');
-
       console.log('File uploaded successfully, inserting into database...');
 
-      // Only insert into database if file upload was successful
+      // Insert into database
       const { error: dbError } = await supabase
         .from('invoices')
         .insert({
@@ -89,13 +84,14 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
       if (dbError) {
         console.error('Database error:', dbError);
         
-        // If database insert fails, try to clean up the uploaded file
+        // Clean up uploaded file on database error
         try {
           await supabase.storage
             .from('documents')
             .remove([uploadResult.filePath!]);
+          console.log('Cleaned up file after database error');
         } catch (cleanupError) {
-          console.error('Failed to cleanup file after database error:', cleanupError);
+          console.error('Failed to cleanup file:', cleanupError);
         }
         
         toast.error(`Database error: ${dbError.message}`);
@@ -108,14 +104,10 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
 
       console.log('Invoice uploaded and saved successfully');
       
-      // Enhanced success feedback with upload metrics
-      const uploadTime = uploadResult.uploadDuration ? `${(uploadResult.uploadDuration / 1000).toFixed(1)}s` : 'unknown';
-      const retryInfo = uploadResult.retryAttempt && uploadResult.retryAttempt > 0 ? ` (${uploadResult.retryAttempt + 1} attempts)` : '';
-      
       toast.success(
         `Invoice "${metadata.invoiceNumber}" uploaded successfully!`,
         {
-          description: `File: ${file.name} (${(file.size / 1024).toFixed(1)} KB) - Upload time: ${uploadTime}${retryInfo}`,
+          description: `File: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`,
           duration: 4000,
         }
       );
@@ -180,7 +172,6 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
     if (file) {
       handleFileUpload(file);
     }
-    // Reset the input so the same file can be selected again
     if (cameraInputRef.current) {
       cameraInputRef.current.value = '';
     }
@@ -191,7 +182,6 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
     if (file) {
       handleFileUpload(file);
     }
-    // Reset the input so the same file can be selected again
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -268,7 +258,7 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
           />
         </div>
 
-        {/* Enhanced Upload Status */}
+        {/* Upload Status */}
         <InvoiceUploadStatus
           isUploading={isUploading}
           hasRequiredFields={hasRequiredFields}
