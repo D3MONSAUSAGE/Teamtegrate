@@ -7,8 +7,8 @@ import { ChatProvider } from './contexts/chat/ChatContext'
 import { UnifiedDataProvider } from '@/contexts/UnifiedDataContext';
 import NetworkPerformanceMonitor from '@/components/debug/NetworkPerformanceMonitor';
 import { Toaster } from '@/components/ui/toaster';
-import { RouterProvider } from 'react-router-dom';
-import { router } from '@/routes/OptimizedRouter';
+import { BrowserRouter } from 'react-router-dom';
+import OptimizedRouter from '@/routes/OptimizedRouter';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -27,7 +27,9 @@ function App() {
         <UnifiedDataProvider>
           <TaskProvider>
             <ChatProvider>
-              <RouterProvider router={router} />
+              <BrowserRouter>
+                <OptimizedRouter />
+              </BrowserRouter>
               <NetworkPerformanceMonitor />
               <Toaster />
             </ChatProvider>
