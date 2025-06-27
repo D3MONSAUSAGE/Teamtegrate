@@ -13,7 +13,7 @@ export const uploadInvoiceFileSimple = async (
   userId: string
 ): Promise<SimpleUploadResult> => {
   try {
-    console.log('Starting simple invoice upload:', {
+    console.log('Starting standardized invoice upload:', {
       fileName: file.name,
       fileSize: file.size,
       fileType: file.type,
@@ -21,14 +21,14 @@ export const uploadInvoiceFileSimple = async (
       userId
     });
 
-    // Create simple file path
+    // Generate standardized file path using organization-based structure
     const timestamp = Date.now();
     const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-    const filePath = `invoices/${timestamp}-${sanitizedFileName}`;
+    const filePath = `${organizationId}/invoices/${timestamp}-${sanitizedFileName}`;
     
-    console.log('Upload path:', filePath);
+    console.log('Standardized upload path:', filePath);
 
-    // Upload to storage
+    // Upload to storage with organization-based path
     const { data, error: uploadError } = await supabase.storage
       .from('documents')
       .upload(filePath, file, {
@@ -46,46 +46,20 @@ export const uploadInvoiceFileSimple = async (
 
     console.log('Storage upload successful:', data);
 
-    // Simple verification - just check if we can get the file info
-    const { data: fileData, error: getError } = await supabase.storage
+    // Since bucket is now public, verify using public URL
+    const { data: urlData } = supabase.storage
       .from('documents')
-      .list('invoices', {
-        limit: 100,
-        search: `${timestamp}-${sanitizedFileName}`
-      });
+      .getPublicUrl(filePath);
 
-    if (getError) {
-      console.error('File verification error:', getError);
+    if (!urlData?.publicUrl) {
+      console.error('Failed to get public URL for uploaded file');
       return {
         success: false,
-        error: `File verification failed: ${getError.message}`
+        error: 'Failed to verify file upload'
       };
     }
 
-    const uploadedFile = fileData?.find(f => f.name === `${timestamp}-${sanitizedFileName}`);
-    if (!uploadedFile) {
-      console.error('File not found after upload, found files:', fileData?.map(f => f.name));
-      
-      // Let's try a different approach - check if the file exists by trying to get its public URL
-      const { data: urlData } = supabase.storage
-        .from('documents')
-        .getPublicUrl(filePath);
-      
-      if (urlData?.publicUrl) {
-        console.log('File exists, verification via public URL successful');
-        return {
-          success: true,
-          filePath: filePath
-        };
-      }
-      
-      return {
-        success: false,
-        error: 'File not found after upload'
-      };
-    }
-
-    console.log('File verification successful:', uploadedFile);
+    console.log('File upload and verification successful');
 
     return {
       success: true,

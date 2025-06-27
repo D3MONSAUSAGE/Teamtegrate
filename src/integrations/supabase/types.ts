@@ -1315,6 +1315,10 @@ export type Database = {
         }
         Returns: string
       }
+      generate_invoice_file_path: {
+        Args: { org_id: string; user_id: string; filename: string }
+        Returns: string
+      }
       get_all_projects: {
         Args: Record<PropertyKey, never>
         Returns: {

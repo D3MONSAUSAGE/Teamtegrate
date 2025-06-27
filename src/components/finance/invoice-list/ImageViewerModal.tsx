@@ -1,7 +1,7 @@
 
 import React, { useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from '@/components/ui/sonner';
 
 interface Invoice {
   id: string;
@@ -29,22 +29,7 @@ const ImageViewerModal: React.FC<ImageViewerModalProps> = ({
   invoice,
   imageUrl
 }) => {
-  const { toast } = useToast();
-
-  // Clean up blob URLs when modal closes
-  useEffect(() => {
-    return () => {
-      if (imageUrl && imageUrl.startsWith('blob:')) {
-        window.URL.revokeObjectURL(imageUrl);
-      }
-    };
-  }, [imageUrl]);
-
   const handleClose = () => {
-    // Clean up blob URL before closing
-    if (imageUrl && imageUrl.startsWith('blob:')) {
-      window.URL.revokeObjectURL(imageUrl);
-    }
     onClose();
   };
 
@@ -65,11 +50,7 @@ const ImageViewerModal: React.FC<ImageViewerModalProps> = ({
               onLoad={() => console.log('Image loaded successfully')}
               onError={(e) => {
                 console.error('Error loading image:', e);
-                toast({
-                  title: "Error",
-                  description: 'Failed to load image',
-                  variant: "destructive",
-                });
+                toast.error('Failed to load image');
               }}
             />
           </div>
