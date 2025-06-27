@@ -75,80 +75,78 @@ const CalendarPage = () => {
   }).length;
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
-      {/* Enhanced Background with Gradient and Effects */}
-      <div className="fixed inset-0 bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 dark:from-slate-950 dark:via-blue-950 dark:to-purple-950" />
-      <div className="fixed inset-0 bg-[radial-gradient(circle_at_25%_25%,rgba(59,130,246,0.1),transparent_50%)]" />
-      <div className="fixed inset-0 bg-[radial-gradient(circle_at_75%_75%,rgba(147,51,234,0.1),transparent_50%)]" />
+    <div className="relative">
+      {/* Background with gradient effects within content area */}
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 dark:from-slate-950 dark:via-blue-950 dark:to-purple-950 -z-10" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_25%,rgba(59,130,246,0.1),transparent_50%)] -z-10" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_75%_75%,rgba(147,51,234,0.1),transparent_50%)] -z-10" />
       
-      <div className="relative z-10">
-        <SectionContainer maxWidth="7xl" className="py-8 space-y-8">
-          {/* Enhanced Calendar Header */}
-          <div className="animate-fade-in">
-            <CalendarHeader />
-          </div>
+      <SectionContainer maxWidth="7xl" className="py-8 space-y-8">
+        {/* Enhanced Calendar Header */}
+        <div className="animate-fade-in">
+          <CalendarHeader />
+        </div>
 
-          {/* Calendar Navigation Card */}
-          <div className="animate-fade-in delay-75">
-            <ModernSectionCard
-              title="Calendar Navigation"
-              icon={Navigation}
-              gradient="from-blue-500/10 via-primary/5 to-purple-500/10"
-              noPadding
-            >
-              <div className="p-4">
-                <CalendarNavigation
-                  selectedDate={selectedDate}
-                  onPreviousMonth={goToPreviousMonth}
-                  onNextMonth={goToNextMonth}
-                  onToday={goToToday}
-                  onAddTask={() => handleDateCreate(selectedDate)}
-                />
-              </div>
-            </ModernSectionCard>
-          </div>
-
-          {/* Calendar Stats Card */}
-          <div className="animate-fade-in delay-100">
-            <ModernSectionCard
-              title="Task Overview"
-              subtitle="Quick insights into your schedule"
-              icon={BarChart}
-              gradient="from-emerald-500/10 via-green-500/5 to-blue-500/10"
-              noPadding
-            >
-              <div className="p-4">
-                <CalendarStats
-                  todayTasksCount={todayTasksCount}
-                  upcomingTasksCount={upcomingTasksCount}
-                  overdueTasksCount={overdueTasksCount}
-                />
-              </div>
-            </ModernSectionCard>
-          </div>
-
-          {/* Calendar Content Card */}
-          <div className="animate-fade-in delay-150">
-            <ModernSectionCard
-              title="Calendar"
-              subtitle="Organize and manage your tasks by date"
-              icon={CalendarIcon}
-              gradient="from-primary/10 via-blue-500/5 to-indigo-500/10"
-              className="min-h-[600px]"
-              noPadding
-            >
-              <CalendarContent
-                viewType={viewType}
-                onViewChange={setViewType}
+        {/* Calendar Navigation Card */}
+        <div className="animate-fade-in delay-75">
+          <ModernSectionCard
+            title="Calendar Navigation"
+            icon={Navigation}
+            gradient="from-blue-500/10 via-primary/5 to-purple-500/10"
+            noPadding
+          >
+            <div className="p-4">
+              <CalendarNavigation
                 selectedDate={selectedDate}
-                tasks={tasks}
-                onTaskClick={handleTaskClick}
-                onDateCreate={handleDateCreate}
+                onPreviousMonth={goToPreviousMonth}
+                onNextMonth={goToNextMonth}
+                onToday={goToToday}
+                onAddTask={() => handleDateCreate(selectedDate)}
               />
-            </ModernSectionCard>
-          </div>
-        </SectionContainer>
-      </div>
+            </div>
+          </ModernSectionCard>
+        </div>
+
+        {/* Calendar Stats Card */}
+        <div className="animate-fade-in delay-100">
+          <ModernSectionCard
+            title="Task Overview"
+            subtitle="Quick insights into your schedule"
+            icon={BarChart}
+            gradient="from-emerald-500/10 via-green-500/5 to-blue-500/10"
+            noPadding
+          >
+            <div className="p-4">
+              <CalendarStats
+                todayTasksCount={todayTasksCount}
+                upcomingTasksCount={upcomingTasksCount}
+                overdueTasksCount={overdueTasksCount}
+              />
+            </div>
+          </ModernSectionCard>
+        </div>
+
+        {/* Calendar Content Card */}
+        <div className="animate-fade-in delay-150">
+          <ModernSectionCard
+            title="Calendar"
+            subtitle="Organize and manage your tasks by date"
+            icon={CalendarIcon}
+            gradient="from-primary/10 via-blue-500/5 to-indigo-500/10"
+            className="min-h-[600px]"
+            noPadding
+          >
+            <CalendarContent
+              viewType={viewType}
+              onViewChange={setViewType}
+              selectedDate={selectedDate}
+              tasks={tasks}
+              onTaskClick={handleTaskClick}
+              onDateCreate={handleDateCreate}
+            />
+          </ModernSectionCard>
+        </div>
+      </SectionContainer>
       
       <TaskDetailDialog
         open={isDialogOpen}
