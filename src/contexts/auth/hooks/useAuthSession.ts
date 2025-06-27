@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,6 +10,8 @@ export const useAuthSession = () => {
 
   const fetchUserProfile = useCallback(async (userId: string) => {
     try {
+      console.log('AuthSession: Fetching profile for user:', userId);
+      
       const { data: profileData, error } = await supabase
         .from('users')
         .select('*')
@@ -19,7 +22,8 @@ export const useAuthSession = () => {
         console.error('AuthSession: Profile fetch error:', error);
         return null;
       }
-
+      
+      console.log('AuthSession: Profile data fetched:', profileData);
       return profileData;
     } catch (error) {
       console.error('AuthSession: Profile fetch failed:', error);
@@ -32,11 +36,14 @@ export const useAuthSession = () => {
     const authUser = session.user;
     const metadata = authUser.user_metadata || {};
 
+    console.log('AuthSession: Creating user from session for:', authUser.email);
+    console.log('AuthSession: User metadata:', metadata);
+
     // Fetch complete profile from database
     const profileData = await fetchUserProfile(authUser.id);
 
     // Merge data, prioritizing database values over metadata
-    return {
+    const user: User = {
       id: authUser.id,
       email: authUser.email || '',
       name: profileData?.name || metadata.name || 'User',
@@ -46,6 +53,22 @@ export const useAuthSession = () => {
       timezone: metadata.timezone || profileData?.timezone || null,
       createdAt: new Date(authUser.created_at),
     };
+
+    console.log('AuthSession: Created user object:', {
+      id: user.id,
+      email: user.email,
+      organizationId: user.organizationId,
+      role: user.role
+    });
+
+    // Validate that organizationId is present
+    if (!user.organizationId) {
+      console.error('AuthSession: WARNING - User has no organizationId:', user.email);
+      console.error('AuthSession: Profile data:', profileData);
+      console.error('AuthSession: Metadata:', metadata);
+    }
+
+    return user;
   }, [fetchUserProfile]);
 
   // Synchronous session update - sets session immediately
@@ -70,7 +93,7 @@ export const useAuthSession = () => {
       };
       
       setUser(basicUser);
-      console.log('AuthSession: Basic user set:', basicUser.email);
+      console.log('AuthSession: Basic user set:', basicUser.email, 'orgId:', basicUser.organizationId);
     } else {
       setUser(null);
       console.log('AuthSession: User cleared');
@@ -83,7 +106,12 @@ export const useAuthSession = () => {
       console.log('AuthSession: Enhancing user profile...');
       const completeUser = await createUserFromSession(session);
       setUser(completeUser);
-      console.log('AuthSession: Enhanced user profile set:', completeUser.email);
+      console.log('AuthSession: Enhanced user profile set:', completeUser.email, 'orgId:', completeUser.organizationId);
+      
+      // Double-check organizationId after enhancement
+      if (!completeUser.organizationId) {
+        console.error('AuthSession: CRITICAL - Enhanced user still has no organizationId!');
+      }
     } catch (error) {
       console.error('AuthSession: Profile enhancement failed:', error);
       // Don't clear the user, keep the basic version

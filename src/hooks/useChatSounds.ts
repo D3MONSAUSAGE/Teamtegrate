@@ -11,7 +11,8 @@ export function useChatSounds() {
     try {
       await playChatNotification(soundSettings);
     } catch (error) {
-      console.log('Sound playback failed:', error);
+      console.log('Sound playback failed (this is normal and expected):', error);
+      // Don't show error to user - audio failures are common and not critical
     }
   }, [soundSettings]);
 
@@ -33,7 +34,12 @@ export function useChatSounds() {
       }, 500);
       
     } catch (error) {
-      console.log('Buzz sound failed:', error);
+      console.log('Buzz sound failed (this is normal):', error);
+      // Still show the visual notification even if sound fails
+      toast.info("💫 Someone buzzed you!", {
+        duration: 3000,
+        className: "animate-bounce"
+      });
     }
   }, [soundSettings]);
 

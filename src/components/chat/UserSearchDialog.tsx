@@ -13,7 +13,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Search, UserPlus, Check, AlertCircle } from 'lucide-react';
+import { Search, UserPlus, Check, AlertCircle, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import ChatMessageAvatar from './ChatMessageAvatar';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -42,12 +42,13 @@ const UserSearchDialog: React.FC<UserSearchDialogProps> = ({
   const [loading, setLoading] = useState(false);
   const { user: currentUser } = useAuth();
 
-  const { data: users = [], isLoading, error: usersError } = useQuery({
+  const { data: users = [], isLoading, error: usersError, refetch } = useQuery({
     queryKey: ['organization-users', currentUser?.organizationId, searchTerm],
     queryFn: async () => {
       if (!currentUser?.organizationId) {
-        console.log('UserSearchDialog: No organization ID available');
-        return [];
+        console.error('UserSearchDialog: No organization ID available');
+        console.error('UserSearchDialog: Current user:', currentUser);
+        throw new Error('No organization ID available');
       }
       
       console.log('UserSearchDialog: Searching for users in org:', currentUser.organizationId);
@@ -61,20 +62,26 @@ const UserSearchDialog: React.FC<UserSearchDialogProps> = ({
 
       // Add search filtering if there's a search term
       if (searchTerm.trim()) {
-        query = query.or(`name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
+        // Use ilike for case-insensitive search
+        query = query.or(`name.ilike.%${searchTerm.trim()}%,email.ilike.%${searchTerm.trim()}%`);
       }
 
-      const { data, error } = await query.limit(50);
+      const { data, error } = await query
+        .order('name')
+        .limit(50);
 
       if (error) {
         console.error('UserSearchDialog: Error fetching users:', error);
         throw error;
       }
       
-      console.log('UserSearchDialog: Found users:', data);
-      return data as User[];
+      console.log('UserSearchDialog: Found users:', data?.length || 0);
+      console.log('UserSearchDialog: Users data:', data);
+      
+      return (data as User[]) || [];
     },
     enabled: open && !!currentUser?.organizationId,
+    retry: 2,
   });
 
   // Get existing room members to filter them out
@@ -93,8 +100,8 @@ const UserSearchDialog: React.FC<UserSearchDialogProps> = ({
         throw error;
       }
       
-      console.log('UserSearchDialog: Existing members:', data);
-      return data.map(m => m.user_id);
+      console.log('UserSearchDialog: Existing members:', data?.length || 0);
+      return data?.map(m => m.user_id) || [];
     },
     enabled: open,
   });
@@ -112,6 +119,11 @@ const UserSearchDialog: React.FC<UserSearchDialogProps> = ({
   const handleAddUsers = async () => {
     if (selectedUsers.length === 0) {
       toast.error('Please select at least one user to add');
+      return;
+    }
+
+    if (!currentUser?.organizationId) {
+      toast.error('Organization information not available. Please refresh and try again.');
       return;
     }
 
@@ -133,22 +145,40 @@ const UserSearchDialog: React.FC<UserSearchDialogProps> = ({
 
       if (error) {
         console.error('UserSearchDialog: Error adding participants:', error);
-        toast.error(`Failed to add users: ${error.message}`);
+        
+        // Provide more specific error messages
+        if (error.code === '23505') {
+          toast.error('One or more users are already members of this room');
+        } else if (error.message.includes('organization')) {
+          toast.error('Users must be in the same organization to join this room');
+        } else {
+          toast.error(`Failed to add users: ${error.message}`);
+        }
         throw error;
       }
 
       console.log('UserSearchDialog: Successfully added participants');
-      toast.success(`Added ${selectedUsers.length} member(s) to the room`);
+      
+      const addedUserNames = users
+        .filter(u => selectedUsers.includes(u.id))
+        .map(u => u.name || u.email)
+        .join(', ');
+      
+      toast.success(`Added ${selectedUsers.length} member(s) to the room: ${addedUserNames}`);
       setSelectedUsers([]);
       setSearchTerm('');
       onOpenChange(false);
       onUsersAdded?.();
     } catch (error: any) {
       console.error('UserSearchDialog: Failed to add users:', error);
-      toast.error(`Failed to add users to room: ${error.message || 'Unknown error'}`);
+      // Error already handled above with specific messages
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleRetry = () => {
+    refetch();
   };
 
   // Debug info
@@ -161,8 +191,13 @@ const UserSearchDialog: React.FC<UserSearchDialogProps> = ({
         searchTerm,
         usersFound: users.length,
         existingMembers: existingMembers.length,
-        filteredUsers: filteredUsers.length
+        filteredUsers: filteredUsers.length,
+        hasOrgId: !!currentUser?.organizationId
       });
+      
+      if (!currentUser?.organizationId) {
+        console.error('UserSearchDialog: CRITICAL - No organization ID available!');
+      }
     }
   }, [open, currentUser, roomId, searchTerm, users.length, existingMembers.length, filteredUsers.length]);
 
@@ -177,29 +212,52 @@ const UserSearchDialog: React.FC<UserSearchDialogProps> = ({
         </DialogHeader>
         
         <div className="space-y-4">
+          {/* Organization Check Warning */}
+          {!currentUser?.organizationId && (
+            <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 p-3 rounded">
+              <AlertCircle className="h-4 w-4" />
+              <div>
+                <p className="font-medium">Organization Error</p>
+                <p>Your organization information is not available. Please refresh the page and try again.</p>
+              </div>
+            </div>
+          )}
+
           {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search by name or email..."
+              placeholder="Search by name or email (e.g., 'Dulce')..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-9"
+              disabled={!currentUser?.organizationId}
             />
           </div>
 
           {/* Debug info for troubleshooting */}
           {process.env.NODE_ENV === 'development' && (
-            <div className="text-xs text-muted-foreground bg-muted/30 p-2 rounded">
-              Debug: Org ID: {currentUser?.organizationId}, Users: {users.length}, Existing: {existingMembers.length}, Filtered: {filteredUsers.length}
+            <div className="text-xs text-muted-foreground bg-muted/30 p-2 rounded space-y-1">
+              <div>Debug Info:</div>
+              <div>• Organization ID: {currentUser?.organizationId || 'MISSING'}</div>
+              <div>• Users found: {users.length}</div>
+              <div>• Existing members: {existingMembers.length}</div>
+              <div>• Available to add: {filteredUsers.length}</div>
+              <div>• Search term: "{searchTerm}"</div>
             </div>
           )}
 
           {/* Error display */}
           {usersError && (
-            <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 p-2 rounded">
+            <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 p-3 rounded">
               <AlertCircle className="h-4 w-4" />
-              <span>Error loading users: {usersError.message}</span>
+              <div className="flex-1">
+                <p className="font-medium">Error loading users</p>
+                <p>{usersError.message}</p>
+              </div>
+              <Button variant="outline" size="sm" onClick={handleRetry}>
+                <RefreshCw className="h-4 w-4" />
+              </Button>
             </div>
           )}
 
@@ -216,6 +274,12 @@ const UserSearchDialog: React.FC<UserSearchDialogProps> = ({
               <div className="text-center py-4">
                 <p className="text-sm text-muted-foreground">Loading users...</p>
               </div>
+            ) : !currentUser?.organizationId ? (
+              <div className="text-center py-4">
+                <p className="text-sm text-muted-foreground">
+                  Organization information required to search for users
+                </p>
+              </div>
             ) : filteredUsers.length === 0 ? (
               <div className="text-center py-4">
                 <p className="text-sm text-muted-foreground">
@@ -229,8 +293,18 @@ const UserSearchDialog: React.FC<UserSearchDialogProps> = ({
                 </p>
                 {searchTerm && users.length > 0 && (
                   <p className="text-xs text-muted-foreground mt-1">
-                    Try searching for part of the name or email
+                    Try a different search term or check the spelling
                   </p>
+                )}
+                {searchTerm && users.length === 0 && (
+                  <div className="mt-2 text-xs text-muted-foreground">
+                    <p>Make sure the user:</p>
+                    <ul className="list-disc list-inside mt-1 space-y-1">
+                      <li>Is in your organization</li>
+                      <li>Has been added to the system</li>
+                      <li>Name/email is spelled correctly</li>
+                    </ul>
+                  </div>
                 )}
               </div>
             ) : (
@@ -271,7 +345,7 @@ const UserSearchDialog: React.FC<UserSearchDialogProps> = ({
             </Button>
             <Button 
               onClick={handleAddUsers} 
-              disabled={loading || selectedUsers.length === 0}
+              disabled={loading || selectedUsers.length === 0 || !currentUser?.organizationId}
             >
               {loading ? 'Adding...' : (
                 <>

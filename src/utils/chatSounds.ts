@@ -1,10 +1,10 @@
-
 import { SoundSettings } from "@/hooks/useSoundSettings";
 
 // Define multiple audio formats to increase browser compatibility
 const CHAT_MESSAGE_SOUND = "/sounds/notification.mp3";
 const CHAT_MESSAGE_SOUND_WAV = "/sounds/message.wav";
 const CHAT_MESSAGE_SOUND_FALLBACK = "/sounds/message.mp3";
+const CHAT_MESSAGE_SOUND_SIMPLE = "/sounds/notification-simple.mp3";
 
 // Additional app sound files
 const SUCCESS_SOUND = "/sounds/success.mp3";
@@ -44,10 +44,46 @@ export function markUserInteraction() {
 }
 
 /**
+ * Create a simple beep sound using Web Audio API as fallback
+ */
+function createBeepSound(frequency: number = 800, duration: number = 200): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const context = initAudioContext();
+    if (!context) {
+      reject(new Error("AudioContext not available"));
+      return;
+    }
+
+    try {
+      const oscillator = context.createOscillator();
+      const gainNode = context.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(context.destination);
+      
+      oscillator.frequency.value = frequency;
+      oscillator.type = 'sine';
+      
+      gainNode.gain.setValueAtTime(0.3, context.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, context.currentTime + duration / 1000);
+      
+      oscillator.start(context.currentTime);
+      oscillator.stop(context.currentTime + duration / 1000);
+      
+      oscillator.onended = () => resolve();
+      
+      setTimeout(() => resolve(), duration + 100);
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
+
+/**
  * Play notification sound for new chat messages with enhanced browser compatibility
  */
 export function playChatNotification(settings: SoundSettings): Promise<void> {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     if (!settings.enabled) {
       resolve();
       return;
@@ -61,14 +97,28 @@ export function playChatNotification(settings: SoundSettings): Promise<void> {
     console.log('Playing chat notification with settings:', settings);
     
     // Try multiple sound files in order of preference
-    const soundFiles = [CHAT_MESSAGE_SOUND, CHAT_MESSAGE_SOUND_WAV, CHAT_MESSAGE_SOUND_FALLBACK];
+    const soundFiles = [
+      CHAT_MESSAGE_SOUND_SIMPLE, 
+      CHAT_MESSAGE_SOUND, 
+      CHAT_MESSAGE_SOUND_WAV, 
+      CHAT_MESSAGE_SOUND_FALLBACK
+    ];
     
     let currentFileIndex = 0;
     
     const tryNextSound = () => {
       if (currentFileIndex >= soundFiles.length) {
-        console.error("All chat notification sounds failed");
-        reject(new Error("Failed to play any notification sound"));
+        console.log("All sound files failed, trying beep fallback");
+        // Final fallback: create a simple beep
+        createBeepSound(800, 300)
+          .then(() => {
+            console.log("Beep fallback successful");
+            resolve();
+          })
+          .catch(() => {
+            console.log("All notification methods failed - resolving silently");
+            resolve(); // Don't reject, just resolve silently
+          });
         return;
       }
       
@@ -112,46 +162,56 @@ export async function playWithWebAudioAPI(soundPath: string, volume: number = 0.
 
   console.log(`Loading sound with Web Audio API: ${soundPath}`);
   
-  // Fetch the audio file
-  const response = await fetch(soundPath);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch sound file: ${soundPath} (${response.status})`);
+  // Fetch the audio file with timeout
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5000);
+  
+  try {
+    const response = await fetch(soundPath, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch sound file: ${soundPath} (${response.status})`);
+    }
+    
+    const arrayBuffer = await response.arrayBuffer();
+    
+    // Decode the audio data
+    const audioBuffer = await context.decodeAudioData(arrayBuffer);
+    
+    // Create audio source
+    const source = context.createBufferSource();
+    source.buffer = audioBuffer;
+    
+    // Create gain node for volume control
+    const gainNode = context.createGain();
+    gainNode.gain.value = Math.max(0, Math.min(1, volume));
+    
+    // Connect nodes
+    source.connect(gainNode);
+    gainNode.connect(context.destination);
+    
+    // Play the sound
+    source.start(0);
+    
+    console.log(`Successfully playing sound: ${soundPath} at volume ${volume}`);
+    
+    // Return a promise that resolves when the sound finishes playing
+    return new Promise((resolve) => {
+      source.onended = () => {
+        console.log(`Sound finished: ${soundPath}`);
+        resolve();
+      };
+      // Fallback timeout
+      setTimeout(() => {
+        console.log(`Sound timeout: ${soundPath}`);
+        resolve();
+      }, audioBuffer.duration * 1000 + 500);
+    });
+  } catch (error) {
+    clearTimeout(timeoutId);
+    throw error;
   }
-  
-  const arrayBuffer = await response.arrayBuffer();
-  
-  // Decode the audio data
-  const audioBuffer = await context.decodeAudioData(arrayBuffer);
-  
-  // Create audio source
-  const source = context.createBufferSource();
-  source.buffer = audioBuffer;
-  
-  // Create gain node for volume control
-  const gainNode = context.createGain();
-  gainNode.gain.value = Math.max(0, Math.min(1, volume));
-  
-  // Connect nodes
-  source.connect(gainNode);
-  gainNode.connect(context.destination);
-  
-  // Play the sound
-  source.start(0);
-  
-  console.log(`Successfully playing sound: ${soundPath} at volume ${volume}`);
-  
-  // Return a promise that resolves when the sound finishes playing
-  return new Promise((resolve) => {
-    source.onended = () => {
-      console.log(`Sound finished: ${soundPath}`);
-      resolve();
-    };
-    // Fallback timeout
-    setTimeout(() => {
-      console.log(`Sound timeout: ${soundPath}`);
-      resolve();
-    }, audioBuffer.duration * 1000 + 500);
-  });
 }
 
 /**
