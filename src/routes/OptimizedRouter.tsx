@@ -1,3 +1,4 @@
+
 import React, { Suspense } from 'react';
 import { createBrowserRouter } from 'react-router-dom';
 import LoadingFallback from '@/components/LoadingFallback';
@@ -12,6 +13,7 @@ import DashboardPage from '@/pages/DashboardPage';
 import TasksPage from '@/pages/TasksPage';
 import ProjectsPage from '@/pages/ProjectsPage';
 import ProjectTasksPage from '@/pages/ProjectTasksPage';
+import TimeTrackingPage from '@/pages/TimeTrackingPage';
 
 // Lazy load non-critical pages
 import {
@@ -74,6 +76,10 @@ export const router = createBrowserRouter([
           {
             path: "projects/:projectId/tasks",
             element: <ProjectTasksPage />,
+          },
+          {
+            path: "time-tracking",
+            element: <TimeTrackingPage />,
           },
           {
             path: "calendar",
