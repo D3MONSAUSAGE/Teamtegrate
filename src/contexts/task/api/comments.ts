@@ -31,28 +31,55 @@ export const fetchTaskComments = async (taskId: string): Promise<TaskComment[]> 
 
 export const fetchProjectComments = async (projectId: string): Promise<TaskComment[]> => {
   try {
-    const { data, error } = await supabase
+    // First get the comments
+    const { data: comments, error: commentsError } = await supabase
       .from('comments')
-      .select(`
-        *,
-        users!comments_user_id_fkey(name, email)
-      `)
+      .select('*')
       .eq('project_id', projectId)
       .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('Error fetching project comments:', error);
-      throw error;
+    if (commentsError) {
+      console.error('Error fetching project comments:', commentsError);
+      throw commentsError;
     }
 
-    return data?.map(comment => ({
-      id: comment.id,
-      userId: comment.user_id,
-      userName: comment.users?.name || comment.users?.email || 'Unknown User',
-      text: comment.content,
-      createdAt: new Date(comment.created_at),
-      organizationId: comment.organization_id
-    })) || [];
+    if (!comments || comments.length === 0) {
+      return [];
+    }
+
+    // Get unique user IDs
+    const userIds = [...new Set(comments.map(comment => comment.user_id))];
+
+    // Fetch user names for those IDs
+    const { data: users, error: usersError } = await supabase
+      .from('users')
+      .select('id, name, email')
+      .in('id', userIds);
+
+    if (usersError) {
+      console.error('Error fetching users:', usersError);
+      // Continue without user names rather than failing completely
+    }
+
+    // Create a map of user ID to user info
+    const userMap = new Map();
+    if (users) {
+      users.forEach(user => {
+        userMap.set(user.id, user);
+      });
+    }
+
+    return comments.map(comment => {
+      const user = userMap.get(comment.user_id);
+      return {
+        id: comment.id,
+        userId: comment.user_id,
+        userName: user?.name || user?.email || 'Unknown User',
+        text: comment.content,
+        createdAt: new Date(comment.created_at),
+        organizationId: comment.organization_id
+      };
+    });
   } catch (error) {
     console.error('Error in fetchProjectComments:', error);
     return [];
