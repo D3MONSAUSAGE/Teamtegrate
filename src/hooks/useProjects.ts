@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -13,9 +14,10 @@ export function useProjects() {
   const { user } = useAuth();
 
   const fetchProjects = async () => {
-    if (!user) {
-      console.log('useProjects: No user, skipping fetch');
+    if (!user?.organizationId) {
+      console.log('useProjects: No user or organization ID, skipping fetch');
       setLoading(false);
+      setProjects([]);
       return;
     }
     

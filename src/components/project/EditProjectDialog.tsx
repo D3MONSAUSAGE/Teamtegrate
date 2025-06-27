@@ -10,7 +10,9 @@ import { ProjectDetailsSection } from './ProjectDetailsSection';
 import { TeamMembersSection } from './TeamMembersSection';
 import { toast } from '@/components/ui/sonner';
 import { format } from 'date-fns';
-import { useTask } from '@/contexts/task';
+import { useAuth } from '@/contexts/AuthContext';
+import { useProjects } from '@/hooks/useProjects';
+import { updateProject as updateProjectOperation } from '@/contexts/task/operations/updateProject';
 import { useUsers } from '@/hooks/useUsers';
 
 // Define the validation schema - making memberId required in team members
@@ -38,7 +40,8 @@ const EditProjectDialog: React.FC<EditProjectDialogProps> = ({
   project,
   onSuccess
 }) => {
-  const { updateProject } = useTask();
+  const { user } = useAuth();
+  const { setProjects } = useProjects();
   const { users, isLoading: loadingUsers } = useUsers();
   
   const { register, handleSubmit, reset, control, watch, setValue, formState: { errors, isSubmitting } } = useForm<FormValues>({
@@ -77,17 +80,23 @@ const EditProjectDialog: React.FC<EditProjectDialogProps> = ({
     try {
       console.log('Submitting project update:', data);
       
+      if (!user) {
+        toast.error('User not authenticated');
+        return;
+      }
+      
       // Extract team member IDs from the form data
       const teamMemberIds = data.teamMembers?.map(tm => tm.memberId) || [];
       
-      await updateProject(project.id, {
+      // Use the operation function directly with proper parameters
+      await updateProjectOperation(project.id, {
         title: data.title,
         description: data.description,
         startDate: data.startDate,
         endDate: data.endDate,
         budget: data.budget,
         teamMemberIds: teamMemberIds
-      });
+      }, user, setProjects);
       
       toast.success("Project updated successfully");
       if (onSuccess) {
