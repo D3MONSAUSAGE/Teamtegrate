@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   Users, 
   Search, 
@@ -186,37 +187,43 @@ const PaginatedUserList: React.FC<PaginatedUserListProps> = ({
         </span>
       </div>
 
-      {/* User List */}
-      <div className={viewMode === 'grid' ? 'grid gap-4' : 'space-y-2'}>
-        {paginatedUsers.map((user) => (
-          <UserCard
-            key={user.id}
-            user={user}
-            updatingUserId={updatingUserId}
-            onRoleChange={onRoleChange}
-            onEditUser={onEditUser}
-            onDeleteUser={onDeleteUser}
-            compact={viewMode === 'table'}
-          />
-        ))}
+      {/* Fixed Height Scrollable User List Container */}
+      <div className="border rounded-lg bg-card">
+        <ScrollArea className="h-[500px] w-full">
+          <div className="p-4">
+            <div className={viewMode === 'grid' ? 'grid gap-4' : 'space-y-2'}>
+              {paginatedUsers.map((user) => (
+                <UserCard
+                  key={user.id}
+                  user={user}
+                  updatingUserId={updatingUserId}
+                  onRoleChange={onRoleChange}
+                  onEditUser={onEditUser}
+                  onDeleteUser={onDeleteUser}
+                  compact={viewMode === 'table'}
+                />
+              ))}
+            </div>
+
+            {/* No Results Message Inside Scroll Area */}
+            {filteredUsers.length === 0 && (
+              <div className="text-center py-8">
+                <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">
+                  {searchTerm || roleFilter !== 'all' 
+                    ? 'No users match your filters' 
+                    : 'No users found'
+                  }
+                </p>
+              </div>
+            )}
+          </div>
+        </ScrollArea>
       </div>
 
-      {/* No Results */}
-      {filteredUsers.length === 0 && (
-        <div className="text-center py-8">
-          <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground">
-            {searchTerm || roleFilter !== 'all' 
-              ? 'No users match your filters' 
-              : 'No users found'
-            }
-          </p>
-        </div>
-      )}
-
-      {/* Pagination Controls */}
+      {/* Pagination Controls - Outside of Scroll Area */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2">
+        <div className="flex items-center justify-center gap-2 pt-4">
           <Button
             variant="outline"
             size="sm"
