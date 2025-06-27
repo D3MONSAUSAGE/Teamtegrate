@@ -8,7 +8,7 @@ import ProfileStats from '@/components/profile/ProfileStats';
 import ProfileActivity from '@/components/profile/ProfileActivity';
 import ProfileTeamOverview from '@/components/profile/ProfileTeamOverview';
 import ProfileQuickActions from '@/components/profile/ProfileQuickActions';
-import AdminUserManagement from '@/components/profile/AdminUserManagement';
+import AccountSecuritySection from '@/components/profile/AccountSecuritySection';
 
 const ProfilePage = () => {
   const navigate = useNavigate();
@@ -31,7 +31,7 @@ const ProfilePage = () => {
   return (
     <div className="p-3 sm:p-6 max-w-7xl mx-auto">
       <div className="space-y-6">
-        {/* Profile Header Section */}
+        {/* Profile Header with consolidated profile info */}
         <ProfileHeader />
         
         {/* Statistics Dashboard */}
@@ -40,8 +40,8 @@ const ProfilePage = () => {
         {/* Quick Actions Panel */}
         <ProfileQuickActions />
         
-        {/* Admin User Management - AdminUserManagement handles its own access control */}
-        <AdminUserManagement />
+        {/* Account Security Section - moved from Settings */}
+        <AccountSecuritySection />
         
         {/* Team & Project Overview */}
         <ProfileTeamOverview projects={projects} user={user} />

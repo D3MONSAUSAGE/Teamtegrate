@@ -3,8 +3,6 @@ import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import SettingsLayout from '@/components/settings/SettingsLayout';
-import ProfileSection from '@/components/settings/ProfileSection';
-import AccountSettingsSection from '@/components/settings/AccountSettingsSection';
 import AppSettingsSection from '@/components/settings/AppSettingsSection';
 import NotificationSettings from '@/components/settings/NotificationSettings';
 
@@ -26,9 +24,15 @@ const SettingsPage = () => {
   return (
     <SettingsLayout>
       <div className="space-y-8">
-        <ProfileSection />
+        <div>
+          <h2 className="text-2xl font-bold mb-4">Application Settings</h2>
+          <p className="text-muted-foreground mb-6">
+            Configure your app preferences and notification settings. For profile information, 
+            visit your <a href="/dashboard/profile" className="text-primary hover:underline">Profile page</a>.
+          </p>
+        </div>
+        
         <NotificationSettings />
-        <AccountSettingsSection />
         <AppSettingsSection />
       </div>
     </SettingsLayout>
