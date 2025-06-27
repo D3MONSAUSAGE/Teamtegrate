@@ -11,12 +11,20 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { toast } from '@/components/ui/sonner';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Mail } from 'lucide-react';
 import BrandLogo from '@/components/shared/BrandLogo';
 import MultiTenantSignupForm from '@/components/auth/MultiTenantSignupForm';
+import { supabase } from '@/integrations/supabase/client';
 
 const LoginPage = () => {
   const [searchParams] = useSearchParams();
@@ -24,6 +32,9 @@ const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   
@@ -81,6 +92,40 @@ const LoginPage = () => {
       toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!resetEmail) {
+      toast.error('Please enter your email address');
+      return;
+    }
+
+    setIsResettingPassword(true);
+    
+    try {
+      const redirectUrl = `${window.location.origin}/reset-password`;
+      
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo: redirectUrl,
+      });
+
+      if (error) {
+        console.error('Password reset error:', error);
+        toast.error('Failed to send password reset email. Please try again.');
+        return;
+      }
+
+      toast.success('Password reset email sent! Check your inbox for instructions.');
+      setShowForgotPassword(false);
+      setResetEmail('');
+    } catch (error: any) {
+      console.error('Password reset failed:', error);
+      toast.error('Failed to send password reset email. Please try again.');
+    } finally {
+      setIsResettingPassword(false);
     }
   };
 
@@ -164,6 +209,19 @@ const LoginPage = () => {
                 />
               </div>
 
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  variant="link"
+                  size="sm"
+                  className="p-0 h-auto text-xs"
+                  onClick={() => setShowForgotPassword(true)}
+                  disabled={isSubmitting}
+                >
+                  Forgot password?
+                </Button>
+              </div>
+
               <Button 
                 type="submit" 
                 className="w-full" 
@@ -191,6 +249,63 @@ const LoginPage = () => {
             </Button>
           </CardFooter>
         </Card>
+
+        {/* Forgot Password Dialog */}
+        <Dialog open={showForgotPassword} onOpenChange={setShowForgotPassword}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Mail className="h-5 w-5" />
+                Reset Password
+              </DialogTitle>
+              <DialogDescription>
+                Enter your email address and we'll send you a link to reset your password.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <form onSubmit={handleForgotPassword} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="resetEmail">Email Address</Label>
+                <Input
+                  id="resetEmail"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  disabled={isResettingPassword}
+                  required
+                />
+              </div>
+              
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setShowForgotPassword(false);
+                    setResetEmail('');
+                  }}
+                  disabled={isResettingPassword}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={isResettingPassword || !resetEmail}
+                >
+                  {isResettingPassword ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Sending...
+                    </>
+                  ) : (
+                    'Send Reset Link'
+                  )}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
