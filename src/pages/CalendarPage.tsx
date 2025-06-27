@@ -6,7 +6,6 @@ import { isSameDay, addMonths, subMonths } from 'date-fns';
 import TaskDetailDialog from '@/components/calendar/TaskDetailDialog';
 import CreateTaskDialogEnhanced from '@/components/CreateTaskDialogEnhanced';
 import CalendarHeader from '@/components/calendar/CalendarHeader';
-import CalendarViewSelector from '@/components/calendar/CalendarViewSelector';
 import CalendarNavigation from '@/components/calendar/CalendarNavigation';
 import CalendarStats from '@/components/calendar/CalendarStats';
 import CalendarContent from '@/components/calendar/CalendarContent';
@@ -86,12 +85,7 @@ const CalendarPage = () => {
         <SectionContainer maxWidth="7xl" className="py-8 space-y-8">
           {/* Enhanced Calendar Header */}
           <div className="animate-fade-in">
-            <CalendarHeader>
-              <CalendarViewSelector 
-                viewType={viewType} 
-                onViewChange={setViewType} 
-              />
-            </CalendarHeader>
+            <CalendarHeader />
           </div>
 
           {/* Calendar Navigation Card */}
@@ -136,7 +130,7 @@ const CalendarPage = () => {
           {/* Calendar Content Card */}
           <div className="animate-fade-in delay-150">
             <ModernSectionCard
-              title={`${viewType.charAt(0).toUpperCase() + viewType.slice(1)} View`}
+              title="Calendar"
               subtitle="Organize and manage your tasks by date"
               icon={CalendarIcon}
               gradient="from-primary/10 via-blue-500/5 to-indigo-500/10"
@@ -145,6 +139,7 @@ const CalendarPage = () => {
             >
               <CalendarContent
                 viewType={viewType}
+                onViewChange={setViewType}
                 selectedDate={selectedDate}
                 tasks={tasks}
                 onTaskClick={handleTaskClick}

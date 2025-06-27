@@ -3,11 +3,7 @@ import React from 'react';
 import { CalendarIcon, Sparkles, Clock, TrendingUp, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 
-interface CalendarHeaderProps {
-  children?: React.ReactNode;
-}
-
-const CalendarHeader: React.FC<CalendarHeaderProps> = ({ children }) => {
+const CalendarHeader: React.FC = () => {
   return (
     <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/5 via-purple-500/5 to-primary/5 border border-primary/10">
       {/* Background Effects */}
@@ -65,11 +61,6 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({ children }) => {
                 <div className="text-sm text-muted-foreground">Time Management</div>
               </div>
             </div>
-          </div>
-          
-          {/* View Selector */}
-          <div className="flex-shrink-0">
-            {children}
           </div>
         </div>
       </div>
