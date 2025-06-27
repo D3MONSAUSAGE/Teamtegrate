@@ -20,7 +20,7 @@ const EnhancedInviteCodeGenerator: React.FC = () => {
   const [expiryDays, setExpiryDays] = useState<string>('7');
   const [maxUses, setMaxUses] = useState<string>('');
   const [selectedRole, setSelectedRole] = useState<UserRole>('user');
-  const [selectedTeam, setSelectedTeam] = useState<string>('');
+  const [selectedTeam, setSelectedTeam] = useState<string>('none');
   const [connectionError, setConnectionError] = useState<string>('');
 
   // Fetch teams for the organization
@@ -114,7 +114,7 @@ const EnhancedInviteCodeGenerator: React.FC = () => {
       const result = await generateEnhancedInviteCode(
         user.organizationId,
         selectedRole,
-        selectedTeam || undefined,
+        selectedTeam !== 'none' ? selectedTeam : undefined,
         parseInt(expiryDays),
         maxUses ? parseInt(maxUses) : undefined
       );
@@ -215,9 +215,9 @@ const EnhancedInviteCodeGenerator: React.FC = () => {
                 <SelectValue placeholder="No team assignment" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No team assignment</SelectItem>
+                <SelectItem value="none">No team assignment</SelectItem>
                 {teamsLoading ? (
-                  <SelectItem value="" disabled>
+                  <SelectItem value="loading" disabled>
                     <div className="flex items-center gap-2">
                       <Loader2 className="h-3 w-3 animate-spin" />
                       Loading teams...
@@ -322,7 +322,7 @@ const EnhancedInviteCodeGenerator: React.FC = () => {
               <div className="flex items-center gap-2">
                 <strong>Role:</strong> {roleOptions.find(r => r.value === selectedRole)?.label}
               </div>
-              {selectedTeam && teams && (
+              {selectedTeam !== 'none' && teams && (
                 <div className="flex items-center gap-2">
                   <strong>Team:</strong> {teams.find(t => t.id === selectedTeam)?.name}
                 </div>
