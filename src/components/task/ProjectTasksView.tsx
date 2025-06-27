@@ -109,6 +109,12 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
     setIsEditProjectOpen(true);
   };
 
+  // Handle project edit success
+  const handleProjectEditSuccess = () => {
+    setIsEditProjectOpen(false);
+    handleManualRefresh();
+  };
+
   // Handle adding team member
   const handleAddTeamMember = async (userId: string) => {
     if (!projectId) return;
@@ -173,6 +179,7 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
         open={isEditProjectOpen}
         onOpenChange={setIsEditProjectOpen}
         project={project}
+        onSuccess={handleProjectEditSuccess}
       />
     </>
   );
