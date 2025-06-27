@@ -152,10 +152,10 @@ const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
                         </div>
                       )}
                       
-                      {/* Persistent add button */}
+                      {/* Always visible add button */}
                       <button
                         onClick={() => onDateCreate(day)}
-                        className="group/add opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 rounded-full hover:bg-primary/20 hover:scale-110"
+                        className="group/add opacity-60 hover:opacity-100 transition-all duration-200 p-1 rounded-full hover:bg-primary/20 hover:scale-110"
                         title="Add task"
                       >
                         <Plus className="h-3 w-3 text-primary group-hover/add:scale-110 transition-transform" />

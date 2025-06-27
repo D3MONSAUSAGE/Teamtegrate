@@ -64,10 +64,10 @@ const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
                 )}>
                   {format(day, 'd')}
                 </div>
-                {/* Persistent add button in header */}
+                {/* Always visible add button */}
                 <button
                   onClick={() => onDateCreate(day)}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 rounded-full hover:bg-primary/20 hover:scale-110"
+                  className="opacity-60 hover:opacity-100 transition-all duration-200 p-1 rounded-full hover:bg-primary/20 hover:scale-110"
                   title="Add task"
                 >
                   <Plus className="h-3 w-3 text-primary" />

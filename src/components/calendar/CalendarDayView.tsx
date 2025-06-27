@@ -116,10 +116,10 @@ const CalendarDayView: React.FC<CalendarDayViewProps> = ({
                           </span>
                         </div>
                       )}
-                      {/* Persistent add button for each time block */}
+                      {/* Always visible add button for each time block */}
                       <button
                         onClick={() => onDateCreate(selectedDate)}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 rounded-full hover:bg-primary/20 hover:scale-110"
+                        className="opacity-50 hover:opacity-100 transition-all duration-200 p-1 rounded-full hover:bg-primary/20 hover:scale-110"
                         title="Add task to this time"
                       >
                         <Plus className="h-3 w-3 text-primary" />
