@@ -1,7 +1,8 @@
+
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import LoadingFallback from '@/components/LoadingFallback';
-import ProtectedRoute from './ProtectedRoute';
+import AppLayout from '@/components/AppLayout';
 import { useAuth } from '@/contexts/AuthContext';
 
 // Lazy load pages for better performance
@@ -46,28 +47,30 @@ const OptimizedRouter = () => {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         
-        {/* Protected routes */}
-        <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-        <Route path="/tasks" element={<ProtectedRoute><TasksPage /></ProtectedRoute>} />
-        <Route path="/projects" element={<ProtectedRoute><ProjectsPage /></ProtectedRoute>} />
-        <Route path="/projects/:projectId/tasks" element={<ProtectedRoute><ProjectTasksPage /></ProtectedRoute>} />
-        <Route path="/calendar" element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />
-        <Route path="/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
-        <Route path="/team" element={<ProtectedRoute><TeamPage /></ProtectedRoute>} />
-        <Route path="/team/:teamId" element={<ProtectedRoute><TeamDetailPage /></ProtectedRoute>} />
-        <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-        <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
-        <Route path="/reports" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
-        <Route path="/time-tracking" element={<ProtectedRoute><TimeTrackingPage /></ProtectedRoute>} />
-        <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
-        <Route path="/documents" element={<ProtectedRoute><DocumentsPage /></ProtectedRoute>} />
-        <Route path="/finance" element={<ProtectedRoute><FinancePage /></ProtectedRoute>} />
-        <Route path="/journal" element={<ProtectedRoute><JournalPage /></ProtectedRoute>} />
-        <Route path="/notebook" element={<ProtectedRoute><NotebookPage /></ProtectedRoute>} />
-        <Route path="/timeline" element={<ProtectedRoute><TimelinePage /></ProtectedRoute>} />
-        <Route path="/focus" element={<ProtectedRoute><FocusZonePage /></ProtectedRoute>} />
-        <Route path="/organization" element={<ProtectedRoute><OrganizationDashboard /></ProtectedRoute>} />
-        <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
+        {/* Protected routes with AppLayout (includes sidebar + navbar) */}
+        <Route path="/dashboard" element={<AppLayout />}>
+          <Route index element={<DashboardPage />} />
+          <Route path="tasks" element={<TasksPage />} />
+          <Route path="projects" element={<ProjectsPage />} />
+          <Route path="projects/:projectId/tasks" element={<ProjectTasksPage />} />
+          <Route path="calendar" element={<CalendarPage />} />
+          <Route path="chat" element={<ChatPage />} />
+          <Route path="team" element={<TeamPage />} />
+          <Route path="team/:teamId" element={<TeamDetailPage />} />
+          <Route path="profile" element={<ProfilePage />} />
+          <Route path="settings" element={<SettingsPage />} />
+          <Route path="reports" element={<ReportsPage />} />
+          <Route path="time-tracking" element={<TimeTrackingPage />} />
+          <Route path="notifications" element={<NotificationsPage />} />
+          <Route path="documents" element={<DocumentsPage />} />
+          <Route path="finance" element={<FinancePage />} />
+          <Route path="journal" element={<JournalPage />} />
+          <Route path="notebook" element={<NotebookPage />} />
+          <Route path="timeline" element={<TimelinePage />} />
+          <Route path="focus" element={<FocusZonePage />} />
+          <Route path="organization" element={<OrganizationDashboard />} />
+          <Route path="admin" element={<AdminPage />} />
+        </Route>
         
         {/* Redirect authenticated users from public routes */}
         {isAuthenticated && (

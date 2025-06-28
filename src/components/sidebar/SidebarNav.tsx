@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import {
   Home,
-  CheckSquare,
+  CheckSquare,  
   Briefcase,
   Users,
   Calendar,
