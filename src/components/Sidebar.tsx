@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { memo, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDarkMode } from '@/hooks/useDarkMode';
 import SidebarHeader from './sidebar/SidebarHeader';
@@ -17,43 +17,48 @@ interface SidebarProps {
   onNavigation?: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
+const Sidebar: React.FC<SidebarProps> = memo(({ onNavigation }) => {
   const { user } = useAuth();
   const { isDark, toggle } = useDarkMode();
   const { state, isMobile, setOpenMobile, setOpen } = useSidebar();
 
-  const handleNavigation = () => {
+  // Memoize user object to prevent unnecessary re-renders
+  const sidebarUser = useMemo(() => {
+    if (!user) return null;
+    
+    return {
+      name: user.name || user.email || 'User',
+      email: user.email,
+      role: user.role
+    };
+  }, [user?.name, user?.email, user?.role]);
+
+  // Memoize handlers
+  const handleNavigation = useMemo(() => () => {
     // Close mobile sidebar when navigating
     if (isMobile) {
       setOpenMobile(false);
     }
     onNavigation?.();
-  };
+  }, [isMobile, setOpenMobile, onNavigation]);
 
-  const handleMouseEnter = () => {
+  const handleMouseEnter = useMemo(() => () => {
     // Only expand on hover for desktop
     if (!isMobile) {
       setOpen(true);
     }
-  };
+  }, [isMobile, setOpen]);
 
-  const handleMouseLeave = () => {
+  const handleMouseLeave = useMemo(() => () => {
     // Only collapse on hover leave for desktop
     if (!isMobile) {
       setOpen(false);
     }
-  };
+  }, [isMobile, setOpen]);
 
-  if (!user) return null;
+  if (!sidebarUser) return null;
 
   const isCollapsed = !isMobile && state === 'collapsed';
-
-  // Create a safe user object for the sidebar footer
-  const sidebarUser = {
-    name: user.name || user.email || 'User',
-    email: user.email,
-    role: user.role
-  };
 
   return (
     <ShadcnSidebar 
@@ -89,6 +94,8 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigation }) => {
       </ShadcnSidebarFooter>
     </ShadcnSidebar>
   );
-};
+});
+
+Sidebar.displayName = 'Sidebar';
 
 export default Sidebar;

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { memo, useMemo, useCallback } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
@@ -30,11 +30,12 @@ interface SidebarNavProps {
   isCollapsed?: boolean;
 }
 
-const SidebarNav: React.FC<SidebarNavProps> = ({ onNavigation, isCollapsed = false }) => {
+const SidebarNav: React.FC<SidebarNavProps> = memo(({ onNavigation, isCollapsed = false }) => {
   const location = useLocation();
   const { user } = useAuth();
 
-  const navigation = [
+  // Memoize navigation items to prevent re-creation on every render
+  const navigation = useMemo(() => [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
     { name: 'Tasks', href: '/dashboard/tasks', icon: CheckSquare },
     { name: 'Projects', href: '/dashboard/projects', icon: Briefcase },
@@ -48,35 +49,47 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ onNavigation, isCollapsed = fal
     { name: 'Notebook', href: '/dashboard/notebook', icon: NotebookPen },
     { name: 'Time Clock', href: '/dashboard/time-tracking', icon: Clock },
     { name: 'Profile', href: '/dashboard/profile', icon: User },
-  ];
+  ], []);
 
-  const handleNavClick = () => {
+  // Memoize the navigation click handler
+  const handleNavClick = useCallback(() => {
     if (onNavigation) {
       onNavigation();
     }
-  };
+  }, [onNavigation]);
+
+  // Memoize the current path for comparison
+  const currentPath = useMemo(() => location.pathname, [location.pathname]);
+
+  if (!user) return null;
 
   return (
     <div className="flex flex-col space-y-1">
-      {navigation.map((item: NavItemProps) => (
-        <Link
-          key={item.name}
-          to={item.href}
-          onClick={handleNavClick}
-          className={cn(
-            "flex items-center space-x-2 rounded-md p-2 text-sm font-medium hover:bg-secondary hover:text-accent-foreground transition-colors",
-            location.pathname === item.href
-              ? "bg-secondary text-accent-foreground"
-              : "text-muted-foreground",
-            isCollapsed && "justify-center"
-          )}
-        >
-          <item.icon className="h-4 w-4 flex-shrink-0" />
-          {!isCollapsed && <span>{item.name}</span>}
-        </Link>
-      ))}
+      {navigation.map((item: NavItemProps) => {
+        const isActive = currentPath === item.href;
+        
+        return (
+          <Link
+            key={item.name}
+            to={item.href}
+            onClick={handleNavClick}
+            className={cn(
+              "flex items-center space-x-2 rounded-md p-2 text-sm font-medium hover:bg-secondary hover:text-accent-foreground transition-colors",
+              isActive
+                ? "bg-secondary text-accent-foreground"
+                : "text-muted-foreground",
+              isCollapsed && "justify-center"
+            )}
+          >
+            <item.icon className="h-4 w-4 flex-shrink-0" />
+            {!isCollapsed && <span>{item.name}</span>}
+          </Link>
+        );
+      })}
     </div>
   );
-};
+});
+
+SidebarNav.displayName = 'SidebarNav';
 
 export default SidebarNav;

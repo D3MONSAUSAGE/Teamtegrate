@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, memo, useMemo, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { enhancedNotifications } from '@/utils/enhancedNotifications';
@@ -10,7 +10,7 @@ import NavbarBrand from './navbar/NavbarBrand';
 import NotificationButton from './navbar/NotificationButton';
 import UserMenu from './navbar/UserMenu';
 
-const Navbar = () => {
+const Navbar = memo(() => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { markAsRead, fetchNotifications } = useNotifications();
@@ -22,7 +22,8 @@ const Navbar = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleLogout = async () => {
+  // Memoize handlers to prevent unnecessary re-renders
+  const handleLogout = useCallback(async () => {
     try {
       await logout();
       navigate('/login');
@@ -31,18 +32,18 @@ const Navbar = () => {
       console.error('Logout error:', error);
       navigate('/login');
     }
-  };
+  }, [logout, navigate]);
 
-  const handleSettings = () => {
+  const handleSettings = useCallback(() => {
     navigate('/dashboard/settings');
-  };
+  }, [navigate]);
 
-  const handleNotificationsOpen = () => {
+  const handleNotificationsOpen = useCallback(() => {
     fetchNotifications();
     console.log("Opening notifications");
-  };
+  }, [fetchNotifications]);
 
-  const handleNotificationClick = (notificationType: string) => {
+  const handleNotificationClick = useCallback((notificationType: string) => {
     if (notificationType.includes('task')) {
       navigate('/dashboard/tasks');
     } else if (notificationType.includes('chat')) {
@@ -51,9 +52,9 @@ const Navbar = () => {
       navigate('/dashboard/projects');
     }
     markAsRead();
-  };
+  }, [navigate, markAsRead]);
 
-  const formatNotificationTime = (timestamp: string) => {
+  const formatNotificationTime = useMemo(() => (timestamp: string) => {
     const date = new Date(timestamp);
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
@@ -65,7 +66,7 @@ const Navbar = () => {
     if (diffMins < 60) return `${diffMins}m ago`;
     if (diffHours < 24) return `${diffHours}h ago`;
     return `${diffDays}d ago`;
-  };
+  }, []);
 
   if (!user) return null;
 
@@ -92,6 +93,8 @@ const Navbar = () => {
       </div>
     </nav>
   );
-};
+});
+
+Navbar.displayName = 'Navbar';
 
 export default Navbar;

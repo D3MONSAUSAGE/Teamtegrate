@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { memo } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import Navbar from './Navbar';
@@ -8,7 +9,8 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { Loader2 } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 
-const MainContent = ({ children }: { children: React.ReactNode }) => {
+// Memoized main content component to prevent unnecessary re-renders
+const MainContent = memo(({ children }: { children: React.ReactNode }) => {
   const { setOpen, isMobile } = useSidebar();
   const isDesktop = !isMobile;
 
@@ -32,24 +34,31 @@ const MainContent = ({ children }: { children: React.ReactNode }) => {
       </main>
     </SidebarInset>
   );
-};
+});
 
-const AppLayout = () => {
+MainContent.displayName = 'MainContent';
+
+// Memoized loading component
+const LoadingScreen = memo(() => (
+  <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-muted/30 to-background">
+    <div className="text-center glass-card p-8 rounded-2xl animate-scale-in">
+      <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-r from-primary/20 to-accent/20 rounded-full flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+      <h3 className="text-lg font-semibold text-foreground mb-2">Loading TeamTegrate</h3>
+      <p className="text-muted-foreground">Preparing your workspace...</p>
+    </div>
+  </div>
+));
+
+LoadingScreen.displayName = 'LoadingScreen';
+
+const AppLayout = memo(() => {
   const { user, loading, isAuthenticated } = useAuth();
 
   // Show loading while auth is initializing
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-muted/30 to-background">
-        <div className="text-center glass-card p-8 rounded-2xl animate-scale-in">
-          <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-r from-primary/20 to-accent/20 rounded-full flex items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-          <h3 className="text-lg font-semibold text-foreground mb-2">Loading TeamTegrate</h3>
-          <p className="text-muted-foreground">Preparing your workspace...</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   // Redirect to login if not authenticated
@@ -68,6 +77,8 @@ const AppLayout = () => {
       </div>
     </SidebarProvider>
   );
-};
+});
+
+AppLayout.displayName = 'AppLayout';
 
 export default AppLayout;
