@@ -66,13 +66,13 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const { user } = useAuth();
   const { createProject, isLoading } = useProjectOperations();
-  const { users, isLoading: usersLoading } = useUsers();
+  const { users, isLoading: usersLoading, error: usersError } = useUsers();
 
   // Transform users into options for MultiSelect with proper null checks
   const userOptions = Array.isArray(users) ? users.map(user => ({
     value: user.id,
-    label: `${user.name} (${user.email})`
-  })) : [];
+    label: `${user.name || user.email} (${user.email})`
+  })).filter(option => option.value && option.label) : [];
 
   const onSubmit = async (data: any) => {
     try {
@@ -274,15 +274,13 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
             </div>
             
             <div className="pl-6">
-              {usersLoading ? (
-                <div className="text-sm text-muted-foreground">Loading team members...</div>
-              ) : (
-                <MultiSelect 
-                  onChange={onMemberChange} 
-                  options={userOptions}
-                  placeholder="Select team members..."
-                />
-              )}
+              <MultiSelect 
+                onChange={onMemberChange} 
+                options={userOptions}
+                placeholder="Select team members..."
+                isLoading={usersLoading}
+                error={usersError}
+              />
             </div>
           </div>
 
