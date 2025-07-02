@@ -45,15 +45,18 @@ const ProjectsPage = () => {
     const inProgress: Project[] = [];
     const completed: Project[] = [];
 
-    projects.forEach(project => {
-      if (project.status === 'Completed' || project.isCompleted) {
-        completed.push(project);
-      } else if (project.status === 'In Progress') {
-        inProgress.push(project);
-      } else {
-        todo.push(project);
-      }
-    });
+    // Guard against undefined or null projects
+    if (Array.isArray(projects)) {
+      projects.forEach(project => {
+        if (project.status === 'Completed' || project.isCompleted) {
+          completed.push(project);
+        } else if (project.status === 'In Progress') {
+          inProgress.push(project);
+        } else {
+          todo.push(project);
+        }
+      });
+    }
 
     return {
       todoProjects: todo,

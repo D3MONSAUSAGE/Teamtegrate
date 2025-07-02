@@ -125,7 +125,7 @@ export const useResilientProjects = (options: UseResilientProjectsOptions = {}) 
     }
   }, [deleteProject]);
 
-  const displayProjects = isShowingCached ? cachedProjects : projects;
+  const displayProjects = isShowingCached ? cachedProjects : (projects || []);
   const isStale = isShowingCached || (lastSuccessfulFetch && (Date.now() - lastSuccessfulFetch.getTime()) > cacheTimeout);
 
   return {
