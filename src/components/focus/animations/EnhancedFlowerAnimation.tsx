@@ -18,32 +18,32 @@ const EnhancedFlowerAnimation: React.FC<EnhancedFlowerAnimationProps> = ({
   const flowerTypes = [
     {
       id: 'flower1',
-      position: { left: '25%', bottom: '25px' },
-      startProgress: 20,
-      color: 'from-pink-400 to-rose-500',
-      centerColor: 'from-yellow-200 to-orange-300',
+      position: { left: '30%', bottom: '25px' },
+      startProgress: 25,
+      color: 'from-pink-300 to-rose-400',
+      centerColor: 'from-yellow-100 to-orange-200',
       petalCount: 8,
-      size: 28,
+      size: 24,
       type: 'rose'
     },
     {
       id: 'flower2',
-      position: { left: '50%', bottom: '30px' },
-      startProgress: 45,
-      color: 'from-purple-400 to-violet-500',
-      centerColor: 'from-white to-yellow-100',
+      position: { left: '60%', bottom: '30px' },
+      startProgress: 50,
+      color: 'from-purple-300 to-violet-400',
+      centerColor: 'from-white to-yellow-50',
       petalCount: 6,
-      size: 24,
+      size: 20,
       type: 'daisy'
     },
     {
       id: 'flower3',
-      position: { left: '75%', bottom: '20px' },
-      startProgress: 70,
-      color: 'from-blue-400 to-indigo-500',
+      position: { left: '80%', bottom: '20px' },
+      startProgress: 75,
+      color: 'from-blue-300 to-indigo-400',
       centerColor: 'from-white to-blue-50',
       petalCount: 10,
-      size: 26,
+      size: 22,
       type: 'morning-glory'
     }
   ];
@@ -71,7 +71,7 @@ const EnhancedFlowerAnimation: React.FC<EnhancedFlowerAnimationProps> = ({
     const progressAfterStart = safeProgress - flower.startProgress;
     const growthWindow = 20;
     const growthRatio = Math.min(1, progressAfterStart / growthWindow);
-    return 20 + (growthRatio * 40);
+    return 15 + (growthRatio * 35);
   };
 
   // Simple flower visibility
@@ -107,7 +107,6 @@ const EnhancedFlowerAnimation: React.FC<EnhancedFlowerAnimationProps> = ({
               height: `${flowerSize}px`
             }}
             initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
             transition={{ type: "spring", duration: 0.8, ease: "easeOut" }}
           >
             {/* Petals */}
@@ -185,16 +184,16 @@ const EnhancedFlowerAnimation: React.FC<EnhancedFlowerAnimationProps> = ({
         )}
 
         {/* Leaves along the stem */}
-        {stemHeight > 15 && Array.from({ length: Math.min(2, Math.floor(stemHeight / 20)) }, (_, i) => (
+        {stemHeight > 10 && Array.from({ length: Math.min(2, Math.floor(stemHeight / 20)) }, (_, i) => (
           <motion.div
             key={i}
-            className="absolute bg-gradient-to-r from-green-400 to-green-600 rounded-full opacity-80 shadow-sm"
+            className="absolute bg-gradient-to-r from-green-300 to-green-500 rounded-full opacity-70 shadow-sm"
             style={{
-              width: '8px',
-              height: '4px',
-              left: i % 2 === 0 ? '-10px' : '10px',
-              bottom: `${15 + i * 12}px`,
-              transform: `rotate(${i % 2 === 0 ? -30 : 30}deg)`
+              width: '6px',
+              height: '3px',
+              left: i % 2 === 0 ? '-8px' : '8px',
+              bottom: `${10 + i * 10}px`,
+              transform: `rotate(${i % 2 === 0 ? -25 : 25}deg)`
             }}
             initial={{ scale: 0, x: 0 }}
             animate={{ 
@@ -210,9 +209,9 @@ const EnhancedFlowerAnimation: React.FC<EnhancedFlowerAnimationProps> = ({
         
         {/* Stem */}
         <motion.div 
-          className="bg-gradient-to-t from-green-600 to-green-500 rounded-lg relative shadow-sm"
+          className="bg-gradient-to-t from-green-500 to-green-400 rounded-lg relative shadow-sm"
           style={{
-            width: '4px',
+            width: '3px',
             height: `${stemHeight}px`
           }}
           initial={{ height: 0 }}
@@ -233,25 +232,22 @@ const EnhancedFlowerAnimation: React.FC<EnhancedFlowerAnimationProps> = ({
     <div className="relative w-full h-80 overflow-hidden">
       {/* Clean garden ground */}
       <motion.div 
-        className="absolute bottom-0 w-full h-12 bg-gradient-to-r from-emerald-100/70 via-green-200/70 to-emerald-100/70 rounded-lg"
+        className="absolute bottom-0 w-full h-12 bg-gradient-to-r from-emerald-50/60 via-green-100/60 to-emerald-50/60 rounded-lg border-t border-green-200/30"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
       >
-        {/* Garden bed texture */}
-        <div className="absolute inset-0 bg-gradient-to-r from-amber-50/40 to-yellow-50/40 rounded-lg" />
-        
         {/* Subtle grass elements */}
-        {Array.from({ length: 6 }, (_, i) => (
+        {Array.from({ length: 4 }, (_, i) => (
           <motion.div
             key={i}
-            className="absolute bottom-0 w-1 h-2 bg-green-400/60 rounded-t-full"
+            className="absolute bottom-0 w-1 h-2 bg-green-300/50 rounded-t-full"
             style={{
-              left: `${20 + i * 12}%`,
+              left: `${25 + i * 15}%`,
             }}
             animate={{
               scaleY: [1, 1.05, 1],
-              opacity: [0.6, 0.8, 0.6]
+              opacity: [0.4, 0.6, 0.4]
             }}
             transition={{
               duration: 2.5 + i * 0.3,
@@ -276,14 +272,14 @@ const EnhancedFlowerAnimation: React.FC<EnhancedFlowerAnimationProps> = ({
         <>
           {/* Butterfly */}
           <motion.div
-            className="absolute text-sm z-30 opacity-70"
+            className="absolute text-sm z-30 opacity-60"
             style={{
-              left: '40%',
-              top: '30%'
+              left: '45%',
+              top: '35%'
             }}
             animate={{
-              x: [0, 12, -6, 0],
-              y: [0, -6, 2, 0],
+              x: [0, 10, -5, 0],
+              y: [0, -5, 2, 0],
               rotate: [0, 2, -2, 0]
             }}
             transition={{
@@ -296,18 +292,18 @@ const EnhancedFlowerAnimation: React.FC<EnhancedFlowerAnimationProps> = ({
           </motion.div>
 
           {/* Gentle pollen particles */}
-          {Array.from({ length: 3 }, (_, i) => (
+          {Array.from({ length: 2 }, (_, i) => (
             <motion.div
               key={`pollen-${i}`}
-              className="absolute w-1 h-1 bg-yellow-300 rounded-full opacity-50"
+              className="absolute w-1 h-1 bg-yellow-200 rounded-full opacity-40"
               style={{
-                left: `${30 + i * 20}%`,
-                top: `${50 + i * 8}%`
+                left: `${35 + i * 25}%`,
+                top: `${55 + i * 8}%`
               }}
               animate={{
                 y: [0, -8, 0],
                 x: [0, 2, -2, 0],
-                opacity: [0.5, 0.8, 0.5]
+                opacity: [0.4, 0.7, 0.4]
               }}
               transition={{
                 duration: 3 + i * 0.5,
