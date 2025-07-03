@@ -14,12 +14,12 @@ const EnhancedFlowerAnimation: React.FC<EnhancedFlowerAnimationProps> = ({
   const safeProgress = Math.max(0, Math.min(100, isNaN(progress) ? 0 : progress));
   const controls = useAnimation();
 
-  // Simplified flower types with earlier start progress
+  // Simplified flower types with better visibility thresholds
   const flowerTypes = [
     {
       id: 'flower1',
       position: { left: '15%', bottom: '20px' },
-      startProgress: 10,
+      startProgress: 8,
       color: 'from-pink-400 to-rose-500',
       centerColor: 'from-yellow-300 to-orange-400',
       petalCount: 8,
@@ -29,7 +29,7 @@ const EnhancedFlowerAnimation: React.FC<EnhancedFlowerAnimationProps> = ({
     {
       id: 'flower2',
       position: { left: '35%', bottom: '30px' },
-      startProgress: 30,
+      startProgress: 25,
       color: 'from-purple-400 to-violet-500',
       centerColor: 'from-white to-yellow-200',
       petalCount: 6,
@@ -39,7 +39,7 @@ const EnhancedFlowerAnimation: React.FC<EnhancedFlowerAnimationProps> = ({
     {
       id: 'flower3',
       position: { left: '55%', bottom: '25px' },
-      startProgress: 50,
+      startProgress: 45,
       color: 'from-red-400 to-pink-500',
       centerColor: 'from-yellow-400 to-orange-500',
       petalCount: 12,
@@ -49,7 +49,7 @@ const EnhancedFlowerAnimation: React.FC<EnhancedFlowerAnimationProps> = ({
     {
       id: 'flower4',
       position: { left: '75%', bottom: '35px' },
-      startProgress: 70,
+      startProgress: 65,
       color: 'from-blue-400 to-indigo-500',
       centerColor: 'from-white to-blue-100',
       petalCount: 10,
@@ -59,7 +59,7 @@ const EnhancedFlowerAnimation: React.FC<EnhancedFlowerAnimationProps> = ({
     {
       id: 'flower5',
       position: { left: '85%', bottom: '15px' },
-      startProgress: 85,
+      startProgress: 80,
       color: 'from-orange-400 to-red-500',
       centerColor: 'from-yellow-300 to-yellow-500',
       petalCount: 16,
@@ -90,55 +90,49 @@ const EnhancedFlowerAnimation: React.FC<EnhancedFlowerAnimationProps> = ({
     if (safeProgress < flower.startProgress) return 0;
     const progressAfterStart = safeProgress - flower.startProgress;
     const remainingProgress = 100 - flower.startProgress;
-    const growthRatio = Math.min(1, progressAfterStart / Math.max(1, remainingProgress * 0.3));
-    return 20 + (growthRatio * 40);
+    const growthRatio = Math.min(1, progressAfterStart / Math.max(1, remainingProgress * 0.4));
+    return 20 + (growthRatio * 50);
   };
 
-  // Simplified flower opacity - appears when stem starts growing
-  const getFlowerOpacity = (flower: any) => {
-    if (safeProgress < flower.startProgress + 5) return 0;
-    const progressAfterStart = safeProgress - flower.startProgress - 5;
-    const maxProgressForGrowth = 100 - flower.startProgress - 5;
-    const opacityRatio = Math.min(1, progressAfterStart / Math.max(1, maxProgressForGrowth));
-    return Math.max(0.8, opacityRatio); // Minimum 80% opacity when visible
+  // Simplified flower visibility - appears when progress reaches threshold
+  const isFlowerVisible = (flower: any) => {
+    return safeProgress >= flower.startProgress + 3;
   };
 
   // Simplified flower size calculation
   const getFlowerSize = (flower: any) => {
-    const opacity = getFlowerOpacity(flower);
-    if (opacity <= 0) return 0;
-    const sizeRatio = Math.min(1, opacity * 1.2); // Scale with opacity
-    return flower.size * Math.max(0.6, sizeRatio); // Minimum 60% size when visible
+    if (!isFlowerVisible(flower)) return 0;
+    
+    const progressAfterVisible = safeProgress - (flower.startProgress + 3);
+    const maxProgressForGrowth = 100 - (flower.startProgress + 3);
+    const sizeRatio = Math.min(1, progressAfterVisible / Math.max(1, maxProgressForGrowth * 0.3));
+    
+    return flower.size * Math.max(0.7, 0.3 + sizeRatio * 0.7);
   };
 
   const renderFlower = (flower: any) => {
     const stemHeight = getStemHeight(flower);
-    const flowerOpacity = getFlowerOpacity(flower);
+    const flowerVisible = isFlowerVisible(flower);
     const flowerSize = getFlowerSize(flower);
 
-    console.log(`Flower ${flower.id}: progress=${safeProgress}, startProgress=${flower.startProgress}, opacity=${flowerOpacity}, size=${flowerSize}`);
+    // Enhanced debug logging
+    console.log(`🌸 Flower ${flower.id}: progress=${safeProgress}, startProgress=${flower.startProgress}, visible=${flowerVisible}, size=${flowerSize}, stemHeight=${stemHeight}`);
 
     return (
       <div key={flower.id} className="absolute" style={flower.position}>
-        {/* Flower Head - Always render if opacity > 0 */}
-        {flowerOpacity > 0 && (
+        {/* Flower Head - Simple visibility logic */}
+        {flowerVisible && (
           <motion.div 
             className="relative mb-2 z-20"
             animate={controls}
             style={{
-              opacity: flowerOpacity,
               width: `${flowerSize}px`,
               height: `${flowerSize}px`
             }}
             initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
             transition={{ type: "spring", duration: 0.6 }}
           >
-            {/* Debug border to see flower bounds */}
-            <div 
-              className="absolute inset-0 border-2 border-red-300 border-dashed opacity-30 z-30"
-              style={{ pointerEvents: 'none' }}
-            />
-            
             {/* Petals */}
             {Array.from({ length: flower.petalCount }, (_, i) => (
               <motion.div
@@ -193,8 +187,8 @@ const EnhancedFlowerAnimation: React.FC<EnhancedFlowerAnimationProps> = ({
               }}
             />
 
-            {/* Floating sparkles for completed flowers */}
-            {flowerOpacity >= 0.8 && (
+            {/* Floating sparkles for fully bloomed flowers */}
+            {flowerSize >= flower.size * 0.9 && (
               <motion.div 
                 className="absolute -top-6 left-1/2 transform -translate-x-1/2 z-30"
                 initial={{ scale: 0, y: 10 }}
@@ -223,6 +217,14 @@ const EnhancedFlowerAnimation: React.FC<EnhancedFlowerAnimationProps> = ({
                 </div>
               </motion.div>
             )}
+
+            {/* Temporary visibility indicator for debugging */}
+            <div 
+              className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-xs bg-green-500 text-white px-1 rounded z-40"
+              style={{ fontSize: '10px' }}
+            >
+              {flower.id.slice(-1)} ✓
+            </div>
           </motion.div>
         )}
 
@@ -318,6 +320,11 @@ const EnhancedFlowerAnimation: React.FC<EnhancedFlowerAnimationProps> = ({
           />
         ))}
       </motion.div>
+
+      {/* Progress indicator */}
+      <div className="absolute top-4 left-4 bg-white/80 px-2 py-1 rounded text-sm font-medium z-50">
+        Progress: {safeProgress}%
+      </div>
 
       {/* Render all flowers */}
       {flowerTypes.map(renderFlower)}
