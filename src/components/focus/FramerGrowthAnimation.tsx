@@ -3,6 +3,7 @@ import React from 'react';
 import { Card } from '@/components/ui/card';
 import { motion } from 'framer-motion';
 import FramerAnimationController from './animations/FramerAnimationController';
+import EnhancedFlowerAnimation from './animations/EnhancedFlowerAnimation';
 import { getGrowthStage, getStageMessage } from './animations/GrowthStageUtils';
 import GrowthAnimationHeader from './components/GrowthAnimationHeader';
 import GrowthProgressDisplay from './components/GrowthProgressDisplay';
@@ -49,11 +50,18 @@ const FramerGrowthAnimation: React.FC<FramerGrowthAnimationProps> = ({
         />
 
         {/* Enhanced Animation Container */}
-        <FramerAnimationController 
-          progress={safeProgress}
-          animationType={animationType}
-          isActive={isActive}
-        />
+        {animationType === 'flower' ? (
+          <EnhancedFlowerAnimation 
+            progress={safeProgress}
+            isActive={isActive}
+          />
+        ) : (
+          <FramerAnimationController 
+            progress={safeProgress}
+            animationType={animationType}
+            isActive={isActive}
+          />
+        )}
 
         <div className="mt-4 text-center">
           <GrowthProgressDisplay 

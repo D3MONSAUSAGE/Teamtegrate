@@ -1,0 +1,362 @@
+
+import React from 'react';
+import { motion, useAnimation } from 'framer-motion';
+
+interface EnhancedFlowerAnimationProps {
+  progress: number;
+  isActive: boolean;
+}
+
+const EnhancedFlowerAnimation: React.FC<EnhancedFlowerAnimationProps> = ({ 
+  progress, 
+  isActive 
+}) => {
+  const safeProgress = Math.max(0, Math.min(100, isNaN(progress) ? 0 : progress));
+  const controls = useAnimation();
+
+  // Define different flower types with their own characteristics
+  const flowerTypes = [
+    {
+      id: 'flower1',
+      position: { left: '20%', bottom: '20px' },
+      startProgress: 5,
+      color: 'from-pink-400 to-rose-500',
+      centerColor: 'from-yellow-300 to-orange-400',
+      petalCount: 8,
+      size: 35,
+      type: 'rose'
+    },
+    {
+      id: 'flower2',
+      position: { left: '40%', bottom: '30px' },
+      startProgress: 25,
+      color: 'from-purple-400 to-violet-500',
+      centerColor: 'from-white to-yellow-200',
+      petalCount: 6,
+      size: 28,
+      type: 'daisy'
+    },
+    {
+      id: 'flower3',
+      position: { left: '65%', bottom: '25px' },
+      startProgress: 45,
+      color: 'from-red-400 to-pink-500',
+      centerColor: 'from-yellow-400 to-orange-500',
+      petalCount: 12,
+      size: 32,
+      type: 'sunflower'
+    },
+    {
+      id: 'flower4',
+      position: { left: '80%', bottom: '35px' },
+      startProgress: 65,
+      color: 'from-blue-400 to-indigo-500',
+      centerColor: 'from-white to-blue-100',
+      petalCount: 10,
+      size: 25,
+      type: 'morning-glory'
+    },
+    {
+      id: 'flower5',
+      position: { left: '50%', bottom: '15px' },
+      startProgress: 85,
+      color: 'from-orange-400 to-red-500',
+      centerColor: 'from-yellow-300 to-yellow-500',
+      petalCount: 16,
+      size: 40,
+      type: 'marigold'
+    }
+  ];
+
+  // Animation controls for active state
+  React.useEffect(() => {
+    if (isActive && safeProgress > 0) {
+      controls.start({
+        scale: [1, 1.02, 1],
+        rotate: [0, 0.5, -0.5, 0],
+        transition: {
+          duration: 4,
+          repeat: Infinity,
+          ease: "easeInOut"
+        }
+      });
+    } else {
+      controls.stop();
+    }
+  }, [isActive, safeProgress, controls]);
+
+  const getStemHeight = (flower: any) => {
+    if (safeProgress < flower.startProgress) return 0;
+    const adjustedProgress = Math.min(100, (safeProgress - flower.startProgress) / (100 - flower.startProgress) * 100);
+    return Math.max(0, 20 + (adjustedProgress / 100) * 40);
+  };
+
+  const getFlowerOpacity = (flower: any) => {
+    if (safeProgress < flower.startProgress + 15) return 0;
+    const adjustedProgress = Math.min(100, (safeProgress - flower.startProgress - 15) / (100 - flower.startProgress - 15) * 100);
+    return Math.min(1, adjustedProgress / 60);
+  };
+
+  const getFlowerSize = (flower: any) => {
+    if (safeProgress < flower.startProgress + 15) return 0;
+    const adjustedProgress = Math.min(100, (safeProgress - flower.startProgress - 15) / (100 - flower.startProgress - 15) * 100);
+    return flower.size * Math.min(1, adjustedProgress / 80);
+  };
+
+  const renderFlower = (flower: any) => {
+    const stemHeight = getStemHeight(flower);
+    const flowerOpacity = getFlowerOpacity(flower);
+    const flowerSize = getFlowerSize(flower);
+
+    return (
+      <div key={flower.id} className="absolute" style={flower.position}>
+        {/* Flower Head */}
+        {flowerOpacity > 0 && (
+          <motion.div 
+            className="relative mb-2"
+            animate={controls}
+            style={{
+              opacity: flowerOpacity,
+              width: `${flowerSize}px`,
+              height: `${flowerSize}px`
+            }}
+            initial={{ scale: 0, opacity: 0 }}
+          >
+            {/* Petals */}
+            {Array.from({ length: flower.petalCount }, (_, i) => (
+              <motion.div
+                key={i}
+                className={`absolute bg-gradient-to-r ${flower.color} rounded-full`}
+                style={{
+                  width: `${flowerSize * 0.6}px`,
+                  height: `${flowerSize * 0.3}px`,
+                  left: '50%',
+                  top: '50%',
+                  transformOrigin: 'center bottom',
+                  transform: `translate(-50%, -50%) rotate(${i * (360 / flower.petalCount)}deg) translateY(-${flowerSize * 0.2}px)`
+                }}
+                initial={{ scale: 0, rotate: i * (360 / flower.petalCount) }}
+                animate={{ 
+                  scale: flowerOpacity,
+                  rotate: isActive 
+                    ? [i * (360 / flower.petalCount), i * (360 / flower.petalCount) + 2, i * (360 / flower.petalCount) - 2, i * (360 / flower.petalCount)]
+                    : i * (360 / flower.petalCount)
+                }}
+                transition={{
+                  scale: { type: "spring", delay: 0.1 + i * 0.05, duration: 0.5 },
+                  rotate: {
+                    duration: 3 + i * 0.1,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  }
+                }}
+              />
+            ))}
+            
+            {/* Flower center */}
+            <motion.div
+              className={`absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r ${flower.centerColor} rounded-full`}
+              style={{
+                width: `${flowerSize * 0.25}px`,
+                height: `${flowerSize * 0.25}px`
+              }}
+              animate={{
+                boxShadow: isActive 
+                  ? ['0 0 5px rgba(251, 191, 36, 0.3)', '0 0 15px rgba(251, 191, 36, 0.6)', '0 0 5px rgba(251, 191, 36, 0.3)']
+                  : '0 0 0px rgba(251, 191, 36, 0)'
+              }}
+              transition={{
+                boxShadow: {
+                  duration: 2.5,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }
+              }}
+            />
+
+            {/* Floating sparkles for completed flowers */}
+            {flowerOpacity >= 1 && (
+              <motion.div 
+                className="absolute -top-6 left-1/2 transform -translate-x-1/2"
+                initial={{ scale: 0, y: 10 }}
+                animate={{ scale: 1, y: 0 }}
+                transition={{ type: "spring", delay: 1 }}
+              >
+                <div className="flex gap-1">
+                  {['✨', '🌸', '✨'].map((emoji, i) => (
+                    <motion.div
+                      key={i}
+                      className="text-xs"
+                      animate={{
+                        y: [0, -3, 0],
+                        opacity: [0.6, 1, 0.6]
+                      }}
+                      transition={{
+                        duration: 2 + i * 0.2,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                        delay: i * 0.3
+                      }}
+                    >
+                      {emoji}
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </motion.div>
+        )}
+
+        {/* Leaves along the stem */}
+        {stemHeight > 15 && Array.from({ length: Math.min(3, Math.floor(stemHeight / 20)) }, (_, i) => (
+          <motion.div
+            key={i}
+            className="absolute bg-gradient-to-r from-green-400 to-green-600 rounded-full opacity-80"
+            style={{
+              width: '12px',
+              height: '6px',
+              left: i % 2 === 0 ? '-15px' : '15px',
+              bottom: `${15 + i * 12}px`,
+              transform: `rotate(${i % 2 === 0 ? -45 : 45}deg)`
+            }}
+            initial={{ scale: 0, x: 0 }}
+            animate={{ 
+              scale: 1, 
+              x: 0,
+              rotate: isActive 
+                ? [(i % 2 === 0 ? -45 : 45) - 3, (i % 2 === 0 ? -45 : 45) + 3, (i % 2 === 0 ? -45 : 45)]
+                : (i % 2 === 0 ? -45 : 45)
+            }}
+            transition={{
+              scale: { type: "spring", delay: 0.3 + i * 0.1 },
+              rotate: {
+                duration: 2.5 + i * 0.3,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }
+            }}
+          />
+        ))}
+        
+        {/* Stem */}
+        <motion.div 
+          className="bg-gradient-to-t from-green-600 to-green-500 rounded-lg relative"
+          style={{
+            width: '6px',
+            height: `${stemHeight}px`
+          }}
+          initial={{ height: 0 }}
+          animate={{ 
+            height: stemHeight,
+            scaleX: isActive ? [1, 1.05, 1] : 1
+          }}
+          transition={{
+            height: { type: "spring", stiffness: 100, damping: 20 },
+            scaleX: {
+              duration: 4,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }
+          }}
+        />
+      </div>
+    );
+  };
+
+  return (
+    <div className="relative w-full h-80 overflow-hidden">
+      {/* Enhanced garden ground with texture */}
+      <motion.div 
+        className="absolute bottom-0 w-full h-12 bg-gradient-to-r from-green-200/40 via-emerald-300/40 to-green-200/40 rounded-lg"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        {/* Garden bed texture */}
+        <div className="absolute inset-0 bg-gradient-to-r from-amber-100/20 to-yellow-100/20 rounded-lg" />
+        
+        {/* Small garden path elements */}
+        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-16 h-2 bg-stone-300/40 rounded-full" />
+        
+        {/* Small grass elements */}
+        {Array.from({ length: 12 }, (_, i) => (
+          <motion.div
+            key={i}
+            className="absolute bottom-0 w-1 h-3 bg-green-400/60 rounded-t-full"
+            style={{
+              left: `${10 + i * 7}%`,
+            }}
+            animate={{
+              scaleY: [1, 1.1, 1],
+              opacity: [0.6, 0.8, 0.6]
+            }}
+            transition={{
+              duration: 2 + i * 0.2,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: i * 0.1
+            }}
+          />
+        ))}
+      </motion.div>
+
+      {/* Render all flowers */}
+      {flowerTypes.map(renderFlower)}
+
+      {/* Floating garden elements */}
+      {safeProgress > 70 && (
+        <>
+          {/* Butterflies */}
+          {Array.from({ length: 2 }, (_, i) => (
+            <motion.div
+              key={`butterfly-${i}`}
+              className="absolute text-sm"
+              style={{
+                left: `${30 + i * 40}%`,
+                top: `${30 + i * 20}%`
+              }}
+              animate={{
+                x: [0, 20, -10, 0],
+                y: [0, -10, 5, 0],
+                rotate: [0, 5, -5, 0]
+              }}
+              transition={{
+                duration: 4 + i,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: i * 2
+              }}
+            >
+              🦋
+            </motion.div>
+          ))}
+
+          {/* Floating pollen particles */}
+          {Array.from({ length: 4 }, (_, i) => (
+            <motion.div
+              key={`pollen-${i}`}
+              className="absolute w-1 h-1 bg-yellow-300 rounded-full opacity-60"
+              style={{
+                left: `${20 + i * 20}%`,
+                top: `${40 + i * 10}%`
+              }}
+              animate={{
+                y: [0, -15, 0],
+                x: [0, 5, -5, 0],
+                opacity: [0.6, 1, 0.3, 0.6]
+              }}
+              transition={{
+                duration: 3 + i * 0.5,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: i * 0.8
+              }}
+            />
+          ))}
+        </>
+      )}
+    </div>
+  );
+};
+
+export default EnhancedFlowerAnimation;
