@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -72,10 +71,13 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
   const { users, isLoading: usersLoading, error: usersError, refetch: refreshUsers } = useOrganizationTeamMembers();
 
   // Transform users into options for MultiSelect - simple and clean like task assignment
-  const userOptions = users.map(user => ({
-    value: user.id,
-    label: `${user.name || user.email} (${user.email})`
-  }));
+  // Add safety checks to prevent undefined iteration
+  const userOptions = Array.isArray(users) ? users
+    .filter(user => user && user.id && user.email) // Filter out invalid users
+    .map(user => ({
+      value: user.id,
+      label: `${user.name || user.email} (${user.email})`
+    })) : [];
 
   const onSubmit = async (data: any) => {
     try {

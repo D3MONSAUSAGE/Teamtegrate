@@ -48,6 +48,17 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
     onChange(newValues);
   };
 
+  // Ensure options is always a valid array with proper validation
+  const safeOptions = Array.isArray(options) ? options.filter(option => 
+    option && 
+    typeof option === 'object' && 
+    option.value && 
+    option.label &&
+    typeof option.value === 'string' &&
+    typeof option.label === 'string' &&
+    option.value.trim() !== ''
+  ) : [];
+
   // Show error state with retry option
   if (error) {
     return (
@@ -74,39 +85,59 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
     );
   }
 
+  // Don't render the complex Command component if we don't have safe data
+  if (isLoading || !Array.isArray(options) || safeOptions.length === 0) {
+    return (
+      <div className="grid gap-2">
+        <Label>Team Members</Label>
+        <Button
+          variant="outline"
+          role="combobox"
+          className="justify-between"
+          disabled={true}
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Loading members...
+            </>
+          ) : (
+            "No team members available"
+          )}
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+        {!isLoading && safeOptions.length === 0 && (
+          <p className="text-xs text-muted-foreground">No team members available to select.</p>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="grid gap-2">
       <Label>Team Members</Label>
-      <Popover open={open && !isLoading} onOpenChange={setOpen}>
+      <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
             variant="outline"
             role="combobox"
             aria-expanded={open}
             className="justify-between"
-            disabled={isLoading}
           >
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Loading members...
-              </>
-            ) : selectedValues.length > 0 ? (
+            {selectedValues.length > 0 ? (
               `${selectedValues.length} selected`
             ) : (
               placeholder
             )}
-            {!isLoading && <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />}
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-[280px] p-0" style={{ zIndex: 9999 }}>
           <Command>
             <CommandInput placeholder="Search members..." />
-            <CommandEmpty>
-              {options.length === 0 ? "No team members available." : "No members found."}
-            </CommandEmpty>
+            <CommandEmpty>No members found.</CommandEmpty>
             <CommandGroup>
-              {options.map((option) => (
+              {safeOptions.map((option) => (
                 <CommandItem
                   key={option.value}
                   value={option.value}
@@ -125,9 +156,6 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
           </Command>
         </PopoverContent>
       </Popover>
-      {options.length === 0 && !isLoading && !error && (
-        <p className="text-xs text-muted-foreground">No team members available to select.</p>
-      )}
     </div>
   );
 };

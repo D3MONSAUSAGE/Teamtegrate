@@ -15,12 +15,19 @@ export const useOrganizationTeamMembers = () => {
       return [];
     }
 
-    console.log('useOrganizationTeamMembers: Fetching team members for organization:', currentUser.organizationId);
+    // Validate organization ID format
+    const orgId = currentUser.organizationId.trim();
+    if (!orgId || orgId.length === 0) {
+      console.log('useOrganizationTeamMembers: Empty organization ID');
+      return [];
+    }
+
+    console.log('useOrganizationTeamMembers: Fetching team members for organization:', orgId);
 
     const { data, error } = await supabase
       .from('users')
       .select('id, name, email, role, organization_id, created_at, avatar_url')
-      .eq('organization_id', currentUser.organizationId)
+      .eq('organization_id', orgId)
       .order('name');
 
     if (error) {
@@ -30,17 +37,19 @@ export const useOrganizationTeamMembers = () => {
 
     console.log(`useOrganizationTeamMembers: Successfully loaded ${data?.length || 0} team members`);
 
-    // Transform to User type
-    const transformedUsers: User[] = (data || []).map(user => ({
-      id: user.id,
-      name: user.name || user.email.split('@')[0],
-      email: user.email,
-      role: user.role as User['role'],
-      organizationId: user.organization_id,
-      createdAt: new Date(user.created_at),
-      timezone: 'UTC',
-      avatar_url: user.avatar_url
-    }));
+    // Transform to User type with validation
+    const transformedUsers: User[] = (data || [])
+      .filter(user => user && user.id && user.email) // Filter out invalid users
+      .map(user => ({
+        id: user.id,
+        name: user.name || user.email.split('@')[0],
+        email: user.email,
+        role: user.role as User['role'],
+        organizationId: user.organization_id,
+        createdAt: new Date(user.created_at),
+        timezone: 'UTC',
+        avatar_url: user.avatar_url
+      }));
 
     return transformedUsers;
   };
@@ -53,16 +62,16 @@ export const useOrganizationTeamMembers = () => {
   } = useQuery({
     queryKey: ['organization-team-members', currentUser?.organizationId],
     queryFn: fetchTeamMembers,
-    enabled: !!currentUser?.organizationId,
-    staleTime: 10000, // Reduced from default for immediate updates
-    gcTime: 60000, // Reduced cache time
+    enabled: !!currentUser?.organizationId && currentUser.organizationId.trim().length > 0,
+    staleTime: 10000,
+    gcTime: 60000,
     refetchOnWindowFocus: true,
     refetchOnMount: true
   });
 
   // Set up real-time subscription for team member changes
   useEffect(() => {
-    if (!currentUser?.organizationId) return;
+    if (!currentUser?.organizationId || currentUser.organizationId.trim().length === 0) return;
 
     console.log('useOrganizationTeamMembers: Setting up real-time subscription');
     
@@ -94,7 +103,7 @@ export const useOrganizationTeamMembers = () => {
   }, [currentUser?.organizationId, queryClient]);
 
   return {
-    users,
+    users: Array.isArray(users) ? users : [], // Always return an array
     isLoading,
     error: error ? (error as Error).message : null,
     refetch
