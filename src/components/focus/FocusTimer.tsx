@@ -2,7 +2,6 @@
 import React from 'react';
 import { Task } from '@/types';
 import { FocusSession } from '@/pages/FocusZonePage';
-import { Card } from '@/components/ui/card';
 import { useFocusTimer } from './hooks/useFocusTimer';
 import TaskInfo from './components/TaskInfo';
 import TimerProgress from './components/TimerProgress';
@@ -41,45 +40,41 @@ const FocusTimer: React.FC<FocusTimerProps> = ({
   });
 
   return (
-    <Card className="p-6 glass-card">
-      <div className="text-center">
-        <h3 className="text-lg font-semibold mb-6">Focus Timer</h3>
+    <div className="text-center">
+      {selectedTask ? (
+        <>
+          <TaskInfo selectedTask={selectedTask} />
+          
+          <TimerProgress
+            timeRemaining={timeRemaining}
+            progress={progress}
+            isActive={isActive}
+            isPaused={isPaused}
+          />
 
-        {selectedTask ? (
-          <>
-            <TaskInfo selectedTask={selectedTask} />
-            
-            <TimerProgress
-              timeRemaining={timeRemaining}
-              progress={progress}
-              isActive={isActive}
-              isPaused={isPaused}
-            />
+          <TimerControls
+            isActive={isActive}
+            isPaused={isPaused}
+            timeRemaining={timeRemaining}
+            onStart={handleStart}
+            onPause={handlePause}
+            onResume={handleResume}
+            onStop={handleStop}
+            onReset={handleReset}
+          />
 
-            <TimerControls
-              isActive={isActive}
-              isPaused={isPaused}
-              timeRemaining={timeRemaining}
-              onStart={handleStart}
-              onPause={handlePause}
-              onResume={handleResume}
-              onStop={handleStop}
-              onReset={handleReset}
-            />
-
-            <TimerStatus
-              selectedTask={selectedTask}
-              timeRemaining={timeRemaining}
-              isActive={isActive}
-              isPaused={isPaused}
-              duration={duration}
-            />
-          </>
-        ) : (
-          <TimerEmptyState />
-        )}
-      </div>
-    </Card>
+          <TimerStatus
+            selectedTask={selectedTask}
+            timeRemaining={timeRemaining}
+            isActive={isActive}
+            isPaused={isPaused}
+            duration={duration}
+          />
+        </>
+      ) : (
+        <TimerEmptyState />
+      )}
+    </div>
   );
 };
 
