@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -5,6 +6,7 @@ import { Project } from '@/types';
 import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
 import { requestManager } from '@/utils/requestManager';
+import { validateUUID, sanitizeProjectData } from '@/utils/uuidValidation';
 
 export function useProjects() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -20,16 +22,26 @@ export function useProjects() {
       return;
     }
     
+    // Validate organization ID before making request
+    const validOrgId = validateUUID(user.organizationId);
+    if (!validOrgId) {
+      console.error('useProjects: Invalid organization ID:', user.organizationId);
+      setError('Invalid organization configuration');
+      setLoading(false);
+      setProjects([]);
+      return;
+    }
+    
     try {
       setLoading(true);
       setError(null);
       
-      const cacheKey = `projects-${user.organizationId}-${user.id}`;
+      const cacheKey = `projects-${validOrgId}-${user.id}`;
       
       console.log('useProjects: Fetching projects for user:', {
         userId: user.id,
         userRole: user.role,
-        organizationId: user.organizationId
+        organizationId: validOrgId
       });
       
       const data = await requestManager.dedupe(cacheKey, async () => {
@@ -39,23 +51,26 @@ export function useProjects() {
 
         let projectPromise;
 
-        // Role-based access logic
+        // Role-based access logic with UUID validation
         if (user.role === 'superadmin' || user.role === 'admin') {
-          // Superadmins and admins can see ALL projects in their organization
           console.log('useProjects: Fetching ALL projects for superadmin/admin');
           projectPromise = supabase
             .from('projects')
             .select('*')
-            .eq('organization_id', user.organizationId)
+            .eq('organization_id', validOrgId)
             .order('updated_at', { ascending: false });
         } else {
-          // Regular users and managers see only projects they manage or are team members of
+          const validUserId = validateUUID(user.id);
+          if (!validUserId) {
+            throw new Error('Invalid user ID format');
+          }
+          
           console.log('useProjects: Fetching user-specific projects for regular user/manager');
           projectPromise = supabase
             .from('projects')
             .select('*')
-            .eq('organization_id', user.organizationId)
-            .or(`manager_id.eq.${user.id},team_members.cs.{${user.id}}`)
+            .eq('organization_id', validOrgId)
+            .or(`manager_id.eq.${validUserId},team_members.cs.{${validUserId}}`)
             .order('updated_at', { ascending: false });
         }
 
@@ -67,7 +82,6 @@ export function useProjects() {
         if (error) {
           console.error('useProjects: Error fetching projects:', error);
           
-          // Enhanced error handling with specific error types
           if (error.message?.includes('Failed to fetch') || 
               error.message?.includes('Network Error') ||
               error.message?.includes('timeout')) {
@@ -86,52 +100,77 @@ export function useProjects() {
           userId: user.id,
           userRole: user.role,
           projectCount: data?.length || 0,
-          projects: data?.map(p => ({ id: p.id, title: p.title, manager_id: p.manager_id, team_members: p.team_members })),
           timestamp: new Date().toISOString()
         });
 
-        return data;
+        return data || [];
       });
 
-      // Validate projects belong to user's organization
-      const validatedProjects = data?.filter(dbProject => {
-        if (dbProject.organization_id !== user.organizationId) {
-          console.error('useProjects: SECURITY VIOLATION - Project from different organization:', {
-            projectId: dbProject.id,
-            projectOrg: dbProject.organization_id,
-            userOrg: user.organizationId
-          });
-          return false;
-        }
-        return true;
-      }) || [];
+      // Validate and sanitize all project data
+      const validatedProjects = data
+        .filter(dbProject => {
+          const validOrgId = validateUUID(dbProject.organization_id);
+          if (!validOrgId || validOrgId !== user.organizationId) {
+            console.error('useProjects: SECURITY VIOLATION - Project from different organization:', {
+              projectId: dbProject.id,
+              projectOrg: dbProject.organization_id,
+              userOrg: user.organizationId
+            });
+            return false;
+          }
+          return true;
+        })
+        .map(sanitizeProjectData);
 
-      // Transform database projects to match Project type and fetch comments for each
+      // Transform database projects to match Project type
       const transformedProjects: Project[] = await Promise.all(
         validatedProjects.map(async (dbProject) => {
-          // Fetch comments for this project
-          const { fetchProjectComments } = await import('@/contexts/task/api/comments');
-          const comments = await fetchProjectComments(dbProject.id);
+          try {
+            // Fetch comments for this project
+            const { fetchProjectComments } = await import('@/contexts/task/api/comments');
+            const comments = await fetchProjectComments(dbProject.id);
 
-          return {
-            id: dbProject.id,
-            title: dbProject.title || '',
-            description: dbProject.description || '',
-            startDate: dbProject.start_date || dbProject.created_at,
-            endDate: dbProject.end_date || dbProject.updated_at,
-            managerId: dbProject.manager_id || '',
-            createdAt: dbProject.created_at,
-            updatedAt: dbProject.updated_at,
-            teamMemberIds: dbProject.team_members || [],
-            budget: dbProject.budget || 0,
-            budgetSpent: dbProject.budget_spent || 0,
-            isCompleted: dbProject.is_completed || false,
-            status: dbProject.status as Project['status'] || 'To Do',
-            tasksCount: dbProject.tasks_count || 0,
-            tags: dbProject.tags || [],
-            organizationId: dbProject.organization_id,
-            comments: comments
-          };
+            return {
+              id: dbProject.id || '',
+              title: dbProject.title || '',
+              description: dbProject.description || '',
+              startDate: dbProject.start_date || dbProject.created_at,
+              endDate: dbProject.end_date || dbProject.updated_at,
+              managerId: dbProject.managerId || '',
+              createdAt: dbProject.created_at,
+              updatedAt: dbProject.updated_at,
+              teamMemberIds: Array.isArray(dbProject.teamMemberIds) ? dbProject.teamMemberIds : [],
+              budget: dbProject.budget || 0,
+              budgetSpent: dbProject.budget_spent || 0,
+              isCompleted: dbProject.is_completed || false,
+              status: dbProject.status as Project['status'] || 'To Do',
+              tasksCount: dbProject.tasks_count || 0,
+              tags: Array.isArray(dbProject.tags) ? dbProject.tags : [],
+              organizationId: dbProject.organizationId || '',
+              comments: Array.isArray(comments) ? comments : []
+            };
+          } catch (commentError) {
+            console.warn('Failed to fetch comments for project:', dbProject.id, commentError);
+            return {
+              id: dbProject.id || '',
+              title: dbProject.title || '',
+              description: dbProject.description || '',
+              startDate: dbProject.start_date || dbProject.created_at,
+              endDate: dbProject.end_date || dbProject.updated_at,
+              managerId: dbProject.managerId || '',
+              createdAt: dbProject.created_at,
+              updatedAt: dbProject.updated_at,
+              teamMemberIds: Array.isArray(dbProject.teamMemberIds) ? dbProject.teamMemberIds : [],
+              budget: dbProject.budget || 0,
+              budgetSpent: dbProject.budget_spent || 0,
+              isCompleted: dbProject.is_completed || false,
+              status: dbProject.status as Project['status'] || 'To Do',
+              tasksCount: dbProject.tasks_count || 0,
+              tags: Array.isArray(dbProject.tags) ? dbProject.tags : [],
+              organizationId: dbProject.organizationId || '',
+              comments: []
+            };
+          }
         })
       );
 
@@ -143,8 +182,7 @@ export function useProjects() {
         validatedCount: validatedProjects.length,
         transformedCount: transformedProjects.length,
         userId: user.id,
-        role: user.role,
-        userCanSeeAll: user.role === 'superadmin' || user.role === 'admin'
+        role: user.role
       });
       
     } catch (err: any) {
@@ -153,7 +191,9 @@ export function useProjects() {
       
       setError(errorMessage);
       
-      // Only show toast for unexpected errors, not network issues (resilient hook will handle those)
+      // Ensure projects is always an array, even on error
+      setProjects([]);
+      
       if (!errorMessage.includes('Network connection issue') && !errorMessage.includes('timeout')) {
         console.error('Unexpected error loading projects:', errorMessage);
       }

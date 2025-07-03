@@ -66,13 +66,16 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const { user } = useAuth();
   const { createProject, isLoading } = useProjectOperations();
-  const { users, isLoading: usersLoading, error: usersError } = useUsers();
+  const { users, isLoading: usersLoading, error: usersError, refreshUsers } = useUsers();
 
-  // Transform users into options for MultiSelect with proper null checks
-  const userOptions = Array.isArray(users) ? users.map(user => ({
-    value: user.id,
-    label: `${user.name || user.email} (${user.email})`
-  })).filter(option => option.value && option.label) : [];
+  // Transform users into options for MultiSelect with proper null checks and UUID validation
+  const userOptions = Array.isArray(users) ? users
+    .filter(user => user && user.id && user.id.trim() !== '')
+    .map(user => ({
+      value: user.id,
+      label: `${user.name || user.email} (${user.email})`
+    }))
+    .filter(option => option.value && option.label) : [];
 
   const onSubmit = async (data: any) => {
     try {
@@ -280,6 +283,7 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
                 placeholder="Select team members..."
                 isLoading={usersLoading}
                 error={usersError}
+                onRetry={refreshUsers}
               />
             </div>
           </div>

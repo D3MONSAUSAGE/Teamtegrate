@@ -6,6 +6,7 @@ import { toast } from '@/components/ui/sonner';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { mapDbUserToApp } from '@/utils/typeCompatibility';
 import { useAuth } from '@/contexts/AuthContext';
+import { validateUUID } from '@/utils/uuidValidation';
 
 export const useUsers = () => {
   const { user: currentUser } = useAuth();
@@ -16,14 +17,20 @@ export const useUsers = () => {
     console.log('Current user role:', currentUser?.role);
     console.log('Current user org:', currentUser?.organizationId);
     
-    // Enhanced query for superadmins to see all users in their organization
+    // Validate organization ID before making request
+    const validOrgId = validateUUID(currentUser?.organizationId);
+    if (!validOrgId) {
+      console.error('useUsers: Invalid organization ID:', currentUser?.organizationId);
+      throw new Error('Invalid organization configuration');
+    }
+    
     let query = supabase
       .from('users')
       .select('id, name, email, role, avatar_url, organization_id, created_at');
 
     // If user is superadmin, get all users in their organization
-    if (currentUser?.role === 'superadmin' && currentUser?.organizationId) {
-      query = query.eq('organization_id', currentUser.organizationId);
+    if (currentUser?.role === 'superadmin' && validOrgId) {
+      query = query.eq('organization_id', validOrgId);
     } else {
       // For non-superadmins, use default RLS filtering
       query = query.order('name');
@@ -37,11 +44,30 @@ export const useUsers = () => {
     }
     
     console.log(`Successfully loaded ${data?.length || 0} users from organization`);
-    console.log('Raw user data:', data);
     
-    // Transform to User type using mapping utility
-    const mappedUsers = data?.map(dbUser => mapDbUserToApp(dbUser)) as User[] || [];
-    console.log('Mapped users:', mappedUsers);
+    // Ensure we always return an array
+    if (!Array.isArray(data)) {
+      console.warn('useUsers: Data is not an array, returning empty array');
+      return [];
+    }
+    
+    // Transform to User type using mapping utility and validate UUIDs
+    const mappedUsers = data
+      .filter(dbUser => {
+        // Validate that user has proper UUID format
+        const validUserId = validateUUID(dbUser.id);
+        const validUserOrgId = validateUUID(dbUser.organization_id);
+        
+        if (!validUserId || !validUserOrgId) {
+          console.warn('useUsers: Filtering out user with invalid UUID:', dbUser);
+          return false;
+        }
+        
+        return true;
+      })
+      .map(dbUser => mapDbUserToApp(dbUser)) as User[];
+    
+    console.log('Mapped users:', mappedUsers.length);
     
     return mappedUsers;
   };
@@ -54,11 +80,11 @@ export const useUsers = () => {
   } = useQuery({
     queryKey: ['users', currentUser?.organizationId, currentUser?.role],
     queryFn: fetchUsers,
-    staleTime: 10000, // Reduced from 5 minutes to 10 seconds for immediate updates
-    gcTime: 60000, // Reduced cache time to 1 minute
-    enabled: !!currentUser?.organizationId,
-    refetchOnWindowFocus: true, // Refetch when window regains focus
-    refetchOnMount: true, // Always refetch on mount
+    staleTime: 10000,
+    gcTime: 60000,
+    enabled: !!currentUser?.organizationId && !!validateUUID(currentUser.organizationId),
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
     meta: {
       onError: (err: Error) => {
         console.error('Error in useUsers hook:', err);
@@ -111,7 +137,7 @@ export const useUsers = () => {
   };
   
   return { 
-    users, 
+    users: Array.isArray(users) ? users : [], // Ensure always array
     isLoading, 
     error: error ? (error as Error).message : null,
     refetchUsers: refetch,

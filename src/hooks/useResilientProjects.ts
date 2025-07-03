@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useProjects } from '@/hooks/useProjects';
 import { Project } from '@/types';
@@ -24,11 +23,13 @@ export const useResilientProjects = (options: UseResilientProjectsOptions = {}) 
   const [retryCount, setRetryCount] = useState(0);
   const [lastSuccessfulFetch, setLastSuccessfulFetch] = useState<Date | null>(null);
 
-  // Cache successful data
+  // Cache successful data - ensure we always work with arrays
   useEffect(() => {
-    if (projects.length > 0 && !loading && !error) {
-      console.log('useResilientProjects: Caching successful user-specific project data:', projects.length);
-      setCachedProjects(projects);
+    const safeProjects = Array.isArray(projects) ? projects : [];
+    
+    if (safeProjects.length > 0 && !loading && !error) {
+      console.log('useResilientProjects: Caching successful user-specific project data:', safeProjects.length);
+      setCachedProjects(safeProjects);
       setIsShowingCached(false);
       setRetryCount(0);
       setLastSuccessfulFetch(new Date());
@@ -37,7 +38,7 @@ export const useResilientProjects = (options: UseResilientProjectsOptions = {}) 
       if (enableOfflineMode) {
         try {
           localStorage.setItem('user_projects_cache', JSON.stringify({
-            data: projects,
+            data: safeProjects,
             timestamp: Date.now()
           }));
           console.log('useResilientProjects: User-specific projects cached to localStorage');
@@ -48,7 +49,7 @@ export const useResilientProjects = (options: UseResilientProjectsOptions = {}) 
     }
   }, [projects, loading, error, enableOfflineMode]);
 
-  // Load from cache on error or initial load
+  // Load from cache on error or initial load - ensure arrays
   useEffect(() => {
     if (error && cachedProjects.length === 0 && enableOfflineMode) {
       try {
@@ -57,13 +58,13 @@ export const useResilientProjects = (options: UseResilientProjectsOptions = {}) 
           const { data, timestamp } = JSON.parse(cached);
           const age = Date.now() - timestamp;
           
-          if (age < cacheTimeout) {
+          if (age < cacheTimeout && Array.isArray(data)) {
             console.log('useResilientProjects: Loading user-specific projects from cache due to error');
             setCachedProjects(data);
             setIsShowingCached(true);
             toast.info('Showing cached projects - trying to refresh...');
           } else {
-            console.log('useResilientProjects: Cached user-specific projects too old, not using');
+            console.log('useResilientProjects: Cached user-specific projects too old or invalid, not using');
           }
         }
       } catch (e) {
@@ -125,7 +126,11 @@ export const useResilientProjects = (options: UseResilientProjectsOptions = {}) 
     }
   }, [deleteProject]);
 
-  const displayProjects = isShowingCached ? cachedProjects : (projects || []);
+  // Ensure displayProjects is always an array
+  const safeProjects = Array.isArray(projects) ? projects : [];
+  const safeCachedProjects = Array.isArray(cachedProjects) ? cachedProjects : [];
+  const displayProjects = isShowingCached ? safeCachedProjects : safeProjects;
+  
   const isStale = isShowingCached || (lastSuccessfulFetch && (Date.now() - lastSuccessfulFetch.getTime()) > cacheTimeout);
 
   return {

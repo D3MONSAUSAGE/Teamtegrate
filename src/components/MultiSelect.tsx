@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Check, ChevronsUpDown, AlertCircle, Loader2 } from "lucide-react";
+import { Check, ChevronsUpDown, AlertCircle, Loader2, RefreshCw } from "lucide-react";
 import {
   Command,
   CommandEmpty,
@@ -23,6 +23,7 @@ interface MultiSelectProps {
   options?: { value: string; label: string; }[];
   isLoading?: boolean;
   error?: string | null;
+  onRetry?: () => void;
 }
 
 const MultiSelect: React.FC<MultiSelectProps> = ({ 
@@ -30,7 +31,8 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
   placeholder = "Select team members...",
   options = [],
   isLoading = false,
-  error = null
+  error = null,
+  onRetry
 }) => {
   const [open, setOpen] = useState(false);
   const [selectedValues, setSelectedValues] = useState<string[]>([]);
@@ -46,17 +48,42 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
     onChange(newValues);
   };
 
-  // Ensure options is always an array
-  const safeOptions = Array.isArray(options) ? options : [];
+  // Ensure options is always an array with proper validation
+  const safeOptions = Array.isArray(options) ? options.filter(option => 
+    option && 
+    typeof option === 'object' && 
+    option.value && 
+    option.label &&
+    option.value.trim() !== '' &&
+    option.label.trim() !== ''
+  ) : [];
   
-  // Show error state
+  // Show error state with retry option
   if (error) {
     return (
       <div className="grid gap-2">
         <Label>Team Members</Label>
         <div className="flex items-center gap-2 p-3 border border-destructive/50 rounded-md bg-destructive/10">
-          <AlertCircle className="h-4 w-4 text-destructive" />
-          <span className="text-sm text-destructive">Failed to load team members</span>
+          <AlertCircle className="h-4 w-4 text-destructive flex-shrink-0" />
+          <div className="flex-1">
+            <span className="text-sm text-destructive">Failed to load team members</span>
+            {error.includes('Invalid organization') && (
+              <p className="text-xs text-destructive/80 mt-1">
+                Organization configuration issue. Please contact support.
+              </p>
+            )}
+          </div>
+          {onRetry && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onRetry}
+              className="flex items-center gap-1"
+            >
+              <RefreshCw className="h-3 w-3" />
+              Retry
+            </Button>
+          )}
         </div>
       </div>
     );
