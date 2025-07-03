@@ -15,43 +15,69 @@ export const useOrganizationTeamMembers = () => {
       return [];
     }
 
-    // Validate organization ID format
+    // Validate organization ID format and ensure it's not empty
     const orgId = currentUser.organizationId.trim();
     if (!orgId || orgId.length === 0) {
       console.log('useOrganizationTeamMembers: Empty organization ID');
       return [];
     }
 
-    console.log('useOrganizationTeamMembers: Fetching team members for organization:', orgId);
-
-    const { data, error } = await supabase
-      .from('users')
-      .select('id, name, email, role, organization_id, created_at, avatar_url')
-      .eq('organization_id', orgId)
-      .order('name');
-
-    if (error) {
-      console.error('useOrganizationTeamMembers: Error fetching team members:', error);
-      throw new Error(`Failed to fetch team members: ${error.message}`);
+    // Additional UUID format validation
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(orgId)) {
+      console.log('useOrganizationTeamMembers: Invalid organization ID format:', orgId);
+      return [];
     }
 
-    console.log(`useOrganizationTeamMembers: Successfully loaded ${data?.length || 0} team members`);
+    console.log('useOrganizationTeamMembers: Fetching team members for organization:', orgId);
 
-    // Transform to User type with validation
-    const transformedUsers: User[] = (data || [])
-      .filter(user => user && user.id && user.email) // Filter out invalid users
-      .map(user => ({
-        id: user.id,
-        name: user.name || user.email.split('@')[0],
-        email: user.email,
-        role: user.role as User['role'],
-        organizationId: user.organization_id,
-        createdAt: new Date(user.created_at),
-        timezone: 'UTC',
-        avatar_url: user.avatar_url
-      }));
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('id, name, email, role, organization_id, created_at, avatar_url')
+        .eq('organization_id', orgId)
+        .order('name');
 
-    return transformedUsers;
+      if (error) {
+        console.error('useOrganizationTeamMembers: Error fetching team members:', error);
+        throw new Error(`Failed to fetch team members: ${error.message}`);
+      }
+
+      console.log(`useOrganizationTeamMembers: Successfully loaded ${data?.length || 0} team members`);
+
+      // Transform to User type with validation
+      const transformedUsers: User[] = (data || [])
+        .filter(user => {
+          // Validate user data integrity
+          if (!user || !user.id || !user.email) {
+            console.warn('useOrganizationTeamMembers: Filtering out invalid user:', user);
+            return false;
+          }
+          
+          // Validate user ID format
+          if (!uuidRegex.test(user.id)) {
+            console.warn('useOrganizationTeamMembers: Filtering out user with invalid ID format:', user.id);
+            return false;
+          }
+          
+          return true;
+        })
+        .map(user => ({
+          id: user.id,
+          name: user.name || user.email.split('@')[0],
+          email: user.email,
+          role: user.role as User['role'],
+          organizationId: user.organization_id,
+          createdAt: new Date(user.created_at),
+          timezone: 'UTC',
+          avatar_url: user.avatar_url
+        }));
+
+      return transformedUsers;
+    } catch (error) {
+      console.error('useOrganizationTeamMembers: Database query failed:', error);
+      throw error;
+    }
   };
 
   const { 
@@ -62,16 +88,30 @@ export const useOrganizationTeamMembers = () => {
   } = useQuery({
     queryKey: ['organization-team-members', currentUser?.organizationId],
     queryFn: fetchTeamMembers,
-    enabled: !!currentUser?.organizationId && currentUser.organizationId.trim().length > 0,
+    enabled: !!currentUser?.organizationId && 
+             currentUser.organizationId.trim().length > 0 &&
+             /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(currentUser.organizationId.trim()),
     staleTime: 10000,
     gcTime: 60000,
     refetchOnWindowFocus: true,
-    refetchOnMount: true
+    refetchOnMount: true,
+    retry: (failureCount, error) => {
+      // Don't retry on validation errors
+      if (error?.message?.includes('Invalid organization ID') || 
+          error?.message?.includes('Empty organization ID')) {
+        return false;
+      }
+      return failureCount < 3;
+    }
   });
 
   // Set up real-time subscription for team member changes
   useEffect(() => {
-    if (!currentUser?.organizationId || currentUser.organizationId.trim().length === 0) return;
+    if (!currentUser?.organizationId || 
+        currentUser.organizationId.trim().length === 0 ||
+        !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(currentUser.organizationId.trim())) {
+      return;
+    }
 
     console.log('useOrganizationTeamMembers: Setting up real-time subscription');
     

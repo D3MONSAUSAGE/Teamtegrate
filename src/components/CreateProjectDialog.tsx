@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,7 +24,7 @@ import { cn } from "@/lib/utils"
 import { format } from "date-fns"
 import { CalendarIcon, Sparkles, DollarSign, Users, Calendar as CalendarIconLucide } from "lucide-react"
 import { toast } from '@/components/ui/sonner';
-import MultiSelect from './MultiSelect';
+import SimpleMultiSelect from './SimpleMultiSelect';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProjectOperations } from '@/hooks/useProjectOperations';
 import { useOrganizationTeamMembers } from '@/hooks/useOrganizationTeamMembers';
@@ -67,12 +68,11 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
   const { user } = useAuth();
   const { createProject, isLoading } = useProjectOperations();
   
-  // Use the same hook as task assignment for reliable user fetching
+  // Use the team members hook with proper validation
   const { users, isLoading: usersLoading, error: usersError, refetch: refreshUsers } = useOrganizationTeamMembers();
 
-  // Transform users into options for MultiSelect - simple and clean like task assignment
-  // Add safety checks to prevent undefined iteration
-  const userOptions = Array.isArray(users) ? users
+  // Transform users into options for SimpleMultiSelect with safety checks
+  const userOptions = Array.isArray(users) && users.length > 0 ? users
     .filter(user => user && user.id && user.email) // Filter out invalid users
     .map(user => ({
       value: user.id,
@@ -279,13 +279,14 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
             </div>
             
             <div className="pl-6">
-              <MultiSelect 
+              <SimpleMultiSelect 
                 onChange={onMemberChange} 
                 options={userOptions}
                 placeholder="Select team members..."
                 isLoading={usersLoading}
                 error={usersError}
                 onRetry={refreshUsers}
+                label="Team Members"
               />
             </div>
           </div>
