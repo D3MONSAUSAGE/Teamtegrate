@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -37,6 +38,27 @@ export const useUnifiedData = () => {
     throw new Error('useUnifiedData must be used within a UnifiedDataProvider');
   }
   return context;
+};
+
+// Transform database task to app Task type
+const transformDbTaskToAppTask = (dbTask: any): Task => {
+  return {
+    id: String(dbTask.id || ''),
+    userId: String(dbTask.user_id || ''),
+    projectId: dbTask.project_id ? String(dbTask.project_id) : undefined,
+    title: String(dbTask.title || ''),
+    description: String(dbTask.description || ''),
+    deadline: new Date(dbTask.deadline || new Date()),
+    priority: (['Low', 'Medium', 'High'].includes(dbTask.priority) ? dbTask.priority : 'Medium') as 'Low' | 'Medium' | 'High',
+    status: (['To Do', 'In Progress', 'Completed'].includes(dbTask.status) ? dbTask.status : 'To Do') as 'To Do' | 'In Progress' | 'Completed',
+    createdAt: new Date(dbTask.created_at || new Date()),
+    updatedAt: new Date(dbTask.updated_at || new Date()),
+    assignedToId: dbTask.assigned_to_id ? String(dbTask.assigned_to_id) : undefined,
+    assignedToIds: dbTask.assigned_to_ids || [],
+    assignedToNames: dbTask.assigned_to_names || [],
+    cost: Number(dbTask.cost) || 0,
+    organizationId: String(dbTask.organization_id || '')
+  };
 };
 
 export const UnifiedDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -85,7 +107,8 @@ export const UnifiedDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
         throw error;
       }
 
-      return data as Task[];
+      // Transform database response to Task type
+      return (data || []).map(transformDbTaskToAppTask);
     },
     enabled: queryOptions.isReady && queryOptions.hasUser,
   });

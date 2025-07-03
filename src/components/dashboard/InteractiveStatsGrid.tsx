@@ -20,17 +20,17 @@ interface InteractiveStatsGridProps {
   dailyScore: number;
   todaysTasks: Task[];
   upcomingTasks: Task[];
+  overdueTasks: Task[];
 }
 
 const InteractiveStatsGrid: React.FC<InteractiveStatsGridProps> = ({
   dailyScore,
   todaysTasks,
-  upcomingTasks
+  upcomingTasks,
+  overdueTasks
 }) => {
   const completedToday = todaysTasks.filter(task => task.status === 'Completed').length;
-  const allTasks = [...todaysTasks, ...upcomingTasks];
-  const overdueTasks = allTasks.filter(task => isTaskOverdue(task)).length;
-  const highPriorityTasks = allTasks.filter(task => task.priority === 'High').length;
+  const highPriorityTasks = [...todaysTasks, ...upcomingTasks].filter(task => task.priority === 'High').length;
   const completionRate = todaysTasks.length > 0 ? Math.round((completedToday / todaysTasks.length) * 100) : 0;
 
   const stats = [
@@ -56,12 +56,12 @@ const InteractiveStatsGrid: React.FC<InteractiveStatsGridProps> = ({
     },
     {
       title: 'Overdue Tasks',
-      value: overdueTasks,
+      value: overdueTasks.length,
       subtitle: 'Need attention',
       icon: AlertTriangle,
       color: 'from-red-500 to-orange-500',
       bgColor: 'bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-950/20 dark:to-orange-950/20',
-      progress: overdueTasks > 0 ? 100 : 0,
+      progress: overdueTasks.length > 0 ? 100 : 0,
       maxValue: 100
     },
     {

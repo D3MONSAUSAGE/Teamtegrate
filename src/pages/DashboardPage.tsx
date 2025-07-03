@@ -10,6 +10,7 @@ import CreateTaskDialogEnhanced from '@/components/CreateTaskDialogEnhanced';
 import { format } from 'date-fns';
 import DailyTasksSection from '@/components/dashboard/DailyTasksSection';
 import UpcomingTasksSection from '@/components/dashboard/UpcomingTasksSection';
+import OverdueTasksSection from '@/components/dashboard/OverdueTasksSection';
 import RecentProjects from '@/components/dashboard/RecentProjects';
 import TeamManagement from '@/components/dashboard/TeamManagement';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -19,7 +20,8 @@ import EnhancedDashboardHeader from '@/components/dashboard/EnhancedDashboardHea
 import InteractiveStatsGrid from '@/components/dashboard/InteractiveStatsGrid';
 import ModernSectionCard from '@/components/dashboard/ModernSectionCard';
 import QuickActionsPanel from '@/components/dashboard/QuickActionsPanel';
-import { Clock, FileText, Users, Target } from 'lucide-react';
+import { Clock, FileText, Users, Target, AlertTriangle } from 'lucide-react';
+import { isTaskOverdue } from '@/utils/taskUtils';
 
 const DashboardPage = () => {
   const { user } = useAuth();
@@ -41,7 +43,7 @@ const DashboardPage = () => {
   const isLoading = tasksLoading || projectsLoading;
   
   // Memoize expensive calculations to prevent re-computation on every render
-  const { todaysTasks, upcomingTasks, flatProjects, recentProjects } = useMemo(() => {
+  const { todaysTasks, upcomingTasks, overdueTasks, flatProjects, recentProjects } = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const nextWeek = new Date(today);
@@ -58,6 +60,9 @@ const DashboardPage = () => {
       taskDate.setHours(0, 0, 0, 0);
       return taskDate > today && taskDate <= nextWeek;
     }).sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime());
+
+    // Calculate overdue tasks from ALL tasks
+    const overdueTasks = tasks.filter((task) => isTaskOverdue(task));
     
     const flatProjects = projects.map(project => ({
       id: project.id,
@@ -80,7 +85,7 @@ const DashboardPage = () => {
     
     const recentProjects = flatProjects.slice(0, 3);
     
-    return { todaysTasks, upcomingTasks, flatProjects, recentProjects };
+    return { todaysTasks, upcomingTasks, overdueTasks, flatProjects, recentProjects };
   }, [tasks, projects, user?.organizationId]);
 
   // Manual refresh handler
@@ -168,6 +173,7 @@ const DashboardPage = () => {
             dailyScore={dailyScore.percentage}
             todaysTasks={todaysTasks}
             upcomingTasks={upcomingTasks}
+            overdueTasks={overdueTasks}
           />
         </div>
 
@@ -201,9 +207,20 @@ const DashboardPage = () => {
             </div>
           </ModernSectionCard>
         </div>
+
+        {/* Overdue Tasks Section - Show first if there are overdue tasks */}
+        {overdueTasks.length > 0 && (
+          <div className="animate-fade-in delay-400">
+            <OverdueTasksSection 
+              tasks={overdueTasks}
+              onCreateTask={() => handleCreateTask()}
+              onEditTask={handleEditTask}
+            />
+          </div>
+        )}
         
         {/* Tasks Sections with improved spacing */}
-        <div className="space-y-8 animate-fade-in delay-400">
+        <div className="space-y-8 animate-fade-in delay-500">
           <ModernSectionCard
             title="Today's Focus"
             subtitle="Tasks scheduled for today"
@@ -237,7 +254,7 @@ const DashboardPage = () => {
         
         {/* Manager-only sections */}
         {user?.role === 'manager' && (
-          <div className="space-y-8 animate-fade-in delay-500">
+          <div className="space-y-8 animate-fade-in delay-600">
             <ModernSectionCard
               title="Active Projects"
               subtitle="Your recent projects and progress"
