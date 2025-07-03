@@ -207,17 +207,6 @@ const DashboardPage = () => {
             </div>
           </ModernSectionCard>
         </div>
-
-        {/* Overdue Tasks Section - Show first if there are overdue tasks */}
-        {overdueTasks.length > 0 && (
-          <div className="animate-fade-in delay-400">
-            <OverdueTasksSection 
-              tasks={overdueTasks}
-              onCreateTask={() => handleCreateTask()}
-              onEditTask={handleEditTask}
-            />
-          </div>
-        )}
         
         {/* Tasks Sections with improved spacing */}
         <div className="space-y-8 animate-fade-in delay-500">
@@ -245,6 +234,22 @@ const DashboardPage = () => {
             <div className="p-1">
               <UpcomingTasksSection 
                 tasks={upcomingTasks}
+                onCreateTask={() => handleCreateTask()}
+                onEditTask={handleEditTask}
+              />
+            </div>
+          </ModernSectionCard>
+
+          {/* Overdue Tasks Section - Positioned below Upcoming Work */}
+          <ModernSectionCard
+            title="Overdue Tasks"
+            subtitle="Tasks that need immediate attention"
+            icon={AlertTriangle}
+            noPadding
+          >
+            <div className="p-1">
+              <OverdueTasksSection 
+                tasks={overdueTasks}
                 onCreateTask={() => handleCreateTask()}
                 onEditTask={handleEditTask}
               />
