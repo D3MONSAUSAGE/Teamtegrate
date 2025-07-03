@@ -38,7 +38,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
   const [selectedValues, setSelectedValues] = useState<string[]>([]);
 
   const handleSelect = (value: string) => {
-    if (!value) return; // Prevent empty values
+    if (!value) return;
     
     const newValues = selectedValues.includes(value)
       ? selectedValues.filter(v => v !== value)
@@ -48,16 +48,6 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
     onChange(newValues);
   };
 
-  // Ensure options is always an array with proper validation
-  const safeOptions = Array.isArray(options) ? options.filter(option => 
-    option && 
-    typeof option === 'object' && 
-    option.value && 
-    option.label &&
-    option.value.trim() !== '' &&
-    option.label.trim() !== ''
-  ) : [];
-  
   // Show error state with retry option
   if (error) {
     return (
@@ -67,11 +57,6 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
           <AlertCircle className="h-4 w-4 text-destructive flex-shrink-0" />
           <div className="flex-1">
             <span className="text-sm text-destructive">Failed to load team members</span>
-            {error.includes('Invalid organization') && (
-              <p className="text-xs text-destructive/80 mt-1">
-                Organization configuration issue. Please contact support.
-              </p>
-            )}
           </div>
           {onRetry && (
             <Button
@@ -118,10 +103,10 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
           <Command>
             <CommandInput placeholder="Search members..." />
             <CommandEmpty>
-              {safeOptions.length === 0 ? "No team members available." : "No members found."}
+              {options.length === 0 ? "No team members available." : "No members found."}
             </CommandEmpty>
             <CommandGroup>
-              {safeOptions.map((option) => (
+              {options.map((option) => (
                 <CommandItem
                   key={option.value}
                   value={option.value}
@@ -140,7 +125,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
           </Command>
         </PopoverContent>
       </Popover>
-      {safeOptions.length === 0 && !isLoading && !error && (
+      {options.length === 0 && !isLoading && !error && (
         <p className="text-xs text-muted-foreground">No team members available to select.</p>
       )}
     </div>

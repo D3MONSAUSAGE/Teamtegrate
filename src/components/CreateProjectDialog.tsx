@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -26,7 +27,7 @@ import { toast } from '@/components/ui/sonner';
 import MultiSelect from './MultiSelect';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProjectOperations } from '@/hooks/useProjectOperations';
-import { useUsers } from '@/hooks/useUsers';
+import { useOrganizationTeamMembers } from '@/hooks/useOrganizationTeamMembers';
 
 const FormSchema = z.object({
   title: z.string().min(2, {
@@ -66,16 +67,15 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const { user } = useAuth();
   const { createProject, isLoading } = useProjectOperations();
-  const { users, isLoading: usersLoading, error: usersError, refreshUsers } = useUsers();
+  
+  // Use the same hook as task assignment for reliable user fetching
+  const { users, isLoading: usersLoading, error: usersError, refetch: refreshUsers } = useOrganizationTeamMembers();
 
-  // Transform users into options for MultiSelect with proper null checks and UUID validation
-  const userOptions = Array.isArray(users) ? users
-    .filter(user => user && user.id && user.id.trim() !== '')
-    .map(user => ({
-      value: user.id,
-      label: `${user.name || user.email} (${user.email})`
-    }))
-    .filter(option => option.value && option.label) : [];
+  // Transform users into options for MultiSelect - simple and clean like task assignment
+  const userOptions = users.map(user => ({
+    value: user.id,
+    label: `${user.name || user.email} (${user.email})`
+  }));
 
   const onSubmit = async (data: any) => {
     try {
