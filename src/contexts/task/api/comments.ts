@@ -21,7 +21,11 @@ export const fetchTaskComments = async (taskId: string): Promise<TaskComment[]> 
       userName: comment.user_id, // We'll need to join with users table or store user name
       text: comment.content,
       createdAt: new Date(comment.created_at),
-      organizationId: comment.organization_id
+      organizationId: comment.organization_id,
+      category: comment.category,
+      isPinned: comment.is_pinned,
+      metadata: comment.metadata,
+      updatedAt: comment.updated_at ? new Date(comment.updated_at) : undefined
     })) || [];
   } catch (error) {
     console.error('Error in fetchTaskComments:', error);
@@ -77,7 +81,11 @@ export const fetchProjectComments = async (projectId: string): Promise<TaskComme
         userName: user?.name || user?.email || 'Unknown User',
         text: comment.content,
         createdAt: new Date(comment.created_at),
-        organizationId: comment.organization_id
+        organizationId: comment.organization_id,
+        category: comment.category,
+        isPinned: comment.is_pinned,
+        metadata: comment.metadata,
+        updatedAt: comment.updated_at ? new Date(comment.updated_at) : undefined
       };
     });
   } catch (error) {
@@ -110,7 +118,11 @@ export const addTaskComment = async (taskId: string, comment: { userId: string; 
       userName: comment.userName,
       text: data.content,
       createdAt: new Date(data.created_at),
-      organizationId: data.organization_id
+      organizationId: data.organization_id,
+      category: data.category,
+      isPinned: data.is_pinned,
+      metadata: data.metadata,
+      updatedAt: data.updated_at ? new Date(data.updated_at) : undefined
     };
   } catch (error) {
     console.error('Error in addTaskComment:', error);
@@ -118,7 +130,7 @@ export const addTaskComment = async (taskId: string, comment: { userId: string; 
   }
 };
 
-export const addProjectComment = async (projectId: string, comment: { userId: string; userName: string; text: string; organizationId: string }): Promise<TaskComment> => {
+export const addProjectComment = async (projectId: string, comment: { userId: string; userName: string; text: string; organizationId: string; category?: string; isPinned?: boolean }): Promise<TaskComment> => {
   try {
     const { data, error } = await supabase
       .from('comments')
@@ -126,7 +138,9 @@ export const addProjectComment = async (projectId: string, comment: { userId: st
         user_id: comment.userId,
         project_id: projectId,
         content: comment.text,
-        organization_id: comment.organizationId
+        organization_id: comment.organizationId,
+        category: comment.category || 'general',
+        is_pinned: comment.isPinned || false
       })
       .select('*')
       .single();
@@ -142,7 +156,11 @@ export const addProjectComment = async (projectId: string, comment: { userId: st
       userName: comment.userName,
       text: data.content,
       createdAt: new Date(data.created_at),
-      organizationId: data.organization_id
+      organizationId: data.organization_id,
+      category: data.category,
+      isPinned: data.is_pinned,
+      metadata: data.metadata,
+      updatedAt: data.updated_at ? new Date(data.updated_at) : undefined
     };
   } catch (error) {
     console.error('Error in addProjectComment:', error);

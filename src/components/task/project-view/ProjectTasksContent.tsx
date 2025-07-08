@@ -9,10 +9,11 @@ import ProjectTasksTabs from './ProjectTasksTabs';
 import ProjectActionToolbar from './ProjectActionToolbar';
 import TeamManagementDialog from './TeamManagementDialog';
 import ViewControlsPanel from './ViewControlsPanel';
-import ProjectLogDialog from '../../project/ProjectLogDialog';
-import CollapsibleProjectLogSection from '../../project/CollapsibleProjectLogSection';
 import ProjectTeamMembersSection from './ProjectTeamMembersSection';
+import ProjectNotebookButton from '../../project/notebook/ProjectNotebookButton';
+import ProjectNotebookDialog from '../../project/notebook/ProjectNotebookDialog';
 import { useProjectViewState } from './hooks/useProjectViewState';
+import { useProjectComments } from '@/hooks/useProjectComments';
 
 interface ProjectTasksContentProps {
   project: Project;
@@ -78,7 +79,10 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
   } = useProjectViewState(allTasks);
 
   const [showTeamManagement, setShowTeamManagement] = useState(false);
-  const [showProjectLog, setShowProjectLog] = useState(false);
+  const [showProjectNotebook, setShowProjectNotebook] = useState(false);
+  
+  // Get project comments for the notebook button
+  const { comments } = useProjectComments(project.id);
 
   // Filter tasks by the view state - show all tasks including completed
   const filteredTodoTasks = filteredTasks.filter(task => task.status === 'To Do');
@@ -107,10 +111,6 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
     }
   };
 
-  const handleOpenProjectLog = () => {
-    setShowProjectLog(true);
-  };
-
   return (
     <div className="space-y-6">
       {/* Enhanced Project Action Toolbar */}
@@ -130,9 +130,16 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
         progress={progress || 0}
       />
 
-      {/* Simplified Header Actions */}
+      {/* Header with Project Journal Button */}
       <div className="flex justify-between items-center px-4 sm:px-6 lg:px-8">
-        <h2 className="text-xl font-semibold">Project Tasks</h2>
+        <div className="flex items-center gap-4">
+          <h2 className="text-xl font-semibold">Project Tasks</h2>
+          <ProjectNotebookButton
+            onClick={() => setShowProjectNotebook(true)}
+            updateCount={comments.length}
+            hasUnreadUpdates={false}
+          />
+        </div>
         <Button onClick={onCreateTask}>
           <Plus className="h-4 w-4 mr-2" />
           Add Task
@@ -156,14 +163,6 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
           isLoading={isLoadingTeamMembers}
           onRetry={onRefresh}
           onManageTeam={handleManageTeam}
-        />
-      </div>
-
-      {/* Collapsible Project Log Section */}
-      <div className="px-4 sm:px-6 lg:px-8">
-        <CollapsibleProjectLogSection 
-          projectId={project.id}
-          onViewAllClick={handleOpenProjectLog}
         />
       </div>
 
@@ -200,10 +199,10 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
         onRemoveTeamMember={handleRemoveTeamMember}
       />
 
-      {/* Project Log Dialog */}
-      <ProjectLogDialog
-        open={showProjectLog}
-        onOpenChange={setShowProjectLog}
+      {/* Project Notebook Dialog */}
+      <ProjectNotebookDialog
+        open={showProjectNotebook}
+        onOpenChange={setShowProjectNotebook}
         projectId={project.id}
         projectTitle={project.title}
       />

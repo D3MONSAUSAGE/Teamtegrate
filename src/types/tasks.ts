@@ -33,7 +33,11 @@ export interface TaskComment {
   userName: string;
   text: string;
   createdAt: Date;
+  updatedAt?: Date;
   organizationId?: string;
+  category?: string;
+  isPinned?: boolean;
+  metadata?: any;
 }
 
 export type DailyScore = {
