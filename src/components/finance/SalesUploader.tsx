@@ -50,7 +50,7 @@ const SalesUploader: React.FC<SalesUploaderProps> = ({ onUpload }) => {
       // For this demo, we'll simulate parsing after a delay
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // Create simulated data based on the sample data
+      // Create simulated data based on the sample data with all required properties
       const simulatedData: SalesData = {
         id: uuidv4(),
         date: format(salesDate, 'yyyy-MM-dd'),
@@ -59,6 +59,30 @@ const SalesUploader: React.FC<SalesUploaderProps> = ({ onUpload }) => {
         netSales: 8684.61 + Math.random() * 800,
         orderCount: 291 + Math.floor(Math.random() * 50),
         orderAverage: 29.84 + Math.random() * 5,
+        labor: {
+          cost: 1200.50,
+          hours: 45.5,
+          percentage: 12.5,
+          salesPerLaborHour: 209.9
+        },
+        cashManagement: {
+          depositsAccepted: 500.00,
+          depositsRedeemed: 450.00,
+          paidIn: 100.00,
+          paidOut: 75.00
+        },
+        giftCards: {
+          issueAmount: 250.00,
+          issueCount: 5,
+          reloadAmount: 100.00,
+          reloadCount: 2
+        },
+        paymentBreakdown: {
+          nonCash: 7200.00,
+          totalCash: 1484.61,
+          calculatedCash: 1484.61,
+          tips: 123.28
+        },
         destinations: [
           { name: 'Drive Thru', quantity: 257, total: 7642.24, percent: 88.00 },
           { name: 'DoorDash', quantity: 17, total: 590.25, percent: 6.80 },
@@ -93,7 +117,11 @@ const SalesUploader: React.FC<SalesUploaderProps> = ({ onUpload }) => {
         ],
         taxes: [
           { name: 'Sales Tax', quantity: 1379, total: 825.03, percent: 100.00 }
-        ]
+        ],
+        voids: 25.50,
+        refunds: 15.75,
+        surcharges: 45.20,
+        expenses: 125.00
       };
       
       onUpload(simulatedData);

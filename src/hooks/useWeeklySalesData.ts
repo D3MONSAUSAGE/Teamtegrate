@@ -88,11 +88,17 @@ export const useWeeklySalesData = (salesData: SalesData[]) => {
       totalInHouseCash: 0
     });
     
+    // Convert parsed sales back to string dates for the return type
+    const dailySalesWithStringDates: SalesData[] = weekSales.map(sale => ({
+      ...sale,
+      date: format(sale.date, 'yyyy-MM-dd')
+    }));
+    
     return {
       weekStart,
       weekEnd,
       location: selectedLocation === 'all' ? 'All Locations' : selectedLocation,
-      dailySales: weekSales,
+      dailySales: dailySalesWithStringDates,
       totals
     };
   }, [parsedSalesData, selectedWeek, selectedLocation]);

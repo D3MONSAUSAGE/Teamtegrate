@@ -19,6 +19,7 @@ export interface TaskComment {
   id: string;
   content: string;
   userId: string;
+  userName?: string;
   taskId?: string;
   projectId?: string;
   createdAt: string;
@@ -26,4 +27,20 @@ export interface TaskComment {
   category?: string;
   isPinned?: boolean;
   metadata?: Record<string, any>;
+}
+
+export type TaskStatus = 'To Do' | 'In Progress' | 'Completed';
+export type TaskPriority = 'Low' | 'Medium' | 'High';
+
+export interface TaskFormValues {
+  title: string;
+  description?: string;
+  priority: TaskPriority;
+  deadline: Date | string;
+  projectId?: string;
+  cost?: number;
+  assignedToId?: string;
+  assignedToName?: string;
+  assignedToIds?: string[];
+  assignedToNames?: string[];
 }

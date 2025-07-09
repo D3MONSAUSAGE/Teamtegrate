@@ -1,145 +1,82 @@
 
 import { useState } from 'react';
-import { useForm } from "react-hook-form";
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { Task, TaskPriority, TaskFormValues } from '@/types/tasks';
-import { useTask } from '@/contexts/task';
-import { useAuth } from '@/contexts/AuthContext';
 
-export const useTaskFormWithTime = (
-  editingTask?: Task, 
-  currentProjectId?: string,
-  onTaskComplete?: () => void
-) => {
-  const { user } = useAuth();
-  const { addTask, updateTask } = useTask();
-  const [selectedMember, setSelectedMember] = useState<string | undefined>(
-    editingTask?.assignedToId
+const taskFormSchema = z.object({
+  title: z.string().min(1, 'Title is required'),
+  description: z.string().optional(),
+  priority: z.enum(['Low', 'Medium', 'High']),
+  deadline: z.union([z.string(), z.date()]),
+  projectId: z.string().optional(),
+  cost: z.union([z.number(), z.string()]).optional(),
+});
+
+export const useTaskFormWithTime = (editingTask?: Task, currentProjectId?: string) => {
+  const [deadlineDate, setDeadlineDate] = useState<Date | undefined>(
+    editingTask?.deadline ? new Date(editingTask.deadline) : undefined
+  );
+  const [timeInput, setTimeInput] = useState<string>(
+    editingTask?.deadline && typeof editingTask.deadline === 'string'
+      ? new Date(editingTask.deadline).toLocaleTimeString('en-US', {
+          hour12: false,
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+      : ''
   );
 
-  // Initialize date and time from deadline
-  const initializeDateTime = () => {
-    if (!editingTask?.deadline) return { dateValue: undefined, timeValue: '' };
-    
-    const deadlineDate = editingTask.deadline instanceof Date 
-      ? editingTask.deadline
-      : new Date(editingTask.deadline);
-    
-    if (isNaN(deadlineDate.getTime())) return { dateValue: undefined, timeValue: '' };
-    
-    // Format the time as HH:MM
-    const hours = deadlineDate.getHours().toString().padStart(2, '0');
-    const minutes = deadlineDate.getMinutes().toString().padStart(2, '0');
-    
-    return { 
-      dateValue: deadlineDate,
-      timeValue: `${hours}:${minutes}`
-    };
-  };
-  
-  const { dateValue: initialDate, timeValue: initialTime } = initializeDateTime();
-  
-  // State for date and time inputs
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(initialDate);
-  const [selectedTime, setSelectedTime] = useState(initialTime || '');
-
-  // Configure form with proper defaults
-  const {
-    register,
-    handleSubmit, 
-    formState: { errors }, 
-    reset, 
-    setValue,
-    watch
-  } = useForm<TaskFormValues>({
+  const form = useForm<TaskFormValues>({
+    resolver: zodResolver(taskFormSchema),
     defaultValues: {
       title: editingTask?.title || '',
       description: editingTask?.description || '',
       priority: editingTask?.priority || 'Medium',
-      deadline: '',  // We'll handle this with date and time separately
-      projectId: editingTask?.projectId || currentProjectId || '',
-      cost: editingTask?.cost?.toString() || '',
-      assignedToId: editingTask?.assignedToId || '',
-      assignedToName: editingTask?.assignedToName || ''
+      deadline: editingTask?.deadline || new Date(),
+      projectId: editingTask?.projectId || currentProjectId || 'none',
+      cost: editingTask?.cost || 0,
+      assignedToIds: editingTask?.assignedToIds || [],
+      assignedToNames: editingTask?.assignedToNames || [],
     },
   });
 
-  // Submit handler
-  const handleFormSubmit = async (data: TaskFormValues) => {
-    if (!user || !user.organizationId) return;
-    
-    // Combine date and time into a single Date object
-    let deadline: Date;
-    
-    if (selectedDate) {
-      deadline = new Date(selectedDate);
-      
-      if (selectedTime) {
-        const [hours, minutes] = selectedTime.split(':').map(Number);
-        deadline.setHours(hours || 0);
-        deadline.setMinutes(minutes || 0);
-      }
-    } else {
-      deadline = new Date();  // Default to current date/time if not set
-    }
-    
-    // Convert cost string to number or undefined
-    const cost = data.cost ? Number(data.cost) : undefined;
-    
-    // Prepare form data
-    const formData = {
-      ...data,
-      deadline,
-      cost,
-      assignedToId: selectedMember === "unassigned" ? undefined : selectedMember,
-    };
+  const { register, setValue, watch, formState: { errors }, reset, handleSubmit } = form;
 
-    try {
-      // Create or edit task
-      if (editingTask) {
-        await updateTask(editingTask.id, formData);
-      } else {
-        await addTask({
-          ...formData,
-          status: 'To Do' as const,
-          userId: user.id,
-          projectId: data.projectId === "none" ? undefined : data.projectId,
-          organizationId: user.organizationId,
-          assignedToIds: selectedMember && selectedMember !== "unassigned" ? [selectedMember] : [],
-          assignedToNames: data.assignedToName ? [data.assignedToName] : [],
-        });
-      }
-
-      // Reset form and call completion callback
-      reset();
-      setSelectedMember(undefined);
-      if (onTaskComplete) onTaskComplete();
-    } catch (error) {
-      console.error("Error saving task:", error);
-    }
-  };
-
-  // Handle date change
   const handleDateChange = (date: Date | undefined) => {
-    setSelectedDate(date);
+    setDeadlineDate(date);
+    if (date && timeInput) {
+      const [hours, minutes] = timeInput.split(':');
+      const newDateTime = new Date(date);
+      newDateTime.setHours(parseInt(hours, 10), parseInt(minutes, 10));
+      setValue('deadline', newDateTime);
+    } else if (date) {
+      setValue('deadline', date);
+    }
   };
 
-  // Handle time change
-  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSelectedTime(e.target.value);
+  const handleTimeChange = (time: string) => {
+    setTimeInput(time);
+    if (deadlineDate && time) {
+      const [hours, minutes] = time.split(':');
+      const newDateTime = new Date(deadlineDate);
+      newDateTime.setHours(parseInt(hours, 10), parseInt(minutes, 10));
+      setValue('deadline', newDateTime);
+    }
   };
 
   return {
+    form,
     register,
-    errors,
-    reset,
     setValue,
     watch,
-    selectedMember,
-    setSelectedMember,
-    selectedDate,
-    selectedTime,
+    errors,
+    reset,
+    handleSubmit,
+    deadlineDate,
+    timeInput,
     handleDateChange,
     handleTimeChange,
-    handleFormSubmit: handleSubmit(handleFormSubmit)
   };
 };
