@@ -35,13 +35,14 @@ export const updateProjectComment = async (commentId: string, updates: { content
       id: data.id,
       userId: data.user_id,
       userName: users?.name || users?.email || 'Unknown User',
-      text: data.content,
-      createdAt: new Date(data.created_at),
-      organizationId: data.organization_id,
+      content: data.content,
+      taskId: data.task_id,
+      projectId: data.project_id,
+      createdAt: data.created_at,
+      updatedAt: data.updated_at,
       category: data.category,
       isPinned: data.is_pinned,
-      metadata: data.metadata,
-      updatedAt: data.updated_at ? new Date(data.updated_at) : new Date(data.created_at)
+      metadata: data.metadata
     };
   } catch (error) {
     console.error('Error in updateProjectComment:', error);
@@ -111,13 +112,14 @@ export const searchProjectComments = async (projectId: string, searchQuery: stri
         id: comment.id,
         userId: comment.user_id,
         userName: user?.name || user?.email || 'Unknown User',
-        text: comment.content,
-        createdAt: new Date(comment.created_at),
-        organizationId: comment.organization_id,
+        content: comment.content,
+        taskId: comment.task_id,
+        projectId: comment.project_id,
+        createdAt: comment.created_at,
+        updatedAt: comment.updated_at,
         category: comment.category,
         isPinned: comment.is_pinned,
-        metadata: comment.metadata,
-        updatedAt: comment.updated_at ? new Date(comment.updated_at) : new Date(comment.created_at)
+        metadata: comment.metadata
       };
     });
   } catch (error) {

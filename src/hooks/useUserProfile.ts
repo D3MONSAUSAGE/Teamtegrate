@@ -1,35 +1,79 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { Task } from '@/types';
 
-export const useUserProfile = () => {
-  const { user } = useAuth();
-  const [userTasks, setUserTasks] = useState<Task[]>([]);
-  const [tasksLoading, setTasksLoading] = useState(false);
-  const [tasksError, setTasksError] = useState<Error | null>(null);
+interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  avatar_url?: string;
+  created_at: string;
+}
+
+interface UserStats {
+  totalTasks: number;
+  completedTasks: number;
+  overdueTasks: number;
+  activeProjects: number;
+  completionRate: number;
+}
+
+interface ProfileData {
+  user: UserProfile;
+  tasks: Task[];
+  projects: any[];
+  stats: UserStats;
+}
+
+export const useUserProfile = (userId: string | null) => {
+  const { user: currentUser } = useAuth();
+  const [profileData, setProfileData] = useState<ProfileData | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const canViewProfile = currentUser && ['superadmin', 'admin', 'manager'].includes(currentUser.role);
 
   useEffect(() => {
-    fetchUserTasks();
-  }, [user]);
+    if (userId && canViewProfile) {
+      fetchUserProfile();
+    }
+  }, [userId, canViewProfile]);
 
-  const fetchUserTasks = async () => {
-    if (!user?.id) return;
+  const fetchUserProfile = async () => {
+    if (!userId || !canViewProfile) return;
     
     try {
-      setTasksLoading(true);
-      const { data, error } = await supabase
-        .from('tasks')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+      setLoading(true);
+      setError(null);
 
-      if (error) {
-        console.error('Error fetching tasks:', error);
+      // Fetch user profile
+      const { data: userProfile, error: userError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (userError) {
+        setError('Failed to fetch user profile');
+        console.error('Error fetching user profile:', userError);
         return;
       }
 
-      const tasksWithComments = data?.map(task => ({
+      // Fetch user tasks
+      const { data: tasksData, error: tasksError } = await supabase
+        .from('tasks')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (tasksError) {
+        console.error('Error fetching tasks:', tasksError);
+      }
+
+      const tasks: Task[] = tasksData?.map(task => ({
         id: task.id,
         userId: task.user_id,
         projectId: task.project_id,
@@ -40,25 +84,49 @@ export const useUserProfile = () => {
         status: task.status as 'To Do' | 'In Progress' | 'Completed',
         createdAt: task.created_at,
         updatedAt: task.updated_at,
-        assignedTo: task.assigned_to,
+        assignedTo: task.assigned_to_id,
         assignedToIds: task.assigned_to_ids,
         assignedToNames: task.assigned_to_names,
         cost: task.cost,
         comments: []
       })) || [];
 
-      setUserTasks(tasksWithComments);
+      // Calculate stats
+      const totalTasks = tasks.length;
+      const completedTasks = tasks.filter(task => task.status === 'Completed').length;
+      const overdueTasks = tasks.filter(task => 
+        task.deadline && new Date(task.deadline) < new Date() && task.status !== 'Completed'
+      ).length;
+      const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+      const stats: UserStats = {
+        totalTasks,
+        completedTasks,
+        overdueTasks,
+        activeProjects: 0, // TODO: Implement project counting
+        completionRate
+      };
+
+      setProfileData({
+        user: userProfile,
+        tasks,
+        projects: [], // TODO: Implement project fetching
+        stats
+      });
+
     } catch (error) {
-      console.error('Error in fetchUserTasks:', error);
+      console.error('Error in fetchUserProfile:', error);
+      setError('An unexpected error occurred');
     } finally {
-      setTasksLoading(false);
+      setLoading(false);
     }
   };
 
   return {
-    userTasks,
-    tasksLoading,
-    tasksError,
-    fetchUserTasks
+    profileData,
+    loading,
+    error,
+    canViewProfile,
+    refetch: fetchUserProfile
   };
 };

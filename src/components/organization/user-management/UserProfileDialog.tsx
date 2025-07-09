@@ -243,10 +243,12 @@ const UserProfileDialog: React.FC<UserProfileDialogProps> = ({
                               </p>
                             )}
                             <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
-                              <div className="flex items-center gap-1">
-                                <Calendar className="h-4 w-4" />
-                                {formatDistanceToNow(task.deadline, { addSuffix: true })}
-                              </div>
+                              {task.deadline && (
+                                <div className="flex items-center gap-1">
+                                  <Calendar className="h-4 w-4" />
+                                  {formatDistanceToNow(new Date(task.deadline), { addSuffix: true })}
+                                </div>
+                              )}
                               {task.cost && task.cost > 0 && (
                                 <div className="flex items-center gap-1">
                                   <Target className="h-4 w-4" />
