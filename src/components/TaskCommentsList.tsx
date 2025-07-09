@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { TaskComment } from '@/types';
 
@@ -19,7 +20,7 @@ const TaskCommentsList: React.FC<TaskCommentsListProps> = ({ taskComments, class
           <div className="flex justify-between items-start mb-1">
             <div className="font-medium text-sm">{comment.userName}</div>
             <div className="text-xs text-muted-foreground">
-              {new Date(comment.createdAt).toLocaleDateString()}
+              {comment.createdAt.toLocaleDateString()}
             </div>
           </div>
           <div className="text-sm">{comment.text}</div>
@@ -30,3 +31,4 @@ const TaskCommentsList: React.FC<TaskCommentsListProps> = ({ taskComments, class
 };
 
 export default TaskCommentsList;
+

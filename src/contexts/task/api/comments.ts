@@ -1,4 +1,5 @@
 
+
 import { TaskComment } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -19,14 +20,15 @@ export const fetchTaskComments = async (taskId: string): Promise<TaskComment[]> 
       id: comment.id,
       userId: comment.user_id,
       userName: comment.user_id, // We'll need to join with users table or store user name
-      content: comment.content,
+      text: comment.content, // Map content to text
       taskId: comment.task_id,
       projectId: comment.project_id,
-      createdAt: comment.created_at,
-      updatedAt: comment.updated_at,
+      createdAt: new Date(comment.created_at), // Convert to Date
+      updatedAt: new Date(comment.updated_at), // Convert to Date
       category: comment.category,
       isPinned: comment.is_pinned,
-      metadata: comment.metadata
+      metadata: comment.metadata,
+      organizationId: comment.organization_id // Add organizationId
     })) || [];
   } catch (error) {
     console.error('Error in fetchTaskComments:', error);
@@ -80,14 +82,15 @@ export const fetchProjectComments = async (projectId: string): Promise<TaskComme
         id: comment.id,
         userId: comment.user_id,
         userName: user?.name || user?.email || 'Unknown User',
-        content: comment.content,
+        text: comment.content, // Map content to text
         taskId: comment.task_id,
         projectId: comment.project_id,
-        createdAt: comment.created_at,
-        updatedAt: comment.updated_at,
+        createdAt: new Date(comment.created_at), // Convert to Date
+        updatedAt: new Date(comment.updated_at), // Convert to Date
         category: comment.category,
         isPinned: comment.is_pinned,
-        metadata: comment.metadata
+        metadata: comment.metadata,
+        organizationId: comment.organization_id // Add organizationId
       };
     });
   } catch (error) {
@@ -118,14 +121,15 @@ export const addTaskComment = async (taskId: string, comment: { userId: string; 
       id: data.id,
       userId: data.user_id,
       userName: comment.userName,
-      content: data.content,
+      text: data.content, // Map content to text
       taskId: data.task_id,
       projectId: data.project_id,
-      createdAt: data.created_at,
-      updatedAt: data.updated_at,
+      createdAt: new Date(data.created_at), // Convert to Date
+      updatedAt: new Date(data.updated_at), // Convert to Date
       category: data.category,
       isPinned: data.is_pinned,
-      metadata: data.metadata
+      metadata: data.metadata,
+      organizationId: data.organization_id // Add organizationId
     };
   } catch (error) {
     console.error('Error in addTaskComment:', error);
@@ -157,17 +161,19 @@ export const addProjectComment = async (projectId: string, comment: { userId: st
       id: data.id,
       userId: data.user_id,
       userName: comment.userName,
-      content: data.content,
+      text: data.content, // Map content to text
       taskId: data.task_id,
       projectId: data.project_id,
-      createdAt: data.created_at,
-      updatedAt: data.updated_at,
+      createdAt: new Date(data.created_at), // Convert to Date
+      updatedAt: new Date(data.updated_at), // Convert to Date
       category: data.category,
       isPinned: data.is_pinned,
-      metadata: data.metadata
+      metadata: data.metadata,
+      organizationId: data.organization_id // Add organizationId
     };
   } catch (error) {
     console.error('Error in addProjectComment:', error);
     throw error;
   }
 };
+
