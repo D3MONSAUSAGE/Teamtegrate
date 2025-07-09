@@ -1,3 +1,4 @@
+
 export interface Task {
   id: string;
   title: string;
@@ -19,7 +20,7 @@ export interface Task {
 
 export interface TaskComment {
   id: string;
-  content: string;
+  text: string;
   userId: string;
   userName?: string;
   taskId?: string;
@@ -29,7 +30,6 @@ export interface TaskComment {
   category?: string;
   isPinned?: boolean;
   metadata?: Record<string, any>;
-  text: string;
   organizationId: string;
 }
 
