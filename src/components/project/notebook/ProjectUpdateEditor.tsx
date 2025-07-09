@@ -37,6 +37,10 @@ const ProjectUpdateEditor: React.FC<ProjectUpdateEditorProps> = ({
     }
   };
 
+  const handlePinnedChange = (checked: boolean | 'indeterminate') => {
+    setIsPinned(checked === true);
+  };
+
   return (
     <Card className="p-4 bg-muted/30">
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -78,7 +82,7 @@ const ProjectUpdateEditor: React.FC<ProjectUpdateEditorProps> = ({
             <Checkbox 
               id="pin-update"
               checked={isPinned}
-              onCheckedChange={setIsPinned}
+              onCheckedChange={handlePinnedChange}
             />
             <label htmlFor="pin-update" className="text-sm flex items-center gap-1 cursor-pointer">
               <Pin className="h-3 w-3" />

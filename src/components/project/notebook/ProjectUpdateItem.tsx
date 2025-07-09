@@ -1,196 +1,183 @@
 
 import React, { useState } from 'react';
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Edit3, Trash2, Pin, MoreHorizontal, Check, X } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { Checkbox } from "@/components/ui/checkbox";
+import { Pin, Edit2, Trash2, Save, X, User, Calendar, Tag } from 'lucide-react';
 import { EnhancedTaskComment } from '@/types/enhancedComments';
-import { useAuth } from '@/contexts/AuthContext';
+import { formatDistanceToNow } from 'date-fns';
 
 interface ProjectUpdateItemProps {
   comment: EnhancedTaskComment;
   onEdit: (commentId: string, updates: { content?: string; category?: string; is_pinned?: boolean }) => Promise<void>;
   onDelete: (commentId: string) => Promise<void>;
-  isEditing?: boolean;
-  onEditStart?: () => void;
-  onEditCancel?: () => void;
+  isEditing: boolean;
+  onEditStart: () => void;
+  onEditCancel: () => void;
 }
 
 const ProjectUpdateItem: React.FC<ProjectUpdateItemProps> = ({
   comment,
   onEdit,
   onDelete,
-  isEditing = false,
+  isEditing,
   onEditStart,
   onEditCancel
 }) => {
-  const { user } = useAuth();
-  const [editText, setEditText] = useState(comment.text);
+  const [editContent, setEditContent] = useState(comment.text);
   const [editCategory, setEditCategory] = useState(comment.category || 'general');
+  const [editPinned, setEditPinned] = useState(comment.isPinned || false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  const canEdit = user?.id === comment.userId;
-  const isOwn = user?.id === comment.userId;
 
   const handleSaveEdit = async () => {
-    if (!editText.trim() || isSubmitting) return;
+    if (!editContent.trim()) return;
     
     setIsSubmitting(true);
     try {
       await onEdit(comment.id, {
-        content: editText.trim(),
-        category: editCategory
+        content: editContent.trim(),
+        category: editCategory,
+        is_pinned: editPinned
       });
-    } catch (error) {
-      console.error('Error saving edit:', error);
     } finally {
       setIsSubmitting(false);
-      onEditCancel?.();
     }
   };
 
   const handleDelete = async () => {
-    if (window.confirm('Are you sure you want to delete this update? This action cannot be undone.')) {
-      try {
-        await onDelete(comment.id);
-      } catch (error) {
-        console.error('Error deleting comment:', error);
-      }
+    if (window.confirm('Are you sure you want to delete this update?')) {
+      await onDelete(comment.id);
     }
   };
 
-  const handlePin = async () => {
-    try {
-      await onEdit(comment.id, {
-        is_pinned: !comment.isPinned
-      });
-    } catch (error) {
-      console.error('Error pinning comment:', error);
-    }
+  const handlePinnedChange = (checked: boolean | 'indeterminate') => {
+    setEditPinned(checked === true);
   };
 
   const getCategoryColor = (category: string) => {
     switch (category) {
-      case 'progress': return 'bg-green-500/10 text-green-700 border-green-200';
-      case 'issue': return 'bg-red-500/10 text-red-700 border-red-200';
-      case 'milestone': return 'bg-blue-500/10 text-blue-700 border-blue-200';
-      case 'note': return 'bg-purple-500/10 text-purple-700 border-purple-200';
-      default: return 'bg-gray-500/10 text-gray-700 border-gray-200';
+      case 'progress': return 'bg-blue-100 text-blue-800';
+      case 'issue': return 'bg-red-100 text-red-800';
+      case 'milestone': return 'bg-green-100 text-green-800';
+      case 'note': return 'bg-yellow-100 text-yellow-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
   return (
-    <Card className={`p-4 transition-all duration-200 ${comment.isPinned ? 'ring-2 ring-primary/20 bg-primary/5' : 'hover:shadow-sm'}`}>
-      <div className="flex items-start gap-3">
-        <Avatar className="h-8 w-8 flex-shrink-0">
-          <AvatarFallback className="text-sm">
-            {comment.userName.charAt(0).toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
+    <Card className={`p-4 ${comment.isPinned ? 'border-yellow-200 bg-yellow-50/50' : ''}`}>
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <User className="h-4 w-4" />
+            <span className="font-medium text-foreground">{comment.userName}</span>
+            <Calendar className="h-4 w-4 ml-2" />
+            <span>{formatDistanceToNow(comment.createdAt, { addSuffix: true })}</span>
+            {comment.updatedAt && comment.updatedAt !== comment.createdAt && (
+              <span className="text-xs">(edited)</span>
+            )}
+          </div>
+        </div>
         
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-medium text-sm">{comment.userName}</span>
-              <Badge 
-                variant="outline" 
-                className={`text-xs px-2 py-0.5 ${getCategoryColor(comment.category || 'general')}`}
-              >
-                {comment.category || 'general'}
-              </Badge>
-              {comment.isPinned && (
-                <Pin className="h-3 w-3 text-primary" />
-              )}
-            </div>
+        <div className="flex items-center gap-2">
+          {comment.isPinned && <Pin className="h-4 w-4 text-yellow-600" />}
+          {comment.category && (
+            <Badge variant="secondary" className={getCategoryColor(comment.category)}>
+              <Tag className="h-3 w-3 mr-1" />
+              {comment.category}
+            </Badge>
+          )}
+          
+          <div className="flex gap-1">
+            {!isEditing && (
+              <>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={onEditStart}
+                  className="h-8 w-8 p-0"
+                >
+                  <Edit2 className="h-3 w-3" />
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={handleDelete}
+                  className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                >
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {isEditing ? (
+        <div className="space-y-3">
+          <div className="flex gap-2">
+            <Select value={editCategory} onValueChange={setEditCategory}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="general">General</SelectItem>
+                <SelectItem value="progress">Progress</SelectItem>
+                <SelectItem value="issue">Issue</SelectItem>
+                <SelectItem value="milestone">Milestone</SelectItem>
+                <SelectItem value="note">Note</SelectItem>
+              </SelectContent>
+            </Select>
             
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">
-                {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
-                {comment.updatedAt && comment.updatedAt > comment.createdAt && ' (edited)'}
-              </span>
-              
-              {canEdit && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                      <MoreHorizontal className="h-3 w-3" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-32">
-                    <DropdownMenuItem onClick={onEditStart}>
-                      <Edit3 className="h-3 w-3 mr-2" />
-                      Edit
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handlePin}>
-                      <Pin className="h-3 w-3 mr-2" />
-                      {comment.isPinned ? 'Unpin' : 'Pin'}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleDelete} className="text-destructive">
-                      <Trash2 className="h-3 w-3 mr-2" />
-                      Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id={`pin-edit-${comment.id}`}
+                checked={editPinned}
+                onCheckedChange={handlePinnedChange}
+              />
+              <label htmlFor={`pin-edit-${comment.id}`} className="text-sm">
+                Pin
+              </label>
             </div>
           </div>
           
-          {isEditing ? (
-            <div className="space-y-3">
-              <div className="flex gap-2">
-                <Select value={editCategory} onValueChange={setEditCategory}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="general">General</SelectItem>
-                    <SelectItem value="progress">Progress</SelectItem>
-                    <SelectItem value="issue">Issue</SelectItem>
-                    <SelectItem value="milestone">Milestone</SelectItem>
-                    <SelectItem value="note">Note</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <Textarea
-                value={editText}
-                onChange={(e) => setEditText(e.target.value)}
-                className="min-h-[80px] resize-none"
-                placeholder="Update your note..."
-              />
-              
-              <div className="flex gap-2">
-                <Button 
-                  size="sm" 
-                  onClick={handleSaveEdit}
-                  disabled={!editText.trim() || isSubmitting}
-                >
-                  <Check className="h-3 w-3 mr-1" />
-                  {isSubmitting ? 'Saving...' : 'Save'}
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  onClick={onEditCancel}
-                  disabled={isSubmitting}
-                >
-                  <X className="h-3 w-3 mr-1" />
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="text-sm leading-relaxed whitespace-pre-wrap break-words">
-              {comment.text}
-            </div>
-          )}
+          <Textarea
+            value={editContent}
+            onChange={(e) => setEditContent(e.target.value)}
+            className="min-h-[100px]"
+            disabled={isSubmitting}
+          />
+          
+          <div className="flex gap-2 justify-end">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={onEditCancel}
+              disabled={isSubmitting}
+            >
+              <X className="h-3 w-3 mr-1" />
+              Cancel
+            </Button>
+            <Button 
+              size="sm" 
+              onClick={handleSaveEdit}
+              disabled={!editContent.trim() || isSubmitting}
+            >
+              <Save className="h-3 w-3 mr-1" />
+              {isSubmitting ? 'Saving...' : 'Save'}
+            </Button>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="prose prose-sm max-w-none">
+          <p className="whitespace-pre-wrap text-sm leading-relaxed">
+            {comment.text}
+          </p>
+        </div>
+      )}
     </Card>
   );
 };

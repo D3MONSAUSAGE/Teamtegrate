@@ -31,7 +31,7 @@ export function useProjectComments(projectId: string | null) {
     }
   }, [projectId]);
 
-  const addComment = useCallback(async (commentText: string) => {
+  const addComment = useCallback(async (commentText: string, category?: string, isPinned?: boolean) => {
     if (!projectId || !user) {
       toast.error('Unable to add comment');
       return;
@@ -42,7 +42,9 @@ export function useProjectComments(projectId: string | null) {
         userId: user.id,
         userName: user.name,
         text: commentText,
-        organizationId: user.organizationId || ''
+        organizationId: user.organizationId || '',
+        category,
+        isPinned
       });
 
       // Add the new comment to the beginning of the list (most recent first)
