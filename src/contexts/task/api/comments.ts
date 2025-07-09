@@ -1,5 +1,4 @@
 
-
 import { TaskComment } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -21,7 +20,6 @@ export const fetchTaskComments = async (taskId: string): Promise<TaskComment[]> 
       userId: comment.user_id,
       userName: comment.user_id, // We'll need to join with users table or store user name
       text: comment.content,
-      content: comment.content,
       taskId: comment.task_id,
       projectId: comment.project_id,
       createdAt: new Date(comment.created_at),
@@ -84,7 +82,6 @@ export const fetchProjectComments = async (projectId: string): Promise<TaskComme
         userId: comment.user_id,
         userName: user?.name || user?.email || 'Unknown User',
         text: comment.content,
-        content: comment.content,
         taskId: comment.task_id,
         projectId: comment.project_id,
         createdAt: new Date(comment.created_at),
@@ -124,7 +121,6 @@ export const addTaskComment = async (taskId: string, comment: { userId: string; 
       userId: data.user_id,
       userName: comment.userName,
       text: data.content,
-      content: data.content,
       taskId: data.task_id,
       projectId: data.project_id,
       createdAt: new Date(data.created_at),
@@ -165,7 +161,6 @@ export const addProjectComment = async (projectId: string, comment: { userId: st
       userId: data.user_id,
       userName: comment.userName,
       text: data.content,
-      content: data.content,
       taskId: data.task_id,
       projectId: data.project_id,
       createdAt: new Date(data.created_at),

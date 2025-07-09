@@ -1,5 +1,3 @@
-
-
 import { TaskComment } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -37,7 +35,6 @@ export const updateProjectComment = async (commentId: string, updates: { content
       userId: data.user_id,
       userName: users?.name || users?.email || 'Unknown User',
       text: data.content,
-      content: data.content,
       taskId: data.task_id,
       projectId: data.project_id,
       createdAt: new Date(data.created_at),
@@ -116,7 +113,6 @@ export const searchProjectComments = async (projectId: string, searchQuery: stri
         userId: comment.user_id,
         userName: user?.name || user?.email || 'Unknown User',
         text: comment.content,
-        content: comment.content,
         taskId: comment.task_id,
         projectId: comment.project_id,
         createdAt: new Date(comment.created_at),
@@ -154,4 +150,3 @@ export const getProjectCommentStats = async (projectId: string): Promise<any> =>
     };
   }
 };
-
