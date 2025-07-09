@@ -12,6 +12,7 @@ import PaginatedUserList from './user-management/PaginatedUserList';
 import OrganizationUserManagementHeader from './user-management/OrganizationUserManagementHeader';
 import OrganizationUserStats from './user-management/OrganizationUserStats';
 import CreateUserDialog from './CreateUserDialog';
+import UserProfileDialog from './user-management/UserProfileDialog';
 import { toast } from '@/components/ui/sonner';
 import { UserRole } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,6 +22,8 @@ const SimplifiedOrganizationUserManagement = () => {
   const [selectedOrganizationId, setSelectedOrganizationId] = useState<string>('');
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
   const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
 
   // Data sync hook for checking missing users
   const { isChecking, checkMissingUsers } = useDataSync();
@@ -120,6 +123,11 @@ const SimplifiedOrganizationUserManagement = () => {
     toast.info('Delete user functionality coming soon');
   };
 
+  const handleViewProfile = (userId: string) => {
+    setSelectedUserId(userId);
+    setIsProfileDialogOpen(true);
+  };
+
   const handleUserCreated = async () => {
     await refetch();
     toast.success('User created successfully');
@@ -212,6 +220,7 @@ const SimplifiedOrganizationUserManagement = () => {
             onRoleChange={handleRoleChange}
             onEditUser={handleEditUser}
             onDeleteUser={handleDeleteUser}
+            onViewProfile={handleViewProfile}
           />
         </CardContent>
       </Card>
@@ -220,6 +229,12 @@ const SimplifiedOrganizationUserManagement = () => {
         open={isCreateUserOpen}
         onOpenChange={setIsCreateUserOpen}
         onUserCreated={handleUserCreated}
+      />
+
+      <UserProfileDialog
+        userId={selectedUserId}
+        open={isProfileDialogOpen}
+        onOpenChange={setIsProfileDialogOpen}
       />
     </>
   );

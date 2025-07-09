@@ -13,7 +13,8 @@ import {
   Calendar,
   MoreHorizontal,
   Edit,
-  Trash2
+  Trash2,
+  Eye
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -38,6 +39,7 @@ interface UserCardProps {
   onRoleChange: (userId: string, newRole: UserRole) => void;
   onEditUser: (user: any) => void;
   onDeleteUser: (user: any) => void;
+  onViewProfile?: (userId: string) => void;
   compact?: boolean;
 }
 
@@ -47,6 +49,7 @@ const UserCard: React.FC<UserCardProps> = ({
   onRoleChange,
   onEditUser,
   onDeleteUser,
+  onViewProfile,
   compact = false
 }) => {
   const { user: currentUser } = useAuth();
@@ -73,6 +76,7 @@ const UserCard: React.FC<UserCardProps> = ({
   const initials = userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   const isCurrentUser = currentUser?.id === user.id;
   const canManage = currentUser && ['superadmin', 'admin'].includes(currentUser.role) && !isCurrentUser;
+  const canViewProfile = currentUser && ['manager', 'admin', 'superadmin'].includes(currentUser.role) && !isCurrentUser;
 
   const handleRoleChanged = () => {
     // Trigger a refresh or callback if needed
@@ -109,28 +113,36 @@ const UserCard: React.FC<UserCardProps> = ({
                 onRoleChanged={handleRoleChanged}
               />
               
-              {canManage && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => onEditUser(user)}>
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit User
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {canViewProfile && onViewProfile && (
+                    <DropdownMenuItem onClick={() => onViewProfile(user.id)}>
+                      <Eye className="h-4 w-4 mr-2" />
+                      View Profile
                     </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      onClick={() => onDeleteUser(user)} 
-                      className="text-destructive focus:text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete User
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
+                  )}
+                  {canManage && (
+                    <>
+                      <DropdownMenuItem onClick={() => onEditUser(user)}>
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit User
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => onDeleteUser(user)} 
+                        className="text-destructive focus:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete User
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </CardContent>
@@ -174,28 +186,36 @@ const UserCard: React.FC<UserCardProps> = ({
                 )}
               </div>
               
-              {canManage && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => onEditUser(user)}>
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit User
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {canViewProfile && onViewProfile && (
+                    <DropdownMenuItem onClick={() => onViewProfile(user.id)}>
+                      <Eye className="h-4 w-4 mr-2" />
+                      View Profile
                     </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      onClick={() => onDeleteUser(user)} 
-                      className="text-destructive focus:text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete User
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
+                  )}
+                  {canManage && (
+                    <>
+                      <DropdownMenuItem onClick={() => onEditUser(user)}>
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit User
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => onDeleteUser(user)} 
+                        className="text-destructive focus:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete User
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
             
             <div className="flex items-center justify-between">
