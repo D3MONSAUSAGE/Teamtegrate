@@ -1,5 +1,3 @@
-
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -80,16 +78,15 @@ export const useUserProfile = (userId: string | null) => {
         projectId: task.project_id,
         title: task.title,
         description: task.description,
-        deadline: task.deadline, // Keep as string to match Task interface
+        deadline: new Date(task.deadline), // Convert string to Date
         priority: task.priority as 'Low' | 'Medium' | 'High',
         status: task.status as 'To Do' | 'In Progress' | 'Completed',
         createdAt: new Date(task.created_at),
         updatedAt: new Date(task.updated_at),
-        assignedToId: task.assigned_to_id,
         assignedToIds: task.assigned_to_ids,
         assignedToNames: task.assigned_to_names,
         cost: task.cost,
-        organizationId: task.organization_id, // Add organizationId
+        organizationId: task.organization_id,
         comments: []
       })) || [];
 
@@ -132,4 +129,3 @@ export const useUserProfile = (userId: string | null) => {
     refetch: fetchUserProfile
   };
 };
-

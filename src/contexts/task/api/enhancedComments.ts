@@ -36,15 +36,16 @@ export const updateProjectComment = async (commentId: string, updates: { content
       id: data.id,
       userId: data.user_id,
       userName: users?.name || users?.email || 'Unknown User',
-      text: data.content, // Map content to text
+      text: data.content,
+      content: data.content,
       taskId: data.task_id,
       projectId: data.project_id,
-      createdAt: new Date(data.created_at), // Convert to Date
-      updatedAt: new Date(data.updated_at), // Convert to Date
+      createdAt: new Date(data.created_at),
+      updatedAt: new Date(data.updated_at),
       category: data.category,
       isPinned: data.is_pinned,
       metadata: data.metadata,
-      organizationId: data.organization_id // Add organizationId
+      organizationId: data.organization_id
     };
   } catch (error) {
     console.error('Error in updateProjectComment:', error);
@@ -114,15 +115,16 @@ export const searchProjectComments = async (projectId: string, searchQuery: stri
         id: comment.id,
         userId: comment.user_id,
         userName: user?.name || user?.email || 'Unknown User',
-        text: comment.content, // Map content to text
+        text: comment.content,
+        content: comment.content,
         taskId: comment.task_id,
         projectId: comment.project_id,
-        createdAt: new Date(comment.created_at), // Convert to Date
-        updatedAt: new Date(comment.updated_at), // Convert to Date
+        createdAt: new Date(comment.created_at),
+        updatedAt: new Date(comment.updated_at),
         category: comment.category,
         isPinned: comment.is_pinned,
         metadata: comment.metadata,
-        organizationId: comment.organization_id // Add organizationId
+        organizationId: comment.organization_id
       };
     });
   } catch (error) {

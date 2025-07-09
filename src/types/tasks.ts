@@ -1,18 +1,20 @@
-
 export interface Task {
   id: string;
   title: string;
   description?: string;
   status: 'To Do' | 'In Progress' | 'Completed';
   priority: 'Low' | 'Medium' | 'High';
-  deadline?: string;
+  deadline: Date;
   assignedTo?: string;
   assignedToIds?: string[];
   assignedToNames?: string[];
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Date;
+  updatedAt: Date;
   projectId?: string;
   cost?: number;
+  organizationId: string;
+  userId: string;
+  comments?: TaskComment[];
 }
 
 export interface TaskComment {
@@ -22,11 +24,13 @@ export interface TaskComment {
   userName?: string;
   taskId?: string;
   projectId?: string;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Date;
+  updatedAt: Date;
   category?: string;
   isPinned?: boolean;
   metadata?: Record<string, any>;
+  text: string;
+  organizationId: string;
 }
 
 export type TaskStatus = 'To Do' | 'In Progress' | 'Completed';
