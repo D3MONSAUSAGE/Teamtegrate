@@ -99,6 +99,10 @@ const ProfessionalUserManagement: React.FC<ProfessionalUserManagementProps> = ({
 
   const canManageUsers = currentUser && ['superadmin', 'admin'].includes(currentUser.role);
 
+  const handleRefresh = () => {
+    refetch();
+  };
+
   if (isLoading) {
     return (
       <Card className="border-0 shadow-lg">
@@ -144,7 +148,7 @@ const ProfessionalUserManagement: React.FC<ProfessionalUserManagementProps> = ({
                 Add Member
               </Button>
             )}
-            <Button variant="outline" onClick={refetch}>
+            <Button variant="outline" onClick={handleRefresh}>
               <RefreshCw className="h-4 w-4 mr-2" />
               Refresh
             </Button>
