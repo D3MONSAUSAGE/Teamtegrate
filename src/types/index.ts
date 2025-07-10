@@ -1,3 +1,4 @@
+
 export type UserRole = 'superadmin' | 'admin' | 'manager' | 'user';
 
 export interface User {
@@ -17,11 +18,17 @@ export type TaskStatus = 'To Do' | 'In Progress' | 'Completed';
 
 export interface TaskComment {
   id: string;
-  userId: string;
-  userName: string;
   text: string;
+  userId: string;
+  userName?: string;
+  taskId: string;
+  projectId?: string;
   createdAt: Date;
-  organizationId: string; // Made required
+  updatedAt: Date;
+  category?: string;
+  isPinned?: boolean;
+  metadata?: Record<string, any>;
+  organizationId: string;
 }
 
 export type Comment = TaskComment;
