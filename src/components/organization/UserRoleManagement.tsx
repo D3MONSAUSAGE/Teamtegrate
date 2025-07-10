@@ -36,10 +36,17 @@ import { useAuth } from '@/contexts/AuthContext';
 import { UserRole, User as UserType } from '@/types';
 import { format } from 'date-fns';
 
-interface OrganizationUser extends UserType {
-  assigned_tasks_count?: number;
-  completed_tasks_count?: number;
+// Define the local OrganizationUser interface to match the hook's return type
+interface LocalOrganizationUser {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  organization_id: string;
   created_at: string;
+  assigned_tasks_count: number;
+  completed_tasks_count: number;
+  role_level: number;
 }
 
 const getRoleIcon = (role: UserRole) => {
@@ -121,7 +128,7 @@ const UserRoleManagement: React.FC = () => {
     setUpdatingUserId(null);
   };
 
-  const filteredUsers = users?.filter((user: OrganizationUser) =>
+  const filteredUsers = users?.filter((user: LocalOrganizationUser) =>
     user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.role.toLowerCase().includes(searchTerm.toLowerCase())
@@ -196,7 +203,7 @@ const UserRoleManagement: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredUsers.map((user: OrganizationUser) => (
+                {filteredUsers.map((user: LocalOrganizationUser) => (
                   <TableRow key={user.id}>
                     <TableCell>
                       <div className="flex items-center gap-3">

@@ -125,7 +125,7 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
     email: user.email
   }));
 
-  // Type-safe projects casting - ensure projects match the expected Project interface
+  // Type-safe projects casting - ensure proper date string conversion
   const typedProjects: Project[] = projects.map(project => ({
     id: project.id,
     title: project.title || 'Untitled Project',
@@ -133,8 +133,8 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
     startDate: project.startDate,
     endDate: project.endDate,
     managerId: project.managerId,
-    createdAt: project.createdAt || new Date(),
-    updatedAt: project.updatedAt || new Date(),
+    createdAt: project.createdAt instanceof Date ? project.createdAt.toISOString() : (project.createdAt || new Date().toISOString()),
+    updatedAt: project.updatedAt instanceof Date ? project.updatedAt.toISOString() : (project.updatedAt || new Date().toISOString()),
     teamMemberIds: project.teamMemberIds || [],
     budget: project.budget,
     budgetSpent: project.budgetSpent || 0,
