@@ -16,6 +16,13 @@ import UserProfileDialog from './user-management/UserProfileDialog';
 import { toast } from '@/components/ui/sonner';
 import { UserRole } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/utils/logger';
+
+interface RoleChangeResponse {
+  success?: boolean;
+  error?: string;
+  message?: string;
+}
 
 const SimplifiedOrganizationUserManagement = () => {
   const { user: currentUser } = useAuth();
@@ -32,13 +39,13 @@ const SimplifiedOrganizationUserManagement = () => {
   const { organizations, isLoading: loadingOrgs } = useOrganizations();
 
   // Get users for the selected organization (or current user's org)
-  const targetOrgId = selectedOrganizationId || currentUser?.organizationId;
   const { users, isLoading, error, refetch } = useOrganizationTeamMembers();
 
   // Initialize organization selection for superadmin
   useEffect(() => {
     if (currentUser?.role === 'superadmin' && !selectedOrganizationId && currentUser.organizationId) {
       setSelectedOrganizationId(currentUser.organizationId);
+      logger.debug('Initialized organization selection for superadmin', { orgId: currentUser.organizationId });
     }
   }, [currentUser, selectedOrganizationId]);
 
@@ -46,22 +53,23 @@ const SimplifiedOrganizationUserManagement = () => {
     try {
       await refetch();
       toast.success('User list refreshed');
+      logger.userAction('User list refreshed');
     } catch (error) {
+      logger.error('Failed to refresh user list', error);
       toast.error('Failed to refresh user list');
     }
   };
 
   const handleDataSyncCheck = async () => {
+    logger.userAction('Data sync check initiated');
     await checkMissingUsers();
   };
 
   const handleRoleChange = async (userId: string, newRole: UserRole) => {
     setUpdatingUserId(userId);
+    
     try {
-      console.log('Calling update-user-role function with:', {
-        targetUserId: userId,
-        newRole: newRole
-      });
+      logger.userAction('Role change initiated', { userId, newRole });
 
       const { data, error } = await supabase.functions.invoke('update-user-role', {
         body: {
@@ -70,10 +78,10 @@ const SimplifiedOrganizationUserManagement = () => {
         }
       });
 
-      console.log('Edge function response:', { data, error });
+      logger.debug('Edge function response', { data, error });
 
       if (error) {
-        console.error('Edge function error:', error);
+        logger.error('Edge function error', error);
         
         let userMessage = 'Failed to update role';
         if (error.message?.includes('Failed to fetch')) {
@@ -89,22 +97,24 @@ const SimplifiedOrganizationUserManagement = () => {
         throw new Error(userMessage);
       }
 
-      if (data?.error) {
-        console.error('Edge function returned error:', data.error);
-        throw new Error(data.error);
+      const responseData = data as RoleChangeResponse;
+      
+      if (responseData?.error) {
+        logger.error('Edge function returned error', responseData.error);
+        throw new Error(responseData.error);
       }
 
-      if (!data?.success) {
-        console.error('Edge function did not return success');
+      if (!responseData?.success) {
+        logger.error('Edge function did not return success');
         throw new Error('Role update failed - please try again');
       }
 
-      console.log('Role update successful:', data);
-      toast.success(data?.message || `Role updated to ${newRole} successfully`);
+      logger.userAction('Role update successful', { userId, newRole });
+      toast.success(responseData?.message || `Role updated to ${newRole} successfully`);
       await refetch();
     } catch (error) {
-      console.error('Error updating role:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to update role';
+      logger.error('Error updating role', { userId, newRole, error: errorMessage });
       toast.error(errorMessage);
     } finally {
       setUpdatingUserId(null);
@@ -112,28 +122,29 @@ const SimplifiedOrganizationUserManagement = () => {
   };
 
   const handleEditUser = (user: any) => {
-    // Edit user logic would go here
-    console.log('Edit user:', user);
+    logger.userAction('Edit user requested', { userId: user.id });
     toast.info('Edit user functionality coming soon');
   };
 
   const handleDeleteUser = (user: any) => {
-    // Delete user logic would go here
-    console.log('Delete user:', user);
+    logger.userAction('Delete user requested', { userId: user.id });
     toast.info('Delete user functionality coming soon');
   };
 
   const handleViewProfile = (userId: string) => {
+    logger.userAction('View user profile', { userId });
     setSelectedUserId(userId);
     setIsProfileDialogOpen(true);
   };
 
   const handleUserCreated = async () => {
+    logger.userAction('User created successfully');
     await refetch();
     toast.success('User created successfully');
   };
 
   const handleOrganizationChange = (orgId: string) => {
+    logger.userAction('Organization changed', { orgId });
     setSelectedOrganizationId(orgId);
   };
 

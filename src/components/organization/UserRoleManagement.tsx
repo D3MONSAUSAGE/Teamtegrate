@@ -33,8 +33,14 @@ import {
 } from "@/components/ui/table";
 import { useOrganizationUsers } from '@/hooks/useOrganizationUsers';
 import { useAuth } from '@/contexts/AuthContext';
-import { UserRole } from '@/types';
+import { UserRole, User as UserType } from '@/types';
 import { format } from 'date-fns';
+
+interface OrganizationUser extends UserType {
+  assigned_tasks_count?: number;
+  completed_tasks_count?: number;
+  created_at: string;
+}
 
 const getRoleIcon = (role: UserRole) => {
   switch (role) {
@@ -51,7 +57,7 @@ const getRoleIcon = (role: UserRole) => {
   }
 };
 
-const getRoleBadgeVariant = (role: UserRole) => {
+const getRoleBadgeVariant = (role: UserRole): "destructive" | "default" | "secondary" | "outline" => {
   switch (role) {
     case 'superadmin':
       return 'destructive';
@@ -115,7 +121,7 @@ const UserRoleManagement: React.FC = () => {
     setUpdatingUserId(null);
   };
 
-  const filteredUsers = users?.filter(user =>
+  const filteredUsers = users?.filter((user: OrganizationUser) =>
     user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.role.toLowerCase().includes(searchTerm.toLowerCase())
@@ -190,7 +196,7 @@ const UserRoleManagement: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredUsers.map((user) => (
+                {filteredUsers.map((user: OrganizationUser) => (
                   <TableRow key={user.id}>
                     <TableCell>
                       <div className="flex items-center gap-3">

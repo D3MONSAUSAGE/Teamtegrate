@@ -1,7 +1,7 @@
 
 import React, { useCallback, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Task } from '@/types';
+import { Task, Project } from '@/types';
 import { useTask } from '@/contexts/task';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -125,6 +125,28 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
     email: user.email
   }));
 
+  // Type-safe projects casting - ensure projects match the expected Project interface
+  const typedProjects: Project[] = projects.map(project => ({
+    id: project.id,
+    title: project.title || 'Untitled Project',
+    description: project.description,
+    startDate: project.startDate,
+    endDate: project.endDate,
+    managerId: project.managerId,
+    createdAt: project.createdAt || new Date(),
+    updatedAt: project.updatedAt || new Date(),
+    teamMemberIds: project.teamMemberIds || [],
+    budget: project.budget,
+    budgetSpent: project.budgetSpent || 0,
+    isCompleted: project.isCompleted || false,
+    status: project.status || 'To Do',
+    tasksCount: project.tasksCount || 0,
+    tags: project.tags || [],
+    organizationId: project.organizationId || user?.organizationId || '',
+    teamMembers: project.teamMembers || [],
+    comments: project.comments || []
+  }));
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={`${isMobile ? 'w-[95%] p-4' : 'sm:max-w-[550px]'} max-h-[90vh] overflow-y-auto`}>
@@ -146,7 +168,7 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
               <TabsContent value="details" className="space-y-4">
                 <TaskFormFieldsWithAI
                   form={form}
-                  projects={projects as any}
+                  projects={typedProjects}
                   teamMembers={teamMembers}
                   showProjectField={true}
                   showAssignmentFields={false}
