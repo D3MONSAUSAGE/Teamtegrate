@@ -9,14 +9,13 @@ import ProjectTasksLoading from './project-view/ProjectTasksLoading';
 import ProjectTasksError from './project-view/ProjectTasksError';
 import { addTeamMemberToProject, removeTeamMemberFromProject } from '@/contexts/task/operations';
 import { useProjects } from '@/hooks/useProjects';
+import { devLog } from '@/utils/devLogger';
 
 interface ProjectTasksViewProps {
   projectId: string | undefined;
 }
 
 const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
-  console.log('ProjectTasksView: Rendering with projectId:', projectId);
-
   const [isEditProjectOpen, setIsEditProjectOpen] = useState(false);
   const { setProjects, refetch: refetchProjects } = useProjects();
 
@@ -63,7 +62,7 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
 
   // Log component rendering for debugging
   useEffect(() => {
-    console.log("ProjectTasksView rendering", {
+    devLog.debug("ProjectTasksView rendering", {
       projectId,
       isLoading,
       hasError: !!loadError,
@@ -79,12 +78,10 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
   }, [projectId, isLoading, loadError, project, editingTask, todoTasks, inProgressTasks, completedTasks, teamMembers, isLoadingTeamMembers, teamMembersError]);
 
   if (isLoading) {
-    console.log('ProjectTasksView: Showing loading state');
     return <ProjectTasksLoading />;
   }
   
   if (loadError || !project) {
-    console.log('ProjectTasksView: Showing error state:', loadError);
     return (
       <ProjectTasksError 
         errorMessage={loadError || "Project not found or not accessible."}
@@ -96,7 +93,7 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
 
   // Create a wrapper function to convert the event to a string
   const handleSearchQueryChange = (query: string) => {
-    console.log('ProjectTasksView: Search query changed to:', query);
+    devLog.debug('Search query changed', { query });
     // handleSearchChange expects a ChangeEvent, so we need to create a mock event
     const mockEvent = {
       target: { value: query }
@@ -140,8 +137,6 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
       console.error('Error removing team member:', error);
     }
   };
-
-  console.log('ProjectTasksView: Rendering content with project:', project.title);
 
   return (
     <>

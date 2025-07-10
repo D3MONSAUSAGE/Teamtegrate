@@ -31,6 +31,20 @@ export const devLog = {
     }
   },
   
+  // UI interactions - only in development
+  uiOperation: (operation: string, data?: any) => {
+    if (isDevelopment) {
+      console.log(`[UI] ${operation}`, data);
+    }
+  },
+  
+  // Navigation - only in development
+  navigation: (operation: string, data?: any) => {
+    if (isDevelopment) {
+      console.log(`[NAV] ${operation}`, data);
+    }
+  },
+  
   // Debug info - only in development
   debug: (message: string, data?: any) => {
     if (isDevelopment) {
