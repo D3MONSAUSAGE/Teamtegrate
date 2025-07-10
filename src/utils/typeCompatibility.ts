@@ -3,7 +3,7 @@
 import { User, Project, Task, TaskComment, TeamMemberPerformance } from '@/types';
 
 // Property name mapping utilities
-export const mapDbUserToApp = (dbUser: any): User => ({
+export const mapDbUserToApp = (dbUser: Record<string, any>): User => ({
   id: dbUser.id,
   email: dbUser.email,
   role: dbUser.role,
@@ -14,7 +14,7 @@ export const mapDbUserToApp = (dbUser: any): User => ({
   avatar_url: dbUser.avatar_url
 });
 
-export const mapAppUserToDb = (appUser: User): any => ({
+export const mapAppUserToDb = (appUser: User): Record<string, any> => ({
   id: appUser.id,
   email: appUser.email,
   role: appUser.role,
@@ -26,7 +26,7 @@ export const mapAppUserToDb = (appUser: User): any => ({
 });
 
 // Project property fixes
-export const fixProjectProperties = (project: any): Project => ({
+export const fixProjectProperties = (project: Record<string, any>): Project => ({
   ...project,
   teamMemberIds: project.teamMembers || project.team_members || project.teamMemberIds || [],
   tasksCount: project.tasks_count || project.tasksCount || 0,
@@ -47,9 +47,9 @@ export const ensureTaskCommentComplete = (comment: Partial<TaskComment>, organiz
   userId: comment.userId || '',
   userName: comment.userName || 'User',
   text: comment.text || '',
-  taskId: comment.taskId || '', // Add the missing taskId
+  taskId: comment.taskId,
   createdAt: comment.createdAt || new Date(),
-  updatedAt: comment.updatedAt || new Date(), // Add the missing updatedAt
+  updatedAt: comment.updatedAt,
   organizationId: comment.organizationId || organizationId
 });
 

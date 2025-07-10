@@ -1,12 +1,12 @@
 
-
+import { TaskPriority, TaskStatus, TaskComment } from './index';
 
 export interface Task {
   id: string;
   title: string;
   description?: string;
-  status: 'To Do' | 'In Progress' | 'Completed';
-  priority: 'Low' | 'Medium' | 'High';
+  status: TaskStatus;
+  priority: TaskPriority;
   deadline: Date;
   assignedTo?: string;
   assignedToIds?: string[];
@@ -20,23 +20,7 @@ export interface Task {
   comments?: TaskComment[];
 }
 
-export interface TaskComment {
-  id: string;
-  text: string;
-  userId: string;
-  userName?: string;
-  taskId: string;
-  projectId?: string;
-  createdAt: Date;
-  updatedAt: Date;
-  category?: string;
-  isPinned?: boolean;
-  metadata?: Record<string, any>;
-  organizationId: string;
-}
-
-export type TaskStatus = 'To Do' | 'In Progress' | 'Completed';
-export type TaskPriority = 'Low' | 'Medium' | 'High';
+export { TaskComment, TaskStatus, TaskPriority };
 
 export interface TaskFormValues {
   title: string;

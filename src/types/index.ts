@@ -5,7 +5,7 @@ export interface User {
   id: string;
   email: string;
   role: UserRole;
-  organizationId: string; // Made required and consistent naming
+  organizationId: string;
   name?: string;
   timezone?: string;
   createdAt: Date;
@@ -21,13 +21,13 @@ export interface TaskComment {
   text: string;
   userId: string;
   userName?: string;
-  taskId?: string; // Made optional since not all comments have taskId
+  taskId?: string;
   projectId?: string;
   createdAt: Date;
-  updatedAt?: Date; // Made optional since not all comments have updatedAt
+  updatedAt?: Date;
   category?: string;
   isPinned?: boolean;
-  metadata?: any; // Changed from Record<string, any> to any to handle Json type
+  metadata?: Record<string, any>;
   organizationId: string;
 }
 
@@ -54,7 +54,7 @@ export interface Task {
   tags?: string[];
   comments?: TaskComment[];
   cost?: number;
-  organizationId: string; // Made required
+  organizationId: string;
 }
 
 export type ProjectStatus = 'To Do' | 'In Progress' | 'Completed';
@@ -93,7 +93,7 @@ export interface TeamMember {
   email: string;
   role: string;
   managerId: string;
-  organizationId: string; // Made required
+  organizationId: string;
 }
 
 export interface TeamMemberPerformance {
@@ -102,7 +102,7 @@ export interface TeamMemberPerformance {
   completedTasks: number;
   completionRate: number;
   projects: number;
-  organizationId: string; // Made required
+  organizationId: string;
 }
 
 export interface Organization {
@@ -117,7 +117,7 @@ export interface ChatRoom {
   name: string;
   created_by: string;
   created_at: Date;
-  organizationId: string; // Made required
+  organizationId: string;
 }
 
 export interface ChatMessage {
@@ -128,7 +128,7 @@ export interface ChatMessage {
   type: 'text' | 'file' | 'image';
   created_at: Date;
   parent_id?: string;
-  organizationId: string; // Made required
+  organizationId: string;
 }
 
 export interface Notification {
@@ -141,7 +141,7 @@ export interface Notification {
   created_at: Date;
   task_id?: string;
   event_id?: string;
-  organizationId: string; // Made required
+  organizationId: string;
 }
 
 export interface Document {
@@ -155,7 +155,7 @@ export interface Document {
   folder?: string;
   storage_id: string;
   created_at: Date;
-  organizationId: string; // Made required
+  organizationId: string;
 }
 
 export interface Event {
@@ -167,7 +167,7 @@ export interface Event {
   user_id: string;
   created_at: Date;
   updated_at: Date;
-  organizationId: string; // Made required
+  organizationId: string;
 }
 
 export interface TimeEntry {
@@ -178,7 +178,7 @@ export interface TimeEntry {
   duration_minutes?: number;
   notes?: string;
   created_at: Date;
-  organizationId: string; // Made required
+  organizationId: string;
 }
 
 // Role hierarchy utility functions
