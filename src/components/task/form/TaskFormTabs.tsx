@@ -1,8 +1,9 @@
+
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Task, Project } from '@/types';
 import { TaskDetailsWithAISection } from './TaskDetailsWithAISection';
-import EnhancedTaskAssignmentSection from './EnhancedTaskAssignmentSection';
+import UnifiedTaskAssignment from '../assignment/UnifiedTaskAssignment';
 
 interface TaskFormTabsProps {
   register: any;
@@ -72,14 +73,15 @@ const TaskFormTabs: React.FC<TaskFormTabsProps> = ({
       </TabsContent>
       
       <TabsContent value="assignment" className="mt-0">
-        <EnhancedTaskAssignmentSection 
+        <UnifiedTaskAssignment 
           selectedMember={selectedMember || "unassigned"}
+          selectedMembers={selectedMembers}
           onAssign={handleUserAssignment}
+          onMembersChange={onMembersChange}
           users={users}
           isLoading={loadingUsers}
           multiAssignMode={multiAssignMode}
-          selectedMembers={selectedMembers}
-          onMembersChange={onMembersChange}
+          editingTask={editingTask}
         />
       </TabsContent>
     </Tabs>

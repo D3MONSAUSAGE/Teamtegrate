@@ -1,3 +1,4 @@
+
 import React, { useCallback, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Task, Project } from '@/types';
@@ -9,7 +10,7 @@ import { useTaskFormWithAI } from '@/hooks/useTaskFormWithAI';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TaskFormFieldsWithAI from './task/TaskFormFieldsWithAI';
-import TaskAssignmentSection from '@/components/task/form/TaskAssignmentSection';
+import UnifiedTaskAssignment from '@/components/task/assignment/UnifiedTaskAssignment';
 import { useUsers } from '@/hooks/useUsers';
 import { toast } from '@/components/ui/sonner';
 import { devLog } from '@/utils/devLogger';
@@ -174,7 +175,7 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
               </TabsContent>
               
               <TabsContent value="assignment">
-                <TaskAssignmentSection 
+                <UnifiedTaskAssignment 
                   selectedMember={selectedMember || "unassigned"}
                   onAssign={handleUserAssignment}
                   users={users}
