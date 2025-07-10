@@ -17,7 +17,9 @@ export const addCommentToTask = (
         userId: comment.userId,
         userName: comment.userName,
         text: comment.text,
+        taskId: taskId, // Add the missing taskId
         createdAt: new Date(),
+        updatedAt: new Date(), // Add the missing updatedAt
         organizationId: comment.organizationId
       };
       return { ...task, comments: [...(task.comments || []), newComment] };

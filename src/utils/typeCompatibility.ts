@@ -47,7 +47,9 @@ export const ensureTaskCommentComplete = (comment: Partial<TaskComment>, organiz
   userId: comment.userId || '',
   userName: comment.userName || 'User',
   text: comment.text || '',
+  taskId: comment.taskId || '', // Add the missing taskId
   createdAt: comment.createdAt || new Date(),
+  updatedAt: comment.updatedAt || new Date(), // Add the missing updatedAt
   organizationId: comment.organizationId || organizationId
 });
 

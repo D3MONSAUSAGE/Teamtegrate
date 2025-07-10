@@ -21,13 +21,13 @@ export interface TaskComment {
   text: string;
   userId: string;
   userName?: string;
-  taskId: string;
+  taskId?: string; // Made optional since not all comments have taskId
   projectId?: string;
   createdAt: Date;
-  updatedAt: Date;
+  updatedAt?: Date; // Made optional since not all comments have updatedAt
   category?: string;
   isPinned?: boolean;
-  metadata?: Record<string, any>;
+  metadata?: any; // Changed from Record<string, any> to any to handle Json type
   organizationId: string;
 }
 

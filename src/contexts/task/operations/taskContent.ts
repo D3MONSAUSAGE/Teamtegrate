@@ -20,7 +20,9 @@ export const addCommentToTask = async (
       userId: comment.userId,
       userName: comment.userName,
       text: comment.text,
+      taskId: taskId, // Add the missing taskId
       createdAt: now,
+      updatedAt: now, // Add the missing updatedAt
       organizationId: comment.organizationId
     };
 
