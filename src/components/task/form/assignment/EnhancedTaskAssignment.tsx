@@ -2,8 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { User } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
-import AssignmentErrorBoundary from './AssignmentErrorBoundary';
-import UnifiedTaskAssignment from './UnifiedTaskAssignment';
+import UnifiedTaskAssignment from '../../../task/assignment/UnifiedTaskAssignment';
 
 interface EnhancedTaskAssignmentProps {
   selectedMember?: string;
@@ -42,21 +41,19 @@ const EnhancedTaskAssignment: React.FC<EnhancedTaskAssignmentProps> = ({
   };
 
   return (
-    <AssignmentErrorBoundary>
-      <UnifiedTaskAssignment
-        selectedMember={selectedMember}
-        selectedMembers={selectedMembers}
-        onAssign={onAssign}
-        onMembersChange={onMembersChange}
-        onSelectionChange={handleSelectionChange}
-        users={fallbackUsers}
-        isLoading={fallbackLoading}
-        multiAssignMode={multiAssignMode}
-        editingTask={editingTask}
-        showOrganizationSelect={currentUser?.role === 'superadmin'}
-        showTeamSelect={currentUser?.role === 'superadmin' || currentUser?.role === 'admin'}
-      />
-    </AssignmentErrorBoundary>
+    <UnifiedTaskAssignment
+      selectedMember={selectedMember}
+      selectedMembers={selectedMembers}
+      onAssign={onAssign}
+      onMembersChange={onMembersChange}
+      onSelectionChange={handleSelectionChange}
+      users={fallbackUsers}
+      isLoading={fallbackLoading}
+      multiAssignMode={multiAssignMode}
+      editingTask={editingTask}
+      showOrganizationSelect={currentUser?.role === 'superadmin'}
+      showTeamSelect={currentUser?.role === 'superadmin' || currentUser?.role === 'admin'}
+    />
   );
 };
 
