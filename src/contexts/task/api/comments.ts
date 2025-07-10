@@ -1,5 +1,4 @@
 
-
 import { TaskComment } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -27,7 +26,7 @@ export const fetchTaskComments = async (taskId: string): Promise<TaskComment[]> 
       updatedAt: new Date(comment.updated_at),
       category: comment.category,
       isPinned: comment.is_pinned,
-      metadata: comment.metadata,
+      metadata: (comment.metadata as Record<string, any>) || {},
       organizationId: comment.organization_id
     })) || [];
   } catch (error) {
@@ -89,7 +88,7 @@ export const fetchProjectComments = async (projectId: string): Promise<TaskComme
         updatedAt: new Date(comment.updated_at),
         category: comment.category,
         isPinned: comment.is_pinned,
-        metadata: comment.metadata,
+        metadata: (comment.metadata as Record<string, any>) || {},
         organizationId: comment.organization_id
       };
     });
@@ -128,7 +127,7 @@ export const addTaskComment = async (taskId: string, comment: { userId: string; 
       updatedAt: new Date(data.updated_at),
       category: data.category,
       isPinned: data.is_pinned,
-      metadata: data.metadata,
+      metadata: (data.metadata as Record<string, any>) || {},
       organizationId: data.organization_id
     };
   } catch (error) {
@@ -168,7 +167,7 @@ export const addProjectComment = async (projectId: string, comment: { userId: st
       updatedAt: new Date(data.updated_at),
       category: data.category,
       isPinned: data.is_pinned,
-      metadata: data.metadata,
+      metadata: (data.metadata as Record<string, any>) || {},
       organizationId: data.organization_id
     };
   } catch (error) {

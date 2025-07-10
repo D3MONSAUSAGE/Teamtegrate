@@ -138,18 +138,11 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
               
               <TabsContent value="details" className="space-y-4">
                 <TaskFormFieldsWithAI
-                  register={register}
-                  errors={errors}
-                  setValue={setValue}
+                  form={form}
                   projects={projects as any}
-                  editingTask={editingTask}
-                  currentProjectId={currentProjectId}
-                  selectedMember={selectedMember}
-                  setSelectedMember={setSelectedMember}
-                  date={deadlineDate}
-                  timeInput={timeInput}
-                  onDateChange={handleDateChange}
-                  onTimeChange={handleTimeChange}
+                  teamMembers={users}
+                  showProjectField={true}
+                  showAssignmentFields={false}
                 />
               </TabsContent>
               

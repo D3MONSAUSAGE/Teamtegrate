@@ -20,7 +20,7 @@ export interface Task {
   comments?: TaskComment[];
 }
 
-export { TaskComment, TaskStatus, TaskPriority };
+export type { TaskComment, TaskStatus, TaskPriority };
 
 export interface TaskFormValues {
   title: string;

@@ -27,12 +27,24 @@ export const mapAppUserToDb = (appUser: User): Record<string, any> => ({
 
 // Project property fixes
 export const fixProjectProperties = (project: Record<string, any>): Project => ({
-  ...project,
+  id: project.id || '',
+  title: project.title || '',
+  description: project.description,
+  startDate: project.start_date || project.startDate,
+  endDate: project.end_date || project.endDate,
+  managerId: project.manager_id || project.managerId,
+  createdAt: project.created_at || project.createdAt,
+  updatedAt: project.updated_at || project.updatedAt,
   teamMemberIds: project.teamMembers || project.team_members || project.teamMemberIds || [],
-  tasksCount: project.tasks_count || project.tasksCount || 0,
-  isCompleted: project.is_completed || project.isCompleted || false,
+  budget: project.budget,
   budgetSpent: project.budget_spent || project.budgetSpent || 0,
-  organizationId: project.organization_id || project.organizationId
+  isCompleted: project.is_completed || project.isCompleted || false,
+  status: project.status || 'To Do',
+  tasksCount: project.tasks_count || project.tasksCount || 0,
+  tags: project.tags || [],
+  organizationId: project.organization_id || project.organizationId || '',
+  teamMembers: project.team_members || project.teamMembers || [],
+  comments: project.comments || []
 });
 
 // Add missing organizationId to objects
