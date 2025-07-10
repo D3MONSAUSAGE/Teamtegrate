@@ -3,6 +3,8 @@ import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Shield, AlertCircle, Loader2, BarChart3 } from 'lucide-react';
+import { toast } from '@/components/ui/sonner';
+import { supabase } from '@/integrations/supabase/client';
 import ProfessionalOrganizationHeader from '@/components/organization/professional/ProfessionalOrganizationHeader';
 import ProfessionalUserManagement from '@/components/organization/professional/ProfessionalUserManagement';
 import OrganizationStatsCards from '@/components/organization/OrganizationStatsCards';
@@ -13,6 +15,15 @@ import InviteCodeDialog from '@/components/organization/InviteCodeDialog';
 import UserProfileDialog from '@/components/organization/user-management/UserProfileDialog';
 import CreateUserDialog from '@/components/organization/CreateUserDialog';
 import ModernSectionCard from '@/components/dashboard/ModernSectionCard';
+import { devLog } from '@/utils/devLogger';
+import { logger } from '@/utils/logger';
+
+interface UserToEdit {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+}
 
 const OrganizationDashboard = () => {
   const { user, loading } = useAuth();
@@ -75,22 +86,67 @@ const OrganizationDashboard = () => {
   }
 
   const handleViewProfile = (userId: string) => {
+    devLog.userOperation('View user profile requested', { userId });
     setSelectedUserId(userId);
     setIsProfileDialogOpen(true);
   };
 
-  const handleEditUser = (user: any) => {
-    console.log('Edit user:', user);
-    // TODO: Implement edit user functionality
+  const handleEditUser = async (userToEdit: UserToEdit) => {
+    devLog.userOperation('Edit user requested', { userId: userToEdit.id });
+    
+    try {
+      // For now, we'll implement a simple name update
+      const newName = prompt(`Edit name for ${userToEdit.name}:`, userToEdit.name);
+      
+      if (newName && newName.trim() !== userToEdit.name) {
+        const { error } = await supabase
+          .from('users')
+          .update({ name: newName.trim() })
+          .eq('id', userToEdit.id);
+
+        if (error) throw error;
+
+        toast.success('User updated successfully');
+        logger.userAction('User edited successfully', { userId: userToEdit.id });
+        
+        // Force refresh of user data
+        window.location.reload();
+      }
+    } catch (error) {
+      logger.error('Error editing user', error);
+      toast.error('Failed to edit user');
+    }
   };
 
-  const handleDeleteUser = (user: any) => {
-    console.log('Delete user:', user);
-    // TODO: Implement delete user functionality
+  const handleDeleteUser = async (userToDelete: UserToEdit) => {
+    devLog.userOperation('Delete user requested', { userId: userToDelete.id });
+    
+    if (!confirm(`Are you sure you want to delete user "${userToDelete.name}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      // Call the delete user edge function
+      const { error } = await supabase.functions.invoke('delete-user', {
+        body: { targetUserId: userToDelete.id }
+      });
+
+      if (error) throw error;
+
+      toast.success('User deleted successfully');
+      logger.userAction('User deleted successfully', { userId: userToDelete.id });
+      
+      // Force refresh of user data
+      window.location.reload();
+    } catch (error) {
+      logger.error('Error deleting user', error);
+      toast.error('Failed to delete user');
+    }
   };
 
   const handleUserCreated = () => {
-    console.log('User created successfully');
+    devLog.userOperation('User created successfully');
+    logger.userAction('User created from organization dashboard');
   };
 
   return (

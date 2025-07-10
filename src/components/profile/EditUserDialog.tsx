@@ -12,17 +12,22 @@ import { Label } from "@/components/ui/label";
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
+import { UserFormData } from '@/types/forms';
+import { devLog } from '@/utils/devLogger';
+import { logger } from '@/utils/logger';
+
+interface UserInfo {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+}
 
 interface EditUserDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onUserUpdated: () => void;
-  user: {
-    id: string;
-    name: string;
-    email: string;
-    role: string;
-  };
+  user: UserInfo;
 }
 
 const EditUserDialog: React.FC<EditUserDialogProps> = ({
@@ -42,6 +47,8 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
 
     setIsUpdating(true);
     try {
+      devLog.userOperation('Updating user', { userId: user.id, newName: name });
+      
       const { error } = await supabase
         .from('users')
         .update({ name: name.trim() })
@@ -51,11 +58,12 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
         throw error;
       }
 
+      logger.userAction('User updated successfully', { userId: user.id });
       toast.success('User updated successfully');
       onUserUpdated();
       onClose();
     } catch (error) {
-      console.error('Error updating user:', error);
+      logger.error('Error updating user', error);
       toast.error('Failed to update user');
     } finally {
       setIsUpdating(false);

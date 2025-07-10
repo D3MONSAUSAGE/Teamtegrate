@@ -1,7 +1,10 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Task } from '@/types';
+import { devLog } from '@/utils/devLogger';
+import { logger } from '@/utils/logger';
 
 interface UserProfile {
   id: string;
@@ -20,10 +23,17 @@ interface UserStats {
   completionRate: number;
 }
 
+interface ProjectInfo {
+  id: string;
+  title: string;
+  status: string;
+  is_completed: boolean;
+}
+
 interface ProfileData {
   user: UserProfile;
   tasks: Task[];
-  projects: any[];
+  projects: ProjectInfo[];
   stats: UserStats;
 }
 
@@ -47,6 +57,7 @@ export const useUserProfile = (userId: string | null) => {
     try {
       setLoading(true);
       setError(null);
+      devLog.userOperation('Fetching user profile', { userId });
 
       // Fetch user profile
       const { data: userProfile, error: userError } = await supabase
@@ -57,7 +68,7 @@ export const useUserProfile = (userId: string | null) => {
 
       if (userError) {
         setError('Failed to fetch user profile');
-        console.error('Error fetching user profile:', userError);
+        logger.error('Error fetching user profile', userError);
         return;
       }
 
@@ -69,7 +80,17 @@ export const useUserProfile = (userId: string | null) => {
         .order('created_at', { ascending: false });
 
       if (tasksError) {
-        console.error('Error fetching tasks:', tasksError);
+        logger.error('Error fetching tasks', tasksError);
+      }
+
+      // Fetch user projects (where they are manager or team member)
+      const { data: projectsData, error: projectsError } = await supabase
+        .from('projects')
+        .select('id, title, status, is_completed')
+        .or(`manager_id.eq.${userId},${userId}.in.(team_members)`);
+
+      if (projectsError) {
+        logger.error('Error fetching projects', projectsError);
       }
 
       const tasks: Task[] = tasksData?.map(task => ({
@@ -90,31 +111,40 @@ export const useUserProfile = (userId: string | null) => {
         comments: []
       })) || [];
 
+      const projects: ProjectInfo[] = projectsData || [];
+
       // Calculate stats
       const totalTasks = tasks.length;
       const completedTasks = tasks.filter(task => task.status === 'Completed').length;
       const overdueTasks = tasks.filter(task => 
         task.deadline && new Date(task.deadline) < new Date() && task.status !== 'Completed'
       ).length;
+      const activeProjects = projects.filter(p => !p.is_completed).length;
       const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
       const stats: UserStats = {
         totalTasks,
         completedTasks,
         overdueTasks,
-        activeProjects: 0, // TODO: Implement project counting
+        activeProjects,
         completionRate
       };
 
       setProfileData({
         user: userProfile,
         tasks,
-        projects: [], // TODO: Implement project fetching
+        projects,
         stats
       });
 
+      devLog.userOperation('User profile fetched successfully', { 
+        userId, 
+        tasksCount: tasks.length, 
+        projectsCount: projects.length 
+      });
+
     } catch (error) {
-      console.error('Error in fetchUserProfile:', error);
+      logger.error('Error in fetchUserProfile', error);
       setError('An unexpected error occurred');
     } finally {
       setLoading(false);

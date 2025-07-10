@@ -17,6 +17,7 @@ import { toast } from '@/components/ui/sonner';
 import { UserRole } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/utils/logger';
+import { devLog } from '@/utils/devLogger';
 
 interface RoleChangeResponse {
   success?: boolean;
@@ -45,7 +46,7 @@ const SimplifiedOrganizationUserManagement = () => {
   useEffect(() => {
     if (currentUser?.role === 'superadmin' && !selectedOrganizationId && currentUser.organizationId) {
       setSelectedOrganizationId(currentUser.organizationId);
-      logger.debug('Initialized organization selection for superadmin', { orgId: currentUser.organizationId });
+      devLog.userOperation('Initialized organization selection for superadmin', { orgId: currentUser.organizationId });
     }
   }, [currentUser, selectedOrganizationId]);
 
@@ -69,7 +70,7 @@ const SimplifiedOrganizationUserManagement = () => {
     setUpdatingUserId(userId);
     
     try {
-      logger.userAction('Role change initiated', { userId, newRole });
+      devLog.userOperation('Role change initiated', { userId, newRole });
 
       const { data, error } = await supabase.functions.invoke('update-user-role', {
         body: {
@@ -78,7 +79,7 @@ const SimplifiedOrganizationUserManagement = () => {
         }
       });
 
-      logger.debug('Edge function response', { data, error });
+      devLog.debug('Edge function response', { data, error });
 
       if (error) {
         logger.error('Edge function error', error);
@@ -122,12 +123,12 @@ const SimplifiedOrganizationUserManagement = () => {
   };
 
   const handleEditUser = (user: any) => {
-    logger.userAction('Edit user requested', { userId: user.id });
+    devLog.userOperation('Edit user requested', { userId: user.id });
     toast.info('Edit user functionality coming soon');
   };
 
   const handleDeleteUser = (user: any) => {
-    logger.userAction('Delete user requested', { userId: user.id });
+    devLog.userOperation('Delete user requested', { userId: user.id });
     toast.info('Delete user functionality coming soon');
   };
 

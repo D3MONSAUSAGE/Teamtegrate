@@ -1,10 +1,13 @@
 
 import React, { useEffect } from 'react';
 import { Task } from '@/types';
+import { TaskFormData } from '@/types/forms';
 import { useProjects } from '@/hooks/useProjects';
 import { useOrganizationTeamMembers } from '@/hooks/useOrganizationTeamMembers';
 import { useTaskSubmission } from '@/hooks/useTaskSubmission';
 import { useAuth } from '@/contexts/AuthContext';
+import { devLog } from '@/utils/devLogger';
+import { logger } from '@/utils/logger';
 import EnhancedCreateTaskDialog from './task/EnhancedCreateTaskDialog';
 
 interface CreateTaskDialogEnhancedProps {
@@ -34,13 +37,13 @@ const CreateTaskDialogEnhanced: React.FC<CreateTaskDialogEnhancedProps> = ({
   // Force refresh users when dialog opens to ensure latest data
   useEffect(() => {
     if (open) {
-      console.log('CreateTaskDialogEnhanced: Dialog opened, refreshing users...');
+      devLog.taskOperation('Dialog opened, refreshing users');
       refetchUsers();
     }
   }, [open, refetchUsers]);
 
-  const handleSubmit = async (data: any, selectedUsers: any[]) => {
-    console.log('🎯 CreateTaskDialogEnhanced: handleSubmit called with:', {
+  const handleSubmit = async (data: TaskFormData, selectedUsers: any[]) => {
+    devLog.taskOperation('handleSubmit called', {
       data,
       selectedUsers: selectedUsers.map(u => ({ id: u.id, name: u.name })),
       editingTask: !!editingTask,
@@ -48,7 +51,7 @@ const CreateTaskDialogEnhanced: React.FC<CreateTaskDialogEnhancedProps> = ({
     });
 
     try {
-      console.log('🚀 CreateTaskDialogEnhanced: Calling submitTask...');
+      devLog.taskOperation('Calling submitTask');
       const success = await submitTask(
         data,
         selectedUsers,
@@ -56,20 +59,21 @@ const CreateTaskDialogEnhanced: React.FC<CreateTaskDialogEnhancedProps> = ({
         '', // timeInput not needed as deadline includes time
         editingTask,
         () => {
-          console.log('✅ CreateTaskDialogEnhanced: Task submission success callback');
+          devLog.taskOperation('Task submission success callback');
+          logger.userAction('Task created/updated successfully');
           onOpenChange(false);
           onTaskComplete?.();
         }
       );
 
       if (!success) {
-        console.error('❌ CreateTaskDialogEnhanced: Task submission failed');
+        logger.error('Task submission failed');
         throw new Error('Failed to submit task');
       }
 
-      console.log('🎉 CreateTaskDialogEnhanced: Task submission completed successfully');
+      devLog.taskOperation('Task submission completed successfully');
     } catch (error) {
-      console.error('💥 CreateTaskDialogEnhanced: Error in handleSubmit:', error);
+      logger.error('Error in handleSubmit', error);
       throw error; // Re-throw to let the dialog handle it
     }
   };
