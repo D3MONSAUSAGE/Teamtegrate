@@ -49,22 +49,43 @@ export const updateProject = async (
       }
     }
 
-    // Handle team members updates FIRST before updating the main project
+    // Handle team members updates with enhanced consistency checks
     if (updates.teamMemberIds !== undefined) {
       try {
         console.log('Updating team members for project:', projectId, 'with IDs:', updates.teamMemberIds);
         
-        // Get current team members
-        const { data: currentMembers } = await supabase
-          .from('project_team_members')
-          .select('user_id')
-          .eq('project_id', projectId);
+        // Get current team members from both storage locations for consistency check
+        const [currentMembersResult, projectResult] = await Promise.all([
+          supabase
+            .from('project_team_members')
+            .select('user_id')
+            .eq('project_id', projectId),
+          supabase
+            .from('projects')
+            .select('team_members')
+            .eq('id', projectId)
+            .single()
+        ]);
+
+        const { data: currentMembers } = currentMembersResult;
+        const { data: projectData } = projectResult;
 
         const currentMemberIds = currentMembers ? currentMembers.map(m => m.user_id) : [];
+        const currentArrayMemberIds = projectData?.team_members || [];
         const newMemberIds = updates.teamMemberIds || [];
 
-        console.log('Current members:', currentMemberIds);
-        console.log('New members:', newMemberIds);
+        console.log('Current team members in project_team_members table:', currentMemberIds);
+        console.log('Current team members in projects.team_members array:', currentArrayMemberIds);
+        console.log('New team members to set:', newMemberIds);
+
+        // Check for data inconsistency and log warning
+        const inconsistencyDetected = JSON.stringify(currentMemberIds.sort()) !== JSON.stringify(currentArrayMemberIds.map(id => id.toString()).sort());
+        if (inconsistencyDetected) {
+          console.warn('Data inconsistency detected between project_team_members table and projects.team_members array', {
+            table: currentMemberIds,
+            array: currentArrayMemberIds
+          });
+        }
 
         const membersToAdd = newMemberIds.filter(id => !currentMemberIds.includes(id));
         const membersToRemove = currentMemberIds.filter(id => !newMemberIds.includes(id));
@@ -72,20 +93,19 @@ export const updateProject = async (
         console.log('Members to add:', membersToAdd);
         console.log('Members to remove:', membersToRemove);
 
+        // Perform database operations in transaction-like manner
+        const operations = [];
+
         // Remove members that are no longer in the list
         if (membersToRemove.length > 0) {
           for (const userId of membersToRemove) {
-            const { error: removeError } = await supabase
+            const removeOperation = supabase
               .from('project_team_members')
               .delete()
               .eq('project_id', projectId)
               .eq('user_id', userId);
-
-            if (removeError) {
-              console.error('Error removing team member:', removeError);
-            } else {
-              console.log('Successfully removed team member:', userId);
-            }
+            
+            operations.push(removeOperation);
           }
         }
 
@@ -96,17 +116,25 @@ export const updateProject = async (
             user_id: userId
           }));
 
-          const { error: addError } = await supabase
+          const addOperation = supabase
             .from('project_team_members')
             .insert(newMembersData);
+            
+          operations.push(addOperation);
+        }
 
-          if (addError) {
-            console.error('Error adding new team members:', addError);
-            throw addError;
-          } else {
-            console.log('Successfully added team members:', membersToAdd);
+        // Execute all team member operations
+        const results = await Promise.all(operations);
+        
+        // Check for errors in team member operations
+        for (const result of results) {
+          if (result.error) {
+            console.error('Error in team member operation:', result.error);
+            throw result.error;
           }
         }
+
+        console.log('Successfully updated team members in project_team_members table');
 
         // Update the team_members array in the projects table for consistency
         updatedFields.team_members = newMemberIds;

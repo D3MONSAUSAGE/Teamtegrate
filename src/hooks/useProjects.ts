@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -130,23 +129,32 @@ export function useProjects() {
             const { fetchProjectComments } = await import('@/contexts/task/api/comments');
             const comments = await fetchProjectComments(dbProject.id);
 
+            // Fix: Use team_members from database instead of teamMemberIds
+            const teamMemberIds = Array.isArray(dbProject.team_members) ? dbProject.team_members : [];
+            
+            // Log data consistency check
+            console.log('useProjects: Team member data for project', dbProject.id, {
+              team_members_array: teamMemberIds,
+              team_members_count: teamMemberIds.length
+            });
+
             return {
               id: dbProject.id || '',
               title: dbProject.title || '',
               description: dbProject.description || '',
               startDate: dbProject.start_date || dbProject.created_at,
               endDate: dbProject.end_date || dbProject.updated_at,
-              managerId: dbProject.managerId || '',
+              managerId: dbProject.manager_id || '',
               createdAt: dbProject.created_at,
               updatedAt: dbProject.updated_at,
-              teamMemberIds: Array.isArray(dbProject.teamMemberIds) ? dbProject.teamMemberIds : [],
+              teamMemberIds: teamMemberIds,
               budget: dbProject.budget || 0,
               budgetSpent: dbProject.budget_spent || 0,
               isCompleted: dbProject.is_completed || false,
               status: dbProject.status as Project['status'] || 'To Do',
               tasksCount: dbProject.tasks_count || 0,
               tags: Array.isArray(dbProject.tags) ? dbProject.tags : [],
-              organizationId: dbProject.organizationId || '',
+              organizationId: dbProject.organization_id || '',
               comments: Array.isArray(comments) ? comments : []
             };
           } catch (commentError) {
@@ -157,17 +165,17 @@ export function useProjects() {
               description: dbProject.description || '',
               startDate: dbProject.start_date || dbProject.created_at,
               endDate: dbProject.end_date || dbProject.updated_at,
-              managerId: dbProject.managerId || '',
+              managerId: dbProject.manager_id || '',
               createdAt: dbProject.created_at,
               updatedAt: dbProject.updated_at,
-              teamMemberIds: Array.isArray(dbProject.teamMemberIds) ? dbProject.teamMemberIds : [],
+              teamMemberIds: Array.isArray(dbProject.team_members) ? dbProject.team_members : [],
               budget: dbProject.budget || 0,
               budgetSpent: dbProject.budget_spent || 0,
               isCompleted: dbProject.is_completed || false,
               status: dbProject.status as Project['status'] || 'To Do',
               tasksCount: dbProject.tasks_count || 0,
               tags: Array.isArray(dbProject.tags) ? dbProject.tags : [],
-              organizationId: dbProject.organizationId || '',
+              organizationId: dbProject.organization_id || '',
               comments: []
             };
           }
