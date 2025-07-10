@@ -1,4 +1,3 @@
-
 import React, { useCallback, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Task, Project } from '@/types';
@@ -13,6 +12,7 @@ import TaskFormFieldsWithAI from './task/TaskFormFieldsWithAI';
 import TaskAssignmentSection from '@/components/task/form/TaskAssignmentSection';
 import { useUsers } from '@/hooks/useUsers';
 import { toast } from '@/components/ui/sonner';
+import { devLog } from '@/utils/devLogger';
 
 interface CreateTaskDialogProps {
   open: boolean;
@@ -51,18 +51,17 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
     handleTimeChange
   } = useTaskFormWithAI(editingTask, currentProjectId);
 
-  // Log when dialog opens/closes with editing task
+  // Log when dialog opens/closes with editing task - keep for debugging
   React.useEffect(() => {
-    if (open) {
-      console.log('Dialog opened with editingTask:', editingTask);
+    if (open && editingTask) {
+      devLog.taskOperation('Dialog opened with editing task', { taskId: editingTask.id });
     }
   }, [open, editingTask]);
 
   const handleUserAssignment = (userId: string) => {
-    console.log('Assigning user:', userId);
+    devLog.taskOperation('User assignment', { userId });
     
     if (userId === "unassigned") {
-      console.log('Setting user to unassigned');
       setSelectedMember(undefined);
       setValue('assignedToId', undefined);
       setValue('assignedToName', undefined);
@@ -70,7 +69,6 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
     }
     
     const selectedUser = users.find(user => user.id === userId);
-    console.log('Selected user:', selectedUser);
     
     if (selectedUser) {
       setSelectedMember(userId);

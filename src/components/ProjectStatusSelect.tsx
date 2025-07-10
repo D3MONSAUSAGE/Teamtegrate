@@ -11,6 +11,7 @@ import { Project, ProjectStatus } from '@/types';
 import { useTask } from '@/contexts/task';
 import { toast } from '@/components/ui/sonner';
 import { playSuccessSound, playErrorSound } from '@/utils/sounds';
+import { devLog } from '@/utils/devLogger';
 
 interface ProjectStatusSelectProps {
   project: Project;
@@ -24,8 +25,11 @@ const ProjectStatusSelect: React.FC<ProjectStatusSelectProps> = ({ project }) =>
       // Explicitly set isCompleted based on the status
       const isCompleted = newStatus === 'Completed';
       
-      console.log(`Updating project ${project.id} status to:`, newStatus);
-      console.log(`Setting isCompleted to:`, isCompleted);
+      devLog.projectOperation('Updating project status', { 
+        projectId: project.id, 
+        newStatus, 
+        isCompleted 
+      });
       
       await updateProject(project.id, { 
         status: newStatus as ProjectStatus,

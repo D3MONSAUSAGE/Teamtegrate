@@ -51,7 +51,6 @@ const CreateTaskDialogEnhanced: React.FC<CreateTaskDialogEnhancedProps> = ({
     });
 
     try {
-      devLog.taskOperation('Calling submitTask');
       const success = await submitTask(
         data,
         selectedUsers,

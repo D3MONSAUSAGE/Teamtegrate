@@ -3,6 +3,7 @@ import React, { useEffect } from 'react';
 import { Progress } from "@/components/ui/progress";
 import { Project, ProjectStatus } from '@/types';
 import { useTask } from '@/contexts/task';
+import { devLog } from '@/utils/devLogger';
 
 interface ProjectProgressBarProps {
   project: Project;
@@ -35,18 +36,24 @@ const ProjectProgressBar: React.FC<ProjectProgressBarProps> = ({ project }) => {
     const completedTasks = projectTasks.filter(task => task.status === 'Completed').length;
     const allTasksCompleted = completedTasks === totalTasks;
     
-    console.log(`Project ${project.id} progress check: ${completedTasks}/${totalTasks} tasks completed (${progress}%)`);
-    console.log(`Current status: ${project.status}, All completed: ${allTasksCompleted}, Is completed flag: ${project.isCompleted}`);
+    devLog.projectOperation('Project progress check', { 
+      projectId: project.id, 
+      completedTasks, 
+      totalTasks, 
+      progress,
+      currentStatus: project.status,
+      allCompleted: allTasksCompleted
+    });
     
     // Make sure project status is consistent with task completion
     if (allTasksCompleted && project.status !== 'Completed') {
-      console.log(`Auto-updating project ${project.id} to Completed status as all tasks are done`);
+      devLog.projectOperation('Auto-updating project to Completed', { projectId: project.id });
       updateProject(project.id, { 
         status: 'Completed' as ProjectStatus,
         isCompleted: true
       });
     } else if (!allTasksCompleted && project.status === 'Completed') {
-      console.log(`Auto-updating project ${project.id} to In Progress status as not all tasks are done`);
+      devLog.projectOperation('Auto-updating project to In Progress', { projectId: project.id });
       updateProject(project.id, { 
         status: 'In Progress' as ProjectStatus,
         isCompleted: false

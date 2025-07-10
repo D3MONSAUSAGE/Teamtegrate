@@ -8,6 +8,7 @@ import { useTask } from '@/contexts/task';
 import { Task } from '@/types';
 import { Check, Search } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { devLog } from '@/utils/devLogger';
 
 interface TeamMember {
   id: string;
@@ -79,7 +80,7 @@ const AssignTaskDialog: React.FC<AssignTaskDialogProps> = ({ open, onOpenChange,
   });
   
   const handleAssign = (memberId: string, memberName: string) => {
-    console.log('Assigning task to member:', { memberId, memberName, taskId: task.id });
+    devLog.taskOperation('Task assignment', { memberId, memberName, taskId: task.id });
     assignTaskToUser(task.id, memberId, memberName);
     onOpenChange(false);
   };
