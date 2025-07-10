@@ -1,4 +1,5 @@
 
+
 export interface Task {
   id: string;
   title: string;
@@ -23,7 +24,7 @@ export interface TaskComment {
   text: string;
   userId: string;
   userName?: string;
-  taskId?: string;
+  taskId: string;
   projectId?: string;
   createdAt: Date;
   updatedAt: Date;
