@@ -118,6 +118,13 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
     setSelectedMember(undefined);
   };
 
+  // Transform users to match the expected interface
+  const teamMembers = users.map(user => ({
+    id: user.id,
+    name: user.name || user.email || 'Unknown User',
+    email: user.email
+  }));
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={`${isMobile ? 'w-[95%] p-4' : 'sm:max-w-[550px]'} max-h-[90vh] overflow-y-auto`}>
@@ -140,7 +147,7 @@ const CreateTaskDialogWithAI: React.FC<CreateTaskDialogProps> = ({
                 <TaskFormFieldsWithAI
                   form={form}
                   projects={projects as any}
-                  teamMembers={users}
+                  teamMembers={teamMembers}
                   showProjectField={true}
                   showAssignmentFields={false}
                 />

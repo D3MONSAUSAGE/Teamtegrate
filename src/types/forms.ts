@@ -7,7 +7,7 @@ export interface TaskFormValues {
   priority: TaskPriority;
   deadline: Date | string;
   projectId?: string;
-  cost?: number;
+  cost?: number | string; // Allow both number and string for form handling
   assignedToId?: string;
   assignedToName?: string;
   assignedToIds?: string[];

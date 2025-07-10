@@ -128,3 +128,92 @@ export const fetchEnhancedComments = async (
     return [];
   }
 };
+
+export const updateProjectComment = async (
+  commentId: string,
+  updates: {
+    content?: string;
+    category?: string;
+    is_pinned?: boolean;
+  }
+): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from('comments')
+      .update({
+        content: updates.content,
+        category: updates.category,
+        is_pinned: updates.is_pinned,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', commentId);
+
+    if (error) {
+      console.error('Error updating project comment:', error);
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error in updateProjectComment:', error);
+    throw error;
+  }
+};
+
+export const deleteProjectComment = async (commentId: string): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from('comments')
+      .delete()
+      .eq('id', commentId);
+
+    if (error) {
+      console.error('Error deleting project comment:', error);
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error in deleteProjectComment:', error);
+    throw error;
+  }
+};
+
+export const searchProjectComments = async (
+  projectId: string,
+  searchQuery: string
+): Promise<TaskComment[]> => {
+  return await fetchEnhancedComments(projectId, 'project', {
+    searchQuery
+  });
+};
+
+export const getProjectCommentStats = async (projectId: string): Promise<any> => {
+  try {
+    const { data, error } = await supabase.rpc('get_project_comment_stats', {
+      project_id_param: projectId
+    });
+
+    if (error) {
+      console.error('Error getting project comment stats:', error);
+      // Return default stats if function fails
+      return {
+        total_comments: 0,
+        recent_comments: 0,
+        pinned_comments: 0,
+        categories: []
+      };
+    }
+
+    return data || {
+      total_comments: 0,
+      recent_comments: 0,
+      pinned_comments: 0,
+      categories: []
+    };
+  } catch (error) {
+    console.error('Error in getProjectCommentStats:', error);
+    return {
+      total_comments: 0,
+      recent_comments: 0,
+      pinned_comments: 0,
+      categories: []
+    };
+  }
+};
