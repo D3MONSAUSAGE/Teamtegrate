@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useForm } from "react-hook-form";
 import { Task, TaskPriority } from '@/types';
+import { TaskFormValues } from '@/types/forms';
 import { format } from 'date-fns';
 
 export const useTaskFormWithAI = (editingTask?: Task, currentProjectId?: string) => {
@@ -18,19 +19,19 @@ export const useTaskFormWithAI = (editingTask?: Task, currentProjectId?: string)
     editingTask?.deadline ? format(new Date(editingTask.deadline), 'HH:mm') : "12:00"
   );
 
-  // Set default values for the form including multi-assignment fields
-  const form = useForm({
+  // Set default values for the form to match TaskFormValues exactly
+  const form = useForm<TaskFormValues>({
     defaultValues: {
       title: editingTask?.title || '',
-      description: editingTask?.description || '',
+      description: editingTask?.description,
       priority: editingTask?.priority || 'Medium',
-      deadline: editingTask?.deadline ? new Date(editingTask.deadline).toISOString() : new Date().toISOString(),
-      projectId: editingTask?.projectId || currentProjectId || '',
-      cost: editingTask?.cost !== undefined ? editingTask.cost : '',
-      assignedToId: editingTask?.assignedToId || '',
-      assignedToName: editingTask?.assignedToName || '',
-      assignedToIds: editingTask?.assignedToIds || [],
-      assignedToNames: editingTask?.assignedToNames || []
+      deadline: editingTask?.deadline ? new Date(editingTask.deadline) : new Date(),
+      projectId: editingTask?.projectId || currentProjectId,
+      cost: editingTask?.cost,
+      assignedToId: editingTask?.assignedToId,
+      assignedToName: editingTask?.assignedToName,
+      assignedToIds: editingTask?.assignedToIds,
+      assignedToNames: editingTask?.assignedToNames
     }
   });
   
@@ -46,16 +47,16 @@ export const useTaskFormWithAI = (editingTask?: Task, currentProjectId?: string)
       setTimeInput(format(taskDate, 'HH:mm'));
       
       setValue('title', editingTask.title);
-      setValue('description', editingTask.description || '');
+      setValue('description', editingTask.description);
       setValue('priority', editingTask.priority);
-      setValue('deadline', new Date(editingTask.deadline).toISOString());
-      setValue('projectId', editingTask.projectId || '');
-      setValue('cost', editingTask.cost !== undefined ? editingTask.cost : '');
+      setValue('deadline', new Date(editingTask.deadline));
+      setValue('projectId', editingTask.projectId);
+      setValue('cost', editingTask.cost);
       setSelectedMember(editingTask.assignedToId);
-      setValue('assignedToId', editingTask.assignedToId || '');
-      setValue('assignedToName', editingTask.assignedToName || '');
-      setValue('assignedToIds', editingTask.assignedToIds || []);
-      setValue('assignedToNames', editingTask.assignedToNames || []);
+      setValue('assignedToId', editingTask.assignedToId);
+      setValue('assignedToName', editingTask.assignedToName);
+      setValue('assignedToIds', editingTask.assignedToIds);
+      setValue('assignedToNames', editingTask.assignedToNames);
     } else {
       // For new tasks
       const today = new Date();
@@ -78,9 +79,9 @@ export const useTaskFormWithAI = (editingTask?: Task, currentProjectId?: string)
       const [hours, minutes] = timeInput.split(':').map(Number);
       const newDate = new Date(date);
       newDate.setHours(hours || 0, minutes || 0);
-      setValue('deadline', newDate.toISOString());
+      setValue('deadline', newDate);
     } else {
-      setValue('deadline', date.toISOString());
+      setValue('deadline', date);
     }
   };
 
@@ -93,7 +94,7 @@ export const useTaskFormWithAI = (editingTask?: Task, currentProjectId?: string)
       const [hours, minutes] = newTimeInput.split(':').map(Number);
       const newDate = new Date(deadlineDate);
       newDate.setHours(hours || 0, minutes || 0);
-      setValue('deadline', newDate.toISOString());
+      setValue('deadline', newDate);
     }
   };
 
