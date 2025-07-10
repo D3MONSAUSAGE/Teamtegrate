@@ -28,6 +28,8 @@ interface ProjectInfo {
   title: string;
   status: string;
   is_completed: boolean;
+  is_manager: boolean;
+  is_team_member: boolean;
 }
 
 interface ProfileData {
@@ -86,8 +88,8 @@ export const useUserProfile = (userId: string | null) => {
       // Fetch user projects (where they are manager or team member)
       const { data: projectsData, error: projectsError } = await supabase
         .from('projects')
-        .select('id, title, status, is_completed')
-        .or(`manager_id.eq.${userId},${userId}.in.(team_members)`);
+        .select('id, title, status, is_completed, manager_id, team_members')
+        .or(`manager_id.eq.${userId},team_members.cs.{${userId}}`);
 
       if (projectsError) {
         logger.error('Error fetching projects', projectsError);
@@ -111,7 +113,14 @@ export const useUserProfile = (userId: string | null) => {
         comments: []
       })) || [];
 
-      const projects: ProjectInfo[] = projectsData || [];
+      const projects: ProjectInfo[] = projectsData?.map(project => ({
+        id: project.id,
+        title: project.title,
+        status: project.status || 'To Do',
+        is_completed: project.is_completed || false,
+        is_manager: project.manager_id === userId,
+        is_team_member: project.team_members?.includes(userId) || false
+      })) || [];
 
       // Calculate stats
       const totalTasks = tasks.length;

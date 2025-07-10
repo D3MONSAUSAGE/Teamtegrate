@@ -10,6 +10,20 @@ export interface TaskFormData {
   cost?: number;
 }
 
+// TaskFormValues interface for react-hook-form
+export interface TaskFormValues {
+  title: string;
+  description?: string;
+  priority: 'Low' | 'Medium' | 'High';
+  deadline: Date;
+  projectId?: string;
+  cost?: number;
+  assignedToId?: string;
+  assignedToName?: string;
+  assignedToIds?: string[];
+  assignedToNames?: string[];
+}
+
 export interface ProjectFormData {
   title: string;
   description: string;
