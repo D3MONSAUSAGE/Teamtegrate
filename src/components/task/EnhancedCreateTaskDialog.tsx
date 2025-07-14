@@ -4,8 +4,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Target } from 'lucide-react';
 import { format } from "date-fns";
 import { Task, User, Project, TaskPriority, UserRole } from '@/types';
+import { TaskFormData } from '@/types/forms';
 import { useForm } from 'react-hook-form';
 import { toast } from '@/components/ui/sonner';
+import { useProjects } from '@/hooks/useProjects';
+import { useOrganizationTeamMembers } from '@/hooks/useOrganizationTeamMembers';
+import { useTaskSubmission } from '@/hooks/useTaskSubmission';
+import { useAuth } from '@/contexts/AuthContext';
+import { devLog } from '@/utils/devLogger';
+import { logger } from '@/utils/logger';
 import TaskDetailsCard from './TaskDetailsCard';
 import EnhancedTaskAssignment from './form/assignment/EnhancedTaskAssignment';
 import TaskDialogActions from './TaskDialogActions';
@@ -16,11 +23,6 @@ interface EnhancedCreateTaskDialogProps {
   editingTask?: Task;
   currentProjectId?: string;
   onTaskComplete?: () => void;
-  projects: Project[];
-  users: User[];
-  loadingUsers: boolean;
-  onSubmit: (data: any, selectedUsers: User[]) => Promise<void>;
-  currentUserRole?: UserRole;
 }
 
 const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
@@ -29,12 +31,16 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
   editingTask,
   currentProjectId,
   onTaskComplete,
-  projects,
-  users,
-  loadingUsers,
-  onSubmit,
-  currentUserRole
 }) => {
+  const { user: currentUser } = useAuth();
+  const { projects } = useProjects();
+  
+  // For managers, use organization team members (current behavior)
+  // For admins and superadmins, the enhanced assignment component will handle user loading
+  const { users, isLoading: loadingUsers, refetch: refetchUsers } = useOrganizationTeamMembers();
+  
+  const { submitTask } = useTaskSubmission();
+
   const [selectedMember, setSelectedMember] = useState<string | undefined>("unassigned");
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const [deadlineDate, setDeadlineDate] = useState<Date | undefined>(undefined);
@@ -50,6 +56,14 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
       cost: ''
     }
   });
+
+  // Force refresh users when dialog opens to ensure latest data
+  useEffect(() => {
+    if (open) {
+      devLog.taskOperation('Dialog opened, refreshing users');
+      refetchUsers();
+    }
+  }, [open, refetchUsers]);
 
   // Initialize form data when editing
   useEffect(() => {
@@ -136,10 +150,28 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
         projectId: formData.projectId === 'none' ? undefined : formData.projectId,
       };
 
-      await onSubmit(taskData, assignedUsers);
-      onTaskComplete?.();
+      const success = await submitTask(
+        taskData,
+        assignedUsers,
+        deadline,
+        '',
+        editingTask,
+        () => {
+          devLog.taskOperation('Task submission success callback');
+          logger.userAction('Task created/updated successfully');
+          onOpenChange(false);
+          onTaskComplete?.();
+        }
+      );
+
+      if (!success) {
+        logger.error('Task submission failed');
+        throw new Error('Failed to submit task');
+      }
+
+      devLog.taskOperation('Task submission completed successfully');
     } catch (error) {
-      console.error('Error submitting task:', error);
+      logger.error('Error in handleSubmit', error);
       toast.error('Failed to save task');
     } finally {
       setIsSubmitting(false);
@@ -153,9 +185,9 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
           <DialogTitle className="flex items-center gap-2">
             <Target className="h-5 w-5" />
             {editingTask ? 'Edit Task' : 'Create New Task'}
-            {currentUserRole && (
+            {currentUser?.role && (
               <span className="text-sm text-muted-foreground">
-                ({currentUserRole} view)
+                ({currentUser.role} view)
               </span>
             )}
           </DialogTitle>

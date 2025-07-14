@@ -1,10 +1,9 @@
-
 import React, { useState } from 'react';
 import { useTask } from '@/contexts/task';
 import { Task } from '@/types';
 import { isSameDay, addMonths, subMonths } from 'date-fns';
 import TaskDetailDialog from '@/components/calendar/TaskDetailDialog';
-import CreateTaskDialogEnhanced from '@/components/CreateTaskDialogEnhanced';
+import EnhancedCreateTaskDialog from '@/components/task/EnhancedCreateTaskDialog';
 import CalendarHeader from '@/components/calendar/CalendarHeader';
 import CalendarNavigation from '@/components/calendar/CalendarNavigation';
 import CalendarStats from '@/components/calendar/CalendarStats';
@@ -154,7 +153,7 @@ const CalendarPage = () => {
         task={selectedTask}
       />
 
-      <CreateTaskDialogEnhanced
+      <EnhancedCreateTaskDialog
         open={isCreateTaskOpen}
         onOpenChange={setIsCreateTaskOpen}
         editingTask={editingTask}

@@ -1,9 +1,8 @@
-
 import React, { useState, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUsers } from '@/hooks/useUsers';
 import CreateProjectDialog from '@/components/CreateProjectDialog';
-import CreateTaskDialogEnhanced from '@/components/CreateTaskDialogEnhanced';
+import EnhancedCreateTaskDialog from '@/components/task/EnhancedCreateTaskDialog';
 import { useNavigate } from 'react-router-dom';
 import ProjectsPageHeader from './projects/ProjectsPageHeader';
 import ProjectsPageBackground from './projects/ProjectsPageBackground';
@@ -183,7 +182,7 @@ const ProjectsPage = () => {
           onProjectCreated={handleProjectCreated}
         />
 
-        <CreateTaskDialogEnhanced
+        <EnhancedCreateTaskDialog
           open={isCreateTaskOpen}
           onOpenChange={setIsCreateTaskOpen}
           currentProjectId={selectedProjectId}

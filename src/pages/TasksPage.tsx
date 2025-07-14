@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePersonalTasks } from '@/hooks/usePersonalTasks';
 import { Task, TaskStatus } from '@/types';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import TaskCommentsDialog from '@/components/TaskCommentsDialog';
-import CreateTaskDialogEnhanced from '@/components/CreateTaskDialogEnhanced';
+import EnhancedCreateTaskDialog from '@/components/task/EnhancedCreateTaskDialog';
 import TasksPageLoading from '@/components/task/TasksPageLoading';
 import TasksPageError from '@/components/task/TasksPageError';
 import TasksPageContent from '@/components/task/TasksPageContent';
@@ -110,7 +109,7 @@ const TasksPage = () => {
         onStatusChange={handleStatusChange}
       />
       
-      <CreateTaskDialogEnhanced
+      <EnhancedCreateTaskDialog
         open={isCreateTaskOpen} 
         onOpenChange={setIsCreateTaskOpen}
         editingTask={editingTask}

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { usePersonalTasks } from '@/hooks/usePersonalTasks';
@@ -6,7 +5,7 @@ import { useProjects } from '@/hooks/useProjects';
 import { useAuth } from '@/contexts/AuthContext';
 import { Task, Project } from '@/types';
 import { Plus, Sparkles, TrendingUp, Calendar } from 'lucide-react';
-import CreateTaskDialogEnhanced from '@/components/CreateTaskDialogEnhanced';
+import EnhancedCreateTaskDialog from '@/components/task/EnhancedCreateTaskDialog';
 import { format } from 'date-fns';
 import DailyTasksSection from '@/components/dashboard/DailyTasksSection';
 import UpcomingTasksSection from '@/components/dashboard/UpcomingTasksSection';
@@ -289,7 +288,7 @@ const DashboardPage = () => {
         {/* Add bottom padding for proper spacing */}
         <div className="pb-8" />
         
-        <CreateTaskDialogEnhanced 
+        <EnhancedCreateTaskDialog 
           open={isCreateTaskOpen} 
           onOpenChange={setIsCreateTaskOpen}
           editingTask={editingTask}

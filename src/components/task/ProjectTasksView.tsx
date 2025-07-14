@@ -1,153 +1,178 @@
-
-import React, { useState } from 'react';
-import { Task, TaskStatus } from '@/types';
-import CreateTaskDialogEnhanced from '../CreateTaskDialogEnhanced';
-import EditProjectDialog from '../project/EditProjectDialog';
-import ProjectTasksContent from './project-view/ProjectTasksContent';
-import { useProjectTasksView } from './project-view/useProjectTasksView';
-import ProjectTasksLoading from './project-view/ProjectTasksLoading';
-import ProjectTasksError from './project-view/ProjectTasksError';
-import { addTeamMemberToProject, removeTeamMemberFromProject } from '@/contexts/task/operations';
-import { useProjects } from '@/hooks/useProjects';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useParams } from 'react-router-dom';
+import { Task, Project, User, TaskStatus } from '@/types';
+import { useProject } from '@/hooks/useProject';
+import { useTasks } from '@/hooks/useTasks';
+import { useOrganizationTeamMembers } from '@/hooks/useOrganizationTeamMembers';
+import { useAuth } from '@/contexts/AuthContext';
+import { useDebounce } from '@/utils/performanceUtils';
+import { toast } from '@/components/ui/sonner';
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Plus } from 'lucide-react';
+import { ProjectTasksContent } from './ProjectTasksContent';
+import EditProjectDialog from './EditProjectDialog';
+import EnhancedCreateTaskDialog from '../task/EnhancedCreateTaskDialog';
+import { ProjectService } from '@/services/projectService';
 
 interface ProjectTasksViewProps {
   projectId: string | undefined;
 }
 
 const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
+  const { user } = useAuth();
+  const { project, isLoading: isLoadingProject, error: projectError, updateProject, refetch: refetchProject } = useProject(projectId);
+  const { tasks, isLoading, error, refetch, updateTaskStatus } = useTasks(projectId);
+  const { users, isLoading: isLoadingTeamMembers, refetch: refetchTeamMembers } = useOrganizationTeamMembers();
+
+  const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [isEditProjectOpen, setIsEditProjectOpen] = useState(false);
-  const { setProjects, refetch: refetchProjects } = useProjects();
+  const [searchQuery, setSearchQuery] = useState('');
 
-  // Add error boundary for the hook
-  let hookData;
-  try {
-    hookData = useProjectTasksView(projectId || null, refetchProjects);
-  } catch (error) {
-    console.error('ProjectTasksView: Error in useProjectTasksView hook:', error);
-    return (
-      <ProjectTasksError 
-        errorMessage="Failed to load project tasks data"
-        onRefresh={async () => window.location.reload()}
-        isRefreshing={false}
-      />
-    );
-  }
+  // Project authorization check
+  const canEditProject = useMemo(() => {
+    if (!user || !project) return false;
+    return ProjectService.canEditProject(user, project);
+  }, [user, project]);
 
-  const {
-    isLoading,
-    loadError,
-    project,
-    searchQuery,
-    sortBy,
-    todoTasks,
-    inProgressTasks,
-    completedTasks,
-    progress,
-    teamMembers,
-    isLoadingTeamMembers,
-    teamMembersError,
-    isRefreshing,
-    isCreateTaskOpen,
-    editingTask,
-    setIsCreateTaskOpen,
-    handleSearchChange,
-    handleEditTask,
-    handleCreateTask,
-    handleManualRefresh,
-    handleTaskStatusChange,
-    onSortByChange,
-    handleTaskDialogComplete
-  } = hookData;
+  // Team members management
+  const teamMembers = useMemo(() => {
+    return users.filter(user => project?.teamMemberIds?.includes(user.id));
+  }, [users, project]);
 
-  if (isLoading) {
-    return <ProjectTasksLoading />;
-  }
-  
-  if (loadError || !project) {
-    return (
-      <ProjectTasksError 
-        errorMessage={loadError || "Project not found or not accessible."}
-        onRefresh={handleManualRefresh}
-        isRefreshing={isRefreshing}
-      />
-    );
-  }
+  // Task categorization
+  const { todoTasks, inProgressTasks, completedTasks } = useMemo(() => {
+    const todo: Task[] = [];
+    const inProgress: Task[] = [];
+    const completed: Task[] = [];
 
-  // Create a wrapper function to convert the event to a string
-  const handleSearchQueryChange = (query: string) => {
-    // handleSearchChange expects a ChangeEvent, so we need to create a mock event
-    const mockEvent = {
-      target: { value: query }
-    } as React.ChangeEvent<HTMLInputElement>;
-    handleSearchChange(mockEvent);
-  };
+    tasks.forEach(task => {
+      if (task.status === 'To Do') {
+        todo.push(task);
+      } else if (task.status === 'In Progress') {
+        inProgress.push(task);
+      } else if (task.status === 'Completed') {
+        completed.push(task);
+      }
+    });
 
-  // Handle editing project
-  const handleEditProject = () => {
+    return {
+      todoTasks: todo,
+      inProgressTasks: inProgress,
+      completedTasks: completed
+    };
+  }, [tasks]);
+
+  // Handlers
+  const handleEditTask = useCallback((task: Task) => {
+    setEditingTask(task);
+    setIsCreateTaskOpen(true);
+  }, []);
+
+  const handleStatusChange = useCallback(async (taskId: string, status: TaskStatus) => {
+    try {
+      await updateTaskStatus(taskId, status);
+      refetch();
+    } catch (error) {
+      console.error('ProjectTasksView: Error updating task status:', error);
+      toast.error('Failed to update task status');
+    }
+  }, [updateTaskStatus, refetch]);
+
+  const handleCreateTask = useCallback(() => {
+    setEditingTask(undefined);
+    setIsCreateTaskOpen(true);
+  }, []);
+
+  const handleTaskDialogComplete = useCallback(() => {
+    setIsCreateTaskOpen(false);
+    setEditingTask(undefined);
+    refetch();
+  }, [refetch]);
+
+  const handleEditProject = useCallback(() => {
     setIsEditProjectOpen(true);
-  };
+  }, []);
 
-  // Handle project edit success
-  const handleProjectEditSuccess = () => {
+  const handleProjectUpdated = useCallback(() => {
     setIsEditProjectOpen(false);
-    handleManualRefresh();
-  };
+    refetchProject();
+  }, [refetchProject]);
 
-  // Handle adding team member
-  const handleAddTeamMember = async (userId: string) => {
-    if (!projectId) return;
-    
-    try {
-      await addTeamMemberToProject(projectId, userId, [], setProjects);
-      // Refresh team members after adding
-      handleManualRefresh();
-    } catch (error) {
-      console.error('Error adding team member:', error);
-    }
-  };
+  const handleToggleComplete = useCallback(async (completed: boolean) => {
+    if (!project) return;
 
-  // Handle removing team member
-  const handleRemoveTeamMember = async (userId: string) => {
-    if (!projectId) return;
-    
     try {
-      await removeTeamMemberFromProject(projectId, userId, [], setProjects);
-      // Refresh team members after removing
-      handleManualRefresh();
+      await updateProject(project.id, { isCompleted: completed });
+      refetchProject();
     } catch (error) {
-      console.error('Error removing team member:', error);
+      console.error('ProjectTasksView: Error toggling project completion:', error);
+      toast.error('Failed to update project completion status');
     }
-  };
+  }, [project, updateProject, refetchProject]);
+
+  const handleAddTeamMember = useCallback(async (userId: string) => {
+    if (!project) return;
+
+    try {
+      const updatedTeamMemberIds = [...(project.teamMemberIds || []), userId];
+      await updateProject(project.id, { teamMemberIds: updatedTeamMemberIds });
+      refetchProject();
+      refetchTeamMembers();
+    } catch (error) {
+      console.error('ProjectTasksView: Error adding team member:', error);
+      toast.error('Failed to add team member');
+    }
+  }, [project, updateProject, refetchProject, refetchTeamMembers]);
+
+  const handleRemoveTeamMember = useCallback(async (userId: string) => {
+    if (!project) return;
+
+    try {
+      const updatedTeamMemberIds = (project.teamMemberIds || []).filter(id => id !== userId);
+      await updateProject(project.id, { teamMemberIds: updatedTeamMemberIds });
+      refetchProject();
+      refetchTeamMembers();
+    } catch (error) {
+      console.error('ProjectTasksView: Error removing team member:', error);
+      toast.error('Failed to remove team member');
+    }
+  }, [project, updateProject, refetchProject, refetchTeamMembers]);
+
+  const handleSearchQueryChange = useDebounce((value: string) => {
+    setSearchQuery(value);
+  }, 300);
 
   return (
     <>
       <ProjectTasksContent
         project={project}
-        progress={progress}
-        todoTasks={todoTasks || []}
-        inProgressTasks={inProgressTasks || []}
-        completedTasks={completedTasks || []}
-        teamMembers={teamMembers || []}
-        isLoadingTeamMembers={isLoadingTeamMembers}
-        searchQuery={searchQuery || ''}
-        sortBy={sortBy || 'deadline'}
-        onSearchChange={handleSearchQueryChange}
-        onSortByChange={onSortByChange}
-        onRefresh={handleManualRefresh}
-        isRefreshing={isRefreshing}
+        todoTasks={todoTasks}
+        inProgressTasks={inProgressTasks}
+        completedTasks={completedTasks}
         onEditTask={handleEditTask}
+        onStatusChange={handleStatusChange}
         onCreateTask={handleCreateTask}
-        onTaskStatusChange={handleTaskStatusChange}
-        onEditProject={handleEditProject}
+        onToggleComplete={handleToggleComplete}
+        onCreateTaskClick={handleCreateTask}
+        teamMembers={teamMembers}
         onAddTeamMember={handleAddTeamMember}
         onRemoveTeamMember={handleRemoveTeamMember}
+        searchQuery={searchQuery}
+        onSearchChange={handleSearchQueryChange}
+        canEdit={canEditProject}
+        onEditProject={handleEditProject}
+        isLoadingTasks={isLoading}
+        isLoadingTeamMembers={isLoadingTeamMembers}
       />
-      
-      <CreateTaskDialogEnhanced
-        open={isCreateTaskOpen} 
+
+      <EnhancedCreateTaskDialog
+        open={isCreateTaskOpen}
         onOpenChange={setIsCreateTaskOpen}
         editingTask={editingTask}
-        currentProjectId={projectId ?? undefined}
+        currentProjectId={projectId}
         onTaskComplete={handleTaskDialogComplete}
       />
 
@@ -155,7 +180,7 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
         open={isEditProjectOpen}
         onOpenChange={setIsEditProjectOpen}
         project={project}
-        onSuccess={handleProjectEditSuccess}
+        onProjectUpdated={handleProjectUpdated}
       />
     </>
   );
