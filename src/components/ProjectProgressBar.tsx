@@ -36,15 +36,6 @@ const ProjectProgressBar: React.FC<ProjectProgressBarProps> = ({ project }) => {
     const completedTasks = projectTasks.filter(task => task.status === 'Completed').length;
     const allTasksCompleted = completedTasks === totalTasks;
     
-    devLog.projectOperation('Project progress check', { 
-      projectId: project.id, 
-      completedTasks, 
-      totalTasks, 
-      progress,
-      currentStatus: project.status,
-      allCompleted: allTasksCompleted
-    });
-    
     // Make sure project status is consistent with task completion
     if (allTasksCompleted && project.status !== 'Completed') {
       devLog.projectOperation('Auto-updating project to Completed', { projectId: project.id });

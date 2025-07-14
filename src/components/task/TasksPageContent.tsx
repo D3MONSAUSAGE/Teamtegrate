@@ -3,7 +3,6 @@ import React, { useMemo } from 'react';
 import { Task, TaskStatus } from '@/types';
 import TaskHeader from '@/components/task/TaskHeader';
 import TaskTabs from '@/components/task/TaskTabs';
-import { devLog } from '@/utils/devLogger';
 
 interface TasksPageContentProps {
   tasks: Task[];
@@ -24,7 +23,6 @@ const TasksPageContent = ({
 }: TasksPageContentProps) => {
   
   if (!tasks || !Array.isArray(tasks)) {
-    devLog.debug('Tasks data is not available or not an array', { tasks });
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-accent/10 relative overflow-hidden">
         <div className="flex items-center justify-center min-h-screen">
@@ -41,12 +39,6 @@ const TasksPageContent = ({
     const todo = tasks.filter((task) => task.status === 'To Do');
     const inProgress = tasks.filter((task) => task.status === 'In Progress');
     const completed = tasks.filter((task) => task.status === 'Completed');
-    
-    devLog.debug('Tasks filtered by status', {
-      todoCount: todo.length,
-      inProgressCount: inProgress.length,
-      completedCount: completed.length
-    });
     
     return { 
       todoTasks: todo, 

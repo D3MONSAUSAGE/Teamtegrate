@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Task, TaskStatus } from '@/types';
 import CreateTaskDialogEnhanced from '../CreateTaskDialogEnhanced';
 import EditProjectDialog from '../project/EditProjectDialog';
@@ -9,7 +9,6 @@ import ProjectTasksLoading from './project-view/ProjectTasksLoading';
 import ProjectTasksError from './project-view/ProjectTasksError';
 import { addTeamMemberToProject, removeTeamMemberFromProject } from '@/contexts/task/operations';
 import { useProjects } from '@/hooks/useProjects';
-import { devLog } from '@/utils/devLogger';
 
 interface ProjectTasksViewProps {
   projectId: string | undefined;
@@ -60,23 +59,6 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
     handleTaskDialogComplete
   } = hookData;
 
-  // Log component rendering for debugging
-  useEffect(() => {
-    devLog.debug("ProjectTasksView rendering", {
-      projectId,
-      isLoading,
-      hasError: !!loadError,
-      hasProject: !!project,
-      editingTask,
-      todoTasksCount: todoTasks?.length || 0,
-      inProgressTasksCount: inProgressTasks?.length || 0,
-      completedTasksCount: completedTasks?.length || 0,
-      teamMembersCount: teamMembers?.length || 0,
-      isLoadingTeamMembers,
-      teamMembersError
-    });
-  }, [projectId, isLoading, loadError, project, editingTask, todoTasks, inProgressTasks, completedTasks, teamMembers, isLoadingTeamMembers, teamMembersError]);
-
   if (isLoading) {
     return <ProjectTasksLoading />;
   }
@@ -93,7 +75,6 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
 
   // Create a wrapper function to convert the event to a string
   const handleSearchQueryChange = (query: string) => {
-    devLog.debug('Search query changed', { query });
     // handleSearchChange expects a ChangeEvent, so we need to create a mock event
     const mockEvent = {
       target: { value: query }

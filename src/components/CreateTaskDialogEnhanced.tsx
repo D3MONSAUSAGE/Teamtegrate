@@ -43,13 +43,6 @@ const CreateTaskDialogEnhanced: React.FC<CreateTaskDialogEnhancedProps> = ({
   }, [open, refetchUsers]);
 
   const handleSubmit = async (data: TaskFormData, selectedUsers: any[]) => {
-    devLog.taskOperation('handleSubmit called', {
-      data,
-      selectedUsers: selectedUsers.map(u => ({ id: u.id, name: u.name })),
-      editingTask: !!editingTask,
-      currentProjectId
-    });
-
     try {
       const success = await submitTask(
         data,

@@ -10,7 +10,6 @@ export const debugRLSPolicies = async (userId: string, organizationId: string) =
 
   try {
     // Test direct task access
-    console.log('🔍 Testing direct task access...');
     const { data: tasksData, error: tasksError } = await supabase
       .from('tasks')
       .select('id, title, organization_id, user_id, assigned_to_id')
@@ -29,7 +28,6 @@ export const debugRLSPolicies = async (userId: string, organizationId: string) =
     });
 
     // Test direct project access
-    console.log('🔍 Testing direct project access...');
     const { data: projectsData, error: projectsError } = await supabase
       .from('projects')
       .select('id, title, organization_id, manager_id')
