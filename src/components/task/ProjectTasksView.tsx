@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { Task, Project, User, TaskStatus, ProjectStatus } from '@/types';
@@ -63,8 +64,8 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
           managerId: data.manager_id || '',
           status: (data.status as ProjectStatus) || 'To Do',
           organizationId: data.organization_id,
-          createdAt: new Date(data.created_at || Date.now()),
-          updatedAt: new Date(data.updated_at || Date.now())
+          createdAt: data.created_at || new Date().toISOString(),
+          updatedAt: data.updated_at || new Date().toISOString()
         };
 
         setProject(transformedProject);
@@ -194,8 +195,8 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
             managerId: data.manager_id || '',
             status: (data.status as ProjectStatus) || 'To Do',
             organizationId: data.organization_id,
-            createdAt: new Date(data.created_at || Date.now()),
-            updatedAt: new Date(data.updated_at || Date.now())
+            createdAt: data.created_at || new Date().toISOString(),
+            updatedAt: data.updated_at || new Date().toISOString()
           };
 
           setProject(transformedProject);
