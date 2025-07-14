@@ -7,7 +7,9 @@ import { useOrganizationTeamMembers } from '@/hooks/useOrganizationTeamMembers';
 import { useDebounce } from '@/utils/performanceUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
-import ProjectTasksContent from '../../project-view/ProjectTasksContent';
+import ProjectTasksHeader from './ProjectTasksHeader';
+import ProjectTasksActions from './ProjectTasksActions';
+import ProjectTasksBody from './ProjectTasksBody';
 import ProjectTasksDialogs from './ProjectTasksDialogs';
 import { useProjectData } from '../hooks/useProjectData';
 import { useProjectTasksData } from '../hooks/useProjectTasksData';
@@ -89,28 +91,39 @@ const ProjectTasksContainer: React.FC<ProjectTasksContainerProps> = ({ projectId
     setSearchQuery(value);
   }, 300);
 
+  if (!project) {
+    return null;
+  }
+
   return (
-    <>
-      <ProjectTasksContent
-        project={project!}
+    <div className="container mx-auto px-4 py-6 space-y-6">
+      <ProjectTasksHeader
+        project={project}
         searchQuery={searchQuery}
         sortBy={sortBy}
+        progress={progress}
+        teamMembers={teamMembers}
+        onSearchChange={handleSearchQueryChange}
+        onSortByChange={setSortBy}
+        onEditProject={handleEditProject}
+      />
+
+      <ProjectTasksActions
+        canEditProject={canEditProject}
+        isRefreshing={isLoading}
+        onCreateTask={handleCreateTask}
+        onEditProject={handleEditProject}
+        onRefresh={refetch}
+        onAddTeamMember={handleAddTeamMember}
+      />
+
+      <ProjectTasksBody
         todoTasks={todoTasks}
         inProgressTasks={inProgressTasks}
         completedTasks={completedTasks}
-        progress={progress}
         teamMembers={teamMembers}
-        isLoadingTeamMembers={isLoadingTeamMembers}
-        onSearchChange={handleSearchQueryChange}
-        onSortByChange={setSortBy}
-        onCreateTask={handleCreateTask}
         onEditTask={handleEditTask}
         onTaskStatusChange={handleStatusChange}
-        onRefresh={refetch}
-        isRefreshing={isLoading}
-        onEditProject={handleEditProject}
-        onAddTeamMember={handleAddTeamMember}
-        onRemoveTeamMember={handleRemoveTeamMember}
       />
 
       <ProjectTasksDialogs
@@ -124,7 +137,7 @@ const ProjectTasksContainer: React.FC<ProjectTasksContainerProps> = ({ projectId
         onTaskDialogComplete={handleTaskDialogComplete}
         onProjectUpdated={handleProjectUpdated}
       />
-    </>
+    </div>
   );
 };
 
