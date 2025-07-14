@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
-import { Task, Project, User, TaskStatus } from '@/types';
+import { Task, Project, User, TaskStatus, ProjectStatus } from '@/types';
 import { useProjectTasks } from '@/hooks/useProjectTasks';
 import { useOrganizationTeamMembers } from '@/hooks/useOrganizationTeamMembers';
 import { useAuth } from '@/contexts/AuthContext';
@@ -62,7 +61,7 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
           tasksCount: data.tasks_count || 0,
           tags: data.tags || [],
           managerId: data.manager_id || '',
-          status: data.status || 'To Do',
+          status: (data.status as ProjectStatus) || 'To Do',
           organizationId: data.organization_id,
           createdAt: new Date(data.created_at || Date.now()),
           updatedAt: new Date(data.updated_at || Date.now())
@@ -193,7 +192,7 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
             tasksCount: data.tasks_count || 0,
             tags: data.tags || [],
             managerId: data.manager_id || '',
-            status: data.status || 'To Do',
+            status: (data.status as ProjectStatus) || 'To Do',
             organizationId: data.organization_id,
             createdAt: new Date(data.created_at || Date.now()),
             updatedAt: new Date(data.updated_at || Date.now())
