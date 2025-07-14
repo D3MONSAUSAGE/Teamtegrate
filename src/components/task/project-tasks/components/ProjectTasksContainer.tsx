@@ -28,7 +28,7 @@ const ProjectTasksContainer: React.FC<ProjectTasksContainerProps> = ({ projectId
   // Custom hooks
   const { project, isLoadingProject, refetchProject } = useProjectData(projectId);
   const { todoTasks, inProgressTasks, completedTasks, progress } = useProjectTasksData(tasks);
-  const { handleAddTeamMember, handleRemoveTeamMember } = useProjectTeamManagement(project, refetchTeamMembers);
+  const { handleAddTeamMember: addTeamMemberToProject, handleRemoveTeamMember } = useProjectTeamManagement(project, refetchTeamMembers);
   const {
     isCreateTaskOpen,
     setIsCreateTaskOpen,
@@ -90,6 +90,14 @@ const ProjectTasksContainer: React.FC<ProjectTasksContainerProps> = ({ projectId
   const handleSearchQueryChange = useDebounce((value: string) => {
     setSearchQuery(value);
   }, 300);
+
+  // Add team member handler - this creates a wrapper that doesn't take parameters
+  const handleAddTeamMember = useCallback(() => {
+    // For now, we'll show a toast indicating this feature needs implementation
+    // In a real app, this would open a dialog to select users
+    toast.info('Team member addition dialog not yet implemented');
+    console.log('Add team member clicked - would open user selection dialog');
+  }, []);
 
   if (!project) {
     return null;
