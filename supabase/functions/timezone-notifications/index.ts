@@ -19,22 +19,60 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    console.log('Running timezone-aware notifications check...')
+    console.log('Running timezone-aware notifications and daily emails check...')
 
-    // Call the database function to send timezone-aware reminders
-    const { error: reminderError } = await supabaseClient.rpc('send_timezone_aware_reminders')
+    // Call the enhanced database function to send both reminders and daily emails
+    const { error: reminderError } = await supabaseClient.rpc('send_daily_emails_and_reminders')
 
     if (reminderError) {
-      console.error('Error calling send_timezone_aware_reminders:', reminderError)
+      console.error('Error calling send_daily_emails_and_reminders:', reminderError)
       throw reminderError
     }
 
-    console.log('Timezone-aware notifications check completed successfully')
+    // Process daily email notifications that were created
+    const { data: emailNotifications, error: fetchError } = await supabaseClient
+      .from('notifications')
+      .select('user_id')
+      .eq('type', 'daily_email')
+      .gte('created_at', new Date(Date.now() - 5 * 60 * 1000).toISOString()) // Last 5 minutes
+
+    if (fetchError) {
+      console.error('Error fetching email notifications:', fetchError)
+      throw fetchError
+    }
+
+    console.log(`Found ${emailNotifications?.length || 0} daily email notifications to process`)
+
+    // Send daily emails for each user
+    if (emailNotifications && emailNotifications.length > 0) {
+      const uniqueUserIds = [...new Set(emailNotifications.map(n => n.user_id))]
+      
+      for (const userId of uniqueUserIds) {
+        try {
+          console.log('Sending daily email for user:', userId)
+          
+          const { error: emailError } = await supabaseClient.functions.invoke('send-daily-task-email', {
+            body: { user_id: userId }
+          })
+
+          if (emailError) {
+            console.error(`Error sending email to user ${userId}:`, emailError)
+          } else {
+            console.log(`Daily email sent successfully to user ${userId}`)
+          }
+        } catch (error) {
+          console.error(`Failed to send email to user ${userId}:`, error)
+        }
+      }
+    }
+
+    console.log('Timezone-aware notifications and daily emails check completed successfully')
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: 'Timezone-aware notifications processed successfully',
+        message: 'Timezone-aware notifications and daily emails processed successfully',
+        daily_emails_sent: emailNotifications?.length || 0,
         timestamp: new Date().toISOString()
       }),
       { 
