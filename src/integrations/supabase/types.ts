@@ -799,6 +799,8 @@ export type Database = {
           organization_id: string
           priority: string | null
           project_id: string | null
+          scheduled_end: string | null
+          scheduled_start: string | null
           status: string | null
           title: string | null
           updated_at: string | null
@@ -817,6 +819,8 @@ export type Database = {
           organization_id: string
           priority?: string | null
           project_id?: string | null
+          scheduled_end?: string | null
+          scheduled_start?: string | null
           status?: string | null
           title?: string | null
           updated_at?: string | null
@@ -835,6 +839,8 @@ export type Database = {
           organization_id?: string
           priority?: string | null
           project_id?: string | null
+          scheduled_end?: string | null
+          scheduled_start?: string | null
           status?: string | null
           title?: string | null
           updated_at?: string | null

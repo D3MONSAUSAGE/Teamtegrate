@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -18,6 +19,8 @@ const taskFormSchema = z.object({
   assignedToName: z.string().optional(),
   assignedToIds: z.array(z.string()).optional(),
   assignedToNames: z.array(z.string()).optional(),
+  scheduledStart: z.union([z.string(), z.date()]).optional(),
+  scheduledEnd: z.union([z.string(), z.date()]).optional(),
 });
 
 export const useEnhancedTaskForm = (editingTask?: Task, currentProjectId?: string) => {
@@ -46,6 +49,28 @@ export const useEnhancedTaskForm = (editingTask?: Task, currentProjectId?: strin
     }) : ''
   );
 
+  // New scheduled time states
+  const [scheduledStartDate, setScheduledStartDate] = useState<Date | undefined>(
+    editingTask?.scheduledStart ? new Date(editingTask.scheduledStart) : undefined
+  );
+  const [scheduledEndDate, setScheduledEndDate] = useState<Date | undefined>(
+    editingTask?.scheduledEnd ? new Date(editingTask.scheduledEnd) : undefined
+  );
+  const [scheduledStartTime, setScheduledStartTime] = useState<string>(
+    editingTask?.scheduledStart ? new Date(editingTask.scheduledStart).toLocaleTimeString('en-US', {
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit'
+    }) : ''
+  );
+  const [scheduledEndTime, setScheduledEndTime] = useState<string>(
+    editingTask?.scheduledEnd ? new Date(editingTask.scheduledEnd).toLocaleTimeString('en-US', {
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit'
+    }) : ''
+  );
+
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(taskFormSchema),
     defaultValues: {
@@ -59,6 +84,8 @@ export const useEnhancedTaskForm = (editingTask?: Task, currentProjectId?: strin
       assignedToName: editingTask?.assignedToName,
       assignedToIds: editingTask?.assignedToIds || [],
       assignedToNames: editingTask?.assignedToNames || [],
+      scheduledStart: editingTask?.scheduledStart,
+      scheduledEnd: editingTask?.scheduledEnd,
     },
   });
 
@@ -83,6 +110,56 @@ export const useEnhancedTaskForm = (editingTask?: Task, currentProjectId?: strin
       const newDateTime = new Date(deadlineDate);
       newDateTime.setHours(parseInt(hours, 10), parseInt(minutes, 10));
       setValue('deadline', newDateTime);
+    }
+  };
+
+  // Scheduled start handlers
+  const handleScheduledStartDateChange = (date: Date | undefined) => {
+    setScheduledStartDate(date);
+    if (date && scheduledStartTime) {
+      const [hours, minutes] = scheduledStartTime.split(':');
+      const newDateTime = new Date(date);
+      newDateTime.setHours(parseInt(hours, 10), parseInt(minutes, 10));
+      setValue('scheduledStart', newDateTime);
+    } else if (date) {
+      setValue('scheduledStart', date);
+    } else {
+      setValue('scheduledStart', undefined);
+    }
+  };
+
+  const handleScheduledStartTimeChange = (time: string) => {
+    setScheduledStartTime(time);
+    if (scheduledStartDate && time) {
+      const [hours, minutes] = time.split(':');
+      const newDateTime = new Date(scheduledStartDate);
+      newDateTime.setHours(parseInt(hours, 10), parseInt(minutes, 10));
+      setValue('scheduledStart', newDateTime);
+    }
+  };
+
+  // Scheduled end handlers
+  const handleScheduledEndDateChange = (date: Date | undefined) => {
+    setScheduledEndDate(date);
+    if (date && scheduledEndTime) {
+      const [hours, minutes] = scheduledEndTime.split(':');
+      const newDateTime = new Date(date);
+      newDateTime.setHours(parseInt(hours, 10), parseInt(minutes, 10));
+      setValue('scheduledEnd', newDateTime);
+    } else if (date) {
+      setValue('scheduledEnd', date);
+    } else {
+      setValue('scheduledEnd', undefined);
+    }
+  };
+
+  const handleScheduledEndTimeChange = (time: string) => {
+    setScheduledEndTime(time);
+    if (scheduledEndDate && time) {
+      const [hours, minutes] = time.split(':');
+      const newDateTime = new Date(scheduledEndDate);
+      newDateTime.setHours(parseInt(hours, 10), parseInt(minutes, 10));
+      setValue('scheduledEnd', newDateTime);
     }
   };
 
@@ -119,6 +196,20 @@ export const useEnhancedTaskForm = (editingTask?: Task, currentProjectId?: strin
         hour: '2-digit',
         minute: '2-digit'
       }) : '');
+      
+      // Update scheduled time states
+      setScheduledStartDate(editingTask.scheduledStart ? new Date(editingTask.scheduledStart) : undefined);
+      setScheduledEndDate(editingTask.scheduledEnd ? new Date(editingTask.scheduledEnd) : undefined);
+      setScheduledStartTime(editingTask.scheduledStart ? new Date(editingTask.scheduledStart).toLocaleTimeString('en-US', {
+        hour12: false,
+        hour: '2-digit',
+        minute: '2-digit'
+      }) : '');
+      setScheduledEndTime(editingTask.scheduledEnd ? new Date(editingTask.scheduledEnd).toLocaleTimeString('en-US', {
+        hour12: false,
+        hour: '2-digit',
+        minute: '2-digit'
+      }) : '');
     }
   }, [editingTask]);
 
@@ -140,5 +231,14 @@ export const useEnhancedTaskForm = (editingTask?: Task, currentProjectId?: strin
     handleTimeChange,
     handleUserAssignment,
     handleMembersChange,
+    // New scheduled time returns
+    scheduledStartDate,
+    scheduledEndDate,
+    scheduledStartTime,
+    scheduledEndTime,
+    handleScheduledStartDateChange,
+    handleScheduledEndDateChange,
+    handleScheduledStartTimeChange,
+    handleScheduledEndTimeChange,
   };
 };

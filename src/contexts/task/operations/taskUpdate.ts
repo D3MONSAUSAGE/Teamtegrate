@@ -38,6 +38,8 @@ export const updateTask = async (
     if (updates.priority !== undefined) updateData.priority = updates.priority;
     if (updates.status !== undefined) updateData.status = updates.status;
     if (updates.deadline !== undefined) updateData.deadline = updates.deadline.toISOString();
+    if (updates.scheduledStart !== undefined) updateData.scheduled_start = updates.scheduledStart ? updates.scheduledStart.toISOString() : null;
+    if (updates.scheduledEnd !== undefined) updateData.scheduled_end = updates.scheduledEnd ? updates.scheduledEnd.toISOString() : null;
     if (updates.projectId !== undefined) updateData.project_id = updates.projectId;
     if (updates.cost !== undefined) updateData.cost = updates.cost;
     
@@ -97,6 +99,8 @@ export const updateTask = async (
             priority: (updatedTask.priority as 'Low' | 'Medium' | 'High') || 'Medium',
             status: (updatedTask.status as 'To Do' | 'In Progress' | 'Completed') || 'To Do',
             deadline: new Date(updatedTask.deadline || updatedTask.updated_at),
+            scheduledStart: updatedTask.scheduled_start ? new Date(updatedTask.scheduled_start) : undefined,
+            scheduledEnd: updatedTask.scheduled_end ? new Date(updatedTask.scheduled_end) : undefined,
             projectId: updatedTask.project_id,
             assignedToId: updatedTask.assigned_to_id || undefined,
             assignedToName: updatedTask.assigned_to_names?.[0] || undefined,

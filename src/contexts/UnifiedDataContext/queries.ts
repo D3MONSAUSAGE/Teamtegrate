@@ -96,6 +96,8 @@ export const useTasksQuery = ({ user, networkStatus, setRequestsInFlight, isRead
             title: task.title || 'Untitled Task',
             description: task.description || '',
             deadline: task.deadline ? new Date(task.deadline) : new Date(),
+            scheduledStart: task.scheduled_start ? new Date(task.scheduled_start) : undefined,
+            scheduledEnd: task.scheduled_end ? new Date(task.scheduled_end) : undefined,
             priority: (task.priority as 'Low' | 'Medium' | 'High') || 'Medium',
             status: (task.status as 'To Do' | 'In Progress' | 'Completed') || 'To Do',
             createdAt: task.created_at ? new Date(task.created_at) : new Date(),

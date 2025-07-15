@@ -15,6 +15,7 @@ import { devLog } from '@/utils/devLogger';
 import { logger } from '@/utils/logger';
 import TaskDetailsCard from './TaskDetailsCard';
 import EnhancedTaskAssignment from './form/assignment/EnhancedTaskAssignment';
+import TaskScheduleSection from './form/TaskScheduleSection';
 import TaskDialogActions from './TaskDialogActions';
 
 interface EnhancedCreateTaskDialogProps {
@@ -45,6 +46,13 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const [deadlineDate, setDeadlineDate] = useState<Date | undefined>(undefined);
   const [timeInput, setTimeInput] = useState('09:00');
+  
+  // New scheduled time states
+  const [scheduledStartDate, setScheduledStartDate] = useState<Date | undefined>(undefined);
+  const [scheduledEndDate, setScheduledEndDate] = useState<Date | undefined>(undefined);
+  const [scheduledStartTime, setScheduledStartTime] = useState('');
+  const [scheduledEndTime, setScheduledEndTime] = useState('');
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm({
@@ -77,6 +85,16 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
       setDeadlineDate(new Date(editingTask.deadline));
       setTimeInput(format(new Date(editingTask.deadline), 'HH:mm'));
       
+      // Set scheduled times
+      if (editingTask.scheduledStart) {
+        setScheduledStartDate(new Date(editingTask.scheduledStart));
+        setScheduledStartTime(format(new Date(editingTask.scheduledStart), 'HH:mm'));
+      }
+      if (editingTask.scheduledEnd) {
+        setScheduledEndDate(new Date(editingTask.scheduledEnd));
+        setScheduledEndTime(format(new Date(editingTask.scheduledEnd), 'HH:mm'));
+      }
+      
       // Set assigned users based on assignment type
       if (editingTask.assignedToIds && editingTask.assignedToIds.length > 0) {
         setSelectedMembers(editingTask.assignedToIds);
@@ -94,6 +112,10 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
       setSelectedMembers([]);
       setDeadlineDate(undefined);
       setTimeInput('09:00');
+      setScheduledStartDate(undefined);
+      setScheduledEndDate(undefined);
+      setScheduledStartTime('');
+      setScheduledEndTime('');
     }
   }, [editingTask, open, users, form, currentProjectId]);
 
@@ -113,6 +135,23 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
     setTimeInput(time);
   };
 
+  // Scheduled time handlers
+  const handleScheduledStartDateChange = (date: Date | undefined) => {
+    setScheduledStartDate(date);
+  };
+
+  const handleScheduledEndDateChange = (date: Date | undefined) => {
+    setScheduledEndDate(date);
+  };
+
+  const handleScheduledStartTimeChange = (time: string) => {
+    setScheduledStartTime(time);
+  };
+
+  const handleScheduledEndTimeChange = (time: string) => {
+    setScheduledEndTime(time);
+  };
+
   const handleSubmit = async () => {
     if (!deadlineDate) {
       toast.error('Please select a deadline date');
@@ -127,10 +166,30 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
     setIsSubmitting(true);
 
     try {
-      // Combine date and time
+      // Combine date and time for deadline
       const [hours, minutes] = timeInput.split(':');
       const deadline = new Date(deadlineDate);
       deadline.setHours(parseInt(hours, 10), parseInt(minutes, 10));
+
+      // Combine scheduled start date and time if provided
+      let scheduledStart: Date | undefined;
+      if (scheduledStartDate) {
+        scheduledStart = new Date(scheduledStartDate);
+        if (scheduledStartTime) {
+          const [startHours, startMinutes] = scheduledStartTime.split(':');
+          scheduledStart.setHours(parseInt(startHours, 10), parseInt(startMinutes, 10));
+        }
+      }
+
+      // Combine scheduled end date and time if provided
+      let scheduledEnd: Date | undefined;
+      if (scheduledEndDate) {
+        scheduledEnd = new Date(scheduledEndDate);
+        if (scheduledEndTime) {
+          const [endHours, endMinutes] = scheduledEndTime.split(':');
+          scheduledEnd.setHours(parseInt(endHours, 10), parseInt(endMinutes, 10));
+        }
+      }
 
       const formData = form.getValues();
       
@@ -146,6 +205,8 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
       const taskData = {
         ...formData,
         deadline,
+        scheduledStart,
+        scheduledEnd,
         cost: formData.cost ? parseFloat(formData.cost) : 0,
         projectId: formData.projectId === 'none' ? undefined : formData.projectId,
       };
@@ -180,7 +241,7 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[1200px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Target className="h-5 w-5" />
@@ -193,25 +254,40 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
           </DialogTitle>
         </DialogHeader>
         
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 py-4">
-          <TaskDetailsCard
-            form={form}
-            projects={projects}
-            deadlineDate={deadlineDate}
-            timeInput={timeInput}
-            onDateChange={handleDateChange}
-            onTimeChange={handleTimeChange}
-          />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 py-4">
+          <div className="lg:col-span-2 space-y-6">
+            <TaskDetailsCard
+              form={form}
+              projects={projects}
+              deadlineDate={deadlineDate}
+              timeInput={timeInput}
+              onDateChange={handleDateChange}
+              onTimeChange={handleTimeChange}
+            />
+            
+            <TaskScheduleSection
+              scheduledStartDate={scheduledStartDate}
+              scheduledEndDate={scheduledEndDate}
+              scheduledStartTime={scheduledStartTime}
+              scheduledEndTime={scheduledEndTime}
+              onScheduledStartDateChange={handleScheduledStartDateChange}
+              onScheduledEndDateChange={handleScheduledEndDateChange}
+              onScheduledStartTimeChange={handleScheduledStartTimeChange}
+              onScheduledEndTimeChange={handleScheduledEndTimeChange}
+            />
+          </div>
           
-          <EnhancedTaskAssignment
-            selectedMember={selectedMember}
-            selectedMembers={selectedMembers}
-            onAssign={handleAssign}
-            onMembersChange={handleMembersChange}
-            users={users}
-            isLoading={loadingUsers}
-            editingTask={editingTask}
-          />
+          <div className="lg:col-span-1">
+            <EnhancedTaskAssignment
+              selectedMember={selectedMember}
+              selectedMembers={selectedMembers}
+              onAssign={handleAssign}
+              onMembersChange={handleMembersChange}
+              users={users}
+              isLoading={loadingUsers}
+              editingTask={editingTask}
+            />
+          </div>
         </div>
 
         <TaskDialogActions

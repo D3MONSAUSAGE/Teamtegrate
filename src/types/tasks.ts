@@ -18,6 +18,8 @@ export interface Task {
   organizationId: string;
   userId: string;
   comments?: TaskComment[];
+  scheduledStart?: Date;
+  scheduledEnd?: Date;
 }
 
 export type { TaskComment, TaskStatus, TaskPriority };
@@ -33,4 +35,6 @@ export interface TaskFormValues {
   assignedToName?: string;
   assignedToIds?: string[];
   assignedToNames?: string[];
+  scheduledStart?: Date | string;
+  scheduledEnd?: Date | string;
 }
