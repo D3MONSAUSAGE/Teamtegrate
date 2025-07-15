@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { usePersonalTasks } from '@/hooks/usePersonalTasks';
@@ -21,10 +22,10 @@ import ModernSectionCard from '@/components/dashboard/ModernSectionCard';
 import QuickActionsPanel from '@/components/dashboard/QuickActionsPanel';
 import { Clock, FileText, Users, Target, AlertTriangle } from 'lucide-react';
 import { isTaskOverdue } from '@/utils/taskUtils';
+import { calculateDailyScore } from '@/contexts/task/taskMetrics';
 
 const DashboardPage = () => {
   const { user } = useAuth();
-  const { dailyScore } = useTask();
   
   // Use personal tasks hook for refined personal task filtering
   const { tasks: personalTasks, isLoading: tasksLoading, error: tasksError } = usePersonalTasks();
@@ -40,6 +41,11 @@ const DashboardPage = () => {
   
   // Combined loading state
   const isLoading = tasksLoading || projectsLoading;
+  
+  // Calculate personal daily score using only the user's tasks
+  const personalDailyScore = useMemo(() => {
+    return calculateDailyScore(tasks);
+  }, [tasks]);
   
   // Memoize expensive calculations to prevent re-computation on every render
   const { todaysTasks, upcomingTasks, overdueTasks, flatProjects, recentProjects } = useMemo(() => {
@@ -169,7 +175,7 @@ const DashboardPage = () => {
         {/* Interactive Stats Grid */}
         <div className="animate-fade-in delay-100">
           <InteractiveStatsGrid 
-            dailyScore={dailyScore.percentage}
+            dailyScore={personalDailyScore.percentage}
             todaysTasks={todaysTasks}
             upcomingTasks={upcomingTasks}
             overdueTasks={overdueTasks}

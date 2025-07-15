@@ -3,19 +3,22 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { CheckSquare, FolderKanban, Users, Clock } from 'lucide-react';
-import { useTask } from '@/contexts/task';
+import { usePersonalTasks } from '@/hooks/usePersonalTasks';
+import { useProjects } from '@/hooks/useProjects';
 import useTeamMembers from '@/hooks/useTeamMembers';
 import { useAuth } from '@/contexts/AuthContext';
+import { calculateDailyScore } from '@/contexts/task/taskMetrics';
 
 const ProfileStats = () => {
-  const { tasks, projects } = useTask();
   const { user } = useAuth();
-  const { teamMembersPerformance, managerPerformance } = useTeamMembers();
+  const { tasks: personalTasks } = usePersonalTasks();
+  const { projects } = useProjects();
+  const { teamMembersPerformance } = useTeamMembers();
 
   if (!user) return null;
 
-  // Calculate user's personal stats
-  const userTasks = tasks.filter(task => task.userId === user.id || task.assignedToId === user.id);
+  // Use personal tasks only
+  const userTasks = personalTasks;
   const completedTasks = userTasks.filter(task => task.status === 'Completed');
   const completionRate = userTasks.length > 0 ? Math.round((completedTasks.length / userTasks.length) * 100) : 0;
   
@@ -25,7 +28,7 @@ const ProfileStats = () => {
     project.teamMemberIds?.includes(user.id)
   );
 
-  // Tasks due today
+  // Tasks due today - using personal tasks only
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
