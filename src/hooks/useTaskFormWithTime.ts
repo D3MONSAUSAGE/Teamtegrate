@@ -1,9 +1,9 @@
-
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Task, TaskPriority, TaskFormValues } from '@/types/tasks';
+import { Task, TaskPriority } from '@/types';
+import { TaskFormValues } from '@/types/tasks';
 
 const taskFormSchema = z.object({
   title: z.string().min(1, 'Title is required'),
