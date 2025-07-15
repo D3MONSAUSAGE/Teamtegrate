@@ -1,27 +1,6 @@
 
 import { TaskPriority, TaskStatus, TaskComment } from './index';
 
-export interface Task {
-  id: string;
-  title: string;
-  description?: string;
-  status: TaskStatus;
-  priority: TaskPriority;
-  deadline: Date;
-  assignedTo?: string;
-  assignedToIds?: string[];
-  assignedToNames?: string[];
-  createdAt: Date;
-  updatedAt: Date;
-  projectId?: string;
-  cost?: number;
-  organizationId: string;
-  userId: string;
-  comments?: TaskComment[];
-  scheduledStart?: Date;
-  scheduledEnd?: Date;
-}
-
 export type { TaskComment, TaskStatus, TaskPriority };
 
 export interface TaskFormValues {

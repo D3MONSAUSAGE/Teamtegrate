@@ -40,6 +40,8 @@ export interface Task {
   title: string;
   description: string;
   deadline: Date;
+  scheduledStart?: Date;
+  scheduledEnd?: Date;
   priority: TaskPriority;
   status: TaskStatus;
   createdAt: Date;
