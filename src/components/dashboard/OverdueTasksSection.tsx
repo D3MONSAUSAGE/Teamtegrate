@@ -2,6 +2,7 @@
 import React from 'react';
 import { Task } from '@/types';
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 import { Plus, AlertTriangle, Calendar } from 'lucide-react';
 import TaskCard from '@/components/task-card/TaskCard';
 
@@ -17,6 +18,11 @@ const OverdueTasksSection: React.FC<OverdueTasksSectionProps> = ({
   onEditTask
 }) => {
   const hasOverdueTasks = tasks.length > 0;
+  
+  // Calculate completion progress for overdue tasks
+  const completedOverdueTasks = tasks.filter(task => task.status === 'Completed').length;
+  const totalOverdueTasks = tasks.length;
+  const completionPercentage = totalOverdueTasks > 0 ? Math.round((completedOverdueTasks / totalOverdueTasks) * 100) : 0;
 
   return (
     <div className="relative">
@@ -57,6 +63,24 @@ const OverdueTasksSection: React.FC<OverdueTasksSectionProps> = ({
             </Button>
           </div>
         </div>
+
+        {/* Progress Bar for Overdue Tasks */}
+        {hasOverdueTasks && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-red-700 dark:text-red-300 font-medium">
+                Progress on Overdue Tasks
+              </span>
+              <span className="text-red-600 dark:text-red-400">
+                {completedOverdueTasks} of {totalOverdueTasks} completed ({completionPercentage}%)
+              </span>
+            </div>
+            <Progress 
+              value={completionPercentage} 
+              className="h-2 bg-red-100 dark:bg-red-950/30"
+            />
+          </div>
+        )}
 
         {/* Tasks Grid or Empty State */}
         {hasOverdueTasks ? (
