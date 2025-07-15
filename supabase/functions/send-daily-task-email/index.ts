@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { Resend } from "npm:resend@2.0.0"
@@ -38,8 +37,11 @@ serve(async (req) => {
       .single()
 
     if (userError || !user) {
+      console.error('User not found error:', userError)
       throw new Error('User not found')
     }
+
+    console.log('User found:', { name: user.name, email: user.email, timezone: user.timezone })
 
     // Get daily task summary
     const { data: taskSummary, error: summaryError } = await supabaseClient
@@ -55,9 +57,9 @@ serve(async (req) => {
     // Generate email HTML
     const emailHtml = generateEmailTemplate(user, taskSummary)
 
-    // Send email
+    // Send email using verified domain
     const { data: emailData, error: emailError } = await resend.emails.send({
-      from: 'TaskManager <noreply@resend.dev>',
+      from: 'TaskManager <noreply@teamtegrate.com>',
       to: [user.email],
       subject: `Daily Task Summary - ${new Date().toLocaleDateString()}`,
       html: emailHtml,
@@ -74,7 +76,8 @@ serve(async (req) => {
       JSON.stringify({ 
         success: true, 
         message: 'Daily email sent successfully',
-        email_id: emailData.id
+        email_id: emailData.id,
+        recipient: user.email
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
