@@ -1137,6 +1137,8 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
+          daily_email_enabled: boolean | null
+          daily_email_time: string | null
           email: string
           id: string
           name: string
@@ -1147,6 +1149,8 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          daily_email_enabled?: boolean | null
+          daily_email_time?: string | null
           email: string
           id: string
           name: string
@@ -1157,6 +1161,8 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           created_at?: string
+          daily_email_enabled?: boolean | null
+          daily_email_time?: string | null
           email?: string
           id?: string
           name?: string
@@ -1362,6 +1368,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_daily_task_summary: {
+        Args: { target_user_id: string; target_date?: string }
+        Returns: Json
+      }
       get_organization_stats: {
         Args: { org_id: string }
         Returns: Json
@@ -1406,6 +1416,10 @@ export type Database = {
         Args:
           | { table_name: string; action_type: string; record_count: number }
           | { table_name: string; operation: string; user_id: string }
+        Returns: undefined
+      }
+      send_daily_emails_and_reminders: {
+        Args: Record<PropertyKey, never>
         Returns: undefined
       }
       send_reminders: {
