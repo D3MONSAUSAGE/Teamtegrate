@@ -141,8 +141,8 @@ const ProjectNotebookDialog: React.FC<ProjectNotebookDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[90vh] p-0">
-        <DialogHeader className="p-6 pb-0">
+      <DialogContent className="max-w-4xl max-h-[85vh] p-0 overflow-hidden flex flex-col">
+        <DialogHeader className="p-6 pb-4 shrink-0">
           <DialogTitle className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <span>Project Journal - {projectTitle}</span>
@@ -159,19 +159,19 @@ const ProjectNotebookDialog: React.FC<ProjectNotebookDialogProps> = ({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex flex-1 min-h-0">
+        <div className="flex flex-1 min-h-0 overflow-hidden">
           {/* Left Sidebar */}
-          <div className="w-48 border-r bg-muted/30 p-4">
-            <div className="space-y-2">
+          <div className="w-48 border-r bg-muted/30 p-3 shrink-0">
+            <div className="space-y-1">
               {sidebarItems.map((item) => (
                 <Button
                   key={item.id}
                   variant={selectedSidebarItem === item.id ? "secondary" : "ghost"}
                   size="sm"
-                  className="w-full justify-start"
+                  className="w-full justify-start text-xs"
                   onClick={() => setSelectedSidebarItem(item.id)}
                 >
-                  <item.icon className="h-4 w-4 mr-2" />
+                  <item.icon className="h-3 w-3 mr-2" />
                   {item.label}
                   <Badge variant="outline" className="ml-auto text-xs">
                     {item.count}
@@ -182,22 +182,22 @@ const ProjectNotebookDialog: React.FC<ProjectNotebookDialogProps> = ({
           </div>
 
           {/* Main Content */}
-          <div className="flex-1 flex flex-col min-h-0">
+          <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
             {/* Search and Filters */}
-            <div className="p-4 border-b bg-background">
-              <div className="flex gap-3 items-center">
+            <div className="p-3 border-b bg-background shrink-0">
+              <div className="flex gap-2 items-center">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="Search updates..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 h-8"
                   />
                 </div>
                 <Select value={filter.category || 'all'} onValueChange={(value) => setFilter({ ...filter, category: value === 'all' ? undefined : value })}>
-                  <SelectTrigger className="w-36">
-                    <Filter className="h-4 w-4 mr-2" />
+                  <SelectTrigger className="w-32 h-8">
+                    <Filter className="h-3 w-3 mr-1" />
                     <SelectValue placeholder="Category" />
                   </SelectTrigger>
                   <SelectContent>
@@ -213,39 +213,43 @@ const ProjectNotebookDialog: React.FC<ProjectNotebookDialogProps> = ({
             </div>
 
             {/* Updates List */}
-            <ScrollArea className="flex-1 p-4">
-              {loading ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  Loading updates...
+            <div className="flex-1 min-h-0 overflow-hidden">
+              <ScrollArea className="h-full">
+                <div className="p-3">
+                  {loading ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      Loading updates...
+                    </div>
+                  ) : filteredComments.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      {searchQuery || filter.category || selectedSidebarItem !== 'all' 
+                        ? 'No updates match your filters'
+                        : 'No updates yet. Add the first one below!'
+                      }
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {filteredComments.map((comment) => (
+                        <ProjectUpdateItem
+                          key={comment.id}
+                          comment={comment}
+                          onEdit={handleEditComment}
+                          onDelete={handleDeleteComment}
+                          isEditing={editingCommentId === comment.id}
+                          onEditStart={() => setEditingCommentId(comment.id)}
+                          onEditCancel={() => setEditingCommentId(null)}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
-              ) : filteredComments.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  {searchQuery || filter.category || selectedSidebarItem !== 'all' 
-                    ? 'No updates match your filters'
-                    : 'No updates yet. Add the first one below!'
-                  }
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {filteredComments.map((comment) => (
-                    <ProjectUpdateItem
-                      key={comment.id}
-                      comment={comment}
-                      onEdit={handleEditComment}
-                      onDelete={handleDeleteComment}
-                      isEditing={editingCommentId === comment.id}
-                      onEditStart={() => setEditingCommentId(comment.id)}
-                      onEditCancel={() => setEditingCommentId(null)}
-                    />
-                  ))}
-                </div>
-              )}
-            </ScrollArea>
+              </ScrollArea>
+            </div>
 
             <Separator />
 
             {/* Add Update Form */}
-            <div className="p-4">
+            <div className="p-3 shrink-0">
               <ProjectUpdateEditor 
                 onSubmit={handleAddUpdate}
                 placeholder="Share a project update..."
