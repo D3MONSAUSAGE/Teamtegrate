@@ -60,6 +60,15 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
     );
   }
 
+  // Create a wrapper function that converts string to the expected event format
+  const handleSearchChangeWrapper = (query: string) => {
+    // Create a mock event object that matches what handleSearchChange expects
+    const mockEvent = {
+      target: { value: query }
+    } as React.ChangeEvent<HTMLInputElement>;
+    handleSearchChange(mockEvent);
+  };
+
   return (
     <div className="h-full">
       <ProjectTasksContent
@@ -72,7 +81,7 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
         progress={progress}
         teamMembers={teamMembers}
         isLoadingTeamMembers={isLoadingTeamMembers}
-        onSearchChange={handleSearchChange}
+        onSearchChange={handleSearchChangeWrapper}
         onSortByChange={onSortByChange}
         onCreateTask={handleCreateTask}
         onEditTask={handleEditTask}
