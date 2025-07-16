@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { TaskProvider } from '@/contexts/task';
+import AppLayout from '@/components/AppLayout';
 import DashboardPage from '@/pages/DashboardPage';
 import LoginPage from '@/pages/LoginPage';
 import SignupPage from '@/pages/SignupPage';
@@ -22,16 +23,6 @@ import EmployeeDashboard from '@/pages/EmployeeDashboard';
 
 const queryClient = new QueryClient();
 
-const AuthRoutes: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const isAuthenticated = localStorage.getItem('sb-zlfpiovyodiyecdueiig-auth-token');
-  
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-  
-  return <>{children}</>;
-};
-
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -42,19 +33,24 @@ function App() {
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<SignupPage />} />
-              <Route path="/dashboard" element={<AuthRoutes><DashboardPage /></AuthRoutes>} />
-              <Route path="/tasks" element={<AuthRoutes><TasksPage /></AuthRoutes>} />
-              <Route path="/projects" element={<AuthRoutes><ProjectsPage /></AuthRoutes>} />
-              <Route path="/journal" element={<AuthRoutes><JournalPage /></AuthRoutes>} />
-              <Route path="/team" element={<AuthRoutes><TeamPage /></AuthRoutes>} />
-              <Route path="/documents" element={<AuthRoutes><DocumentsPage /></AuthRoutes>} />
-              <Route path="/calendar" element={<AuthRoutes><CalendarPage /></AuthRoutes>} />
-              <Route path="/notifications" element={<AuthRoutes><NotificationsPage /></AuthRoutes>} />
-              <Route path="/settings" element={<AuthRoutes><SettingsPage /></AuthRoutes>} />
-              <Route path="/admin" element={<AuthRoutes><AdminPage /></AuthRoutes>} />
-              <Route path="/profile" element={<AuthRoutes><ProfilePage /></AuthRoutes>} />
-              <Route path="/dashboard/organization/employee/:userId" element={<AuthRoutes><EmployeeDashboard /></AuthRoutes>} />
-              <Route path="/dashboard/organization" element={<AuthRoutes><OrganizationDashboard /></AuthRoutes>} />
+              
+              {/* All authenticated routes go through AppLayout */}
+              <Route path="/*" element={<AppLayout />}>
+                <Route path="dashboard" element={<DashboardPage />} />
+                <Route path="tasks" element={<TasksPage />} />
+                <Route path="projects" element={<ProjectsPage />} />
+                <Route path="journal" element={<JournalPage />} />
+                <Route path="team" element={<TeamPage />} />
+                <Route path="documents" element={<DocumentsPage />} />
+                <Route path="calendar" element={<CalendarPage />} />
+                <Route path="notifications" element={<NotificationsPage />} />
+                <Route path="settings" element={<SettingsPage />} />
+                <Route path="admin" element={<AdminPage />} />
+                <Route path="profile" element={<ProfilePage />} />
+                <Route path="dashboard/organization/employee/:userId" element={<EmployeeDashboard />} />
+                <Route path="dashboard/organization" element={<OrganizationDashboard />} />
+              </Route>
+              
               <Route path="*" element={<div className="min-h-screen flex items-center justify-center"><h1 className="text-2xl">Page Not Found</h1></div>} />
             </Routes>
           </TaskProvider>
