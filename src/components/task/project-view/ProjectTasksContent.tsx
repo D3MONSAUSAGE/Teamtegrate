@@ -84,10 +84,17 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
   // Get project comments for the notebook button
   const { comments } = useProjectComments(project.id);
 
-  // Filter tasks by the view state
-  const filteredTodoTasks = filteredTasks.filter(task => task.status === 'To Do');
-  const filteredInProgressTasks = filteredTasks.filter(task => task.status === 'In Progress');
-  const filteredCompletedTasks = filteredTasks.filter(task => task.status === 'Completed');
+  // Apply search filter to the already filtered tasks
+  const searchFilteredTasks = filteredTasks.filter(task => {
+    if (!searchQuery) return true;
+    return task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+           task.description.toLowerCase().includes(searchQuery.toLowerCase());
+  });
+
+  // Separate filtered tasks by status for passing to ProjectTasksGrid
+  const filteredTodoTasks = searchFilteredTasks.filter(task => task.status === 'To Do');
+  const filteredInProgressTasks = searchFilteredTasks.filter(task => task.status === 'In Progress');
+  const filteredCompletedTasks = searchFilteredTasks.filter(task => task.status === 'Completed');
 
   const handleEditProject = () => {
     if (onEditProject) {
@@ -179,7 +186,7 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
         />
       </div>
 
-      {/* Tasks Display - Grid Layout */}
+      {/* Tasks Display - Uniform Grid Layout */}
       <div className="px-4 sm:px-6 lg:px-8">
         <ProjectTasksGrid
           todoTasks={filteredTodoTasks || []}

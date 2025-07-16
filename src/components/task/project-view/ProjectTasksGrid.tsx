@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { Task, TaskStatus, User } from '@/types';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import TaskCard from '@/components/task-card/TaskCard';
 
 interface ProjectTasksGridProps {
@@ -23,58 +22,32 @@ const ProjectTasksGrid: React.FC<ProjectTasksGridProps> = ({
   teamMembers,
   isLoadingTeamMembers
 }) => {
-  const getStatusColor = (status: TaskStatus) => {
-    switch (status) {
-      case 'To Do':
-        return 'border-yellow-200 bg-yellow-50';
-      case 'In Progress':
-        return 'border-blue-200 bg-blue-50';
-      case 'Completed':
-        return 'border-green-200 bg-green-50';
-      default:
-        return 'border-gray-200 bg-gray-50';
-    }
-  };
+  // Combine all tasks into a single array
+  const allTasks = [...todoTasks, ...inProgressTasks, ...completedTasks];
 
   const handleStatusChange = async (taskId: string, status: TaskStatus) => {
     await onStatusChange(taskId, status);
   };
 
-  const renderTaskColumn = (tasks: Task[], status: TaskStatus, title: string) => (
-    <Card className={`h-fit ${getStatusColor(status)}`}>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg flex items-center justify-between">
-          {title}
-          <span className="text-sm font-normal bg-white px-2 py-1 rounded-full">
-            {tasks.length}
-          </span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3 max-h-[80vh] overflow-y-auto">
-        {tasks.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-4">
-            No {status.toLowerCase()} tasks
-          </p>
-        ) : (
-          tasks.map((task) => (
-            <TaskCard
-              key={task.id}
-              task={task}
-              onEdit={onEditTask}
-              onStatusChange={handleStatusChange}
-              showProjectInfo={false}
-            />
-          ))
-        )}
-      </CardContent>
-    </Card>
-  );
+  if (allTasks.length === 0) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        No tasks in this project yet
+      </div>
+    );
+  }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
-      {renderTaskColumn(todoTasks, 'To Do', 'To Do')}
-      {renderTaskColumn(inProgressTasks, 'In Progress', 'In Progress')}
-      {renderTaskColumn(completedTasks, 'Completed', 'Completed')}
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+      {allTasks.map((task) => (
+        <TaskCard
+          key={task.id}
+          task={task}
+          onEdit={onEditTask}
+          onStatusChange={handleStatusChange}
+          showProjectInfo={false}
+        />
+      ))}
     </div>
   );
 };
