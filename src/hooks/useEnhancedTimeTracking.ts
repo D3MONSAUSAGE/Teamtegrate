@@ -52,20 +52,23 @@ export const useEnhancedTimeTracking = () => {
   const [todayEntries, setTodayEntries] = useState<TimeEntry[]>([]);
   
   const timerRef = useRef<NodeJS.Timeout>();
+  const startTimeRef = useRef<Date | null>(null);
 
-  // Calculate break requirements based on current work time
+  // Calculate break requirements based on current work time - Made more practical for testing
   const getBreakRequirements = useCallback((): BreakRequirements => {
     const totalWorked = sessionState.totalWorkedToday + sessionState.workElapsedMinutes;
     
-    if (totalWorked < 120) { // Less than 2 hours
+    // Allow breaks after 30 minutes for better UX and testing
+    if (totalWorked < 30) {
       return {
         canTakeBreak: false,
         requiresMealBreak: false,
-        complianceMessage: 'Work 2+ hours to earn your first break'
+        complianceMessage: 'Work 30+ minutes to earn your first break'
       };
     }
     
-    if (totalWorked >= 300 && sessionState.totalBreakToday < 30) { // 5+ hours, need meal break
+    // Require meal break after 5+ hours (300 minutes)
+    if (totalWorked >= 300 && sessionState.totalBreakToday < 30) {
       return {
         canTakeBreak: true,
         requiresMealBreak: true,
@@ -74,7 +77,8 @@ export const useEnhancedTimeTracking = () => {
       };
     }
     
-    if (totalWorked >= 240) { // 4+ hours, can take any break
+    // Allow any break after 2+ hours (120 minutes)
+    if (totalWorked >= 120) {
       return {
         canTakeBreak: true,
         requiresMealBreak: false,
@@ -83,12 +87,14 @@ export const useEnhancedTimeTracking = () => {
       };
     }
     
+    // Allow basic breaks after 30 minutes
     return {
       canTakeBreak: true,
       requiresMealBreak: false,
-      suggestedBreakType: 'Coffee'
+      suggestedBreakType: 'Coffee',
+      complianceMessage: 'Short break available'
     };
-  }, [sessionState]);
+  }, [sessionState.totalWorkedToday, sessionState.workElapsedMinutes, sessionState.totalBreakToday]);
 
   // Fetch current session and today's entries
   const fetchCurrentState = useCallback(async () => {
@@ -144,8 +150,8 @@ export const useEnhancedTimeTracking = () => {
       // Determine current state
       if (activeSession) {
         const isBreakSession = activeSession.notes?.toLowerCase().includes('break') || false;
-        const elapsedMs = Date.now() - activeSession.clock_in.getTime();
-        const elapsedMinutes = Math.floor(elapsedMs / 60000);
+        const startTime = activeSession.clock_in;
+        startTimeRef.current = startTime;
 
         setSessionState(prev => ({
           ...prev,
@@ -155,14 +161,13 @@ export const useEnhancedTimeTracking = () => {
             (activeSession.notes?.includes('Lunch') ? 'Lunch' : 
              activeSession.notes?.includes('Coffee') ? 'Coffee' : 'Rest') : undefined,
           sessionId: activeSession.id,
-          clockInTime: isBreakSession ? undefined : activeSession.clock_in,
-          breakStartTime: isBreakSession ? activeSession.clock_in : undefined,
-          workElapsedMinutes: isBreakSession ? 0 : elapsedMinutes,
-          breakElapsedMinutes: isBreakSession ? elapsedMinutes : 0,
+          clockInTime: isBreakSession ? undefined : startTime,
+          breakStartTime: isBreakSession ? startTime : undefined,
           totalWorkedToday: totalWorked,
           totalBreakToday: totalBreak,
         }));
       } else {
+        startTimeRef.current = null;
         setSessionState(prev => ({
           ...prev,
           isActive: false,
@@ -225,7 +230,7 @@ export const useEnhancedTimeTracking = () => {
         .from('time_entries')
         .update({ 
           clock_out: new Date().toISOString(),
-          notes: notes || sessionState.isOnBreak ? `${sessionState.breakType} break` : 'Work session'
+          notes: notes || (sessionState.isOnBreak ? `${sessionState.breakType} break` : 'Work session')
         })
         .eq('id', sessionState.sessionId);
 
@@ -245,6 +250,8 @@ export const useEnhancedTimeTracking = () => {
   // Start a break
   const startBreak = useCallback(async (breakType: 'Coffee' | 'Lunch' | 'Rest') => {
     if (!sessionState.isActive || isLoading) return;
+
+    console.log('Starting break:', breakType, 'Current state:', sessionState);
 
     try {
       setIsLoading(true);
@@ -322,27 +329,29 @@ export const useEnhancedTimeTracking = () => {
     }
   }, [sessionState.isOnBreak, sessionState.sessionId, sessionState.breakType, user, isLoading, fetchCurrentState]);
 
-  // Real-time timer updates
+  // Fixed real-time timer updates
   useEffect(() => {
-    if (sessionState.isActive || sessionState.isOnBreak) {
+    // Clear any existing timer
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+
+    // Only start timer if we have an active session and a start time
+    if ((sessionState.isActive || sessionState.isOnBreak) && startTimeRef.current) {
       timerRef.current = setInterval(() => {
+        const now = Date.now();
+        const startTime = startTimeRef.current!.getTime();
+        const elapsedMinutes = Math.floor((now - startTime) / 60000);
+
         setSessionState(prev => {
-          if (prev.isActive && prev.clockInTime) {
-            const elapsedMs = Date.now() - prev.clockInTime.getTime();
-            const elapsedMinutes = Math.floor(elapsedMs / 60000);
+          if (prev.isActive) {
             return { ...prev, workElapsedMinutes: elapsedMinutes };
-          } else if (prev.isOnBreak && prev.breakStartTime) {
-            const elapsedMs = Date.now() - prev.breakStartTime.getTime();
-            const elapsedMinutes = Math.floor(elapsedMs / 60000);
+          } else if (prev.isOnBreak) {
             return { ...prev, breakElapsedMinutes: elapsedMinutes };
           }
           return prev;
         });
-      }, 1000);
-    } else {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
+      }, 1000); // Update every second for real-time feel
     }
 
     return () => {
@@ -350,7 +359,7 @@ export const useEnhancedTimeTracking = () => {
         clearInterval(timerRef.current);
       }
     };
-  }, [sessionState.isActive, sessionState.isOnBreak, sessionState.clockInTime, sessionState.breakStartTime]);
+  }, [sessionState.isActive, sessionState.isOnBreak]); // Minimal dependencies to prevent timer restarts
 
   // Initialize on mount
   useEffect(() => {

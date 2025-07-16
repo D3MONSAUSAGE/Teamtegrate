@@ -197,7 +197,10 @@ const EnhancedTimeTracking: React.FC = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => startBreak('Coffee')}
+                      onClick={() => {
+                        console.log('Coffee break clicked, canTakeBreak:', breakRequirements.canTakeBreak);
+                        startBreak('Coffee');
+                      }}
                       disabled={isLoading || !breakRequirements.canTakeBreak}
                       className="justify-start"
                     >
@@ -208,7 +211,10 @@ const EnhancedTimeTracking: React.FC = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => startBreak('Rest')}
+                      onClick={() => {
+                        console.log('Rest break clicked, canTakeBreak:', breakRequirements.canTakeBreak);
+                        startBreak('Rest');
+                      }}
                       disabled={isLoading || !breakRequirements.canTakeBreak}
                       className="justify-start"
                     >
@@ -219,7 +225,10 @@ const EnhancedTimeTracking: React.FC = () => {
                     <Button
                       variant={breakRequirements.requiresMealBreak ? "default" : "outline"}
                       size="sm"
-                      onClick={() => startBreak('Lunch')}
+                      onClick={() => {
+                        console.log('Lunch break clicked, canTakeBreak:', breakRequirements.canTakeBreak);
+                        startBreak('Lunch');
+                      }}
                       disabled={isLoading || !breakRequirements.canTakeBreak}
                       className="justify-start"
                     >
@@ -228,11 +237,17 @@ const EnhancedTimeTracking: React.FC = () => {
                     </Button>
                   </div>
 
-                  {breakRequirements.complianceMessage && (
-                    <div className="text-xs text-muted-foreground p-2 bg-muted/20 rounded">
-                      {breakRequirements.complianceMessage}
+                  {/* Break Requirements Debug Info */}
+                  <div className="text-xs text-muted-foreground p-2 bg-muted/20 rounded">
+                    {breakRequirements.complianceMessage && (
+                      <div className="mb-1">{breakRequirements.complianceMessage}</div>
+                    )}
+                    <div>
+                      Break Status: {breakRequirements.canTakeBreak ? '✅ Available' : '❌ Not Available'} | 
+                      Total Work: {sessionState.totalWorkedToday + sessionState.workElapsedMinutes} min | 
+                      Break Time: {sessionState.totalBreakToday} min
                     </div>
-                  )}
+                  </div>
                 </div>
               )}
             </div>

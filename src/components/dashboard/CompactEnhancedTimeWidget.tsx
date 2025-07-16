@@ -144,7 +144,7 @@ const CompactEnhancedTimeWidget: React.FC = () => {
         )}
 
         {/* Break Controls - Compact version */}
-        {sessionState.isActive && breakRequirements.canTakeBreak && (
+        {sessionState.isActive && (
           <div className="space-y-2">
             {breakRequirements.requiresMealBreak && (
               <Badge variant="destructive" className="w-full text-xs">
@@ -157,8 +157,11 @@ const CompactEnhancedTimeWidget: React.FC = () => {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => startBreak('Coffee')}
-                disabled={isLoading}
+                onClick={() => {
+                  console.log('Coffee break clicked (compact), canTakeBreak:', breakRequirements.canTakeBreak);
+                  startBreak('Coffee');
+                }}
+                disabled={isLoading || !breakRequirements.canTakeBreak}
                 className="text-xs"
               >
                 <Coffee className="mr-1 h-3 w-3" />
@@ -167,14 +170,25 @@ const CompactEnhancedTimeWidget: React.FC = () => {
               <Button
                 variant={breakRequirements.requiresMealBreak ? "default" : "outline"}
                 size="sm"
-                onClick={() => startBreak('Lunch')}
-                disabled={isLoading}
+                onClick={() => {
+                  console.log('Lunch break clicked (compact), canTakeBreak:', breakRequirements.canTakeBreak);
+                  startBreak('Lunch');
+                }}
+                disabled={isLoading || !breakRequirements.canTakeBreak}
                 className="text-xs"
               >
                 <UtensilsCrossed className="mr-1 h-3 w-3" />
                 Lunch
               </Button>
             </div>
+
+            {/* Break Status for debugging */}
+            {process.env.NODE_ENV === 'development' && (
+              <div className="text-xs text-muted-foreground p-1 bg-muted/20 rounded">
+                Break: {breakRequirements.canTakeBreak ? '✅' : '❌'} | 
+                Work: {sessionState.totalWorkedToday + sessionState.workElapsedMinutes}min
+              </div>
+            )}
           </div>
         )}
 
