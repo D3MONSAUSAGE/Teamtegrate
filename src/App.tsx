@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { QueryClient } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/contexts/AuthContext';
 import DashboardPage from '@/pages/DashboardPage';
 import LoginPage from '@/pages/LoginPage';
@@ -8,8 +9,6 @@ import SignupPage from '@/pages/SignupPage';
 import ProfilePage from '@/pages/ProfilePage';
 import OrganizationDashboard from '@/pages/OrganizationDashboard';
 import AdminPage from '@/pages/AdminPage';
-import TaskDetailsPage from '@/pages/TaskDetailsPage';
-import ProjectDetailsPage from '@/pages/ProjectDetailsPage';
 import TasksPage from '@/pages/TasksPage';
 import ProjectsPage from '@/pages/ProjectsPage';
 import JournalPage from '@/pages/JournalPage';
@@ -18,9 +17,9 @@ import DocumentsPage from '@/pages/DocumentsPage';
 import CalendarPage from '@/pages/CalendarPage';
 import NotificationsPage from '@/pages/NotificationsPage';
 import SettingsPage from '@/pages/SettingsPage';
-import NotFoundPage from '@/pages/NotFoundPage';
-import SuperadminDashboard from '@/pages/SuperadminDashboard';
 import EmployeeDashboard from '@/pages/EmployeeDashboard';
+
+const queryClient = new QueryClient();
 
 const AuthRoutes: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const isAuthenticated = localStorage.getItem('sb-zlfpiovyodiyecdueiig-auth-token');
@@ -34,7 +33,7 @@ const AuthRoutes: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
 function App() {
   return (
-    <QueryClient>
+    <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <AuthProvider>
           <Routes>
@@ -43,9 +42,7 @@ function App() {
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/dashboard" element={<AuthRoutes><DashboardPage /></AuthRoutes>} />
             <Route path="/tasks" element={<AuthRoutes><TasksPage /></AuthRoutes>} />
-            <Route path="/tasks/:taskId" element={<AuthRoutes><TaskDetailsPage /></AuthRoutes>} />
             <Route path="/projects" element={<AuthRoutes><ProjectsPage /></AuthRoutes>} />
-            <Route path="/projects/:projectId" element={<AuthRoutes><ProjectDetailsPage /></AuthRoutes>} />
             <Route path="/journal" element={<AuthRoutes><JournalPage /></AuthRoutes>} />
             <Route path="/team" element={<AuthRoutes><TeamPage /></AuthRoutes>} />
             <Route path="/documents" element={<AuthRoutes><DocumentsPage /></AuthRoutes>} />
@@ -53,15 +50,14 @@ function App() {
             <Route path="/notifications" element={<AuthRoutes><NotificationsPage /></AuthRoutes>} />
             <Route path="/settings" element={<AuthRoutes><SettingsPage /></AuthRoutes>} />
             <Route path="/admin" element={<AuthRoutes><AdminPage /></AuthRoutes>} />
-            <Route path="/superadmin" element={<AuthRoutes><SuperadminDashboard /></AuthRoutes>} />
             <Route path="/profile" element={<AuthRoutes><ProfilePage /></AuthRoutes>} />
             <Route path="/dashboard/organization/employee/:userId" element={<AuthRoutes><EmployeeDashboard /></AuthRoutes>} />
             <Route path="/dashboard/organization" element={<AuthRoutes><OrganizationDashboard /></AuthRoutes>} />
-            <Route path="*" element={<NotFoundPage />} />
+            <Route path="*" element={<div className="min-h-screen flex items-center justify-center"><h1 className="text-2xl">Page Not Found</h1></div>} />
           </Routes>
         </AuthProvider>
       </BrowserRouter>
-    </QueryClient>
+    </QueryClientProvider>
   );
 }
 
