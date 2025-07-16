@@ -1,57 +1,67 @@
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { QueryClient } from '@tanstack/react-query';
+import { AuthProvider } from '@/contexts/AuthContext';
+import DashboardPage from '@/pages/DashboardPage';
+import LoginPage from '@/pages/LoginPage';
+import SignupPage from '@/pages/SignupPage';
+import ProfilePage from '@/pages/ProfilePage';
+import OrganizationDashboard from '@/pages/OrganizationDashboard';
+import AdminPage from '@/pages/AdminPage';
+import TaskDetailsPage from '@/pages/TaskDetailsPage';
+import ProjectDetailsPage from '@/pages/ProjectDetailsPage';
+import TasksPage from '@/pages/TasksPage';
+import ProjectsPage from '@/pages/ProjectsPage';
+import JournalPage from '@/pages/JournalPage';
+import TeamPage from '@/pages/TeamPage';
+import DocumentsPage from '@/pages/DocumentsPage';
+import CalendarPage from '@/pages/CalendarPage';
+import NotificationsPage from '@/pages/NotificationsPage';
+import SettingsPage from '@/pages/SettingsPage';
+import NotFoundPage from '@/pages/NotFoundPage';
+import SuperadminDashboard from '@/pages/SuperadminDashboard';
+import EmployeeDashboard from '@/pages/EmployeeDashboard';
 
-import React, { memo } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { AuthProvider } from './contexts/AuthContext'
-import { TaskProvider } from './contexts/task/TaskContext'
-import { ChatProvider } from './contexts/chat/ChatContext'
-import { UnifiedDataProvider } from '@/contexts/UnifiedDataContext';
-import NetworkPerformanceMonitor from '@/components/debug/NetworkPerformanceMonitor';
-import { Toaster } from '@/components/ui/toaster';
-import { BrowserRouter } from 'react-router-dom';
-import OptimizedRouter from '@/routes/OptimizedRouter';
+const AuthRoutes: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const isAuthenticated = localStorage.getItem('sb-zlfpiovyodiyecdueiig-auth-token');
 
-// Optimized query client with better caching strategy
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1, // Reduce retries for faster failure detection
-      refetchOnMount: false,
-      refetchOnWindowFocus: false,
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
-    },
-    mutations: {
-      retry: 1,
-    }
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />;
   }
-});
 
-// Memoized providers to prevent unnecessary re-renders
-const MemoizedProviders = memo(({ children }: { children: React.ReactNode }) => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <UnifiedDataProvider>
-        <TaskProvider>
-          <ChatProvider>
-            {children}
-          </ChatProvider>
-        </TaskProvider>
-      </UnifiedDataProvider>
-    </AuthProvider>
-  </QueryClientProvider>
-));
-
-MemoizedProviders.displayName = 'MemoizedProviders';
+  return <>{children}</>;
+};
 
 function App() {
   return (
-    <MemoizedProviders>
+    <QueryClient>
       <BrowserRouter>
-        <OptimizedRouter />
+        <AuthProvider>
+          <Routes>
+            <Route path="/" element={<Navigate to="/dashboard" />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />
+            <Route path="/dashboard" element={<AuthRoutes><DashboardPage /></AuthRoutes>} />
+            <Route path="/tasks" element={<AuthRoutes><TasksPage /></AuthRoutes>} />
+            <Route path="/tasks/:taskId" element={<AuthRoutes><TaskDetailsPage /></AuthRoutes>} />
+            <Route path="/projects" element={<AuthRoutes><ProjectsPage /></AuthRoutes>} />
+            <Route path="/projects/:projectId" element={<AuthRoutes><ProjectDetailsPage /></AuthRoutes>} />
+            <Route path="/journal" element={<AuthRoutes><JournalPage /></AuthRoutes>} />
+            <Route path="/team" element={<AuthRoutes><TeamPage /></AuthRoutes>} />
+            <Route path="/documents" element={<AuthRoutes><DocumentsPage /></AuthRoutes>} />
+            <Route path="/calendar" element={<AuthRoutes><CalendarPage /></AuthRoutes>} />
+            <Route path="/notifications" element={<AuthRoutes><NotificationsPage /></AuthRoutes>} />
+            <Route path="/settings" element={<AuthRoutes><SettingsPage /></AuthRoutes>} />
+            <Route path="/admin" element={<AuthRoutes><AdminPage /></AuthRoutes>} />
+            <Route path="/superadmin" element={<AuthRoutes><SuperadminDashboard /></AuthRoutes>} />
+            <Route path="/profile" element={<AuthRoutes><ProfilePage /></AuthRoutes>} />
+            <Route path="/dashboard/organization/employee/:userId" element={<AuthRoutes><EmployeeDashboard /></AuthRoutes>} />
+            <Route path="/dashboard/organization" element={<AuthRoutes><OrganizationDashboard /></AuthRoutes>} />
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
-      <NetworkPerformanceMonitor />
-      <Toaster />
-    </MemoizedProviders>
+    </QueryClient>
   );
 }
 

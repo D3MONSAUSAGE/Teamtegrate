@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_access_audit: {
+        Row: {
+          access_type: string
+          accessed_at: string | null
+          admin_user_id: string
+          id: string
+          ip_address: string | null
+          organization_id: string
+          target_user_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          access_type: string
+          accessed_at?: string | null
+          admin_user_id: string
+          id?: string
+          ip_address?: string | null
+          organization_id: string
+          target_user_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          access_type?: string
+          accessed_at?: string | null
+          admin_user_id?: string
+          id?: string
+          ip_address?: string | null
+          organization_id?: string
+          target_user_id?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       chat_attachments: {
         Row: {
           created_at: string
