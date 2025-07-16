@@ -14,7 +14,7 @@ import OverdueTasksSection from '@/components/dashboard/OverdueTasksSection';
 import RecentProjects from '@/components/dashboard/RecentProjects';
 import TeamManagement from '@/components/dashboard/TeamManagement';
 import { useIsMobile } from '@/hooks/use-mobile';
-import TimeTracking from '@/components/dashboard/TimeTracking';
+import EnhancedTimeTracking from '@/components/dashboard/EnhancedTimeTracking';
 import { useTask } from '@/contexts/task';
 import EnhancedDashboardHeader from '@/components/dashboard/EnhancedDashboardHeader';
 import InteractiveStatsGrid from '@/components/dashboard/InteractiveStatsGrid';
@@ -199,16 +199,16 @@ const DashboardPage = () => {
           </ModernSectionCard>
         </div>
 
-        {/* Time Tracking Section */}
+        {/* Enhanced Time Tracking Section */}
         <div className="animate-fade-in delay-300">
           <ModernSectionCard
             title="Time Tracking"
-            subtitle="Track your work hours and view today's activity"
+            subtitle="Track your work hours with break management and compliance monitoring"
             icon={Clock}
             noPadding
           >
-            <div className="p-4">
-              <TimeTracking />
+            <div className="p-6">
+              <EnhancedTimeTracking />
             </div>
           </ModernSectionCard>
         </div>
