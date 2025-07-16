@@ -10,7 +10,7 @@ const LoadingFallback = () => {
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
         <h3 className="text-lg font-semibold text-foreground mb-2">Loading...</h3>
-        <p className="text-muted-foreground">Preparing your experience...</p>
+        <p className="text-muted-foreground">Please wait while we prepare your content</p>
       </div>
     </div>
   );

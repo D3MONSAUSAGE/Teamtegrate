@@ -9,6 +9,7 @@ import { useRoutePreloader } from '@/hooks/useRoutePreloader';
 // Lazy load pages with route-specific fallbacks
 const LandingPage = lazy(() => import('@/pages/LandingPage'));
 const LoginPage = lazy(() => import('@/pages/LoginPage'));
+const SignupPage = lazy(() => import('@/pages/SignupPage'));
 const ResetPasswordPage = lazy(() => import('@/pages/ResetPasswordPage'));
 
 // Dashboard pages with individual suspense boundaries
@@ -33,6 +34,7 @@ const TimelinePage = lazy(() => import('@/pages/TimelinePage'));
 const FocusZonePage = lazy(() => import('@/pages/FocusZonePage'));
 const OrganizationDashboard = lazy(() => import('@/pages/OrganizationDashboard'));
 const AdminPage = lazy(() => import('@/pages/AdminPage'));
+const EmployeeDashboard = lazy(() => import('@/pages/EmployeeDashboard'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 
 // Lightweight page wrapper for individual suspense
@@ -55,6 +57,7 @@ const OptimizedRouter = () => {
     return (
       <>
         <Route path="/login" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/signup" element={<Navigate to="/dashboard" replace />} />
         <Route path="/reset-password" element={<Navigate to="/dashboard" replace />} />
       </>
     );
@@ -66,15 +69,18 @@ const OptimizedRouter = () => {
 
   return (
     <Routes>
+      {/* Root redirect */}
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      
       {/* Public routes with individual suspense */}
-      <Route path="/" element={
-        <PageWrapper>
-          <LandingPage />
-        </PageWrapper>
-      } />
       <Route path="/login" element={
         <PageWrapper>
           <LoginPage />
+        </PageWrapper>
+      } />
+      <Route path="/signup" element={
+        <PageWrapper>
+          <SignupPage />
         </PageWrapper>
       } />
       <Route path="/reset-password" element={
@@ -183,6 +189,11 @@ const OptimizedRouter = () => {
         <Route path="organization" element={
           <PageWrapper>
             <OrganizationDashboard />
+          </PageWrapper>
+        } />
+        <Route path="organization/employee/:userId" element={
+          <PageWrapper>
+            <EmployeeDashboard />
           </PageWrapper>
         } />
         <Route path="admin" element={
