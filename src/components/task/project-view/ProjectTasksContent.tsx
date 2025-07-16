@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import ProjectOverview from './ProjectOverview';
 import ProjectTasksFilters from './ProjectTasksFilters';
-import ProjectTasksTabs from './ProjectTasksTabs';
+import ProjectTasksGrid from './ProjectTasksGrid';
 import ProjectActionToolbar from './ProjectActionToolbar';
 import TeamManagementDialog from './TeamManagementDialog';
 import ViewControlsPanel from './ViewControlsPanel';
@@ -84,7 +84,7 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
   // Get project comments for the notebook button
   const { comments } = useProjectComments(project.id);
 
-  // Filter tasks by the view state - show all tasks including completed
+  // Filter tasks by the view state
   const filteredTodoTasks = filteredTasks.filter(task => task.status === 'To Do');
   const filteredInProgressTasks = filteredTasks.filter(task => task.status === 'In Progress');
   const filteredCompletedTasks = filteredTasks.filter(task => task.status === 'Completed');
@@ -166,7 +166,7 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
         />
       </div>
 
-      {/* Filter Controls positioned right above task tabs */}
+      {/* Filter Controls */}
       <div className="px-4 sm:px-6 lg:px-8">
         <ViewControlsPanel
           sortBy={sortBy || 'deadline'}
@@ -179,14 +179,18 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
         />
       </div>
 
-      {/* Tasks Display - Now with Filtered Data */}
-      <ProjectTasksTabs
-        todoTasks={filteredTodoTasks || []}
-        inProgressTasks={filteredInProgressTasks || []}
-        completedTasks={filteredCompletedTasks || []}
-        onEdit={onEditTask}
-        onStatusChange={onTaskStatusChange}
-      />
+      {/* Tasks Display - Grid Layout */}
+      <div className="px-4 sm:px-6 lg:px-8">
+        <ProjectTasksGrid
+          todoTasks={filteredTodoTasks || []}
+          inProgressTasks={filteredInProgressTasks || []}
+          completedTasks={filteredCompletedTasks || []}
+          onEditTask={onEditTask}
+          onStatusChange={onTaskStatusChange}
+          teamMembers={teamMembers || []}
+          isLoadingTeamMembers={isLoadingTeamMembers}
+        />
+      </div>
 
       {/* Team Management Dialog */}
       <TeamManagementDialog
