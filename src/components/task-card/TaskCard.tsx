@@ -3,7 +3,7 @@ import React from "react";
 import { Card } from "@/components/ui/card";
 import { Task, TaskStatus } from "@/types";
 import { cn } from "@/lib/utils";
-import TaskDetailDrawer from "../task/TaskDetailDrawer";
+import TaskDetailDialog from "../calendar/TaskDetailDialog";
 import TaskCardActions from "./TaskCardActions";
 import TaskCardContent from "./TaskCardContent";
 import { useTaskCard } from "./useTaskCard";
@@ -151,10 +151,11 @@ const TaskCard: React.FC<TaskCardProps> = ({
         )}
       </Card>
       
-      <TaskDetailDrawer
+      <TaskDetailDialog
         open={showDrawer}
         onOpenChange={setShowDrawer}
         task={task}
+        onEdit={onEdit}
       />
     </>
   );

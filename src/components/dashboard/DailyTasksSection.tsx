@@ -6,7 +6,7 @@ import { Task } from '@/types';
 import { Plus, ChevronRight, Calendar } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
-import TaskDetailDrawer from '@/components/task/TaskDetailDrawer';
+import TaskDetailDialog from '@/components/calendar/TaskDetailDialog';
 import { useDebounce } from '@/utils/performanceUtils';
 
 interface DailyTasksSectionProps {
@@ -90,10 +90,11 @@ const DailyTasksSection: React.FC<DailyTasksSectionProps> = ({
         </div>
       )}
       
-      <TaskDetailDrawer
+      <TaskDetailDialog
         open={showDetails}
         onOpenChange={setShowDetails}
         task={selectedTask}
+        onEdit={handleEditTask}
       />
     </div>
   );
