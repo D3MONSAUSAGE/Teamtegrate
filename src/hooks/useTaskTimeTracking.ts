@@ -81,7 +81,7 @@ export const useTaskTimeTracking = () => {
         `)
         .eq('user_id', user.id)
         .is('clock_out', null)
-        .is_not('task_id', null)
+        .not('task_id', 'is', null)
         .maybeSingle();
 
       if (activeError) throw activeError;
@@ -92,8 +92,8 @@ export const useTaskTimeTracking = () => {
         .select('task_id, duration_minutes')
         .eq('user_id', user.id)
         .gte('clock_in', today.toISOString())
-        .is_not('task_id', null)
-        .is_not('clock_out', null);
+        .not('task_id', 'is', null)
+        .not('clock_out', 'is', null);
 
       if (todayError) throw todayError;
 
