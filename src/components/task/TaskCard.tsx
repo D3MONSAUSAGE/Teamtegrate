@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Clock, AlertCircle, User, DollarSign } from 'lucide-react';
+import { Clock, AlertCircle, User } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Task } from '@/types';
@@ -63,19 +63,12 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, className }) => {
       </CardHeader>
 
       <CardContent className="pt-0 space-y-3">
-        {/* Main info row */}
+        {/* Main info row - only showing deadline, no cost */}
         <div className="flex items-center justify-between text-xs text-muted-foreground">
           <div className="flex items-center gap-1">
             <Clock className="h-3 w-3" />
             <span>{new Date(task.deadline).toLocaleDateString()}</span>
           </div>
-          
-          {task.cost && task.cost > 0 && (
-            <div className="flex items-center gap-1">
-              <DollarSign className="h-3 w-3" />
-              <span>${task.cost}</span>
-            </div>
-          )}
         </div>
 
         {/* Timer - minimal integration */}
