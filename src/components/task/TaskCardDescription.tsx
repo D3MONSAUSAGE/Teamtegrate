@@ -8,7 +8,9 @@ interface TaskCardDescriptionProps {
 const TaskCardDescription: React.FC<TaskCardDescriptionProps> = ({ description }) => {
   return (
     <div className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-      {description}
+      {description ? description : (
+        <span className="italic text-muted-foreground/60">No description provided</span>
+      )}
     </div>
   );
 };

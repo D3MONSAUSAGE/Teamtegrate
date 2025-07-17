@@ -37,12 +37,14 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, className }) => {
   return (
     <Card 
       className={cn(
-        "cursor-pointer transition-all duration-300 ease-out relative min-h-[300px] flex flex-col",
-        "bg-gradient-to-br from-card/95 to-card/85 backdrop-blur-sm",
-        "border border-border/60 rounded-xl",
-        "shadow-md hover:shadow-xl",
-        "hover:scale-[1.01] hover:-translate-y-1",
-        "group overflow-hidden",
+        "cursor-pointer relative min-h-[320px] flex flex-col",
+        "border border-border/60 rounded-xl overflow-hidden",
+        "transition-all duration-300 ease-out",
+        "bg-gradient-to-br from-card/98 to-card/90",
+        "backdrop-blur-sm shadow-lg",
+        "hover:shadow-xl hover:shadow-primary/5",
+        "hover:scale-[1.02] hover:-translate-y-1",
+        "group",
         !isOverdue && getPriorityStyles(task.priority),
         isOverdue && [
           "ring-2 ring-red-400/60 shadow-red-100/40 dark:shadow-red-900/30",
@@ -53,15 +55,24 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, className }) => {
       )}
       onClick={onClick}
     >
-      {/* Priority accent line */}
+      {/* Priority indicator - left border */}
       <div className={cn(
-        "absolute top-0 left-0 right-0 h-1 rounded-t-xl",
+        "absolute top-0 bottom-0 left-0 w-1.5",
+        task.priority === 'High' && "bg-gradient-to-b from-red-400 to-red-500",
+        task.priority === 'Medium' && "bg-gradient-to-b from-amber-400 to-amber-500",
+        task.priority === 'Low' && "bg-gradient-to-b from-blue-400 to-blue-500"
+      )} />
+
+      {/* Priority bar on top */}
+      <div className={cn(
+        "absolute top-0 left-0 right-0 h-1",
         task.priority === 'High' && "bg-gradient-to-r from-red-400 to-red-500",
         task.priority === 'Medium' && "bg-gradient-to-r from-amber-400 to-amber-500",
         task.priority === 'Low' && "bg-gradient-to-r from-blue-400 to-blue-500"
       )} />
 
-      <div className="p-6 flex-1 flex flex-col min-h-0 space-y-4">
+      {/* Card content with improved spacing */}
+      <div className="p-5 flex-1 flex flex-col min-h-0 space-y-3.5">
         {/* Header Section */}
         <div className="flex-shrink-0">
           <TaskCardHeader 
@@ -70,8 +81,8 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, className }) => {
           />
         </div>
 
-        {/* Description Section */}
-        <div className="flex-shrink-0">
+        {/* Description Section with visual separation */}
+        <div className="flex-shrink-0 bg-muted/10 rounded-md p-2.5 border-l-2 border-border/30">
           <TaskCardDescription description={task.description} />
         </div>
 
@@ -83,9 +94,13 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, className }) => {
           />
         </div>
         
-        {/* Timer Section */}
+        {/* Timer Section - With improved glass effect */}
         <div className="flex-shrink-0">
-          <div className="bg-muted/30 rounded-lg p-3 border border-border/40">
+          <div className={cn(
+            "bg-muted/20 backdrop-blur-sm rounded-lg p-2.5 border", 
+            "border-border/30 shadow-sm",
+            "hover:border-border/50 hover:shadow-md transition-all duration-300"
+          )}>
             <TaskTimer 
               taskId={task.id}
               taskTitle={task.title}
@@ -96,8 +111,8 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, className }) => {
           </div>
         </div>
 
-        {/* Footer Section */}
-        <div className="flex-shrink-0 pt-2 border-t border-border/40">
+        {/* Footer Section - with subtle divider */}
+        <div className="flex-shrink-0 pt-2.5 mt-1 border-t border-border/30">
           <TaskCardFooter
             status={task.status}
             isOverdue={isOverdue}
@@ -107,10 +122,15 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, className }) => {
         </div>
       </div>
 
-      {/* Overdue indicator */}
+      {/* Redesigned overdue indicator - more integrated with the card */}
       {isOverdue && (
-        <div className="absolute top-4 right-4 z-10">
-          <div className="flex items-center gap-1.5 bg-red-500 text-white px-3 py-1.5 rounded-full shadow-lg text-xs font-semibold animate-pulse">
+        <div className="absolute -top-1 -right-1 z-10">
+          <div className={cn(
+            "flex items-center gap-1.5 bg-red-500/90 text-white",
+            "px-3 py-1.5 rounded-md shadow-lg text-xs font-semibold",
+            "animate-pulse border border-red-400/60",
+            "translate-x-1 -translate-y-1.5 transform -rotate-3"
+          )}>
             <AlertCircle className="w-3 h-3" />
             <span>Overdue</span>
           </div>

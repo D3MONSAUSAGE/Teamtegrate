@@ -90,12 +90,16 @@ const TaskCardFooter: React.FC<TaskCardFooterProps> = ({
         disabled={isUpdating}
       >
         <SelectTrigger className={cn(
-          "w-[140px] h-9 border border-border/50 bg-gradient-to-r from-background/95 to-background/80 rounded-lg hover:border-primary/50 transition-all duration-300 shadow-sm hover:shadow-md",
+          "w-[140px] h-8 border border-border/50 rounded-lg",
+          "bg-gradient-to-r from-background/95 to-background/80",
+          "hover:border-primary/50 transition-all duration-300",
+          "shadow-sm hover:shadow-md",
           isUpdating && "opacity-50 cursor-not-allowed"
         )}>
           <SelectValue>
             <Badge className={cn(
-              "px-3 py-1 text-xs font-medium rounded-md shadow-sm ring-1",
+              "px-3 py-1 text-xs font-medium rounded-md",
+              "shadow-sm ring-1 backdrop-blur-sm",
               "flex items-center gap-2 transition-all duration-300",
               statusConfig.color,
               statusConfig.shadowColor,
@@ -131,17 +135,16 @@ const TaskCardFooter: React.FC<TaskCardFooterProps> = ({
         </SelectContent>
       </Select>
 
-      {/* Enhanced Comments Button */}
+      {/* Enhanced Comments Button with hover effects */}
       {commentCount > 0 && (
         <button
           onClick={onShowComments}
           className={cn(
             "group flex items-center gap-2 px-3 py-1.5 rounded-lg",
-            "bg-background/90",
-            "border border-border/50 shadow-sm hover:shadow-md",
+            "bg-background/90 border border-border/50 shadow-sm",
             "text-sm text-muted-foreground",
-            "hover:text-primary hover:bg-primary/5",
-            "hover:border-primary/30 hover:scale-105 active:scale-95",
+            "hover:text-primary hover:bg-primary/5 hover:border-primary/30",
+            "hover:scale-105 active:scale-95 hover:shadow-md",
             "transition-all duration-300"
           )}
         >

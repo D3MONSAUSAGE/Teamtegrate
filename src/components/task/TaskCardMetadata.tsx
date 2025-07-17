@@ -42,18 +42,22 @@ const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({ task, isOverdue }) 
       {/* First row: Deadline and Cost */}
       <div className="grid grid-cols-2 gap-2">
         <div className={cn(
-          "flex items-center gap-2 text-xs px-2 py-1.5 rounded-md font-medium border",
+          "flex items-center gap-2 text-xs px-2.5 py-1.5 rounded-md font-medium border",
+          "shadow-sm backdrop-blur-sm transition-all duration-300",
           isOverdue 
-            ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/50 dark:text-red-300 dark:border-red-800/50" 
-            : "bg-muted/50 text-muted-foreground border-border/50"
+            ? "bg-red-50/80 text-red-700 border-red-200/70 dark:bg-red-950/60 dark:text-red-300 dark:border-red-800/60" 
+            : "bg-muted/40 text-muted-foreground border-border/40 hover:border-border/60"
         )}>
-          <Clock className="h-3 w-3 flex-shrink-0" />
+          <Clock className="h-3.5 w-3.5 flex-shrink-0" />
           <span className="truncate font-medium">{formatDeadline(new Date(task.deadline))}</span>
         </div>
 
         {shouldShowCost && (
-          <div className="flex items-center gap-2 text-xs bg-green-50 text-green-700 dark:bg-green-950/50 dark:text-green-300 px-2 py-1.5 rounded-md border border-green-200 dark:border-green-800/50 font-medium">
-            <DollarSign className="h-3 w-3 flex-shrink-0" />
+          <div className="flex items-center gap-2 text-xs backdrop-blur-sm shadow-sm
+                          bg-green-50/80 text-green-700 dark:bg-green-950/60 dark:text-green-300 
+                          px-2.5 py-1.5 rounded-md border border-green-200/70 dark:border-green-800/60 font-medium
+                          transition-all duration-300 hover:border-green-300/70 dark:hover:border-green-700/60">
+            <DollarSign className="h-3.5 w-3.5 flex-shrink-0" />
             <span className="truncate font-medium">{task.cost}</span>
           </div>
         )}
@@ -62,8 +66,11 @@ const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({ task, isOverdue }) 
       {/* Second row: Assignment and Project */}
       <div className="space-y-2">
         {(task.assignedToName || task.assignedToNames?.length) && (
-          <div className="flex items-center gap-2 text-xs bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 px-2 py-1.5 rounded-md border border-blue-200 dark:border-blue-800/50 font-medium">
-            <User className="h-3 w-3 flex-shrink-0" />
+          <div className="flex items-center gap-2 text-xs backdrop-blur-sm shadow-sm
+                         bg-blue-50/80 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 
+                         px-2.5 py-1.5 rounded-md border border-blue-200/70 dark:border-blue-800/60 font-medium
+                         transition-all duration-300 hover:border-blue-300/70 dark:hover:border-blue-700/60">
+            <User className="h-3.5 w-3.5 flex-shrink-0" />
             <span className="truncate font-medium">
               {task.assignedToNames?.length > 1 
                 ? `${task.assignedToNames[0]} +${task.assignedToNames.length - 1}`
@@ -74,8 +81,11 @@ const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({ task, isOverdue }) 
         )}
 
         {projectName && (
-          <div className="flex items-center gap-2 text-xs bg-purple-50 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300 px-2 py-1.5 rounded-md border border-purple-200 dark:border-purple-800/50 font-medium">
-            <Building2 className="h-3 w-3 flex-shrink-0" />
+          <div className="flex items-center gap-2 text-xs backdrop-blur-sm shadow-sm
+                         bg-purple-50/80 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 
+                         px-2.5 py-1.5 rounded-md border border-purple-200/70 dark:border-purple-800/60 font-medium
+                         transition-all duration-300 hover:border-purple-300/70 dark:hover:border-purple-700/60">
+            <Building2 className="h-3.5 w-3.5 flex-shrink-0" />
             <span className="truncate font-medium">{projectName}</span>
           </div>
         )}

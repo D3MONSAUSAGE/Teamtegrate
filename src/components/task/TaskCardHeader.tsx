@@ -21,7 +21,7 @@ const TaskCardHeader: React.FC<TaskCardHeaderProps> = ({ title, priority }) => {
   return (
     <div className="flex items-start justify-between gap-3">
       <div className="flex-1 min-w-0">
-        <h3 className="font-semibold text-sm leading-tight text-foreground line-clamp-2 break-words">
+        <h3 className="font-semibold text-base leading-tight text-foreground line-clamp-2 break-words tracking-tight">
           {title}
         </h3>
       </div>
@@ -29,11 +29,16 @@ const TaskCardHeader: React.FC<TaskCardHeaderProps> = ({ title, priority }) => {
         <Badge 
           variant="outline"
           className={cn(
-            "text-xs font-medium px-2 py-0.5 border",
+            "text-xs font-medium px-2.5 py-0.5 border",
+            "shadow-sm transition-all duration-300",
+            "flex items-center gap-1.5",
             getPriorityColor(priority)
           )}
         >
-          {priority}
+          {priority === 'High' && <span className="block w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />}
+          {priority === 'Medium' && <span className="block w-1.5 h-1.5 rounded-full bg-amber-500" />}
+          {priority === 'Low' && <span className="block w-1.5 h-1.5 rounded-full bg-blue-500" />}
+          <span>{priority}</span>
         </Badge>
       </div>
     </div>
