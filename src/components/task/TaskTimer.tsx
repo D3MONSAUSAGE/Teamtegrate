@@ -41,7 +41,8 @@ const TaskTimer: React.FC<TaskTimerProps> = ({
     return `${hours}h ${mins}m`;
   };
 
-  const handleToggleTimer = async () => {
+  const handleToggleTimer = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click
     if (isActive) {
       await stopTaskWork();
     } else {
@@ -49,13 +50,18 @@ const TaskTimer: React.FC<TaskTimerProps> = ({
     }
   };
 
+  // Don't render anything if no active timer and no total time
+  if (!isActive && totalMinutes === 0) {
+    return null;
+  }
+
   if (compact) {
     return (
       <div className={cn("flex items-center gap-2 text-xs", className)}>
         {isActive && (
           <div className="flex items-center gap-1 text-green-600">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-            <span className="font-mono font-medium">
+            <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+            <span className="font-mono font-medium text-xs">
               {formatTime(timerState.elapsedSeconds)}
             </span>
           </div>
@@ -63,8 +69,23 @@ const TaskTimer: React.FC<TaskTimerProps> = ({
         {totalMinutes > 0 && (
           <div className="flex items-center gap-1 text-muted-foreground">
             <Clock className="h-3 w-3" />
-            <span>{formatTotalTime(totalMinutes)}</span>
+            <span className="text-xs">{formatTotalTime(totalMinutes)}</span>
           </div>
+        )}
+        {showControls && (
+          <Button
+            size="sm"
+            variant={isActive ? "destructive" : "outline"}
+            onClick={handleToggleTimer}
+            disabled={isLoading}
+            className="h-6 px-2 text-xs"
+          >
+            {isActive ? (
+              <Square className="h-3 w-3" />
+            ) : (
+              <Play className="h-3 w-3" />
+            )}
+          </Button>
         )}
       </div>
     );

@@ -33,9 +33,15 @@ export const useTaskTimeTracking = () => {
   const [isLoading, setIsLoading] = useState(false);
   const timerRef = useRef<NodeJS.Timeout>();
 
+  // Debug logging
+  useEffect(() => {
+    console.log('🕒 Timer state updated:', timerState);
+  }, [timerState]);
+
   // Start timer updates
   useEffect(() => {
     if (timerState.activeTaskId && timerState.startTime) {
+      console.log('⏰ Starting timer interval for task:', timerState.activeTaskId);
       timerRef.current = setInterval(() => {
         const now = Date.now();
         const startTime = timerState.startTime!.getTime();
@@ -48,6 +54,7 @@ export const useTaskTimeTracking = () => {
       }, 1000);
     } else {
       if (timerRef.current) {
+        console.log('⏹️ Clearing timer interval');
         clearInterval(timerRef.current);
       }
     }
@@ -61,7 +68,12 @@ export const useTaskTimeTracking = () => {
 
   // Fetch current state and today's totals
   const fetchTaskTimeState = useCallback(async () => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      console.log('❌ No user ID for fetching task time state');
+      return;
+    }
+
+    console.log('🔄 Fetching task time state for user:', user.id);
 
     try {
       const today = new Date();
@@ -84,7 +96,12 @@ export const useTaskTimeTracking = () => {
         .not('task_id', 'is', null)
         .maybeSingle();
 
-      if (activeError) throw activeError;
+      if (activeError) {
+        console.error('❌ Error fetching active session:', activeError);
+        throw activeError;
+      }
+
+      console.log('📊 Active session:', activeSession);
 
       // Get today's totals per task
       const { data: todayEntries, error: todayError } = await supabase
@@ -95,7 +112,12 @@ export const useTaskTimeTracking = () => {
         .not('task_id', 'is', null)
         .not('clock_out', 'is', null);
 
-      if (todayError) throw todayError;
+      if (todayError) {
+        console.error('❌ Error fetching today entries:', todayError);
+        throw todayError;
+      }
+
+      console.log('📈 Today entries:', todayEntries);
 
       // Calculate totals
       const totalTimeToday: Record<string, number> = {};
@@ -105,10 +127,18 @@ export const useTaskTimeTracking = () => {
         }
       });
 
+      console.log('📊 Total time today:', totalTimeToday);
+
       // Update state
       if (activeSession) {
         const startTime = new Date(activeSession.clock_in);
         const elapsedSeconds = Math.floor((Date.now() - startTime.getTime()) / 1000);
+        
+        console.log('▶️ Setting active timer state:', {
+          taskId: activeSession.task_id,
+          title: (activeSession.tasks as any)?.title,
+          elapsedSeconds
+        });
         
         setTimerState({
           activeTaskId: activeSession.task_id,
@@ -118,25 +148,32 @@ export const useTaskTimeTracking = () => {
           totalTimeToday
         });
       } else {
+        console.log('⏸️ No active session, setting empty state');
         setTimerState({
           elapsedSeconds: 0,
           totalTimeToday
         });
       }
     } catch (error) {
-      console.error('Error fetching task time state:', error);
+      console.error('❌ Error fetching task time state:', error);
     }
   }, [user?.id]);
 
   // Start working on a task
   const startTaskWork = useCallback(async (taskId: string, taskTitle: string) => {
-    if (!user?.organizationId || isLoading) return;
+    if (!user?.organizationId || isLoading) {
+      console.log('❌ Cannot start task work - no org ID or loading');
+      return;
+    }
+
+    console.log('▶️ Starting work on task:', { taskId, taskTitle });
 
     try {
       setIsLoading(true);
 
       // Stop any existing active session
       if (timerState.activeTaskId) {
+        console.log('⏸️ Stopping existing active session');
         await stopTaskWork();
       }
 
@@ -151,7 +188,12 @@ export const useTaskTimeTracking = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error starting task work:', error);
+        throw error;
+      }
+
+      console.log('✅ Started task work:', data);
 
       const startTime = new Date(data.clock_in);
       setTimerState(prev => ({
@@ -164,7 +206,7 @@ export const useTaskTimeTracking = () => {
 
       toast.success(`Started working on "${taskTitle}"`);
     } catch (error) {
-      console.error('Error starting task work:', error);
+      console.error('❌ Error starting task work:', error);
       toast.error('Failed to start task timer');
     } finally {
       setIsLoading(false);
@@ -173,7 +215,12 @@ export const useTaskTimeTracking = () => {
 
   // Stop working on current task
   const stopTaskWork = useCallback(async () => {
-    if (!timerState.activeTaskId || isLoading) return;
+    if (!timerState.activeTaskId || isLoading) {
+      console.log('❌ Cannot stop task work - no active task or loading');
+      return;
+    }
+
+    console.log('⏹️ Stopping work on task:', timerState.activeTaskId);
 
     try {
       setIsLoading(true);
@@ -187,14 +234,19 @@ export const useTaskTimeTracking = () => {
         .eq('task_id', timerState.activeTaskId)
         .is('clock_out', null);
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error stopping task work:', error);
+        throw error;
+      }
+
+      console.log('✅ Stopped task work');
 
       toast.success(`Stopped working on "${timerState.activeTaskTitle}"`);
       
       // Refresh state to get updated totals
       await fetchTaskTimeState();
     } catch (error) {
-      console.error('Error stopping task work:', error);
+      console.error('❌ Error stopping task work:', error);
       toast.error('Failed to stop task timer');
     } finally {
       setIsLoading(false);
@@ -216,6 +268,7 @@ export const useTaskTimeTracking = () => {
   // Initialize on mount
   useEffect(() => {
     if (user?.id) {
+      console.log('🚀 Initializing task time tracking for user:', user.id);
       fetchTaskTimeState();
     }
   }, [user?.id, fetchTaskTimeState]);
