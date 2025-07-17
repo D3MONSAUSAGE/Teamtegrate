@@ -94,7 +94,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
     <>
       <Card
         className={cn(
-          "group relative cursor-pointer overflow-hidden",
+          "group relative cursor-pointer overflow-hidden h-full flex flex-col",
           // Clean professional card styling
           "bg-card border border-border/50",
           "shadow-sm hover:shadow-md",
@@ -130,8 +130,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
           </div>
         </div>
 
-        {/* Main content */}
-        <div className="p-4 space-y-4">          
+        {/* Main content - takes full height */}
+        <div className="p-4 flex-1 flex flex-col justify-between min-h-0">          
           <TaskCardContent
             task={task}
             handleStatusChange={handleStatusChange}

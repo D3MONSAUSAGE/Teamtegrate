@@ -34,6 +34,7 @@ const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({ task, isOverdue }) 
   };
 
   const projectName = getProjectName();
+  const hasCost = task.cost && task.cost > 0;
 
   return (
     <div className="space-y-3">
@@ -49,10 +50,12 @@ const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({ task, isOverdue }) 
           <span className="truncate font-medium">{formatDeadline(task.deadline)}</span>
         </div>
 
-        <div className="flex items-center gap-2 text-xs bg-green-50 text-green-700 dark:bg-green-950/50 dark:text-green-300 px-2 py-1.5 rounded-md border border-green-200 dark:border-green-800/50 font-medium">
-          <DollarSign className="h-3 w-3 flex-shrink-0" />
-          <span className="truncate font-medium">${task.cost || 0}</span>
-        </div>
+        {hasCost && (
+          <div className="flex items-center gap-2 text-xs bg-green-50 text-green-700 dark:bg-green-950/50 dark:text-green-300 px-2 py-1.5 rounded-md border border-green-200 dark:border-green-800/50 font-medium">
+            <DollarSign className="h-3 w-3 flex-shrink-0" />
+            <span className="truncate font-medium">{task.cost}</span>
+          </div>
+        )}
       </div>
 
       {/* Second row: Assignment and Project */}

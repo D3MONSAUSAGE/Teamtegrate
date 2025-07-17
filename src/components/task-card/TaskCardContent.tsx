@@ -23,26 +23,32 @@ const TaskCardContent: React.FC<TaskCardContentProps> = ({
   const isOverdue = new Date(task.deadline) < new Date() && task.status !== 'Completed';
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col h-full">
       {/* Header with title and priority */}
-      <TaskCardHeader 
-        title={task.title}
-        priority={task.priority}
-      />
+      <div className="flex-shrink-0 mb-3">
+        <TaskCardHeader 
+          title={task.title}
+          priority={task.priority}
+        />
+      </div>
 
       {/* Description section */}
       {task.description && (
-        <TaskCardDescription description={task.description} />
+        <div className="flex-shrink-0 mb-3">
+          <TaskCardDescription description={task.description} />
+        </div>
       )}
 
-      {/* Metadata section */}
-      <TaskCardMetadata 
-        task={task}
-        isOverdue={isOverdue}
-      />
+      {/* Metadata section - takes available space */}
+      <div className="flex-1 mb-3">
+        <TaskCardMetadata 
+          task={task}
+          isOverdue={isOverdue}
+        />
+      </div>
       
       {/* Timer integration */}
-      <div className="flex justify-end">
+      <div className="flex-shrink-0 flex justify-end mb-3">
         <TaskTimer 
           taskId={task.id}
           taskTitle={task.title}
@@ -53,7 +59,7 @@ const TaskCardContent: React.FC<TaskCardContentProps> = ({
       </div>
 
       {/* Footer with status and comments */}
-      <div className="pt-2 border-t border-border/30">
+      <div className="flex-shrink-0 pt-2 border-t border-border/30">
         <TaskCardFooter
           status={task.status}
           isOverdue={isOverdue}
