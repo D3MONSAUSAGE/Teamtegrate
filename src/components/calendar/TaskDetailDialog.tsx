@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Progress } from "@/components/ui/progress";
 import { 
   CalendarIcon, 
   Clock, 
@@ -28,13 +27,16 @@ import {
   Timer,
   Users,
   ArrowRight,
-  Copy,
-  ExternalLink
+  Repeat,
+  ExternalLink,
+  Play
 } from 'lucide-react';
 import TaskCommentForm from "@/components/TaskCommentForm";
 import TaskCommentsList from "@/components/TaskCommentsList";
 import { useTaskDetailUtils } from './task-detail/useTaskDetailUtils';
 import { format, differenceInDays, differenceInHours } from 'date-fns';
+import { useEnhancedTimeTracking } from '@/hooks/useEnhancedTimeTracking';
+import { toast } from 'sonner';
 
 interface TaskDetailDialogProps {
   task: Task | null;
@@ -49,6 +51,7 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
 }) => {
   const { updateTaskStatus } = useTask();
   const [isEditing, setIsEditing] = useState(false);
+  const { clockIn, sessionState } = useEnhancedTimeTracking();
 
   if (!task) return null;
   
@@ -64,12 +67,18 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
     updateTaskStatus(task.id, status);
   };
 
-  const getStatusProgress = (status: string) => {
-    switch(status) {
-      case 'To Do': return 0;
-      case 'In Progress': return 50;
-      case 'Completed': return 100;
-      default: return 0;
+  const handleStartWorking = async () => {
+    try {
+      // First update task status to In Progress
+      await updateTaskStatus(task.id, 'In Progress');
+      
+      // Then start time tracking session
+      await clockIn(`Working on: ${task.title}`);
+      
+      toast.success('Started working on task and began time tracking');
+    } catch (error) {
+      console.error('Error starting work session:', error);
+      toast.error('Failed to start work session');
     }
   };
 
@@ -91,13 +100,12 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
   };
 
   const deadlineInfo = getDeadlineInfo();
-  const statusProgress = getStatusProgress(task.status);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-0">
-        {/* Header */}
-        <DialogHeader className="px-6 py-4 border-b bg-gradient-to-r from-background to-muted/30">
+      <DialogContent className="max-w-4xl h-[85vh] overflow-hidden p-0 flex flex-col">
+        {/* Header - Fixed */}
+        <DialogHeader className="px-6 py-4 border-b bg-gradient-to-r from-background to-muted/30 shrink-0">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 space-y-2">
               <DialogTitle className="text-xl font-semibold pr-8 leading-tight">
@@ -128,31 +136,23 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
               <Edit3 className="h-4 w-4" />
             </Button>
           </div>
-          
-          {/* Progress Bar */}
-          <div className="space-y-1">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Progress</span>
-              <span className="font-medium">{statusProgress}%</span>
-            </div>
-            <Progress value={statusProgress} className="h-2" />
-          </div>
         </DialogHeader>
 
+        {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 p-4">
             {/* Main Content */}
-            <div className="lg:col-span-2 space-y-6">
+            <div className="lg:col-span-2 space-y-4">
               {/* Description */}
               <Card>
-                <CardHeader className="pb-3">
+                <CardHeader className="pb-2">
                   <CardTitle className="text-base flex items-center gap-2">
                     <Edit3 className="h-4 w-4" />
                     Description
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-sm leading-relaxed whitespace-pre-line p-3 rounded-md bg-muted/50 border min-h-[80px]">
+                  <div className="text-sm leading-relaxed whitespace-pre-line p-3 rounded-md bg-muted/50 border min-h-[60px]">
                     {task.description || (
                       <em className="text-muted-foreground">No description provided.</em>
                     )}
@@ -162,43 +162,43 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
 
               {/* Timeline & Details */}
               <Card>
-                <CardHeader className="pb-3">
+                <CardHeader className="pb-2">
                   <CardTitle className="text-base flex items-center gap-2">
                     <Calendar className="h-4 w-4" />
                     Timeline & Details
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 border">
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="flex items-center gap-3 p-2 rounded-lg bg-muted/30 border">
                       <CalendarIcon className="h-4 w-4 text-primary" />
                       <div>
                         <div className="text-xs text-muted-foreground">Due Date</div>
-                        <div className="font-medium">{formatDate(task.deadline)}</div>
+                        <div className="font-medium text-sm">{formatDate(task.deadline)}</div>
                       </div>
                     </div>
                     
-                    <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 border">
+                    <div className="flex items-center gap-3 p-2 rounded-lg bg-muted/30 border">
                       <Clock className="h-4 w-4 text-primary" />
                       <div>
                         <div className="text-xs text-muted-foreground">Due Time</div>
-                        <div className="font-medium">{formatTime(task.deadline)}</div>
+                        <div className="font-medium text-sm">{formatTime(task.deadline)}</div>
                       </div>
                     </div>
                   </div>
 
-                  <div className={`flex items-center gap-2 p-3 rounded-lg border ${
+                  <div className={`flex items-center gap-2 p-2 rounded-lg border ${
                     deadlineInfo.urgent ? 'bg-rose-50 border-rose-200' : 'bg-muted/30'
                   }`}>
                     <Timer className={`h-4 w-4 ${deadlineInfo.color}`} />
-                    <span className={`font-medium ${deadlineInfo.color}`}>
+                    <span className={`font-medium text-sm ${deadlineInfo.color}`}>
                       {deadlineInfo.text}
                     </span>
                   </div>
 
                   {task.cost && (
-                    <div className="flex items-center gap-3 p-3 rounded-lg bg-green-50 border border-green-200">
-                      <div className="text-green-600 font-medium">💰 Cost: ${task.cost}</div>
+                    <div className="flex items-center gap-3 p-2 rounded-lg bg-green-50 border border-green-200">
+                      <div className="text-green-600 font-medium text-sm">💰 Cost: ${task.cost}</div>
                     </div>
                   )}
                 </CardContent>
@@ -206,24 +206,24 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
 
               {/* Comments */}
               <Card>
-                <CardHeader className="pb-3">
+                <CardHeader className="pb-2">
                   <CardTitle className="text-base flex items-center gap-2">
                     <MessageCircle className="h-4 w-4" />
                     Comments ({task.comments?.length || 0})
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-3">
                   {task.comments && task.comments.length > 0 ? (
-                    <div className="max-h-48 overflow-y-auto">
+                    <div className="max-h-32 overflow-y-auto">
                       <TaskCommentsList 
                         taskComments={task.comments} 
-                        className="space-y-3" 
+                        className="space-y-2" 
                       />
                     </div>
                   ) : (
-                    <div className="text-center py-6 text-muted-foreground">
-                      <MessageCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                      <p>No comments yet</p>
+                    <div className="text-center py-4 text-muted-foreground">
+                      <MessageCircle className="h-6 w-6 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">No comments yet</p>
                     </div>
                   )}
                   
@@ -234,10 +234,10 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
             </div>
 
             {/* Sidebar */}
-            <div className="space-y-6">
+            <div className="space-y-4">
               {/* Assignment */}
               <Card>
-                <CardHeader className="pb-3">
+                <CardHeader className="pb-2">
                   <CardTitle className="text-base flex items-center gap-2">
                     <Users className="h-4 w-4" />
                     Assignment
@@ -245,20 +245,20 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
                 </CardHeader>
                 <CardContent>
                   {task.assignedToName ? (
-                    <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/5 border border-primary/20">
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback className="bg-primary/10 text-primary font-medium">
+                    <div className="flex items-center gap-3 p-2 rounded-lg bg-primary/5 border border-primary/20">
+                      <Avatar className="h-6 w-6">
+                        <AvatarFallback className="bg-primary/10 text-primary font-medium text-xs">
                           {task.assignedToName.charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <div className="font-medium">{task.assignedToName}</div>
+                        <div className="font-medium text-sm">{task.assignedToName}</div>
                         <div className="text-xs text-muted-foreground">Assignee</div>
                       </div>
                     </div>
                   ) : (
-                    <div className="text-center py-4 text-muted-foreground">
-                      <User className="h-6 w-6 mx-auto mb-2 opacity-50" />
+                    <div className="text-center py-3 text-muted-foreground">
+                      <User className="h-5 w-5 mx-auto mb-2 opacity-50" />
                       <p className="text-sm">Unassigned</p>
                     </div>
                   )}
@@ -267,7 +267,7 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
 
               {/* Quick Actions */}
               <Card>
-                <CardHeader className="pb-3">
+                <CardHeader className="pb-2">
                   <CardTitle className="text-base">Quick Actions</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -302,13 +302,14 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
 
                     {task.status === 'To Do' && (
                       <Button
-                        onClick={() => handleStatusChange('In Progress')}
+                        onClick={handleStartWorking}
                         variant="outline"
                         className="w-full border-blue-200 text-blue-700 hover:bg-blue-50"
                         size="sm"
+                        disabled={sessionState.isActive}
                       >
-                        <ArrowRight className="h-4 w-4 mr-2" />
-                        Start Working
+                        <Play className="h-4 w-4 mr-2" />
+                        {sessionState.isActive ? 'Already Working' : 'Start Working'}
                       </Button>
                     )}
                   </div>
@@ -322,8 +323,8 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
                     </div>
                     
                     <Button variant="outline" size="sm" className="w-full justify-start">
-                      <Copy className="h-4 w-4 mr-2" />
-                      Duplicate Task
+                      <Repeat className="h-4 w-4 mr-2" />
+                      Make Recurring
                     </Button>
                     
                     <Button variant="outline" size="sm" className="w-full justify-start">
@@ -336,10 +337,10 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
 
               {/* Task Metadata */}
               <Card>
-                <CardHeader className="pb-3">
+                <CardHeader className="pb-2">
                   <CardTitle className="text-base">Task Info</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3 text-sm">
+                <CardContent className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Created</span>
                     <span className="font-medium">
@@ -373,8 +374,8 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="px-6 py-4 border-t bg-muted/20 flex justify-end">
+        {/* Footer - Fixed */}
+        <div className="px-4 py-3 border-t bg-muted/20 flex justify-end shrink-0">
           <Button 
             variant="outline" 
             onClick={() => onOpenChange(false)}
