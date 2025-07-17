@@ -36,7 +36,7 @@ export const mapRawTaskToFlat = (rawTask: RawTaskRow, comments: FlatComment[] = 
     assignedToNames: Array.isArray(rawTask.assigned_to_names) 
       ? rawTask.assigned_to_names.map((name: any) => String(name)) 
       : [],
-    cost: Number(rawTask.cost) || 0,
+    cost: rawTask.cost !== null && rawTask.cost !== undefined ? Number(rawTask.cost) : undefined,
     organizationId: String(rawTask.organization_id || ''),
   };
 };

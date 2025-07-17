@@ -67,7 +67,7 @@ export const updateTask = async (
       priority: updatedTask.priority,
       status: updatedTask.status,
       updated_at: now.toISOString(),
-      cost: updatedTask.cost || 0,
+      cost: updatedTask.cost !== undefined ? updatedTask.cost : null,
       ...assignmentData,
     };
     

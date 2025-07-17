@@ -34,8 +34,8 @@ const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({ task, isOverdue }) 
   };
 
   const projectName = getProjectName();
-  // Show cost box when cost is defined (including 0)
-  const shouldShowCost = task.cost !== null && task.cost !== undefined;
+  // Only show cost box when cost is defined AND greater than 0
+  const shouldShowCost = task.cost !== null && task.cost !== undefined && task.cost > 0;
 
   return (
     <div className="space-y-3">

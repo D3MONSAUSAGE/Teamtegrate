@@ -23,7 +23,7 @@ const TaskCardContent: React.FC<TaskCardContentProps> = ({
   const isOverdue = new Date(task.deadline) < new Date() && task.status !== 'Completed';
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full min-h-[280px]">
       {/* Header with title and priority */}
       <div className="flex-shrink-0 mb-3">
         <TaskCardHeader 
@@ -32,12 +32,14 @@ const TaskCardContent: React.FC<TaskCardContentProps> = ({
         />
       </div>
 
-      {/* Description section */}
-      {task.description && (
-        <div className="flex-shrink-0 mb-3">
+      {/* Description section - always reserve space */}
+      <div className="flex-shrink-0 mb-3 min-h-[40px]">
+        {task.description ? (
           <TaskCardDescription description={task.description} />
-        </div>
-      )}
+        ) : (
+          <div className="text-xs text-muted-foreground/50 italic">No description</div>
+        )}
+      </div>
 
       {/* Metadata section - takes available space */}
       <div className="flex-1 mb-3">
@@ -47,8 +49,8 @@ const TaskCardContent: React.FC<TaskCardContentProps> = ({
         />
       </div>
       
-      {/* Timer integration */}
-      <div className="flex-shrink-0 flex justify-end mb-3">
+      {/* Timer integration - always visible */}
+      <div className="flex-shrink-0 flex justify-end mb-3 min-h-[24px]">
         <TaskTimer 
           taskId={task.id}
           taskTitle={task.title}

@@ -177,7 +177,7 @@ export const fetchTasks = async (
         assignedToNames,
         tags: [],
         comments: taskComments,
-        cost: Number(dbTask.cost) || 0,
+        cost: dbTask.cost !== null && dbTask.cost !== undefined ? Number(dbTask.cost) : undefined,
         organizationId: user.organization_id
       };
     });

@@ -1,4 +1,3 @@
-
 import { Task, Project, User } from '@/types';
 
 // Transform database task to app Task type
@@ -20,7 +19,7 @@ export const transformDbTaskToAppTask = (dbTask: any, user?: { id?: string; orga
     assignedToNames: dbTask.assigned_to_names || [],
     tags: [],
     comments: [],
-    cost: Number(dbTask.cost) || 0,
+    cost: dbTask.cost !== null && dbTask.cost !== undefined ? Number(dbTask.cost) : undefined,
     organizationId: String(dbTask.organization_id || user?.organizationId || '')
   };
 };

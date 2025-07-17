@@ -50,11 +50,6 @@ const TaskTimer: React.FC<TaskTimerProps> = ({
     }
   };
 
-  // Don't render anything if no active timer and no total time
-  if (!isActive && totalMinutes === 0) {
-    return null;
-  }
-
   if (compact) {
     return (
       <div className={cn("flex items-center gap-2 text-xs text-muted-foreground", className)}>
@@ -64,12 +59,10 @@ const TaskTimer: React.FC<TaskTimerProps> = ({
             <span className="font-mono text-xs">{formatTime(timerState.elapsedSeconds)}</span>
           </div>
         )}
-        {totalMinutes > 0 && (
-          <div className="flex items-center gap-1">
-            <Clock className="h-3 w-3" />
-            <span>{formatTotalTime(totalMinutes)}</span>
-          </div>
-        )}
+        <div className="flex items-center gap-1">
+          <Clock className="h-3 w-3" />
+          <span>{totalMinutes > 0 ? formatTotalTime(totalMinutes) : '0m'}</span>
+        </div>
         {showControls && (
           <Button
             size="sm"
@@ -105,11 +98,9 @@ const TaskTimer: React.FC<TaskTimerProps> = ({
           )}
         </div>
         
-        {totalMinutes > 0 && (
-          <div className="text-sm text-muted-foreground">
-            Total today: {formatTotalTime(totalMinutes)}
-          </div>
-        )}
+        <div className="text-sm text-muted-foreground">
+          Total today: {totalMinutes > 0 ? formatTotalTime(totalMinutes) : '0m'}
+        </div>
       </div>
 
       {showControls && (
