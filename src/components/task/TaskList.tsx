@@ -4,7 +4,7 @@ import { Task, TaskStatus } from '@/types';
 import TaskCard from '@/components/task-card';
 import { Button } from "@/components/ui/button";
 import { Plus, Rocket, Sparkles, Shield } from 'lucide-react';
-import TaskDetailDrawer from './TaskDetailDrawer';
+import TaskDetailDialog from '@/components/calendar/TaskDetailDialog';
 
 interface TaskListProps {
   tasks: Task[];
@@ -81,7 +81,7 @@ const TaskList = ({ tasks, onEdit, onNewTask, onStatusChange, emptyMessage = "No
           </div>
         ))}
       </div>
-      <TaskDetailDrawer
+      <TaskDetailDialog
         open={showDetails}
         onOpenChange={setShowDetails}
         task={selectedTask}
