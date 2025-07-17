@@ -5,7 +5,7 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
+:root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
@@ -39,9 +39,15 @@
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    
+    /* Task Card Gradients */
+    --task-gradient-high: linear-gradient(135deg, hsl(0 84% 60% / 0.05), hsl(15 78% 65% / 0.08), hsl(0 84% 60% / 0.03));
+    --task-gradient-medium: linear-gradient(135deg, hsl(43 96% 56% / 0.05), hsl(38 92% 50% / 0.08), hsl(43 96% 56% / 0.03));
+    --task-gradient-low: linear-gradient(135deg, hsl(217 91% 60% / 0.05), hsl(221 83% 53% / 0.08), hsl(217 91% 60% / 0.03));
+    --task-gradient-default: linear-gradient(135deg, hsl(210 40% 96% / 0.4), hsl(220 13% 91% / 0.6), hsl(210 40% 96% / 0.2));
   }
 
-  .dark {
+.dark {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
     --card: 222.2 84% 4.9%;
@@ -74,6 +80,12 @@
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    
+    /* Task Card Gradients - Dark Mode */
+    --task-gradient-high: linear-gradient(135deg, hsl(0 62% 31% / 0.15), hsl(15 70% 40% / 0.2), hsl(0 62% 31% / 0.1));
+    --task-gradient-medium: linear-gradient(135deg, hsl(43 80% 40% / 0.15), hsl(38 75% 35% / 0.2), hsl(43 80% 40% / 0.1));
+    --task-gradient-low: linear-gradient(135deg, hsl(217 91% 60% / 0.15), hsl(221 83% 53% / 0.2), hsl(217 91% 60% / 0.1));
+    --task-gradient-default: linear-gradient(135deg, hsl(217 32% 18% / 0.6), hsl(240 4% 16% / 0.8), hsl(217 32% 18% / 0.4));
   }
 }
 
