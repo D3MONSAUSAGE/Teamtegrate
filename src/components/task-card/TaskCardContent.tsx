@@ -2,6 +2,9 @@
 import React from "react";
 import { Clock, DollarSign, User } from "lucide-react";
 import { Task, TaskStatus } from "@/types";
+import TaskCardHeader from "./TaskCardHeader";
+import TaskCardDescription from "./TaskCardDescription";
+import TaskCardMetadata from "./TaskCardMetadata";
 import TaskCardFooter from "./TaskCardFooter";
 import TaskTimer from "../task/TaskTimer";
 
@@ -21,48 +24,39 @@ const TaskCardContent: React.FC<TaskCardContentProps> = ({
   const isOverdue = new Date(task.deadline) < new Date() && task.status !== 'Completed';
 
   return (
-    <div className="px-4 pb-4 space-y-3 flex-1 flex flex-col">
-      {/* Top info row */}
-      <div className="flex items-center justify-between text-xs text-muted-foreground/80">
-        <div className="flex items-center gap-1">
-          <Clock className="h-3 w-3" />
-          <span className="font-medium">
-            {new Date(task.deadline).toLocaleDateString()}
-          </span>
-        </div>
-        
-        {task.cost && task.cost > 0 && (
-          <div className="flex items-center gap-1">
-            <DollarSign className="h-3 w-3" />
-            <span className="font-medium">${task.cost}</span>
-          </div>
-        )}
-      </div>
+    <div className="flex flex-col h-full space-y-4">
+      {/* Professional header with title and priority */}
+      <TaskCardHeader 
+        title={task.title}
+        priority={task.priority}
+      />
 
-      {/* Timer section - positioned above footer */}
-      <div className="flex justify-end">
-        <TaskTimer 
-          taskId={task.id}
-          taskTitle={task.title}
-          compact={true}
-          showControls={false}
-          className="justify-end"
-        />
-      </div>
-
-      {/* Assignee info */}
-      {(task.assignedToNames && task.assignedToNames.length > 0) && (
-        <div className="flex items-center gap-1 text-xs text-muted-foreground/80">
-          <User className="h-3 w-3" />
-          <span className="truncate font-medium">
-            {task.assignedToNames[0]}
-            {task.assignedToNames.length > 1 && ` +${task.assignedToNames.length - 1}`}
-          </span>
-        </div>
+      {/* Description section */}
+      {task.description && (
+        <TaskCardDescription description={task.description} />
       )}
 
-      {/* Footer with status */}
-      <div className="mt-auto">
+      {/* Metadata section with professional styling */}
+      <div className="space-y-3">
+        <TaskCardMetadata 
+          task={task}
+          isOverdue={isOverdue}
+        />
+        
+        {/* Timer integration - minimal and professional */}
+        <div className="flex justify-end">
+          <TaskTimer 
+            taskId={task.id}
+            taskTitle={task.title}
+            compact={true}
+            showControls={false}
+            className="justify-end"
+          />
+        </div>
+      </div>
+
+      {/* Footer with status and comments - pushed to bottom */}
+      <div className="mt-auto pt-4 border-t border-border/30">
         <TaskCardFooter
           status={task.status}
           isOverdue={isOverdue}
