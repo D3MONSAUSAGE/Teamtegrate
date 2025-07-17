@@ -4,11 +4,13 @@ import { useTask } from '@/contexts/task';
 import { useAuth } from '@/contexts/AuthContext';
 import { Task, User } from '@/types';
 import { toast } from '@/components/ui/sonner';
+import { useQueryClient } from '@tanstack/react-query';
 
 export const useTaskSubmission = () => {
   const { user } = useAuth();
   const { createTask, updateTask } = useTask();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const queryClient = useQueryClient();
 
   const submitTask = async (
     taskData: any,
@@ -34,7 +36,6 @@ export const useTaskSubmission = () => {
 
     console.log('✅ submitTask: User organization check passed');
 
-    // Declare finalTaskData outside try block to make it accessible in catch
     let finalTaskData: any;
 
     try {
@@ -93,6 +94,21 @@ export const useTaskSubmission = () => {
         console.log('✅ submitTask: Task created successfully');
         toast.success('Task created successfully');
       }
+
+      // Invalidate all relevant query caches to ensure dashboard updates
+      console.log('🔄 submitTask: Invalidating query caches');
+      await queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      await queryClient.invalidateQueries({ queryKey: ['personal-tasks'] });
+      await queryClient.invalidateQueries({ queryKey: ['tasks-my-tasks'] });
+      await queryClient.invalidateQueries({ queryKey: ['project-tasks'] });
+      
+      // Invalidate specific user/organization queries
+      await queryClient.invalidateQueries({ 
+        queryKey: ['personal-tasks', user.organizationId, user.id] 
+      });
+      await queryClient.invalidateQueries({ 
+        queryKey: ['tasks-my-tasks', user.organizationId, user.id] 
+      });
 
       console.log('🎉 submitTask: Calling onSuccess callback');
       onSuccess?.();

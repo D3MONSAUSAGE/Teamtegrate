@@ -23,9 +23,13 @@ import QuickActionsPanel from '@/components/dashboard/QuickActionsPanel';
 import { Clock, FileText, Users, Target, AlertTriangle } from 'lucide-react';
 import { isTaskOverdue } from '@/utils/taskUtils';
 import { calculateDailyScore } from '@/contexts/task/taskMetrics';
+import { useTaskRealtime } from '@/hooks/useTaskRealtime';
 
 const DashboardPage = () => {
   const { user } = useAuth();
+  
+  // Add real-time subscription for immediate updates
+  useTaskRealtime();
   
   // Use personal tasks hook for refined personal task filtering
   const { tasks: personalTasks, isLoading: tasksLoading, error: tasksError } = usePersonalTasks();

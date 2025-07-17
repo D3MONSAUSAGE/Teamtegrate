@@ -5,9 +5,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Task } from '@/types';
 import { useMemo } from 'react';
 import { requestManager } from '@/utils/requestManager';
+import { useTaskRealtime } from './useTaskRealtime';
 
 export const usePersonalTasks = () => {
   const { user } = useAuth();
+
+  // Add real-time subscription
+  useTaskRealtime();
 
   const { data: tasks = [], isLoading, error, refetch } = useQuery({
     queryKey: ['personal-tasks', user?.organizationId, user?.id],
@@ -280,4 +284,3 @@ export const usePersonalTasks = () => {
 
   return memoizedResult;
 };
-

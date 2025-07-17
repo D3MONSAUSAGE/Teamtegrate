@@ -40,6 +40,22 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     date: new Date()
   });
 
+  // Helper function to invalidate all task-related caches
+  const invalidateAllTaskCaches = useCallback(async () => {
+    const cacheKeys = [
+      ['tasks'],
+      ['personal-tasks'],
+      ['tasks-my-tasks'],
+      ['project-tasks'],
+      ['personal-tasks', user?.organizationId, user?.id],
+      ['tasks-my-tasks', user?.organizationId, user?.id]
+    ];
+
+    await Promise.all(
+      cacheKeys.map(key => queryClient.invalidateQueries({ queryKey: key }))
+    );
+  }, [queryClient, user?.organizationId, user?.id]);
+
   const fetchTasks = useCallback(async () => {
     if (!user) return;
     setLoading(true);
@@ -91,6 +107,10 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const newTask = await createTaskAPI({ ...task, organizationId: user.organizationId || '' });
       setTasks(prevTasks => [...prevTasks, newTask]);
+      
+      // Invalidate all task-related caches
+      await invalidateAllTaskCaches();
+      
       toast.success('Task created successfully');
       return newTask;
     } catch (err: any) {
@@ -99,7 +119,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, invalidateAllTaskCaches]);
 
   const addTask = useCallback(async (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>): Promise<Task | undefined> => {
     if (!user) return;
@@ -121,6 +141,10 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setTasks(prevTasks =>
         prevTasks.map(t => (t.id === taskId ? { ...t, ...task, updatedAt: new Date() } : t))
       );
+      
+      // Invalidate all task-related caches
+      await invalidateAllTaskCaches();
+      
       toast.success('Task updated successfully');
     } catch (err: any) {
       setError(err.message || 'Failed to update task');
@@ -128,7 +152,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [invalidateAllTaskCaches]);
 
   const deleteTask = useCallback(async (taskId: string) => {
     console.log('🎯 TaskContext.deleteTask called', { taskId });
@@ -145,10 +169,8 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return filteredTasks;
       });
 
-      // Invalidate React Query caches to force UI refresh
-      await queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      await queryClient.invalidateQueries({ queryKey: ['personal-tasks'] });
-      await queryClient.invalidateQueries({ queryKey: ['project-tasks'] });
+      // Invalidate all task-related caches
+      await invalidateAllTaskCaches();
       
       toast.success('Task deleted successfully');
       console.log('✅ TaskContext.deleteTask completed successfully');
@@ -160,7 +182,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } finally {
       setLoading(false);
     }
-  }, [user, queryClient]);
+  }, [user, invalidateAllTaskCaches]);
 
   const updateTaskStatus = useCallback(async (taskId: string, status: Task['status']): Promise<void> => {
     console.log('🎯 TaskContext.updateTaskStatus called', { taskId, status });
@@ -192,10 +214,8 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         )
       );
 
-      // Invalidate React Query caches to force UI refresh
-      await queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      await queryClient.invalidateQueries({ queryKey: ['personal-tasks'] });
-      await queryClient.invalidateQueries({ queryKey: ['project-tasks'] });
+      // Invalidate all task-related caches
+      await invalidateAllTaskCaches();
       
       console.log('✅ TaskContext.updateTaskStatus completed successfully');
     } catch (err: any) {
@@ -206,7 +226,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } finally {
       setLoading(false);
     }
-  }, [user, queryClient]);
+  }, [user, invalidateAllTaskCaches]);
 
   const assignTaskToUser = useCallback(async (taskId: string, userId: string, userName: string) => {
     setLoading(true);
@@ -217,6 +237,10 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
           task.id === taskId ? { ...task, assignedToId: userId, assignedToName: userName, updatedAt: new Date() } : task
         )
       );
+      
+      // Invalidate all task-related caches
+      await invalidateAllTaskCaches();
+      
       toast.success('Task assigned successfully');
     } catch (err: any) {
       setError(err.message || 'Failed to assign task');
@@ -224,7 +248,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [invalidateAllTaskCaches]);
 
   const addCommentToTask = useCallback(async (taskId: string, commentText: string) => {
     if (!user) return;
