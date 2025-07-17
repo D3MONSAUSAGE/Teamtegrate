@@ -78,7 +78,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, className }) => {
           )}
         </div>
 
-        {/* Timer - positioned above the bottom row */}
+        {/* Timer - minimal integration */}
         <TaskTimer 
           taskId={task.id}
           taskTitle={task.title}

@@ -57,19 +57,17 @@ const TaskTimer: React.FC<TaskTimerProps> = ({
 
   if (compact) {
     return (
-      <div className={cn("flex items-center gap-2 text-xs", className)}>
+      <div className={cn("flex items-center gap-2 text-xs text-muted-foreground", className)}>
         {isActive && (
           <div className="flex items-center gap-1 text-green-600">
             <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-            <span className="font-mono font-medium text-xs">
-              {formatTime(timerState.elapsedSeconds)}
-            </span>
+            <span className="font-mono text-xs">{formatTime(timerState.elapsedSeconds)}</span>
           </div>
         )}
         {totalMinutes > 0 && (
-          <div className="flex items-center gap-1 text-muted-foreground">
+          <div className="flex items-center gap-1">
             <Clock className="h-3 w-3" />
-            <span className="text-xs">{formatTotalTime(totalMinutes)}</span>
+            <span>{formatTotalTime(totalMinutes)}</span>
           </div>
         )}
         {showControls && (
@@ -78,13 +76,9 @@ const TaskTimer: React.FC<TaskTimerProps> = ({
             variant={isActive ? "destructive" : "outline"}
             onClick={handleToggleTimer}
             disabled={isLoading}
-            className="h-6 px-2 text-xs"
+            className="h-5 px-1.5 text-xs"
           >
-            {isActive ? (
-              <Square className="h-3 w-3" />
-            ) : (
-              <Play className="h-3 w-3" />
-            )}
+            {isActive ? <Square className="h-2.5 w-2.5" /> : <Play className="h-2.5 w-2.5" />}
           </Button>
         )}
       </div>
@@ -132,7 +126,7 @@ const TaskTimer: React.FC<TaskTimerProps> = ({
               Stop
             </>
           ) : (
-            <>
+            <>  
               <Play className="h-4 w-4" />
               Start
             </>
