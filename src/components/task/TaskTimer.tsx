@@ -54,8 +54,8 @@ const TaskTimer: React.FC<TaskTimerProps> = ({
     return (
       <div className={cn("flex items-center gap-2 text-xs text-muted-foreground", className)}>
         {isActive && (
-          <div className="flex items-center gap-1 text-green-600">
-            <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+          <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
+            <div className="w-1.5 h-1.5 bg-green-500 dark:bg-green-400 rounded-full animate-pulse" />
             <span className="font-mono text-xs">{formatTime(timerState.elapsedSeconds)}</span>
           </div>
         )}
@@ -83,8 +83,8 @@ const TaskTimer: React.FC<TaskTimerProps> = ({
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
           {isActive ? (
-            <div className="flex items-center gap-2 text-green-600">
-              <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
+            <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+              <div className="w-3 h-3 bg-green-500 dark:bg-green-400 rounded-full animate-pulse" />
               <span className="font-mono font-bold text-lg">
                 {formatTime(timerState.elapsedSeconds)}
               </span>

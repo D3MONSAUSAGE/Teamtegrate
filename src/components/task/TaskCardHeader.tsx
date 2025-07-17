@@ -1,9 +1,7 @@
 
 import React from 'react';
-import { CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { Task } from '@/types';
 
 interface TaskCardHeaderProps {
   title: string;
@@ -13,29 +11,32 @@ interface TaskCardHeaderProps {
 const TaskCardHeader: React.FC<TaskCardHeaderProps> = ({ title, priority }) => {
   const getPriorityColor = (priority: string) => {
     switch(priority) {
-      case 'Low': return 'bg-blue-200 dark:bg-blue-800/60 text-blue-800 dark:text-blue-100';
-      case 'Medium': return 'bg-amber-200 dark:bg-amber-800/60 text-amber-800 dark:text-amber-100';
-      case 'High': return 'bg-rose-200 dark:bg-rose-800/60 text-rose-800 dark:text-rose-100';
-      default: return 'bg-blue-200 dark:bg-blue-800/60 text-blue-800 dark:text-blue-100';
+      case 'Low': return 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 border-blue-200 dark:border-blue-800';
+      case 'Medium': return 'bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200 border-amber-200 dark:border-amber-800';
+      case 'High': return 'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-200 border-red-200 dark:border-red-800';
+      default: return 'bg-gray-100 dark:bg-gray-800/40 text-gray-800 dark:text-gray-200 border-gray-200 dark:border-gray-700';
     }
   };
 
   return (
-    <CardHeader className="pb-1 md:pb-2 flex flex-row justify-between items-start">
-      <div className="min-w-0 flex-grow">
-        <CardTitle 
-          className="text-sm md:text-base break-words overflow-wrap-anywhere" 
-          title={title}
-        >
+    <div className="flex items-start justify-between gap-3">
+      <div className="flex-1 min-w-0">
+        <h3 className="font-semibold text-sm leading-tight text-foreground line-clamp-2 break-words">
           {title}
-        </CardTitle>
+        </h3>
       </div>
-      <div className="flex items-center space-x-1 md:space-x-2 flex-shrink-0">
-        <Badge className={cn(getPriorityColor(priority), "text-xs md:text-sm px-1.5 py-0.5")}>
+      <div className="flex-shrink-0">
+        <Badge 
+          variant="outline"
+          className={cn(
+            "text-xs font-medium px-2 py-0.5 border",
+            getPriorityColor(priority)
+          )}
+        >
           {priority}
         </Badge>
       </div>
-    </CardHeader>
+    </div>
   );
 };
 

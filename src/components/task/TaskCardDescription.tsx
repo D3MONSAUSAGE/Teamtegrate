@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React from "react";
 
 interface TaskCardDescriptionProps {
   description: string;
@@ -7,9 +7,9 @@ interface TaskCardDescriptionProps {
 
 const TaskCardDescription: React.FC<TaskCardDescriptionProps> = ({ description }) => {
   return (
-    <p className="text-xs md:text-sm text-gray-600 line-clamp-2">
+    <div className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
       {description}
-    </p>
+    </div>
   );
 };
 
