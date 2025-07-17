@@ -1044,6 +1044,7 @@ export type Database = {
           id: string
           notes: string | null
           organization_id: string
+          task_id: string | null
           user_id: string
         }
         Insert: {
@@ -1054,6 +1055,7 @@ export type Database = {
           id?: string
           notes?: string | null
           organization_id: string
+          task_id?: string | null
           user_id: string
         }
         Update: {
@@ -1064,6 +1066,7 @@ export type Database = {
           id?: string
           notes?: string | null
           organization_id?: string
+          task_id?: string | null
           user_id?: string
         }
         Relationships: [
@@ -1072,6 +1075,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_entries_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
             referencedColumns: ["id"]
           },
         ]
