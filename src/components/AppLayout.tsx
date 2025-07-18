@@ -89,7 +89,6 @@ const AppLayout = memo(() => {
   return (
     <SidebarProvider 
       defaultOpen={!isMobile}
-      collapsedWidth={isMobile ? 0 : 56}
     >
       <div className={`
         min-h-screen bg-gradient-to-br from-background via-muted/20 to-background 
