@@ -6,29 +6,44 @@ import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 import { SidebarProvider, SidebarInset, useSidebar } from '@/components/ui/sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useMobileNavigation } from '@/hooks/useMobileNavigation';
 import { Loader2 } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 
 // Memoized main content component to prevent unnecessary re-renders
 const MainContent = memo(({ children }: { children: React.ReactNode }) => {
-  const { setOpen, isMobile } = useSidebar();
+  const { setOpen, isMobile, setOpenMobile } = useSidebar();
+  const { safeNavigate } = useMobileNavigation();
   const isDesktop = !isMobile;
 
   const handleMainContentClick = () => {
-    // Only auto-collapse on desktop, not mobile
+    // Auto-collapse sidebar when clicking main content
     if (isDesktop) {
       setOpen(false);
+    } else {
+      // Close mobile sidebar if open
+      setOpenMobile(false);
     }
   };
 
   return (
     <SidebarInset 
-      className="flex flex-col flex-1 no-scrollbar overflow-hidden"
+      className={`
+        flex flex-col flex-1 no-scrollbar overflow-hidden
+        ${isMobile ? 'mobile-safe-area' : ''}
+      `}
       onClick={handleMainContentClick}
     >
       <Navbar />
-      <main className="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar smooth-scroll px-6 lg:px-12">
-        <div className="space-y-6 animate-fade-in">
+      <main className={`
+        flex-1 overflow-y-auto overflow-x-hidden no-scrollbar smooth-scroll
+        ${isMobile ? 'px-4 py-4' : 'px-6 lg:px-12'}
+        touch-pan-y
+      `}>
+        <div className={`
+          space-y-6 animate-fade-in
+          ${isMobile ? 'pb-20' : ''} /* Extra bottom padding for mobile */
+        `}>
           {children}
         </div>
       </main>
@@ -40,7 +55,11 @@ MainContent.displayName = 'MainContent';
 
 // Memoized loading component
 const LoadingScreen = memo(() => (
-  <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-muted/30 to-background">
+  <div className={`
+    min-h-screen flex items-center justify-center 
+    bg-gradient-to-br from-background via-muted/30 to-background
+    mobile-safe-area
+  `}>
     <div className="text-center glass-card p-8 rounded-2xl animate-scale-in">
       <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-r from-primary/20 to-accent/20 rounded-full flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -55,6 +74,7 @@ LoadingScreen.displayName = 'LoadingScreen';
 
 const AppLayout = memo(() => {
   const { user, loading, isAuthenticated } = useAuth();
+  const isMobile = useIsMobile();
 
   // Show loading while auth is initializing
   if (loading) {
@@ -67,8 +87,16 @@ const AppLayout = memo(() => {
   }
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background w-full flex mobile-safe-area no-scrollbar overflow-hidden">
+    <SidebarProvider 
+      defaultOpen={!isMobile}
+      collapsedWidth={isMobile ? 0 : 56}
+    >
+      <div className={`
+        min-h-screen bg-gradient-to-br from-background via-muted/20 to-background 
+        w-full flex no-scrollbar overflow-hidden
+        ${isMobile ? 'mobile-safe-area' : 'mobile-safe-area'}
+        touch-manipulation
+      `}>
         <Sidebar />
         
         <MainContent>

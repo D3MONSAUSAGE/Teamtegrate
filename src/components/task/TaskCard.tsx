@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Task } from '@/types';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 import TaskTimer from './TaskTimer';
 import TaskCardHeader from './TaskCardHeader';
 import TaskCardDescription from './TaskCardDescription';
@@ -18,6 +19,7 @@ interface TaskCardProps {
 }
 
 const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, className }) => {
+  const isMobile = useIsMobile();
   const isOverdue = new Date(task.deadline) < new Date() && task.status !== 'Completed';
   const commentCount = task.comments?.length || 0;
   
@@ -37,13 +39,21 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, className }) => {
   return (
     <Card 
       className={cn(
-        "cursor-pointer relative min-h-[320px] flex flex-col",
+        "cursor-pointer relative flex flex-col touch-manipulation",
+        // Mobile-optimized minimum height and padding
+        isMobile ? "min-h-[280px]" : "min-h-[320px]",
         "border border-border/60 rounded-xl overflow-hidden",
         "transition-all duration-300 ease-out",
         "bg-gradient-to-br from-card/98 to-card/90",
         "backdrop-blur-sm shadow-lg",
-        "hover:shadow-xl hover:shadow-primary/5",
-        "hover:scale-[1.02] hover:-translate-y-1",
+        // Mobile-optimized hover and active states
+        isMobile ? [
+          "active:scale-[0.98] active:shadow-md",
+          "touch-manipulation"
+        ] : [
+          "hover:shadow-xl hover:shadow-primary/5",
+          "hover:scale-[1.02] hover:-translate-y-1"
+        ],
         "group",
         !isOverdue && getPriorityStyles(task.priority),
         isOverdue && [
@@ -54,10 +64,14 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, className }) => {
         className
       )}
       onClick={onClick}
+      tabIndex={0}
+      role="button"
+      aria-label={`Open task details for ${task.title}`}
     >
       {/* Priority indicator - left border */}
       <div className={cn(
-        "absolute top-0 bottom-0 left-0 w-1.5",
+        "absolute top-0 bottom-0 left-0",
+        isMobile ? "w-2" : "w-1.5",
         task.priority === 'High' && "bg-gradient-to-b from-red-400 to-red-500",
         task.priority === 'Medium' && "bg-gradient-to-b from-amber-400 to-amber-500",
         task.priority === 'Low' && "bg-gradient-to-b from-blue-400 to-blue-500"
@@ -65,14 +79,18 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, className }) => {
 
       {/* Priority bar on top */}
       <div className={cn(
-        "absolute top-0 left-0 right-0 h-1",
+        "absolute top-0 left-0 right-0",
+        isMobile ? "h-1.5" : "h-1",
         task.priority === 'High' && "bg-gradient-to-r from-red-400 to-red-500",
         task.priority === 'Medium' && "bg-gradient-to-r from-amber-400 to-amber-500",
         task.priority === 'Low' && "bg-gradient-to-r from-blue-400 to-blue-500"
       )} />
 
-      {/* Card content with improved spacing */}
-      <div className="p-5 flex-1 flex flex-col min-h-0 space-y-3.5">
+      {/* Card content with mobile-optimized spacing */}
+      <div className={cn(
+        "flex-1 flex flex-col min-h-0",
+        isMobile ? "p-4 space-y-3" : "p-5 space-y-3.5"
+      )}>
         {/* Header Section */}
         <div className="flex-shrink-0">
           <TaskCardHeader 
@@ -81,8 +99,11 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, className }) => {
           />
         </div>
 
-        {/* Description Section with visual separation */}
-        <div className="flex-shrink-0 bg-muted/10 rounded-md p-2.5 border-l-2 border-border/30">
+        {/* Description Section with mobile-optimized visual separation */}
+        <div className={cn(
+          "flex-shrink-0 bg-muted/10 rounded-md border-l-2 border-border/30",
+          isMobile ? "p-2" : "p-2.5"
+        )}>
           <TaskCardDescription description={task.description} />
         </div>
 
@@ -94,12 +115,17 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, className }) => {
           />
         </div>
         
-        {/* Timer Section - With improved glass effect */}
+        {/* Timer Section - Mobile-optimized */}
         <div className="flex-shrink-0">
           <div className={cn(
-            "bg-muted/20 backdrop-blur-sm rounded-lg p-2.5 border", 
+            "bg-muted/20 backdrop-blur-sm rounded-lg border", 
             "border-border/30 shadow-sm",
-            "hover:border-border/50 hover:shadow-md transition-all duration-300"
+            isMobile ? "p-2" : "p-2.5",
+            isMobile ? [
+              "active:border-border/70 active:shadow-sm transition-all duration-200"
+            ] : [
+              "hover:border-border/50 hover:shadow-md transition-all duration-300"
+            ]
           )}>
             <TaskTimer 
               taskId={task.id}
@@ -111,8 +137,11 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, className }) => {
           </div>
         </div>
 
-        {/* Footer Section - with subtle divider */}
-        <div className="flex-shrink-0 pt-2.5 mt-1 border-t border-border/30">
+        {/* Footer Section - with mobile-optimized divider */}
+        <div className={cn(
+          "flex-shrink-0 border-t border-border/30",
+          isMobile ? "pt-2 mt-1" : "pt-2.5 mt-1"
+        )}>
           <TaskCardFooter
             status={task.status}
             isOverdue={isOverdue}
@@ -122,16 +151,23 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, className }) => {
         </div>
       </div>
 
-      {/* Redesigned overdue indicator - more integrated with the card */}
+      {/* Mobile-optimized overdue indicator */}
       {isOverdue && (
-        <div className="absolute -top-1 -right-1 z-10">
+        <div className={cn(
+          "absolute z-10",
+          isMobile ? "-top-1 -right-1" : "-top-1 -right-1"
+        )}>
           <div className={cn(
             "flex items-center gap-1.5 bg-red-500/90 text-white",
-            "px-3 py-1.5 rounded-md shadow-lg text-xs font-semibold",
-            "animate-pulse border border-red-400/60",
-            "translate-x-1 -translate-y-1.5 transform -rotate-3"
+            "shadow-lg border border-red-400/60",
+            "animate-pulse translate-x-1 -translate-y-1.5 transform -rotate-3",
+            isMobile ? [
+              "px-2.5 py-1 rounded-md text-xs font-semibold"
+            ] : [
+              "px-3 py-1.5 rounded-md text-xs font-semibold"
+            ]
           )}>
-            <AlertCircle className="w-3 h-3" />
+            <AlertCircle className={isMobile ? "w-2.5 h-2.5" : "w-3 h-3"} />
             <span>Overdue</span>
           </div>
         </div>
