@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -40,14 +40,43 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
   onEdit
 }) => {
   const { updateTaskStatus } = useTask();
-  const { timerState, startTaskWork, stopTaskWork, isLoading: timerLoading } = useTaskTimeTracking();
+  const { timerState, startTaskWork, stopTaskWork, isLoading: timerLoading, refreshState } = useTaskTimeTracking();
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [comment, setComment] = useState('');
+
+  // Refresh timer state when dialog opens to ensure we have fresh data
+  useEffect(() => {
+    if (open && task) {
+      console.log('🔄 Dialog opened, refreshing timer state for task:', task.id);
+      refreshState();
+    }
+  }, [open, task?.id, refreshState]);
+
+  // Debug logging for timer state
+  useEffect(() => {
+    if (task && open) {
+      console.log('🐛 TaskDetailDialog state debug:', {
+        taskId: task.id,
+        activeTaskId: timerState.activeTaskId,
+        isActiveTimer: timerState.activeTaskId === task.id,
+        timerState
+      });
+    }
+  }, [task, timerState, open]);
 
   if (!task) return null;
 
   const isOverdue = new Date(task.deadline) < new Date() && task.status !== 'Completed';
   const isActiveTimer = timerState.activeTaskId === task.id;
+  
+  console.log('🎯 Button logic check:', {
+    taskId: task.id,
+    activeTaskId: timerState.activeTaskId,
+    isActiveTimer,
+    taskStatus: task.status,
+    shouldShowStartButton: task.status !== 'In Progress' && !isActiveTimer,
+    shouldShowStopButton: isActiveTimer
+  });
   
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -71,6 +100,8 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
     try {
       setIsUpdatingStatus(true);
       
+      console.log('▶️ Starting work on task:', task.id);
+      
       // Update task status to In Progress if not already
       if (task.status !== 'In Progress') {
         await updateTaskStatus(task.id, 'In Progress');
@@ -78,6 +109,9 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
       
       // Start the task timer
       await startTaskWork(task.id, task.title);
+      
+      // Refresh state to ensure UI updates
+      await refreshState();
       
       toast.success('Started working on task');
     } catch (error) {
@@ -90,7 +124,11 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
 
   const handleStopWorking = async () => {
     try {
+      console.log('⏹️ Stopping work on task:', task.id);
       await stopTaskWork();
+      
+      // Refresh state to ensure UI updates
+      await refreshState();
     } catch (error) {
       console.error('Error stopping work:', error);
     }
@@ -106,6 +144,10 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
       }
       
       await updateTaskStatus(task.id, newStatus);
+      
+      // Refresh state to ensure UI updates
+      await refreshState();
+      
       toast.success(`Task status updated to ${newStatus}`);
     } catch (error) {
       console.error('Error updating task status:', error);
@@ -161,7 +203,8 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
               </div>
               
               <div className="flex gap-2">
-                {task.status !== 'In Progress' && !isActiveTimer && (
+                {/* Show Start Working button only if timer is NOT active for this task */}
+                {!isActiveTimer && (
                   <Button
                     onClick={handleStartWorking}
                     disabled={isUpdatingStatus || timerLoading}
@@ -172,6 +215,7 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
                   </Button>
                 )}
                 
+                {/* Show Stop Working button only if timer IS active for this task */}
                 {isActiveTimer && (
                   <Button
                     variant="destructive"
