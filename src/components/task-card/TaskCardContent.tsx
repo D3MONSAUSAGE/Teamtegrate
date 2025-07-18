@@ -42,21 +42,21 @@ const TaskCardContent: React.FC<TaskCardContentProps> = ({
       </div>
 
       {/* Metadata section - takes available space */}
-      <div className="flex-1 mb-3">
+      <div className="flex-1 mb-4">
         <TaskCardMetadata 
           task={task}
           isOverdue={isOverdue}
         />
       </div>
       
-      {/* Timer integration - always visible */}
-      <div className="flex-shrink-0 flex justify-end mb-3 min-h-[24px]">
+      {/* Enhanced Timer integration - more prominent display */}
+      <div className="flex-shrink-0 mb-4">
         <TaskTimer 
           taskId={task.id}
           taskTitle={task.title}
           compact={true}
-          showControls={false}
-          className="justify-end"
+          showControls={true}
+          className="w-full"
         />
       </div>
 

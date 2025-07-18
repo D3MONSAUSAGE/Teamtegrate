@@ -52,26 +52,56 @@ const TaskTimer: React.FC<TaskTimerProps> = ({
 
   if (compact) {
     return (
-      <div className={cn("flex items-center gap-2 text-xs text-muted-foreground", className)}>
+      <div className={cn(
+        "flex items-center gap-3 text-xs",
+        "bg-gradient-to-r from-slate-50/80 to-slate-100/60 dark:from-slate-900/60 dark:to-slate-800/80",
+        "backdrop-blur-sm border border-slate-200/50 dark:border-slate-700/50",
+        "px-3 py-2 rounded-lg shadow-sm transition-all duration-300",
+        "hover:shadow-md hover:border-slate-300/60 dark:hover:border-slate-600/60",
+        isActive && "ring-2 ring-green-400/30 bg-gradient-to-r from-green-50/80 to-emerald-50/60 dark:from-green-950/60 dark:to-emerald-950/40 border-green-300/50 dark:border-green-700/50",
+        className
+      )}>
+        {/* Active timer display */}
         {isActive && (
-          <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
-            <div className="w-1.5 h-1.5 bg-green-500 dark:bg-green-400 rounded-full animate-pulse" />
-            <span className="font-mono text-xs">{formatTime(timerState.elapsedSeconds)}</span>
+          <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+            <div className="relative">
+              <div className="w-2 h-2 bg-green-500 dark:bg-green-400 rounded-full animate-pulse" />
+              <div className="absolute inset-0 w-2 h-2 bg-green-500/30 dark:bg-green-400/30 rounded-full animate-ping" />
+            </div>
+            <span className="font-mono text-xs font-semibold tracking-wide">
+              {formatTime(timerState.elapsedSeconds)}
+            </span>
           </div>
         )}
-        <div className="flex items-center gap-1">
-          <Clock className="h-3 w-3" />
-          <span>{totalMinutes > 0 ? formatTotalTime(totalMinutes) : '0m'}</span>
+        
+        {/* Total time display */}
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Clock className="h-3.5 w-3.5 flex-shrink-0" />
+          <span className="font-medium">
+            {totalMinutes > 0 ? formatTotalTime(totalMinutes) : '0m'}
+          </span>
         </div>
+        
+        {/* Control button */}
         {showControls && (
           <Button
             size="sm"
             variant={isActive ? "destructive" : "outline"}
             onClick={handleToggleTimer}
             disabled={isLoading}
-            className="h-5 px-1.5 text-xs"
+            className={cn(
+              "h-6 px-2 text-xs font-semibold transition-all duration-300",
+              "hover:scale-105 active:scale-95",
+              isActive 
+                ? "bg-red-500/90 hover:bg-red-600/90 text-white shadow-md hover:shadow-lg" 
+                : "bg-gradient-to-r from-blue-500/90 to-blue-600/90 hover:from-blue-600/90 hover:to-blue-700/90 text-white border-0 shadow-md hover:shadow-lg"
+            )}
           >
-            {isActive ? <Square className="h-2.5 w-2.5" /> : <Play className="h-2.5 w-2.5" />}
+            {isActive ? (
+              <Square className="h-3 w-3" />
+            ) : (
+              <Play className="h-3 w-3" />
+            )}
           </Button>
         )}
       </div>
