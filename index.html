@@ -3,7 +3,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
     <title>Teamtegrate - Team Collaboration Platform</title>
     <meta name="description" content="Transform your team's productivity with Teamtegrate - the all-in-one team management platform that streamlines collaboration and boosts efficiency" />
     <meta name="author" content="Teamtegrate" />
@@ -65,10 +65,14 @@
         user-select: text;
       }
       
-      /* Improved mobile scrolling */
+      /* Improved mobile scrolling and font rendering */
       html {
         height: 100%;
         -webkit-text-size-adjust: 100%;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        text-rendering: optimizeLegibility;
+        font-smooth: always;
         scroll-behavior: smooth;
       }
       
@@ -80,6 +84,10 @@
         overscroll-behavior-y: none;
         background-color: white;
         transition: background-color 0.3s ease;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
       }
       
       /* Dark mode body background */
@@ -91,6 +99,8 @@
         min-height: 100vh;
         width: 100%;
         overflow-x: hidden;
+        transform: translateZ(0);
+        -webkit-transform: translateZ(0);
       }
       
       /* Mobile-specific optimizations */
@@ -116,9 +126,24 @@
           justify-content: center;
         }
         
-        /* Prevent zoom on input focus */
+        /* Prevent zoom on input focus and improve rendering */
         input, select, textarea {
           font-size: 16px;
+          -webkit-font-smoothing: antialiased;
+          -webkit-appearance: none;
+        }
+      }
+      
+      /* High-DPI display optimizations */
+      @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+        * {
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+        }
+        
+        img, svg {
+          image-rendering: -webkit-optimize-contrast;
+          image-rendering: crisp-edges;
         }
       }
       
@@ -135,6 +160,15 @@
       .loading {
         pointer-events: none;
         opacity: 0.7;
+      }
+      
+      /* Hardware acceleration for common elements */
+      .hardware-accelerated {
+        transform: translate3d(0, 0, 0);
+        -webkit-transform: translate3d(0, 0, 0);
+        will-change: transform;
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
       }
     </style>
   </head>

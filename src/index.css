@@ -105,8 +105,22 @@
   * {
     @apply border-border;
   }
+  
   body {
     @apply bg-background text-foreground;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    font-smooth: always;
+    font-feature-settings: "kern" 1;
+    font-kerning: normal;
+  }
+  
+  /* Enhanced font rendering for all text elements */
+  h1, h2, h3, h4, h5, h6, p, span, div, a, button {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
   
   /* Mobile safe area support */
@@ -115,6 +129,15 @@
     padding-bottom: var(--mobile-safe-bottom);
     padding-left: var(--mobile-safe-left);
     padding-right: var(--mobile-safe-right);
+  }
+  
+  /* Hardware acceleration for common UI elements */
+  .card, .button, [role="button"], .dialog-content, .popover-content {
+    transform: translate3d(0, 0, 0);
+    -webkit-transform: translate3d(0, 0, 0);
+    will-change: transform;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
   }
 }
 
@@ -189,6 +212,40 @@ body::-webkit-scrollbar {
   touch-action: pan-x;
 }
 
+/* High-DPI display optimizations */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  * {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-smooth: always;
+  }
+  
+  img, svg, canvas {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+    image-rendering: pixelated;
+  }
+  
+  /* Ensure icons render crisp on high-DPI screens */
+  .lucide-icon, [data-lucide] {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+}
+
+/* Android-specific optimizations */
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+  body {
+    -webkit-optimize-contrast: optimizeSpeed;
+    image-rendering: -webkit-optimize-contrast;
+  }
+  
+  * {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+  }
+}
+
 /* Mobile-specific utility classes */
 @media (max-width: 768px) {
   .mobile-grid-1 {
@@ -226,6 +283,14 @@ body::-webkit-scrollbar {
     min-height: var(--mobile-touch-target);
     min-width: var(--mobile-touch-target);
   }
+  
+  /* Enhanced font rendering for mobile */
+  body, * {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    font-smooth: always;
+  }
 }
 
 /* Ensure proper mobile viewport handling */
@@ -257,4 +322,13 @@ body::-webkit-scrollbar {
     outline: 3px solid hsl(var(--ring));
     outline-offset: 2px;
   }
+}
+
+/* Utility class for hardware acceleration */
+.gpu-accelerated {
+  transform: translate3d(0, 0, 0);
+  -webkit-transform: translate3d(0, 0, 0);
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }

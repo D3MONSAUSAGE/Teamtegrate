@@ -8,6 +8,7 @@ interface MobileOptimizationOptions {
   enableTouchOptimization?: boolean;
   enableViewportFix?: boolean;
   enableKeyboardHandling?: boolean;
+  enableHardwareAcceleration?: boolean;
 }
 
 interface ViewportState {
@@ -23,6 +24,7 @@ export function useMobileOptimization(options: MobileOptimizationOptions = {}) {
     enableTouchOptimization = true,
     enableViewportFix = true,
     enableKeyboardHandling = true,
+    enableHardwareAcceleration = true,
   } = options;
 
   const isMobile = useIsMobile();
@@ -86,6 +88,26 @@ export function useMobileOptimization(options: MobileOptimizationOptions = {}) {
         document.body.style.setProperty('scroll-behavior', 'smooth');
       }
 
+      // Enable hardware acceleration for better rendering
+      if (enableHardwareAcceleration) {
+        document.body.style.setProperty('transform', 'translate3d(0, 0, 0)');
+        document.body.style.setProperty('-webkit-transform', 'translate3d(0, 0, 0)');
+        document.body.style.setProperty('will-change', 'transform');
+        document.body.style.setProperty('backface-visibility', 'hidden');
+        document.body.style.setProperty('-webkit-backface-visibility', 'hidden');
+        
+        // Apply font smoothing optimizations
+        document.body.style.setProperty('-webkit-font-smoothing', 'antialiased');
+        document.body.style.setProperty('-moz-osx-font-smoothing', 'grayscale');
+        document.body.style.setProperty('text-rendering', 'optimizeLegibility');
+        
+        // Add hardware acceleration class to common UI elements
+        const elements = document.querySelectorAll('.card, .button, [role="button"], .dialog-content, .popover-content');
+        elements.forEach(el => {
+          (el as HTMLElement).classList.add('gpu-accelerated');
+        });
+      }
+
       // Handle viewport height on mobile
       if (enableViewportFix) {
         const setViewportHeight = () => {
@@ -120,7 +142,7 @@ export function useMobileOptimization(options: MobileOptimizationOptions = {}) {
         };
       }
     }
-  }, [isMobile, enableTouchOptimization, optimizeScrolling, enableViewportFix, enableKeyboardHandling, detectKeyboard]);
+  }, [isMobile, enableTouchOptimization, optimizeScrolling, enableViewportFix, enableKeyboardHandling, enableHardwareAcceleration, detectKeyboard]);
 
   useEffect(() => {
     // Handle reduced motion preference
@@ -179,6 +201,16 @@ export function useMobileOptimization(options: MobileOptimizationOptions = {}) {
     }
   }, []);
 
+  const enableHardwareAccelerationForElement = useCallback((element: HTMLElement) => {
+    if (enableHardwareAcceleration) {
+      element.style.setProperty('transform', 'translate3d(0, 0, 0)');
+      element.style.setProperty('-webkit-transform', 'translate3d(0, 0, 0)');
+      element.style.setProperty('will-change', 'transform');
+      element.style.setProperty('backface-visibility', 'hidden');
+      element.style.setProperty('-webkit-backface-visibility', 'hidden');
+    }
+  }, [enableHardwareAcceleration]);
+
   return {
     isMobile,
     isOptimized,
@@ -186,5 +218,6 @@ export function useMobileOptimization(options: MobileOptimizationOptions = {}) {
     isKeyboardOpen: viewport.isKeyboardOpen,
     scrollToTop,
     preventBodyScroll,
+    enableHardwareAccelerationForElement,
   };
 }
