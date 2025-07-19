@@ -1,7 +1,7 @@
 
 import * as React from "react"
 
-const MOBILE_BREAKPOINT = 768
+const MOBILE_BREAKPOINT = 640
 const TABLET_BREAKPOINT = 1024
 
 export function useIsMobile() {

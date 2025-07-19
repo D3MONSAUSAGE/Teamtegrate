@@ -219,7 +219,7 @@ body::-webkit-scrollbar,
 }
 
 /* Mobile-specific enhancements */
-@media screen and (max-width: 768px) {
+@media screen and (max-width: 640px) {
   /* Improve mobile form handling */
   .form-container {
     /* Account for virtual keyboard */
