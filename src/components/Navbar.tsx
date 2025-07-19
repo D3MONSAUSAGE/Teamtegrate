@@ -5,7 +5,9 @@ import { useNavigate } from 'react-router-dom';
 import { enhancedNotifications } from '@/utils/enhancedNotifications';
 import { useNotifications } from '@/hooks/use-notifications';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
+import { useSidebar } from '@/components/ui/sidebar';
+import { Menu } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import NavbarBrand from './navbar/NavbarBrand';
 import NotificationButton from './navbar/NotificationButton';
 import UserMenu from './navbar/UserMenu';
@@ -81,13 +83,17 @@ const Navbar = memo(() => {
       <div className="flex items-center justify-between h-16 px-4 md:px-6">
         <div className="flex items-center gap-3">
           {isMobile && (
-            <SidebarTrigger 
-              className="h-10 w-10 native-button tap-highlight-none flex items-center justify-center" 
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-10 w-10 native-button tap-highlight-none" 
               onClick={() => {
-                console.log('Sidebar trigger clicked on mobile');
+                console.log('Custom sidebar trigger clicked on mobile');
                 setOpenMobile(true);
               }}
-            />
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
           )}
           <NavbarBrand />
         </div>
