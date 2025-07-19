@@ -1,3 +1,4 @@
+
 interface DeviceInfo {
   isAndroid: boolean;
   isWebView: boolean;
@@ -5,23 +6,24 @@ interface DeviceInfo {
   manufacturer: string;
   chromeVersion: number;
   androidVersion: number;
+  screenWidth: number;
+  screenHeight: number;
 }
 
-interface RenderingStrategy {
-  useHardwareAcceleration: boolean;
-  fontRenderingMethod: 'antialiased' | 'subpixel' | 'auto';
-  transformOptimization: 'translate3d' | 'translateZ' | 'none';
-  cssContainment: boolean;
+interface OptimizationLevel {
+  level: 0 | 1 | 2 | 3; // 0 = nuclear reset, 1-3 = progressive enhancement
+  description: string;
+  cssClass: string;
 }
 
 export class AndroidOptimizations {
   private deviceInfo: DeviceInfo;
-  private renderingStrategy: RenderingStrategy;
+  private currentLevel: OptimizationLevel;
+  private isDebugMode: boolean = false;
 
   constructor() {
     this.deviceInfo = this.detectDevice();
-    this.renderingStrategy = this.determineRenderingStrategy();
-    this.logDeviceInfo();
+    this.currentLevel = this.determineOptimalLevel();
     this.init();
   }
 
@@ -53,272 +55,172 @@ export class AndroidOptimizations {
       devicePixelRatio,
       manufacturer,
       chromeVersion,
-      androidVersion
+      androidVersion,
+      screenWidth: window.screen.width,
+      screenHeight: window.screen.height
     };
   }
 
-  private logDeviceInfo(): void {
-    console.log('🔍 Android Blur Fix - Device Analysis:', {
-      isAndroid: this.deviceInfo.isAndroid,
-      manufacturer: this.deviceInfo.manufacturer,
-      androidVersion: this.deviceInfo.androidVersion,
-      chromeVersion: this.deviceInfo.chromeVersion,
-      devicePixelRatio: this.deviceInfo.devicePixelRatio,
-      isWebView: this.deviceInfo.isWebView,
-      userAgent: navigator.userAgent,
-      renderingStrategy: this.renderingStrategy
-    });
+  private determineOptimalLevel(): OptimizationLevel {
+    const { isAndroid, devicePixelRatio, manufacturer, chromeVersion, androidVersion } = this.deviceInfo;
 
-    if (this.deviceInfo.isAndroid) {
-      console.log('🤖 Android Device - Applying blur fixes');
-      console.log('🎨 Rendering Strategy:', this.renderingStrategy);
-    }
-  }
-
-  private determineRenderingStrategy(): RenderingStrategy {
-    const { isAndroid, isWebView, devicePixelRatio, manufacturer, chromeVersion } = this.deviceInfo;
-
-    // Default strategy for non-Android devices
+    // Default for non-Android devices
     if (!isAndroid) {
-      console.log('📱 Non-Android device - using standard optimizations');
       return {
-        useHardwareAcceleration: true,
-        fontRenderingMethod: 'antialiased',
-        transformOptimization: 'translate3d',
-        cssContainment: true
+        level: 1,
+        description: 'Basic optimization for non-Android',
+        cssClass: 'android-level-1'
       };
     }
 
-    // Android-specific strategy focused on preventing blur
-    let strategy: RenderingStrategy = {
-      useHardwareAcceleration: false,
-      fontRenderingMethod: 'subpixel',
-      transformOptimization: 'none',
-      cssContainment: false
-    };
+    // Start conservative for Android
+    let level: 0 | 1 | 2 | 3 = 1;
 
-    // Manufacturer-specific adjustments
-    if (manufacturer === 'samsung') {
-      strategy.fontRenderingMethod = 'auto';
-      console.log('🔧 Samsung device detected - using auto font rendering');
+    // Problematic devices get nuclear reset
+    if (devicePixelRatio > 4 || devicePixelRatio < 0.5) {
+      level = 0;
+    } else if (chromeVersion < 70 || androidVersion < 8) {
+      level = 0;
+    } else if (manufacturer === 'samsung' && devicePixelRatio > 3) {
+      level = 0; // Samsung high-DPI often has blur issues
+    } else if (chromeVersion >= 90 && androidVersion >= 10) {
+      level = 2; // Modern devices can handle more optimization
     }
 
-    if (isWebView) {
-      strategy.fontRenderingMethod = 'antialiased';
-      console.log('🌐 WebView detected - using antialiased fonts');
-    }
+    const levels = [
+      { level: 0 as const, description: 'Nuclear reset - browser defaults only', cssClass: 'android-nuclear-reset' },
+      { level: 1 as const, description: 'Basic anti-blur optimization', cssClass: 'android-level-1' },
+      { level: 2 as const, description: 'Moderate optimization', cssClass: 'android-level-2' },
+      { level: 3 as const, description: 'Full optimization', cssClass: 'android-level-3' }
+    ];
 
-    // High DPI handling
-    if (devicePixelRatio > 3) {
-      strategy.fontRenderingMethod = 'auto';
-      console.log('📱 High DPI detected (', devicePixelRatio, ') - using auto rendering');
-    }
-
-    // Chrome version specific handling
-    if (chromeVersion < 80) {
-      strategy.fontRenderingMethod = 'auto';
-      console.log('🔧 Old Chrome version (', chromeVersion, ') - using conservative settings');
-    }
-
-    console.log('✅ Final Android blur fix strategy:', strategy);
-    return strategy;
+    return levels[level];
   }
 
   private init(): void {
-    console.log('🚀 Initializing Android blur fixes...');
-    this.applyViewportFix();
-    this.applyFontOptimizations();
-    this.applyDeviceClasses();
-    this.preventBlurTransforms();
-    this.addDeviceSpecificCSS();
-    console.log('✅ Android blur fix initialization complete');
+    console.log('🔧 Android Optimization Init:', {
+      deviceInfo: this.deviceInfo,
+      selectedLevel: this.currentLevel,
+      isDebugMode: this.isDebugMode
+    });
+
+    this.applyOptimizationLevel();
+    this.addDeviceClasses();
   }
 
-  private applyViewportFix(): void {
-    const { devicePixelRatio } = this.deviceInfo;
+  private applyOptimizationLevel(): void {
+    // Remove all existing optimization classes
+    const classesToRemove = [
+      'android-device', 'android-level-1', 'android-level-2', 'android-level-3', 
+      'android-nuclear-reset', 'android-webview', 'samsung-device', 'xiaomi-device', 
+      'high-dpi', 'android-debug'
+    ];
     
-    // More conservative viewport handling
-    if (devicePixelRatio > 2.5 || devicePixelRatio < 0.75) {
-      const metaViewport = document.querySelector('meta[name="viewport"]');
-      if (metaViewport) {
-        // Allow slight scaling to prevent forced browser scaling
-        metaViewport.setAttribute('content', 
-          'width=device-width, initial-scale=1.0, minimum-scale=0.9, maximum-scale=1.1, viewport-fit=cover, user-scalable=yes'
-        );
-        console.log('🔧 Viewport adjusted for extreme DPR:', devicePixelRatio);
-      }
+    classesToRemove.forEach(cls => document.body.classList.remove(cls));
+
+    // Apply base Android class
+    if (this.deviceInfo.isAndroid) {
+      document.body.classList.add('android-device');
     }
+
+    // Apply optimization level
+    document.body.classList.add(this.currentLevel.cssClass);
+
+    // Apply device-specific classes
+    if (this.deviceInfo.isWebView) {
+      document.body.classList.add('android-webview');
+    }
+
+    if (this.deviceInfo.manufacturer === 'samsung') {
+      document.body.classList.add('samsung-device');
+    } else if (this.deviceInfo.manufacturer === 'xiaomi') {
+      document.body.classList.add('xiaomi-device');
+    }
+
+    if (this.deviceInfo.devicePixelRatio > 2.5) {
+      document.body.classList.add('high-dpi');
+    }
+
+    // Add debug indicator if enabled
+    if (this.isDebugMode) {
+      document.body.classList.add('android-debug', `level-${this.currentLevel.level}`);
+    }
+
+    console.log(`✅ Applied optimization level ${this.currentLevel.level}: ${this.currentLevel.description}`);
   }
 
-  private applyFontOptimizations(): void {
-    const { fontRenderingMethod } = this.renderingStrategy;
-    
-    // Remove any existing font optimization styles
-    const existingStyle = document.getElementById('android-font-optimization');
-    if (existingStyle) {
-      existingStyle.remove();
+  private addDeviceClasses(): void {
+    // Add manufacturer and version classes for CSS targeting
+    if (this.deviceInfo.isAndroid) {
+      document.body.classList.add(`android-${this.deviceInfo.androidVersion}`);
+      document.body.classList.add(`chrome-${Math.floor(this.deviceInfo.chromeVersion / 10) * 10}`);
     }
-    
-    const style = document.createElement('style');
-    style.id = 'android-font-optimization';
-    
-    let fontCSS = '';
-    
-    if (fontRenderingMethod === 'subpixel') {
-      fontCSS = `
-        .android-blur-fix {
-          -webkit-font-smoothing: subpixel-antialiased !important;
-          -moz-osx-font-smoothing: auto !important;
-          text-rendering: auto !important;
-          font-smooth: auto !important;
-        }
-      `;
-      console.log('🔤 Applied subpixel font rendering for blur fix');
-    } else if (fontRenderingMethod === 'antialiased') {
-      fontCSS = `
-        .webview-blur-fix {
-          -webkit-font-smoothing: antialiased !important;
-          -moz-osx-font-smoothing: grayscale !important;
-          text-rendering: optimizeLegibility !important;
-        }
-      `;
-      console.log('🔤 Applied antialiased font rendering for WebView');
-    } else {
-      fontCSS = `
-        .android-blur-fix {
-          -webkit-font-smoothing: auto !important;
-          -moz-osx-font-smoothing: auto !important;
-          text-rendering: auto !important;
-          font-smooth: auto !important;
-        }
-      `;
-      console.log('🔤 Applied auto font rendering (conservative)');
-    }
-    
-    style.textContent = fontCSS;
-    document.head.appendChild(style);
-  }
-
-  private applyDeviceClasses(): void {
-    const { isAndroid, isWebView, manufacturer } = this.deviceInfo;
-    
-    // Clear existing classes first
-    document.body.classList.remove('android-blur-fix', 'webview-blur-fix', 'samsung-blur-fix');
-    
-    if (isAndroid) {
-      document.body.classList.add('android-blur-fix');
-      console.log('🤖 Applied android-blur-fix class');
-      
-      if (isWebView) {
-        document.body.classList.add('webview-blur-fix');
-        console.log('🌐 Applied webview-blur-fix class');
-      }
-      
-      if (manufacturer === 'samsung') {
-        document.body.classList.add('samsung-blur-fix');
-        console.log('📱 Applied samsung-blur-fix class');
-      }
-    }
-  }
-
-  private preventBlurTransforms(): void {
-    // Critical: Prevent any transforms that could cause blur
-    const style = document.createElement('style');
-    style.id = 'android-blur-prevention';
-    style.textContent = `
-      .android-blur-fix * {
-        transform: none !important;
-        will-change: auto !important;
-        backface-visibility: visible !important;
-        -webkit-backface-visibility: visible !important;
-      }
-      
-      /* Specifically target common blur-causing elements */
-      .android-blur-fix .card,
-      .android-blur-fix .button,
-      .android-blur-fix .dialog-content,
-      .android-blur-fix [role="dialog"],
-      .android-blur-fix [role="button"] {
-        transform: none !important;
-        will-change: auto !important;
-      }
-    `;
-    
-    document.head.appendChild(style);
-    console.log('🚫 Applied blur prevention transforms');
-  }
-
-  private addDeviceSpecificCSS(): void {
-    const { manufacturer, isWebView } = this.deviceInfo;
-    
-    // Remove existing device-specific styles
-    const existingStyle = document.getElementById('device-specific-css');
-    if (existingStyle) {
-      existingStyle.remove();
-    }
-    
-    const style = document.createElement('style');
-    style.id = 'device-specific-css';
-    let css = '';
-
-    if (manufacturer === 'samsung') {
-      css += `
-        .samsung-blur-fix {
-          image-rendering: crisp-edges !important;
-          -webkit-optimize-contrast: optimizeSpeed !important;
-          text-rendering: auto !important;
-        }
-      `;
-      console.log('📱 Applied Samsung-specific blur fixes');
-    }
-
-    if (isWebView) {
-      css += `
-        .webview-blur-fix {
-          -webkit-tap-highlight-color: transparent !important;
-          -webkit-touch-callout: none !important;
-        }
-        
-        .webview-blur-fix input, 
-        .webview-blur-fix textarea, 
-        .webview-blur-fix [contenteditable] {
-          -webkit-user-select: text !important;
-          user-select: text !important;
-          font-size: 16px !important;
-        }
-      `;
-      console.log('🌐 Applied WebView-specific blur fixes');
-    }
-
-    style.textContent = css;
-    document.head.appendChild(style);
   }
 
   public getDeviceInfo(): DeviceInfo {
     return this.deviceInfo;
   }
 
-  public getRenderingStrategy(): RenderingStrategy {
-    return this.renderingStrategy;
+  public getCurrentLevel(): OptimizationLevel {
+    return this.currentLevel;
+  }
+
+  public setOptimizationLevel(level: 0 | 1 | 2 | 3): void {
+    const levels = [
+      { level: 0 as const, description: 'Nuclear reset - browser defaults only', cssClass: 'android-nuclear-reset' },
+      { level: 1 as const, description: 'Basic anti-blur optimization', cssClass: 'android-level-1' },
+      { level: 2 as const, description: 'Moderate optimization', cssClass: 'android-level-2' },
+      { level: 3 as const, description: 'Full optimization', cssClass: 'android-level-3' }
+    ];
+
+    this.currentLevel = levels[level];
+    this.applyOptimizationLevel();
+    
+    console.log(`🔄 Optimization level changed to ${level}: ${this.currentLevel.description}`);
+  }
+
+  public enableDebugMode(enable: boolean = true): void {
+    this.isDebugMode = enable;
+    
+    if (enable) {
+      document.body.classList.add('android-debug', `level-${this.currentLevel.level}`);
+      console.log('🐛 Android debug mode enabled');
+    } else {
+      document.body.classList.remove('android-debug', `level-${this.currentLevel.level}`);
+      console.log('🐛 Android debug mode disabled');
+    }
   }
 
   public recalibrate(): void {
-    console.log('🔄 Recalibrating Android blur fixes...');
+    console.log('🔄 Recalibrating Android optimizations...');
     
-    // Remove existing optimizations
-    const stylesToRemove = ['android-font-optimization', 'device-specific-css', 'android-blur-prevention'];
-    stylesToRemove.forEach(id => {
-      const style = document.getElementById(id);
-      if (style) style.remove();
-    });
-    
-    // Reapply optimizations
     this.deviceInfo = this.detectDevice();
-    this.renderingStrategy = this.determineRenderingStrategy();
-    this.logDeviceInfo();
+    this.currentLevel = this.determineOptimalLevel();
     this.init();
     
-    console.log('✅ Android blur fix recalibration complete');
+    console.log('✅ Recalibration complete');
+  }
+
+  public testAllLevels(): void {
+    console.log('🧪 Testing all optimization levels...');
+    
+    const levels: (0 | 1 | 2 | 3)[] = [0, 1, 2, 3];
+    let currentIndex = 0;
+
+    const testNext = () => {
+      if (currentIndex < levels.length) {
+        this.setOptimizationLevel(levels[currentIndex]);
+        console.log(`Testing level ${levels[currentIndex]} for 3 seconds...`);
+        currentIndex++;
+        setTimeout(testNext, 3000);
+      } else {
+        console.log('🧪 Testing complete. Returning to optimal level...');
+        this.currentLevel = this.determineOptimalLevel();
+        this.applyOptimizationLevel();
+      }
+    };
+
+    testNext();
   }
 }
 

@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useCallback } from 'react';
 import { useIsMobile } from './use-mobile';
 import { androidOptimizations } from '@/utils/androidOptimizations';
@@ -9,6 +10,8 @@ interface MobileOptimizationOptions {
   enableViewportFix?: boolean;
   enableKeyboardHandling?: boolean;
   enableAndroidOptimization?: boolean;
+  debugMode?: boolean;
+  optimizationLevel?: 0 | 1 | 2 | 3;
 }
 
 interface ViewportState {
@@ -25,6 +28,8 @@ export function useMobileOptimization(options: MobileOptimizationOptions = {}) {
     enableViewportFix = true,
     enableKeyboardHandling = true,
     enableAndroidOptimization = true,
+    debugMode = false,
+    optimizationLevel
   } = options;
 
   const isMobile = useIsMobile();
@@ -43,7 +48,6 @@ export function useMobileOptimization(options: MobileOptimizationOptions = {}) {
     const currentHeight = window.innerHeight;
     const heightDifference = initialHeight - currentHeight;
     
-    // If height difference is significant, keyboard is likely open
     const isKeyboardOpen = heightDifference > 150;
     
     setViewport(prev => ({
@@ -53,7 +57,6 @@ export function useMobileOptimization(options: MobileOptimizationOptions = {}) {
       isKeyboardOpen,
     }));
 
-    // Add class to body for keyboard state
     if (isKeyboardOpen) {
       document.body.classList.add('keyboard-open');
     } else {
@@ -62,80 +65,61 @@ export function useMobileOptimization(options: MobileOptimizationOptions = {}) {
   }, [isMobile, enableKeyboardHandling]);
 
   useEffect(() => {
-    console.log('🚀 Initializing mobile optimizations with blur fixes...', { 
+    console.log('🚀 Initializing clean mobile optimizations...', { 
       isMobile, 
       enableAndroidOptimization,
+      debugMode,
+      optimizationLevel,
       options 
     });
 
-    // Initialize Android optimizations with blur fixes if enabled
+    // Initialize Android optimizations
     if (enableAndroidOptimization) {
       const deviceInfo = androidOptimizations.getDeviceInfo();
-      const strategy = androidOptimizations.getRenderingStrategy();
       
-      console.log('📱 Android blur fix optimization initialized:', { 
-        deviceInfo, 
-        strategy,
-        blurFixApplied: deviceInfo.isAndroid 
+      console.log('📱 Android optimization initialized:', { 
+        deviceInfo,
+        currentLevel: androidOptimizations.getCurrentLevel()
       });
       
-      // Apply device-specific classes immediately for blur prevention
-      if (deviceInfo.isAndroid) {
-        document.body.classList.add('android-blur-fix');
-        console.log('✅ Android blur fix class applied immediately');
-        
-        if (deviceInfo.isWebView) {
-          document.body.classList.add('webview-blur-fix');
-          console.log('✅ WebView blur fix class applied immediately');
-        }
-        
-        // Apply manufacturer-specific blur fixes
-        if (deviceInfo.manufacturer === 'samsung') {
-          document.body.classList.add('samsung-blur-fix');
-          console.log('✅ Samsung blur fix class applied immediately');
-        }
-        
-        // Force recalibration to ensure all blur fixes are applied
-        setTimeout(() => {
-          androidOptimizations.recalibrate();
-          console.log('🔄 Android blur fixes recalibrated after initialization');
-        }, 100);
+      // Enable debug mode if requested
+      androidOptimizations.enableDebugMode(debugMode);
+      
+      // Set custom optimization level if specified
+      if (optimizationLevel !== undefined) {
+        androidOptimizations.setOptimizationLevel(optimizationLevel);
+        console.log(`🎛️ Custom optimization level set: ${optimizationLevel}`);
       }
     }
 
-    // Mobile-specific optimizations
+    // Mobile-specific optimizations (simplified)
     if (isMobile) {
-      console.log('📱 Applying mobile-specific optimizations with blur prevention...');
+      console.log('📱 Applying mobile-specific optimizations...');
       
-      // Prevent zoom on double tap
-      let lastTouchEnd = 0;
-      const preventZoom = (e: TouchEvent) => {
-        const now = new Date().getTime();
-        if (now - lastTouchEnd <= 300) {
-          e.preventDefault();
-        }
-        lastTouchEnd = now;
-      };
-
+      // Basic touch optimization without conflicts
       if (enableTouchOptimization) {
+        let lastTouchEnd = 0;
+        const preventZoom = (e: TouchEvent) => {
+          const now = new Date().getTime();
+          if (now - lastTouchEnd <= 300) {
+            e.preventDefault();
+          }
+          lastTouchEnd = now;
+        };
+
         document.addEventListener('touchend', preventZoom, { passive: false });
         document.body.style.touchAction = 'pan-y';
-        console.log('✅ Touch optimization applied (blur-safe)');
+        console.log('✅ Touch optimization applied');
       }
 
-      // Optimize scrolling performance without causing blur
+      // Simple scroll optimization
       if (optimizeScrolling) {
         document.body.style.setProperty('-webkit-overflow-scrolling', 'touch');
         document.body.style.setProperty('overscroll-behavior-y', 'none');
-        // Use smooth scrolling only if not on problematic Android devices
-        const deviceInfo = androidOptimizations.getDeviceInfo();
-        if (!deviceInfo.isAndroid || deviceInfo.chromeVersion >= 80) {
-          document.body.style.setProperty('scroll-behavior', 'smooth');
-        }
-        console.log('✅ Scroll optimization applied (Android-safe)');
+        console.log('✅ Scroll optimization applied');
       }
 
-      // Handle viewport height on mobile
+      // Viewport handling
       if (enableViewportFix) {
         const setViewportHeight = () => {
           const vh = window.innerHeight * 0.01;
@@ -158,6 +142,7 @@ export function useMobileOptimization(options: MobileOptimizationOptions = {}) {
 
         return () => {
           if (enableTouchOptimization) {
+            const preventZoom = () => {};
             document.removeEventListener('touchend', preventZoom);
           }
           window.removeEventListener('resize', setViewportHeight);
@@ -169,7 +154,7 @@ export function useMobileOptimization(options: MobileOptimizationOptions = {}) {
         };
       }
     }
-  }, [isMobile, enableTouchOptimization, optimizeScrolling, enableViewportFix, enableKeyboardHandling, enableAndroidOptimization, detectKeyboard]);
+  }, [isMobile, enableTouchOptimization, optimizeScrolling, enableViewportFix, enableKeyboardHandling, enableAndroidOptimization, debugMode, optimizationLevel, detectKeyboard]);
 
   useEffect(() => {
     // Handle reduced motion preference
@@ -195,18 +180,9 @@ export function useMobileOptimization(options: MobileOptimizationOptions = {}) {
   }, [enableReducedMotion]);
 
   useEffect(() => {
-    // Add mobile optimization classes to body with blur fix integration
+    // Add mobile optimization classes
     if (isMobile) {
       document.body.classList.add('mobile-optimized');
-      
-      // Ensure Android blur fixes are maintained
-      if (enableAndroidOptimization) {
-        const deviceInfo = androidOptimizations.getDeviceInfo();
-        if (deviceInfo.isAndroid && !document.body.classList.contains('android-blur-fix')) {
-          console.log('🔄 Re-applying Android blur fix classes...');
-          androidOptimizations.recalibrate();
-        }
-      }
       
       // Add safe area support
       document.body.style.setProperty('padding-top', 'env(safe-area-inset-top)');
@@ -214,24 +190,18 @@ export function useMobileOptimization(options: MobileOptimizationOptions = {}) {
       document.body.style.setProperty('padding-left', 'env(safe-area-inset-left)');
       document.body.style.setProperty('padding-right', 'env(safe-area-inset-right)');
       
-      console.log('✅ Mobile optimization classes applied with blur fix integration');
+      console.log('✅ Mobile optimization classes applied');
     } else {
       document.body.classList.remove('mobile-optimized');
     }
 
     setIsOptimized(true);
-    console.log('🎯 Mobile optimization with blur fixes setup complete');
+    console.log('🎯 Mobile optimization setup complete');
 
     return () => {
-      document.body.classList.remove(
-        'mobile-optimized', 
-        'keyboard-open', 
-        'android-blur-fix', 
-        'webview-blur-fix',
-        'samsung-blur-fix'
-      );
+      document.body.classList.remove('mobile-optimized', 'keyboard-open');
     };
-  }, [isMobile, enableAndroidOptimization]);
+  }, [isMobile]);
 
   const scrollToTop = useCallback(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -245,18 +215,30 @@ export function useMobileOptimization(options: MobileOptimizationOptions = {}) {
     }
   }, []);
 
-  const enableHardwareAccelerationForElement = useCallback((element: HTMLElement) => {
-    // Only apply hardware acceleration selectively based on Android optimization strategy
-    const deviceInfo = androidOptimizations.getDeviceInfo();
-    const strategy = androidOptimizations.getRenderingStrategy();
-    
-    if (strategy.useHardwareAcceleration && !deviceInfo.isAndroid) {
-      element.classList.add('hw-accelerated');
-      console.log('🚀 Hardware acceleration enabled for element');
-    } else {
-      console.log('⏭️ Hardware acceleration skipped to prevent blur');
+  // Android-specific controls
+  const setAndroidOptimizationLevel = useCallback((level: 0 | 1 | 2 | 3) => {
+    if (enableAndroidOptimization) {
+      androidOptimizations.setOptimizationLevel(level);
     }
-  }, []);
+  }, [enableAndroidOptimization]);
+
+  const toggleAndroidDebug = useCallback(() => {
+    if (enableAndroidOptimization) {
+      androidOptimizations.enableDebugMode(!debugMode);
+    }
+  }, [enableAndroidOptimization, debugMode]);
+
+  const testAllAndroidLevels = useCallback(() => {
+    if (enableAndroidOptimization) {
+      androidOptimizations.testAllLevels();
+    }
+  }, [enableAndroidOptimization]);
+
+  const recalibrateAndroid = useCallback(() => {
+    if (enableAndroidOptimization) {
+      androidOptimizations.recalibrate();
+    }
+  }, [enableAndroidOptimization]);
 
   return {
     isMobile,
@@ -265,7 +247,14 @@ export function useMobileOptimization(options: MobileOptimizationOptions = {}) {
     isKeyboardOpen: viewport.isKeyboardOpen,
     scrollToTop,
     preventBodyScroll,
-    enableHardwareAccelerationForElement,
-    androidOptimizations: enableAndroidOptimization ? androidOptimizations : null,
+    // Android-specific controls
+    androidOptimizations: enableAndroidOptimization ? {
+      setLevel: setAndroidOptimizationLevel,
+      toggleDebug: toggleAndroidDebug,
+      testAllLevels: testAllAndroidLevels,
+      recalibrate: recalibrateAndroid,
+      getDeviceInfo: () => androidOptimizations.getDeviceInfo(),
+      getCurrentLevel: () => androidOptimizations.getCurrentLevel()
+    } : null,
   };
 }

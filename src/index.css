@@ -128,7 +128,7 @@
   animation: buzz 0.5s ease-in-out;
 }
 
-/* Enhanced scrollbar hiding - cross-browser compatibility */
+/* Clean scrollbar hiding */
 .scrollbar-hide {
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -136,25 +136,9 @@
 
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
-  width: 0;
-  height: 0;
-  background: transparent;
 }
 
-/* Global scrollbar hiding for body and html */
-html, body {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-html::-webkit-scrollbar,
-body::-webkit-scrollbar {
-  display: none;
-  width: 0;
-  height: 0;
-}
-
-/* Mobile touch optimizations */
+/* Clean touch optimizations */
 .touch-manipulation {
   touch-action: manipulation;
 }
@@ -179,24 +163,24 @@ body::-webkit-scrollbar {
   }
 }
 
-/* Ensure proper mobile viewport handling */
+/* Proper mobile viewport handling */
 @supports (height: 100dvh) {
   .min-h-screen {
     min-height: 100dvh;
   }
 }
 
-/* Mobile-first responsive animations */
+/* Clean reduced motion support */
 @media (prefers-reduced-motion: reduce) {
   * {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
+    animation-duration: 0.01ms;
+    animation-iteration-count: 1;
+    transition-duration: 0.01ms;
+    scroll-behavior: auto;
   }
 }
 
-/* Mobile-optimized focus states */
+/* Clean focus states */
 @media (max-width: 768px) {
   :focus-visible {
     outline: 2px solid hsl(var(--ring));

@@ -1,72 +1,137 @@
 
-/* Android-specific fixes for blurriness and rendering issues */
+/* Clean Android Optimization CSS - Progressive Enhancement Approach */
 
-/* Reset any browser-imposed transforms that cause blur */
-@media screen and (-webkit-min-device-pixel-ratio: 1) {
-  .android-blur-fix {
-    -webkit-font-smoothing: subpixel-antialiased !important;
-    -moz-osx-font-smoothing: auto !important;
-    text-rendering: auto !important;
-    font-smooth: auto !important;
-    image-rendering: crisp-edges !important;
-    -webkit-optimize-contrast: optimizeSpeed !important;
-    transform: none !important;
-    will-change: auto !important;
-    backface-visibility: visible !important;
-    -webkit-backface-visibility: visible !important;
-  }
+/* Base Android Detection and Reset */
+.android-device {
+  /* Start with browser defaults - no forced optimizations */
+  -webkit-font-smoothing: auto;
+  -moz-osx-font-smoothing: auto;
+  text-rendering: auto;
+  font-smooth: auto;
   
-  /* Prevent any implicit transforms */
-  .android-blur-fix *,
-  .android-blur-fix *::before,
-  .android-blur-fix *::after {
-    transform: none !important;
-    will-change: auto !important;
-    backface-visibility: visible !important;
-    -webkit-backface-visibility: visible !important;
-  }
-  
-  /* High DPI specific fixes */
-  @media (-webkit-min-device-pixel-ratio: 2) {
-    .android-blur-fix {
-      image-rendering: -webkit-optimize-contrast !important;
-      image-rendering: crisp-edges !important;
-    }
-  }
+  /* Prevent any implicit transforms that cause blur */
+  transform: none;
+  will-change: auto;
+  backface-visibility: visible;
+  -webkit-backface-visibility: visible;
 }
 
-/* WebView specific fixes */
-.webview-blur-fix {
-  -webkit-tap-highlight-color: transparent;
-  -webkit-touch-callout: none;
+/* Progressive Enhancement Level 1: Basic Anti-Blur */
+.android-level-1 {
+  /* Minimal font optimization */
+  text-rendering: optimizeSpeed;
+  
+  /* Prevent browser-imposed transforms */
+  transform: translateZ(0);
+  
+  /* Basic image optimization */
+  image-rendering: -webkit-optimize-contrast;
+}
+
+/* Progressive Enhancement Level 2: Moderate Optimization */
+.android-level-2 {
+  /* Selective font smoothing */
+  -webkit-font-smoothing: subpixel-antialiased;
+  -moz-osx-font-smoothing: auto;
+  
+  /* Controlled containment */
+  contain: layout style;
+}
+
+/* Progressive Enhancement Level 3: Full Optimization */
+.android-level-3 {
+  /* Advanced font rendering */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  
+  /* Full containment */
+  contain: layout style paint;
 }
 
-.webview-blur-fix input,
-.webview-blur-fix textarea,
-.webview-blur-fix [contenteditable] {
-  -webkit-user-select: text !important;
-  user-select: text !important;
+/* WebView Specific Fixes */
+.android-webview {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+.android-webview input,
+.android-webview textarea,
+.android-webview [contenteditable] {
+  -webkit-user-select: text;
+  user-select: text;
   font-size: 16px; /* Prevent zoom on focus */
 }
 
-/* Samsung device specific fixes */
-.samsung-blur-fix {
-  image-rendering: crisp-edges !important;
-  -webkit-optimize-contrast: optimizeSpeed !important;
-  text-rendering: auto !important;
+/* Manufacturer Specific Fixes */
+.samsung-device {
+  image-rendering: crisp-edges;
+  -webkit-optimize-contrast: optimizeSpeed;
 }
 
-/* Progressive enhancement for different Android versions */
-.android-modern {
-  font-feature-settings: "kern" 1;
-  font-kerning: normal;
-  text-rendering: optimizeLegibility;
+.xiaomi-device {
+  text-rendering: geometricPrecision;
 }
 
-.android-legacy {
-  font-feature-settings: normal;
-  font-kerning: auto;
+/* High DPI Specific */
+.high-dpi {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
+/* Debug Mode - Visual Indicators */
+.android-debug::before {
+  content: "Android Optimized";
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background: rgba(255, 0, 0, 0.8);
+  color: white;
+  padding: 4px 8px;
+  font-size: 10px;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.android-debug.level-1::before {
+  content: "Android L1";
+  background: rgba(255, 165, 0, 0.8);
+}
+
+.android-debug.level-2::before {
+  content: "Android L2";
+  background: rgba(0, 165, 255, 0.8);
+}
+
+.android-debug.level-3::before {
+  content: "Android L3";
+  background: rgba(0, 255, 0, 0.8);
+}
+
+/* Nuclear Option - Disable All Optimizations */
+.android-nuclear-reset {
+  -webkit-font-smoothing: auto;
+  -moz-osx-font-smoothing: auto;
   text-rendering: auto;
+  font-smooth: auto;
+  image-rendering: auto;
+  transform: none;
+  will-change: auto;
+  backface-visibility: visible;
+  -webkit-backface-visibility: visible;
+  contain: none;
+  -webkit-optimize-contrast: auto;
+}
+
+.android-nuclear-reset *,
+.android-nuclear-reset *::before,
+.android-nuclear-reset *::after {
+  -webkit-font-smoothing: auto;
+  -moz-osx-font-smoothing: auto;
+  text-rendering: auto;
+  transform: none;
+  will-change: auto;
+  backface-visibility: visible;
+  -webkit-backface-visibility: visible;
+  contain: none;
 }

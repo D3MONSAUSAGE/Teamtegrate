@@ -3,7 +3,8 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=2.0, viewport-fit=cover, user-scalable=yes" />
+    <!-- Simplified viewport for Android compatibility -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Teamtegrate - Team Collaboration Platform</title>
     <meta name="description" content="Transform your team's productivity with Teamtegrate - the all-in-one team management platform that streamlines collaboration and boosts efficiency" />
     <meta name="author" content="Teamtegrate" />
@@ -60,7 +61,7 @@
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap"></noscript>
 
     <style>
-      /* Minimal critical CSS - cleaned up for Android compatibility */
+      /* Minimal critical CSS - clean baseline without conflicts */
       * {
         box-sizing: border-box;
         margin: 0;
@@ -78,9 +79,7 @@
         background-color: white;
         color: #1a1a1a;
         line-height: 1.5;
-        /* Clean font rendering - let Android optimizations handle device-specific rules */
-        text-rendering: auto;
-        font-kerning: auto;
+        /* Let browser handle font rendering natively */
         -webkit-overflow-scrolling: touch;
         overscroll-behavior-y: none;
       }
@@ -97,7 +96,7 @@
         overflow-x: hidden;
       }
       
-      /* Mobile touch targets */
+      /* Basic mobile optimizations without conflicts */
       @media (max-width: 768px) {
         button, [role="button"], a {
           touch-action: manipulation;
@@ -107,23 +106,19 @@
         
         input, textarea, [contenteditable] {
           font-size: 16px;
-          -webkit-appearance: none;
         }
       }
       
       /* Reduced motion support */
       @media (prefers-reduced-motion: reduce) {
         *, *::before, *::after {
-          animation-duration: 0.01ms !important;
-          animation-iteration-count: 1 !important;
-          transition-duration: 0.01ms !important;
-          scroll-behavior: auto !important;
+          animation-duration: 0.01ms;
+          animation-iteration-count: 1;
+          transition-duration: 0.01ms;
+          scroll-behavior: auto;
         }
       }
     </style>
-    
-    <!-- Load Android-specific fixes -->
-    <link rel="stylesheet" href="/src/styles/android-fixes.css" />
   </head>
 
   <body>
