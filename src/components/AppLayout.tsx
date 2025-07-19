@@ -6,7 +6,6 @@ import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 import { SidebarProvider, SidebarInset, useSidebar } from '@/components/ui/sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useMobileNavigation } from '@/hooks/useMobileNavigation';
 import { Loader2 } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 

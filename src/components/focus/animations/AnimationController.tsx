@@ -36,7 +36,7 @@ const AnimationController: React.FC<AnimationControllerProps> = ({
   };
 
   return (
-    <div className="gpu-accelerated">
+    <div>
       {renderAnimation()}
     </div>
   );

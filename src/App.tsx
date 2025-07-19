@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { TaskProvider } from '@/contexts/task';
 import OptimizedRouter from '@/routes/OptimizedRouter';
+import '@/utils/cleanupOptimizations';
 
 const queryClient = new QueryClient();
 
