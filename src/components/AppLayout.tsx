@@ -26,9 +26,10 @@ const MainContent = memo(({ children }: { children: React.ReactNode }) => {
     <SidebarInset 
       className="flex flex-col flex-1 overflow-hidden"
       onClick={handleMainContentClick}
+      style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
     >
       <Navbar />
-      <main className="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar px-4 md:px-6 lg:px-12">
+      <main className="flex-1 overflow-y-auto overflow-x-hidden px-4 md:px-6 lg:px-12" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
         <div className="space-y-6 py-4 pb-20 md:pb-6">
           {children}
         </div>
@@ -68,7 +69,7 @@ const AppLayout = memo(() => {
 
   return (
     <SidebarProvider defaultOpen={!isMobile}>
-      <div className="min-h-screen bg-background w-full flex overflow-hidden no-scrollbar">
+      <div className="min-h-screen bg-background w-full flex overflow-hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
         <Sidebar />
         <MainContent>
           <Outlet />
