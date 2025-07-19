@@ -43,7 +43,7 @@ const TaskTimer: React.FC<TaskTimerProps> = ({
   };
 
   const handleToggleTimer = async (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent card click
+    e.stopPropagation();
     if (isActive) {
       await stopTaskWork();
     } else {
@@ -52,7 +52,7 @@ const TaskTimer: React.FC<TaskTimerProps> = ({
   };
 
   const handlePauseResume = async (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent card click
+    e.stopPropagation();
     
     if (!isActive) {
       console.log('⚠️ Not active task, cannot pause/resume');
@@ -77,6 +77,7 @@ const TaskTimer: React.FC<TaskTimerProps> = ({
         "px-3 py-2 rounded-lg shadow-sm transition-all duration-300",
         "hover:shadow-md hover:border-slate-300/60 dark:hover:border-slate-600/60",
         isActive && "ring-2 ring-green-400/30 bg-gradient-to-r from-green-50/80 to-emerald-50/60 dark:from-green-950/60 dark:to-emerald-950/40 border-green-300/50 dark:border-green-700/50",
+        isPaused && "ring-2 ring-yellow-400/30 bg-gradient-to-r from-yellow-50/80 to-amber-50/60 dark:from-yellow-950/60 dark:to-amber-950/40 border-yellow-300/50 dark:border-yellow-700/50",
         className
       )}>
         {/* Active timer display */}
@@ -100,7 +101,7 @@ const TaskTimer: React.FC<TaskTimerProps> = ({
               {formatTime(timerState.elapsedSeconds)}
             </span>
             {isPaused && (
-              <span className="text-xs opacity-75">Paused</span>
+              <span className="text-xs opacity-75 font-medium">PAUSED</span>
             )}
           </div>
         )}
@@ -185,8 +186,8 @@ const TaskTimer: React.FC<TaskTimerProps> = ({
               <span className="font-mono font-bold text-lg">
                 {formatTime(timerState.elapsedSeconds)}
               </span>
-              <span className="text-sm">
-                {isPaused ? 'Paused' : 'Active'}
+              <span className="text-sm font-semibold">
+                {isPaused ? 'PAUSED' : 'Active'}
               </span>
             </div>
           ) : (

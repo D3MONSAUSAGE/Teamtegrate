@@ -27,6 +27,9 @@ export interface TaskTimerState {
   totalTimeToday: Record<string, number>; // taskId -> minutes
   isPaused: boolean;
   pausedAt?: Date;
+  totalPausedDuration: number; // milliseconds
+  pauseStartTime?: Date;
+  elapsedAtPause?: number; // frozen elapsed seconds when paused
 }
 
 interface ClockOutResult {
@@ -48,7 +51,8 @@ export const useTaskTimeTracking = () => {
   const [timerState, setTimerState] = useState<TaskTimerState>({
     elapsedSeconds: 0,
     totalTimeToday: {},
-    isPaused: false
+    isPaused: false,
+    totalPausedDuration: 0
   });
   const [isLoading, setIsLoading] = useState(false);
   const timerRef = useRef<NodeJS.Timeout>();
@@ -58,14 +62,34 @@ export const useTaskTimeTracking = () => {
     console.log('🕒 Timer state updated:', timerState);
   }, [timerState]);
 
-  // Start timer updates
+  // Calculate elapsed time correctly accounting for pause duration
+  const calculateElapsedTime = useCallback((startTime: Date, isPaused: boolean, elapsedAtPause?: number, totalPausedMs: number = 0) => {
+    if (isPaused && elapsedAtPause !== undefined) {
+      // When paused, return the frozen elapsed time
+      return elapsedAtPause;
+    }
+    
+    if (!startTime) return 0;
+    
+    const now = Date.now();
+    const startMs = startTime.getTime();
+    const rawElapsed = now - startMs;
+    const adjustedElapsed = Math.max(0, rawElapsed - totalPausedMs);
+    
+    return Math.floor(adjustedElapsed / 1000);
+  }, []);
+
+  // Start timer updates with proper pause handling
   useEffect(() => {
     if (timerState.activeTaskId && timerState.startTime && !timerState.isPaused) {
       console.log('⏰ Starting timer interval for task:', timerState.activeTaskId);
       timerRef.current = setInterval(() => {
-        const now = Date.now();
-        const startTime = timerState.startTime!.getTime();
-        const elapsedSeconds = Math.floor((now - startTime) / 1000);
+        const elapsedSeconds = calculateElapsedTime(
+          timerState.startTime!,
+          timerState.isPaused,
+          timerState.elapsedAtPause,
+          timerState.totalPausedDuration
+        );
         
         setTimerState(prev => ({
           ...prev,
@@ -84,7 +108,7 @@ export const useTaskTimeTracking = () => {
         clearInterval(timerRef.current);
       }
     };
-  }, [timerState.activeTaskId, timerState.startTime, timerState.isPaused]);
+  }, [timerState.activeTaskId, timerState.startTime, timerState.isPaused, calculateElapsedTime]);
 
   // Fetch current state and today's totals
   const fetchTaskTimeState = useCallback(async () => {
@@ -99,7 +123,7 @@ export const useTaskTimeTracking = () => {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      // Get active task session (basic query until types are regenerated)
+      // Get active task session
       const { data: activeSession, error: activeError } = await supabase
         .from('time_entries')
         .select(`
@@ -108,7 +132,10 @@ export const useTaskTimeTracking = () => {
           task_id,
           clock_in,
           notes,
-          organization_id
+          organization_id,
+          is_paused,
+          paused_at,
+          total_paused_duration
         `)
         .eq('user_id', user.id)
         .is('clock_out', null)
@@ -153,7 +180,27 @@ export const useTaskTimeTracking = () => {
       // Update state
       if (activeSession) {
         const startTime = new Date(activeSession.clock_in);
-        const elapsedSeconds = Math.floor((Date.now() - startTime.getTime()) / 1000);
+        const isPaused = activeSession.is_paused || false;
+        const pausedAt = activeSession.paused_at ? new Date(activeSession.paused_at) : undefined;
+        
+        // Parse total paused duration from PostgreSQL interval
+        let totalPausedMs = 0;
+        if (activeSession.total_paused_duration) {
+          // Simple parsing for common interval formats like "00:05:30" or "300 seconds"
+          const durationStr = activeSession.total_paused_duration;
+          if (durationStr.includes(':')) {
+            const parts = durationStr.split(':');
+            if (parts.length >= 3) {
+              const hours = parseInt(parts[0]) || 0;
+              const minutes = parseInt(parts[1]) || 0;
+              const seconds = parseInt(parts[2]) || 0;
+              totalPausedMs = (hours * 3600 + minutes * 60 + seconds) * 1000;
+            }
+          }
+        }
+        
+        // Calculate elapsed time
+        const elapsedSeconds = calculateElapsedTime(startTime, isPaused, undefined, totalPausedMs);
         
         // Get task title separately
         const { data: taskData } = await supabase
@@ -165,7 +212,9 @@ export const useTaskTimeTracking = () => {
         console.log('▶️ Setting active timer state:', {
           taskId: activeSession.task_id,
           title: taskData?.title,
-          elapsedSeconds
+          elapsedSeconds,
+          isPaused,
+          totalPausedMs
         });
         
         setTimerState({
@@ -174,22 +223,25 @@ export const useTaskTimeTracking = () => {
           startTime,
           elapsedSeconds,
           totalTimeToday,
-          isPaused: false,
-          pausedAt: undefined
+          isPaused,
+          pausedAt,
+          totalPausedDuration: totalPausedMs,
+          elapsedAtPause: isPaused ? elapsedSeconds : undefined
         });
       } else {
         console.log('⏸️ No active session, setting empty state');
         setTimerState({
           elapsedSeconds: 0,
           totalTimeToday,
-          isPaused: false
+          isPaused: false,
+          totalPausedDuration: 0
         });
       }
     } catch (error) {
       console.error('❌ Error fetching task time state:', error);
       toast.error('Failed to load timer state');
     }
-  }, [user?.id]);
+  }, [user?.id, calculateElapsedTime]);
 
   // Start working on a task
   const startTaskWork = useCallback(async (taskId: string, taskTitle: string) => {
@@ -207,7 +259,6 @@ export const useTaskTimeTracking = () => {
       if (timerState.activeTaskId) {
         console.log('⏸️ Stopping existing active session');
         await stopTaskWork();
-        // Small delay to ensure the stop operation completes
         await new Promise(resolve => setTimeout(resolve, 100));
       }
 
@@ -237,14 +288,15 @@ export const useTaskTimeTracking = () => {
         startTime,
         elapsedSeconds: 0,
         isPaused: false,
-        pausedAt: undefined
+        pausedAt: undefined,
+        totalPausedDuration: 0,
+        elapsedAtPause: undefined
       }));
 
       toast.success(`Started working on "${taskTitle}"`);
     } catch (error) {
       console.error('❌ Error starting task work:', error);
       toast.error('Failed to start task timer');
-      // Reset state on error
       setTimerState(prev => ({
         ...prev,
         activeTaskId: undefined,
@@ -252,7 +304,9 @@ export const useTaskTimeTracking = () => {
         startTime: undefined,
         elapsedSeconds: 0,
         isPaused: false,
-        pausedAt: undefined
+        pausedAt: undefined,
+        totalPausedDuration: 0,
+        elapsedAtPause: undefined
       }));
     } finally {
       setIsLoading(false);
@@ -286,7 +340,6 @@ export const useTaskTimeTracking = () => {
       if (result?.success) {
         toast.success(`Stopped working on "${timerState.activeTaskTitle || 'task'}"`);
         
-        // Reset timer state immediately
         setTimerState(prev => ({
           ...prev,
           activeTaskId: undefined,
@@ -294,10 +347,11 @@ export const useTaskTimeTracking = () => {
           startTime: undefined,
           elapsedSeconds: 0,
           isPaused: false,
-          pausedAt: undefined
+          pausedAt: undefined,
+          totalPausedDuration: 0,
+          elapsedAtPause: undefined
         }));
         
-        // Refresh state to get updated totals
         await fetchTaskTimeState();
       } else {
         console.warn('⚠️ No active time entry found, syncing state...');
@@ -313,7 +367,7 @@ export const useTaskTimeTracking = () => {
     }
   }, [timerState.activeTaskId, timerState.activeTaskTitle, user, isLoading, fetchTaskTimeState]);
 
-  // Pause current task work (temporary local state until RPC functions are available)
+  // Pause current task work
   const pauseTaskWork = useCallback(async () => {
     if (!user?.id || isLoading || !timerState.activeTaskId || timerState.isPaused) {
       console.log('❌ Cannot pause task work - no user, loading, no active task, or already paused');
@@ -325,23 +379,50 @@ export const useTaskTimeTracking = () => {
     try {
       setIsLoading(true);
       
-      // For now, just update local state until RPC functions are properly typed
-      setTimerState(prev => ({
-        ...prev,
-        isPaused: true,
-        pausedAt: new Date()
-      }));
-      
-      toast.success(`Paused working on "${timerState.activeTaskTitle || 'task'}"`);
+      // Call the database pause function
+      const { data: result, error } = await supabase.rpc('pause_time_entry', {
+        p_user_id: user.id,
+        p_task_id: timerState.activeTaskId
+      }) as { data: PauseResumeResult | null; error: any };
+
+      if (error) {
+        console.error('❌ Error pausing task work:', error);
+        throw error;
+      }
+
+      console.log('✅ Pause result:', result);
+
+      if (result?.success) {
+        const now = new Date();
+        const currentElapsed = calculateElapsedTime(
+          timerState.startTime!,
+          false,
+          undefined,
+          timerState.totalPausedDuration
+        );
+        
+        setTimerState(prev => ({
+          ...prev,
+          isPaused: true,
+          pausedAt: now,
+          pauseStartTime: now,
+          elapsedAtPause: currentElapsed
+        }));
+        
+        toast.success(`Paused working on "${timerState.activeTaskTitle || 'task'}"`);
+      } else {
+        toast.error('Failed to pause timer - no active session found');
+        await fetchTaskTimeState();
+      }
     } catch (error) {
       console.error('❌ Error pausing task work:', error);
       toast.error('Failed to pause task timer');
     } finally {
       setIsLoading(false);
     }
-  }, [timerState.activeTaskId, timerState.activeTaskTitle, timerState.isPaused, user, isLoading]);
+  }, [timerState.activeTaskId, timerState.activeTaskTitle, timerState.isPaused, timerState.startTime, timerState.totalPausedDuration, user, isLoading, calculateElapsedTime, fetchTaskTimeState]);
 
-  // Resume current task work (temporary local state until RPC functions are available)
+  // Resume current task work
   const resumeTaskWork = useCallback(async () => {
     if (!user?.id || isLoading || !timerState.activeTaskId || !timerState.isPaused) {
       console.log('❌ Cannot resume task work - no user, loading, no active task, or not paused');
@@ -353,21 +434,48 @@ export const useTaskTimeTracking = () => {
     try {
       setIsLoading(true);
       
-      // For now, just update local state until RPC functions are properly typed
-      setTimerState(prev => ({
-        ...prev,
-        isPaused: false,
-        pausedAt: undefined
-      }));
-      
-      toast.success(`Resumed working on "${timerState.activeTaskTitle || 'task'}"`);
+      // Call the database resume function
+      const { data: result, error } = await supabase.rpc('resume_time_entry', {
+        p_user_id: user.id,
+        p_task_id: timerState.activeTaskId
+      }) as { data: PauseResumeResult | null; error: any };
+
+      if (error) {
+        console.error('❌ Error resuming task work:', error);
+        throw error;
+      }
+
+      console.log('✅ Resume result:', result);
+
+      if (result?.success) {
+        // Calculate the duration of this pause
+        const pauseDuration = timerState.pauseStartTime 
+          ? Date.now() - timerState.pauseStartTime.getTime()
+          : 0;
+        
+        const newTotalPausedDuration = timerState.totalPausedDuration + pauseDuration;
+        
+        setTimerState(prev => ({
+          ...prev,
+          isPaused: false,
+          pausedAt: undefined,
+          pauseStartTime: undefined,
+          totalPausedDuration: newTotalPausedDuration,
+          elapsedAtPause: undefined
+        }));
+        
+        toast.success(`Resumed working on "${timerState.activeTaskTitle || 'task'}"`);
+      } else {
+        toast.error('Failed to resume timer - no paused session found');
+        await fetchTaskTimeState();
+      }
     } catch (error) {
       console.error('❌ Error resuming task work:', error);
       toast.error('Failed to resume task timer');
     } finally {
       setIsLoading(false);
     }
-  }, [timerState.activeTaskId, timerState.activeTaskTitle, timerState.isPaused, user, isLoading]);
+  }, [timerState.activeTaskId, timerState.activeTaskTitle, timerState.isPaused, timerState.pauseStartTime, timerState.totalPausedDuration, user, isLoading, fetchTaskTimeState]);
 
   // Get total time for a specific task today
   const getTaskTotalTime = useCallback((taskId: string): number => {

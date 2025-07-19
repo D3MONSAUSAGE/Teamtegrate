@@ -85,7 +85,7 @@ const TaskTimerDialog: React.FC<TaskTimerDialogProps> = ({
               {formatTime(timerState.elapsedSeconds)}
             </span>
             <span className="text-lg font-semibold">
-              {isPaused ? 'Paused' : 'Active'}
+              {isPaused ? 'PAUSED' : 'Active'}
             </span>
           </div>
         ) : (
