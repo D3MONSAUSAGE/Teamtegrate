@@ -18,8 +18,7 @@ import DocumentsPage from "./pages/DocumentsPage";
 import TimeTrackingPage from "./pages/TimeTrackingPage";
 import JournalPage from "./pages/JournalPage";
 import AdminPage from "./pages/AdminPage";
-import AppLayout from "./components/layout/AppLayout";
-import ProtectedRoute from "./routes/ProtectedRoute";
+import AppLayout from "./components/AppLayout";
 import PushNotificationManager from "./components/PushNotificationManager";
 
 const queryClient = new QueryClient();
@@ -38,11 +37,7 @@ function App() {
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/signup" element={<SignupPage />} />
                   
-                  <Route path="/dashboard" element={
-                    <ProtectedRoute>
-                      <AppLayout />
-                    </ProtectedRoute>
-                  }>
+                  <Route path="/dashboard" element={<AppLayout />}>
                     <Route index element={<DashboardPage />} />
                     <Route path="tasks" element={<TasksPage />} />
                     <Route path="projects" element={<ProjectsPage />} />

@@ -2,6 +2,9 @@
 import React, { memo } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import ProtectedRoute from '@/routes/ProtectedRoute';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { TaskProvider } from '@/contexts/task';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 import { SidebarProvider, SidebarInset, useSidebar } from '@/components/ui/sidebar';
@@ -68,14 +71,20 @@ const AppLayout = memo(() => {
   }
 
   return (
-    <SidebarProvider defaultOpen={!isMobile}>
-      <div className="min-h-screen-mobile bg-background w-full flex overflow-hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-        <Sidebar />
-        <MainContent>
-          <Outlet />
-        </MainContent>
-      </div>
-    </SidebarProvider>
+    <ProtectedRoute>
+      <TooltipProvider>
+        <TaskProvider>
+          <SidebarProvider defaultOpen={!isMobile}>
+            <div className="min-h-screen-mobile bg-background w-full flex overflow-hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+              <Sidebar />
+              <MainContent>
+                <Outlet />
+              </MainContent>
+            </div>
+          </SidebarProvider>
+        </TaskProvider>
+      </TooltipProvider>
+    </ProtectedRoute>
   );
 });
 
