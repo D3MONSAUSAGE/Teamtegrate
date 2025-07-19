@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useCallback } from 'react';
 import { useIsMobile } from './use-mobile';
 import { androidOptimizations } from '@/utils/androidOptimizations';
@@ -63,30 +62,41 @@ export function useMobileOptimization(options: MobileOptimizationOptions = {}) {
   }, [isMobile, enableKeyboardHandling]);
 
   useEffect(() => {
+    console.log('🚀 Initializing mobile optimizations...', { 
+      isMobile, 
+      enableAndroidOptimization,
+      options 
+    });
+
     // Initialize Android optimizations if enabled
     if (enableAndroidOptimization) {
       const deviceInfo = androidOptimizations.getDeviceInfo();
       const strategy = androidOptimizations.getRenderingStrategy();
       
-      console.log('Android optimization initialized:', { deviceInfo, strategy });
+      console.log('📱 Mobile optimization initialized:', { deviceInfo, strategy });
       
-      // Apply device-specific classes
+      // Apply device-specific classes immediately
       if (deviceInfo.isAndroid) {
         document.body.classList.add('android-optimized');
+        console.log('✅ Android optimized class applied');
         
         if (deviceInfo.isWebView) {
           document.body.classList.add('webview-optimized');
+          console.log('✅ WebView optimized class applied');
         }
         
         // Apply manufacturer-specific optimizations
-        if (deviceInfo.manufacturer) {
+        if (deviceInfo.manufacturer && deviceInfo.manufacturer !== 'unknown') {
           document.body.classList.add(`${deviceInfo.manufacturer}-optimized`);
+          console.log(`✅ ${deviceInfo.manufacturer} optimized class applied`);
         }
       }
     }
 
     // Mobile-specific optimizations
     if (isMobile) {
+      console.log('📱 Applying mobile-specific optimizations...');
+      
       // Prevent zoom on double tap
       let lastTouchEnd = 0;
       const preventZoom = (e: TouchEvent) => {
@@ -99,9 +109,8 @@ export function useMobileOptimization(options: MobileOptimizationOptions = {}) {
 
       if (enableTouchOptimization) {
         document.addEventListener('touchend', preventZoom, { passive: false });
-        
-        // Add touch-action CSS for better scroll performance
         document.body.style.touchAction = 'pan-y';
+        console.log('✅ Touch optimization applied');
       }
 
       // Optimize scrolling performance
@@ -109,6 +118,7 @@ export function useMobileOptimization(options: MobileOptimizationOptions = {}) {
         document.body.style.setProperty('-webkit-overflow-scrolling', 'touch');
         document.body.style.setProperty('overscroll-behavior-y', 'none');
         document.body.style.setProperty('scroll-behavior', 'smooth');
+        console.log('✅ Scroll optimization applied');
       }
 
       // Handle viewport height on mobile
@@ -122,15 +132,15 @@ export function useMobileOptimization(options: MobileOptimizationOptions = {}) {
         setViewportHeight();
         window.addEventListener('resize', setViewportHeight);
         window.addEventListener('orientationchange', () => {
-          // Delay viewport calculation after orientation change
           setTimeout(setViewportHeight, 150);
         });
 
-        // Listen for keyboard events
         if (enableKeyboardHandling) {
           window.addEventListener('focusin', detectKeyboard);
           window.addEventListener('focusout', detectKeyboard);
         }
+
+        console.log('✅ Viewport fix applied');
 
         return () => {
           if (enableTouchOptimization) {
@@ -180,18 +190,20 @@ export function useMobileOptimization(options: MobileOptimizationOptions = {}) {
       document.body.style.setProperty('padding-bottom', 'env(safe-area-inset-bottom)');
       document.body.style.setProperty('padding-left', 'env(safe-area-inset-left)');
       document.body.style.setProperty('padding-right', 'env(safe-area-inset-right)');
+      
+      console.log('✅ Mobile optimization classes applied');
     } else {
       document.body.classList.remove('mobile-optimized');
     }
 
     setIsOptimized(true);
+    console.log('🎯 Mobile optimization setup complete');
 
     return () => {
       document.body.classList.remove('mobile-optimized', 'keyboard-open', 'android-optimized', 'webview-optimized');
     };
   }, [isMobile]);
 
-  // Utility functions for mobile optimization
   const scrollToTop = useCallback(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
@@ -209,8 +221,11 @@ export function useMobileOptimization(options: MobileOptimizationOptions = {}) {
     const deviceInfo = androidOptimizations.getDeviceInfo();
     const strategy = androidOptimizations.getRenderingStrategy();
     
-    if (strategy.useHardwareAcceleration) {
+    if (strategy.useHardwareAcceleration && !deviceInfo.isAndroid) {
       element.classList.add('hw-accelerated');
+      console.log('🚀 Hardware acceleration enabled for element');
+    } else {
+      console.log('⏭️ Hardware acceleration skipped to prevent blur');
     }
   }, []);
 

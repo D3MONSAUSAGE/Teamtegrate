@@ -3,7 +3,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=2.0, viewport-fit=cover, user-scalable=yes" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover, user-scalable=no" />
     <title>Teamtegrate - Team Collaboration Platform</title>
     <meta name="description" content="Transform your team's productivity with Teamtegrate - the all-in-one team management platform that streamlines collaboration and boosts efficiency" />
     <meta name="author" content="Teamtegrate" />
@@ -38,7 +38,7 @@
     <meta property="og:title" content="Teamtegrate - Team Collaboration Platform" />
     <meta property="og:description" content="Transform your team's productivity with Teamtegrate - the all-in-one team management platform that streamlines collaboration and boosts efficiency" />
     <meta property="og:url" content="https://teamtegrate.com/" />
-    <meta property="og:image" content="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=1200&h=630&fit=crop&crop=center" />
+    <meta property="og:image" content="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=1200&amp;h=630&amp;fit=crop&amp;crop=center" />
     <meta property="og:image:alt" content="Teamtegrate - Transform Your Team's Productivity" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -48,7 +48,7 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Teamtegrate - Team Collaboration Platform" />
     <meta name="twitter:description" content="Transform your team's productivity with Teamtegrate - the all-in-one team management platform that streamlines collaboration and boosts efficiency" />
-    <meta name="twitter:image" content="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=1200&h=630&fit=crop&crop=center" />
+    <meta name="twitter:image" content="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=1200&amp;h=630&amp;fit=crop&amp;crop=center" />
     <meta name="twitter:image:alt" content="Teamtegrate - Transform Your Team's Productivity" />
 
     <!-- Additional SEO meta tags -->
@@ -56,11 +56,11 @@
     <meta name="googlebot" content="index, follow" />
 
     <!-- Preload critical fonts -->
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"></noscript>
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap"></noscript>
 
     <style>
-      /* Critical CSS for initial render */
+      /* Critical CSS for initial render - Android optimized */
       * {
         box-sizing: border-box;
         margin: 0;
@@ -90,6 +90,20 @@
         overscroll-behavior-y: none;
       }
       
+      /* Android-specific rendering fixes applied immediately */
+      @media screen and (-webkit-min-device-pixel-ratio: 1) {
+        body {
+          -webkit-font-smoothing: subpixel-antialiased !important;
+          -moz-osx-font-smoothing: auto !important;
+          text-rendering: auto !important;
+          font-smooth: auto !important;
+          image-rendering: -webkit-optimize-contrast;
+          -webkit-optimize-contrast: optimizeSpeed;
+          transform: none !important;
+          will-change: auto !important;
+        }
+      }
+      
       /* Dark mode body background */
       body.dark {
         background-color: hsl(222, 31%, 11%);
@@ -102,11 +116,15 @@
         overflow-x: hidden;
       }
       
-      /* Android-specific optimizations */
-      @media screen and (-webkit-min-device-pixel-ratio: 1) {
-        body {
-          -webkit-optimize-contrast: optimizeSpeed;
-          image-rendering: -webkit-optimize-contrast;
+      /* Ensure proper touch targets on mobile */
+      @media (max-width: 768px) {
+        button, [role="button"], a {
+          touch-action: manipulation;
+          min-height: 44px;
+          min-width: 44px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
         
         * {
@@ -119,18 +137,6 @@
           user-select: text;
           font-size: 16px;
           -webkit-appearance: none;
-        }
-      }
-      
-      /* Ensure proper touch targets on mobile */
-      @media (max-width: 768px) {
-        button, [role="button"], a {
-          touch-action: manipulation;
-          min-height: 44px;
-          min-width: 44px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
         }
       }
       

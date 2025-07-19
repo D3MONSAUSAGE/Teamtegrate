@@ -1,4 +1,3 @@
-
 interface DeviceInfo {
   isAndroid: boolean;
   isWebView: boolean;
@@ -22,6 +21,7 @@ export class AndroidOptimizations {
   constructor() {
     this.deviceInfo = this.detectDevice();
     this.renderingStrategy = this.determineRenderingStrategy();
+    this.logDeviceInfo();
     this.init();
   }
 
@@ -57,9 +57,27 @@ export class AndroidOptimizations {
     };
   }
 
+  private logDeviceInfo(): void {
+    if (this.deviceInfo.isAndroid) {
+      console.log('🤖 Android Device Detected:', {
+        manufacturer: this.deviceInfo.manufacturer,
+        androidVersion: this.deviceInfo.androidVersion,
+        chromeVersion: this.deviceInfo.chromeVersion,
+        devicePixelRatio: this.deviceInfo.devicePixelRatio,
+        isWebView: this.deviceInfo.isWebView,
+        userAgent: navigator.userAgent
+      });
+      
+      console.log('🎨 Rendering Strategy Applied:', this.renderingStrategy);
+    } else {
+      console.log('📱 Non-Android device detected, using standard optimizations');
+    }
+  }
+
   private determineRenderingStrategy(): RenderingStrategy {
     const { isAndroid, isWebView, devicePixelRatio, manufacturer, chromeVersion, androidVersion } = this.deviceInfo;
 
+    // Default strategy for non-Android devices
     if (!isAndroid) {
       return {
         useHardwareAcceleration: true,
@@ -69,58 +87,61 @@ export class AndroidOptimizations {
       };
     }
 
-    // Android-specific optimizations
+    // Conservative Android strategy to prevent blurriness
     let strategy: RenderingStrategy = {
-      useHardwareAcceleration: true,
-      fontRenderingMethod: 'antialiased',
-      transformOptimization: 'translateZ',
-      cssContainment: true
+      useHardwareAcceleration: false, // Disable by default to prevent blur
+      fontRenderingMethod: 'subpixel', // Use subpixel for clearer text
+      transformOptimization: 'none', // Avoid transforms that cause blur
+      cssContainment: false // Disable containment that might cause issues
     };
 
-    // Adjust for problematic devices/versions
-    if (manufacturer === 'samsung' && androidVersion < 10) {
-      strategy.useHardwareAcceleration = false;
+    // Device-specific adjustments
+    if (manufacturer === 'samsung') {
       strategy.fontRenderingMethod = 'auto';
+      console.log('🔧 Samsung-specific optimizations applied');
     }
 
     if (isWebView) {
-      strategy.transformOptimization = 'none';
-      strategy.fontRenderingMethod = 'subpixel';
+      strategy.fontRenderingMethod = 'antialiased';
+      console.log('🔧 WebView-specific optimizations applied');
     }
 
-    // Handle non-standard DPR
+    // Handle problematic DPR
     if (devicePixelRatio > 3 || devicePixelRatio < 1) {
-      strategy.useHardwareAcceleration = false;
+      strategy.fontRenderingMethod = 'auto';
+      console.log('🔧 Non-standard DPR detected, using auto font rendering');
     }
 
-    // Old Chrome versions
+    // Old Chrome versions need special handling
     if (chromeVersion < 80) {
-      strategy.transformOptimization = 'none';
-      strategy.cssContainment = false;
+      strategy.fontRenderingMethod = 'auto';
+      console.log('🔧 Old Chrome version detected, using conservative settings');
     }
 
+    console.log('📋 Final rendering strategy:', strategy);
     return strategy;
   }
 
   private init(): void {
     this.applyViewportFix();
     this.applyFontOptimizations();
-    this.applyHardwareAcceleration();
-    this.applyCSSContainment();
+    this.applyDeviceClasses();
     this.addDeviceSpecificCSS();
+    console.log('✅ Android optimizations initialized successfully');
   }
 
   private applyViewportFix(): void {
     const { devicePixelRatio } = this.deviceInfo;
     
-    // Adjust viewport for non-standard DPR
-    if (devicePixelRatio !== 1) {
+    // Only adjust viewport for extreme DPR values
+    if (devicePixelRatio > 3 || devicePixelRatio < 0.5) {
       const metaViewport = document.querySelector('meta[name="viewport"]');
       if (metaViewport) {
-        const scale = 1 / devicePixelRatio;
+        const scale = Math.min(Math.max(1 / devicePixelRatio, 0.5), 1);
         metaViewport.setAttribute('content', 
-          `width=device-width, initial-scale=${scale}, minimum-scale=${scale}, maximum-scale=${scale * 2}, viewport-fit=cover`
+          `width=device-width, initial-scale=${scale}, maximum-scale=1.0, viewport-fit=cover, user-scalable=no`
         );
+        console.log('🔧 Viewport adjusted for DPR:', devicePixelRatio, 'scale:', scale);
       }
     }
   }
@@ -129,53 +150,78 @@ export class AndroidOptimizations {
     const { fontRenderingMethod } = this.renderingStrategy;
     
     const style = document.createElement('style');
-    style.textContent = `
-      .android-font-fix {
-        -webkit-font-smoothing: ${fontRenderingMethod === 'antialiased' ? 'antialiased' : 'subpixel-antialiased'};
-        -moz-osx-font-smoothing: ${fontRenderingMethod === 'antialiased' ? 'grayscale' : 'auto'};
-        text-rendering: ${fontRenderingMethod === 'auto' ? 'auto' : 'optimizeLegibility'};
-        font-smooth: ${fontRenderingMethod === 'auto' ? 'auto' : 'always'};
-        font-kerning: normal;
-        font-feature-settings: "kern" 1;
-      }
-    `;
-    document.head.appendChild(style);
+    style.id = 'android-font-optimization';
     
-    document.body.classList.add('android-font-fix');
+    let fontCSS = '';
+    if (fontRenderingMethod === 'subpixel') {
+      fontCSS = `
+        body, * {
+          -webkit-font-smoothing: subpixel-antialiased !important;
+          -moz-osx-font-smoothing: auto !important;
+          text-rendering: auto !important;
+          font-smooth: auto !important;
+        }
+      `;
+    } else if (fontRenderingMethod === 'antialiased') {
+      fontCSS = `
+        body, * {
+          -webkit-font-smoothing: antialiased !important;
+          -moz-osx-font-smoothing: grayscale !important;
+          text-rendering: optimizeLegibility !important;
+          font-smooth: always !important;
+        }
+      `;
+    }
+    
+    style.textContent = fontCSS;
+    document.head.appendChild(style);
+    console.log('🔤 Font rendering applied:', fontRenderingMethod);
+  }
+
+  private applyDeviceClasses(): void {
+    const { isAndroid, isWebView, manufacturer } = this.deviceInfo;
+    
+    if (isAndroid) {
+      document.body.classList.add('android-optimized');
+      console.log('🤖 Android optimization class applied');
+      
+      if (isWebView) {
+        document.body.classList.add('webview-optimized');
+        console.log('🌐 WebView optimization class applied');
+      }
+      
+      if (manufacturer && manufacturer !== 'unknown') {
+        document.body.classList.add(`${manufacturer}-optimized`);
+        console.log(`📱 ${manufacturer} optimization class applied`);
+      }
+    }
   }
 
   private applyHardwareAcceleration(): void {
-    const { useHardwareAcceleration, transformOptimization } = this.renderingStrategy;
+    // Intentionally minimal - only apply when absolutely necessary
+    const { useHardwareAcceleration } = this.renderingStrategy;
     
     if (!useHardwareAcceleration) {
-      document.body.style.setProperty('transform', 'none');
-      return;
-    }
-
-    const transformValue = transformOptimization === 'translate3d' 
-      ? 'translate3d(0, 0, 0)' 
-      : transformOptimization === 'translateZ' 
-        ? 'translateZ(0)' 
-        : 'none';
-
-    if (transformValue !== 'none') {
-      document.body.style.setProperty('transform', transformValue);
-      document.body.style.setProperty('will-change', 'transform');
-      document.body.style.setProperty('backface-visibility', 'hidden');
+      // Ensure no hardware acceleration
+      document.body.style.setProperty('transform', 'none', 'important');
+      document.body.style.setProperty('will-change', 'auto', 'important');
+      console.log('🚫 Hardware acceleration disabled for blur prevention');
     }
   }
 
   private applyCSSContainment(): void {
+    // Skip CSS containment for Android to prevent rendering issues
+    if (this.deviceInfo.isAndroid) {
+      console.log('⏭️ CSS containment skipped for Android compatibility');
+      return;
+    }
+    
     if (!this.renderingStrategy.cssContainment) return;
 
     const style = document.createElement('style');
     style.textContent = `
       .android-containment {
         contain: layout style paint;
-      }
-      
-      .android-layer-promotion {
-        isolation: isolate;
       }
     `;
     document.head.appendChild(style);
@@ -185,27 +231,30 @@ export class AndroidOptimizations {
     const { manufacturer, isWebView } = this.deviceInfo;
     
     const style = document.createElement('style');
+    style.id = 'device-specific-css';
     let css = '';
 
     if (manufacturer === 'samsung') {
       css += `
-        .samsung-fix {
-          image-rendering: crisp-edges;
-          -webkit-optimize-contrast: optimizeSpeed;
+        .samsung-optimized {
+          image-rendering: crisp-edges !important;
+          -webkit-optimize-contrast: optimizeSpeed !important;
         }
       `;
     }
 
     if (isWebView) {
       css += `
-        .webview-fix {
-          -webkit-tap-highlight-color: transparent;
-          -webkit-touch-callout: none;
-          -webkit-user-select: none;
-          user-select: none;
+        .webview-optimized {
+          -webkit-tap-highlight-color: transparent !important;
+          -webkit-touch-callout: none !important;
+          -webkit-user-select: none !important;
+          user-select: none !important;
         }
         
-        input, textarea, [contenteditable] {
+        .webview-optimized input, 
+        .webview-optimized textarea, 
+        .webview-optimized [contenteditable] {
           -webkit-user-select: text !important;
           user-select: text !important;
         }
@@ -214,8 +263,7 @@ export class AndroidOptimizations {
 
     style.textContent = css;
     document.head.appendChild(style);
-    
-    document.body.classList.add(`${manufacturer}-fix`, isWebView ? 'webview-fix' : '');
+    console.log('🎨 Device-specific CSS applied');
   }
 
   public getDeviceInfo(): DeviceInfo {
@@ -227,8 +275,10 @@ export class AndroidOptimizations {
   }
 
   public recalibrate(): void {
+    console.log('🔄 Recalibrating Android optimizations...');
     this.deviceInfo = this.detectDevice();
     this.renderingStrategy = this.determineRenderingStrategy();
+    this.logDeviceInfo();
     this.init();
   }
 }
