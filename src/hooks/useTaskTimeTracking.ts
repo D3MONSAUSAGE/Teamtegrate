@@ -94,6 +94,8 @@ export const useTaskTimeTracking = () => {
         .eq('user_id', user.id)
         .is('clock_out', null)
         .not('task_id', 'is', null)
+        .order('clock_in', { ascending: false })
+        .limit(1)
         .maybeSingle();
 
       if (activeError) {
@@ -171,10 +173,12 @@ export const useTaskTimeTracking = () => {
     try {
       setIsLoading(true);
 
-      // Stop any existing active session
+      // Stop any existing active session first
       if (timerState.activeTaskId) {
         console.log('⏸️ Stopping existing active session');
         await stopTaskWork();
+        // Small delay to ensure the stop operation completes
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
 
       const { data, error } = await supabase
@@ -208,12 +212,20 @@ export const useTaskTimeTracking = () => {
     } catch (error) {
       console.error('❌ Error starting task work:', error);
       toast.error('Failed to start task timer');
+      // Reset state on error
+      setTimerState(prev => ({
+        ...prev,
+        activeTaskId: undefined,
+        activeTaskTitle: undefined,
+        startTime: undefined,
+        elapsedSeconds: 0
+      }));
     } finally {
       setIsLoading(false);
     }
   }, [user, isLoading, timerState.activeTaskId]);
 
-  // Stop working on current task
+  // Stop working on current task - Fixed with server-side timestamp
   const stopTaskWork = useCallback(async () => {
     if (!timerState.activeTaskId || isLoading) {
       console.log('❌ Cannot stop task work - no active task or loading');
@@ -225,18 +237,33 @@ export const useTaskTimeTracking = () => {
     try {
       setIsLoading(true);
 
-      const { error } = await supabase
-        .from('time_entries')
-        .update({ 
-          clock_out: new Date().toISOString()
-        })
-        .eq('user_id', user!.id)
-        .eq('task_id', timerState.activeTaskId)
-        .is('clock_out', null);
+      // Use server-side NOW() function instead of client-side timestamp
+      const { error } = await supabase.rpc('update_time_entry_clock_out', {
+        p_user_id: user!.id,
+        p_task_id: timerState.activeTaskId
+      });
 
       if (error) {
         console.error('❌ Error stopping task work:', error);
-        throw error;
+        // Handle specific constraint violation
+        if (error.message?.includes('Clock out time cannot be before clock in time')) {
+          console.log('🔄 Retrying with buffer time...');
+          // Fallback: try updating with a small buffer
+          const { error: retryError } = await supabase
+            .from('time_entries')
+            .update({ 
+              clock_out: 'NOW() + INTERVAL \'1 second\''
+            })
+            .eq('user_id', user!.id)
+            .eq('task_id', timerState.activeTaskId)
+            .is('clock_out', null);
+          
+          if (retryError) {
+            throw retryError;
+          }
+        } else {
+          throw error;
+        }
       }
 
       console.log('✅ Stopped task work');
