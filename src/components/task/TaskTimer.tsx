@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Clock, Play, Square } from 'lucide-react';
+import { Clock, Play, Square, Pause } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTaskTimeTracking } from '@/hooks/useTaskTimeTracking';
 import { cn } from '@/lib/utils';
@@ -20,9 +20,10 @@ const TaskTimer: React.FC<TaskTimerProps> = ({
   showControls = true,
   className 
 }) => {
-  const { timerState, isLoading, startTaskWork, stopTaskWork, getTaskTotalTime } = useTaskTimeTracking();
+  const { timerState, isLoading, startTaskWork, stopTaskWork, pauseTaskWork, resumeTaskWork, getTaskTotalTime } = useTaskTimeTracking();
   
   const isActive = timerState.activeTaskId === taskId;
+  const isPaused = isActive && timerState.isPaused;
   const totalMinutes = getTaskTotalTime(taskId);
   
   // Format time display
@@ -50,6 +51,15 @@ const TaskTimer: React.FC<TaskTimerProps> = ({
     }
   };
 
+  const handlePauseResume = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click
+    if (isPaused) {
+      await resumeTaskWork();
+    } else {
+      await pauseTaskWork();
+    }
+  };
+
   if (compact) {
     return (
       <div className={cn(
@@ -63,14 +73,27 @@ const TaskTimer: React.FC<TaskTimerProps> = ({
       )}>
         {/* Active timer display */}
         {isActive && (
-          <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+          <div className={cn(
+            "flex items-center gap-2",
+            isPaused ? "text-yellow-600 dark:text-yellow-400" : "text-green-600 dark:text-green-400"
+          )}>
             <div className="relative">
-              <div className="w-2 h-2 bg-green-500 dark:bg-green-400 rounded-full animate-pulse" />
-              <div className="absolute inset-0 w-2 h-2 bg-green-500/30 dark:bg-green-400/30 rounded-full animate-ping" />
+              <div className={cn(
+                "w-2 h-2 rounded-full",
+                isPaused 
+                  ? "bg-yellow-500 dark:bg-yellow-400" 
+                  : "bg-green-500 dark:bg-green-400 animate-pulse"
+              )} />
+              {!isPaused && (
+                <div className="absolute inset-0 w-2 h-2 bg-green-500/30 dark:bg-green-400/30 rounded-full animate-ping" />
+              )}
             </div>
             <span className="font-mono text-xs font-semibold tracking-wide">
               {formatTime(timerState.elapsedSeconds)}
             </span>
+            {isPaused && (
+              <span className="text-xs opacity-75">Paused</span>
+            )}
           </div>
         )}
         
@@ -82,27 +105,53 @@ const TaskTimer: React.FC<TaskTimerProps> = ({
           </span>
         </div>
         
-        {/* Control button */}
+        {/* Control buttons */}
         {showControls && (
-          <Button
-            size="sm"
-            variant={isActive ? "destructive" : "outline"}
-            onClick={handleToggleTimer}
-            disabled={isLoading}
-            className={cn(
-              "h-6 px-2 text-xs font-semibold transition-all duration-300",
-              "hover:scale-105 active:scale-95",
-              isActive 
-                ? "bg-red-500/90 hover:bg-red-600/90 text-white shadow-md hover:shadow-lg" 
-                : "bg-gradient-to-r from-blue-500/90 to-blue-600/90 hover:from-blue-600/90 hover:to-blue-700/90 text-white border-0 shadow-md hover:shadow-lg"
+          <div className="flex items-center gap-1">
+            {/* Pause/Resume button - only show when active */}
+            {isActive && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handlePauseResume}
+                disabled={isLoading}
+                className={cn(
+                  "h-6 px-2 text-xs font-semibold transition-all duration-300",
+                  "hover:scale-105 active:scale-95",
+                  isPaused 
+                    ? "bg-gradient-to-r from-green-500/90 to-green-600/90 hover:from-green-600/90 hover:to-green-700/90 text-white border-0 shadow-md hover:shadow-lg"
+                    : "bg-gradient-to-r from-yellow-500/90 to-yellow-600/90 hover:from-yellow-600/90 hover:to-yellow-700/90 text-white border-0 shadow-md hover:shadow-lg"
+                )}
+              >
+                {isPaused ? (
+                  <Play className="h-3 w-3" />
+                ) : (
+                  <Pause className="h-3 w-3" />
+                )}
+              </Button>
             )}
-          >
-            {isActive ? (
-              <Square className="h-3 w-3" />
-            ) : (
-              <Play className="h-3 w-3" />
-            )}
-          </Button>
+            
+            {/* Start/Stop button */}
+            <Button
+              size="sm"
+              variant={isActive ? "destructive" : "outline"}
+              onClick={handleToggleTimer}
+              disabled={isLoading}
+              className={cn(
+                "h-6 px-2 text-xs font-semibold transition-all duration-300",
+                "hover:scale-105 active:scale-95",
+                isActive 
+                  ? "bg-red-500/90 hover:bg-red-600/90 text-white shadow-md hover:shadow-lg" 
+                  : "bg-gradient-to-r from-blue-500/90 to-blue-600/90 hover:from-blue-600/90 hover:to-blue-700/90 text-white border-0 shadow-md hover:shadow-lg"
+              )}
+            >
+              {isActive ? (
+                <Square className="h-3 w-3" />
+              ) : (
+                <Play className="h-3 w-3" />
+              )}
+            </Button>
+          </div>
         )}
       </div>
     );
@@ -113,12 +162,22 @@ const TaskTimer: React.FC<TaskTimerProps> = ({
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
           {isActive ? (
-            <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
-              <div className="w-3 h-3 bg-green-500 dark:bg-green-400 rounded-full animate-pulse" />
+            <div className={cn(
+              "flex items-center gap-2",
+              isPaused ? "text-yellow-600 dark:text-yellow-400" : "text-green-600 dark:text-green-400"
+            )}>
+              <div className={cn(
+                "w-3 h-3 rounded-full",
+                isPaused 
+                  ? "bg-yellow-500 dark:bg-yellow-400" 
+                  : "bg-green-500 dark:bg-green-400 animate-pulse"
+              )} />
               <span className="font-mono font-bold text-lg">
                 {formatTime(timerState.elapsedSeconds)}
               </span>
-              <span className="text-sm">Active</span>
+              <span className="text-sm">
+                {isPaused ? 'Paused' : 'Active'}
+              </span>
             </div>
           ) : (
             <div className="flex items-center gap-2 text-muted-foreground">
@@ -134,25 +193,51 @@ const TaskTimer: React.FC<TaskTimerProps> = ({
       </div>
 
       {showControls && (
-        <Button
-          size="sm"
-          variant={isActive ? "destructive" : "default"}
-          onClick={handleToggleTimer}
-          disabled={isLoading}
-          className="flex items-center gap-2"
-        >
-          {isActive ? (
-            <>
-              <Square className="h-4 w-4" />
-              Stop
-            </>
-          ) : (
-            <>  
-              <Play className="h-4 w-4" />
-              Start
-            </>
+        <div className="flex items-center gap-2">
+          {/* Pause/Resume button - only show when active */}
+          {isActive && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handlePauseResume}
+              disabled={isLoading}
+              className="flex items-center gap-2"
+            >
+              {isPaused ? (
+                <>
+                  <Play className="h-4 w-4" />
+                  Resume
+                </>
+              ) : (
+                <>
+                  <Pause className="h-4 w-4" />
+                  Pause
+                </>
+              )}
+            </Button>
           )}
-        </Button>
+          
+          {/* Start/Stop button */}
+          <Button
+            size="sm"
+            variant={isActive ? "destructive" : "default"}
+            onClick={handleToggleTimer}
+            disabled={isLoading}
+            className="flex items-center gap-2"
+          >
+            {isActive ? (
+              <>
+                <Square className="h-4 w-4" />
+                Stop
+              </>
+            ) : (
+              <>  
+                <Play className="h-4 w-4" />
+                Start
+              </>
+            )}
+          </Button>
+        </div>
       )}
     </div>
   );
