@@ -89,7 +89,9 @@ const Navbar = memo(() => {
               className="h-10 w-10 native-button tap-highlight-none" 
               onClick={() => {
                 console.log('Custom sidebar trigger clicked on mobile');
+                console.log('Setting mobile sidebar to open...');
                 setOpenMobile(true);
+                console.log('Mobile sidebar open state set to true');
               }}
             >
               <Menu className="h-5 w-5" />
