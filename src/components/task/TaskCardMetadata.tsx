@@ -41,13 +41,9 @@ const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({ task, isOverdue }) 
     <div className="space-y-3">
       {/* First row: Deadline and Cost */}
       <div className="grid grid-cols-2 gap-2">
-        <div className={cn(
-          "flex items-center gap-2 text-xs px-2.5 py-1.5 rounded-md font-medium border",
-          "shadow-sm backdrop-blur-sm transition-all duration-300",
-          isOverdue 
-            ? "bg-red-50/80 text-red-700 border-red-200/70 dark:bg-red-950/60 dark:text-red-300 dark:border-red-800/60" 
-            : "bg-muted/40 text-muted-foreground border-border/40 hover:border-border/60"
-        )}>
+        <div className="flex items-center gap-2 text-xs px-2.5 py-1.5 rounded-md font-medium border
+                         shadow-sm backdrop-blur-sm transition-all duration-300
+                         bg-muted/40 text-muted-foreground border-border/40 hover:border-border/60">
           <Clock className="h-3.5 w-3.5 flex-shrink-0" />
           <span className="truncate font-medium">{formatDeadline(new Date(task.deadline))}</span>
         </div>
