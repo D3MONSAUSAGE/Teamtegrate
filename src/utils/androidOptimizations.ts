@@ -28,7 +28,7 @@ export class AndroidOptimizations {
   private detectDevice(): DeviceInfo {
     const userAgent = navigator.userAgent.toLowerCase();
     const isAndroid = /android/.test(userAgent);
-    const isWebView = /wv/.test(userAgent) || window.navigator.standalone === false;
+    const isWebView = /wv/.test(userAgent) || (window.navigator as any).standalone === false;
     const devicePixelRatio = window.devicePixelRatio || 1;
     
     // Detect manufacturer
