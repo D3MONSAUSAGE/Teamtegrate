@@ -24,7 +24,7 @@ const MainContent = memo(({ children }: { children: React.ReactNode }) => {
 
   return (
     <SidebarInset 
-      className="flex flex-col flex-1 overflow-hidden safe-area-all"
+      className="flex flex-col flex-1 overflow-hidden"
       onClick={handleMainContentClick}
       style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
     >
@@ -42,7 +42,7 @@ MainContent.displayName = 'MainContent';
 
 // Enhanced loading screen with mobile optimization
 const LoadingScreen = memo(() => (
-  <div className="min-h-screen-mobile flex items-center justify-center bg-background safe-area-all">
+  <div className="min-h-screen-mobile flex items-center justify-center bg-background">
     <div className="text-center p-8">
       <div className="w-16 h-16 mx-auto mb-6 bg-primary/20 rounded-full flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -69,7 +69,7 @@ const AppLayout = memo(() => {
 
   return (
     <SidebarProvider defaultOpen={!isMobile}>
-      <div className="min-h-screen-mobile bg-background w-full flex overflow-hidden safe-area-all" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+      <div className="min-h-screen-mobile bg-background w-full flex overflow-hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
         <Sidebar />
         <MainContent>
           <Outlet />
