@@ -1,4 +1,3 @@
-
 import * as React from "react"
 
 const MOBILE_BREAKPOINT = 768
@@ -11,16 +10,13 @@ export function useIsMobile() {
     const checkMobile = () => {
       const width = window.innerWidth
       
-      // Enhanced mobile detection using multiple criteria
-      const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0
+      // Simplified mobile detection - primarily based on screen width
+      // with basic touch capability check as secondary indicator
       const isNarrowScreen = width < MOBILE_BREAKPOINT
-      const hasCoarsePointer = window.matchMedia('(pointer: coarse)').matches
-      const hasNoHover = window.matchMedia('(hover: none)').matches
+      const hasTouchCapability = 'ontouchstart' in window
       
-      // Consider mobile if:
-      // - Screen is narrow (< 768px) OR
-      // - Device has touch capability AND (has coarse pointer OR no hover capability)
-      const mobile = isNarrowScreen || (isTouchDevice && (hasCoarsePointer || hasNoHover))
+      // Consider mobile if screen is narrow, or if very narrow with touch
+      const mobile = isNarrowScreen || (width < MOBILE_BREAKPOINT + 100 && hasTouchCapability)
       
       setIsMobile(mobile)
     }
@@ -28,15 +24,11 @@ export function useIsMobile() {
     // Check immediately on mount
     checkMobile()
     
-    // Add event listener for window resize and orientation change
+    // Add event listener for window resize
     window.addEventListener("resize", checkMobile)
-    window.addEventListener("orientationchange", checkMobile)
     
-    // Clean up event listeners
-    return () => {
-      window.removeEventListener("resize", checkMobile)
-      window.removeEventListener("orientationchange", checkMobile)
-    }
+    // Clean up event listener
+    return () => window.removeEventListener("resize", checkMobile)
   }, [])
 
   return isMobile
