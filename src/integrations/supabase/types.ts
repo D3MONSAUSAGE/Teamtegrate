@@ -1491,6 +1491,10 @@ export type Database = {
         Args: { target_user_id: string; target_date: string }
         Returns: undefined
       }
+      update_time_entry_clock_out: {
+        Args: { p_user_id: string; p_task_id: string }
+        Returns: undefined
+      }
       user_is_admin_or_superadmin: {
         Args: { user_id: string }
         Returns: boolean
