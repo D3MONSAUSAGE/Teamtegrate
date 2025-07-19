@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { MessageCircle, CheckCircle, Clock, Play, Sparkles } from 'lucide-react';
+import { MessageCircle, CheckCircle, Clock, Play, Sparkles, AlertCircle } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { TaskStatus } from '@/types';
 import {
@@ -88,7 +88,7 @@ const TaskCardFooter: React.FC<TaskCardFooterProps> = ({
 
   return (
     <div className="flex items-center justify-between pt-3 gap-3">
-      {/* Enhanced Status Selector with modern styling */}
+      {/* Enhanced Status Selector with consistent height */}
       <Select 
         value={status} 
         onValueChange={handleStatusChange}
@@ -137,32 +137,47 @@ const TaskCardFooter: React.FC<TaskCardFooterProps> = ({
         </SelectContent>
       </Select>
 
-      {/* Enhanced Comments Button with modern floating design */}
-      {commentCount > 0 && (
-        <button
-          onClick={onShowComments}
-          className={cn(
-            "group/btn flex items-center gap-2.5 px-4 py-2.5 rounded-xl backdrop-blur-lg flex-shrink-0",
-            "bg-gradient-to-r from-background/90 via-background/85 to-background/80",
-            "border-2 border-border/50 shadow-lg hover:shadow-xl",
-            "text-sm font-semibold text-muted-foreground",
-            "hover:text-primary hover:bg-gradient-to-r hover:from-primary/10 hover:via-primary/5 hover:to-primary/10",
-            "hover:border-primary/40 hover:scale-105 active:scale-95",
-            "transition-all duration-300 transform-gpu",
-            "ring-1 ring-black/5 dark:ring-white/10"
-          )}
-        >
-          <div className="relative">
-            <MessageCircle className="h-4 w-4 flex-shrink-0 transition-transform duration-300 group-hover/btn:scale-110" />
-            {/* Subtle pulse effect */}
-            <div className="absolute inset-0 bg-primary/20 rounded-full blur-sm opacity-0 group-hover/btn:opacity-100 group-hover/btn:animate-ping" />
+      <div className="flex items-center gap-3">
+        {/* Enhanced Comments Button with consistent height */}
+        {commentCount > 0 && (
+          <button
+            onClick={onShowComments}
+            className={cn(
+              "group/btn flex items-center gap-2.5 px-4 h-11 rounded-xl backdrop-blur-lg flex-shrink-0",
+              "bg-gradient-to-r from-background/90 via-background/85 to-background/80",
+              "border-2 border-border/50 shadow-lg hover:shadow-xl",
+              "text-sm font-semibold text-muted-foreground",
+              "hover:text-primary hover:bg-gradient-to-r hover:from-primary/10 hover:via-primary/5 hover:to-primary/10",
+              "hover:border-primary/40 hover:scale-105 active:scale-95",
+              "transition-all duration-300 transform-gpu",
+              "ring-1 ring-black/5 dark:ring-white/10"
+            )}
+          >
+            <div className="relative">
+              <MessageCircle className="h-4 w-4 flex-shrink-0 transition-transform duration-300 group-hover/btn:scale-110" />
+              {/* Subtle pulse effect */}
+              <div className="absolute inset-0 bg-primary/20 rounded-full blur-sm opacity-0 group-hover/btn:opacity-100 group-hover/btn:animate-ping" />
+            </div>
+            <span className="text-xs font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
+              {commentCount}
+            </span>
+            <Sparkles className="h-3 w-3 opacity-0 group-hover/btn:opacity-100 transition-all duration-300 text-primary" />
+          </button>
+        )}
+
+        {/* Overdue Badge - positioned in footer with consistent height */}
+        {isOverdue && (
+          <div className={cn(
+            "flex items-center gap-1.5 h-11 px-3 rounded-xl",
+            "bg-gradient-to-r from-red-500 to-red-600 text-white",
+            "shadow-lg border border-red-400/50 text-xs font-semibold",
+            "backdrop-blur-sm animate-pulse flex-shrink-0"
+          )}>
+            <AlertCircle className="w-3 h-3" />
+            <span>Overdue</span>
           </div>
-          <span className="text-xs font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
-            {commentCount}
-          </span>
-          <Sparkles className="h-3 w-3 opacity-0 group-hover/btn:opacity-100 transition-all duration-300 text-primary" />
-        </button>
-      )}
+        )}
+      </div>
     </div>
   );
 };

@@ -151,27 +151,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, className }) => {
         </div>
       </div>
 
-      {/* Mobile-optimized overdue indicator */}
-      {isOverdue && (
-        <div className={cn(
-          "absolute z-10",
-          isMobile ? "-top-1 -right-1" : "-top-1 -right-1"
-        )}>
-          <div className={cn(
-            "flex items-center gap-1.5 bg-red-500/90 text-white",
-            "shadow-lg border border-red-400/60",
-            "animate-pulse translate-x-1 -translate-y-1.5 transform -rotate-3",
-            isMobile ? [
-              "px-2.5 py-1 rounded-md text-xs font-semibold"
-            ] : [
-              "px-3 py-1.5 rounded-md text-xs font-semibold"
-            ]
-          )}>
-            <AlertCircle className={isMobile ? "w-2.5 h-2.5" : "w-3 h-3"} />
-            <span>Overdue</span>
-          </div>
-        </div>
-      )}
+      {/* Remove the overdue indicator from here since it's now in the footer */}
     </Card>
   );
 };
