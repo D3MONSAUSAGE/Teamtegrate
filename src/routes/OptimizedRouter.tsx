@@ -6,6 +6,9 @@ import AppLayout from '@/components/AppLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRoutePreloader } from '@/hooks/useRoutePreloader';
 
+// Import Index component for the root route
+const Index = lazy(() => import('@/pages/Index'));
+
 // Lazy load pages with route-specific fallbacks
 const LandingPage = lazy(() => import('@/pages/LandingPage'));
 const LoginPage = lazy(() => import('@/pages/LoginPage'));
@@ -70,8 +73,12 @@ const OptimizedRouter = () => {
 
   return (
     <Routes>
-      {/* Root redirect */}
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      {/* Root route now uses Index component which handles auth routing */}
+      <Route path="/" element={
+        <PageWrapper>
+          <Index />
+        </PageWrapper>
+      } />
       
       {/* Public routes with individual suspense */}
       <Route path="/login" element={
