@@ -84,6 +84,13 @@
   body {
     @apply bg-background text-foreground;
     font-family: 'Inter', sans-serif;
+    /* Improve mobile touch responsiveness */
+    touch-action: manipulation;
+  }
+  
+  /* Ensure buttons and interactive elements have proper touch handling */
+  button, a, [role="button"], [tabindex] {
+    touch-action: manipulation;
   }
 }
 
@@ -102,6 +109,11 @@
     padding-bottom: env(safe-area-inset-bottom);
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
+  }
+  
+  /* Mobile touch optimization */
+  .touch-manipulation {
+    touch-action: manipulation;
   }
 }
 
@@ -126,3 +138,4 @@ body::-webkit-scrollbar,
 *::-webkit-scrollbar {
   display: none;
 }
+
