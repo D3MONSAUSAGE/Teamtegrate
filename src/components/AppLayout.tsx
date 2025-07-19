@@ -29,7 +29,7 @@ const MainContent = memo(({ children }: { children: React.ReactNode }) => {
       onClick={handleMainContentClick}
     >
       <Navbar />
-      <main className="flex-1 overflow-y-auto overflow-x-hidden px-4 md:px-6 lg:px-12">
+      <main className="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar px-4 md:px-6 lg:px-12">
         <div className="space-y-6 py-4 pb-20 md:pb-6">
           {children}
         </div>
