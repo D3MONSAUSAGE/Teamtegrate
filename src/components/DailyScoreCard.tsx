@@ -11,7 +11,7 @@ interface DailyScoreCardProps {
 
 const DailyScoreCard: React.FC<DailyScoreCardProps> = ({ score }) => {
   return (
-    <div className="group glass-card border shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 bg-gradient-to-br from-white/95 via-white/90 to-white/85 dark:from-card/95 dark:via-card/90 dark:to-card/85 backdrop-blur-xl rounded-2xl p-6">
+    <div className="group border shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 bg-card rounded-2xl p-6">
       <div className="flex items-center gap-3 mb-3">
         <div className="p-2 rounded-full bg-gradient-to-r from-purple-500/20 to-purple-600/20">
           <Target className="h-5 w-5 text-purple-600 dark:text-purple-400" />

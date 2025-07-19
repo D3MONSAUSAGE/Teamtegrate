@@ -27,7 +27,7 @@ const ModernSectionCard: React.FC<ModernSectionCardProps> = ({
   return (
     <Card className={cn(
       "group relative overflow-hidden border-0 shadow-md hover:shadow-xl transition-all duration-300 hover:scale-[1.01]",
-      "bg-gradient-to-br from-card/90 via-card/95 to-card/90 backdrop-blur-sm",
+      "bg-card",
       className
     )}>
       {/* Background gradient */}

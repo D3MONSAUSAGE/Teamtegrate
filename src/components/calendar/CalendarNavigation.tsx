@@ -20,18 +20,18 @@ const CalendarNavigation: React.FC<CalendarNavigationProps> = ({
   onAddTask
 }) => {
   return (
-    <div className="flex items-center justify-between gap-4 p-6 glass-card border shadow-xl bg-gradient-to-br from-white/90 via-white/85 to-white/80 dark:from-card/90 dark:via-card/85 dark:to-card/80 backdrop-blur-xl rounded-2xl">
+    <div className="flex items-center justify-between gap-4 p-6 border shadow-xl bg-card rounded-2xl">
       <div className="flex items-center gap-4">
         <Button
           variant="outline"
           size="sm"
           onClick={onPreviousMonth}
-          className="h-10 w-10 p-0 rounded-full hover:scale-110 transition-all duration-200 shadow-md hover:shadow-lg hover:bg-primary/10 hover:border-primary/40 bg-white/80 backdrop-blur-sm"
+          className="h-10 w-10 p-0 rounded-full hover:scale-110 transition-all duration-200 shadow-md hover:shadow-lg hover:bg-primary/10 hover:border-primary/40 bg-background"
         >
           <ChevronLeft className="h-4 w-4" />
         </Button>
         
-        <div className="flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-primary/10 to-purple-500/10 rounded-xl border border-primary/20 backdrop-blur-sm">
+        <div className="flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-primary/10 to-purple-500/10 rounded-xl border border-primary/20">
           <CalendarIcon className="h-5 w-5 text-primary" />
           <h2 className="text-xl font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
             {format(selectedDate, 'MMMM yyyy')}
@@ -42,7 +42,7 @@ const CalendarNavigation: React.FC<CalendarNavigationProps> = ({
           variant="outline"
           size="sm"
           onClick={onNextMonth}
-          className="h-10 w-10 p-0 rounded-full hover:scale-110 transition-all duration-200 shadow-md hover:shadow-lg hover:bg-primary/10 hover:border-primary/40 bg-white/80 backdrop-blur-sm"
+          className="h-10 w-10 p-0 rounded-full hover:scale-110 transition-all duration-200 shadow-md hover:shadow-lg hover:bg-primary/10 hover:border-primary/40 bg-background"
         >
           <ChevronRight className="h-4 w-4" />
         </Button>
@@ -53,7 +53,7 @@ const CalendarNavigation: React.FC<CalendarNavigationProps> = ({
           variant="outline"
           size="sm"
           onClick={onToday}
-          className="px-4 py-2 rounded-xl hover:scale-105 transition-all duration-200 shadow-md hover:shadow-lg hover:bg-primary/10 hover:border-primary/40 bg-white/80 backdrop-blur-sm font-medium"
+          className="px-4 py-2 rounded-xl hover:scale-105 transition-all duration-200 shadow-md hover:shadow-lg hover:bg-primary/10 hover:border-primary/40 bg-background font-medium"
         >
           Today
         </Button>

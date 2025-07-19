@@ -96,7 +96,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ onNavigation }) => {
       {/* Mobile overlay */}
       {isMobile && open && (
         <div 
-          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 md:hidden"
+          className="fixed inset-0 bg-black/20 z-40 md:hidden"
           onClick={handleOverlayClick}
           style={{ zIndex: 40 }}
         />
@@ -104,8 +104,8 @@ const Sidebar: React.FC<SidebarProps> = memo(({ onNavigation }) => {
       
       <ShadcnSidebar 
         className={`
-          border-r border-sidebar-border/60 backdrop-blur-xl no-scrollbar overflow-hidden transition-all duration-300
-          ${isMobile ? 'fixed left-0 top-0 z-50 h-full shadow-2xl bg-sidebar-background/95' : 'glass-sidebar'}
+          border-r border-sidebar-border/60 no-scrollbar overflow-hidden transition-all duration-300
+          ${isMobile ? 'fixed left-0 top-0 z-50 h-full shadow-2xl bg-sidebar-background' : 'bg-sidebar-background'}
           ${isMobile && !open ? '-translate-x-full' : 'translate-x-0'}
         `}
         collapsible={isMobile ? "offcanvas" : "icon"}

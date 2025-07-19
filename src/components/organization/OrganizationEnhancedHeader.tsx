@@ -23,11 +23,10 @@ const OrganizationEnhancedHeader: React.FC<OrganizationEnhancedHeaderProps> = ({
   const canInviteUsers = user && ['superadmin', 'admin'].includes(user.role);
 
   return (
-    <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/5 via-purple-500/5 to-primary/5 border border-primary/10">
+    <div className="relative overflow-hidden rounded-3xl bg-card border shadow-lg">
       {/* Background Effects */}
-      <div className="absolute inset-0 bg-gradient-to-r from-card/95 via-card/90 to-card/95 backdrop-blur-sm" />
-      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/20 to-purple-500/20 rounded-full blur-3xl" />
-      <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-blue-500/20 to-indigo-500/20 rounded-full blur-2xl" />
+      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/10 to-purple-500/10 rounded-full blur-3xl" />
+      <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-blue-500/10 to-indigo-500/10 rounded-full blur-2xl" />
       
       <div className="relative p-6 md:p-8">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
