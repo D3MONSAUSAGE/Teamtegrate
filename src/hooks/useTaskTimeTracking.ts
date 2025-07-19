@@ -185,7 +185,7 @@ export const useTaskTimeTracking = () => {
         
         // Parse total paused duration from PostgreSQL interval
         let totalPausedMs = 0;
-        if (activeSession.total_paused_duration) {
+        if (activeSession.total_paused_duration && typeof activeSession.total_paused_duration === 'string') {
           // Simple parsing for common interval formats like "00:05:30" or "300 seconds"
           const durationStr = activeSession.total_paused_duration;
           if (durationStr.includes(':')) {
