@@ -10,13 +10,8 @@ export function useIsMobile() {
     const checkMobile = () => {
       const width = window.innerWidth
       
-      // Simplified mobile detection - primarily based on screen width
-      // with basic touch capability check as secondary indicator
-      const isNarrowScreen = width < MOBILE_BREAKPOINT
-      const hasTouchCapability = 'ontouchstart' in window
-      
-      // Consider mobile if screen is narrow, or if very narrow with touch
-      const mobile = isNarrowScreen || (width < MOBILE_BREAKPOINT + 100 && hasTouchCapability)
+      // Simple mobile detection - only screen width
+      const mobile = width < MOBILE_BREAKPOINT
       
       setIsMobile(mobile)
     }

@@ -1,3 +1,4 @@
+
 import React, { useEffect, memo, useMemo, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -78,8 +79,10 @@ const Navbar = memo(() => {
     <nav className="bg-white dark:bg-background border-b border-gray-200 dark:border-gray-800 safe-area-top">
       <div className="flex items-center justify-between h-16 px-4 md:px-6">
         <div className="flex items-center gap-3">
-          {/* Always show sidebar trigger - both mobile and desktop */}
-          <SidebarTrigger className="h-10 w-10 native-button tap-highlight-none" />
+          {/* Only show hamburger menu on mobile */}
+          {isMobile && (
+            <SidebarTrigger className="h-10 w-10 native-button tap-highlight-none" />
+          )}
           <NavbarBrand />
         </div>
 

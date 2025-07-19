@@ -1,3 +1,4 @@
+
 import React, { memo, useMemo, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDarkMode } from '@/hooks/useDarkMode';
@@ -19,7 +20,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = memo(({ onNavigation }) => {
   const { user } = useAuth();
   const { isDark, toggle } = useDarkMode();
-  const { state, isMobile, setOpenMobile, setOpen } = useSidebar();
+  const { state, isMobile, setOpenMobile } = useSidebar();
 
   // Memoize user object to prevent unnecessary re-renders
   const sidebarUser = useMemo(() => {
@@ -41,20 +42,6 @@ const Sidebar: React.FC<SidebarProps> = memo(({ onNavigation }) => {
     onNavigation?.();
   }, [isMobile, setOpenMobile, onNavigation]);
 
-  // Desktop hover behavior - only when not manually toggled
-  const handleMouseEnter = useMemo(() => () => {
-    if (!isMobile && state === 'collapsed') {
-      setOpen(true);
-    }
-  }, [isMobile, state, setOpen]);
-
-  const handleMouseLeave = useMemo(() => () => {
-    if (!isMobile && state === 'expanded') {
-      // Only auto-collapse if user hasn't manually expanded
-      setOpen(false);
-    }
-  }, [isMobile, state, setOpen]);
-
   if (!sidebarUser) return null;
 
   const isCollapsed = !isMobile && state === 'collapsed';
@@ -64,8 +51,6 @@ const Sidebar: React.FC<SidebarProps> = memo(({ onNavigation }) => {
       className="border-r border-sidebar-border/60 transition-all duration-300 bg-sidebar-background"
       collapsible={isMobile ? "offcanvas" : "icon"}
       variant="sidebar"
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
     >
       <ShadcnSidebarHeader className="border-b border-sidebar-border/30">
         <SidebarHeader 
