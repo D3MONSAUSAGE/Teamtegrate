@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Clock, Play, Square, Pause } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -100,9 +99,6 @@ const TaskTimer: React.FC<TaskTimerProps> = ({
             <span className="font-mono text-xs font-semibold tracking-wide">
               {formatTime(timerState.elapsedSeconds)}
             </span>
-            {isPaused && (
-              <span className="text-xs opacity-75 font-medium">PAUSED</span>
-            )}
           </div>
         )}
         
@@ -186,9 +182,11 @@ const TaskTimer: React.FC<TaskTimerProps> = ({
               <span className="font-mono font-bold text-lg">
                 {formatTime(timerState.elapsedSeconds)}
               </span>
-              <span className="text-sm font-semibold">
-                {isPaused ? 'PAUSED' : 'Active'}
-              </span>
+              {!isPaused && (
+                <span className="text-sm font-semibold">
+                  Active
+                </span>
+              )}
             </div>
           ) : (
             <div className="flex items-center gap-2 text-muted-foreground">
