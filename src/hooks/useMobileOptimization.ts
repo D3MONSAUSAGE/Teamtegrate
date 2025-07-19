@@ -7,6 +7,9 @@ interface MobileOptimizationOptions {
   enableViewportFix?: boolean;
   enableKeyboardHandling?: boolean;
   enableAndroidOptimization?: boolean;
+  enableTouchOptimization?: boolean;
+  optimizeScrolling?: boolean;
+  enableReducedMotion?: boolean;
   debugMode?: boolean;
 }
 
