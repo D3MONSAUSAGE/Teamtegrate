@@ -3,7 +3,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=2.0, viewport-fit=cover, user-scalable=yes" />
     <title>Teamtegrate - Team Collaboration Platform</title>
     <meta name="description" content="Transform your team's productivity with Teamtegrate - the all-in-one team management platform that streamlines collaboration and boosts efficiency" />
     <meta name="author" content="Teamtegrate" />
@@ -60,7 +60,7 @@
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap"></noscript>
 
     <style>
-      /* Critical CSS for initial render - Android optimized */
+      /* Minimal critical CSS - cleaned up for Android compatibility */
       * {
         box-sizing: border-box;
         margin: 0;
@@ -69,8 +69,6 @@
       
       html {
         height: 100%;
-        -webkit-text-size-adjust: 100%;
-        text-size-adjust: 100%;
         scroll-behavior: smooth;
       }
       
@@ -80,28 +78,11 @@
         background-color: white;
         color: #1a1a1a;
         line-height: 1.5;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-        text-rendering: optimizeLegibility;
-        font-feature-settings: "kern" 1;
-        font-kerning: normal;
-        font-smooth: always;
+        /* Clean font rendering - let Android optimizations handle device-specific rules */
+        text-rendering: auto;
+        font-kerning: auto;
         -webkit-overflow-scrolling: touch;
         overscroll-behavior-y: none;
-      }
-      
-      /* Android-specific rendering fixes applied immediately */
-      @media screen and (-webkit-min-device-pixel-ratio: 1) {
-        body {
-          -webkit-font-smoothing: subpixel-antialiased !important;
-          -moz-osx-font-smoothing: auto !important;
-          text-rendering: auto !important;
-          font-smooth: auto !important;
-          image-rendering: -webkit-optimize-contrast;
-          -webkit-optimize-contrast: optimizeSpeed;
-          transform: none !important;
-          will-change: auto !important;
-        }
       }
       
       /* Dark mode body background */
@@ -116,25 +97,15 @@
         overflow-x: hidden;
       }
       
-      /* Ensure proper touch targets on mobile */
+      /* Mobile touch targets */
       @media (max-width: 768px) {
         button, [role="button"], a {
           touch-action: manipulation;
           min-height: 44px;
           min-width: 44px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-        
-        * {
-          -webkit-tap-highlight-color: transparent;
-          -webkit-touch-callout: none;
         }
         
         input, textarea, [contenteditable] {
-          -webkit-user-select: text;
-          user-select: text;
           font-size: 16px;
           -webkit-appearance: none;
         }
@@ -149,13 +120,10 @@
           scroll-behavior: auto !important;
         }
       }
-      
-      /* Loading state */
-      .loading {
-        pointer-events: none;
-        opacity: 0.7;
-      }
     </style>
+    
+    <!-- Load Android-specific fixes -->
+    <link rel="stylesheet" href="/src/styles/android-fixes.css" />
   </head>
 
   <body>

@@ -62,40 +62,50 @@ export function useMobileOptimization(options: MobileOptimizationOptions = {}) {
   }, [isMobile, enableKeyboardHandling]);
 
   useEffect(() => {
-    console.log('🚀 Initializing mobile optimizations...', { 
+    console.log('🚀 Initializing mobile optimizations with blur fixes...', { 
       isMobile, 
       enableAndroidOptimization,
       options 
     });
 
-    // Initialize Android optimizations if enabled
+    // Initialize Android optimizations with blur fixes if enabled
     if (enableAndroidOptimization) {
       const deviceInfo = androidOptimizations.getDeviceInfo();
       const strategy = androidOptimizations.getRenderingStrategy();
       
-      console.log('📱 Mobile optimization initialized:', { deviceInfo, strategy });
+      console.log('📱 Android blur fix optimization initialized:', { 
+        deviceInfo, 
+        strategy,
+        blurFixApplied: deviceInfo.isAndroid 
+      });
       
-      // Apply device-specific classes immediately
+      // Apply device-specific classes immediately for blur prevention
       if (deviceInfo.isAndroid) {
-        document.body.classList.add('android-optimized');
-        console.log('✅ Android optimized class applied');
+        document.body.classList.add('android-blur-fix');
+        console.log('✅ Android blur fix class applied immediately');
         
         if (deviceInfo.isWebView) {
-          document.body.classList.add('webview-optimized');
-          console.log('✅ WebView optimized class applied');
+          document.body.classList.add('webview-blur-fix');
+          console.log('✅ WebView blur fix class applied immediately');
         }
         
-        // Apply manufacturer-specific optimizations
-        if (deviceInfo.manufacturer && deviceInfo.manufacturer !== 'unknown') {
-          document.body.classList.add(`${deviceInfo.manufacturer}-optimized`);
-          console.log(`✅ ${deviceInfo.manufacturer} optimized class applied`);
+        // Apply manufacturer-specific blur fixes
+        if (deviceInfo.manufacturer === 'samsung') {
+          document.body.classList.add('samsung-blur-fix');
+          console.log('✅ Samsung blur fix class applied immediately');
         }
+        
+        // Force recalibration to ensure all blur fixes are applied
+        setTimeout(() => {
+          androidOptimizations.recalibrate();
+          console.log('🔄 Android blur fixes recalibrated after initialization');
+        }, 100);
       }
     }
 
     // Mobile-specific optimizations
     if (isMobile) {
-      console.log('📱 Applying mobile-specific optimizations...');
+      console.log('📱 Applying mobile-specific optimizations with blur prevention...');
       
       // Prevent zoom on double tap
       let lastTouchEnd = 0;
@@ -110,15 +120,19 @@ export function useMobileOptimization(options: MobileOptimizationOptions = {}) {
       if (enableTouchOptimization) {
         document.addEventListener('touchend', preventZoom, { passive: false });
         document.body.style.touchAction = 'pan-y';
-        console.log('✅ Touch optimization applied');
+        console.log('✅ Touch optimization applied (blur-safe)');
       }
 
-      // Optimize scrolling performance
+      // Optimize scrolling performance without causing blur
       if (optimizeScrolling) {
         document.body.style.setProperty('-webkit-overflow-scrolling', 'touch');
         document.body.style.setProperty('overscroll-behavior-y', 'none');
-        document.body.style.setProperty('scroll-behavior', 'smooth');
-        console.log('✅ Scroll optimization applied');
+        // Use smooth scrolling only if not on problematic Android devices
+        const deviceInfo = androidOptimizations.getDeviceInfo();
+        if (!deviceInfo.isAndroid || deviceInfo.chromeVersion >= 80) {
+          document.body.style.setProperty('scroll-behavior', 'smooth');
+        }
+        console.log('✅ Scroll optimization applied (Android-safe)');
       }
 
       // Handle viewport height on mobile
@@ -181,9 +195,18 @@ export function useMobileOptimization(options: MobileOptimizationOptions = {}) {
   }, [enableReducedMotion]);
 
   useEffect(() => {
-    // Add mobile optimization classes to body
+    // Add mobile optimization classes to body with blur fix integration
     if (isMobile) {
       document.body.classList.add('mobile-optimized');
+      
+      // Ensure Android blur fixes are maintained
+      if (enableAndroidOptimization) {
+        const deviceInfo = androidOptimizations.getDeviceInfo();
+        if (deviceInfo.isAndroid && !document.body.classList.contains('android-blur-fix')) {
+          console.log('🔄 Re-applying Android blur fix classes...');
+          androidOptimizations.recalibrate();
+        }
+      }
       
       // Add safe area support
       document.body.style.setProperty('padding-top', 'env(safe-area-inset-top)');
@@ -191,18 +214,24 @@ export function useMobileOptimization(options: MobileOptimizationOptions = {}) {
       document.body.style.setProperty('padding-left', 'env(safe-area-inset-left)');
       document.body.style.setProperty('padding-right', 'env(safe-area-inset-right)');
       
-      console.log('✅ Mobile optimization classes applied');
+      console.log('✅ Mobile optimization classes applied with blur fix integration');
     } else {
       document.body.classList.remove('mobile-optimized');
     }
 
     setIsOptimized(true);
-    console.log('🎯 Mobile optimization setup complete');
+    console.log('🎯 Mobile optimization with blur fixes setup complete');
 
     return () => {
-      document.body.classList.remove('mobile-optimized', 'keyboard-open', 'android-optimized', 'webview-optimized');
+      document.body.classList.remove(
+        'mobile-optimized', 
+        'keyboard-open', 
+        'android-blur-fix', 
+        'webview-blur-fix',
+        'samsung-blur-fix'
+      );
     };
-  }, [isMobile]);
+  }, [isMobile, enableAndroidOptimization]);
 
   const scrollToTop = useCallback(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });

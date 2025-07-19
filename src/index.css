@@ -1,3 +1,4 @@
+
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
 @tailwind base;
 @tailwind components;
@@ -51,11 +52,6 @@
     --mobile-safe-left: env(safe-area-inset-left);
     --mobile-safe-right: env(safe-area-inset-right);
     --mobile-touch-target: 44px;
-    --mobile-spacing-xs: 0.25rem;
-    --mobile-spacing-sm: 0.5rem;
-    --mobile-spacing-md: 1rem;
-    --mobile-spacing-lg: 1.5rem;
-    --mobile-spacing-xl: 2rem;
   }
 
 .dark {
@@ -110,49 +106,12 @@
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   }
   
-  /* Android-specific font rendering fixes */
-  .android-optimized {
-    -webkit-font-smoothing: subpixel-antialiased;
-    -moz-osx-font-smoothing: auto;
-    text-rendering: auto;
-    font-smooth: auto;
-    image-rendering: -webkit-optimize-contrast;
-    -webkit-optimize-contrast: optimizeSpeed;
-  }
-  
-  /* WebView-specific optimizations */
-  .webview-optimized {
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    text-rendering: optimizeLegibility;
-    font-smooth: always;
-    transform: none !important;
-    will-change: auto;
-  }
-  
   /* Mobile safe area support */
   .mobile-safe-area {
     padding-top: var(--mobile-safe-top);
     padding-bottom: var(--mobile-safe-bottom);
     padding-left: var(--mobile-safe-left);
     padding-right: var(--mobile-safe-right);
-  }
-  
-  /* Selective hardware acceleration - only for elements that need it */
-  .hw-accelerated {
-    transform: translateZ(0);
-    will-change: transform;
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
-  }
-  
-  /* CSS Containment for better performance */
-  .contain-layout {
-    contain: layout style;
-  }
-  
-  .contain-paint {
-    contain: paint;
   }
 }
 
@@ -195,42 +154,6 @@ body::-webkit-scrollbar {
   height: 0;
 }
 
-/* Android-specific rendering optimizations */
-@media screen and (-webkit-min-device-pixel-ratio: 1) {
-  .android-text-fix {
-    -webkit-font-smoothing: subpixel-antialiased;
-    -moz-osx-font-smoothing: auto;
-    text-rendering: auto;
-    font-smooth: auto;
-  }
-  
-  .android-image-fix {
-    image-rendering: -webkit-optimize-contrast;
-    image-rendering: crisp-edges;
-  }
-  
-  .android-transform-fix {
-    transform: none !important;
-    will-change: auto !important;
-  }
-}
-
-/* High-DPI display optimizations with Android-specific handling */
-@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-  .android-optimized img, 
-  .android-optimized svg, 
-  .android-optimized canvas {
-    image-rendering: -webkit-optimize-contrast;
-    image-rendering: crisp-edges;
-  }
-  
-  .android-optimized .lucide-icon, 
-  .android-optimized [data-lucide] {
-    image-rendering: -webkit-optimize-contrast;
-    image-rendering: crisp-edges;
-  }
-}
-
 /* Mobile touch optimizations */
 .touch-manipulation {
   touch-action: manipulation;
@@ -248,33 +171,6 @@ body::-webkit-scrollbar {
 @media (max-width: 768px) {
   .mobile-grid-1 {
     grid-template-columns: 1fr;
-  }
-  
-  .mobile-p-4 {
-    padding: 1rem;
-  }
-  
-  .mobile-px-4 {
-    padding-left: 1rem;
-    padding-right: 1rem;
-  }
-  
-  .mobile-py-4 {
-    padding-top: 1rem;
-    padding-bottom: 1rem;
-  }
-  
-  .mobile-gap-4 {
-    gap: 1rem;
-  }
-  
-  .mobile-text-sm {
-    font-size: 0.875rem;
-    line-height: 1.25rem;
-  }
-  
-  .mobile-min-h-12 {
-    min-height: 3rem;
   }
   
   .mobile-touch-target {
@@ -313,24 +209,3 @@ body::-webkit-scrollbar {
     outline-offset: 2px;
   }
 }
-
-/* Device-specific fixes */
-.samsung-fix {
-  image-rendering: crisp-edges;
-  -webkit-optimize-contrast: optimizeSpeed;
-}
-
-.webview-fix {
-  -webkit-tap-highlight-color: transparent;
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  user-select: none;
-}
-
-.webview-fix input,
-.webview-fix textarea,
-.webview-fix [contenteditable] {
-  -webkit-user-select: text !important;
-  user-select: text !important;
-}
-

@@ -1,0 +1,72 @@
+
+/* Android-specific fixes for blurriness and rendering issues */
+
+/* Reset any browser-imposed transforms that cause blur */
+@media screen and (-webkit-min-device-pixel-ratio: 1) {
+  .android-blur-fix {
+    -webkit-font-smoothing: subpixel-antialiased !important;
+    -moz-osx-font-smoothing: auto !important;
+    text-rendering: auto !important;
+    font-smooth: auto !important;
+    image-rendering: crisp-edges !important;
+    -webkit-optimize-contrast: optimizeSpeed !important;
+    transform: none !important;
+    will-change: auto !important;
+    backface-visibility: visible !important;
+    -webkit-backface-visibility: visible !important;
+  }
+  
+  /* Prevent any implicit transforms */
+  .android-blur-fix *,
+  .android-blur-fix *::before,
+  .android-blur-fix *::after {
+    transform: none !important;
+    will-change: auto !important;
+    backface-visibility: visible !important;
+    -webkit-backface-visibility: visible !important;
+  }
+  
+  /* High DPI specific fixes */
+  @media (-webkit-min-device-pixel-ratio: 2) {
+    .android-blur-fix {
+      image-rendering: -webkit-optimize-contrast !important;
+      image-rendering: crisp-edges !important;
+    }
+  }
+}
+
+/* WebView specific fixes */
+.webview-blur-fix {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.webview-blur-fix input,
+.webview-blur-fix textarea,
+.webview-blur-fix [contenteditable] {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+  font-size: 16px; /* Prevent zoom on focus */
+}
+
+/* Samsung device specific fixes */
+.samsung-blur-fix {
+  image-rendering: crisp-edges !important;
+  -webkit-optimize-contrast: optimizeSpeed !important;
+  text-rendering: auto !important;
+}
+
+/* Progressive enhancement for different Android versions */
+.android-modern {
+  font-feature-settings: "kern" 1;
+  font-kerning: normal;
+  text-rendering: optimizeLegibility;
+}
+
+.android-legacy {
+  font-feature-settings: normal;
+  font-kerning: auto;
+  text-rendering: auto;
+}
