@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { enhancedNotifications } from '@/utils/enhancedNotifications';
 import { useNotifications } from '@/hooks/use-notifications';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { SidebarTrigger } from '@/components/ui/sidebar';
+import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import NavbarBrand from './navbar/NavbarBrand';
 import NotificationButton from './navbar/NotificationButton';
 import UserMenu from './navbar/UserMenu';
@@ -15,6 +15,7 @@ const Navbar = memo(() => {
   const navigate = useNavigate();
   const { markAsRead, fetchNotifications } = useNotifications();
   const isMobile = useIsMobile();
+  const { setOpenMobile } = useSidebar();
 
   // Debug mobile detection
   useEffect(() => {
@@ -82,7 +83,10 @@ const Navbar = memo(() => {
           {isMobile && (
             <SidebarTrigger 
               className="h-10 w-10 native-button tap-highlight-none flex items-center justify-center" 
-              onClick={() => console.log('Sidebar trigger clicked on mobile')}
+              onClick={() => {
+                console.log('Sidebar trigger clicked on mobile');
+                setOpenMobile(true);
+              }}
             />
           )}
           <NavbarBrand />
