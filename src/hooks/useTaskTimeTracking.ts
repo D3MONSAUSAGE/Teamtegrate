@@ -155,9 +155,10 @@ export const useTaskTimeTracking = () => {
 
       // Update state
       if (activeSession) {
-        const startTime = new Date(activeSession.clock_in);
-        const isPaused = activeSession.is_paused || false;
-        const pausedAt = activeSession.paused_at ? new Date(activeSession.paused_at) : undefined;
+        const sessionData = activeSession as any;
+        const startTime = new Date(sessionData.clock_in);
+        const isPaused = sessionData.is_paused || false;
+        const pausedAt = sessionData.paused_at ? new Date(sessionData.paused_at) : undefined;
         
         let elapsedSeconds = 0;
         if (isPaused && pausedAt) {
@@ -169,16 +170,16 @@ export const useTaskTimeTracking = () => {
         }
         
         console.log('▶️ Setting active timer state:', {
-          taskId: activeSession.task_id,
-          title: (activeSession.tasks as any)?.title,
+          taskId: sessionData.task_id,
+          title: sessionData.tasks?.title,
           elapsedSeconds,
           isPaused,
           pausedAt
         });
         
         setTimerState({
-          activeTaskId: activeSession.task_id,
-          activeTaskTitle: (activeSession.tasks as any)?.title,
+          activeTaskId: sessionData.task_id,
+          activeTaskTitle: sessionData.tasks?.title,
           startTime,
           elapsedSeconds,
           totalTimeToday,
@@ -332,8 +333,8 @@ export const useTaskTimeTracking = () => {
     try {
       setIsLoading(true);
 
-      // Call the database function directly using rpc
-      const { data: result, error } = await supabase.rpc('pause_time_entry', {
+      // Call the database function directly using rpc (cast to any due to missing types)
+      const { data: result, error } = await (supabase.rpc as any)('pause_time_entry', {
         p_user_id: user.id,
         p_task_id: timerState.activeTaskId
       });
@@ -351,7 +352,7 @@ export const useTaskTimeTracking = () => {
       console.log('✅ Pause result:', result);
 
       // Type guard for the result
-      const pauseResult = result as PauseResumeResult;
+      const pauseResult = result as any;
       
       if (pauseResult?.success) {
         toast.success(`Paused working on "${timerState.activeTaskTitle || 'task'}"`);
@@ -385,8 +386,8 @@ export const useTaskTimeTracking = () => {
     try {
       setIsLoading(true);
 
-      // Call the database function directly using rpc
-      const { data: result, error } = await supabase.rpc('resume_time_entry', {
+      // Call the database function directly using rpc (cast to any due to missing types)
+      const { data: result, error } = await (supabase.rpc as any)('resume_time_entry', {
         p_user_id: user.id,
         p_task_id: timerState.activeTaskId
       });
@@ -404,7 +405,7 @@ export const useTaskTimeTracking = () => {
       console.log('✅ Resume result:', result);
 
       // Type guard for the result
-      const resumeResult = result as PauseResumeResult;
+      const resumeResult = result as any;
       
       if (resumeResult?.success) {
         toast.success(`Resumed working on "${timerState.activeTaskTitle || 'task'}"`);
