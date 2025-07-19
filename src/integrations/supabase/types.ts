@@ -1042,9 +1042,12 @@ export type Database = {
           created_at: string
           duration_minutes: number | null
           id: string
+          is_paused: boolean | null
           notes: string | null
           organization_id: string
+          paused_at: string | null
           task_id: string | null
+          total_paused_duration: unknown | null
           user_id: string
         }
         Insert: {
@@ -1053,9 +1056,12 @@ export type Database = {
           created_at?: string
           duration_minutes?: number | null
           id?: string
+          is_paused?: boolean | null
           notes?: string | null
           organization_id: string
+          paused_at?: string | null
           task_id?: string | null
+          total_paused_duration?: unknown | null
           user_id: string
         }
         Update: {
@@ -1064,9 +1070,12 @@ export type Database = {
           created_at?: string
           duration_minutes?: number | null
           id?: string
+          is_paused?: boolean | null
           notes?: string | null
           organization_id?: string
+          paused_at?: string | null
           task_id?: string | null
+          total_paused_duration?: unknown | null
           user_id?: string
         }
         Relationships: [
@@ -1466,6 +1475,14 @@ export type Database = {
           | { table_name: string; action_type: string; record_count: number }
           | { table_name: string; operation: string; user_id: string }
         Returns: undefined
+      }
+      pause_time_entry: {
+        Args: { p_user_id: string; p_task_id?: string }
+        Returns: Json
+      }
+      resume_time_entry: {
+        Args: { p_user_id: string; p_task_id?: string }
+        Returns: Json
       }
       send_daily_emails_and_reminders: {
         Args: Record<PropertyKey, never>

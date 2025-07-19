@@ -123,10 +123,10 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
                 </div>
               )}
 
-              {task.user_id && (
+              {task.userId && (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <User className="h-4 w-4" />
-                  <span>Assigned to: {task.user_id}</span>
+                  <span>Assigned to: {task.userId}</span>
                 </div>
               )}
             </div>
