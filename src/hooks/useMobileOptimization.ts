@@ -1,6 +1,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useIsMobile } from './use-mobile';
+import { androidOptimizations } from '@/utils/androidOptimizations';
 
 interface MobileOptimizationOptions {
   enableReducedMotion?: boolean;
@@ -8,7 +9,7 @@ interface MobileOptimizationOptions {
   enableTouchOptimization?: boolean;
   enableViewportFix?: boolean;
   enableKeyboardHandling?: boolean;
-  enableHardwareAcceleration?: boolean;
+  enableAndroidOptimization?: boolean;
 }
 
 interface ViewportState {
@@ -24,7 +25,7 @@ export function useMobileOptimization(options: MobileOptimizationOptions = {}) {
     enableTouchOptimization = true,
     enableViewportFix = true,
     enableKeyboardHandling = true,
-    enableHardwareAcceleration = true,
+    enableAndroidOptimization = true,
   } = options;
 
   const isMobile = useIsMobile();
@@ -62,6 +63,28 @@ export function useMobileOptimization(options: MobileOptimizationOptions = {}) {
   }, [isMobile, enableKeyboardHandling]);
 
   useEffect(() => {
+    // Initialize Android optimizations if enabled
+    if (enableAndroidOptimization) {
+      const deviceInfo = androidOptimizations.getDeviceInfo();
+      const strategy = androidOptimizations.getRenderingStrategy();
+      
+      console.log('Android optimization initialized:', { deviceInfo, strategy });
+      
+      // Apply device-specific classes
+      if (deviceInfo.isAndroid) {
+        document.body.classList.add('android-optimized');
+        
+        if (deviceInfo.isWebView) {
+          document.body.classList.add('webview-optimized');
+        }
+        
+        // Apply manufacturer-specific optimizations
+        if (deviceInfo.manufacturer) {
+          document.body.classList.add(`${deviceInfo.manufacturer}-optimized`);
+        }
+      }
+    }
+
     // Mobile-specific optimizations
     if (isMobile) {
       // Prevent zoom on double tap
@@ -86,26 +109,6 @@ export function useMobileOptimization(options: MobileOptimizationOptions = {}) {
         document.body.style.setProperty('-webkit-overflow-scrolling', 'touch');
         document.body.style.setProperty('overscroll-behavior-y', 'none');
         document.body.style.setProperty('scroll-behavior', 'smooth');
-      }
-
-      // Enable hardware acceleration for better rendering
-      if (enableHardwareAcceleration) {
-        document.body.style.setProperty('transform', 'translate3d(0, 0, 0)');
-        document.body.style.setProperty('-webkit-transform', 'translate3d(0, 0, 0)');
-        document.body.style.setProperty('will-change', 'transform');
-        document.body.style.setProperty('backface-visibility', 'hidden');
-        document.body.style.setProperty('-webkit-backface-visibility', 'hidden');
-        
-        // Apply font smoothing optimizations
-        document.body.style.setProperty('-webkit-font-smoothing', 'antialiased');
-        document.body.style.setProperty('-moz-osx-font-smoothing', 'grayscale');
-        document.body.style.setProperty('text-rendering', 'optimizeLegibility');
-        
-        // Add hardware acceleration class to common UI elements
-        const elements = document.querySelectorAll('.card, .button, [role="button"], .dialog-content, .popover-content');
-        elements.forEach(el => {
-          (el as HTMLElement).classList.add('gpu-accelerated');
-        });
       }
 
       // Handle viewport height on mobile
@@ -142,7 +145,7 @@ export function useMobileOptimization(options: MobileOptimizationOptions = {}) {
         };
       }
     }
-  }, [isMobile, enableTouchOptimization, optimizeScrolling, enableViewportFix, enableKeyboardHandling, enableHardwareAcceleration, detectKeyboard]);
+  }, [isMobile, enableTouchOptimization, optimizeScrolling, enableViewportFix, enableKeyboardHandling, enableAndroidOptimization, detectKeyboard]);
 
   useEffect(() => {
     // Handle reduced motion preference
@@ -184,7 +187,7 @@ export function useMobileOptimization(options: MobileOptimizationOptions = {}) {
     setIsOptimized(true);
 
     return () => {
-      document.body.classList.remove('mobile-optimized', 'keyboard-open');
+      document.body.classList.remove('mobile-optimized', 'keyboard-open', 'android-optimized', 'webview-optimized');
     };
   }, [isMobile]);
 
@@ -202,14 +205,14 @@ export function useMobileOptimization(options: MobileOptimizationOptions = {}) {
   }, []);
 
   const enableHardwareAccelerationForElement = useCallback((element: HTMLElement) => {
-    if (enableHardwareAcceleration) {
-      element.style.setProperty('transform', 'translate3d(0, 0, 0)');
-      element.style.setProperty('-webkit-transform', 'translate3d(0, 0, 0)');
-      element.style.setProperty('will-change', 'transform');
-      element.style.setProperty('backface-visibility', 'hidden');
-      element.style.setProperty('-webkit-backface-visibility', 'hidden');
+    // Only apply hardware acceleration selectively based on Android optimization strategy
+    const deviceInfo = androidOptimizations.getDeviceInfo();
+    const strategy = androidOptimizations.getRenderingStrategy();
+    
+    if (strategy.useHardwareAcceleration) {
+      element.classList.add('hw-accelerated');
     }
-  }, [enableHardwareAcceleration]);
+  }, []);
 
   return {
     isMobile,
@@ -219,5 +222,6 @@ export function useMobileOptimization(options: MobileOptimizationOptions = {}) {
     scrollToTop,
     preventBodyScroll,
     enableHardwareAccelerationForElement,
+    androidOptimizations: enableAndroidOptimization ? androidOptimizations : null,
   };
 }

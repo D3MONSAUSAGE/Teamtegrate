@@ -108,19 +108,27 @@
   
   body {
     @apply bg-background text-foreground;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  }
+  
+  /* Android-specific font rendering fixes */
+  .android-optimized {
+    -webkit-font-smoothing: subpixel-antialiased;
+    -moz-osx-font-smoothing: auto;
+    text-rendering: auto;
+    font-smooth: auto;
+    image-rendering: -webkit-optimize-contrast;
+    -webkit-optimize-contrast: optimizeSpeed;
+  }
+  
+  /* WebView-specific optimizations */
+  .webview-optimized {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
     font-smooth: always;
-    font-feature-settings: "kern" 1;
-    font-kerning: normal;
-  }
-  
-  /* Enhanced font rendering for all text elements */
-  h1, h2, h3, h4, h5, h6, p, span, div, a, button {
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    text-rendering: optimizeLegibility;
+    transform: none !important;
+    will-change: auto;
   }
   
   /* Mobile safe area support */
@@ -131,13 +139,21 @@
     padding-right: var(--mobile-safe-right);
   }
   
-  /* Hardware acceleration for common UI elements */
-  .card, .button, [role="button"], .dialog-content, .popover-content {
-    transform: translate3d(0, 0, 0);
-    -webkit-transform: translate3d(0, 0, 0);
+  /* Selective hardware acceleration - only for elements that need it */
+  .hw-accelerated {
+    transform: translateZ(0);
     will-change: transform;
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
+  }
+  
+  /* CSS Containment for better performance */
+  .contain-layout {
+    contain: layout style;
+  }
+  
+  .contain-paint {
+    contain: paint;
   }
 }
 
@@ -156,30 +172,23 @@
 
 /* Enhanced scrollbar hiding - cross-browser compatibility */
 .scrollbar-hide {
-  /* Firefox */
   scrollbar-width: none;
-  /* Internet Explorer and Edge */
   -ms-overflow-style: none;
 }
 
 .scrollbar-hide::-webkit-scrollbar {
-  /* WebKit browsers (Chrome, Safari, newer Edge) */
   display: none;
   width: 0;
   height: 0;
   background: transparent;
 }
 
-/* Alias for backward compatibility */
 .no-scrollbar {
-  /* Firefox */
   scrollbar-width: none;
-  /* Internet Explorer and Edge */
   -ms-overflow-style: none;
 }
 
 .no-scrollbar::-webkit-scrollbar {
-  /* WebKit browsers (Chrome, Safari, newer Edge) */
   display: none;
   width: 0;
   height: 0;
@@ -199,6 +208,42 @@ body::-webkit-scrollbar {
   height: 0;
 }
 
+/* Android-specific rendering optimizations */
+@media screen and (-webkit-min-device-pixel-ratio: 1) {
+  .android-text-fix {
+    -webkit-font-smoothing: subpixel-antialiased;
+    -moz-osx-font-smoothing: auto;
+    text-rendering: auto;
+    font-smooth: auto;
+  }
+  
+  .android-image-fix {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+  
+  .android-transform-fix {
+    transform: none !important;
+    will-change: auto !important;
+  }
+}
+
+/* High-DPI display optimizations with Android-specific handling */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .android-optimized img, 
+  .android-optimized svg, 
+  .android-optimized canvas {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+  
+  .android-optimized .lucide-icon, 
+  .android-optimized [data-lucide] {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+}
+
 /* Mobile touch optimizations */
 .touch-manipulation {
   touch-action: manipulation;
@@ -210,40 +255,6 @@ body::-webkit-scrollbar {
 
 .touch-pan-x {
   touch-action: pan-x;
-}
-
-/* High-DPI display optimizations */
-@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-  * {
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    font-smooth: always;
-  }
-  
-  img, svg, canvas {
-    image-rendering: -webkit-optimize-contrast;
-    image-rendering: crisp-edges;
-    image-rendering: pixelated;
-  }
-  
-  /* Ensure icons render crisp on high-DPI screens */
-  .lucide-icon, [data-lucide] {
-    image-rendering: -webkit-optimize-contrast;
-    image-rendering: crisp-edges;
-  }
-}
-
-/* Android-specific optimizations */
-@media screen and (-webkit-min-device-pixel-ratio: 0) {
-  body {
-    -webkit-optimize-contrast: optimizeSpeed;
-    image-rendering: -webkit-optimize-contrast;
-  }
-  
-  * {
-    -webkit-tap-highlight-color: transparent;
-    -webkit-touch-callout: none;
-  }
 }
 
 /* Mobile-specific utility classes */
@@ -283,14 +294,6 @@ body::-webkit-scrollbar {
     min-height: var(--mobile-touch-target);
     min-width: var(--mobile-touch-target);
   }
-  
-  /* Enhanced font rendering for mobile */
-  body, * {
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    text-rendering: optimizeLegibility;
-    font-smooth: always;
-  }
 }
 
 /* Ensure proper mobile viewport handling */
@@ -324,11 +327,22 @@ body::-webkit-scrollbar {
   }
 }
 
-/* Utility class for hardware acceleration */
-.gpu-accelerated {
-  transform: translate3d(0, 0, 0);
-  -webkit-transform: translate3d(0, 0, 0);
-  will-change: transform;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
+/* Device-specific fixes */
+.samsung-fix {
+  image-rendering: crisp-edges;
+  -webkit-optimize-contrast: optimizeSpeed;
+}
+
+.webview-fix {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.webview-fix input,
+.webview-fix textarea,
+.webview-fix [contenteditable] {
+  -webkit-user-select: text !important;
+  user-select: text !important;
 }
