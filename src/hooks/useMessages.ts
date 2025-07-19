@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { ChatMessage } from '@/types/chat';
 import { toast } from 'sonner';
+import { createChatMessageNotification } from '@/contexts/task/operations/assignment/createChatNotification';
 
 export function useMessages(roomId: string | null) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -56,6 +57,18 @@ export function useMessages(roomId: string | null) {
         .single();
 
       if (error) throw error;
+
+      // Create notifications for other room participants
+      if (user.organizationId) {
+        await createChatMessageNotification(
+          roomId,
+          user.id,
+          user.name || user.email,
+          content.trim(),
+          user.organizationId
+        );
+      }
+
       return data;
     } catch (err: any) {
       toast.error('Failed to send message');
