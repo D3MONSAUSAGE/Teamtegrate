@@ -5,11 +5,13 @@ const MOBILE_BREAKPOINT = 768
 const TABLET_BREAKPOINT = 1024
 
 export function useIsMobile() {
-  const [isMobile, setIsMobile] = React.useState<boolean | undefined>(undefined)
+  const [isMobile, setIsMobile] = React.useState<boolean>(false)
 
   React.useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
+      const mobile = window.innerWidth < MOBILE_BREAKPOINT
+      console.log('Mobile check:', { width: window.innerWidth, mobile })
+      setIsMobile(mobile)
     }
     
     // Check immediately on mount
@@ -22,7 +24,7 @@ export function useIsMobile() {
     return () => window.removeEventListener("resize", checkMobile)
   }, [])
 
-  return !!isMobile
+  return isMobile
 }
 
 export function useIsTablet() {

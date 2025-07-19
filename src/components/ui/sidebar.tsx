@@ -191,8 +191,12 @@ const Sidebar = React.forwardRef<
     }
 
     if (isMobile) {
+      console.log('Rendering mobile Sheet with openMobile:', openMobile)
       return (
-        <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
+        <Sheet open={openMobile} onOpenChange={(open) => {
+          console.log('Sheet onOpenChange called with:', open)
+          setOpenMobile(open)
+        }} {...props}>
           <SheetContent
             data-sidebar="sidebar"
             data-mobile="true"
@@ -202,7 +206,7 @@ const Sidebar = React.forwardRef<
                 "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
               } as React.CSSProperties
             }
-            side={side}
+            side="left"
           >
             <div className="flex h-full w-full flex-col">{children}</div>
           </SheetContent>
@@ -261,7 +265,7 @@ const SidebarTrigger = React.forwardRef<
   React.ElementRef<typeof Button>,
   React.ComponentProps<typeof Button>
 >(({ className, onClick, ...props }, ref) => {
-  const { toggleSidebar } = useSidebar()
+  const { toggleSidebar, isMobile, openMobile, setOpenMobile } = useSidebar()
 
   return (
     <Button
@@ -271,8 +275,21 @@ const SidebarTrigger = React.forwardRef<
       size="icon"
       className={cn("h-7 w-7", className)}
       onClick={(event) => {
+        console.log('SidebarTrigger clicked!', { isMobile, openMobile })
         onClick?.(event)
+        
+        // Debug: try both approaches
+        if (isMobile) {
+          console.log('Mobile detected, calling setOpenMobile(true)')
+          setOpenMobile(true)
+        }
+        console.log('Also calling toggleSidebar()')
         toggleSidebar()
+        
+        // Debug the state after
+        setTimeout(() => {
+          console.log('State after toggle:', { openMobile })
+        }, 100)
       }}
       {...props}
     >
