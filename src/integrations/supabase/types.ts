@@ -1201,6 +1201,7 @@ export type Database = {
           id: string
           name: string
           organization_id: string
+          push_token: string | null
           role: string
           timezone: string | null
         }
@@ -1213,6 +1214,7 @@ export type Database = {
           id: string
           name: string
           organization_id: string
+          push_token?: string | null
           role: string
           timezone?: string | null
         }
@@ -1225,6 +1227,7 @@ export type Database = {
           id?: string
           name?: string
           organization_id?: string
+          push_token?: string | null
           role?: string
           timezone?: string | null
         }
