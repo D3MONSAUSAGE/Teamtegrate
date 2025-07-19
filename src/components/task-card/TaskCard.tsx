@@ -158,16 +158,6 @@ const TaskCard: React.FC<TaskCardProps> = ({
             onShowComments={() => setShowDrawer(true)}
           />
         </div>
-        
-        {/* Enhanced overdue indicator */}
-        {isOverdue && (
-          <div className="absolute bottom-3 right-3 z-20">
-            <div className="flex items-center gap-1.5 bg-gradient-to-r from-red-500 to-red-600 text-white px-3 py-1.5 rounded-full shadow-xl border border-red-400/50 text-xs font-semibold backdrop-blur-sm">
-              <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse shadow-lg" />
-              <span>Overdue</span>
-            </div>
-          </div>
-        )}
       </Card>
       
       <TaskDetailDialog
