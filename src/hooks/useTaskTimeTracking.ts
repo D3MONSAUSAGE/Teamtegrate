@@ -24,6 +24,13 @@ export interface TaskTimerState {
   totalTimeToday: Record<string, number>; // taskId -> minutes
 }
 
+interface ClockOutResult {
+  success: boolean;
+  entry_id?: string;
+  task_id?: string;
+  message: string;
+}
+
 export const useTaskTimeTracking = () => {
   const { user } = useAuth();
   const [timerState, setTimerState] = useState<TaskTimerState>({
@@ -225,10 +232,10 @@ export const useTaskTimeTracking = () => {
     }
   }, [user, isLoading, timerState.activeTaskId]);
 
-  // Stop working on current task - Fixed with server-side timestamp
+  // Stop working on current task - Uses improved database function
   const stopTaskWork = useCallback(async () => {
-    if (!timerState.activeTaskId || isLoading) {
-      console.log('❌ Cannot stop task work - no active task or loading');
+    if (!user?.id || isLoading) {
+      console.log('❌ Cannot stop task work - no user or loading');
       return;
     }
 
@@ -237,44 +244,44 @@ export const useTaskTimeTracking = () => {
     try {
       setIsLoading(true);
 
-      // Use server-side NOW() function instead of client-side timestamp
-      const { error } = await supabase.rpc('update_time_entry_clock_out', {
-        p_user_id: user!.id,
-        p_task_id: timerState.activeTaskId
-      });
+      // Use improved database function that handles state mismatches
+      const { data: result, error } = await supabase.rpc('update_time_entry_clock_out', {
+        p_user_id: user.id,
+        p_task_id: timerState.activeTaskId || null
+      }) as { data: ClockOutResult | null; error: any };
 
       if (error) {
         console.error('❌ Error stopping task work:', error);
-        // Handle specific constraint violation
-        if (error.message?.includes('Clock out time cannot be before clock in time')) {
-          console.log('🔄 Retrying with buffer time...');
-          // Fallback: try updating with a small buffer
-          const { error: retryError } = await supabase
-            .from('time_entries')
-            .update({ 
-              clock_out: 'NOW() + INTERVAL \'1 second\''
-            })
-            .eq('user_id', user!.id)
-            .eq('task_id', timerState.activeTaskId)
-            .is('clock_out', null);
-          
-          if (retryError) {
-            throw retryError;
-          }
-        } else {
-          throw error;
-        }
+        throw error;
       }
 
-      console.log('✅ Stopped task work');
+      console.log('✅ Clock out result:', result);
 
-      toast.success(`Stopped working on "${timerState.activeTaskTitle}"`);
-      
-      // Refresh state to get updated totals
-      await fetchTaskTimeState();
+      if (result?.success) {
+        toast.success(`Stopped working on "${timerState.activeTaskTitle || 'task'}"`);
+        
+        // Reset timer state immediately
+        setTimerState(prev => ({
+          ...prev,
+          activeTaskId: undefined,
+          activeTaskTitle: undefined,
+          startTime: undefined,
+          elapsedSeconds: 0
+        }));
+        
+        // Refresh state to get updated totals
+        await fetchTaskTimeState();
+      } else {
+        console.warn('⚠️ No active time entry found, syncing state...');
+        toast.info('Timer state synchronized');
+        // Force sync state with database
+        await fetchTaskTimeState();
+      }
     } catch (error) {
       console.error('❌ Error stopping task work:', error);
       toast.error('Failed to stop task timer');
+      // Force sync on error to recover from state mismatch
+      await fetchTaskTimeState();
     } finally {
       setIsLoading(false);
     }
