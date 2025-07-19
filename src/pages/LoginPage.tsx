@@ -52,6 +52,31 @@ const LoginPage = () => {
       setIsLogin(false);
     }
   }, [searchParams]);
+
+  // Mobile keyboard handling - scroll active input into view
+  useEffect(() => {
+    const handleFocus = (e: FocusEvent) => {
+      if (window.innerWidth <= 768) {
+        setTimeout(() => {
+          (e.target as HTMLElement)?.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center' 
+          });
+        }, 300); // Wait for keyboard animation
+      }
+    };
+
+    const inputs = document.querySelectorAll('input');
+    inputs.forEach(input => {
+      input.addEventListener('focus', handleFocus);
+    });
+
+    return () => {
+      inputs.forEach(input => {
+        input.removeEventListener('focus', handleFocus);
+      });
+    };
+  }, [isLogin]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -135,10 +160,10 @@ const LoginPage = () => {
   
   if (!isLogin) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
-        <div className="w-full max-w-md">
+      <div className="min-h-screen-mobile flex items-center justify-center bg-gradient-to-br from-background to-muted safe-area-all">
+        <div className="w-full max-w-md px-4">
           <div className="mb-6">
-            <Link to="/" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <Link to="/" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors tap-highlight-none native-button">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to home
             </Link>
@@ -162,29 +187,29 @@ const LoginPage = () => {
   }
   
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen-mobile flex items-center justify-center bg-gradient-to-br from-background to-muted safe-area-all">
+      <div className="w-full max-w-md px-4 keyboard-aware">
         <div className="mb-6">
-          <Link to="/" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors">
+          <Link to="/" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors tap-highlight-none native-button">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to home
           </Link>
         </div>
 
-        <Card className="w-full shadow-lg">
-          <CardHeader className="text-center">
-            <div className="flex justify-center mb-2">
+        <Card className="w-full mobile-card shadow-xl border-0">
+          <CardHeader className="text-center px-6 pt-8 pb-6">
+            <div className="flex justify-center mb-4">
               <BrandLogo size="md" />
             </div>
             <CardTitle className="text-2xl font-bold">Welcome Back</CardTitle>
-            <CardDescription>
+            <CardDescription className="text-base">
               Sign in to access your team workspace
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+          <CardContent className="px-6 pb-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
+                <Label htmlFor="email" className="text-sm font-medium">Email Address</Label>
                 <Input
                   id="email"
                   type="email"
@@ -193,11 +218,13 @@ const LoginPage = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isSubmitting}
                   required
+                  className="h-12 px-4 text-base rounded-xl border-2 focus:border-primary transition-colors"
+                  autoComplete="email"
                 />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password" className="text-sm font-medium">Password</Label>
                 <Input
                   id="password"
                   type="password"
@@ -206,6 +233,8 @@ const LoginPage = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={isSubmitting}
                   required
+                  className="h-12 px-4 text-base rounded-xl border-2 focus:border-primary transition-colors"
+                  autoComplete="current-password"
                 />
               </div>
 
@@ -214,7 +243,7 @@ const LoginPage = () => {
                   type="button"
                   variant="link"
                   size="sm"
-                  className="p-0 h-auto text-xs"
+                  className="p-0 h-auto text-xs native-button"
                   onClick={() => setShowForgotPassword(true)}
                   disabled={isSubmitting}
                 >
@@ -224,7 +253,7 @@ const LoginPage = () => {
 
               <Button 
                 type="submit" 
-                className="w-full" 
+                className="w-full h-12 text-base font-semibold rounded-xl native-button" 
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (
@@ -238,10 +267,10 @@ const LoginPage = () => {
               </Button>
             </form>
           </CardContent>
-          <CardFooter>
+          <CardFooter className="px-6 pb-8">
             <Button
               variant="link"
-              className="w-full"
+              className="w-full h-12 text-base native-button"
               onClick={() => setIsLogin(false)}
               disabled={isSubmitting}
             >
@@ -252,7 +281,7 @@ const LoginPage = () => {
 
         {/* Forgot Password Dialog */}
         <Dialog open={showForgotPassword} onOpenChange={setShowForgotPassword}>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="sm:max-w-md mx-4 rounded-2xl">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Mail className="h-5 w-5" />
@@ -274,6 +303,8 @@ const LoginPage = () => {
                   onChange={(e) => setResetEmail(e.target.value)}
                   disabled={isResettingPassword}
                   required
+                  className="h-12 px-4 text-base rounded-xl"
+                  autoComplete="email"
                 />
               </div>
               
@@ -286,12 +317,14 @@ const LoginPage = () => {
                     setResetEmail('');
                   }}
                   disabled={isResettingPassword}
+                  className="native-button"
                 >
                   Cancel
                 </Button>
                 <Button 
                   type="submit" 
                   disabled={isResettingPassword || !resetEmail}
+                  className="native-button"
                 >
                   {isResettingPassword ? (
                     <>

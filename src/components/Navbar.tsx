@@ -71,25 +71,27 @@ const Navbar = memo(() => {
   if (!user) return null;
 
   return (
-    <nav className="bg-white dark:bg-background border-b border-gray-200 dark:border-gray-800 py-4 pl-3 md:pl-6 pr-6 flex items-center justify-between">
-      <div className="flex items-center gap-3">
-        {isMobile && (
-          <SidebarTrigger className="h-9 w-9" />
-        )}
-        <NavbarBrand />
-      </div>
+    <nav className="bg-white dark:bg-background border-b border-gray-200 dark:border-gray-800 safe-area-top">
+      <div className="flex items-center justify-between h-16 px-4 md:px-6">
+        <div className="flex items-center gap-3">
+          {isMobile && (
+            <SidebarTrigger className="h-10 w-10 native-button tap-highlight-none" />
+          )}
+          <NavbarBrand />
+        </div>
 
-      <div className="flex items-center space-x-4">
-        <NotificationButton 
-          onNotificationsOpen={handleNotificationsOpen}
-          onNotificationClick={handleNotificationClick}
-          formatNotificationTime={formatNotificationTime}
-        />
+        <div className="flex items-center space-x-2 md:space-x-4">
+          <NotificationButton 
+            onNotificationsOpen={handleNotificationsOpen}
+            onNotificationClick={handleNotificationClick}
+            formatNotificationTime={formatNotificationTime}
+          />
 
-        <UserMenu 
-          onLogout={handleLogout}
-          onSettings={handleSettings}
-        />
+          <UserMenu 
+            onLogout={handleLogout}
+            onSettings={handleSettings}
+          />
+        </div>
       </div>
     </nav>
   );

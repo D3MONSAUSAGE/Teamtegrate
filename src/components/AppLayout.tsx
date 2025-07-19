@@ -9,7 +9,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { Loader2 } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 
-// Memoized main content component
+// Memoized main content component with mobile optimizations
 const MainContent = memo(({ children }: { children: React.ReactNode }) => {
   const { setOpen, isMobile, setOpenMobile } = useSidebar();
   const isDesktop = !isMobile;
@@ -24,12 +24,12 @@ const MainContent = memo(({ children }: { children: React.ReactNode }) => {
 
   return (
     <SidebarInset 
-      className="flex flex-col flex-1 overflow-hidden"
+      className="flex flex-col flex-1 overflow-hidden safe-area-all"
       onClick={handleMainContentClick}
       style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
     >
       <Navbar />
-      <main className="flex-1 overflow-y-auto overflow-x-hidden px-4 md:px-6 lg:px-12" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+      <main className="flex-1 overflow-y-auto overflow-x-hidden px-4 md:px-6 lg:px-12 safe-area-bottom" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
         <div className="space-y-6 py-4 pb-20 md:pb-6">
           {children}
         </div>
@@ -40,9 +40,9 @@ const MainContent = memo(({ children }: { children: React.ReactNode }) => {
 
 MainContent.displayName = 'MainContent';
 
-// Memoized loading component
+// Enhanced loading screen with mobile optimization
 const LoadingScreen = memo(() => (
-  <div className="min-h-screen flex items-center justify-center bg-background">
+  <div className="min-h-screen-mobile flex items-center justify-center bg-background safe-area-all">
     <div className="text-center p-8">
       <div className="w-16 h-16 mx-auto mb-6 bg-primary/20 rounded-full flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -69,7 +69,7 @@ const AppLayout = memo(() => {
 
   return (
     <SidebarProvider defaultOpen={!isMobile}>
-      <div className="min-h-screen bg-background w-full flex overflow-hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+      <div className="min-h-screen-mobile bg-background w-full flex overflow-hidden safe-area-all" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
         <Sidebar />
         <MainContent>
           <Outlet />

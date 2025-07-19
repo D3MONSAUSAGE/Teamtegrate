@@ -27,15 +27,15 @@ const MultiTenantSignupForm: React.FC<MultiTenantSignupFormProps> = ({ onBack })
 
   return (
     <div className="w-full max-w-md mx-auto">
-      <Card className="shadow-lg">
-        <CardHeader className="text-center">
+      <Card className="mobile-card shadow-xl border-0">
+        <CardHeader className="text-center px-6 pt-8 pb-6">
           <CardTitle className="text-2xl font-bold">Join TeamTegrate</CardTitle>
-          <CardDescription>
+          <CardDescription className="text-base">
             Create your account and set up your organization
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+        <CardContent className="px-6 pb-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
             {/* Personal Information */}
             <PersonalInfoSection 
               formData={formData}
@@ -58,14 +58,14 @@ const MultiTenantSignupForm: React.FC<MultiTenantSignupFormProps> = ({ onBack })
                 type="button"
                 variant="outline"
                 onClick={onBack}
-                className="flex-1"
+                className="flex-1 h-12 text-base native-button"
                 disabled={isDisabled}
               >
                 Back
               </Button>
               <Button 
                 type="submit" 
-                className="flex-1" 
+                className="flex-1 h-12 text-base font-semibold native-button" 
                 disabled={isDisabled || !isFormValid()}
               >
                 {isSubmitting ? 'Creating Account...' : 'Create Account'}

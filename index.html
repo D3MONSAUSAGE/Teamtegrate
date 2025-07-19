@@ -3,40 +3,68 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <!-- Simple viewport - no conflicts -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Enhanced mobile viewport with safe area support -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
     <title>Teamtegrate - Team Collaboration Platform</title>
     <meta name="description" content="Transform your team's productivity with Teamtegrate - the all-in-one team management platform that streamlines collaboration and boosts efficiency" />
+
+    <!-- Mobile app meta tags for native feel -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="TeamTegrate">
 
     <!-- Favicon -->
     <link rel="icon" href="/favicon.ico" type="image/x-icon" />
     
     <!-- Theme -->
     <meta name="theme-color" content="#86b7d3" />
+    <meta name="msapplication-navbutton-color" content="#86b7d3">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
     <!-- Preload fonts -->
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"></noscript>
 
     <style>
-      /* Minimal critical CSS - browser defaults only */
+      /* Enhanced mobile-first critical CSS */
       * {
         box-sizing: border-box;
         margin: 0;
         padding: 0;
+        -webkit-tap-highlight-color: transparent;
       }
       
       html {
         height: 100%;
+        /* Prevent zoom on input focus on iOS */
+        -webkit-text-size-adjust: 100%;
+        /* Smooth scrolling for mobile */
+        scroll-behavior: smooth;
       }
       
       body {
-        height: 100%;
+        height: 100vh;
+        height: 100dvh; /* Dynamic viewport height for mobile */
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
         background-color: white;
         color: #1a1a1a;
         line-height: 1.5;
-        /* No custom optimizations - let browser handle everything */
+        /* Enhanced mobile touch handling */
+        touch-action: manipulation;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        -khtml-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        /* Safe area support */
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+        padding-left: env(safe-area-inset-left);
+        padding-right: env(safe-area-inset-right);
+        /* Prevent overscroll bounce on iOS */
+        overscroll-behavior: none;
       }
       
       body.dark {
@@ -46,7 +74,32 @@
       
       #root {
         min-height: 100vh;
+        min-height: 100dvh;
         width: 100%;
+        /* Enable text selection for inputs and text areas */
+        -webkit-user-select: text;
+        -khtml-user-select: text;
+        -moz-user-select: text;
+        -ms-user-select: text;
+        user-select: text;
+      }
+      
+      /* Allow text selection for specific elements */
+      input, textarea, [contenteditable] {
+        -webkit-user-select: text !important;
+        -khtml-user-select: text !important;
+        -moz-user-select: text !important;
+        -ms-user-select: text !important;
+        user-select: text !important;
+      }
+      
+      /* Mobile keyboard handling */
+      @media screen and (max-width: 768px) {
+        body {
+          /* Use full viewport when keyboard is closed */
+          min-height: 100vh;
+          min-height: 100dvh;
+        }
       }
     </style>
   </head>
