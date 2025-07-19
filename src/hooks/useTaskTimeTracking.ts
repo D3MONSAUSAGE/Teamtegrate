@@ -14,6 +14,9 @@ export interface TaskTimeEntry {
   notes?: string;
   created_at: Date;
   organization_id: string;
+  paused_at?: Date;
+  total_paused_duration?: string;
+  is_paused?: boolean;
 }
 
 export interface TaskTimerState {
@@ -96,7 +99,7 @@ export const useTaskTimeTracking = () => {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      // Get active task session
+      // Get active task session with pause information
       const { data: activeSession, error: activeError } = await supabase
         .from('time_entries')
         .select(`
@@ -106,6 +109,8 @@ export const useTaskTimeTracking = () => {
           clock_in,
           notes,
           organization_id,
+          is_paused,
+          paused_at,
           tasks!inner(title)
         `)
         .eq('user_id', user.id)
@@ -151,12 +156,24 @@ export const useTaskTimeTracking = () => {
       // Update state
       if (activeSession) {
         const startTime = new Date(activeSession.clock_in);
-        const elapsedSeconds = Math.floor((Date.now() - startTime.getTime()) / 1000);
+        const isPaused = activeSession.is_paused || false;
+        const pausedAt = activeSession.paused_at ? new Date(activeSession.paused_at) : undefined;
+        
+        let elapsedSeconds = 0;
+        if (isPaused && pausedAt) {
+          // If paused, calculate time up to pause point
+          elapsedSeconds = Math.floor((pausedAt.getTime() - startTime.getTime()) / 1000);
+        } else if (!isPaused) {
+          // If not paused, calculate current elapsed time
+          elapsedSeconds = Math.floor((Date.now() - startTime.getTime()) / 1000);
+        }
         
         console.log('▶️ Setting active timer state:', {
           taskId: activeSession.task_id,
           title: (activeSession.tasks as any)?.title,
-          elapsedSeconds
+          elapsedSeconds,
+          isPaused,
+          pausedAt
         });
         
         setTimerState({
@@ -165,8 +182,8 @@ export const useTaskTimeTracking = () => {
           startTime,
           elapsedSeconds,
           totalTimeToday,
-          isPaused: false,
-          pausedAt: undefined
+          isPaused,
+          pausedAt
         });
       } else {
         console.log('⏸️ No active session, setting empty state');
@@ -225,7 +242,9 @@ export const useTaskTimeTracking = () => {
         activeTaskId: taskId,
         activeTaskTitle: taskTitle,
         startTime,
-        elapsedSeconds: 0
+        elapsedSeconds: 0,
+        isPaused: false,
+        pausedAt: undefined
       }));
 
       toast.success(`Started working on "${taskTitle}"`);
@@ -238,14 +257,16 @@ export const useTaskTimeTracking = () => {
         activeTaskId: undefined,
         activeTaskTitle: undefined,
         startTime: undefined,
-        elapsedSeconds: 0
+        elapsedSeconds: 0,
+        isPaused: false,
+        pausedAt: undefined
       }));
     } finally {
       setIsLoading(false);
     }
   }, [user, isLoading, timerState.activeTaskId]);
 
-  // Stop working on current task - Uses improved database function
+  // Stop working on current task
   const stopTaskWork = useCallback(async () => {
     if (!user?.id || isLoading) {
       console.log('❌ Cannot stop task work - no user or loading');
@@ -257,7 +278,6 @@ export const useTaskTimeTracking = () => {
     try {
       setIsLoading(true);
 
-      // Use improved database function that handles state mismatches
       const { data: result, error } = await supabase.rpc('update_time_entry_clock_out', {
         p_user_id: user.id,
         p_task_id: timerState.activeTaskId || null
@@ -279,7 +299,9 @@ export const useTaskTimeTracking = () => {
           activeTaskId: undefined,
           activeTaskTitle: undefined,
           startTime: undefined,
-          elapsedSeconds: 0
+          elapsedSeconds: 0,
+          isPaused: false,
+          pausedAt: undefined
         }));
         
         // Refresh state to get updated totals
@@ -287,13 +309,11 @@ export const useTaskTimeTracking = () => {
       } else {
         console.warn('⚠️ No active time entry found, syncing state...');
         toast.info('Timer state synchronized');
-        // Force sync state with database
         await fetchTaskTimeState();
       }
     } catch (error) {
       console.error('❌ Error stopping task work:', error);
       toast.error('Failed to stop task timer');
-      // Force sync on error to recover from state mismatch
       await fetchTaskTimeState();
     } finally {
       setIsLoading(false);
@@ -312,19 +332,28 @@ export const useTaskTimeTracking = () => {
     try {
       setIsLoading(true);
 
-      const { data: result, error } = await supabase.rpc('pause_time_entry' as any, {
+      // Call the database function directly using rpc
+      const { data: result, error } = await supabase.rpc('pause_time_entry', {
         p_user_id: user.id,
         p_task_id: timerState.activeTaskId
-      }) as { data: PauseResumeResult | null; error: any };
+      });
 
       if (error) {
         console.error('❌ Error pausing task work:', error);
+        // Check if it's a function not found error
+        if (error.message?.includes('function pause_time_entry') || error.code === '42883') {
+          toast.error('Pause functionality is not available. Please refresh the page and try again.');
+          return;
+        }
         throw error;
       }
 
       console.log('✅ Pause result:', result);
 
-      if (result?.success) {
+      // Type guard for the result
+      const pauseResult = result as PauseResumeResult;
+      
+      if (pauseResult?.success) {
         toast.success(`Paused working on "${timerState.activeTaskTitle || 'task'}"`);
         
         setTimerState(prev => ({
@@ -334,6 +363,7 @@ export const useTaskTimeTracking = () => {
         }));
       } else {
         toast.error('Failed to pause timer');
+        console.warn('⚠️ Pause result unsuccessful:', pauseResult);
       }
     } catch (error) {
       console.error('❌ Error pausing task work:', error);
@@ -355,19 +385,28 @@ export const useTaskTimeTracking = () => {
     try {
       setIsLoading(true);
 
-      const { data: result, error } = await supabase.rpc('resume_time_entry' as any, {
+      // Call the database function directly using rpc
+      const { data: result, error } = await supabase.rpc('resume_time_entry', {
         p_user_id: user.id,
         p_task_id: timerState.activeTaskId
-      }) as { data: PauseResumeResult | null; error: any };
+      });
 
       if (error) {
         console.error('❌ Error resuming task work:', error);
+        // Check if it's a function not found error
+        if (error.message?.includes('function resume_time_entry') || error.code === '42883') {
+          toast.error('Resume functionality is not available. Please refresh the page and try again.');
+          return;
+        }
         throw error;
       }
 
       console.log('✅ Resume result:', result);
 
-      if (result?.success) {
+      // Type guard for the result
+      const resumeResult = result as PauseResumeResult;
+      
+      if (resumeResult?.success) {
         toast.success(`Resumed working on "${timerState.activeTaskTitle || 'task'}"`);
         
         setTimerState(prev => ({
@@ -377,6 +416,7 @@ export const useTaskTimeTracking = () => {
         }));
       } else {
         toast.error('Failed to resume timer');
+        console.warn('⚠️ Resume result unsuccessful:', resumeResult);
       }
     } catch (error) {
       console.error('❌ Error resuming task work:', error);

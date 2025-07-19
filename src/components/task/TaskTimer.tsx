@@ -53,9 +53,25 @@ const TaskTimer: React.FC<TaskTimerProps> = ({
 
   const handlePauseResume = async (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent card click
+    
+    console.log('🎯 Pause/Resume clicked:', {
+      isActive,
+      isPaused,
+      activeTaskId: timerState.activeTaskId,
+      taskId,
+      isLoading
+    });
+    
+    if (!isActive) {
+      console.log('⚠️ Not active task, cannot pause/resume');
+      return;
+    }
+    
     if (isPaused) {
+      console.log('▶️ Attempting to resume...');
       await resumeTaskWork();
     } else {
+      console.log('⏸️ Attempting to pause...');
       await pauseTaskWork();
     }
   };
