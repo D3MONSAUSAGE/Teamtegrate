@@ -10,40 +10,27 @@ import { useMobileNavigation } from '@/hooks/useMobileNavigation';
 import { Loader2 } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 
-// Memoized main content component to prevent unnecessary re-renders
+// Memoized main content component
 const MainContent = memo(({ children }: { children: React.ReactNode }) => {
   const { setOpen, isMobile, setOpenMobile } = useSidebar();
-  const { safeNavigate } = useMobileNavigation();
   const isDesktop = !isMobile;
 
   const handleMainContentClick = () => {
-    // Auto-collapse sidebar when clicking main content
     if (isDesktop) {
       setOpen(false);
     } else {
-      // Close mobile sidebar if open
       setOpenMobile(false);
     }
   };
 
   return (
     <SidebarInset 
-      className={`
-        flex flex-col flex-1 scrollbar-hide overflow-hidden
-        ${isMobile ? 'mobile-safe-area' : ''}
-      `}
+      className="flex flex-col flex-1 overflow-hidden"
       onClick={handleMainContentClick}
     >
       <Navbar />
-      <main className={`
-        flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide smooth-scroll
-        ${isMobile ? 'px-4 py-4' : 'px-6 lg:px-12'}
-        touch-pan-y
-      `}>
-        <div className={`
-          space-y-6 animate-fade-in
-          ${isMobile ? 'pb-20' : ''} /* Extra bottom padding for mobile */
-        `}>
+      <main className="flex-1 overflow-y-auto overflow-x-hidden px-4 md:px-6 lg:px-12">
+        <div className="space-y-6 py-4 pb-20 md:pb-6">
           {children}
         </div>
       </main>
@@ -55,16 +42,12 @@ MainContent.displayName = 'MainContent';
 
 // Memoized loading component
 const LoadingScreen = memo(() => (
-  <div className={`
-    min-h-screen flex items-center justify-center 
-    bg-gradient-to-br from-background via-muted/30 to-background
-    mobile-safe-area scrollbar-hide
-  `}>
-    <div className="text-center glass-card p-8 rounded-2xl animate-scale-in">
-      <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-r from-primary/20 to-accent/20 rounded-full flex items-center justify-center">
+  <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="text-center p-8">
+      <div className="w-16 h-16 mx-auto mb-6 bg-primary/20 rounded-full flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
-      <h3 className="text-lg font-semibold text-foreground mb-2">Loading TeamTegrate</h3>
+      <h3 className="text-lg font-semibold mb-2">Loading TeamTegrate</h3>
       <p className="text-muted-foreground">Preparing your workspace...</p>
     </div>
   </div>
@@ -76,28 +59,18 @@ const AppLayout = memo(() => {
   const { user, loading, isAuthenticated } = useAuth();
   const isMobile = useIsMobile();
 
-  // Show loading while auth is initializing
   if (loading) {
     return <LoadingScreen />;
   }
 
-  // Redirect to login if not authenticated
   if (!isAuthenticated || !user) {
     return <Navigate to="/login" replace />;
   }
 
   return (
-    <SidebarProvider 
-      defaultOpen={!isMobile}
-    >
-      <div className={`
-        min-h-screen bg-gradient-to-br from-background via-muted/20 to-background 
-        w-full flex scrollbar-hide overflow-hidden
-        ${isMobile ? 'mobile-safe-area' : 'mobile-safe-area'}
-        touch-manipulation
-      `}>
+    <SidebarProvider defaultOpen={!isMobile}>
+      <div className="min-h-screen bg-background w-full flex overflow-hidden">
         <Sidebar />
-        
         <MainContent>
           <Outlet />
         </MainContent>

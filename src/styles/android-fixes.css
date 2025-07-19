@@ -1,137 +1,62 @@
 
-/* Clean Android Optimization CSS - Progressive Enhancement Approach */
+/* Nuclear Reset - Clean Android Optimization CSS */
 
-/* Base Android Detection and Reset */
-.android-device {
-  /* Start with browser defaults - no forced optimizations */
+/* Base reset - use browser defaults */
+.android-reset {
+  /* Remove all custom optimizations */
   -webkit-font-smoothing: auto;
   -moz-osx-font-smoothing: auto;
   text-rendering: auto;
   font-smooth: auto;
   
-  /* Prevent any implicit transforms that cause blur */
+  /* Remove transforms that cause blur */
   transform: none;
   will-change: auto;
   backface-visibility: visible;
   -webkit-backface-visibility: visible;
+  
+  /* Remove containment */
+  contain: none;
+  
+  /* Clean image rendering */
+  image-rendering: auto;
 }
 
-/* Progressive Enhancement Level 1: Basic Anti-Blur */
-.android-level-1 {
-  /* Minimal font optimization */
-  text-rendering: optimizeSpeed;
-  
-  /* Prevent browser-imposed transforms */
-  transform: translateZ(0);
-  
-  /* Basic image optimization */
-  image-rendering: -webkit-optimize-contrast;
-}
-
-/* Progressive Enhancement Level 2: Moderate Optimization */
-.android-level-2 {
-  /* Selective font smoothing */
-  -webkit-font-smoothing: subpixel-antialiased;
+/* Apply reset to all elements */
+.android-reset *,
+.android-reset *::before,
+.android-reset *::after {
+  -webkit-font-smoothing: auto;
   -moz-osx-font-smoothing: auto;
-  
-  /* Controlled containment */
-  contain: layout style;
+  text-rendering: auto;
+  transform: none;
+  will-change: auto;
+  backface-visibility: visible;
+  -webkit-backface-visibility: visible;
+  contain: none;
 }
 
-/* Progressive Enhancement Level 3: Full Optimization */
-.android-level-3 {
-  /* Advanced font rendering */
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-  
-  /* Full containment */
-  contain: layout style paint;
-}
-
-/* WebView Specific Fixes */
-.android-webview {
+/* Simple Android touch optimization - only if needed */
+.android-touch-optimized {
   -webkit-tap-highlight-color: transparent;
   -webkit-touch-callout: none;
 }
 
-.android-webview input,
-.android-webview textarea,
-.android-webview [contenteditable] {
-  -webkit-user-select: text;
-  user-select: text;
+.android-touch-optimized input,
+.android-touch-optimized textarea {
   font-size: 16px; /* Prevent zoom on focus */
 }
 
-/* Manufacturer Specific Fixes */
-.samsung-device {
-  image-rendering: crisp-edges;
-  -webkit-optimize-contrast: optimizeSpeed;
-}
-
-.xiaomi-device {
-  text-rendering: geometricPrecision;
-}
-
-/* High DPI Specific */
-.high-dpi {
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: crisp-edges;
-}
-
-/* Debug Mode - Visual Indicators */
+/* Debug indicator - minimal */
 .android-debug::before {
-  content: "Android Optimized";
+  content: "Clean Mode";
   position: fixed;
   top: 10px;
   right: 10px;
-  background: rgba(255, 0, 0, 0.8);
+  background: rgba(0, 255, 0, 0.8);
   color: white;
   padding: 4px 8px;
   font-size: 10px;
   z-index: 9999;
   pointer-events: none;
-}
-
-.android-debug.level-1::before {
-  content: "Android L1";
-  background: rgba(255, 165, 0, 0.8);
-}
-
-.android-debug.level-2::before {
-  content: "Android L2";
-  background: rgba(0, 165, 255, 0.8);
-}
-
-.android-debug.level-3::before {
-  content: "Android L3";
-  background: rgba(0, 255, 0, 0.8);
-}
-
-/* Nuclear Option - Disable All Optimizations */
-.android-nuclear-reset {
-  -webkit-font-smoothing: auto;
-  -moz-osx-font-smoothing: auto;
-  text-rendering: auto;
-  font-smooth: auto;
-  image-rendering: auto;
-  transform: none;
-  will-change: auto;
-  backface-visibility: visible;
-  -webkit-backface-visibility: visible;
-  contain: none;
-  -webkit-optimize-contrast: auto;
-}
-
-.android-nuclear-reset *,
-.android-nuclear-reset *::before,
-.android-nuclear-reset *::after {
-  -webkit-font-smoothing: auto;
-  -moz-osx-font-smoothing: auto;
-  text-rendering: auto;
-  transform: none;
-  will-change: auto;
-  backface-visibility: visible;
-  -webkit-backface-visibility: visible;
-  contain: none;
 }
