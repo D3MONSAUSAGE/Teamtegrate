@@ -54,14 +54,6 @@ const TaskTimer: React.FC<TaskTimerProps> = ({
   const handlePauseResume = async (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent card click
     
-    console.log('🎯 Pause/Resume clicked:', {
-      isActive,
-      isPaused,
-      activeTaskId: timerState.activeTaskId,
-      taskId,
-      isLoading
-    });
-    
     if (!isActive) {
       console.log('⚠️ Not active task, cannot pause/resume');
       return;
@@ -161,7 +153,9 @@ const TaskTimer: React.FC<TaskTimerProps> = ({
                   : "bg-gradient-to-r from-blue-500/90 to-blue-600/90 hover:from-blue-600/90 hover:to-blue-700/90 text-white border-0 shadow-md hover:shadow-lg"
               )}
             >
-              {isActive ? (
+              {isLoading ? (
+                <div className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              ) : isActive ? (
                 <Square className="h-3 w-3" />
               ) : (
                 <Play className="h-3 w-3" />
@@ -219,7 +213,9 @@ const TaskTimer: React.FC<TaskTimerProps> = ({
               disabled={isLoading}
               className="flex items-center gap-2"
             >
-              {isPaused ? (
+              {isLoading ? (
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              ) : isPaused ? (
                 <>
                   <Play className="h-4 w-4" />
                   Resume
@@ -241,7 +237,9 @@ const TaskTimer: React.FC<TaskTimerProps> = ({
             disabled={isLoading}
             className="flex items-center gap-2"
           >
-            {isActive ? (
+            {isLoading ? (
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+            ) : isActive ? (
               <>
                 <Square className="h-4 w-4" />
                 Stop

@@ -155,10 +155,9 @@ export const useTaskTimeTracking = () => {
 
       // Update state
       if (activeSession) {
-        const sessionData = activeSession as any;
-        const startTime = new Date(sessionData.clock_in);
-        const isPaused = sessionData.is_paused || false;
-        const pausedAt = sessionData.paused_at ? new Date(sessionData.paused_at) : undefined;
+        const startTime = new Date(activeSession.clock_in);
+        const isPaused = activeSession.is_paused || false;
+        const pausedAt = activeSession.paused_at ? new Date(activeSession.paused_at) : undefined;
         
         let elapsedSeconds = 0;
         if (isPaused && pausedAt) {
@@ -170,16 +169,16 @@ export const useTaskTimeTracking = () => {
         }
         
         console.log('▶️ Setting active timer state:', {
-          taskId: sessionData.task_id,
-          title: sessionData.tasks?.title,
+          taskId: activeSession.task_id,
+          title: activeSession.tasks?.title,
           elapsedSeconds,
           isPaused,
           pausedAt
         });
         
         setTimerState({
-          activeTaskId: sessionData.task_id,
-          activeTaskTitle: sessionData.tasks?.title,
+          activeTaskId: activeSession.task_id,
+          activeTaskTitle: activeSession.tasks?.title,
           startTime,
           elapsedSeconds,
           totalTimeToday,
@@ -196,6 +195,7 @@ export const useTaskTimeTracking = () => {
       }
     } catch (error) {
       console.error('❌ Error fetching task time state:', error);
+      toast.error('Failed to load timer state');
     }
   }, [user?.id]);
 
@@ -333,28 +333,19 @@ export const useTaskTimeTracking = () => {
     try {
       setIsLoading(true);
 
-      // Call the database function directly using rpc (cast to any due to missing types)
-      const { data: result, error } = await (supabase.rpc as any)('pause_time_entry', {
+      const { data: result, error } = await supabase.rpc('pause_time_entry', {
         p_user_id: user.id,
         p_task_id: timerState.activeTaskId
-      });
+      }) as { data: PauseResumeResult | null; error: any };
 
       if (error) {
         console.error('❌ Error pausing task work:', error);
-        // Check if it's a function not found error
-        if (error.message?.includes('function pause_time_entry') || error.code === '42883') {
-          toast.error('Pause functionality is not available. Please refresh the page and try again.');
-          return;
-        }
         throw error;
       }
 
       console.log('✅ Pause result:', result);
 
-      // Type guard for the result
-      const pauseResult = result as any;
-      
-      if (pauseResult?.success) {
+      if (result?.success) {
         toast.success(`Paused working on "${timerState.activeTaskTitle || 'task'}"`);
         
         setTimerState(prev => ({
@@ -364,7 +355,7 @@ export const useTaskTimeTracking = () => {
         }));
       } else {
         toast.error('Failed to pause timer');
-        console.warn('⚠️ Pause result unsuccessful:', pauseResult);
+        console.warn('⚠️ Pause result unsuccessful:', result);
       }
     } catch (error) {
       console.error('❌ Error pausing task work:', error);
@@ -386,28 +377,19 @@ export const useTaskTimeTracking = () => {
     try {
       setIsLoading(true);
 
-      // Call the database function directly using rpc (cast to any due to missing types)
-      const { data: result, error } = await (supabase.rpc as any)('resume_time_entry', {
+      const { data: result, error } = await supabase.rpc('resume_time_entry', {
         p_user_id: user.id,
         p_task_id: timerState.activeTaskId
-      });
+      }) as { data: PauseResumeResult | null; error: any };
 
       if (error) {
         console.error('❌ Error resuming task work:', error);
-        // Check if it's a function not found error
-        if (error.message?.includes('function resume_time_entry') || error.code === '42883') {
-          toast.error('Resume functionality is not available. Please refresh the page and try again.');
-          return;
-        }
         throw error;
       }
 
       console.log('✅ Resume result:', result);
 
-      // Type guard for the result
-      const resumeResult = result as any;
-      
-      if (resumeResult?.success) {
+      if (result?.success) {
         toast.success(`Resumed working on "${timerState.activeTaskTitle || 'task'}"`);
         
         setTimerState(prev => ({
@@ -417,7 +399,7 @@ export const useTaskTimeTracking = () => {
         }));
       } else {
         toast.error('Failed to resume timer');
-        console.warn('⚠️ Resume result unsuccessful:', resumeResult);
+        console.warn('⚠️ Resume result unsuccessful:', result);
       }
     } catch (error) {
       console.error('❌ Error resuming task work:', error);

@@ -1,159 +1,94 @@
 
-import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { 
-  Calendar, 
-  Clock, 
-  DollarSign, 
-  User, 
-  Play,
-  Square,
-  Repeat,
-  MessageSquare,
-  AlertCircle,
-  Edit
-} from 'lucide-react';
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Calendar, Clock, User, MessageSquare, Edit, Trash2 } from 'lucide-react';
 import { Task, TaskStatus } from '@/types';
-import { cn } from '@/lib/utils';
-import TaskTimer from '@/components/task/TaskTimer';
-import { useTaskTimeTracking } from '@/hooks/useTaskTimeTracking';
+import { format } from 'date-fns';
 import { useTask } from '@/contexts/task';
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/sonner';
+import TaskTimerDialog from '@/components/task/TaskTimerDialog';
 
 interface TaskDetailDialogProps {
-  task: Task | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  task: Task | null;
   onEdit?: (task: Task) => void;
+  onDelete?: (taskId: string) => void;
 }
 
 const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
-  task,
   open,
   onOpenChange,
-  onEdit
+  task,
+  onEdit,
+  onDelete
 }) => {
-  const { updateTaskStatus } = useTask();
-  const { timerState, startTaskWork, stopTaskWork, isLoading: timerLoading, refreshState } = useTaskTimeTracking();
-  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
-  const [comment, setComment] = useState('');
-
-  // Refresh timer state when dialog opens to ensure we have fresh data
-  useEffect(() => {
-    if (open && task) {
-      console.log('🔄 Dialog opened, refreshing timer state for task:', task.id);
-      refreshState();
-    }
-  }, [open, task?.id, refreshState]);
-
-  // Debug logging for timer state
-  useEffect(() => {
-    if (task && open) {
-      console.log('🐛 TaskDetailDialog state debug:', {
-        taskId: task.id,
-        activeTaskId: timerState.activeTaskId,
-        isActiveTimer: timerState.activeTaskId === task.id,
-        timerState
-      });
-    }
-  }, [task, timerState, open]);
+  const { updateTaskStatus, deleteTask } = useTask();
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [newComment, setNewComment] = useState('');
 
   if (!task) return null;
 
-  const isOverdue = new Date(task.deadline) < new Date() && task.status !== 'Completed';
-  const isActiveTimer = timerState.activeTaskId === task.id;
-  
-  console.log('🎯 Button logic check:', {
-    taskId: task.id,
-    activeTaskId: timerState.activeTaskId,
-    isActiveTimer,
-    taskStatus: task.status,
-    shouldShowStartButton: task.status !== 'In Progress' && !isActiveTimer,
-    shouldShowStopButton: isActiveTimer
-  });
-  
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'High': return 'border-red-200 bg-red-50 text-red-800';
-      case 'Medium': return 'border-yellow-200 bg-yellow-50 text-yellow-800';
-      case 'Low': return 'border-green-200 bg-green-50 text-green-800';
-      default: return 'border-gray-200 bg-gray-50 text-gray-800';
-    }
-  };
-
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: TaskStatus) => {
     switch (status) {
-      case 'Completed': return 'text-green-600 bg-green-50 border-green-200';
-      case 'In Progress': return 'text-blue-600 bg-blue-50 border-blue-200';
-      case 'To Do': return 'text-gray-600 bg-gray-50 border-gray-200';
-      default: return 'text-gray-600 bg-gray-50 border-gray-200';
+      case 'To Do':
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
+      case 'In Progress':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+      case 'Completed':
+        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+      default:
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
     }
   };
 
-  const handleStartWorking = async () => {
-    try {
-      setIsUpdatingStatus(true);
-      
-      console.log('▶️ Starting work on task:', task.id);
-      
-      // Update task status to In Progress if not already
-      if (task.status !== 'In Progress') {
-        await updateTaskStatus(task.id, 'In Progress');
-      }
-      
-      // Start the task timer
-      await startTaskWork(task.id, task.title);
-      
-      // Refresh state to ensure UI updates
-      await refreshState();
-      
-      toast.success('Started working on task');
-    } catch (error) {
-      console.error('Error starting work:', error);
-      toast.error('Failed to start working on task');
-    } finally {
-      setIsUpdatingStatus(false);
-    }
-  };
-
-  const handleStopWorking = async () => {
-    try {
-      console.log('⏹️ Stopping work on task:', task.id);
-      await stopTaskWork();
-      
-      // Refresh state to ensure UI updates
-      await refreshState();
-    } catch (error) {
-      console.error('Error stopping work:', error);
+  const getPriorityColor = (priority: string) => {
+    switch (priority?.toLowerCase()) {
+      case 'high':
+        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+      case 'medium':
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+      case 'low':
+        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+      default:
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
     }
   };
 
   const handleStatusChange = async (newStatus: TaskStatus) => {
+    if (isUpdating) return;
+    
+    setIsUpdating(true);
     try {
-      setIsUpdatingStatus(true);
-      
-      // If stopping work (changing from In Progress), stop the timer
-      if (task.status === 'In Progress' && newStatus !== 'In Progress' && isActiveTimer) {
-        await stopTaskWork();
-      }
-      
       await updateTaskStatus(task.id, newStatus);
-      
-      // Refresh state to ensure UI updates
-      await refreshState();
-      
-      toast.success(`Task status updated to ${newStatus}`);
+      toast.success('Task status updated successfully');
     } catch (error) {
       console.error('Error updating task status:', error);
       toast.error('Failed to update task status');
     } finally {
-      setIsUpdatingStatus(false);
+      setIsUpdating(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (isUpdating) return;
+    
+    if (!confirm('Are you sure you want to delete this task?')) return;
+    
+    setIsUpdating(true);
+    try {
+      await deleteTask(task.id);
+      toast.success('Task deleted successfully');
+      onOpenChange(false);
+      onDelete?.(task.id);
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      toast.error('Failed to delete task');
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -161,180 +96,138 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-start justify-between gap-4">
-            <span className="flex-1 text-xl font-bold leading-tight">
-              {task.title}
-            </span>
-            <div className="flex gap-2 shrink-0">
-              <Badge className={cn("text-xs", getPriorityColor(task.priority))}>
-                {task.priority}
-              </Badge>
-              {isOverdue && (
-                <Badge variant="destructive" className="text-xs">
-                  <AlertCircle className="h-3 w-3 mr-1" />
-                  Overdue
-                </Badge>
-              )}
-            </div>
+          <DialogTitle className="text-xl font-semibold pr-8">
+            {task.title}
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Task Timer Section */}
-          <div className="space-y-3">
-            <h3 className="text-sm font-medium">Time Tracking</h3>
-            <TaskTimer 
-              taskId={task.id}
-              taskTitle={task.title}
-              compact={false}
-              showControls={false}
-              className="bg-background border"
-            />
-          </div>
-
-          {/* Status and Actions */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
+          {/* Task Details */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">Status:</span>
-                <Badge className={cn("text-xs", getStatusColor(task.status))}>
+                <Badge className={getStatusColor(task.status)}>
                   {task.status}
                 </Badge>
-              </div>
-              
-              <div className="flex gap-2">
-                {/* Show Start Working button only if timer is NOT active for this task */}
-                {!isActiveTimer && (
-                  <Button
-                    onClick={handleStartWorking}
-                    disabled={isUpdatingStatus || timerLoading}
-                    className="bg-green-600 hover:bg-green-700"
-                  >
-                    <Play className="h-4 w-4 mr-2" />
-                    Start Working
-                  </Button>
-                )}
-                
-                {/* Show Stop Working button only if timer IS active for this task */}
-                {isActiveTimer && (
-                  <Button
-                    variant="destructive"
-                    onClick={handleStopWorking}
-                    disabled={timerLoading}
-                  >
-                    <Square className="h-4 w-4 mr-2" />
-                    Stop Working
-                  </Button>
+                {task.priority && (
+                  <Badge className={getPriorityColor(task.priority)}>
+                    {task.priority} Priority
+                  </Badge>
                 )}
               </div>
-            </div>
 
-            {/* Quick Status Change Buttons */}
-            <div className="flex gap-2 flex-wrap">
-              {(['To Do', 'In Progress', 'Completed'] as TaskStatus[]).map((status) => (
-                <Button
-                  key={status}
-                  variant={task.status === status ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => handleStatusChange(status)}
-                  disabled={isUpdatingStatus || task.status === status}
-                  className="text-xs"
-                >
-                  {status}
-                </Button>
-              ))}
-            </div>
-          </div>
+              {task.deadline && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Calendar className="h-4 w-4" />
+                  <span>Due: {format(new Date(task.deadline), 'MMM dd, yyyy')}</span>
+                </div>
+              )}
 
-          <Separator />
-
-          {/* Task Details */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-medium">Task Details</h3>
-            
-            {task.description && (
-              <div className="space-y-2">
-                <Label className="text-xs font-medium text-muted-foreground">Description</Label>
-                <p className="text-sm leading-relaxed bg-muted/30 p-3 rounded-md">
-                  {task.description}
-                </p>
-              </div>
-            )}
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                  <Calendar className="h-3 w-3" />
-                  Deadline
-                </Label>
-                <p className="text-sm">
-                  {new Date(task.deadline).toLocaleDateString('en-US', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
-                </p>
-              </div>
-
-              {task.cost && task.cost > 0 && (
-                <div className="space-y-2">
-                  <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                    <DollarSign className="h-3 w-3" />
-                    Budget
-                  </Label>
-                  <p className="text-sm font-medium">${task.cost}</p>
+              {task.user_id && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <User className="h-4 w-4" />
+                  <span>Assigned to: {task.user_id}</span>
                 </div>
               )}
             </div>
 
-            {task.assignedToNames && task.assignedToNames.length > 0 && (
-              <div className="space-y-2">
-                <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                  <User className="h-3 w-3" />
-                  Assigned To
-                </Label>
-                <div className="flex flex-wrap gap-1">
-                  {task.assignedToNames.map((name, index) => (
-                    <Badge key={index} variant="secondary" className="text-xs">
-                      {name}
-                    </Badge>
-                  ))}
-                </div>
+            <div className="space-y-3">
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onEdit?.(task)}
+                  disabled={isUpdating}
+                >
+                  <Edit className="h-4 w-4 mr-1" />
+                  Edit
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDelete}
+                  disabled={isUpdating}
+                  className="text-red-600 hover:text-red-700"
+                >
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  Delete
+                </Button>
               </div>
-            )}
+
+              {/* Status Quick Actions */}
+              <div className="flex flex-wrap gap-2">
+                {(['To Do', 'In Progress', 'Completed'] as TaskStatus[]).map((status) => (
+                  <Button
+                    key={status}
+                    variant={task.status === status ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handleStatusChange(status)}
+                    disabled={isUpdating || task.status === status}
+                    className="text-xs"
+                  >
+                    {status}
+                  </Button>
+                ))}
+              </div>
+            </div>
           </div>
 
-          <Separator />
+          {/* Timer Section */}
+          <div className="border-t pt-4">
+            <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+              <Clock className="h-5 w-5" />
+              Time Tracking
+            </h3>
+            <TaskTimerDialog 
+              taskId={task.id} 
+              taskTitle={task.title}
+            />
+          </div>
 
-          {/* Action Buttons */}
-          <div className="flex justify-between items-center pt-2">
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onEdit?.(task)}
-              >
-                <Edit className="h-4 w-4 mr-2" />
-                Edit Task
-              </Button>
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => toast.info('Recurring tasks feature coming soon!')}
-              >
-                <Repeat className="h-4 w-4 mr-2" />
-                Make Recurring
-              </Button>
+          {/* Description */}
+          {task.description && (
+            <div className="border-t pt-4">
+              <h3 className="text-lg font-semibold mb-2">Description</h3>
+              <p className="text-muted-foreground whitespace-pre-wrap">
+                {task.description}
+              </p>
             </div>
+          )}
 
-            <Button
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              Close
-            </Button>
+          {/* Comments Section */}
+          <div className="border-t pt-4">
+            <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+              <MessageSquare className="h-5 w-5" />
+              Comments
+            </h3>
+            
+            <div className="space-y-4">
+              <div className="flex gap-2">
+                <Textarea
+                  placeholder="Add a comment..."
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  className="flex-1"
+                  rows={3}
+                />
+                <Button
+                  onClick={() => {
+                    if (newComment.trim()) {
+                      // TODO: Add comment functionality
+                      setNewComment('');
+                      toast.success('Comment added');
+                    }
+                  }}
+                  disabled={!newComment.trim() || isUpdating}
+                >
+                  Add
+                </Button>
+              </div>
+              
+              <div className="text-sm text-muted-foreground">
+                No comments yet. Be the first to add one!
+              </div>
+            </div>
           </div>
         </div>
       </DialogContent>
