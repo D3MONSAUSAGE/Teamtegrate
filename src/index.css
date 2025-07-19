@@ -131,14 +131,49 @@
   animation: buzz 0.5s ease-in-out;
 }
 
-/* Mobile-optimized scrollbars */
+/* Enhanced scrollbar hiding - cross-browser compatibility */
 .scrollbar-hide {
-  -ms-overflow-style: none;
+  /* Firefox */
   scrollbar-width: none;
+  /* Internet Explorer and Edge */
+  -ms-overflow-style: none;
 }
 
 .scrollbar-hide::-webkit-scrollbar {
+  /* WebKit browsers (Chrome, Safari, newer Edge) */
   display: none;
+  width: 0;
+  height: 0;
+  background: transparent;
+}
+
+/* Alias for backward compatibility */
+.no-scrollbar {
+  /* Firefox */
+  scrollbar-width: none;
+  /* Internet Explorer and Edge */
+  -ms-overflow-style: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  /* WebKit browsers (Chrome, Safari, newer Edge) */
+  display: none;
+  width: 0;
+  height: 0;
+  background: transparent;
+}
+
+/* Global scrollbar hiding for body and html */
+html, body {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 /* Mobile touch optimizations */

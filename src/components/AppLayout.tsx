@@ -29,14 +29,14 @@ const MainContent = memo(({ children }: { children: React.ReactNode }) => {
   return (
     <SidebarInset 
       className={`
-        flex flex-col flex-1 no-scrollbar overflow-hidden
+        flex flex-col flex-1 scrollbar-hide overflow-hidden
         ${isMobile ? 'mobile-safe-area' : ''}
       `}
       onClick={handleMainContentClick}
     >
       <Navbar />
       <main className={`
-        flex-1 overflow-y-auto overflow-x-hidden no-scrollbar smooth-scroll
+        flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide smooth-scroll
         ${isMobile ? 'px-4 py-4' : 'px-6 lg:px-12'}
         touch-pan-y
       `}>
@@ -58,7 +58,7 @@ const LoadingScreen = memo(() => (
   <div className={`
     min-h-screen flex items-center justify-center 
     bg-gradient-to-br from-background via-muted/30 to-background
-    mobile-safe-area
+    mobile-safe-area scrollbar-hide
   `}>
     <div className="text-center glass-card p-8 rounded-2xl animate-scale-in">
       <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-r from-primary/20 to-accent/20 rounded-full flex items-center justify-center">
@@ -92,7 +92,7 @@ const AppLayout = memo(() => {
     >
       <div className={`
         min-h-screen bg-gradient-to-br from-background via-muted/20 to-background 
-        w-full flex no-scrollbar overflow-hidden
+        w-full flex scrollbar-hide overflow-hidden
         ${isMobile ? 'mobile-safe-area' : 'mobile-safe-area'}
         touch-manipulation
       `}>

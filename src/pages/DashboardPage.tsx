@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { usePersonalTasks } from '@/hooks/usePersonalTasks';
@@ -164,8 +163,8 @@ const DashboardPage = () => {
   }), [todaysTasks.length, upcomingTasks.length, isLoading, flatProjects.length]);
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted/5 to-background">
-      <div className="relative pt-6 px-4 md:px-6 lg:px-8 space-y-8 no-scrollbar">
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/5 to-background scrollbar-hide">
+      <div className="relative pt-6 px-4 md:px-6 lg:px-8 space-y-8 scrollbar-hide">
         {/* Enhanced Welcome Header with proper spacing */}
         <div className="animate-fade-in">
           <EnhancedDashboardHeader
