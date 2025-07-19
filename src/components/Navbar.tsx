@@ -16,6 +16,11 @@ const Navbar = memo(() => {
   const { markAsRead, fetchNotifications } = useNotifications();
   const isMobile = useIsMobile();
 
+  // Debug mobile detection
+  useEffect(() => {
+    console.log('Mobile detection:', { isMobile, userAgent: navigator.userAgent });
+  }, [isMobile]);
+
   // Refresh notifications when component mounts
   useEffect(() => {
     fetchNotifications();
@@ -75,7 +80,10 @@ const Navbar = memo(() => {
       <div className="flex items-center justify-between h-16 px-4 md:px-6">
         <div className="flex items-center gap-3">
           {isMobile && (
-            <SidebarTrigger className="h-10 w-10 native-button tap-highlight-none" />
+            <SidebarTrigger 
+              className="h-10 w-10 native-button tap-highlight-none flex items-center justify-center" 
+              onClick={() => console.log('Sidebar trigger clicked on mobile')}
+            />
           )}
           <NavbarBrand />
         </div>
