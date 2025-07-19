@@ -139,7 +139,7 @@ const LandingFooter: React.FC = () => {
             </p>
             <div className="flex space-x-6 text-sm">
               {[
-                { label: 'Privacy Policy', href: '/login' },
+                { label: 'Privacy Policy', href: '/privacy' },
                 { label: 'Terms of Service', href: '/login' },
                 { label: 'Cookie Policy', href: '/login' },
                 { label: 'Security', href: '/login' }
