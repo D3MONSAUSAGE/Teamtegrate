@@ -10,9 +10,11 @@ import {
   Clock,
   Zap,
   Target,
-  Briefcase
+  Briefcase,
+  Smartphone
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { toast } from '@/components/ui/use-toast';
 
 interface QuickActionsPanelProps {
   onCreateTask: () => void;
@@ -23,6 +25,26 @@ const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({
   onCreateTask,
   userRole
 }) => {
+  const handleDownloadApp = () => {
+    try {
+      // Open download link in new tab
+      window.open('https://github.com/D3MONSAUSAGE/Teamtegrate/releases/download/v1.0.0/app-release.apk', '_blank');
+      
+      // Show success toast
+      toast({
+        title: "Download Started",
+        description: "The TeamTegrate Android app is being downloaded.",
+      });
+    } catch (error) {
+      // Show error toast
+      toast({
+        title: "Download Failed", 
+        description: "Unable to download the app. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const quickActions = [
     {
       label: 'New Task',
@@ -75,13 +97,24 @@ const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-foreground">Quick Actions</h3>
         <Badge variant="secondary" className="text-xs">
           <Zap className="h-3 w-3 mr-1" />
           Fast Access
         </Badge>
+      </div>
+      
+      {/* Android App Download Button */}
+      <div className="mb-6">
+        <Button
+          onClick={handleDownloadApp}
+          className="w-full h-16 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border-0"
+        >
+          <Smartphone className="h-6 w-6 mr-3" />
+          📲 Download Android App
+        </Button>
       </div>
       
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
