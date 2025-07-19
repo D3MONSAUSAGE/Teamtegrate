@@ -219,7 +219,7 @@ body::-webkit-scrollbar,
 }
 
 /* Mobile-specific enhancements */
-@media screen and (max-width: 640px) {
+@media screen and (max-width: 768px) {
   /* Improve mobile form handling */
   .form-container {
     /* Account for virtual keyboard */
@@ -243,5 +243,19 @@ body::-webkit-scrollbar,
   input, textarea {
     @apply rounded-xl text-base px-4 py-3;
     font-size: 16px !important; /* Prevent zoom on iOS */
+  }
+}
+
+/* Additional mobile detection using device capabilities */
+@media (hover: none) and (pointer: coarse) {
+  /* Touch device specific styles */
+  button, a, [role="button"] {
+    min-height: 48px;
+    min-width: 48px;
+  }
+  
+  /* Larger touch targets for mobile */
+  .touch-target {
+    @apply min-h-[48px] min-w-[48px];
   }
 }
