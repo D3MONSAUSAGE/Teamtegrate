@@ -69,7 +69,7 @@ const AppLayout = memo(() => {
 
   return (
     <SidebarProvider defaultOpen={!isMobile}>
-      <div className="min-h-screen bg-background w-full flex overflow-hidden">
+      <div className="min-h-screen bg-background w-full flex overflow-hidden no-scrollbar">
         <Sidebar />
         <MainContent>
           <Outlet />

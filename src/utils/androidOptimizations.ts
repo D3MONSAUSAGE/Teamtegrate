@@ -14,7 +14,7 @@ export class AndroidOptimizations {
 
   constructor() {
     this.deviceInfo = this.detectDevice();
-    this.init();
+    // Removed auto-init to prevent automatic application of styles
   }
 
   private detectDevice(): DeviceInfo {
@@ -106,5 +106,20 @@ export class AndroidOptimizations {
     };
   }
 }
+
+// Clean up any existing Android CSS classes
+const cleanAndroidClasses = () => {
+  const classesToRemove = [
+    'android-device', 'android-level-1', 'android-level-2', 'android-level-3', 
+    'android-nuclear-reset', 'android-webview', 'samsung-device', 'xiaomi-device', 
+    'high-dpi', 'android-debug', 'android-reset', 'android-touch-optimized'
+  ];
+  
+  classesToRemove.forEach(cls => document.body.classList.remove(cls));
+  console.log('🧹 Cleaned all Android optimization classes');
+};
+
+// Clean up immediately when this file is imported
+cleanAndroidClasses();
 
 export const androidOptimizations = new AndroidOptimizations();
