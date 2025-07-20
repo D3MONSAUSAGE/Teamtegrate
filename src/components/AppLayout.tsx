@@ -69,7 +69,6 @@ LoadingScreen.displayName = 'LoadingScreen';
 
 const AppLayout = memo(() => {
   const { user, loading, isAuthenticated } = useAuth();
-  const { isDesktop } = useBreakpoint();
 
   if (loading) {
     return <LoadingScreen />;
@@ -79,14 +78,11 @@ const AppLayout = memo(() => {
     return <Navigate to="/login" replace />;
   }
 
-  // Set initial sidebar state based on screen size, but don't force it
-  const defaultOpen = isDesktop;
-
   return (
     <ProtectedRoute>
       <TooltipProvider>
         <TaskProvider>
-          <SidebarProvider defaultOpen={defaultOpen}>
+          <SidebarProvider defaultOpen={false}>
             <div className="min-h-screen-mobile bg-background w-full flex overflow-hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
               <Sidebar />
               <MainContent>
