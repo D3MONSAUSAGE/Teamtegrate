@@ -210,13 +210,23 @@ const SidebarTrigger = React.forwardRef<
   HTMLButtonElement,
   React.ComponentProps<"button">
 >(({ className, ...props }, ref) => {
-  const { toggleOpen } = useSidebar()
+  const { toggleOpen, isMobile, openMobile, setOpenMobile } = useSidebar()
+  
+  const handleClick = () => {
+    if (isMobile) {
+      // On mobile, toggle the mobile drawer state
+      setOpenMobile(!openMobile)
+    } else {
+      // On desktop, toggle the sidebar collapse/expand state
+      toggleOpen()
+    }
+  }
   
   return (
     <button
       ref={ref}
       className={cn("inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background hover:bg-accent hover:text-accent-foreground h-9 px-3", className)}
-      onClick={toggleOpen}
+      onClick={handleClick}
       {...props}
     >
       <svg
