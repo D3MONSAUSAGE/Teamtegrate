@@ -10,31 +10,12 @@ export function useIsMobile() {
   React.useEffect(() => {
     const checkMobile = () => {
       const width = window.innerWidth
-      const height = window.innerHeight
-      const userAgent = navigator.userAgent
-      
-      // Simple mobile detection - only screen width
       const mobile = width < MOBILE_BREAKPOINT
-      
-      // Debug logging
-      console.log('🔍 Mobile Detection Debug:', {
-        width,
-        height,
-        mobile,
-        userAgent: userAgent.substring(0, 50) + '...',
-        breakpoint: MOBILE_BREAKPOINT
-      })
-      
       setIsMobile(mobile)
     }
     
-    // Check immediately on mount
     checkMobile()
-    
-    // Add event listener for window resize
     window.addEventListener("resize", checkMobile)
-    
-    // Clean up event listener
     return () => window.removeEventListener("resize", checkMobile)
   }, [])
 
@@ -50,13 +31,8 @@ export function useIsTablet() {
       setIsTablet(width >= MOBILE_BREAKPOINT && width < TABLET_BREAKPOINT)
     }
     
-    // Check immediately on mount
     checkTablet()
-    
-    // Add event listener for window resize
     window.addEventListener("resize", checkTablet)
-    
-    // Clean up event listener
     return () => window.removeEventListener("resize", checkTablet)
   }, [])
 
@@ -71,13 +47,8 @@ export function useIsDesktop() {
       setIsDesktop(window.innerWidth >= TABLET_BREAKPOINT)
     }
     
-    // Check immediately on mount
     checkDesktop()
-    
-    // Add event listener for window resize
     window.addEventListener("resize", checkDesktop)
-    
-    // Clean up event listener
     return () => window.removeEventListener("resize", checkDesktop)
   }, [])
 
