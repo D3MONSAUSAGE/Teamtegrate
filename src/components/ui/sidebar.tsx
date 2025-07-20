@@ -1,3 +1,4 @@
+
 import * as React from "react"
 import { useState, createContext, useContext, useMemo, useCallback } from "react"
 import { cva, type VariantProps } from "class-variance-authority"
@@ -252,7 +253,7 @@ const SidebarContent = React.forwardRef<
           data-sidebar="sidebar"
           data-mobile="true"
           className={cn(
-            "w-[--sidebar-width] bg-sidebar-background text-sidebar-foreground backdrop-blur-sm border-sidebar-border/60 shadow-lg p-0 [&>button]:hidden",
+            "w-[--sidebar-width] bg-sidebar-background text-sidebar-foreground border-sidebar-border/60 p-0 [&>button]:hidden",
             side === "left" &&
               "inset-y-0 left-0 h-full border-r data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left",
             side === "right" &&
