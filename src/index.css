@@ -71,6 +71,40 @@
     @apply bg-background text-foreground font-sans;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
+  
+  /* Comprehensive scrollbar hiding */
+  * {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  
+  *::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+    background: transparent;
+  }
+  
+  *::-webkit-scrollbar-track {
+    display: none;
+  }
+  
+  *::-webkit-scrollbar-thumb {
+    display: none;
+  }
+  
+  html, body {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    overflow-x: hidden;
+  }
+  
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
 }
 
 @layer utilities {
@@ -85,6 +119,27 @@
   
   .pt-safe-area-inset-top {
     padding-top: env(safe-area-inset-top);
+  }
+  
+  /* No scrollbar utility */
+  .no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Mobile viewport height */
+  .min-h-screen-mobile {
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+  
+  .h-screen-mobile {
+    height: 100vh;
+    height: 100dvh;
   }
 }
 
@@ -270,4 +325,3 @@
 .progress-ring-animated {
   animation: progress-draw 1s ease-out;
 }
-

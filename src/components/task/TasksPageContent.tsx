@@ -24,8 +24,8 @@ const TasksPageContent = ({
   
   if (!tasks || !Array.isArray(tasks)) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-accent/10 relative overflow-hidden">
-        <div className="flex items-center justify-center min-h-screen">
+      <div className="min-h-screen-mobile bg-gradient-to-br from-background via-secondary/20 to-accent/10 relative overflow-hidden">
+        <div className="flex items-center justify-center min-h-screen-mobile">
           <div className="text-center">
             <p className="text-muted-foreground">Tasks data is not available</p>
           </div>
@@ -81,14 +81,14 @@ const TasksPageContent = ({
   }), [sortTasks, todoTasks, inProgressTasks, completedTasks]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-accent/10 relative overflow-hidden">
+    <div className="min-h-screen-mobile bg-gradient-to-br from-background via-secondary/20 to-accent/10 relative overflow-hidden no-scrollbar">
       {/* Simplified background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/3 rounded-full blur-3xl"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-accent/3 rounded-full blur-3xl"></div>
+        <div className="absolute -top-20 sm:-top-40 -right-20 sm:-right-40 w-40 h-40 sm:w-80 sm:h-80 bg-primary/3 rounded-full blur-3xl"></div>
+        <div className="absolute -bottom-20 sm:-bottom-40 -left-20 sm:-left-40 w-40 h-40 sm:w-80 sm:h-80 bg-accent/3 rounded-full blur-3xl"></div>
       </div>
 
-      <div className="w-full px-2 sm:px-4 lg:px-6 py-8 space-y-10 relative z-10">
+      <div className="w-full space-y-6 sm:space-y-8 lg:space-y-10 relative z-10">
         {/* Enhanced Page Header */}
         <div className="animate-fade-in">
           <TaskHeader 
@@ -100,7 +100,7 @@ const TasksPageContent = ({
         
         {/* Enhanced Main Content Area */}
         <div className="animate-fade-in delay-200">
-          <div className="bg-card/60 backdrop-blur-sm border border-border/40 rounded-3xl shadow-xl overflow-hidden">
+          <div className="bg-card/60 backdrop-blur-sm border border-border/40 rounded-2xl sm:rounded-3xl shadow-xl overflow-hidden">
             <TaskTabs
               todoTasks={sortedTodo}
               inProgressTasks={sortedInProgress}
