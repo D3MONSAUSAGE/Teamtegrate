@@ -177,7 +177,7 @@ const DashboardPage = () => {
     }
   }, [refreshProjects]);
 
-  const onStatusChange = async (taskId: string, status: TaskStatus): Promise<void> => {
+  const onStatusChange = async (taskId: string, status: string): Promise<void> => {
     console.log(`Changing task ${taskId} status to ${status}`);
   };
 

@@ -107,7 +107,7 @@ const SwipeableTaskCard: React.FC<SwipeableTaskCardProps> = ({
             "px-4 py-2 rounded-lg",
             progress > 1 ? "scale-110" : "scale-100"
           )}>
-            <leftActions[0]?.icon className="h-5 w-5" />
+            {leftActions[0]?.icon && React.createElement(leftActions[0].icon, { className: "h-5 w-5" })}
             <span>{leftActions[0]?.label}</span>
           </div>
         </div>
