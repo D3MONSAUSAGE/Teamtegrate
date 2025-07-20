@@ -20,7 +20,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = memo(({ onNavigation }) => {
   const { user } = useAuth();
   const { isDark, toggle } = useDarkMode();
-  const { state, isMobile, setOpenMobile } = useSidebar();
+  const { state, isMobile, setOpenMobile, open, isHoverExpanded } = useSidebar();
 
   // Memoize user object to prevent unnecessary re-renders
   const sidebarUser = useMemo(() => {
@@ -46,7 +46,8 @@ const Sidebar: React.FC<SidebarProps> = memo(({ onNavigation }) => {
     return null;
   }
 
-  const isCollapsed = !isMobile && state === 'collapsed';
+  // Sidebar is collapsed if it's not mobile and neither manually open nor hover expanded
+  const isCollapsed = !isMobile && !open && !isHoverExpanded;
 
   return (
     <ShadcnSidebar 
