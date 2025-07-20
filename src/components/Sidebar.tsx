@@ -52,7 +52,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ onNavigation }) => {
   return (
     <ShadcnSidebar 
       className="border-r border-sidebar-border/60 transition-all duration-300 bg-sidebar-background"
-      collapsible={isMobile ? "offcanvas" : "icon"}
+      collapsible="icon"
       variant="sidebar"
     >
       <ShadcnSidebarHeader className="border-b border-sidebar-border/30">
