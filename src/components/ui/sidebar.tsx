@@ -135,6 +135,11 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
 
     const isCollapsed = !isMobile && !open
 
+    // Hide sidebar completely on mobile - drawer handles mobile display
+    if (isMobile) {
+      return null
+    }
+
     return (
       <div
         ref={ref}
@@ -258,26 +263,19 @@ const SidebarContent = React.forwardRef<
 
   if (isMobile) {
     return (
-      <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
+      <Sheet open={openMobile} onOpenChange={setOpenMobile}>
         <SheetContent
           data-sidebar="sidebar"
           data-mobile="true"
           className={cn(
-            "w-[--sidebar-width] bg-sidebar-background text-sidebar-foreground border-sidebar-border/60 p-0 [&>button]:hidden",
-            side === "left" &&
-              "inset-y-0 left-0 h-full border-r data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left",
-            side === "right" &&
-              "inset-y-0 right-0 h-full border-l data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right",
+            "bg-sidebar-background text-sidebar-foreground border-sidebar-border/60 p-0 [&>button]:hidden",
             className
           )}
-          style={
-            {
-              "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
-            } as React.CSSProperties
-          }
           side={side}
         >
-          <div className="flex h-full w-full flex-col bg-sidebar-background">{props.children}</div>
+          <div className="flex h-full w-full flex-col bg-sidebar-background">
+            {props.children}
+          </div>
         </SheetContent>
       </Sheet>
     )
