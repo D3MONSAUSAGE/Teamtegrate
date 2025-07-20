@@ -185,7 +185,7 @@ const SidebarHeader = React.forwardRef<
   return (
     <div
       ref={ref}
-      className={cn("flex h-[60px] shrink-0 items-center justify-between px-3", className)}
+      className={cn("flex shrink-0 items-center justify-between", className)}
       {...props}
     />
   )
@@ -199,7 +199,7 @@ const SidebarFooter = React.forwardRef<
   return (
     <div
       ref={ref}
-      className={cn("flex h-[60px] shrink-0 items-center justify-between px-3", className)}
+      className={cn("flex shrink-0 items-center justify-between", className)}
       {...props}
     />
   )
