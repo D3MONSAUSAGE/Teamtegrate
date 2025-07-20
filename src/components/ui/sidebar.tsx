@@ -57,7 +57,7 @@ const SidebarProvider = React.forwardRef<
 >(
   (
     {
-      defaultOpen = false,
+      defaultOpen = true,
       open: openProp,
       onOpenChange: setOpenProp,
       className,
@@ -89,22 +89,6 @@ const SidebarProvider = React.forwardRef<
       },
       [setOpenProp, open]
     )
-
-    // Professional auto-expand behavior based on breakpoints
-    React.useEffect(() => {
-      if (isDesktop) {
-        // Desktop: Always expanded unless manually collapsed
-        if (!open) {
-          setOpen(true)
-        }
-      } else if (isTablet) {
-        // Tablet: Auto-expand but allow retraction
-        if (!open) {
-          setOpen(true)
-        }
-      }
-      // Mobile: Keep overlay behavior, don't auto-expand
-    }, [isDesktop, isTablet, open, setOpen])
 
     // Enhanced mobile state management
     const enhancedSetOpenMobile = React.useCallback((value: boolean | ((prev: boolean) => boolean)) => {
@@ -227,7 +211,7 @@ const Sidebar = React.forwardRef<
       )
     }
 
-    // Mobile: Sheet overlay
+    // Mobile: Sheet overlay with solid background
     if (isMobile) {
       const handleOpenChange = (open: boolean) => {
         if (open !== openMobile) {
@@ -252,7 +236,7 @@ const Sidebar = React.forwardRef<
             }
             side="left"
           >
-            <div className="flex h-full w-full flex-col">{children}</div>
+            <div className="flex h-full w-full flex-col bg-sidebar">{children}</div>
           </SheetContent>
         </Sheet>
       )

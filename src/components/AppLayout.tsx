@@ -1,3 +1,4 @@
+
 import React, { memo } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -17,9 +18,9 @@ const MainContent = memo(({ children }: { children: React.ReactNode }) => {
   const { isMobile: breakpointIsMobile, isTablet: breakpointIsTablet } = useBreakpoint();
 
   const handleMainContentClick = (e: React.MouseEvent) => {
-    // Only handle clicks on the main content area itself
+    // Only handle clicks on the main content area itself, not child elements
     const target = e.target as HTMLElement;
-    const isClickOnMainContent = target === e.currentTarget;
+    const isClickOnMainContent = target === e.currentTarget || target.closest('main') === e.currentTarget;
     
     if (isClickOnMainContent) {
       if (breakpointIsMobile) {
@@ -29,7 +30,7 @@ const MainContent = memo(({ children }: { children: React.ReactNode }) => {
         // Tablet: Allow retraction for better UX
         setOpen(false);
       }
-      // Desktop: Keep expanded unless manually toggled
+      // Desktop: No auto-close behavior
     }
   };
 
@@ -68,7 +69,7 @@ LoadingScreen.displayName = 'LoadingScreen';
 
 const AppLayout = memo(() => {
   const { user, loading, isAuthenticated } = useAuth();
-  const { isMobile } = useBreakpoint();
+  const { isDesktop } = useBreakpoint();
 
   if (loading) {
     return <LoadingScreen />;
@@ -78,11 +79,14 @@ const AppLayout = memo(() => {
     return <Navigate to="/login" replace />;
   }
 
+  // Set initial sidebar state based on screen size, but don't force it
+  const defaultOpen = isDesktop;
+
   return (
     <ProtectedRoute>
       <TooltipProvider>
         <TaskProvider>
-          <SidebarProvider defaultOpen={true}>
+          <SidebarProvider defaultOpen={defaultOpen}>
             <div className="min-h-screen-mobile bg-background w-full flex overflow-hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
               <Sidebar />
               <MainContent>
