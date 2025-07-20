@@ -63,7 +63,7 @@ const SidebarProvider: React.FC<SidebarProviderProps> = ({
     setOpen((prevOpen) => !prevOpen)
   }, [])
 
-  const state = useMemo(() => (open ? "open" : "closed"), [open])
+  const state = useMemo(() => (open ? "open" : "closed") as "open" | "closed", [open])
 
   const value = useMemo(
     () => ({
@@ -205,6 +205,38 @@ const SidebarFooter = React.forwardRef<
 })
 SidebarFooter.displayName = "SidebarFooter"
 
+const SidebarTrigger = React.forwardRef<
+  HTMLButtonElement,
+  React.ComponentProps<"button">
+>(({ className, ...props }, ref) => {
+  const { toggleOpen } = useSidebar()
+  
+  return (
+    <button
+      ref={ref}
+      className={cn("inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background hover:bg-accent hover:text-accent-foreground h-9 px-3", className)}
+      onClick={toggleOpen}
+      {...props}
+    >
+      <svg
+        className="h-4 w-4"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M4 6h16M4 12h16M4 18h16"
+        />
+      </svg>
+    </button>
+  )
+})
+SidebarTrigger.displayName = "SidebarTrigger"
+
 const SidebarContent = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<"div"> & {
@@ -257,6 +289,7 @@ export {
   SidebarHeader,
   SidebarFooter,
   SidebarProvider,
+  SidebarTrigger,
   useSidebar,
   SidebarInset,
 }
