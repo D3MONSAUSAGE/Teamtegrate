@@ -1,3 +1,4 @@
+
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap");
 @tailwind base;
@@ -24,16 +25,6 @@
   --border: 240 5.9% 90%;
   --input: 240 5.9% 90%;
   --ring: 217 91% 60%;
-
-  /* Sidebar colors - Light mode */
-  --sidebar-background: 0 0% 98%;
-  --sidebar-foreground: 240 5.3% 26.1%;
-  --sidebar-primary: 240 5.9% 10%;
-  --sidebar-primary-foreground: 0 0% 98%;
-  --sidebar-accent: 240 4.8% 95.9%;
-  --sidebar-accent-foreground: 240 5.9% 10%;
-  --sidebar-border: 220 13% 91%;
-  --sidebar-ring: 217 91% 60%;
 
   /* State colors */
   --destructive: 0 84.2% 60.2%;
@@ -64,17 +55,6 @@
   --secondary: 240 3.7% 15.9%;
   --accent: 142 76% 36%;
   --accent-foreground: 355 100% 95%;
-
-  /* Sidebar colors - Dark mode */
-  --sidebar-background: 240 5.9% 10%;
-  --sidebar-foreground: 240 4.8% 95.9%;
-  --sidebar-primary: 224.3 76.3% 94.1%;
-  --sidebar-primary-foreground: 220.9 39.3% 11%;
-  --sidebar-accent: 240 3.7% 15.9%;
-  --sidebar-accent-foreground: 240 4.8% 95.9%;
-  --sidebar-border: 240 3.7% 15.9%;
-  --sidebar-ring: 217 91% 60%;
-
   --destructive: 0 62.8% 30.6%;
   --destructive-foreground: 0 0% 98%;
   --success: 142 76% 36%;
@@ -91,56 +71,6 @@
     @apply bg-background text-foreground font-sans;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
-  
-  /* Comprehensive scrollbar hiding */
-  html {
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-  }
-  
-  html::-webkit-scrollbar {
-    display: none;
-    width: 0 !important;
-    height: 0 !important;
-    background: transparent;
-  }
-  
-  body {
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    overflow-x: hidden;
-  }
-  
-  body::-webkit-scrollbar {
-    display: none;
-    width: 0 !important;
-    height: 0 !important;
-  }
-  
-  /* Global scrollbar hiding for all elements */
-  * {
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-  }
-  
-  *::-webkit-scrollbar {
-    display: none;
-    width: 0 !important;
-    height: 0 !important;
-    background: transparent !important;
-  }
-  
-  *::-webkit-scrollbar-track {
-    display: none !important;
-  }
-  
-  *::-webkit-scrollbar-thumb {
-    display: none !important;
-  }
-  
-  *::-webkit-scrollbar-corner {
-    display: none !important;
-  }
 }
 
 @layer utilities {
@@ -155,27 +85,6 @@
   
   .pt-safe-area-inset-top {
     padding-top: env(safe-area-inset-top);
-  }
-  
-  /* No scrollbar utility */
-  .no-scrollbar {
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-  }
-  
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-  
-  /* Mobile viewport height */
-  .min-h-screen-mobile {
-    min-height: 100vh;
-    min-height: 100dvh;
-  }
-  
-  .h-screen-mobile {
-    height: 100vh;
-    height: 100dvh;
   }
 }
 
@@ -361,3 +270,4 @@
 .progress-ring-animated {
   animation: progress-draw 1s ease-out;
 }
+
