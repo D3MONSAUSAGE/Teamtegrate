@@ -1,3 +1,4 @@
+
 import * as React from "react"
 
 const MOBILE_BREAKPOINT = 768
@@ -9,9 +10,20 @@ export function useIsMobile() {
   React.useEffect(() => {
     const checkMobile = () => {
       const width = window.innerWidth
+      const height = window.innerHeight
+      const userAgent = navigator.userAgent
       
       // Simple mobile detection - only screen width
       const mobile = width < MOBILE_BREAKPOINT
+      
+      // Debug logging
+      console.log('🔍 Mobile Detection Debug:', {
+        width,
+        height,
+        mobile,
+        userAgent: userAgent.substring(0, 50) + '...',
+        breakpoint: MOBILE_BREAKPOINT
+      })
       
       setIsMobile(mobile)
     }

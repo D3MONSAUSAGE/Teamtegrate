@@ -20,7 +20,17 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = memo(({ onNavigation }) => {
   const { user } = useAuth();
   const { isDark, toggle } = useDarkMode();
-  const { state, isMobile, setOpenMobile } = useSidebar();
+  const { state, isMobile, setOpenMobile, openMobile } = useSidebar();
+
+  // Debug sidebar state
+  React.useEffect(() => {
+    console.log('🔧 Sidebar State Debug:', {
+      state,
+      isMobile,
+      openMobile,
+      userExists: !!user
+    });
+  }, [state, isMobile, openMobile, user]);
 
   // Memoize user object to prevent unnecessary re-renders
   const sidebarUser = useMemo(() => {
@@ -35,16 +45,27 @@ const Sidebar: React.FC<SidebarProps> = memo(({ onNavigation }) => {
 
   // Mobile-optimized navigation handler
   const handleNavigation = useCallback(() => {
+    console.log('🧭 Navigation handler called:', { isMobile });
     // Close sidebar when navigating on mobile
     if (isMobile) {
+      console.log('📱 Closing mobile sidebar on navigation');
       setOpenMobile(false);
     }
     onNavigation?.();
   }, [isMobile, setOpenMobile, onNavigation]);
 
-  if (!sidebarUser) return null;
+  if (!sidebarUser) {
+    console.log('❌ No sidebar user, not rendering sidebar');
+    return null;
+  }
 
   const isCollapsed = !isMobile && state === 'collapsed';
+
+  console.log('🎨 Sidebar Render Debug:', {
+    isMobile,
+    isCollapsed,
+    collapsible: isMobile ? "offcanvas" : "icon"
+  });
 
   return (
     <ShadcnSidebar 

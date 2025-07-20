@@ -68,6 +68,15 @@ const SidebarProvider = React.forwardRef<
     const isMobile = useIsMobile()
     const [openMobile, setOpenMobile] = React.useState(false)
 
+    // Debug mobile state changes
+    React.useEffect(() => {
+      console.log('🏗️ SidebarProvider Mobile State:', {
+        isMobile,
+        openMobile,
+        width: window.innerWidth
+      });
+    }, [isMobile, openMobile]);
+
     // This is the internal state of the sidebar.
     // We use openProp and setOpenProp for control from outside the component.
     const [_open, _setOpen] = React.useState(defaultOpen)
@@ -75,6 +84,7 @@ const SidebarProvider = React.forwardRef<
     const setOpen = React.useCallback(
       (value: boolean | ((value: boolean) => boolean)) => {
         const openState = typeof value === "function" ? value(open) : value
+        console.log('🔧 setOpen called:', { openState, isMobile });
         if (setOpenProp) {
           setOpenProp(openState)
         } else {
@@ -84,19 +94,34 @@ const SidebarProvider = React.forwardRef<
         // This sets the cookie to keep the sidebar state.
         document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`
       },
-      [setOpenProp, open]
+      [setOpenProp, open, isMobile]
     )
+
+    // Enhanced setOpenMobile with debugging
+    const enhancedSetOpenMobile = React.useCallback((value: boolean | ((prev: boolean) => boolean)) => {
+      const newValue = typeof value === "function" ? value(openMobile) : value;
+      console.log('📱 setOpenMobile called:', { 
+        currentValue: openMobile, 
+        newValue, 
+        isMobile 
+      });
+      setOpenMobile(newValue);
+    }, [openMobile, isMobile]);
 
     // Helper to toggle the sidebar - FIXED to handle mobile vs desktop properly
     const toggleSidebar = React.useCallback(() => {
+      console.log('🔄 toggleSidebar called:', { isMobile, openMobile, open });
       if (isMobile) {
         // On mobile, toggle the mobile overlay state
-        setOpenMobile((prev) => !prev)
+        const newMobileState = !openMobile;
+        console.log('📱 Toggling mobile sidebar:', { from: openMobile, to: newMobileState });
+        enhancedSetOpenMobile(newMobileState);
       } else {
         // On desktop, toggle the main sidebar state
+        console.log('💻 Toggling desktop sidebar:', { from: open, to: !open });
         setOpen((prev) => !prev)
       }
-    }, [isMobile, setOpen, setOpenMobile])
+    }, [isMobile, setOpen, enhancedSetOpenMobile, openMobile, open])
 
     // Adds a keyboard shortcut to toggle the sidebar.
     React.useEffect(() => {
@@ -125,10 +150,10 @@ const SidebarProvider = React.forwardRef<
         setOpen,
         isMobile,
         openMobile,
-        setOpenMobile,
+        setOpenMobile: enhancedSetOpenMobile,
         toggleSidebar,
       }),
-      [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar]
+      [state, open, setOpen, isMobile, openMobile, enhancedSetOpenMobile, toggleSidebar]
     )
 
     return (
@@ -179,6 +204,17 @@ const Sidebar = React.forwardRef<
   ) => {
     const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
 
+    // Debug Sidebar render
+    React.useEffect(() => {
+      console.log('🎨 Sidebar Component Debug:', {
+        isMobile,
+        state,
+        openMobile,
+        collapsible,
+        variant
+      });
+    }, [isMobile, state, openMobile, collapsible, variant]);
+
     if (collapsible === "none") {
       return (
         <div
@@ -195,8 +231,16 @@ const Sidebar = React.forwardRef<
     }
 
     if (isMobile) {
+      console.log('📱 Rendering mobile sidebar (Sheet):', { openMobile });
       return (
-        <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
+        <Sheet 
+          open={openMobile} 
+          onOpenChange={(open) => {
+            console.log('📄 Sheet onOpenChange:', { open });
+            setOpenMobile(open);
+          }} 
+          {...props}
+        >
           <SheetContent
             data-sidebar="sidebar"
             data-mobile="true"
@@ -214,6 +258,7 @@ const Sidebar = React.forwardRef<
       )
     }
 
+    console.log('💻 Rendering desktop sidebar');
     return (
       <div
         ref={ref}
@@ -275,6 +320,7 @@ const SidebarTrigger = React.forwardRef<
       size="icon"
       className={cn("h-7 w-7", className)}
       onClick={(event) => {
+        console.log('🍔 SidebarTrigger clicked!');
         onClick?.(event)
         toggleSidebar()
       }}

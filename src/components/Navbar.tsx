@@ -16,9 +16,13 @@ const Navbar = memo(() => {
   const { markAsRead, fetchNotifications } = useNotifications();
   const isMobile = useIsMobile();
 
-  // Debug mobile detection
+  // Debug mobile detection in Navbar
   useEffect(() => {
-    console.log('Mobile detection:', { isMobile, userAgent: navigator.userAgent, width: window.innerWidth });
+    console.log('📱 Navbar Mobile Detection:', { 
+      isMobile, 
+      userAgent: navigator.userAgent.substring(0, 50) + '...', 
+      width: window.innerWidth 
+    });
   }, [isMobile]);
 
   // Refresh notifications when component mounts
@@ -81,7 +85,10 @@ const Navbar = memo(() => {
         <div className="flex items-center gap-3">
           {/* Only show hamburger menu on mobile */}
           {isMobile && (
-            <SidebarTrigger className="h-10 w-10 native-button tap-highlight-none" />
+            <SidebarTrigger 
+              className="h-10 w-10 native-button tap-highlight-none"
+              onClick={() => console.log('🍔 Hamburger menu clicked!')}
+            />
           )}
           <NavbarBrand />
         </div>
