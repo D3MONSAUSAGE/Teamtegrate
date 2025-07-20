@@ -1,4 +1,3 @@
-
 import React, { memo } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -8,27 +7,29 @@ import { TaskProvider } from '@/contexts/task';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 import { SidebarProvider, SidebarInset, useSidebar } from '@/components/ui/sidebar';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useBreakpoint } from '@/hooks/use-mobile';
 import { Loader2 } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 
-// Memoized main content component with mobile optimizations
+// Professional main content component with enhanced navigation handling
 const MainContent = memo(({ children }: { children: React.ReactNode }) => {
-  const { setOpen, isMobile, setOpenMobile } = useSidebar();
-  const isDesktop = !isMobile;
+  const { setOpen, setOpenMobile, isMobile, isTablet } = useSidebar();
+  const { isMobile: breakpointIsMobile, isTablet: breakpointIsTablet } = useBreakpoint();
 
   const handleMainContentClick = (e: React.MouseEvent) => {
-    // Only close sidebar if we're clicking on the main content area itself
-    // and not on any interactive elements
+    // Only handle clicks on the main content area itself
     const target = e.target as HTMLElement;
     const isClickOnMainContent = target === e.currentTarget;
     
     if (isClickOnMainContent) {
-      if (isDesktop) {
-        setOpen(false);
-      } else {
+      if (breakpointIsMobile) {
+        // Mobile: Close overlay drawer
         setOpenMobile(false);
+      } else if (breakpointIsTablet) {
+        // Tablet: Allow retraction for better UX
+        setOpen(false);
       }
+      // Desktop: Keep expanded unless manually toggled
     }
   };
 
@@ -67,7 +68,7 @@ LoadingScreen.displayName = 'LoadingScreen';
 
 const AppLayout = memo(() => {
   const { user, loading, isAuthenticated } = useAuth();
-  const isMobile = useIsMobile();
+  const { isMobile } = useBreakpoint();
 
   if (loading) {
     return <LoadingScreen />;
@@ -81,7 +82,7 @@ const AppLayout = memo(() => {
     <ProtectedRoute>
       <TooltipProvider>
         <TaskProvider>
-          <SidebarProvider defaultOpen={!isMobile}>
+          <SidebarProvider defaultOpen={true}>
             <div className="min-h-screen-mobile bg-background w-full flex overflow-hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
               <Sidebar />
               <MainContent>

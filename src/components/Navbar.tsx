@@ -1,10 +1,9 @@
-
 import React, { useEffect, memo, useMemo, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { enhancedNotifications } from '@/utils/enhancedNotifications';
 import { useNotifications } from '@/hooks/use-notifications';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useBreakpoint } from '@/hooks/use-mobile';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import NavbarBrand from './navbar/NavbarBrand';
 import NotificationButton from './navbar/NotificationButton';
@@ -14,7 +13,7 @@ const Navbar = memo(() => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { markAsRead, fetchNotifications } = useNotifications();
-  const isMobile = useIsMobile();
+  const { isMobile } = useBreakpoint();
 
   // Refresh notifications when component mounts
   useEffect(() => {
@@ -74,7 +73,7 @@ const Navbar = memo(() => {
     <nav className="bg-white dark:bg-background border-b border-gray-200 dark:border-gray-800 safe-area-top">
       <div className="flex items-center justify-between h-16 px-4 md:px-6">
         <div className="flex items-center gap-3">
-          {/* Only show hamburger menu on mobile */}
+          {/* Professional: Only show hamburger menu on mobile */}
           {isMobile && (
             <SidebarTrigger className="h-10 w-10 native-button tap-highlight-none" />
           )}

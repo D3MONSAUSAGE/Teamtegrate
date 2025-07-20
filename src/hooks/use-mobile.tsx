@@ -23,7 +23,7 @@ export function useIsMobile() {
 }
 
 export function useIsTablet() {
-  const [isTablet, setIsTablet] = React.useState<boolean | undefined>(undefined)
+  const [isTablet, setIsTablet] = React.useState<boolean>(false)
 
   React.useEffect(() => {
     const checkTablet = () => {
@@ -36,11 +36,11 @@ export function useIsTablet() {
     return () => window.removeEventListener("resize", checkTablet)
   }, [])
 
-  return !!isTablet
+  return isTablet
 }
 
 export function useIsDesktop() {
-  const [isDesktop, setIsDesktop] = React.useState<boolean | undefined>(undefined)
+  const [isDesktop, setIsDesktop] = React.useState<boolean>(false)
 
   React.useEffect(() => {
     const checkDesktop = () => {
@@ -52,7 +52,7 @@ export function useIsDesktop() {
     return () => window.removeEventListener("resize", checkDesktop)
   }, [])
 
-  return !!isDesktop
+  return isDesktop
 }
 
 export function useBreakpoint() {

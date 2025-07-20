@@ -1,4 +1,3 @@
-
 import React, { memo, useMemo, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDarkMode } from '@/hooks/useDarkMode';
@@ -20,7 +19,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = memo(({ onNavigation }) => {
   const { user } = useAuth();
   const { isDark, toggle } = useDarkMode();
-  const { state, isMobile, setOpenMobile, open, isHoverExpanded } = useSidebar();
+  const { state, isMobile, isTablet, setOpenMobile, setOpen, open } = useSidebar();
 
   // Memoize user object to prevent unnecessary re-renders
   const sidebarUser = useMemo(() => {
@@ -33,21 +32,26 @@ const Sidebar: React.FC<SidebarProps> = memo(({ onNavigation }) => {
     };
   }, [user?.name, user?.email, user?.role]);
 
-  // Mobile-optimized navigation handler
+  // Professional navigation handler with breakpoint-aware behavior
   const handleNavigation = useCallback(() => {
-    // Close sidebar when navigating on mobile
     if (isMobile) {
+      // Mobile: Close overlay drawer
       setOpenMobile(false);
+    } else if (isTablet) {
+      // Tablet: Retract for better UX
+      setOpen(false);
     }
+    // Desktop: Keep expanded
+    
     onNavigation?.();
-  }, [isMobile, setOpenMobile, onNavigation]);
+  }, [isMobile, isTablet, setOpenMobile, setOpen, onNavigation]);
 
   if (!sidebarUser) {
     return null;
   }
 
-  // Sidebar is collapsed if it's not mobile and neither manually open nor hover expanded
-  const isCollapsed = !isMobile && !open && !isHoverExpanded;
+  // Professional collapsed state calculation
+  const isCollapsed = !isMobile && !open;
 
   return (
     <ShadcnSidebar 
