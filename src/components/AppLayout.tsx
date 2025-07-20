@@ -17,11 +17,29 @@ const MainContent = memo(({ children }: { children: React.ReactNode }) => {
   const { setOpen, isMobile, setOpenMobile } = useSidebar();
   const isDesktop = !isMobile;
 
-  const handleMainContentClick = () => {
-    if (isDesktop) {
-      setOpen(false);
+  const handleMainContentClick = (e: React.MouseEvent) => {
+    console.log('🖱️ Main content clicked:', { 
+      isMobile, 
+      target: e.target, 
+      currentTarget: e.currentTarget 
+    });
+    
+    // Only close sidebar if we're clicking on the main content area itself
+    // and not on any interactive elements
+    const target = e.target as HTMLElement;
+    const isClickOnMainContent = target === e.currentTarget;
+    
+    if (isClickOnMainContent) {
+      console.log('🖱️ Click detected on main content area');
+      if (isDesktop) {
+        console.log('💻 Desktop: Setting sidebar to collapsed');
+        setOpen(false);
+      } else {
+        console.log('📱 Mobile: Closing mobile sidebar');
+        setOpenMobile(false);
+      }
     } else {
-      setOpenMobile(false);
+      console.log('🖱️ Click detected on child element, not closing sidebar');
     }
   };
 

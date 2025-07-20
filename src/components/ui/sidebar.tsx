@@ -103,7 +103,8 @@ const SidebarProvider = React.forwardRef<
       console.log('📱 setOpenMobile called:', { 
         currentValue: openMobile, 
         newValue, 
-        isMobile 
+        isMobile,
+        stack: new Error().stack
       });
       setOpenMobile(newValue);
     }, [openMobile, isMobile]);
@@ -232,13 +233,28 @@ const Sidebar = React.forwardRef<
 
     if (isMobile) {
       console.log('📱 Rendering mobile sidebar (Sheet):', { openMobile });
+      
+      // Enhanced onOpenChange with detailed logging
+      const handleOpenChange = (open: boolean) => {
+        console.log('📄 Sheet onOpenChange called:', { 
+          open, 
+          currentOpenMobile: openMobile,
+          stack: new Error().stack?.split('\n')[1]
+        });
+        
+        // Only call setOpenMobile if the value is actually changing
+        if (open !== openMobile) {
+          console.log('📄 Sheet state actually changing, calling setOpenMobile');
+          setOpenMobile(open);
+        } else {
+          console.log('📄 Sheet state unchanged, ignoring onOpenChange');
+        }
+      };
+
       return (
         <Sheet 
           open={openMobile} 
-          onOpenChange={(open) => {
-            console.log('📄 Sheet onOpenChange:', { open });
-            setOpenMobile(open);
-          }} 
+          onOpenChange={handleOpenChange}
           {...props}
         >
           <SheetContent
