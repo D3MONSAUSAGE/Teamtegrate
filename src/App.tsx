@@ -23,6 +23,7 @@ import TeamPage from "@/pages/TeamPage";
 import AdminPage from "@/pages/AdminPage";
 import LandingPage from "@/pages/LandingPage";
 import Index from "@/pages/Index";
+import OrganizationDashboard from "@/pages/OrganizationDashboard";
 import SupabaseNotificationManager from "@/components/SupabaseNotificationManager";
 
 const queryClient = new QueryClient();
@@ -36,10 +37,13 @@ function App() {
         <BrowserRouter>
           <AuthProvider>
             <Routes>
+              {/* Public Routes */}
               <Route path="/" element={<Index />} />
-              <Route path="/login" element={<LoginPage />} />
               <Route path="/landing" element={<LandingPage />} />
-              <Route path="/dashboard" element={<AppLayout />}>
+              <Route path="/login" element={<LoginPage />} />
+              
+              {/* Protected Dashboard Routes */}
+              <Route path="/dashboard" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
                 <Route index element={<DashboardPage />} />
                 <Route path="projects" element={<ProjectsPage />} />
                 <Route path="tasks" element={<TasksPage />} />
@@ -53,7 +57,11 @@ function App() {
                 <Route path="settings" element={<SettingsPage />} />
                 <Route path="team" element={<TeamPage />} />
                 <Route path="admin" element={<AdminPage />} />
+                <Route path="organization" element={<OrganizationDashboard />} />
               </Route>
+              
+              {/* Fallback for unmatched routes */}
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
             <SupabaseNotificationManager />
           </AuthProvider>
