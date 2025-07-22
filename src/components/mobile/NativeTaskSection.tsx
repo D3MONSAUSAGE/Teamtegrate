@@ -99,15 +99,10 @@ const NativeTaskSection: React.FC<NativeTaskSectionProps> = ({
       {visibleTasks.length > 0 ? (
         <div className="space-y-3">
           {visibleTasks.map((task, index) => (
-            <EnhancedTaskCard
-              key={task.id}
-              task={task}
-              onEdit={onEditTask}
-              onStatusChange={onStatusChange}
-              onDelete={() => {}}
-              onClick={() => onViewTask(task)}
-              index={index}
-            />
+          <EnhancedTaskCard
+            key={task.id}
+            task={task}
+          />
           ))}
           
           {hasMoreTasks && (
