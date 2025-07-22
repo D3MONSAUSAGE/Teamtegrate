@@ -32,7 +32,7 @@ const MobileBottomNav: React.FC = () => {
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-sm border-t border-border/50 z-40">
+    <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border z-50 safe-area-bottom">
       <div className="grid grid-cols-4 h-16">
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -55,7 +55,6 @@ const MobileBottomNav: React.FC = () => {
           );
         })}
       </div>
-      <div className="pb-safe" />
     </div>
   );
 };

@@ -225,17 +225,19 @@ const DashboardPage = () => {
     <PullToRefresh onRefresh={handlePullToRefresh}>
       <div className="min-h-screen bg-gradient-to-br from-background via-muted/5 to-background scrollbar-hide">
         {isMobile ? (
-          // Mobile Layout
-          <div className="pb-20"> {/* Bottom padding for bottom nav */}
-            {/* Compact Mobile Header */}
-            <CompactMobileHeader
-              userName={user?.name || 'User'}
-              onCreateTask={() => handleCreateTask()}
-              isLoading={isLoading}
-            />
+          // Mobile Layout with fixed bottom elements
+          <div className="flex flex-col min-h-screen">
+            {/* Fixed Header */}
+            <div className="flex-none">
+              <CompactMobileHeader
+                userName={user?.name || 'User'}
+                onCreateTask={() => handleCreateTask()}
+                isLoading={isLoading}
+              />
+            </div>
             
-            {/* Mobile Status Bar */}
-            <div className="py-3">
+            {/* Fixed Status Bar */}
+            <div className="flex-none py-3">
               <MobileStatusBar 
                 dailyScore={personalDailyScore.percentage}
                 todaysTasks={todaysTasks}
@@ -244,163 +246,171 @@ const DashboardPage = () => {
               />
             </div>
 
-            {/* Compact Task Sections */}
-            <div className="space-y-4">
-              {/* Today's Tasks */}
-              <div>
-                <CompactSectionHeader
-                  title="Today's Focus"
-                  count={todaysTasks.length}
-                  icon={Target}
-                  onAction={() => handleCreateTask()}
-                  viewAllLink="/dashboard/tasks"
-                />
-                <div className="px-4">
-                  {todaysTasks.length > 0 ? (
-                    <div className="space-y-2">
-                      {todaysTasks.slice(0, 3).map((task) => (
-                        <SwipeableTaskCard
-                          key={task.id}
-                          task={task}
-                          onEdit={handleEditTask}
-                          onStatusChange={onStatusChange}
-                          onDelete={() => {}}
-                          onClick={() => {}}
-                          isUpdating={isUpdatingStatus === task.id}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-6 px-4 bg-muted/30 rounded-lg">
-                      <Target className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                      <p className="text-sm text-muted-foreground">No tasks for today</p>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => handleCreateTask()}
-                        className="mt-2"
-                      >
-                        <Plus className="h-3 w-3 mr-1" />
-                        Add Task
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Upcoming Tasks */}
-              <div>
-                <CompactSectionHeader
-                  title="This Week"
-                  count={upcomingTasks.length}
-                  icon={Calendar}
-                  onAction={() => handleCreateTask()}
-                />
-                <div className="px-4">
-                  {upcomingTasks.length > 0 ? (
-                    <div className="space-y-2">
-                      {upcomingTasks.slice(0, 2).map((task) => (
-                        <SwipeableTaskCard
-                          key={task.id}
-                          task={task}
-                          onEdit={handleEditTask}
-                          onStatusChange={onStatusChange}
-                          onDelete={() => {}}
-                          onClick={() => {}}
-                          isUpdating={isUpdatingStatus === task.id}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-4 px-4 bg-muted/30 rounded-lg">
-                      <Calendar className="h-6 w-6 text-muted-foreground mx-auto mb-2" />
-                      <p className="text-xs text-muted-foreground">No upcoming tasks</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Overdue Tasks - Only show if there are any */}
-              {overdueTasks.length > 0 && (
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto pb-32">
+              <div className="space-y-4">
+                {/* Today's Tasks */}
                 <div>
                   <CompactSectionHeader
-                    title="Overdue"
-                    count={overdueTasks.length}
-                    icon={AlertTriangle}
+                    title="Today's Focus"
+                    count={todaysTasks.length}
+                    icon={Target}
+                    onAction={() => handleCreateTask()}
+                    viewAllLink="/dashboard/tasks"
+                  />
+                  <div className="px-4">
+                    {todaysTasks.length > 0 ? (
+                      <div className="space-y-2">
+                        {todaysTasks.slice(0, 3).map((task) => (
+                          <SwipeableTaskCard
+                            key={task.id}
+                            task={task}
+                            onEdit={handleEditTask}
+                            onStatusChange={onStatusChange}
+                            onDelete={() => {}}
+                            onClick={() => {}}
+                            isUpdating={isUpdatingStatus === task.id}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-6 px-4 bg-muted/30 rounded-lg">
+                        <Target className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground">No tasks for today</p>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => handleCreateTask()}
+                          className="mt-2"
+                        >
+                          <Plus className="h-3 w-3 mr-1" />
+                          Add Task
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Upcoming Tasks */}
+                <div>
+                  <CompactSectionHeader
+                    title="This Week"
+                    count={upcomingTasks.length}
+                    icon={Calendar}
                     onAction={() => handleCreateTask()}
                   />
                   <div className="px-4">
-                    <div className="space-y-2">
-                      {overdueTasks.slice(0, 2).map((task) => (
-                        <SwipeableTaskCard
-                          key={task.id}
-                          task={task}
-                          onEdit={handleEditTask}
-                          onStatusChange={onStatusChange}
-                          onDelete={() => {}}
-                          onClick={() => {}}
-                          isUpdating={isUpdatingStatus === task.id}
-                        />
-                      ))}
+                    {upcomingTasks.length > 0 ? (
+                      <div className="space-y-2">
+                        {upcomingTasks.slice(0, 2).map((task) => (
+                          <SwipeableTaskCard
+                            key={task.id}
+                            task={task}
+                            onEdit={handleEditTask}
+                            onStatusChange={onStatusChange}
+                            onDelete={() => {}}
+                            onClick={() => {}}
+                            isUpdating={isUpdatingStatus === task.id}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-4 px-4 bg-muted/30 rounded-lg">
+                        <Calendar className="h-6 w-6 text-muted-foreground mx-auto mb-2" />
+                        <p className="text-xs text-muted-foreground">No upcoming tasks</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Overdue Tasks - Only show if there are any */}
+                {overdueTasks.length > 0 && (
+                  <div>
+                    <CompactSectionHeader
+                      title="Overdue"
+                      count={overdueTasks.length}
+                      icon={AlertTriangle}
+                      onAction={() => handleCreateTask()}
+                    />
+                    <div className="px-4">
+                      <div className="space-y-2">
+                        {overdueTasks.slice(0, 2).map((task) => (
+                          <SwipeableTaskCard
+                            key={task.id}
+                            task={task}
+                            onEdit={handleEditTask}
+                            onStatusChange={onStatusChange}
+                            onDelete={() => {}}
+                            onClick={() => {}}
+                            isUpdating={isUpdatingStatus === task.id}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Time Tracking - Compact */}
+                <div>
+                  <CompactSectionHeader
+                    title="Time Tracking"
+                    icon={Clock}
+                  />
+                  <div className="px-4">
+                    <div className="bg-card rounded-lg p-3">
+                      <EnhancedTimeTracking />
                     </div>
                   </div>
                 </div>
-              )}
 
-              {/* Time Tracking - Compact */}
-              <div>
-                <CompactSectionHeader
-                  title="Time Tracking"
-                  icon={Clock}
-                />
-                <div className="px-4">
-                  <div className="bg-card rounded-lg p-3">
-                    <EnhancedTimeTracking />
-                  </div>
-                </div>
+                {/* Manager-only sections - Compact */}
+                {user?.role === 'manager' && (
+                  <>
+                    <div>
+                      <CompactSectionHeader
+                        title="Active Projects"
+                        count={recentProjects.length}
+                        icon={FileText}
+                      />
+                      <div className="px-4">
+                        <div className="bg-card rounded-lg p-3">
+                          <RecentProjects 
+                            projects={recentProjects}
+                            onViewTasks={handleViewTasks}
+                            onCreateTask={handleCreateTaskForProject}
+                            onRefresh={refreshProjects}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <CompactSectionHeader
+                        title="Team"
+                        icon={Users}
+                      />
+                      <div className="px-4">
+                        <div className="bg-card rounded-lg p-3">
+                          <TeamManagement />
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
-
-              {/* Manager-only sections - Compact */}
-              {user?.role === 'manager' && (
-                <>
-                  <div>
-                    <CompactSectionHeader
-                      title="Active Projects"
-                      count={recentProjects.length}
-                      icon={FileText}
-                    />
-                    <div className="px-4">
-                      <div className="bg-card rounded-lg p-3">
-                        <RecentProjects 
-                          projects={recentProjects}
-                          onViewTasks={handleViewTasks}
-                          onCreateTask={handleCreateTaskForProject}
-                          onRefresh={refreshProjects}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <CompactSectionHeader
-                      title="Team"
-                      icon={Users}
-                    />
-                    <div className="px-4">
-                      <div className="bg-card rounded-lg p-3">
-                        <TeamManagement />
-                      </div>
-                    </div>
-                  </div>
-                </>
-              )}
             </div>
 
-            {/* Mobile Bottom Navigation */}
+            {/* Fixed Bottom Navigation */}
             <MobileBottomNav />
+
+            {/* Fixed Floating Action Button */}
+            <FloatingActionButton
+              onCreateTask={() => handleCreateTask()}
+              onStartTimer={() => {}}
+            />
           </div>
         ) : (
-          // Desktop Layout - Keep existing design
+          // Desktop Layout
           <div className="relative pt-6 px-4 md:px-6 lg:px-8 space-y-8 scrollbar-hide">
             {/* Enhanced Welcome Header with proper spacing */}
             <div className="animate-fade-in">
@@ -547,14 +557,6 @@ const DashboardPage = () => {
           currentProjectId={selectedProject?.id}
           onTaskComplete={handleTaskDialogComplete}
         />
-
-        {/* Floating Action Button - Mobile Only */}
-        {isMobile && (
-          <FloatingActionButton
-            onCreateTask={() => handleCreateTask()}
-            onStartTimer={() => {}}
-          />
-        )}
       </div>
     </PullToRefresh>
   );

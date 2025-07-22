@@ -58,7 +58,7 @@ const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
 
   return (
     <div className={cn(
-      "fixed bottom-20 right-4 z-50 flex flex-col-reverse items-end gap-3",
+      "fixed bottom-20 right-4 z-[60] flex flex-col-reverse items-end gap-3",
       className
     )}>
       {/* Action buttons */}
@@ -108,7 +108,7 @@ const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
       {/* Backdrop */}
       {isExpanded && (
         <div
-          className="fixed inset-0 bg-black/20 backdrop-blur-sm -z-10"
+          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[-1]"
           onClick={() => setIsExpanded(false)}
         />
       )}

@@ -75,16 +75,37 @@
     @apply space-y-2;
   }
   
-  .pb-safe {
+  .safe-area-bottom {
     padding-bottom: max(env(safe-area-inset-bottom), 16px);
   }
   
-  .pt-safe {
+  .safe-area-top {
     padding-top: env(safe-area-inset-top);
   }
   
   .mobile-fab-spacing {
     padding-bottom: calc(80px + env(safe-area-inset-bottom));
+  }
+
+  /* Fixed mobile layout utilities */
+  .mobile-fixed-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 40;
+  }
+
+  .mobile-fixed-bottom {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+  }
+
+  .mobile-content-spacing {
+    padding-bottom: calc(128px + env(safe-area-inset-bottom)); /* 64px bottom nav + 64px FAB space */
   }
 }
 
