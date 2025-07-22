@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -91,12 +90,12 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
       description={editingTask ? "Update task details" : "Add a new task to your project"}
       variant="sheet"
     >
-      <ScrollArea className="flex-1">
-        <div className="p-6 space-y-6">
+      <div className="flex flex-col h-full">
+        <div className="flex-1 px-6 py-6 space-y-6">
           {/* Basic Information */}
-          <div className="space-y-4">
+          <div className="space-y-5">
             <div>
-              <Label htmlFor="title" className="text-sm font-medium">
+              <Label htmlFor="title" className="text-base font-semibold mb-3 block">
                 Task Title *
               </Label>
               <Input
@@ -104,13 +103,13 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
                 value={formData.title}
                 onChange={(e) => updateFormData('title', e.target.value)}
                 placeholder="Enter task title..."
-                className="mt-1 h-12"
+                className="h-14 text-base rounded-2xl border-2 focus:border-primary transition-colors"
                 autoFocus
               />
             </div>
 
             <div>
-              <Label htmlFor="description" className="text-sm font-medium">
+              <Label htmlFor="description" className="text-base font-semibold mb-3 block">
                 Description
               </Label>
               <Textarea
@@ -118,21 +117,21 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
                 value={formData.description}
                 onChange={(e) => updateFormData('description', e.target.value)}
                 placeholder="Describe your task..."
-                className="mt-1 min-h-[100px] resize-none"
-                rows={4}
+                className="min-h-[120px] text-base rounded-2xl border-2 focus:border-primary transition-colors resize-none"
+                rows={5}
               />
             </div>
           </div>
 
-          <Separator />
+          <Separator className="bg-border/50" />
 
           {/* Task Settings */}
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <Label className="text-sm font-medium">Priority</Label>
+                <Label className="text-base font-semibold mb-3 block">Priority</Label>
                 <Select value={formData.priority} onValueChange={(value) => updateFormData('priority', value)}>
-                  <SelectTrigger className="mt-1 h-12">
+                  <SelectTrigger className="h-14 text-base rounded-2xl border-2">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -144,9 +143,9 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
               </div>
 
               <div>
-                <Label className="text-sm font-medium">Status</Label>
+                <Label className="text-base font-semibold mb-3 block">Status</Label>
                 <Select value={formData.status} onValueChange={(value) => updateFormData('status', value as TaskStatus)}>
-                  <SelectTrigger className="mt-1 h-12">
+                  <SelectTrigger className="h-14 text-base rounded-2xl border-2">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -159,21 +158,21 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
             </div>
 
             <div>
-              <Label className="text-sm font-medium">Due Date</Label>
+              <Label className="text-base font-semibold mb-3 block">Due Date</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     className={cn(
-                      "w-full mt-1 h-12 justify-start text-left font-normal",
+                      "w-full h-14 text-base rounded-2xl border-2 justify-start text-left font-normal hover:bg-muted/50 transition-colors",
                       !formData.deadline && "text-muted-foreground"
                     )}
                   >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    <CalendarIcon className="mr-3 h-5 w-5" />
                     {formData.deadline ? format(formData.deadline, "PPP") : "Pick a date"}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                <PopoverContent className="w-auto p-0 rounded-2xl" align="start">
                   <Calendar
                     mode="single"
                     selected={formData.deadline}
@@ -185,7 +184,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
             </div>
 
             <div>
-              <Label htmlFor="assignedTo" className="text-sm font-medium">
+              <Label htmlFor="assignedTo" className="text-base font-semibold mb-3 block">
                 Assign To
               </Label>
               <Input
@@ -193,44 +192,44 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
                 value={formData.assignedTo}
                 onChange={(e) => updateFormData('assignedTo', e.target.value)}
                 placeholder="Enter user ID or email..."
-                className="mt-1 h-12"
+                className="h-14 text-base rounded-2xl border-2 focus:border-primary transition-colors"
               />
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-sm text-muted-foreground mt-2">
                 Leave empty to assign to yourself
               </p>
             </div>
           </div>
         </div>
-      </ScrollArea>
 
-      {/* Fixed Bottom Actions */}
-      <div className="p-6 border-t border-border/50 bg-muted/20">
-        <div className="flex gap-3">
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            className="flex-1 h-12"
-            disabled={isSubmitting}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={!formData.title.trim() || isSubmitting}
-            className="flex-1 h-12"
-          >
-            {isSubmitting ? (
-              <>
-                <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full mr-2" />
-                {editingTask ? 'Updating...' : 'Creating...'}
-              </>
-            ) : (
-              <>
-                {editingTask ? <Save className="h-4 w-4 mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
-                {editingTask ? 'Update Task' : 'Create Task'}
-              </>
-            )}
-          </Button>
+        {/* Fixed Bottom Actions */}
+        <div className="flex-shrink-0 px-6 py-6 border-t border-border/30 bg-muted/10">
+          <div className="grid grid-cols-2 gap-4">
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              className="h-14 text-base font-medium rounded-2xl border-2 hover:bg-muted/50 transition-all duration-200"
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              disabled={!formData.title.trim() || isSubmitting}
+              className="h-14 text-base font-medium rounded-2xl bg-gradient-to-r from-primary to-primary/80 hover:shadow-lg transition-all duration-200"
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin h-5 w-5 border-2 border-current border-t-transparent rounded-full mr-2" />
+                  {editingTask ? 'Updating...' : 'Creating...'}
+                </>
+              ) : (
+                <>
+                  {editingTask ? <Save className="h-5 w-5 mr-2" /> : <Plus className="h-5 w-5 mr-2" />}
+                  {editingTask ? 'Update Task' : 'Create Task'}
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </div>
     </UniversalDialog>

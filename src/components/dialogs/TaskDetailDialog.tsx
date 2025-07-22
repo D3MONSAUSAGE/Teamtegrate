@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { 
   Calendar, 
@@ -11,7 +10,8 @@ import {
   Trash2,
   CheckCircle2,
   Clock,
-  AlertTriangle
+  AlertTriangle,
+  MessageSquare
 } from 'lucide-react';
 import { Task, TaskStatus } from '@/types';
 import { format } from 'date-fns';
@@ -26,6 +26,7 @@ interface TaskDetailDialogProps {
   task: Task | null;
   onEdit?: (task: Task) => void;
   onDelete?: (taskId: string) => void;
+  onOpenComments?: (task: Task) => void;
 }
 
 const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
@@ -33,7 +34,8 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
   onOpenChange,
   task,
   onEdit,
-  onDelete
+  onDelete,
+  onOpenComments
 }) => {
   const { updateTaskStatus, deleteTask } = useTask();
   const [isUpdating, setIsUpdating] = useState(false);
@@ -46,22 +48,22 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
     switch (status) {
       case 'To Do':
         return { 
-          color: 'bg-muted text-muted-foreground',
+          color: 'bg-slate-100 dark:bg-slate-800/50 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-600',
           icon: Clock
         };
       case 'In Progress':
         return { 
-          color: 'bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300',
+          color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-600',
           icon: Clock
         };
       case 'Completed':
         return { 
-          color: 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300',
+          color: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-600',
           icon: CheckCircle2
         };
       default:
         return { 
-          color: 'bg-muted text-muted-foreground',
+          color: 'bg-muted text-muted-foreground border-border',
           icon: Clock
         };
     }
@@ -70,13 +72,13 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
   const getPriorityColor = (priority: string) => {
     switch (priority?.toLowerCase()) {
       case 'high':
-        return 'bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300';
+        return 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border-red-200 dark:border-red-600';
       case 'medium':
-        return 'bg-amber-100 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300';
+        return 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-600';
       case 'low':
-        return 'bg-emerald-100 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300';
+        return 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-600';
       default:
-        return 'bg-muted text-muted-foreground';
+        return 'bg-muted text-muted-foreground border-border';
     }
   };
 
@@ -125,106 +127,127 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
       description="Task details and actions"
       variant="sheet"
     >
-      <ScrollArea className="flex-1">
-        <div className="p-6 space-y-6">
-          {/* Status and Priority Badges */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <Badge className={cn("font-medium flex items-center gap-1", statusConfig.color)}>
-              <StatusIcon className="h-3 w-3" />
-              {task.status}
+      <div className="px-6 py-6 space-y-6">
+        {/* Status and Priority Badges */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <Badge className={cn("px-4 py-2 font-semibold flex items-center gap-2 border", statusConfig.color)}>
+            <StatusIcon className="h-4 w-4" />
+            {task.status}
+          </Badge>
+          <Badge className={cn("px-4 py-2 font-semibold border", getPriorityColor(task.priority))}>
+            {task.priority} Priority
+          </Badge>
+          {isOverdue && (
+            <Badge className="px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border-red-200 dark:border-red-600 font-semibold flex items-center gap-2 border">
+              <AlertTriangle className="h-4 w-4" />
+              Overdue
             </Badge>
-            <Badge className={cn("font-medium", getPriorityColor(task.priority))}>
-              {task.priority} Priority
-            </Badge>
-            {isOverdue && (
-              <Badge className="bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300 font-medium flex items-center gap-1">
-                <AlertTriangle className="h-3 w-3" />
-                Overdue
-              </Badge>
-            )}
-          </div>
+          )}
+        </div>
 
-          {/* Quick Status Change */}
-          <div className="grid grid-cols-3 gap-2">
-            {(['To Do', 'In Progress', 'Completed'] as TaskStatus[]).map((status) => (
-              <Button
-                key={status}
-                variant={task.status === status ? "default" : "outline"}
-                size="sm"
-                onClick={() => handleStatusChange(status)}
-                disabled={isUpdating || task.status === status}
-                className="h-10 text-sm"
-              >
-                {isUpdating ? '...' : status}
-              </Button>
-            ))}
-          </div>
+        {/* Quick Status Change */}
+        <div className="grid grid-cols-3 gap-3">
+          {(['To Do', 'In Progress', 'Completed'] as TaskStatus[]).map((status) => (
+            <Button
+              key={status}
+              variant={task.status === status ? "default" : "outline"}
+              size="lg"
+              onClick={() => handleStatusChange(status)}
+              disabled={isUpdating || task.status === status}
+              className="h-12 text-sm font-medium transition-all duration-200 rounded-2xl"
+            >
+              {isUpdating ? (
+                <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
+              ) : (
+                status
+              )}
+            </Button>
+          ))}
+        </div>
 
-          <Separator />
+        <Separator className="bg-border/50" />
 
-          {/* Task Information */}
-          <div className="space-y-4">
-            {task.deadline && (
-              <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <p className="text-sm font-medium">Due Date</p>
-                  <p className="text-sm text-muted-foreground">
-                    {format(new Date(task.deadline), 'MMM dd, yyyy')}
-                  </p>
-                </div>
+        {/* Task Information */}
+        <div className="space-y-4">
+          {task.deadline && (
+            <div className="flex items-center gap-4 p-4 bg-muted/30 rounded-2xl border border-border/30">
+              <div className="p-2 bg-primary/10 rounded-xl">
+                <Calendar className="h-5 w-5 text-primary" />
               </div>
-            )}
-            
-            {task.userId && (
-              <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
-                <User className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <p className="text-sm font-medium">Assigned To</p>
-                  <p className="text-sm text-muted-foreground">{task.userId}</p>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Description */}
-          {task.description && (
-            <>
-              <Separator />
               <div>
-                <h4 className="font-medium mb-2">Description</h4>
+                <p className="text-sm font-semibold">Due Date</p>
+                <p className="text-base text-muted-foreground">
+                  {format(new Date(task.deadline), 'MMM dd, yyyy')}
+                </p>
+              </div>
+            </div>
+          )}
+          
+          {task.userId && (
+            <div className="flex items-center gap-4 p-4 bg-muted/30 rounded-2xl border border-border/30">
+              <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
+                <User className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold">Assigned To</p>
+                <p className="text-base text-muted-foreground">{task.userId}</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Description */}
+        {task.description && (
+          <>
+            <Separator className="bg-border/50" />
+            <div className="space-y-3">
+              <h4 className="text-lg font-semibold">Description</h4>
+              <div className="p-4 bg-muted/30 rounded-2xl border border-border/30">
                 <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
                   {task.description}
                 </p>
               </div>
-            </>
-          )}
+            </div>
+          </>
+        )}
 
-          <Separator />
+        <Separator className="bg-border/50" />
 
-          {/* Action Buttons */}
-          <div className="flex gap-3">
+        {/* Action Buttons */}
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
             <Button
               variant="outline"
               onClick={() => onEdit?.(task)}
               disabled={isUpdating}
-              className="flex-1 h-12"
+              className="h-14 text-base font-medium rounded-2xl border-2 hover:bg-muted/50 transition-all duration-200"
             >
-              <Edit className="h-4 w-4 mr-2" />
-              Edit
+              <Edit className="h-5 w-5 mr-2" />
+              Edit Task
             </Button>
             <Button
               variant="outline"
               onClick={handleDelete}
               disabled={isUpdating}
-              className="flex-1 h-12 text-red-600 hover:text-red-700"
+              className="h-14 text-base font-medium rounded-2xl border-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all duration-200"
             >
-              <Trash2 className="h-4 w-4 mr-2" />
+              <Trash2 className="h-5 w-5 mr-2" />
               Delete
             </Button>
           </div>
+          
+          {onOpenComments && (
+            <Button
+              variant="secondary"
+              onClick={() => onOpenComments(task)}
+              className="w-full h-14 text-base font-medium rounded-2xl transition-all duration-200"
+            >
+              <MessageSquare className="h-5 w-5 mr-2" />
+              View Comments
+            </Button>
+          )}
         </div>
-      </ScrollArea>
+      </div>
     </UniversalDialog>
   );
 };
