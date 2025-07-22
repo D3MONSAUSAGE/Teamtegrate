@@ -84,10 +84,9 @@ const MobileTaskDetails: React.FC<MobileTaskDetailsProps> = ({ form, projects })
               <SelectItem key={project.id} value={project.id}>
                 <div className="flex items-center gap-2">
                   <div 
-                    className="w-2 h-2 rounded-full" 
-                    style={{ backgroundColor: project.color || '#6366f1' }}
+                    className="w-2 h-2 rounded-full bg-primary" 
                   ></div>
-                  {project.name}
+                  {project.title}
                 </div>
               </SelectItem>
             ))}
