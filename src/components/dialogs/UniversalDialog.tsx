@@ -127,11 +127,13 @@ const UniversalDialog: React.FC<UniversalDialogProps> = ({
               WebkitOverflowScrolling: 'touch',
             }}
           >
-            <style jsx>{`
-              div::-webkit-scrollbar {
-                display: none;
-              }
-            `}</style>
+            <style dangerouslySetInnerHTML={{
+              __html: `
+                .dialog-content::-webkit-scrollbar {
+                  display: none;
+                }
+              `
+            }} />
             {children}
           </div>
         </div>
