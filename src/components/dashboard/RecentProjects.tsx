@@ -68,11 +68,11 @@ const RecentProjects: React.FC<RecentProjectsProps> = ({ projects }) => {
                     <div className="flex items-center justify-between text-sm">
                       <span className="font-medium text-slate-700 dark:text-slate-300">Progress</span>
                       <span className="text-slate-600 dark:text-slate-400">
-                        {project.progress || 0}% Complete
+                        {project.isCompleted ? '100' : '0'}% Complete
                       </span>
                     </div>
                     <Progress 
-                      value={project.progress || 0} 
+                      value={project.isCompleted ? 100 : 0} 
                       className="h-2 bg-slate-200 dark:bg-slate-700"
                     />
                   </div>
