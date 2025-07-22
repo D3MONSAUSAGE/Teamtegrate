@@ -7,35 +7,16 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { TaskProvider } from '@/contexts/task';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
-import { SidebarProvider, SidebarInset, useSidebar } from '@/components/ui/sidebar';
+import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { Loader2 } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
+import { useBreakpoint } from '@/hooks/use-mobile';
 
 // Professional main content component with enhanced navigation handling
 const MainContent = memo(({ children }: { children: React.ReactNode }) => {
-  const { setOpen, setOpenMobile, isMobile, isTablet } = useSidebar();
-
-  const handleMainContentClick = (e: React.MouseEvent) => {
-    // Only handle clicks on the main content area itself, not child elements
-    const target = e.target as HTMLElement;
-    const isClickOnMainContent = target === e.currentTarget || target.closest('main') === e.currentTarget;
-    
-    if (isClickOnMainContent) {
-      if (isMobile) {
-        // Mobile: Close overlay drawer
-        setOpenMobile(false);
-      } else if (isTablet) {
-        // Tablet: Allow retraction for better UX
-        setOpen(false);
-      }
-      // Desktop: No auto-close behavior
-    }
-  };
-
   return (
     <SidebarInset 
       className="flex flex-col flex-1 overflow-hidden"
-      onClick={handleMainContentClick}
       style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
     >
       <Navbar />
@@ -67,6 +48,7 @@ LoadingScreen.displayName = 'LoadingScreen';
 
 const AppLayout = memo(() => {
   const { user, loading, isAuthenticated } = useAuth();
+  const { isDesktop } = useBreakpoint();
 
   if (loading) {
     return <LoadingScreen />;
@@ -76,11 +58,14 @@ const AppLayout = memo(() => {
     return <Navigate to="/login" replace />;
   }
 
+  // Default to open on desktop, closed on mobile/tablet
+  const defaultSidebarOpen = isDesktop;
+
   return (
     <ProtectedRoute>
       <TooltipProvider>
         <TaskProvider>
-          <SidebarProvider defaultOpen={false}>
+          <SidebarProvider defaultOpen={defaultSidebarOpen}>
             <div className="min-h-screen-mobile bg-background w-full flex overflow-hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
               <Sidebar />
               <MainContent>
