@@ -76,7 +76,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
           description: formData.description,
           priority: formData.priority,
           projectId: formData.projectId || undefined,
-          deadline: formData.deadline.toISOString()
+          deadline: formData.deadline
         });
         toast.success('Task updated successfully');
       } else {
@@ -86,7 +86,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
           description: formData.description,
           priority: formData.priority,
           projectId: formData.projectId || undefined,
-          deadline: formData.deadline.toISOString(),
+          deadline: formData.deadline,
           status: 'To Do',
           userId: '', // Will be set by the backend
           organizationId: '' // Will be set by the backend
