@@ -39,7 +39,8 @@ const UniversalDialog: React.FC<UniversalDialogProps> = ({
   }, [open]);
 
   const getDialogStyles = () => {
-    const baseStyles = "p-0 gap-0 border bg-background shadow-2xl backdrop-blur-sm";
+    // Base styles that completely override the default grid layout
+    const baseStyles = "!grid-none !flex !flex-col !p-0 !gap-0 border bg-background shadow-2xl backdrop-blur-sm";
     
     switch (variant) {
       case 'sheet':
@@ -50,15 +51,13 @@ const UniversalDialog: React.FC<UniversalDialogProps> = ({
           "data-[state=open]:duration-300 data-[state=closed]:duration-200",
           "sm:left-[50%] sm:right-auto sm:top-[50%] sm:w-full sm:max-w-2xl",
           "sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-3xl",
-          "h-[90vh] sm:h-auto sm:max-h-[85vh]",
-          "flex flex-col"
+          "max-h-[90vh] w-full"
         );
       case 'fullscreen':
         return cn(
           baseStyles,
           "fixed inset-0 rounded-none h-screen w-screen max-w-none",
-          "data-[state=open]:fade-in data-[state=closed]:fade-out",
-          "flex flex-col"
+          "data-[state=open]:fade-in data-[state=closed]:fade-out"
         );
       case 'modal':
       default:
@@ -69,8 +68,7 @@ const UniversalDialog: React.FC<UniversalDialogProps> = ({
           "data-[state=open]:zoom-in-95 data-[state=closed]:zoom-out-95",
           "data-[state=open]:fade-in data-[state=closed]:fade-out",
           "data-[state=open]:duration-300 data-[state=closed]:duration-200",
-          "max-h-[90vh] min-h-[300px]",
-          "flex flex-col"
+          "max-h-[90vh] min-h-[300px]"
         );
     }
   };
@@ -80,6 +78,7 @@ const UniversalDialog: React.FC<UniversalDialogProps> = ({
       <DialogContent 
         className={cn(getDialogStyles(), className)} 
         onPointerDownOutside={(e) => e.preventDefault()}
+        style={{ display: 'flex !important', flexDirection: 'column !important' }}
       >
         {/* Fixed Header */}
         <DialogHeader className="px-6 py-6 border-b border-border/30 flex-shrink-0 bg-muted/20 rounded-t-3xl">
@@ -108,25 +107,28 @@ const UniversalDialog: React.FC<UniversalDialogProps> = ({
           </div>
         </DialogHeader>
         
-        {/* Scrollable Content - Fixed height calculation */}
+        {/* Scrollable Content Area */}
         <div 
-          className="flex-1 overflow-y-auto overflow-x-hidden"
+          className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden universal-dialog-scroll"
           style={{
-            height: variant === 'sheet' ? 'calc(90vh - 140px)' : variant === 'fullscreen' ? 'calc(100vh - 140px)' : 'calc(90vh - 140px)',
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
             WebkitOverflowScrolling: 'touch',
           }}
         >
-          <style>
-            {`
-              .overflow-y-auto::-webkit-scrollbar {
-                display: none;
-              }
-            `}
-          </style>
           {children}
         </div>
+
+        {/* Global styles for hiding scrollbar */}
+        <style jsx>{`
+          .universal-dialog-scroll::-webkit-scrollbar {
+            display: none;
+          }
+          .universal-dialog-scroll {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+          }
+        `}</style>
       </DialogContent>
     </Dialog>
   );

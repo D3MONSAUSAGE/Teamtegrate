@@ -55,9 +55,9 @@ const CommentsDialog: React.FC<CommentsDialogProps> = ({
       description={`Discussion for "${task.title}"`}
       variant="sheet"
     >
-      <div className="flex flex-col h-full">
-        {/* Comments List */}
-        <div className="flex-1 px-6 py-6 pb-4">
+      <div className="flex flex-col min-h-0">
+        {/* Comments List - Scrollable */}
+        <div className="flex-1 px-6 py-6 pb-4 min-h-0">
           {task.comments && task.comments.length > 0 ? (
             <div className="space-y-4">
               <TaskCommentsList taskComments={task.comments} />
@@ -76,7 +76,7 @@ const CommentsDialog: React.FC<CommentsDialogProps> = ({
         </div>
         
         {/* Comment Input - Fixed at bottom */}
-        <div className="px-6 py-6 pt-4 border-t border-border/30 bg-background">
+        <div className="px-6 py-6 pt-4 border-t border-border/30 bg-background/95 backdrop-blur flex-shrink-0">
           <div className="space-y-4">
             <Textarea
               value={newComment}

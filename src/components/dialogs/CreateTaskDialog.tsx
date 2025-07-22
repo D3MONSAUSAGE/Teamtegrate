@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -89,142 +90,148 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
       description={editingTask ? "Update task details" : "Add a new task to your project"}
       variant="sheet"
     >
-      <div className="px-6 py-6 space-y-6">
-        {/* Basic Information */}
-        <div className="space-y-5">
-          <div>
-            <Label htmlFor="title" className="text-base font-semibold mb-3 block">
-              Task Title *
-            </Label>
-            <Input
-              id="title"
-              value={formData.title}
-              onChange={(e) => updateFormData('title', e.target.value)}
-              placeholder="Enter task title..."
-              className="h-14 text-base rounded-2xl border-2 focus:border-primary transition-colors"
-              autoFocus
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="description" className="text-base font-semibold mb-3 block">
-              Description
-            </Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => updateFormData('description', e.target.value)}
-              placeholder="Describe your task..."
-              className="min-h-[120px] text-base rounded-2xl border-2 focus:border-primary transition-colors resize-none"
-              rows={5}
-            />
-          </div>
-        </div>
-
-        <Separator className="bg-border/50" />
-
-        {/* Task Settings */}
-        <div className="space-y-5">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {/* Properly structured scrollable content */}
+      <div className="flex flex-col min-h-0">
+        {/* Main form content */}
+        <div className="px-6 py-6 space-y-6 flex-1">
+          {/* Basic Information */}
+          <div className="space-y-5">
             <div>
-              <Label className="text-base font-semibold mb-3 block">Priority</Label>
-              <Select value={formData.priority} onValueChange={(value) => updateFormData('priority', value)}>
-                <SelectTrigger className="h-14 text-base rounded-2xl border-2">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Low">Low</SelectItem>
-                  <SelectItem value="Medium">Medium</SelectItem>
-                  <SelectItem value="High">High</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label htmlFor="title" className="text-base font-semibold mb-3 block">
+                Task Title *
+              </Label>
+              <Input
+                id="title"
+                value={formData.title}
+                onChange={(e) => updateFormData('title', e.target.value)}
+                placeholder="Enter task title..."
+                className="h-14 text-base rounded-2xl border-2 focus:border-primary transition-colors"
+                autoFocus
+              />
             </div>
 
             <div>
-              <Label className="text-base font-semibold mb-3 block">Status</Label>
-              <Select value={formData.status} onValueChange={(value) => updateFormData('status', value as TaskStatus)}>
-                <SelectTrigger className="h-14 text-base rounded-2xl border-2">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="To Do">To Do</SelectItem>
-                  <SelectItem value="In Progress">In Progress</SelectItem>
-                  <SelectItem value="Completed">Completed</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label htmlFor="description" className="text-base font-semibold mb-3 block">
+                Description
+              </Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => updateFormData('description', e.target.value)}
+                placeholder="Describe your task..."
+                className="min-h-[120px] text-base rounded-2xl border-2 focus:border-primary transition-colors resize-none"
+                rows={5}
+              />
             </div>
           </div>
 
-          <div>
-            <Label className="text-base font-semibold mb-3 block">Due Date</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full h-14 text-base rounded-2xl border-2 justify-start text-left font-normal hover:bg-muted/50 transition-colors",
-                    !formData.deadline && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-3 h-5 w-5" />
-                  {formData.deadline ? format(formData.deadline, "PPP") : "Pick a date"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 rounded-2xl" align="start">
-                <Calendar
-                  mode="single"
-                  selected={formData.deadline}
-                  onSelect={(date) => date && updateFormData('deadline', date)}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
+          <Separator className="bg-border/50" />
 
-          <div>
-            <Label htmlFor="assignedTo" className="text-base font-semibold mb-3 block">
-              Assign To
-            </Label>
-            <Input
-              id="assignedTo"
-              value={formData.assignedTo}
-              onChange={(e) => updateFormData('assignedTo', e.target.value)}
-              placeholder="Enter user ID or email..."
-              className="h-14 text-base rounded-2xl border-2 focus:border-primary transition-colors"
-            />
-            <p className="text-sm text-muted-foreground mt-2">
-              Leave empty to assign to yourself
-            </p>
+          {/* Task Settings */}
+          <div className="space-y-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label className="text-base font-semibold mb-3 block">Priority</Label>
+                <Select value={formData.priority} onValueChange={(value) => updateFormData('priority', value)}>
+                  <SelectTrigger className="h-14 text-base rounded-2xl border-2">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Low">Low</SelectItem>
+                    <SelectItem value="Medium">Medium</SelectItem>
+                    <SelectItem value="High">High</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label className="text-base font-semibold mb-3 block">Status</Label>
+                <Select value={formData.status} onValueChange={(value) => updateFormData('status', value as TaskStatus)}>
+                  <SelectTrigger className="h-14 text-base rounded-2xl border-2">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="To Do">To Do</SelectItem>
+                    <SelectItem value="In Progress">In Progress</SelectItem>
+                    <SelectItem value="Completed">Completed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div>
+              <Label className="text-base font-semibold mb-3 block">Due Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full h-14 text-base rounded-2xl border-2 justify-start text-left font-normal hover:bg-muted/50 transition-colors",
+                      !formData.deadline && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-3 h-5 w-5" />
+                    {formData.deadline ? format(formData.deadline, "PPP") : "Pick a date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 rounded-2xl" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={formData.deadline}
+                    onSelect={(date) => date && updateFormData('deadline', date)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div>
+              <Label htmlFor="assignedTo" className="text-base font-semibold mb-3 block">
+                Assign To
+              </Label>
+              <Input
+                id="assignedTo"
+                value={formData.assignedTo}
+                onChange={(e) => updateFormData('assignedTo', e.target.value)}
+                placeholder="Enter user ID or email..."
+                className="h-14 text-base rounded-2xl border-2 focus:border-primary transition-colors"
+              />
+              <p className="text-sm text-muted-foreground mt-2">
+                Leave empty to assign to yourself
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="grid grid-cols-2 gap-4 pt-6 pb-8">
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            className="h-14 text-base font-medium rounded-2xl border-2 hover:bg-muted/50 transition-all duration-200"
-            disabled={isSubmitting}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={!formData.title.trim() || isSubmitting}
-            className="h-14 text-base font-medium rounded-2xl bg-gradient-to-r from-primary to-primary/80 hover:shadow-lg transition-all duration-200"
-          >
-            {isSubmitting ? (
-              <>
-                <div className="animate-spin h-5 w-5 border-2 border-current border-t-transparent rounded-full mr-2" />
-                {editingTask ? 'Updating...' : 'Creating...'}
-              </>
-            ) : (
-              <>
-                {editingTask ? <Save className="h-5 w-5 mr-2" /> : <Plus className="h-5 w-5 mr-2" />}
-                {editingTask ? 'Update Task' : 'Create Task'}
-              </>
-            )}
-          </Button>
+        {/* Fixed Action Buttons at bottom */}
+        <div className="px-6 py-6 border-t border-border/30 bg-background/95 backdrop-blur flex-shrink-0">
+          <div className="grid grid-cols-2 gap-4">
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              className="h-14 text-base font-medium rounded-2xl border-2 hover:bg-muted/50 transition-all duration-200"
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              disabled={!formData.title.trim() || isSubmitting}
+              className="h-14 text-base font-medium rounded-2xl bg-gradient-to-r from-primary to-primary/80 hover:shadow-lg transition-all duration-200"
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin h-5 w-5 border-2 border-current border-t-transparent rounded-full mr-2" />
+                  {editingTask ? 'Updating...' : 'Creating...'}
+                </>
+              ) : (
+                <>
+                  {editingTask ? <Save className="h-5 w-5 mr-2" /> : <Plus className="h-5 w-5 mr-2" />}
+                  {editingTask ? 'Update Task' : 'Create Task'}
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </div>
     </UniversalDialog>

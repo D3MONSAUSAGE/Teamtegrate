@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -127,125 +126,126 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
       description="Task details and actions"
       variant="sheet"
     >
-      <div className="px-6 py-6 space-y-6 pb-8">
-        {/* Status and Priority Badges */}
-        <div className="flex items-center gap-3 flex-wrap">
-          <Badge className={cn("px-4 py-2 font-semibold flex items-center gap-2 border", statusConfig.color)}>
-            <StatusIcon className="h-4 w-4" />
-            {task.status}
-          </Badge>
-          <Badge className={cn("px-4 py-2 font-semibold border", getPriorityColor(task.priority))}>
-            {task.priority} Priority
-          </Badge>
-          {isOverdue && (
-            <Badge className="px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border-red-200 dark:border-red-600 font-semibold flex items-center gap-2 border">
-              <AlertTriangle className="h-4 w-4" />
-              Overdue
+      <div className="flex flex-col min-h-0">
+        <div className="px-6 py-6 space-y-6 flex-1 min-h-0">
+          {/* Status and Priority Badges */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <Badge className={cn("px-4 py-2 font-semibold flex items-center gap-2 border", statusConfig.color)}>
+              <StatusIcon className="h-4 w-4" />
+              {task.status}
             </Badge>
-          )}
-        </div>
-
-        {/* Quick Status Change */}
-        <div className="grid grid-cols-3 gap-3">
-          {(['To Do', 'In Progress', 'Completed'] as TaskStatus[]).map((status) => (
-            <Button
-              key={status}
-              variant={task.status === status ? "default" : "outline"}
-              size="lg"
-              onClick={() => handleStatusChange(status)}
-              disabled={isUpdating || task.status === status}
-              className="h-12 text-sm font-medium transition-all duration-200 rounded-2xl"
-            >
-              {isUpdating ? (
-                <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
-              ) : (
-                status
-              )}
-            </Button>
-          ))}
-        </div>
-
-        <Separator className="bg-border/50" />
-
-        {/* Task Information */}
-        <div className="space-y-4">
-          {task.deadline && (
-            <div className="flex items-center gap-4 p-4 bg-muted/30 rounded-2xl border border-border/30">
-              <div className="p-2 bg-primary/10 rounded-xl">
-                <Calendar className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold">Due Date</p>
-                <p className="text-base text-muted-foreground">
-                  {format(new Date(task.deadline), 'MMM dd, yyyy')}
-                </p>
-              </div>
-            </div>
-          )}
-          
-          {task.userId && (
-            <div className="flex items-center gap-4 p-4 bg-muted/30 rounded-2xl border border-border/30">
-              <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
-                <User className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold">Assigned To</p>
-                <p className="text-base text-muted-foreground">{task.userId}</p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Description */}
-        {task.description && (
-          <>
-            <Separator className="bg-border/50" />
-            <div className="space-y-3">
-              <h4 className="text-lg font-semibold">Description</h4>
-              <div className="p-4 bg-muted/30 rounded-2xl border border-border/30">
-                <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
-                  {task.description}
-                </p>
-              </div>
-            </div>
-          </>
-        )}
-
-        <Separator className="bg-border/50" />
-
-        {/* Action Buttons */}
-        <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-3">
-            <Button
-              variant="outline"
-              onClick={() => onEdit?.(task)}
-              disabled={isUpdating}
-              className="h-14 text-base font-medium rounded-2xl border-2 hover:bg-muted/50 transition-all duration-200"
-            >
-              <Edit className="h-5 w-5 mr-2" />
-              Edit Task
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handleDelete}
-              disabled={isUpdating}
-              className="h-14 text-base font-medium rounded-2xl border-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all duration-200"
-            >
-              <Trash2 className="h-5 w-5 mr-2" />
-              Delete
-            </Button>
+            <Badge className={cn("px-4 py-2 font-semibold border", getPriorityColor(task.priority))}>
+              {task.priority} Priority
+            </Badge>
+            {isOverdue && (
+              <Badge className="px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border-red-200 dark:border-red-600 font-semibold flex items-center gap-2 border">
+                <AlertTriangle className="h-4 w-4" />
+                Overdue
+              </Badge>
+            )}
           </div>
-          
-          {onOpenComments && (
-            <Button
-              variant="secondary"
-              onClick={() => onOpenComments(task)}
-              className="w-full h-14 text-base font-medium rounded-2xl transition-all duration-200"
-            >
-              <MessageSquare className="h-5 w-5 mr-2" />
-              View Comments
-            </Button>
+
+          {/* Quick Status Change */}
+          <div className="grid grid-cols-3 gap-3">
+            {(['To Do', 'In Progress', 'Completed'] as TaskStatus[]).map((status) => (
+              <Button
+                key={status}
+                variant={task.status === status ? "default" : "outline"}
+                size="lg"
+                onClick={() => handleStatusChange(status)}
+                disabled={isUpdating || task.status === status}
+                className="h-12 text-sm font-medium transition-all duration-200 rounded-2xl"
+              >
+                {isUpdating ? (
+                  <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
+                ) : (
+                  status
+                )}
+              </Button>
+            ))}
+          </div>
+
+          <Separator className="bg-border/50" />
+
+          {/* Task Information */}
+          <div className="space-y-4">
+            {task.deadline && (
+              <div className="flex items-center gap-4 p-4 bg-muted/30 rounded-2xl border border-border/30">
+                <div className="p-2 bg-primary/10 rounded-xl">
+                  <Calendar className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold">Due Date</p>
+                  <p className="text-base text-muted-foreground">
+                    {format(new Date(task.deadline), 'MMM dd, yyyy')}
+                  </p>
+                </div>
+              </div>
+            )}
+            
+            {task.userId && (
+              <div className="flex items-center gap-4 p-4 bg-muted/30 rounded-2xl border border-border/30">
+                <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
+                  <User className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold">Assigned To</p>
+                  <p className="text-base text-muted-foreground">{task.userId}</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Description */}
+          {task.description && (
+            <>
+              <Separator className="bg-border/50" />
+              <div className="space-y-3">
+                <h4 className="text-lg font-semibold">Description</h4>
+                <div className="p-4 bg-muted/30 rounded-2xl border border-border/30">
+                  <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                    {task.description}
+                  </p>
+                </div>
+              </div>
+            </>
           )}
+        </div>
+
+        <div className="px-6 py-6 border-t border-border/30 bg-background/95 backdrop-blur flex-shrink-0">
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <Button
+                variant="outline"
+                onClick={() => onEdit?.(task)}
+                disabled={isUpdating}
+                className="h-14 text-base font-medium rounded-2xl border-2 hover:bg-muted/50 transition-all duration-200"
+              >
+                <Edit className="h-5 w-5 mr-2" />
+                Edit Task
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleDelete}
+                disabled={isUpdating}
+                className="h-14 text-base font-medium rounded-2xl border-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all duration-200"
+              >
+                <Trash2 className="h-5 w-5 mr-2" />
+                Delete
+              </Button>
+            </div>
+            
+            {onOpenComments && (
+              <Button
+                variant="secondary"
+                onClick={() => onOpenComments(task)}
+                className="w-full h-14 text-base font-medium rounded-2xl transition-all duration-200"
+              >
+                <MessageSquare className="h-5 w-5 mr-2" />
+                View Comments
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </UniversalDialog>
