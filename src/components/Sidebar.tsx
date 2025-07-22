@@ -1,5 +1,4 @@
-
-import React, { memo, useMemo, useCallback, useState } from 'react';
+import React, { memo, useMemo, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDarkMode } from '@/hooks/useDarkMode';
 import SidebarHeader from './sidebar/SidebarHeader';
@@ -20,10 +19,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = memo(({ onNavigation }) => {
   const { user } = useAuth();
   const { isDark, toggle } = useDarkMode();
-  const { state, isMobile, isTablet, isDesktop, setOpenMobile, setOpen, open } = useSidebar();
-  
-  // State for hover expansion on desktop
-  const [isHovering, setIsHovering] = useState(false);
+  const { state, isMobile, isTablet, isDesktop, setOpenMobile, setOpen, open, isHovering, setIsHovering } = useSidebar();
 
   // Memoize user object to prevent unnecessary re-renders
   const sidebarUser = useMemo(() => {
@@ -50,18 +46,18 @@ const Sidebar: React.FC<SidebarProps> = memo(({ onNavigation }) => {
     onNavigation?.();
   }, [isMobile, isTablet, setOpenMobile, setOpen, onNavigation]);
 
-  // Handle hover events for desktop
+  // Handle hover events for desktop using context
   const handleMouseEnter = useCallback(() => {
     if (isDesktop && !open) {
       setIsHovering(true);
     }
-  }, [isDesktop, open]);
+  }, [isDesktop, open, setIsHovering]);
 
   const handleMouseLeave = useCallback(() => {
     if (isDesktop && !open) {
       setIsHovering(false);
     }
-  }, [isDesktop, open]);
+  }, [isDesktop, open, setIsHovering]);
 
   if (!sidebarUser) {
     return null;

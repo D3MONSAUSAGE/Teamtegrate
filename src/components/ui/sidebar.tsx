@@ -34,6 +34,8 @@ type SidebarContext = {
   isTablet: boolean
   isDesktop: boolean
   toggleSidebar: () => void
+  isHovering: boolean
+  setIsHovering: (hovering: boolean) => void
 }
 
 const SidebarContext = React.createContext<SidebarContext | null>(null)
@@ -71,6 +73,7 @@ const SidebarProvider = React.forwardRef<
     const isTablet = useIsTablet()
     const isDesktop = useIsDesktop()
     const [openMobile, setOpenMobile] = React.useState(false)
+    const [isHovering, setIsHovering] = React.useState(false)
 
     // Internal state for desktop/tablet sidebar
     const [_open, _setOpen] = React.useState(defaultOpen)
@@ -97,6 +100,15 @@ const SidebarProvider = React.forwardRef<
         setOpenMobile(newValue);
       }
     }, [openMobile]);
+
+    // Enhanced hover state management for desktop
+    const enhancedSetIsHovering = React.useCallback((hovering: boolean) => {
+      if (isDesktop && !open) {
+        setIsHovering(hovering);
+      } else {
+        setIsHovering(false);
+      }
+    }, [isDesktop, open]);
 
     // Professional toggle behavior per breakpoint
     const toggleSidebar = React.useCallback(() => {
@@ -125,13 +137,14 @@ const SidebarProvider = React.forwardRef<
       return () => window.removeEventListener("keydown", handleKeyDown)
     }, [toggleSidebar])
 
-    // Professional state calculation
+    // Professional state calculation with hover consideration
     const state = React.useMemo(() => {
       if (isMobile) {
         return openMobile ? "expanded" : "collapsed"
       }
-      return open ? "expanded" : "collapsed"
-    }, [isMobile, open, openMobile])
+      // Desktop: Consider both open state and hover state
+      return (open || (isDesktop && isHovering)) ? "expanded" : "collapsed"
+    }, [isMobile, open, openMobile, isDesktop, isHovering])
 
     const contextValue = React.useMemo<SidebarContext>(
       () => ({
@@ -144,8 +157,10 @@ const SidebarProvider = React.forwardRef<
         openMobile,
         setOpenMobile: enhancedSetOpenMobile,
         toggleSidebar,
+        isHovering,
+        setIsHovering: enhancedSetIsHovering,
       }),
-      [state, open, setOpen, isMobile, isTablet, isDesktop, openMobile, enhancedSetOpenMobile, toggleSidebar]
+      [state, open, setOpen, isMobile, isTablet, isDesktop, openMobile, enhancedSetOpenMobile, toggleSidebar, isHovering, enhancedSetIsHovering]
     )
 
     return (
@@ -194,7 +209,7 @@ const Sidebar = React.forwardRef<
     },
     ref
   ) => {
-    const { isMobile, isTablet, isDesktop, state, openMobile, setOpenMobile, open } = useSidebar()
+    const { isMobile, isTablet, isDesktop, state, openMobile, setOpenMobile, open, isHovering } = useSidebar()
 
     if (collapsible === "none") {
       return (
@@ -242,7 +257,11 @@ const Sidebar = React.forwardRef<
       )
     }
 
-    // Tablet/Desktop: Fixed sidebar with smooth transitions
+    // Calculate width based on state and hover - this is the key fix
+    const shouldExpand = open || (isDesktop && isHovering);
+    const sidebarWidth = shouldExpand ? "w-[--sidebar-width]" : "w-[--sidebar-width-icon]";
+
+    // Tablet/Desktop: Fixed sidebar with smooth transitions and hover-aware width
     return (
       <div
         ref={ref}
@@ -252,11 +271,11 @@ const Sidebar = React.forwardRef<
         data-variant={variant}
         data-side={side}
       >
-        {/* Spacer for layout */}
+        {/* Spacer for layout - this pushes the main content */}
         <div
           className={cn(
             "relative h-svh bg-transparent transition-[width] duration-300 ease-in-out",
-            state === "collapsed" ? "w-[--sidebar-width-icon]" : "w-[--sidebar-width]",
+            sidebarWidth,
             "group-data-[collapsible=offcanvas]:w-0",
             "group-data-[side=right]:rotate-180",
           )}
@@ -266,7 +285,7 @@ const Sidebar = React.forwardRef<
         <div
           className={cn(
             "fixed inset-y-0 z-10 h-svh transition-[left,right,width] duration-300 ease-in-out flex",
-            state === "collapsed" ? "w-[--sidebar-width-icon]" : "w-[--sidebar-width]",
+            sidebarWidth,
             side === "left"
               ? "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]"
               : "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
@@ -279,7 +298,7 @@ const Sidebar = React.forwardRef<
             className={cn(
               "flex h-full w-full flex-col bg-sidebar transition-all duration-300 ease-in-out border-r border-sidebar-border/60",
               "group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow",
-              state === "collapsed" && "overflow-hidden"
+              !shouldExpand && "overflow-hidden"
             )}
           >
             {children}
