@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, X, Edit, Clock, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import EnhancedButton from './EnhancedButton';
@@ -26,11 +26,20 @@ const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
   className
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [defaultPosition, setDefaultPosition] = useState({ x: 0, y: 0 });
   
-  // Initialize draggable with default position (bottom-right)
+  // Set default position after component mounts
+  useEffect(() => {
+    const defaultX = window.innerWidth - 80; // 80px from right (56px FAB + 24px margin)
+    const defaultY = window.innerHeight - 120; // 120px from bottom (56px FAB + 64px margin for bottom nav)
+    setDefaultPosition({ x: defaultX, y: defaultY });
+  }, []);
+
+  // Initialize draggable with default position
   const { dragRef, position, isDragging, hasMoved, dragHandlers } = useDraggable({
-    x: window.innerWidth - 80, // 80px from right (56px FAB + 24px margin)
-    y: window.innerHeight - 120 // 120px from bottom (56px FAB + 64px margin for bottom nav)
+    x: defaultPosition.x,
+    y: defaultPosition.y,
+    threshold: 8 // Increased threshold for better click/drag distinction
   });
 
   const actions: FABAction[] = [
@@ -38,6 +47,7 @@ const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
       icon: Edit,
       label: 'Create Task',
       onClick: () => {
+        console.log('Create Task clicked, hasMoved:', hasMoved);
         if (hasMoved) return; // Prevent action if dragging
         onCreateTask();
         setIsExpanded(false);
@@ -48,6 +58,7 @@ const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
       icon: Clock,
       label: 'Start Timer',
       onClick: () => {
+        console.log('Start Timer clicked, hasMoved:', hasMoved);
         if (hasMoved) return; // Prevent action if dragging
         onStartTimer();
         setIsExpanded(false);
@@ -58,6 +69,7 @@ const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
       icon: Users,
       label: 'Quick Note',
       onClick: () => {
+        console.log('Quick Note clicked, hasMoved:', hasMoved);
         if (hasMoved) return; // Prevent action if dragging
         onQuickNote();
         setIsExpanded(false);
@@ -67,7 +79,8 @@ const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
   ];
 
   const handleMainFABClick = () => {
-    if (hasMoved) return; // Prevent expand/collapse if dragging
+    console.log('Main FAB clicked, hasMoved:', hasMoved, 'isDragging:', isDragging);
+    if (hasMoved || isDragging) return; // Prevent expand/collapse if dragging
     setIsExpanded(!isExpanded);
   };
 
@@ -119,9 +132,10 @@ const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
         className={cn(
           "w-14 h-14 rounded-full shadow-xl border-0",
           "bg-primary hover:bg-primary/90",
-          "transition-all duration-300 active:scale-95 cursor-move",
+          "transition-all duration-300 active:scale-95",
           isExpanded ? "rotate-45 scale-110" : "rotate-0 scale-100",
-          isDragging && "scale-110 shadow-2xl", // Visual feedback while dragging
+          isDragging && "scale-110 shadow-2xl cursor-grabbing", // Visual feedback while dragging
+          !isDragging && "cursor-grab", // Show grab cursor when not dragging
           isDragging && "opacity-90" // Slight transparency while dragging
         )}
         onClick={handleMainFABClick}

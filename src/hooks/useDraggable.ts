@@ -13,8 +13,20 @@ interface DragState {
   currentPosition: Position;
 }
 
-export const useDraggable = (initialPosition?: Position) => {
-  const [position, setPosition] = useState<Position>(initialPosition || { x: 0, y: 0 });
+interface UseDraggableOptions {
+  x?: number;
+  y?: number;
+  threshold?: number; // Movement threshold to distinguish drag from click
+}
+
+export const useDraggable = (options: UseDraggableOptions = {}) => {
+  const threshold = options.threshold || 5; // 5px movement threshold
+  
+  const [position, setPosition] = useState<Position>(() => ({
+    x: options.x || 0,
+    y: options.y || 0
+  }));
+  
   const [dragState, setDragState] = useState<DragState>({
     isDragging: false,
     hasMoved: false,
@@ -24,6 +36,7 @@ export const useDraggable = (initialPosition?: Position) => {
 
   const dragRef = useRef<HTMLDivElement>(null);
   const startPositionRef = useRef<Position>({ x: 0, y: 0 });
+  const initialMousePositionRef = useRef<Position>({ x: 0, y: 0 });
 
   const handleStart = useCallback((clientX: number, clientY: number) => {
     if (!dragRef.current) return;
@@ -35,6 +48,8 @@ export const useDraggable = (initialPosition?: Position) => {
     };
 
     startPositionRef.current = startPos;
+    initialMousePositionRef.current = { x: clientX, y: clientY };
+    
     setDragState(prev => ({
       ...prev,
       isDragging: true,
@@ -46,6 +61,16 @@ export const useDraggable = (initialPosition?: Position) => {
 
   const handleMove = useCallback((clientX: number, clientY: number) => {
     if (!dragState.isDragging || !dragRef.current) return;
+
+    // Calculate distance moved from initial position
+    const deltaX = clientX - initialMousePositionRef.current.x;
+    const deltaY = clientY - initialMousePositionRef.current.y;
+    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+    // Only start actual dragging if moved beyond threshold
+    if (distance < threshold && !dragState.hasMoved) {
+      return;
+    }
 
     const rect = dragRef.current.parentElement?.getBoundingClientRect();
     if (!rect) return;
@@ -61,33 +86,38 @@ export const useDraggable = (initialPosition?: Position) => {
     const constrainedX = Math.max(0, Math.min(newX, maxX));
     const constrainedY = Math.max(0, Math.min(newY, maxY));
 
-    // Check if moved enough to be considered a drag
-    const moved = Math.abs(constrainedX - position.x) > 3 || Math.abs(constrainedY - position.y) > 3;
-
     setPosition({ x: constrainedX, y: constrainedY });
     setDragState(prev => ({
       ...prev,
-      hasMoved: moved || prev.hasMoved,
+      hasMoved: true,
       currentPosition: { x: constrainedX, y: constrainedY }
     }));
-  }, [dragState.isDragging, position]);
+  }, [dragState.isDragging, dragState.hasMoved, threshold]);
 
   const handleEnd = useCallback(() => {
     setDragState(prev => ({
       ...prev,
       isDragging: false
     }));
+    
+    // Reset hasMoved after a short delay to allow click handlers to check it
+    setTimeout(() => {
+      setDragState(prev => ({
+        ...prev,
+        hasMoved: false
+      }));
+    }, 50);
   }, []);
 
   // Mouse events
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
+    // Don't prevent default immediately - let click events work
     handleStart(e.clientX, e.clientY);
   }, [handleStart]);
 
   // Touch events
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    e.preventDefault();
+    // Don't prevent default immediately - let click events work
     const touch = e.touches[0];
     handleStart(touch.clientX, touch.clientY);
   }, [handleStart]);
@@ -97,12 +127,15 @@ export const useDraggable = (initialPosition?: Position) => {
     if (!dragState.isDragging) return;
 
     const handleMouseMove = (e: MouseEvent) => {
-      e.preventDefault();
+      e.preventDefault(); // Only prevent default during actual dragging
       handleMove(e.clientX, e.clientY);
     };
 
     const handleTouchMove = (e: TouchEvent) => {
-      e.preventDefault();
+      // Only prevent default if we're actually dragging (moved beyond threshold)
+      if (dragState.hasMoved) {
+        e.preventDefault();
+      }
       const touch = e.touches[0];
       handleMove(touch.clientX, touch.clientY);
     };
@@ -121,7 +154,7 @@ export const useDraggable = (initialPosition?: Position) => {
       document.removeEventListener('touchmove', handleTouchMove);
       document.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [dragState.isDragging, handleMove, handleEnd]);
+  }, [dragState.isDragging, dragState.hasMoved, handleMove, handleEnd]);
 
   return {
     dragRef,
