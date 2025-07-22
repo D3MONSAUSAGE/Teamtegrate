@@ -1,23 +1,21 @@
 
-import React, { useState, useRef } from 'react';
-import { Check, Edit, Trash2, MoreHorizontal } from 'lucide-react';
+import React, { useState } from 'react';
+import { motion, PanInfo } from 'framer-motion';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Task } from '@/types';
+import { Calendar, Clock, Edit3, Trash2, CheckCircle, Circle, PlayCircle, Loader2 } from 'lucide-react';
+import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { Task, TaskStatus } from '@/types';
-import TaskCard from '@/components/task-card/TaskCard';
-
-interface SwipeAction {
-  icon: React.ComponentType<any>;
-  label: string;
-  color: string;
-  action: () => void;
-}
 
 interface SwipeableTaskCardProps {
   task: Task;
-  onEdit?: (task: Task) => void;
-  onStatusChange?: (taskId: string, status: TaskStatus) => Promise<void>;
-  onDelete?: () => void;
-  onClick?: () => void;
+  onEdit: (task: Task) => void;
+  onStatusChange: (taskId: string, status: string) => Promise<void>;
+  onDelete: (taskId: string) => void;
+  onClick: () => void;
+  isUpdating?: boolean;
 }
 
 const SwipeableTaskCard: React.FC<SwipeableTaskCardProps> = ({
@@ -25,137 +23,178 @@ const SwipeableTaskCard: React.FC<SwipeableTaskCardProps> = ({
   onEdit,
   onStatusChange,
   onDelete,
-  onClick
+  onClick,
+  isUpdating = false
 }) => {
-  const [swipeDistance, setSwipeDistance] = useState(0);
-  const [isSwipping, setIsSwipping] = useState(false);
-  const startX = useRef(0);
-  const currentX = useRef(0);
-  const cardRef = useRef<HTMLDivElement>(null);
+  const [isRevealed, setIsRevealed] = useState(false);
+  const [dragX, setDragX] = useState(0);
 
-  const maxSwipe = 240;
-  const threshold = 60;
-
-  const leftActions: SwipeAction[] = [
-    {
-      icon: Check,
-      label: 'Complete',
-      color: 'bg-green-500',
-      action: () => onStatusChange?.(task.id, 'Completed')
-    }
-  ];
-
-  const rightActions: SwipeAction[] = [
-    {
-      icon: Edit,
-      label: 'Edit',
-      color: 'bg-blue-500',
-      action: () => onEdit?.(task)
-    },
-    {
-      icon: Trash2,
-      label: 'Delete',
-      color: 'bg-red-500',
-      action: () => onDelete?.()
-    }
-  ];
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    startX.current = e.touches[0].clientX;
-    setIsSwipping(true);
+  const handleDrag = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    setDragX(info.offset.x);
   };
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isSwipping) return;
-    
-    currentX.current = e.touches[0].clientX;
-    const diff = currentX.current - startX.current;
-    const clampedDiff = Math.max(-maxSwipe, Math.min(maxSwipe, diff));
-    setSwipeDistance(clampedDiff);
-  };
-
-  const handleTouchEnd = () => {
-    setIsSwipping(false);
-    
-    // Check if swipe threshold was met
-    if (Math.abs(swipeDistance) >= threshold) {
-      if (swipeDistance > 0 && leftActions[0]) {
-        leftActions[0].action();
-      } else if (swipeDistance < 0) {
-        const actionIndex = Math.min(
-          Math.floor(Math.abs(swipeDistance) / (maxSwipe / rightActions.length)),
-          rightActions.length - 1
-        );
-        rightActions[actionIndex]?.action();
-      }
+  const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    const threshold = 100;
+    if (Math.abs(info.offset.x) > threshold) {
+      setIsRevealed(true);
+    } else {
+      setIsRevealed(false);
+      setDragX(0);
     }
-    
-    // Reset position
-    setSwipeDistance(0);
   };
 
-  const progress = Math.abs(swipeDistance) / threshold;
+  const handleStatusChange = async (status: string) => {
+    if (isUpdating) return;
+    try {
+      await onStatusChange(task.id, status);
+      setIsRevealed(false);
+    } catch (error) {
+      console.error('Failed to update task status:', error);
+    }
+  };
+
+  const getStatusIcon = () => {
+    if (isUpdating) {
+      return <Loader2 className="h-4 w-4 animate-spin" />;
+    }
+    switch (task.status) {
+      case 'Completed':
+        return <CheckCircle className="h-4 w-4 text-green-600" />;
+      case 'In Progress':
+        return <PlayCircle className="h-4 w-4 text-blue-600" />;
+      default:
+        return <Circle className="h-4 w-4 text-gray-400" />;
+    }
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'High':
+        return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
+      case 'Medium':
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
+      case 'Low':
+        return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
+      default:
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
+    }
+  };
 
   return (
-    <div className="relative overflow-hidden rounded-xl">
-      {/* Left action background */}
-      {swipeDistance > 0 && (
-        <div className="absolute inset-y-0 left-0 flex items-center justify-start pl-6">
-          <div className={cn(
-            "flex items-center gap-2 text-white font-medium transition-all duration-200",
-            leftActions[0]?.color,
-            "px-4 py-2 rounded-lg",
-            progress > 1 ? "scale-110" : "scale-100"
-          )}>
-            {leftActions[0]?.icon && React.createElement(leftActions[0].icon, { className: "h-5 w-5" })}
-            <span>{leftActions[0]?.label}</span>
-          </div>
+    <div className="relative overflow-hidden rounded-lg">
+      {/* Action buttons background */}
+      <div className="absolute inset-0 flex items-center justify-between px-4 bg-gradient-to-r from-blue-500 to-green-500">
+        <div className="flex space-x-2">
+          <Button
+            size="sm"
+            variant="ghost"
+            className="text-white hover:bg-white/20"
+            onClick={() => handleStatusChange('To Do')}
+            disabled={isUpdating || task.status === 'To Do'}
+          >
+            <Circle className="h-4 w-4" />
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="text-white hover:bg-white/20"
+            onClick={() => handleStatusChange('In Progress')}
+            disabled={isUpdating || task.status === 'In Progress'}
+          >
+            <PlayCircle className="h-4 w-4" />
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="text-white hover:bg-white/20"
+            onClick={() => handleStatusChange('Completed')}
+            disabled={isUpdating || task.status === 'Completed'}
+          >
+            <CheckCircle className="h-4 w-4" />
+          </Button>
         </div>
-      )}
-
-      {/* Right actions background */}
-      {swipeDistance < 0 && (
-        <div className="absolute inset-y-0 right-0 flex items-center justify-end pr-6 gap-3">
-          {rightActions.map((action, index) => {
-            const actionProgress = Math.max(0, (Math.abs(swipeDistance) - (index * (maxSwipe / rightActions.length))) / (maxSwipe / rightActions.length));
-            return (
-              <div
-                key={action.label}
-                className={cn(
-                  "flex items-center gap-2 text-white font-medium transition-all duration-200",
-                  action.color,
-                  "px-4 py-2 rounded-lg",
-                  actionProgress > 0.3 ? "scale-100 opacity-100" : "scale-50 opacity-50"
-                )}
-              >
-                <action.icon className="h-5 w-5" />
-                <span className="text-sm">{action.label}</span>
-              </div>
-            );
-          })}
+        <div className="flex space-x-2">
+          <Button
+            size="sm"
+            variant="ghost"
+            className="text-white hover:bg-white/20"
+            onClick={() => onEdit(task)}
+            disabled={isUpdating}
+          >
+            <Edit3 className="h-4 w-4" />
+          </Button>
         </div>
-      )}
+      </div>
 
       {/* Main card */}
-      <div
-        ref={cardRef}
-        className="relative z-10 transition-transform duration-200 ease-out touch-manipulation"
-        style={{
-          transform: `translateX(${swipeDistance}px)`,
-          transition: isSwipping ? 'none' : 'transform 0.3s ease-out'
-        }}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
+      <motion.div
+        drag="x"
+        dragConstraints={{ left: -200, right: 200 }}
+        dragElastic={0.2}
+        onDrag={handleDrag}
+        onDragEnd={handleDragEnd}
+        animate={{ x: isRevealed ? (dragX > 0 ? 100 : -100) : 0 }}
+        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        className="relative z-10"
       >
-        <TaskCard
-          task={task}
-          onEdit={onEdit}
-          onStatusChange={onStatusChange}
-          onDelete={onDelete}
+        <Card 
+          className={cn(
+            "mobile-touch-target cursor-pointer transition-all duration-200 active:scale-[0.98]",
+            isUpdating && "opacity-70 pointer-events-none"
+          )}
           onClick={onClick}
-        />
-      </div>
+        >
+          <CardContent className="p-4">
+            <div className="space-y-3">
+              {/* Header */}
+              <div className="flex items-start justify-between">
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-medium text-sm leading-5 text-card-foreground truncate">
+                    {task.title}
+                  </h3>
+                  {task.description && (
+                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                      {task.description}
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 ml-3 flex-shrink-0">
+                  {getStatusIcon()}
+                </div>
+              </div>
+
+              {/* Metadata */}
+              <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 text-muted-foreground">
+                    <Calendar className="h-3 w-3" />
+                    <span>{format(new Date(task.deadline), 'MMM dd')}</span>
+                  </div>
+                </div>
+                <Badge 
+                  variant="secondary" 
+                  className={cn("text-xs px-2 py-0.5", getPriorityColor(task.priority))}
+                >
+                  {task.priority}
+                </Badge>
+              </div>
+
+              {/* Assignment info */}
+              {(task.assignedToName || task.assignedToNames?.length) && (
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <span>Assigned to:</span>
+                  <span className="font-medium">
+                    {task.assignedToNames?.length > 1 
+                      ? `${task.assignedToNames[0]} +${task.assignedToNames.length - 1} more`
+                      : task.assignedToName || task.assignedToNames?.[0]
+                    }
+                  </span>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
     </div>
   );
 };

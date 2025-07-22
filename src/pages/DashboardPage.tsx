@@ -27,6 +27,7 @@ import PullToRefresh from '@/components/mobile/PullToRefresh';
 import SwipeableTaskCard from '@/components/mobile/SwipeableTaskCard';
 import FloatingActionButton from '@/components/mobile/FloatingActionButton';
 import SkeletonCard from '@/components/mobile/SkeletonCard';
+import { toast } from 'sonner';
 
 const DashboardPage = () => {
   const { user } = useAuth();
@@ -38,9 +39,13 @@ const DashboardPage = () => {
   const { tasks: personalTasks, isLoading: tasksLoading, error: tasksError } = usePersonalTasks();
   const { projects, isLoading: projectsLoading, refreshProjects, error: projectsError } = useProjects();
   
+  // Get task context for status updates
+  const { updateTaskStatus } = useTask();
+  
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState<string | null>(null);
   const isMobile = useIsMobile();
   
   // Use personal tasks for dashboard display
@@ -73,7 +78,6 @@ const DashboardPage = () => {
       return taskDate > today && taskDate <= nextWeek;
     }).sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime());
 
-    // Calculate overdue tasks from ALL tasks
     const overdueTasks = tasks.filter((task) => isTaskOverdue(task));
     
     const flatProjects = projects.map(project => ({
@@ -177,8 +181,29 @@ const DashboardPage = () => {
     }
   }, [refreshProjects]);
 
+  // Fixed task status change handler
   const onStatusChange = async (taskId: string, status: string): Promise<void> => {
-    console.log(`Changing task ${taskId} status to ${status}`);
+    try {
+      setIsUpdatingStatus(taskId);
+      console.log(`Changing task ${taskId} status to ${status}`);
+      
+      // Validate status
+      const validStatuses = ['To Do', 'In Progress', 'Completed'];
+      if (!validStatuses.includes(status)) {
+        toast.error('Invalid status selected');
+        return;
+      }
+
+      // Update task status using the task context
+      await updateTaskStatus(taskId, status as Task['status']);
+      
+      toast.success(`Task status updated to ${status}`);
+    } catch (error) {
+      console.error('Failed to update task status:', error);
+      toast.error('Failed to update task status. Please try again.');
+    } finally {
+      setIsUpdatingStatus(null);
+    }
   };
 
   // Loading skeleton component
@@ -269,6 +294,7 @@ const DashboardPage = () => {
                           onStatusChange={onStatusChange}
                           onDelete={() => {}}
                           onClick={() => {}}
+                          isUpdating={isUpdatingStatus === task.id}
                         />
                       ))}
                     </div>
@@ -299,6 +325,7 @@ const DashboardPage = () => {
                           onStatusChange={onStatusChange}
                           onDelete={() => {}}
                           onClick={() => {}}
+                          isUpdating={isUpdatingStatus === task.id}
                         />
                       ))}
                     </div>
@@ -330,6 +357,7 @@ const DashboardPage = () => {
                           onStatusChange={onStatusChange}
                           onDelete={() => {}}
                           onClick={() => {}}
+                          isUpdating={isUpdatingStatus === task.id}
                         />
                       ))}
                     </div>

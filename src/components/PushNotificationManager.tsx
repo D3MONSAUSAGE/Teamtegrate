@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Bell, BellOff, TestTube, Settings, Smartphone } from 'lucide-react';
+import { Bell, BellOff, TestTube, Settings, Smartphone, X } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import { Link } from 'react-router-dom';
 
@@ -13,6 +13,7 @@ const PushNotificationManager: React.FC = () => {
   const { pushToken, isRegistered, permissionStatus, unregister, testNotification, requestPermissions } = usePushNotifications();
   const { user } = useAuth();
   const [showSettings, setShowSettings] = useState(false);
+  const [isDismissed, setIsDismissed] = useState(false);
 
   useEffect(() => {
     if (isRegistered && pushToken && user) {
@@ -31,8 +32,9 @@ const PushNotificationManager: React.FC = () => {
     }
   }, []);
 
-  if (!showSettings) {
-    return null; // Hidden on web
+  // Don't show if dismissed or hidden
+  if (!showSettings || isDismissed) {
+    return null;
   }
 
   const handleEnableNotifications = async () => {
@@ -40,6 +42,10 @@ const PushNotificationManager: React.FC = () => {
     if (!success) {
       toast.error('Please enable notifications in your device settings to receive push notifications.');
     }
+  };
+
+  const handleDismiss = () => {
+    setIsDismissed(true);
   };
 
   const getStatusColor = () => {
@@ -56,12 +62,26 @@ const PushNotificationManager: React.FC = () => {
   };
 
   return (
-    <Card className="fixed bottom-4 right-4 w-80 z-50 shadow-lg border-2">
+    <Card className={`
+      fixed bottom-4 right-4 w-80 z-50 shadow-lg border-2 
+      transition-all duration-300 ease-in-out
+      ${isDismissed ? 'translate-x-full opacity-0' : 'translate-x-0 opacity-100'}
+    `}>
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-sm">
-          <Bell className="h-4 w-4" />
-          Push Notifications
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <Bell className="h-4 w-4" />
+            Push Notifications
+          </CardTitle>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleDismiss}
+            className="h-6 w-6 p-0 hover:bg-destructive/10 hover:text-destructive"
+          >
+            <X className="h-3 w-3" />
+          </Button>
+        </div>
         <CardDescription className="text-xs">
           Status: <span className={getStatusColor()}>{getStatusText()}</span>
         </CardDescription>
