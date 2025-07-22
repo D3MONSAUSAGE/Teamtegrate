@@ -33,7 +33,9 @@ const MobileOptimizedDialog: React.FC<MobileOptimizedDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={cn(
+      <DialogContent 
+        hideCloseButton={true}
+        className={cn(
         isMobile 
           ? "mobile-dialog-full flex flex-col p-0 gap-0 mobile-animate-slide-up"
           : "w-full max-w-md mx-auto h-auto max-h-[90vh] overflow-hidden",
