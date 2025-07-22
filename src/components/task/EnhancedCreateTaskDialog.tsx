@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Target } from 'lucide-react';
+import { Target, Briefcase, Users, Calendar, DollarSign } from 'lucide-react';
 import { format } from "date-fns";
 import { Task, User, Project, TaskPriority, UserRole } from '@/types';
 import { TaskFormData } from '@/types/forms';
@@ -12,7 +13,7 @@ import { useTaskSubmission } from '@/hooks/useTaskSubmission';
 import { useAuth } from '@/contexts/AuthContext';
 import { devLog } from '@/utils/devLogger';
 import { logger } from '@/utils/logger';
-import TaskDetailsCard from './TaskDetailsCard';
+import MobileTaskForm from './mobile/MobileTaskForm';
 import EnhancedTaskAssignment from './form/assignment/EnhancedTaskAssignment';
 import TaskScheduleSection from './form/TaskScheduleSection';
 import TaskDialogActions from './TaskDialogActions';
@@ -34,11 +35,7 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
 }) => {
   const { user: currentUser } = useAuth();
   const { projects } = useProjects();
-  
-  // For managers, use organization team members (current behavior)
-  // For admins and superadmins, the enhanced assignment component will handle user loading
   const { users, isLoading: loadingUsers, refetch: refetchUsers } = useOrganizationTeamMembers();
-  
   const { submitTask } = useTaskSubmission();
 
   const [selectedMember, setSelectedMember] = useState<string | undefined>("unassigned");
@@ -46,7 +43,6 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
   const [deadlineDate, setDeadlineDate] = useState<Date | undefined>(undefined);
   const [timeInput, setTimeInput] = useState('09:00');
   
-  // New scheduled time states
   const [scheduledStartDate, setScheduledStartDate] = useState<Date | undefined>(undefined);
   const [scheduledEndDate, setScheduledEndDate] = useState<Date | undefined>(undefined);
   const [scheduledStartTime, setScheduledStartTime] = useState('');
@@ -84,7 +80,6 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
       setDeadlineDate(new Date(editingTask.deadline));
       setTimeInput(format(new Date(editingTask.deadline), 'HH:mm'));
       
-      // Set scheduled times
       if (editingTask.scheduledStart) {
         setScheduledStartDate(new Date(editingTask.scheduledStart));
         setScheduledStartTime(format(new Date(editingTask.scheduledStart), 'HH:mm'));
@@ -94,7 +89,6 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
         setScheduledEndTime(format(new Date(editingTask.scheduledEnd), 'HH:mm'));
       }
       
-      // Set assigned users based on assignment type
       if (editingTask.assignedToIds && editingTask.assignedToIds.length > 0) {
         setSelectedMembers(editingTask.assignedToIds);
         if (editingTask.assignedToIds.length === 1) {
@@ -105,7 +99,6 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
         setSelectedMembers([editingTask.assignedToId]);
       }
     } else if (!editingTask && open) {
-      // Reset form for new task
       form.reset();
       setSelectedMember("unassigned");
       setSelectedMembers([]);
@@ -134,7 +127,6 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
     setTimeInput(time);
   };
 
-  // Scheduled time handlers
   const handleScheduledStartDateChange = (date: Date | undefined) => {
     setScheduledStartDate(date);
   };
@@ -165,12 +157,10 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
     setIsSubmitting(true);
 
     try {
-      // Combine date and time for deadline
       const [hours, minutes] = timeInput.split(':');
       const deadline = new Date(deadlineDate);
       deadline.setHours(parseInt(hours, 10), parseInt(minutes, 10));
 
-      // Combine scheduled start date and time if provided
       let scheduledStart: Date | undefined;
       if (scheduledStartDate) {
         scheduledStart = new Date(scheduledStartDate);
@@ -180,7 +170,6 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
         }
       }
 
-      // Combine scheduled end date and time if provided
       let scheduledEnd: Date | undefined;
       if (scheduledEndDate) {
         scheduledEnd = new Date(scheduledEndDate);
@@ -192,7 +181,6 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
 
       const formData = form.getValues();
       
-      // Get assigned users based on current selection
       let assignedUsers: User[] = [];
       if (selectedMembers.length > 0) {
         assignedUsers = users.filter(user => selectedMembers.includes(user.id));
@@ -240,62 +228,49 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-full max-w-sm sm:max-w-md lg:max-w-[1200px] max-h-[85vh] sm:max-h-[90vh] p-4 sm:p-6 scrollbar-hide">
-        <DialogHeader className="pb-4">
-          <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
-            <Target className="h-4 w-4 sm:h-5 sm:w-5" />
-            {editingTask ? 'Edit Task' : 'Create New Task'}
-            {currentUser?.role && (
-              <span className="text-xs sm:text-sm text-muted-foreground">
-                ({currentUser.role} view)
-              </span>
-            )}
-          </DialogTitle>
-        </DialogHeader>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
-          <div className="lg:col-span-2 space-y-4 lg:space-y-6">
-            <TaskDetailsCard
+      <DialogContent className="w-full max-w-sm mx-4 sm:mx-auto sm:max-w-2xl h-[90vh] p-0 gap-0 scrollbar-hide overflow-hidden">
+        <div className="flex flex-col h-full">
+          <DialogHeader className="px-4 py-3 border-b bg-gradient-to-r from-primary/5 to-accent/5">
+            <DialogTitle className="flex items-center gap-2 text-base sm:text-lg font-semibold">
+              <Target className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+              {editingTask ? 'Edit Task' : 'Create New Task'}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="flex-1 overflow-y-auto scrollbar-hide">
+            <MobileTaskForm
               form={form}
               projects={projects}
+              users={users}
+              loadingUsers={loadingUsers}
+              selectedMember={selectedMember}
+              selectedMembers={selectedMembers}
               deadlineDate={deadlineDate}
               timeInput={timeInput}
-              onDateChange={handleDateChange}
-              onTimeChange={handleTimeChange}
-            />
-            
-            <TaskScheduleSection
               scheduledStartDate={scheduledStartDate}
               scheduledEndDate={scheduledEndDate}
               scheduledStartTime={scheduledStartTime}
               scheduledEndTime={scheduledEndTime}
+              onAssign={handleAssign}
+              onMembersChange={handleMembersChange}
+              onDateChange={handleDateChange}
+              onTimeChange={handleTimeChange}
               onScheduledStartDateChange={handleScheduledStartDateChange}
               onScheduledEndDateChange={handleScheduledEndDateChange}
               onScheduledStartTimeChange={handleScheduledStartTimeChange}
               onScheduledEndTimeChange={handleScheduledEndTimeChange}
-            />
-          </div>
-          
-          <div className="lg:col-span-1">
-            <EnhancedTaskAssignment
-              selectedMember={selectedMember}
-              selectedMembers={selectedMembers}
-              onAssign={handleAssign}
-              onMembersChange={handleMembersChange}
-              users={users}
-              isLoading={loadingUsers}
               editingTask={editingTask}
             />
           </div>
-        </div>
 
-        <div className="pt-4 lg:pt-6 border-t">
-          <TaskDialogActions
-            isSubmitting={isSubmitting}
-            editingTask={editingTask}
-            onSubmit={handleSubmit}
-            onCancel={() => onOpenChange(false)}
-          />
+          <div className="p-4 border-t bg-background/95 backdrop-blur-sm">
+            <TaskDialogActions
+              isSubmitting={isSubmitting}
+              editingTask={editingTask}
+              onSubmit={handleSubmit}
+              onCancel={() => onOpenChange(false)}
+            />
+          </div>
         </div>
       </DialogContent>
     </Dialog>

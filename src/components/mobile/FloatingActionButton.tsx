@@ -58,7 +58,7 @@ const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
 
   return (
     <div className={cn(
-      "fixed bottom-20 right-4 z-[60] flex flex-col-reverse items-end gap-3",
+      "fixed bottom-24 right-4 z-[70] flex flex-col-reverse items-end gap-3",
       className
     )}>
       {/* Action buttons */}
@@ -77,7 +77,7 @@ const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
             size="icon"
             className={cn(
               "w-12 h-12 rounded-full shadow-lg border-0",
-              "transition-all duration-200 hover:scale-110",
+              "transition-all duration-200 hover:scale-110 active:scale-95",
               action.color || "bg-primary hover:bg-primary/90"
             )}
             onClick={action.onClick}
@@ -93,7 +93,7 @@ const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
         className={cn(
           "w-14 h-14 rounded-full shadow-xl border-0",
           "bg-primary hover:bg-primary/90",
-          "transition-all duration-300",
+          "transition-all duration-300 active:scale-95",
           isExpanded ? "rotate-45 scale-110" : "rotate-0 scale-100"
         )}
         onClick={() => setIsExpanded(!isExpanded)}
