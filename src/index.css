@@ -76,7 +76,15 @@
   }
   
   .pb-safe {
-    padding-bottom: env(safe-area-inset-bottom);
+    padding-bottom: max(env(safe-area-inset-bottom), 16px);
+  }
+  
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .mobile-fab-spacing {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom));
   }
 }
 

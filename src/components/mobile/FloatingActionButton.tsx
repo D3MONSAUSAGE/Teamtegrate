@@ -58,7 +58,7 @@ const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
 
   return (
     <div className={cn(
-      "fixed bottom-6 right-6 z-50 flex flex-col-reverse items-end gap-3",
+      "fixed bottom-20 right-4 z-50 flex flex-col-reverse items-end gap-3",
       className
     )}>
       {/* Action buttons */}

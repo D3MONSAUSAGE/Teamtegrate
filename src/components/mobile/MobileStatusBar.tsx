@@ -8,7 +8,6 @@ import {
   Zap 
 } from 'lucide-react';
 import { Task } from '@/types';
-import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface MobileStatusBarProps {
   dailyScore: number;
@@ -58,26 +57,26 @@ const MobileStatusBar: React.FC<MobileStatusBarProps> = ({
   ];
 
   return (
-    <ScrollArea className="w-full">
-      <div className="flex gap-3 px-4 py-2">
+    <div className="px-3 py-2">
+      <div className="grid grid-cols-4 gap-2">
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
             <Card 
               key={stat.label}
               className={`
-                flex-shrink-0 w-20 h-16 border-0 shadow-sm hover:shadow-md transition-all duration-200
+                h-14 border-0 shadow-sm hover:shadow-md transition-all duration-200
                 ${stat.bgColor}
               `}
             >
               <div className="p-2 h-full flex flex-col items-center justify-center">
                 <div className={`p-1 rounded-full bg-gradient-to-r ${stat.color} mb-1`}>
-                  <Icon className="h-3 w-3 text-white" />
+                  <Icon className="h-2.5 w-2.5 text-white" />
                 </div>
-                <div className={`text-lg font-bold bg-gradient-to-r ${stat.color} bg-clip-text text-transparent`}>
+                <div className={`text-sm font-bold bg-gradient-to-r ${stat.color} bg-clip-text text-transparent`}>
                   {stat.value}
                 </div>
-                <div className="text-xs text-muted-foreground font-medium">
+                <div className="text-[10px] text-muted-foreground font-medium leading-none">
                   {stat.label}
                 </div>
               </div>
@@ -85,7 +84,7 @@ const MobileStatusBar: React.FC<MobileStatusBarProps> = ({
           );
         })}
       </div>
-    </ScrollArea>
+    </div>
   );
 };
 
