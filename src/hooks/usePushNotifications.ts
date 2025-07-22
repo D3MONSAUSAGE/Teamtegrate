@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { PushNotifications, Token, PushNotificationSchema, ActionPerformed, PermissionStatus } from '@capacitor/push-notifications';
 import { LocalNotifications } from '@capacitor/local-notifications';
@@ -7,7 +6,7 @@ import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { playAppSound } from '@/utils/sounds';
+import { playAppSound } from '@/utils/chatSounds';
 
 interface NotificationAction {
   id: string;
