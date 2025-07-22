@@ -1,4 +1,5 @@
-import React, { memo, useMemo, useCallback } from 'react';
+
+import React, { memo, useMemo, useCallback, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDarkMode } from '@/hooks/useDarkMode';
 import SidebarHeader from './sidebar/SidebarHeader';
@@ -19,7 +20,10 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = memo(({ onNavigation }) => {
   const { user } = useAuth();
   const { isDark, toggle } = useDarkMode();
-  const { state, isMobile, isTablet, setOpenMobile, setOpen, open } = useSidebar();
+  const { state, isMobile, isTablet, isDesktop, setOpenMobile, setOpen, open } = useSidebar();
+  
+  // State for hover expansion on desktop
+  const [isHovering, setIsHovering] = useState(false);
 
   // Memoize user object to prevent unnecessary re-renders
   const sidebarUser = useMemo(() => {
@@ -46,18 +50,34 @@ const Sidebar: React.FC<SidebarProps> = memo(({ onNavigation }) => {
     onNavigation?.();
   }, [isMobile, isTablet, setOpenMobile, setOpen, onNavigation]);
 
+  // Handle hover events for desktop
+  const handleMouseEnter = useCallback(() => {
+    if (isDesktop && !open) {
+      setIsHovering(true);
+    }
+  }, [isDesktop, open]);
+
+  const handleMouseLeave = useCallback(() => {
+    if (isDesktop && !open) {
+      setIsHovering(false);
+    }
+  }, [isDesktop, open]);
+
   if (!sidebarUser) {
     return null;
   }
 
-  // Professional collapsed state calculation
-  const isCollapsed = !isMobile && !open;
+  // Professional collapsed state calculation with hover consideration
+  const isCollapsed = !isMobile && !open && !isHovering;
+  const shouldShowExpanded = isMobile || open || (isDesktop && isHovering);
 
   return (
     <ShadcnSidebar 
       className="border-r border-sidebar-border/60 transition-all duration-300 bg-sidebar-background"
       collapsible="icon"
       variant="sidebar"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       <ShadcnSidebarHeader className="border-b border-sidebar-border/30">
         <SidebarHeader 

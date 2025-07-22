@@ -10,7 +10,6 @@ import Sidebar from './Sidebar';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { Loader2 } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
-import { useBreakpoint } from '@/hooks/use-mobile';
 
 // Professional main content component with enhanced navigation handling
 const MainContent = memo(({ children }: { children: React.ReactNode }) => {
@@ -48,7 +47,6 @@ LoadingScreen.displayName = 'LoadingScreen';
 
 const AppLayout = memo(() => {
   const { user, loading, isAuthenticated } = useAuth();
-  const { isDesktop } = useBreakpoint();
 
   if (loading) {
     return <LoadingScreen />;
@@ -58,8 +56,8 @@ const AppLayout = memo(() => {
     return <Navigate to="/login" replace />;
   }
 
-  // Default to open on desktop, closed on mobile/tablet
-  const defaultSidebarOpen = isDesktop;
+  // Start collapsed on all devices for consistent hover-to-expand UX on desktop
+  const defaultSidebarOpen = false;
 
   return (
     <ProtectedRoute>
