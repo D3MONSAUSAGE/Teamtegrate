@@ -74,7 +74,7 @@ const EnhancedButton: React.FC<EnhancedButtonProps> = ({
         />
       ))}
       
-      <style jsx>{`
+      <style>{`
         @keyframes ripple-expand {
           0% {
             transform: scale(0);
