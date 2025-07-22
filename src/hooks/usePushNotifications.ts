@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { PushNotifications, Token, PushNotificationSchema, ActionPerformed, PermissionStatus } from '@capacitor/push-notifications';
 import { LocalNotifications } from '@capacitor/local-notifications';
@@ -6,7 +7,7 @@ import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { playAppSound } from '@/utils/chatSounds';
+import { playNotificationSound, playChatSound, playStatusChangeSound } from '@/utils/sounds';
 
 interface NotificationAction {
   id: string;
@@ -105,18 +106,18 @@ export const usePushNotifications = () => {
     }
   }, []);
 
-  const playNotificationSound = useCallback(async (notificationType: string) => {
+  const playNotificationSoundEffect = useCallback(async (notificationType: string) => {
     try {
       switch (notificationType) {
         case 'chat_message':
         case 'chat_invitation':
-          await playAppSound('success', 0.7);
+          await playChatSound(0.7);
           break;
         case 'task_assignment':
-          await playAppSound('status-change', 0.8);
+          await playStatusChangeSound(0.8);
           break;
         default:
-          await playAppSound('success', 0.6);
+          await playNotificationSound(0.6);
       }
     } catch (error) {
       console.log('Sound playback failed:', error);
@@ -213,7 +214,7 @@ export const usePushNotifications = () => {
           console.log('Push notification received: ', notification);
           
           // Play sound and vibration
-          await playNotificationSound(notification.data?.type || 'default');
+          await playNotificationSoundEffect(notification.data?.type || 'default');
           await addVibrationAndHaptics(notification.data?.type || 'default');
           
           // Show local toast for foreground notifications
@@ -261,7 +262,7 @@ export const usePushNotifications = () => {
       PushNotifications.removeAllListeners();
       LocalNotifications.removeAllListeners();
     };
-  }, [user, initializeNotificationChannels, requestPermissions, playNotificationSound, addVibrationAndHaptics, showLocalNotification, handleDeepLink]);
+  }, [user, initializeNotificationChannels, requestPermissions, playNotificationSoundEffect, addVibrationAndHaptics, showLocalNotification, handleDeepLink]);
 
   const unregister = async () => {
     if (!Capacitor.isNativePlatform()) return;
@@ -301,7 +302,7 @@ export const usePushNotifications = () => {
         }]
       });
       
-      await playNotificationSound('default');
+      await playNotificationSound(0.6);
       await addVibrationAndHaptics('default');
       
       toast.success('Test notification sent!');

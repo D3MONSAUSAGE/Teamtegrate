@@ -1,338 +1,185 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Smartphone, 
-  Download, 
-  Bell, 
-  Settings, 
-  CheckCircle, 
-  AlertCircle,
-  ExternalLink,
-  Copy
-} from 'lucide-react';
-import { Capacitor } from '@capacitor/core';
-import { toast } from 'sonner';
+import { Separator } from '@/components/ui/separator';
+import { CheckCircle, Circle, ExternalLink, Smartphone, Bell, Download } from 'lucide-react';
 
-const MobileSetupGuide: React.FC = () => {
-  const [step, setStep] = useState(1);
-  const isNative = Capacitor.isNativePlatform();
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast.success('Copied to clipboard!');
-  };
-
+const MobileSetupGuide = () => {
   const steps = [
     {
+      id: 1,
       title: 'Export to GitHub',
-      description: 'Transfer your project to GitHub for mobile development',
-      action: 'Export Project',
+      description: 'Click "Export to GitHub" button and clone the repository to your local machine',
       completed: false,
+      icon: <Download className="h-5 w-5" />,
     },
     {
-      title: 'Setup Development Environment',
-      description: 'Install Android Studio and required tools',
-      action: 'Install Tools',
+      id: 2,
+      title: 'Install Dependencies',
+      description: 'Run "npm install" in your project directory',
       completed: false,
+      icon: <Circle className="h-5 w-5" />,
     },
     {
-      title: 'Configure Firebase',
-      description: 'Setup push notifications with Firebase',
-      action: 'Setup Firebase',
+      id: 3,
+      title: 'Create Firebase Project',
+      description: 'Set up Firebase project and configure FCM for push notifications',
       completed: false,
+      icon: <Bell className="h-5 w-5" />,
+      link: 'https://console.firebase.google.com/',
     },
     {
+      id: 4,
+      title: 'Download google-services.json',
+      description: 'Add Android app to Firebase and download google-services.json to android/app/',
+      completed: false,
+      icon: <Smartphone className="h-5 w-5" />,
+    },
+    {
+      id: 5,
+      title: 'Add FCM Server Key',
+      description: 'Get FCM Server Key and add it to Supabase project secrets as "FCM_SERVER_KEY"',
+      completed: false,
+      icon: <CheckCircle className="h-5 w-5" />,
+    },
+    {
+      id: 6,
       title: 'Build Mobile App',
-      description: 'Build and test on your device',
-      action: 'Build App',
+      description: 'Run the build commands to create your mobile app',
       completed: false,
+      icon: <Circle className="h-5 w-5" />,
     },
   ];
 
-  if (isNative) {
-    return (
-      <Card className="max-w-2xl mx-auto">
+  const commands = [
+    'npx cap add android',
+    'npm run build',
+    'npx cap sync',
+    'npx cap run android'
+  ];
+
+  return (
+    <div className="max-w-4xl mx-auto p-6 space-y-6">
+      <div className="text-center space-y-2">
+        <h1 className="text-3xl font-bold">Mobile App Setup Guide</h1>
+        <p className="text-muted-foreground">
+          Follow these steps to build and run your TeamTegrate mobile app with push notifications
+        </p>
+      </div>
+
+      <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-green-600">
-            <CheckCircle className="h-5 w-5" />
-            Mobile App Active
+          <CardTitle className="flex items-center gap-2">
+            <Smartphone className="h-6 w-6" />
+            Setup Steps
           </CardTitle>
           <CardDescription>
-            You're running the native mobile app! Push notifications should work automatically.
+            Complete these steps in order to enable mobile functionality
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary">
-                Platform: {Capacitor.getPlatform()}
-              </Badge>
-              <Badge variant="secondary">
-                Native: {Capacitor.isNativePlatform() ? 'Yes' : 'No'}
-              </Badge>
+        <CardContent className="space-y-4">
+          {steps.map((step, index) => (
+            <div key={step.id} className="flex items-start gap-4 p-4 rounded-lg border">
+              <div className="flex-shrink-0 mt-1">
+                {step.completed ? (
+                  <CheckCircle className="h-5 w-5 text-green-500" />
+                ) : (
+                  step.icon
+                )}
+              </div>
+              <div className="flex-1 space-y-2">
+                <div className="flex items-center gap-3">
+                  <Badge variant="outline">Step {step.id}</Badge>
+                  <h3 className="font-semibold">{step.title}</h3>
+                  {step.link && (
+                    <Button variant="ghost" size="sm" asChild>
+                      <a href={step.link} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                    </Button>
+                  )}
+                </div>
+                <p className="text-sm text-muted-foreground">{step.description}</p>
+              </div>
             </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Terminal Commands</CardTitle>
+          <CardDescription>
+            Run these commands in your project directory after completing the setup steps
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {commands.map((command, index) => (
+            <div key={index} className="flex items-center gap-3">
+              <Badge variant="secondary">{index + 1}</Badge>
+              <code className="flex-1 bg-muted px-3 py-2 rounded text-sm font-mono">
+                {command}
+              </code>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Firebase Configuration</CardTitle>
+          <CardDescription>
+            Detailed steps for setting up Firebase Cloud Messaging
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <h4 className="font-semibold">1. Create Firebase Project</h4>
             <p className="text-sm text-muted-foreground">
-              If you're not receiving push notifications, check your device settings 
-              and make sure notifications are enabled for this app.
+              Go to Firebase Console and create a new project or use an existing one.
+            </p>
+          </div>
+          
+          <Separator />
+          
+          <div className="space-y-2">
+            <h4 className="font-semibold">2. Add Android App</h4>
+            <p className="text-sm text-muted-foreground">
+              Add an Android app to your Firebase project with package name: <code>com.teamtegrate.app</code>
+            </p>
+          </div>
+          
+          <Separator />
+          
+          <div className="space-y-2">
+            <h4 className="font-semibold">3. Download Configuration</h4>
+            <p className="text-sm text-muted-foreground">
+              Download the <code>google-services.json</code> file and place it in the <code>android/app/</code> directory.
+            </p>
+          </div>
+          
+          <Separator />
+          
+          <div className="space-y-2">
+            <h4 className="font-semibold">4. Get Server Key</h4>
+            <p className="text-sm text-muted-foreground">
+              In Firebase Console, go to Project Settings → Cloud Messaging → Server key. Copy this key and add it to your Supabase project secrets as <code>FCM_SERVER_KEY</code>.
             </p>
           </div>
         </CardContent>
       </Card>
-    );
-  }
 
-  return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <Card>
+      <Card className="border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Smartphone className="h-5 w-5" />
-            Mobile App Setup Guide
-          </CardTitle>
-          <CardDescription>
-            Follow these steps to build and deploy your app as a native mobile application 
-            with push notifications, sounds, and vibration.
-          </CardDescription>
+          <CardTitle className="text-amber-800 dark:text-amber-200">Important Notes</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid gap-6">
-            {/* Step 1: Export to GitHub */}
-            <Card className={step >= 1 ? 'border-primary' : 'border-muted'}>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-sm">
-                    1
-                  </span>
-                  Export to GitHub
-                </CardTitle>
-                <CardDescription>
-                  Export your Lovable project to GitHub so you can build the mobile app locally.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <Button 
-                    onClick={() => window.open('https://github.com', '_blank')}
-                    className="w-full"
-                  >
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    Go to GitHub
-                  </Button>
-                  <div className="text-sm text-muted-foreground">
-                    1. Click "Export to GitHub" in your Lovable project<br/>
-                    2. Create a new repository<br/>
-                    3. Clone the repository to your local machine
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Step 2: Setup Development Environment */}
-            <Card className={step >= 2 ? 'border-primary' : 'border-muted'}>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-sm">
-                    2
-                  </span>
-                  Setup Development Environment
-                </CardTitle>
-                <CardDescription>
-                  Install the required tools for mobile development.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <h4 className="font-medium">Install Required Tools:</h4>
-                    <div className="bg-muted p-3 rounded-lg font-mono text-sm space-y-1">
-                      <div>npm install</div>
-                      <div>npx cap add android</div>
-                      <div>npx cap add ios  # For iOS development</div>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <h4 className="font-medium">Download Android Studio:</h4>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => window.open('https://developer.android.com/studio', '_blank')}
-                    >
-                      <Download className="h-4 w-4 mr-2" />
-                      Download Android Studio
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Step 3: Configure Firebase */}
-            <Card className={step >= 3 ? 'border-primary' : 'border-muted'}>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-sm">
-                    3
-                  </span>
-                  Configure Firebase
-                </CardTitle>
-                <CardDescription>
-                  Setup Firebase for push notifications.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <h4 className="font-medium">Create Firebase Project:</h4>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => window.open('https://console.firebase.google.com', '_blank')}
-                    >
-                      <ExternalLink className="h-4 w-4 mr-2" />
-                      Go to Firebase Console
-                    </Button>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <h4 className="font-medium">Add Android App:</h4>
-                    <div className="bg-muted p-3 rounded-lg">
-                      <div className="text-sm space-y-1">
-                        <div><strong>Package Name:</strong> com.teamtegrate.app</div>
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
-                          onClick={() => copyToClipboard('com.teamtegrate.app')}
-                        >
-                          <Copy className="h-3 w-3 mr-1" />
-                          Copy
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <h4 className="font-medium">Download Config Files:</h4>
-                    <div className="text-sm text-muted-foreground">
-                      1. Download <code>google-services.json</code><br/>
-                      2. Place it in <code>android/app/google-services.json</code><br/>
-                      3. Get your FCM Server Key from Project Settings → Cloud Messaging
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Step 4: Build and Test */}
-            <Card className={step >= 4 ? 'border-primary' : 'border-muted'}>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-sm">
-                    4
-                  </span>
-                  Build and Test
-                </CardTitle>
-                <CardDescription>
-                  Build the app and test on your device.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <h4 className="font-medium">Build Commands:</h4>
-                    <div className="bg-muted p-3 rounded-lg font-mono text-sm space-y-1">
-                      <div>npm run build</div>
-                      <div>npx cap sync</div>
-                      <div>npx cap run android</div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start gap-2 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
-                    <AlertCircle className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                    <div className="text-sm text-blue-700 dark:text-blue-300">
-                      <strong>Important:</strong> Make sure to add the FCM Server Key 
-                      to your Supabase project secrets for push notifications to work.
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Features Preview */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Bell className="h-5 w-5" />
-            Mobile App Features
-          </CardTitle>
-          <CardDescription>
-            What you'll get with the native mobile app:
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <h4 className="font-medium flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                Push Notifications
-              </h4>
-              <p className="text-sm text-muted-foreground">
-                Receive notifications even when the app is closed
-              </p>
-            </div>
-            
-            <div className="space-y-2">
-              <h4 className="font-medium flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                Custom Sounds
-              </h4>
-              <p className="text-sm text-muted-foreground">
-                Different notification sounds for different types of messages
-              </p>
-            </div>
-            
-            <div className="space-y-2">
-              <h4 className="font-medium flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                Vibration Patterns
-              </h4>
-              <p className="text-sm text-muted-foreground">
-                Haptic feedback and custom vibration patterns
-              </p>
-            </div>
-            
-            <div className="space-y-2">
-              <h4 className="font-medium flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                Badge Counting
-              </h4>
-              <p className="text-sm text-muted-foreground">
-                App icon shows unread notification count
-              </p>
-            </div>
-            
-            <div className="space-y-2">
-              <h4 className="font-medium flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                Deep Linking
-              </h4>
-              <p className="text-sm text-muted-foreground">
-                Tap notifications to go directly to relevant content
-              </p>
-            </div>
-            
-            <div className="space-y-2">
-              <h4 className="font-medium flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                Background Processing
-              </h4>
-              <p className="text-sm text-muted-foreground">
-                Notifications work even when app is not running
-              </p>
-            </div>
-          </div>
+        <CardContent className="space-y-2 text-sm text-amber-700 dark:text-amber-300">
+          <p>• Make sure you have Android Studio installed for Android development</p>
+          <p>• The app will run in hot-reload mode connected to this Lovable project</p>
+          <p>• Push notifications require the FCM_SERVER_KEY to be configured in Supabase</p>
+          <p>• Test notifications work even without FCM setup for local testing</p>
         </CardContent>
       </Card>
     </div>

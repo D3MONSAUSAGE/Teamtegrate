@@ -5,8 +5,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Bell, BellOff, TestTube } from 'lucide-react';
+import { Bell, BellOff, TestTube, Settings, Smartphone } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
+import { Link } from 'react-router-dom';
 
 const PushNotificationManager: React.FC = () => {
   const { pushToken, isRegistered, permissionStatus, unregister, testNotification, requestPermissions } = usePushNotifications();
@@ -105,6 +106,19 @@ const PushNotificationManager: React.FC = () => {
             Notifications are disabled. Please enable them in your device settings.
           </div>
         )}
+        
+        <div className="flex gap-2 pt-2">
+          <Button asChild size="sm" variant="ghost" className="flex-1">
+            <Link to="/mobile-setup">
+              <Smartphone className="h-3 w-3 mr-1" />
+              Setup Guide
+            </Link>
+          </Button>
+          <Button size="sm" variant="ghost" className="flex-1">
+            <Settings className="h-3 w-3 mr-1" />
+            Settings
+          </Button>
+        </div>
         
         {pushToken && (
           <div className="text-xs text-muted-foreground break-all">
