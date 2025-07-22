@@ -28,6 +28,10 @@ import SwipeableTaskCard from '@/components/mobile/SwipeableTaskCard';
 import FloatingActionButton from '@/components/mobile/FloatingActionButton';
 import SkeletonCard from '@/components/mobile/SkeletonCard';
 import { toast } from 'sonner';
+import MobileStatusBar from '@/components/mobile/MobileStatusBar';
+import CompactMobileHeader from '@/components/mobile/CompactMobileHeader';
+import CompactSectionHeader from '@/components/mobile/CompactSectionHeader';
+import MobileBottomNav from '@/components/mobile/MobileBottomNav';
 
 const DashboardPage = () => {
   const { user } = useAuth();
@@ -220,73 +224,41 @@ const DashboardPage = () => {
   return (
     <PullToRefresh onRefresh={handlePullToRefresh}>
       <div className="min-h-screen bg-gradient-to-br from-background via-muted/5 to-background scrollbar-hide">
-        <div className="relative pt-6 px-4 md:px-6 lg:px-8 space-y-8 scrollbar-hide">
-          {/* Enhanced Welcome Header with proper spacing */}
-          <div className="animate-fade-in">
-            <EnhancedDashboardHeader
+        {isMobile ? (
+          // Mobile Layout
+          <div className="pb-20"> {/* Bottom padding for bottom nav */}
+            {/* Compact Mobile Header */}
+            <CompactMobileHeader
               userName={user?.name || 'User'}
               onCreateTask={() => handleCreateTask()}
               isLoading={isLoading}
-              stats={headerStats}
             />
-          </div>
-          
-          {/* Interactive Stats Grid */}
-          <div className="animate-fade-in delay-100">
-            <InteractiveStatsGrid 
-              dailyScore={personalDailyScore.percentage}
-              todaysTasks={todaysTasks}
-              upcomingTasks={upcomingTasks}
-              overdueTasks={overdueTasks}
-            />
-          </div>
+            
+            {/* Mobile Status Bar */}
+            <div className="py-3">
+              <MobileStatusBar 
+                dailyScore={personalDailyScore.percentage}
+                todaysTasks={todaysTasks}
+                upcomingTasks={upcomingTasks}
+                overdueTasks={overdueTasks}
+              />
+            </div>
 
-          {/* Quick Actions Panel */}
-          <div className="animate-fade-in delay-200">
-            <ModernSectionCard
-              title="Quick Actions"
-              subtitle="Fast access to common tasks"
-              icon={Target}
-              noPadding
-            >
-              <div className="p-6">
-                <QuickActionsPanel
-                  onCreateTask={() => handleCreateTask()}
-                  userRole={user?.role || 'user'}
+            {/* Compact Task Sections */}
+            <div className="space-y-4">
+              {/* Today's Tasks */}
+              <div>
+                <CompactSectionHeader
+                  title="Today's Focus"
+                  count={todaysTasks.length}
+                  icon={Target}
+                  onAction={() => handleCreateTask()}
+                  viewAllLink="/dashboard/tasks"
                 />
-              </div>
-            </ModernSectionCard>
-          </div>
-
-          {/* Enhanced Time Tracking Section */}
-          <div className="animate-fade-in delay-300">
-            <ModernSectionCard
-              title="Time Tracking"
-              subtitle="Track your work hours with break management and compliance monitoring"
-              icon={Clock}
-              noPadding
-            >
-              <div className="p-6">
-                <EnhancedTimeTracking />
-              </div>
-            </ModernSectionCard>
-          </div>
-          
-          {/* Tasks Sections with enhanced mobile interactions */}
-          {isLoading ? (
-            <LoadingSkeleton />
-          ) : (
-            <div className="space-y-8 animate-fade-in delay-500 stagger-fade-in">
-              <ModernSectionCard
-                title="Today's Focus"
-                subtitle="Tasks scheduled for today"
-                icon={Target}
-                noPadding
-              >
-                <div className="p-1">
-                  {isMobile ? (
-                    <div className="space-y-3">
-                      {todaysTasks.map((task) => (
+                <div className="px-4">
+                  {todaysTasks.length > 0 ? (
+                    <div className="space-y-2">
+                      {todaysTasks.slice(0, 3).map((task) => (
                         <SwipeableTaskCard
                           key={task.id}
                           task={task}
@@ -299,120 +271,282 @@ const DashboardPage = () => {
                       ))}
                     </div>
                   ) : (
+                    <div className="text-center py-6 px-4 bg-muted/30 rounded-lg">
+                      <Target className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                      <p className="text-sm text-muted-foreground">No tasks for today</p>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => handleCreateTask()}
+                        className="mt-2"
+                      >
+                        <Plus className="h-3 w-3 mr-1" />
+                        Add Task
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Upcoming Tasks */}
+              <div>
+                <CompactSectionHeader
+                  title="This Week"
+                  count={upcomingTasks.length}
+                  icon={Calendar}
+                  onAction={() => handleCreateTask()}
+                />
+                <div className="px-4">
+                  {upcomingTasks.length > 0 ? (
+                    <div className="space-y-2">
+                      {upcomingTasks.slice(0, 2).map((task) => (
+                        <SwipeableTaskCard
+                          key={task.id}
+                          task={task}
+                          onEdit={handleEditTask}
+                          onStatusChange={onStatusChange}
+                          onDelete={() => {}}
+                          onClick={() => {}}
+                          isUpdating={isUpdatingStatus === task.id}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-4 px-4 bg-muted/30 rounded-lg">
+                      <Calendar className="h-6 w-6 text-muted-foreground mx-auto mb-2" />
+                      <p className="text-xs text-muted-foreground">No upcoming tasks</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Overdue Tasks - Only show if there are any */}
+              {overdueTasks.length > 0 && (
+                <div>
+                  <CompactSectionHeader
+                    title="Overdue"
+                    count={overdueTasks.length}
+                    icon={AlertTriangle}
+                    onAction={() => handleCreateTask()}
+                  />
+                  <div className="px-4">
+                    <div className="space-y-2">
+                      {overdueTasks.slice(0, 2).map((task) => (
+                        <SwipeableTaskCard
+                          key={task.id}
+                          task={task}
+                          onEdit={handleEditTask}
+                          onStatusChange={onStatusChange}
+                          onDelete={() => {}}
+                          onClick={() => {}}
+                          isUpdating={isUpdatingStatus === task.id}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Time Tracking - Compact */}
+              <div>
+                <CompactSectionHeader
+                  title="Time Tracking"
+                  icon={Clock}
+                />
+                <div className="px-4">
+                  <div className="bg-card rounded-lg p-3">
+                    <EnhancedTimeTracking />
+                  </div>
+                </div>
+              </div>
+
+              {/* Manager-only sections - Compact */}
+              {user?.role === 'manager' && (
+                <>
+                  <div>
+                    <CompactSectionHeader
+                      title="Active Projects"
+                      count={recentProjects.length}
+                      icon={FileText}
+                    />
+                    <div className="px-4">
+                      <div className="bg-card rounded-lg p-3">
+                        <RecentProjects 
+                          projects={recentProjects}
+                          onViewTasks={handleViewTasks}
+                          onCreateTask={handleCreateTaskForProject}
+                          onRefresh={refreshProjects}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <CompactSectionHeader
+                      title="Team"
+                      icon={Users}
+                    />
+                    <div className="px-4">
+                      <div className="bg-card rounded-lg p-3">
+                        <TeamManagement />
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Mobile Bottom Navigation */}
+            <MobileBottomNav />
+          </div>
+        ) : (
+          // Desktop Layout - Keep existing design
+          <div className="relative pt-6 px-4 md:px-6 lg:px-8 space-y-8 scrollbar-hide">
+            {/* Enhanced Welcome Header with proper spacing */}
+            <div className="animate-fade-in">
+              <EnhancedDashboardHeader
+                userName={user?.name || 'User'}
+                onCreateTask={() => handleCreateTask()}
+                isLoading={isLoading}
+                stats={headerStats}
+              />
+            </div>
+            
+            {/* Interactive Stats Grid */}
+            <div className="animate-fade-in delay-100">
+              <InteractiveStatsGrid 
+                dailyScore={personalDailyScore.percentage}
+                todaysTasks={todaysTasks}
+                upcomingTasks={upcomingTasks}
+                overdueTasks={overdueTasks}
+              />
+            </div>
+
+            {/* Quick Actions Panel */}
+            <div className="animate-fade-in delay-200">
+              <ModernSectionCard
+                title="Quick Actions"
+                subtitle="Fast access to common tasks"
+                icon={Target}
+                noPadding
+              >
+                <div className="p-6">
+                  <QuickActionsPanel
+                    onCreateTask={() => handleCreateTask()}
+                    userRole={user?.role || 'user'}
+                  />
+                </div>
+              </ModernSectionCard>
+            </div>
+
+            {/* Enhanced Time Tracking Section */}
+            <div className="animate-fade-in delay-300">
+              <ModernSectionCard
+                title="Time Tracking"
+                subtitle="Track your work hours with break management and compliance monitoring"
+                icon={Clock}
+                noPadding
+              >
+                <div className="p-6">
+                  <EnhancedTimeTracking />
+                </div>
+              </ModernSectionCard>
+            </div>
+            
+            {/* Tasks Sections with enhanced mobile interactions */}
+            {isLoading ? (
+              <LoadingSkeleton />
+            ) : (
+              <div className="space-y-8 animate-fade-in delay-500 stagger-fade-in">
+                <ModernSectionCard
+                  title="Today's Focus"
+                  subtitle="Tasks scheduled for today"
+                  icon={Target}
+                  noPadding
+                >
+                  <div className="p-1">
                     <DailyTasksSection 
                       tasks={todaysTasks}
                       onCreateTask={() => handleCreateTask()}
                       onEditTask={handleEditTask}
                     />
-                  )}
-                </div>
-              </ModernSectionCard>
-              
-              <ModernSectionCard
-                title="Upcoming Work"
-                subtitle="Tasks coming up this week"
-                icon={Calendar}
-                noPadding
-              >
-                <div className="p-1">
-                  {isMobile ? (
-                    <div className="space-y-3">
-                      {upcomingTasks.map((task) => (
-                        <SwipeableTaskCard
-                          key={task.id}
-                          task={task}
-                          onEdit={handleEditTask}
-                          onStatusChange={onStatusChange}
-                          onDelete={() => {}}
-                          onClick={() => {}}
-                          isUpdating={isUpdatingStatus === task.id}
-                        />
-                      ))}
-                    </div>
-                  ) : (
+                  </div>
+                </ModernSectionCard>
+                
+                <ModernSectionCard
+                  title="Upcoming Work"
+                  subtitle="Tasks coming up this week"
+                  icon={Calendar}
+                  noPadding
+                >
+                  <div className="p-1">
                     <UpcomingTasksSection 
                       tasks={upcomingTasks}
                       onCreateTask={() => handleCreateTask()}
                       onEditTask={handleEditTask}
                     />
-                  )}
-                </div>
-              </ModernSectionCard>
+                  </div>
+                </ModernSectionCard>
 
-              {/* Overdue Tasks Section */}
-              <ModernSectionCard
-                title="Overdue Tasks"
-                subtitle="Tasks that need immediate attention"
-                icon={AlertTriangle}
-                noPadding
-              >
-                <div className="p-1">
-                  {isMobile ? (
-                    <div className="space-y-3">
-                      {overdueTasks.map((task) => (
-                        <SwipeableTaskCard
-                          key={task.id}
-                          task={task}
-                          onEdit={handleEditTask}
-                          onStatusChange={onStatusChange}
-                          onDelete={() => {}}
-                          onClick={() => {}}
-                          isUpdating={isUpdatingStatus === task.id}
-                        />
-                      ))}
-                    </div>
-                  ) : (
+                {/* Overdue Tasks Section */}
+                <ModernSectionCard
+                  title="Overdue Tasks"
+                  subtitle="Tasks that need immediate attention"
+                  icon={AlertTriangle}
+                  noPadding
+                >
+                  <div className="p-1">
                     <OverdueTasksSection 
                       tasks={overdueTasks}
                       onCreateTask={() => handleCreateTask()}
                       onEditTask={handleEditTask}
                     />
-                  )}
-                </div>
-              </ModernSectionCard>
-            </div>
-          )}
-          
-          {/* Manager-only sections */}
-          {user?.role === 'manager' && (
-            <div className="space-y-8 animate-fade-in delay-600">
-              <ModernSectionCard
-                title="Active Projects"
-                subtitle="Your recent projects and progress"
-                icon={FileText}
-                noPadding
-              >
-                <div className="p-1">
-                  <RecentProjects 
-                    projects={recentProjects}
-                    onViewTasks={handleViewTasks}
-                    onCreateTask={handleCreateTaskForProject}
-                    onRefresh={refreshProjects}
-                  />
-                </div>
-              </ModernSectionCard>
-              
-              <ModernSectionCard
-                title="Team Management"
-                subtitle="Manage your team and assignments"
-                icon={Users}
-              >
-                <TeamManagement />
-              </ModernSectionCard>
-            </div>
-          )}
-          
-          {/* Add bottom padding for FAB */}
-          <div className="pb-20 md:pb-8" />
-          
-          <EnhancedCreateTaskDialog 
-            open={isCreateTaskOpen} 
-            onOpenChange={setIsCreateTaskOpen}
-            editingTask={editingTask}
-            currentProjectId={selectedProject?.id}
-            onTaskComplete={handleTaskDialogComplete}
-          />
-        </div>
+                  </div>
+                </ModernSectionCard>
+              </div>
+            )}
+            
+            {/* Manager-only sections */}
+            {user?.role === 'manager' && (
+              <div className="space-y-8 animate-fade-in delay-600">
+                <ModernSectionCard
+                  title="Active Projects"
+                  subtitle="Your recent projects and progress"
+                  icon={FileText}
+                  noPadding
+                >
+                  <div className="p-1">
+                    <RecentProjects 
+                      projects={recentProjects}
+                      onViewTasks={handleViewTasks}
+                      onCreateTask={handleCreateTaskForProject}
+                      onRefresh={refreshProjects}
+                    />
+                  </div>
+                </ModernSectionCard>
+                
+                <ModernSectionCard
+                  title="Team Management"
+                  subtitle="Manage your team and assignments"
+                  icon={Users}
+                >
+                  <TeamManagement />
+                </ModernSectionCard>
+              </div>
+            )}
+            
+            {/* Add bottom padding for FAB */}
+            <div className="pb-20 md:pb-8" />
+          </div>
+        )}
+        
+        <EnhancedCreateTaskDialog 
+          open={isCreateTaskOpen} 
+          onOpenChange={setIsCreateTaskOpen}
+          editingTask={editingTask}
+          currentProjectId={selectedProject?.id}
+          onTaskComplete={handleTaskDialogComplete}
+        />
 
         {/* Floating Action Button - Mobile Only */}
         {isMobile && (
