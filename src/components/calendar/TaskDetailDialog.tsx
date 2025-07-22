@@ -1,6 +1,5 @@
 
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -11,7 +10,9 @@ import { useTask } from '@/contexts/task';
 import { toast } from '@/components/ui/sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
 import MobileOptimizedDialog from '@/components/mobile/MobileOptimizedDialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import TaskTimerDialog from '@/components/task/TaskTimerDialog';
+import { useTaskDetailHelpers } from '@/components/task/hooks/useTaskDetailHelpers';
 
 interface TaskDetailDialogProps {
   open: boolean;
@@ -35,31 +36,14 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
 
   if (!task) return null;
 
-  const getStatusColor = (status: TaskStatus) => {
-    switch (status) {
-      case 'To Do':
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
-      case 'In Progress':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
-      case 'Completed':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
-      default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
-    }
-  };
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority?.toLowerCase()) {
-      case 'high':
-        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
-      case 'medium':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
-      case 'low':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
-      default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
-    }
-  };
+  const {
+    getStatusColor,
+    getPriorityColor,
+    isOverdue,
+    formatDate,
+    formatTime,
+    getAssignedToName,
+  } = useTaskDetailHelpers(task);
 
   const handleStatusChange = async (newStatus: TaskStatus) => {
     if (isUpdating) return;
@@ -114,16 +98,14 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
           {task.deadline && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
               <Calendar className="h-4 w-4" />
-              <span>Due: {format(new Date(task.deadline), 'MMM dd, yyyy')}</span>
+              <span>Due: {formatDate(new Date(task.deadline))}</span>
             </div>
           )}
 
-          {task.userId && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
-              <User className="h-4 w-4" />
-              <span>Assigned to: {task.userId}</span>
-            </div>
-          )}
+          <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
+            <User className="h-4 w-4" />
+            <span>Assigned to: {getAssignedToName()}</span>
+          </div>
         </div>
 
         <div className="space-y-3">
