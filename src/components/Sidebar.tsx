@@ -85,7 +85,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ onNavigation }) => {
         />
       </ShadcnSidebarHeader>
       
-      <SidebarContent className="overflow-y-auto overflow-x-hidden bg-sidebar-background">
+      <SidebarContent className="overflow-y-auto overflow-x-hidden scrollbar-hide bg-sidebar-background">
         <div className="p-2">
           <SidebarNav 
             onNavigation={handleNavigation} 

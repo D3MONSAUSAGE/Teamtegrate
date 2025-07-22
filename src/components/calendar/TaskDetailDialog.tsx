@@ -94,14 +94,14 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-full max-w-sm sm:max-w-md lg:max-w-2xl max-h-[85vh] sm:max-h-[90vh] overflow-y-auto scrollbar-hide">
         <DialogHeader>
-          <DialogTitle className="text-xl font-semibold pr-8">
+          <DialogTitle className="text-lg sm:text-xl font-semibold pr-8">
             {task.title}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-4 lg:space-y-6">
           {/* Task Details */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-3">
@@ -132,12 +132,13 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
             </div>
 
             <div className="space-y-3">
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => onEdit?.(task)}
                   disabled={isUpdating}
+                  className="mobile-touch-target"
                 >
                   <Edit className="h-4 w-4 mr-1" />
                   Edit
@@ -147,7 +148,7 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
                   size="sm"
                   onClick={handleDelete}
                   disabled={isUpdating}
-                  className="text-red-600 hover:text-red-700"
+                  className="text-red-600 hover:text-red-700 mobile-touch-target"
                 >
                   <Trash2 className="h-4 w-4 mr-1" />
                   Delete
@@ -163,7 +164,7 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
                     size="sm"
                     onClick={() => handleStatusChange(status)}
                     disabled={isUpdating || task.status === status}
-                    className="text-xs"
+                    className="text-xs mobile-touch-target"
                   >
                     {status}
                   </Button>
@@ -202,7 +203,7 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
             </h3>
             
             <div className="space-y-4">
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Textarea
                   placeholder="Add a comment..."
                   value={newComment}
@@ -219,6 +220,7 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
                     }
                   }}
                   disabled={!newComment.trim() || isUpdating}
+                  className="mobile-touch-target self-start sm:self-auto"
                 >
                   Add
                 </Button>

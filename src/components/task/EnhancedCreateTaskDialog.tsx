@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Target } from 'lucide-react';
@@ -241,21 +240,21 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[1200px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Target className="h-5 w-5" />
+      <DialogContent className="w-full max-w-sm sm:max-w-md lg:max-w-[1200px] max-h-[85vh] sm:max-h-[90vh] p-4 sm:p-6 scrollbar-hide">
+        <DialogHeader className="pb-4">
+          <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
+            <Target className="h-4 w-4 sm:h-5 sm:w-5" />
             {editingTask ? 'Edit Task' : 'Create New Task'}
             {currentUser?.role && (
-              <span className="text-sm text-muted-foreground">
+              <span className="text-xs sm:text-sm text-muted-foreground">
                 ({currentUser.role} view)
               </span>
             )}
           </DialogTitle>
         </DialogHeader>
         
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 py-4">
-          <div className="lg:col-span-2 space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
+          <div className="lg:col-span-2 space-y-4 lg:space-y-6">
             <TaskDetailsCard
               form={form}
               projects={projects}
@@ -290,12 +289,14 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
           </div>
         </div>
 
-        <TaskDialogActions
-          isSubmitting={isSubmitting}
-          editingTask={editingTask}
-          onSubmit={handleSubmit}
-          onCancel={() => onOpenChange(false)}
-        />
+        <div className="pt-4 lg:pt-6 border-t">
+          <TaskDialogActions
+            isSubmitting={isSubmitting}
+            editingTask={editingTask}
+            onSubmit={handleSubmit}
+            onCancel={() => onOpenChange(false)}
+          />
+        </div>
       </DialogContent>
     </Dialog>
   );
