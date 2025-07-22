@@ -2,17 +2,22 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTask } from '@/contexts/task';
+import { Task } from '@/types';
 import EnhancedDashboardHeader from '@/components/dashboard/EnhancedDashboardHeader';
 import DailyTasksSection from '@/components/dashboard/DailyTasksSection';
 import RecentProjects from '@/components/dashboard/RecentProjects';
 import QuickActionsPanel from '@/components/dashboard/QuickActionsPanel';
 import CreateTaskDialog from '@/components/dialogs/CreateTaskDialog';
+import TaskDetailDialog from '@/components/calendar/TaskDetailDialog';
 import FloatingActionButton from '@/components/mobile/FloatingActionButton';
 
 const DashboardPage = () => {
   const { user } = useAuth();
   const { tasks, projects, dailyScore } = useTask();
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [isTaskDetailOpen, setIsTaskDetailOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
 
   const handleCreateTask = () => {
     console.log('DashboardPage: Opening create task dialog');
@@ -22,6 +27,23 @@ const DashboardPage = () => {
   const handleTaskSubmit = async (taskData: any) => {
     console.log('DashboardPage: Task submitted:', taskData);
     // Task creation logic will be handled by the dialog component
+  };
+
+  const handleTaskClick = (task: Task) => {
+    console.log('DashboardPage: Task clicked:', task.title);
+    setSelectedTask(task);
+    setIsTaskDetailOpen(true);
+  };
+
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task);
+    setIsTaskDetailOpen(false);
+    setIsCreateTaskOpen(true);
+  };
+
+  const handleTaskDetailClose = () => {
+    setIsTaskDetailOpen(false);
+    setSelectedTask(null);
   };
 
   if (!user) return null;
@@ -58,7 +80,11 @@ const DashboardPage = () => {
         
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
           <div className="xl:col-span-2 space-y-8">
-            <DailyTasksSection tasks={tasks} onCreateTask={handleCreateTask} />
+            <DailyTasksSection 
+              tasks={tasks} 
+              onCreateTask={handleCreateTask}
+              onTaskClick={handleTaskClick}
+            />
             <RecentProjects projects={projects} />
           </div>
           
@@ -71,6 +97,14 @@ const DashboardPage = () => {
           open={isCreateTaskOpen}
           onOpenChange={setIsCreateTaskOpen}
           onSubmit={handleTaskSubmit}
+          editingTask={editingTask}
+        />
+
+        <TaskDetailDialog
+          open={isTaskDetailOpen}
+          onOpenChange={handleTaskDetailClose}
+          task={selectedTask}
+          onEdit={handleEditTask}
         />
 
         <FloatingActionButton onCreateTask={handleCreateTask} />

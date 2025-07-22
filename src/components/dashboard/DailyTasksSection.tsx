@@ -10,9 +10,10 @@ import { format, isToday, isTomorrow } from 'date-fns';
 interface DailyTasksSectionProps {
   tasks: Task[];
   onCreateTask: () => void;
+  onTaskClick: (task: Task) => void;
 }
 
-const DailyTasksSection: React.FC<DailyTasksSectionProps> = ({ tasks, onCreateTask }) => {
+const DailyTasksSection: React.FC<DailyTasksSectionProps> = ({ tasks, onCreateTask, onTaskClick }) => {
   const todaysTasks = tasks.filter(task => 
     task.deadline && isToday(new Date(task.deadline))
   );
@@ -72,7 +73,11 @@ const DailyTasksSection: React.FC<DailyTasksSectionProps> = ({ tasks, onCreateTa
           {todaysTasks.length > 0 ? (
             <div className="space-y-4">
               {todaysTasks.slice(0, 4).map(task => (
-                <div key={task.id} className="flex items-center space-x-4 p-4 rounded-xl bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm border border-white/20 hover:bg-white/80 dark:hover:bg-slate-700/60 transition-all duration-300">
+                <div 
+                  key={task.id} 
+                  className="flex items-center space-x-4 p-4 rounded-xl bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm border border-white/20 hover:bg-white/80 dark:hover:bg-slate-700/60 transition-all duration-300 cursor-pointer"
+                  onClick={() => onTaskClick(task)}
+                >
                   <div className="flex-shrink-0">
                     {getStatusIcon(task.status)}
                   </div>
@@ -130,7 +135,11 @@ const DailyTasksSection: React.FC<DailyTasksSectionProps> = ({ tasks, onCreateTa
           <CardContent className="p-6">
             <div className="space-y-3">
               {upcomingTasks.slice(0, 3).map(task => (
-                <div key={task.id} className="flex items-center space-x-3 p-3 rounded-lg bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm border border-white/20">
+                <div 
+                  key={task.id} 
+                  className="flex items-center space-x-3 p-3 rounded-lg bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm border border-white/20 cursor-pointer hover:bg-white/80 dark:hover:bg-slate-700/60 transition-all duration-300"
+                  onClick={() => onTaskClick(task)}
+                >
                   <Clock className="h-4 w-4 text-purple-500" />
                   <div className="flex-1">
                     <p className="font-medium text-slate-900 dark:text-slate-100 text-sm">

@@ -114,6 +114,7 @@ const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
           </div>
           <EnhancedButton
             size="icon"
+            ripple={false}
             className={cn(
               "w-12 h-12 rounded-full shadow-lg border-0",
               "transition-all duration-200 hover:scale-110 active:scale-95",
@@ -129,6 +130,7 @@ const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
       {/* Main FAB */}
       <EnhancedButton
         size="icon"
+        ripple={false}
         className={cn(
           "w-14 h-14 rounded-full shadow-xl border-0",
           "bg-primary hover:bg-primary/90",
