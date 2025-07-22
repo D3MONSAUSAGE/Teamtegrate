@@ -1,5 +1,5 @@
 
-import React, { memo } from 'react';
+import React, { memo, useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import ProtectedRoute from '@/routes/ProtectedRoute';
@@ -8,10 +8,12 @@ import { TaskProvider } from '@/contexts/task';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 import MobileBottomNav from './mobile/MobileBottomNav';
+import EnhancedCreateTaskDialog from '@/components/task/EnhancedCreateTaskDialog';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { Loader2 } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Task } from '@/types';
 
 // Professional main content component with enhanced navigation handling
 const MainContent = memo(({ children }: { children: React.ReactNode }) => {
@@ -54,6 +56,15 @@ LoadingScreen.displayName = 'LoadingScreen';
 const AppLayout = memo(() => {
   const { user, loading, isAuthenticated } = useAuth();
   const isMobile = useIsMobile();
+  
+  // Global task creation state for mobile bottom nav
+  const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
+
+  const handleCreateTask = () => {
+    setEditingTask(undefined);
+    setIsCreateTaskOpen(true);
+  };
 
   if (loading) {
     return <LoadingScreen />;
@@ -76,7 +87,16 @@ const AppLayout = memo(() => {
               <MainContent>
                 <Outlet />
               </MainContent>
-              {isMobile && <MobileBottomNav />}
+              {isMobile && (
+                <>
+                  <MobileBottomNav onCreateTask={handleCreateTask} />
+                  <EnhancedCreateTaskDialog
+                    open={isCreateTaskOpen}
+                    onOpenChange={setIsCreateTaskOpen}
+                    editingTask={editingTask}
+                  />
+                </>
+              )}
             </div>
           </SidebarProvider>
         </TaskProvider>

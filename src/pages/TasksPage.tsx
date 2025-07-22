@@ -20,7 +20,7 @@ const TasksPage = () => {
   
   const isMobile = useIsMobile();
   
-  // Local state for dialog management
+  // Local state for dialog management (only used for desktop)
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
 
@@ -98,15 +98,17 @@ const TasksPage = () => {
         onStatusChange={handleTaskStatusChange}
       />
 
-      {/* Enhanced Create Task Dialog */}
-      <EnhancedCreateTaskDialog
-        open={isCreateTaskOpen}
-        onOpenChange={setIsCreateTaskOpen}
-        editingTask={editingTask}
-      />
+      {/* Desktop Create Task Dialog - Mobile uses bottom nav */}
+      {!isMobile && (
+        <EnhancedCreateTaskDialog
+          open={isCreateTaskOpen}
+          onOpenChange={setIsCreateTaskOpen}
+          editingTask={editingTask}
+        />
+      )}
 
-      {/* Mobile FAB */}
-      {isMobile && (
+      {/* Desktop FAB - Mobile uses bottom nav create button */}
+      {!isMobile && (
         <FloatingActionButton
           onCreateTask={handleCreateTask}
           className="z-50"
