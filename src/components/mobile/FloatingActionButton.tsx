@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, X, Edit, Clock, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import EnhancedButton from './EnhancedButton';
+import { EnhancedButton } from '@/components/ui/enhanced-button';
 import { useDraggable } from '@/hooks/useDraggable';
 
 interface FABAction {
