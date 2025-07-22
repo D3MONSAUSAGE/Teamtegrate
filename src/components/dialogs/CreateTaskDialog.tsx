@@ -90,7 +90,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
       description={editingTask ? "Update task details" : "Add a new task to your project"}
       variant="sheet"
     >
-      <div className="px-6 py-6 space-y-6 pb-32">
+      <div className="px-6 py-6 space-y-6 pb-8">
         {/* Basic Information */}
         <div className="space-y-5">
           <div>

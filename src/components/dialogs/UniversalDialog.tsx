@@ -39,7 +39,7 @@ const UniversalDialog: React.FC<UniversalDialogProps> = ({
   }, [open]);
 
   const getDialogStyles = () => {
-    const baseStyles = "p-0 gap-0 border bg-background shadow-2xl backdrop-blur-sm overflow-hidden";
+    const baseStyles = "p-0 gap-0 border bg-background shadow-2xl backdrop-blur-sm flex flex-col";
     
     switch (variant) {
       case 'sheet':
@@ -107,23 +107,19 @@ const UniversalDialog: React.FC<UniversalDialogProps> = ({
         
         {/* Scrollable Content */}
         <div 
-          className="flex-1 overflow-y-auto overflow-x-hidden"
+          className="flex-1 overflow-y-auto"
           style={{
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
             WebkitOverflowScrolling: 'touch',
           }}
         >
-          <style dangerouslySetInnerHTML={{
-            __html: `
-              .dialog-scrollable::-webkit-scrollbar {
-                display: none;
-              }
-            `
-          }} />
-          <div className="dialog-scrollable">
-            {children}
-          </div>
+          <style jsx>{`
+            div::-webkit-scrollbar {
+              display: none;
+            }
+          `}</style>
+          {children}
         </div>
       </DialogContent>
     </Dialog>

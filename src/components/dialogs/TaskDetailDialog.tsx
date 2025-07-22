@@ -127,7 +127,7 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
       description="Task details and actions"
       variant="sheet"
     >
-      <div className="px-6 py-6 space-y-6 pb-32">
+      <div className="px-6 py-6 space-y-6 pb-8">
         {/* Status and Priority Badges */}
         <div className="flex items-center gap-3 flex-wrap">
           <Badge className={cn("px-4 py-2 font-semibold flex items-center gap-2 border", statusConfig.color)}>

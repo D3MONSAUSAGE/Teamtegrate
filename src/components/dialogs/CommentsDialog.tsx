@@ -55,9 +55,9 @@ const CommentsDialog: React.FC<CommentsDialogProps> = ({
       description={`Discussion for "${task.title}"`}
       variant="sheet"
     >
-      <div className="px-6 py-6 pb-32">
+      <div className="flex flex-col h-full">
         {/* Comments List */}
-        <div className="mb-8">
+        <div className="flex-1 px-6 py-6 pb-4">
           {task.comments && task.comments.length > 0 ? (
             <div className="space-y-4">
               <TaskCommentsList taskComments={task.comments} />
@@ -75,35 +75,37 @@ const CommentsDialog: React.FC<CommentsDialogProps> = ({
           )}
         </div>
         
-        {/* Comment Input */}
-        <div className="space-y-4 border-t border-border/30 pt-6">
-          <Textarea
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Write a comment..."
-            className="min-h-[100px] text-base rounded-2xl border-2 focus:border-primary transition-colors resize-none"
-            rows={4}
-          />
-          
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">
-              Press Enter to send, Shift + Enter for new line
-            </span>
+        {/* Comment Input - Fixed at bottom */}
+        <div className="px-6 py-6 pt-4 border-t border-border/30 bg-background">
+          <div className="space-y-4">
+            <Textarea
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Write a comment..."
+              className="min-h-[100px] text-base rounded-2xl border-2 focus:border-primary transition-colors resize-none"
+              rows={4}
+            />
             
-            <Button
-              onClick={handleAddComment}
-              disabled={!newComment.trim() || isSubmitting}
-              size="lg"
-              className="h-12 px-8 text-base font-medium rounded-2xl bg-gradient-to-r from-primary to-primary/80 hover:shadow-lg transition-all duration-200"
-            >
-              {isSubmitting ? (
-                <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full mr-2" />
-              ) : (
-                <Send className="h-4 w-4 mr-2" />
-              )}
-              {isSubmitting ? 'Sending...' : 'Send'}
-            </Button>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">
+                Press Enter to send, Shift + Enter for new line
+              </span>
+              
+              <Button
+                onClick={handleAddComment}
+                disabled={!newComment.trim() || isSubmitting}
+                size="lg"
+                className="h-12 px-8 text-base font-medium rounded-2xl bg-gradient-to-r from-primary to-primary/80 hover:shadow-lg transition-all duration-200"
+              >
+                {isSubmitting ? (
+                  <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full mr-2" />
+                ) : (
+                  <Send className="h-4 w-4 mr-2" />
+                )}
+                {isSubmitting ? 'Sending...' : 'Send'}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
