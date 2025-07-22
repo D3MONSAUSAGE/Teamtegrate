@@ -1,325 +1,166 @@
 
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, PanInfo } from 'framer-motion';
-import { Card, CardContent } from '@/components/ui/card';
+import React, { useState } from 'react';
+import { Task, TaskStatus } from '@/types';
+import { Eye, Calendar, Clock, User, AlertCircle } from 'lucide-react';
+import { format, differenceInDays } from 'date-fns';
+import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Task } from '@/types';
-import { Calendar, Clock, Edit3, CheckCircle, Circle, PlayCircle, Loader2, Flag, Eye } from 'lucide-react';
-import { format, isToday, isTomorrow, isPast } from 'date-fns';
-import { cn } from '@/lib/utils';
+import { useTask } from '@/contexts/task';
+import { toast } from '@/components/ui/sonner';
+import MobileTaskDetailDialog from './MobileTaskDetailDialog';
 
 interface EnhancedTaskCardProps {
   task: Task;
-  onEdit: (task: Task) => void;
-  onStatusChange: (taskId: string, status: string) => Promise<void>;
-  onDelete: (taskId: string) => void;
-  onClick: () => void;
-  isUpdating?: boolean;
-  index?: number;
+  className?: string;
 }
 
-const EnhancedTaskCard: React.FC<EnhancedTaskCardProps> = ({
-  task,
-  onEdit,
-  onStatusChange,
-  onDelete,
-  onClick,
-  isUpdating = false,
-  index = 0
-}) => {
-  const [isRevealed, setIsRevealed] = useState(false);
-  const [dragX, setDragX] = useState(0);
-  const autoHideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+const EnhancedTaskCard: React.FC<EnhancedTaskCardProps> = ({ task, className }) => {
+  const { updateTaskStatus } = useTask();
+  const [showDetails, setShowDetails] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
 
-  // Auto-hide after 3 seconds
-  useEffect(() => {
-    if (isRevealed) {
-      autoHideTimeoutRef.current = setTimeout(() => {
-        setIsRevealed(false);
-        setDragX(0);
-      }, 3000);
-    }
-
-    return () => {
-      if (autoHideTimeoutRef.current) {
-        clearTimeout(autoHideTimeoutRef.current);
-      }
-    };
-  }, [isRevealed]);
-
-  // Clear timeout when user interacts
-  const clearAutoHideTimeout = () => {
-    if (autoHideTimeoutRef.current) {
-      clearTimeout(autoHideTimeoutRef.current);
-      autoHideTimeoutRef.current = null;
-    }
-  };
-
-  const handleDragStart = () => {
-    clearAutoHideTimeout();
-    // Add haptic feedback if available
-    if (navigator.vibrate) {
-      navigator.vibrate(5);
-    }
-  };
-
-  const handleDrag = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    setDragX(info.offset.x);
-  };
-
-  const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    // Reduced thresholds for better responsiveness
-    const threshold = 80; // Reduced from 120px
-    const minVelocity = 250; // Reduced from 400
+  const isOverdue = new Date(task.deadline) < new Date() && task.status !== 'Completed';
+  
+  const formatDeadline = (deadline: Date) => {
+    const now = new Date();
+    const diffDays = differenceInDays(deadline, now);
     
-    const isIntentionalSwipe = Math.abs(info.offset.x) > threshold || Math.abs(info.velocity.x) > minVelocity;
-    const isHorizontalGesture = Math.abs(info.offset.x) > Math.abs(info.offset.y) * 1.2;
+    if (diffDays === 0) return "Today";
+    if (diffDays === 1) return "Tomorrow";
+    if (diffDays === -1) return "Yesterday";
+    if (diffDays > 0 && diffDays <= 7) return `In ${diffDays} days`;
+    if (diffDays < 0) return `${Math.abs(diffDays)} days ago`;
     
-    if (isIntentionalSwipe && isHorizontalGesture) {
-      setIsRevealed(true);
-      if (navigator.vibrate) {
-        navigator.vibrate([10, 5, 10]);
-      }
-    } else {
-      setIsRevealed(false);
-      setDragX(0);
+    return format(deadline, "MMM d");
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch(priority) {
+      case 'Low': return 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 border-blue-200 dark:border-blue-800';
+      case 'Medium': return 'bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200 border-amber-200 dark:border-amber-800';
+      case 'High': return 'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-200 border-red-200 dark:border-red-800';
+      default: return 'bg-gray-100 dark:bg-gray-800/40 text-gray-800 dark:text-gray-200 border-gray-200 dark:border-gray-700';
     }
   };
 
-  const handleStatusChange = async (status: string) => {
+  const handleStatusChange = async (newStatus: TaskStatus) => {
     if (isUpdating) return;
-    clearAutoHideTimeout();
+    
+    setIsUpdating(true);
     try {
-      await onStatusChange(task.id, status);
-      setIsRevealed(false);
-      if (navigator.vibrate) {
-        navigator.vibrate(15);
-      }
+      await updateTaskStatus(task.id, newStatus);
+      toast.success('Task status updated');
     } catch (error) {
-      console.error('Failed to update task status:', error);
+      console.error('Error updating task status:', error);
+      toast.error('Failed to update task status');
+    } finally {
+      setIsUpdating(false);
     }
   };
-
-  const handleEdit = () => {
-    clearAutoHideTimeout();
-    onEdit(task);
-    setIsRevealed(false);
-  };
-
-  const handleViewDetails = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    clearAutoHideTimeout();
-    onClick();
-  };
-
-  const getStatusIcon = () => {
-    if (isUpdating) {
-      return <Loader2 className="h-4 w-4 animate-spin" />;
-    }
-    switch (task.status) {
-      case 'Completed':
-        return <CheckCircle className="h-4 w-4 text-green-600" />;
-      case 'In Progress':
-        return <PlayCircle className="h-4 w-4 text-blue-600" />;
-      default:
-        return <Circle className="h-4 w-4 text-gray-400" />;
-    }
-  };
-
-  const getPriorityConfig = (priority: string) => {
-    switch (priority) {
-      case 'High':
-        return {
-          gradient: 'from-red-400 to-orange-500',
-          bg: 'bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-950/20 dark:to-orange-950/20',
-          badge: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
-          border: 'border-red-200 dark:border-red-800/50'
-        };
-      case 'Medium':
-        return {
-          gradient: 'from-yellow-400 to-amber-500',
-          bg: 'bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-950/20 dark:to-amber-950/20',
-          badge: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
-          border: 'border-yellow-200 dark:border-yellow-800/50'
-        };
-      case 'Low':
-        return {
-          gradient: 'from-green-400 to-emerald-500',
-          bg: 'bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20',
-          badge: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
-          border: 'border-green-200 dark:border-green-800/50'
-        };
-      default:
-        return {
-          gradient: 'from-blue-400 to-cyan-500',
-          bg: 'bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20',
-          badge: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
-          border: 'border-blue-200 dark:border-blue-800/50'
-        };
-    }
-  };
-
-  const formatDeadline = (deadline: Date | string) => {
-    const date = deadline instanceof Date ? deadline : new Date(deadline);
-    if (isToday(date)) return 'Today';
-    if (isTomorrow(date)) return 'Tomorrow';
-    return format(date, 'MMM dd');
-  };
-
-  const isOverdue = isPast(new Date(task.deadline)) && task.status !== 'Completed';
-  const priorityConfig = getPriorityConfig(task.priority);
 
   return (
-    <div className="relative overflow-hidden rounded-2xl">
-      {/* Action buttons background */}
-      <div className="absolute inset-0 flex items-center justify-between px-6">
-        <div className="flex space-x-3">
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-12 w-12 rounded-full bg-blue-500 hover:bg-blue-600 text-white shadow-lg mobile-touch-target"
-            onClick={() => handleStatusChange('To Do')}
-            disabled={isUpdating || task.status === 'To Do'}
-          >
-            <Circle className="h-5 w-5" />
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-12 w-12 rounded-full bg-orange-500 hover:bg-orange-600 text-white shadow-lg mobile-touch-target"
-            onClick={() => handleStatusChange('In Progress')}
-            disabled={isUpdating || task.status === 'In Progress'}
-          >
-            <PlayCircle className="h-5 w-5" />
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-12 w-12 rounded-full bg-green-500 hover:bg-green-600 text-white shadow-lg mobile-touch-target"
-            onClick={() => handleStatusChange('Completed')}
-            disabled={isUpdating || task.status === 'Completed'}
-          >
-            <CheckCircle className="h-5 w-5" />
-          </Button>
+    <>
+      <div className={cn(
+        "bg-card rounded-xl border border-border/60 p-4 space-y-4",
+        "shadow-sm hover:shadow-md transition-all duration-200",
+        "touch-manipulation",
+        isOverdue && "ring-2 ring-red-400/60 bg-red-50/20 dark:bg-red-950/20",
+        className
+      )}>
+        
+        {/* Header with Title and Priority */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold text-base leading-tight text-foreground line-clamp-2 break-words">
+              {task.title}
+            </h3>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <Badge 
+              variant="outline"
+              className={cn("text-xs font-medium px-2 py-1 border", getPriorityColor(task.priority))}
+            >
+              {task.priority}
+            </Badge>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowDetails(true)}
+              className="h-8 w-8 p-0 hover:bg-primary/10"
+            >
+              <Eye className="h-4 w-4 text-primary" />
+            </Button>
+          </div>
         </div>
-        <Button
-          size="sm"
-          variant="ghost"
-          className="h-12 w-12 rounded-full bg-purple-500 hover:bg-purple-600 text-white shadow-lg mobile-touch-target"
-          onClick={handleEdit}
-          disabled={isUpdating}
-        >
-          <Edit3 className="h-5 w-5" />
-        </Button>
+
+        {/* Description */}
+        {task.description && (
+          <div className="bg-muted/20 rounded-md p-3 border-l-2 border-border/30">
+            <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+              {task.description}
+            </p>
+          </div>
+        )}
+
+        {/* Metadata */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/30 px-3 py-2 rounded-md">
+            <Clock className="h-3.5 w-3.5 flex-shrink-0" />
+            <span className="font-medium">{formatDeadline(new Date(task.deadline))}</span>
+            {isOverdue && (
+              <>
+                <AlertCircle className="h-3.5 w-3.5 text-red-500 ml-auto" />
+                <span className="text-red-500 font-medium">Overdue</span>
+              </>
+            )}
+          </div>
+
+          {(task.assignedToName || task.assignedToNames?.length) && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground bg-blue-50/80 dark:bg-blue-950/60 px-3 py-2 rounded-md">
+              <User className="h-3.5 w-3.5 flex-shrink-0" />
+              <span className="font-medium">
+                {task.assignedToNames?.length > 1 
+                  ? `${task.assignedToNames[0]} +${task.assignedToNames.length - 1}`
+                  : task.assignedToName || task.assignedToNames?.[0] || "Assigned"
+                }
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Status Actions */}
+        <div className="flex gap-2 pt-2 border-t border-border/30">
+          {(['To Do', 'In Progress', 'Completed'] as TaskStatus[]).map((status) => (
+            <Button
+              key={status}
+              variant={task.status === status ? "default" : "outline"}
+              size="sm"
+              onClick={() => handleStatusChange(status)}
+              disabled={isUpdating || task.status === status}
+              className="flex-1 text-xs mobile-touch-target"
+            >
+              {isUpdating ? '...' : status}
+            </Button>
+          ))}
+        </div>
       </div>
 
-      {/* Main card */}
-      <motion.div
-        drag="x"
-        dragConstraints={{ left: -150, right: 150 }}
-        dragElastic={0.05}
-        dragMomentum={false}
-        onDragStart={handleDragStart}
-        onDrag={handleDrag}
-        onDragEnd={handleDragEnd}
-        animate={{ x: isRevealed ? (dragX > 0 ? 100 : -100) : 0 }}
-        transition={{ type: "spring", stiffness: 400, damping: 30 }}
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        style={{
-          transition: `opacity 0.6s ease ${index * 0.1}s, transform 0.6s ease ${index * 0.1}s`
+      {/* Mobile Task Detail Dialog */}
+      <MobileTaskDetailDialog
+        open={showDetails}
+        onOpenChange={setShowDetails}
+        task={task}
+        onEdit={(task) => {
+          // TODO: Handle edit
+          setShowDetails(false);
+          toast.info('Edit functionality coming soon');
         }}
-        className="relative z-10"
-      >
-        <Card 
-          className={cn(
-            "overflow-hidden border-2 transition-all duration-300 hover:shadow-xl mobile-touch-target tap-highlight-none cursor-pointer",
-            priorityConfig.bg,
-            priorityConfig.border,
-            isUpdating && "opacity-70 pointer-events-none",
-            isOverdue && "ring-2 ring-red-400 ring-opacity-50"
-          )}
-        >
-          {/* Priority indicator */}
-          <div className={`h-1 bg-gradient-to-r ${priorityConfig.gradient}`} />
-          
-          <CardContent className="p-5" onClick={handleViewDetails}>
-            <div className="space-y-4">
-              <div className="flex items-start justify-between">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="font-semibold text-base leading-6 text-foreground truncate">
-                      {task.title}
-                    </h3>
-                    {task.priority === 'High' && (
-                      <Flag className="h-4 w-4 text-red-500 flex-shrink-0" />
-                    )}
-                  </div>
-                  {task.description && (
-                    <p className="text-sm text-muted-foreground line-clamp-2 leading-5">
-                      {task.description}
-                    </p>
-                  )}
-                </div>
-                <div className="flex items-center gap-2 ml-4 flex-shrink-0">
-                  <motion.div
-                    whileTap={{ scale: 0.9 }}
-                    transition={{ duration: 0.1 }}
-                  >
-                    {getStatusIcon()}
-                  </motion.div>
-                  <motion.div
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    className="p-1.5 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors"
-                    onClick={handleViewDetails}
-                  >
-                    <Eye className="h-4 w-4 text-primary" />
-                  </motion.div>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={cn(
-                    "flex items-center gap-1.5 text-sm",
-                    isOverdue ? "text-red-600 font-medium" : "text-muted-foreground"
-                  )}>
-                    <Calendar className="h-4 w-4" />
-                    <span>{formatDeadline(task.deadline)}</span>
-                    {isOverdue && <span className="text-xs">(Overdue)</span>}
-                  </div>
-                </div>
-                <Badge 
-                  variant="secondary" 
-                  className={cn("text-xs font-medium px-2.5 py-1", priorityConfig.badge)}
-                >
-                  {task.priority}
-                </Badge>
-              </div>
-
-              {(task.assignedToName || task.assignedToNames?.length) && (
-                <div className="flex items-center gap-2 pt-2 border-t border-border/50">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <div className="w-6 h-6 rounded-full bg-gradient-to-r from-blue-400 to-purple-500 flex items-center justify-center text-white text-xs font-semibold">
-                      {(task.assignedToName || task.assignedToNames?.[0] || '').charAt(0).toUpperCase()}
-                    </div>
-                    <span className="font-medium">
-                      {task.assignedToNames?.length > 1 
-                        ? `${task.assignedToNames[0]} +${task.assignedToNames.length - 1} more`
-                        : task.assignedToName || task.assignedToNames?.[0]
-                      }
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
-    </div>
+        onDelete={(taskId) => {
+          setShowDetails(false);
+        }}
+      />
+    </>
   );
 };
 

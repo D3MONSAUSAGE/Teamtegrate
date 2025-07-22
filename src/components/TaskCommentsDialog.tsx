@@ -21,15 +21,20 @@ const TaskCommentsDialog: React.FC<TaskCommentsDialogProps> = ({
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-full max-w-sm sm:max-w-md lg:max-w-[500px] max-h-[85vh] sm:max-h-[90vh] scrollbar-hide">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+      <DialogContent className="w-full max-w-[95vw] sm:max-w-md lg:max-w-[500px] 
+                                 h-[90vh] sm:h-auto sm:max-h-[90vh] 
+                                 fixed inset-x-4 inset-y-4 sm:inset-auto 
+                                 sm:left-[50%] sm:top-[50%] sm:translate-x-[-50%] sm:translate-y-[-50%]
+                                 overflow-hidden flex flex-col
+                                 safe-area-inset">
+        <DialogHeader className="flex-shrink-0 pb-4">
+          <DialogTitle className="flex items-center gap-2 text-lg font-semibold">
             <MessageCircle className="h-5 w-5" />
             Comments on "{task.title}"
           </DialogTitle>
         </DialogHeader>
         
-        <div className="max-h-[60vh] overflow-y-auto scrollbar-hide p-1">
+        <div className="flex-1 overflow-y-auto p-1 min-h-0">
           <TaskCommentsList taskComments={task.comments || []} />
           <TaskCommentForm taskId={task.id} />
         </div>
