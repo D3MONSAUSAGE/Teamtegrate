@@ -77,24 +77,10 @@ const SidebarNav: React.FC<SidebarNavProps> = memo(({ onNavigation, isCollapsed 
   // Memoize the current path for comparison
   const currentPath = useMemo(() => location.pathname, [location.pathname]);
 
-  // Route validation - check if all navigation routes are valid
-  const validateRoutes = useMemo(() => {
-    const validRoutes = navigation.every(item => {
-      // Basic validation - ensure href starts with /dashboard
-      return item.href.startsWith('/dashboard') && item.href.length > '/dashboard'.length || item.href === '/dashboard';
-    });
-    
-    if (!validRoutes) {
-      console.warn('Some navigation routes may be invalid');
-    }
-    
-    return validRoutes;
-  }, [navigation]);
-
   if (!user) return null;
 
   return (
-    <div className="flex flex-col space-y-1">
+    <div className="flex flex-col space-y-1 p-2">
       {navigation.map((item: NavItemProps) => {
         const isActive = isActiveRoute(item.href, currentPath);
         
@@ -104,16 +90,53 @@ const SidebarNav: React.FC<SidebarNavProps> = memo(({ onNavigation, isCollapsed 
             to={item.href}
             onClick={handleNavClick}
             className={cn(
-              "flex items-center space-x-2 rounded-md p-2 text-sm font-medium hover:bg-secondary hover:text-accent-foreground transition-colors duration-200",
+              "group relative flex items-center rounded-lg p-3 text-sm font-medium transition-all duration-300 overflow-hidden",
+              "hover:scale-[1.02] hover:shadow-md",
               isActive
-                ? "bg-secondary text-accent-foreground shadow-sm"
-                : "text-muted-foreground",
-              isCollapsed && "justify-center"
+                ? "bg-gradient-to-r from-primary/15 via-primary/10 to-accent/10 text-primary border-l-4 border-primary shadow-sm"
+                : "text-muted-foreground hover:bg-gradient-to-r hover:from-primary/5 hover:via-transparent hover:to-accent/5 hover:text-foreground hover:shadow-sm",
+              isCollapsed ? "justify-center px-2" : "space-x-3"
             )}
             aria-current={isActive ? 'page' : undefined}
           >
-            <item.icon className="h-4 w-4 flex-shrink-0" />
-            {!isCollapsed && <span className="truncate">{item.name}</span>}
+            {/* Background gradient overlay for hover effect */}
+            <div className={cn(
+              "absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 pointer-events-none",
+              isActive && "opacity-50"
+            )} />
+            
+            {/* Icon container with modern styling */}
+            <div className={cn(
+              "relative p-2 rounded-full transition-all duration-300 flex-shrink-0",
+              isActive 
+                ? "bg-gradient-to-r from-primary/20 to-accent/20 shadow-sm" 
+                : "group-hover:bg-gradient-to-r group-hover:from-primary/10 group-hover:to-accent/10"
+            )}>
+              <item.icon className={cn(
+                "h-4 w-4 transition-all duration-300",
+                isActive ? "text-primary scale-110" : "group-hover:scale-110"
+              )} />
+            </div>
+            
+            {/* Text with gradient effect when active */}
+            {!isCollapsed && (
+              <span className={cn(
+                "truncate font-medium transition-all duration-300",
+                isActive && "bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent font-semibold"
+              )}>
+                {item.name}
+              </span>
+            )}
+            
+            {/* Active indicator dot for collapsed state */}
+            {isCollapsed && isActive && (
+              <div className="absolute -right-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-primary rounded-full shadow-sm animate-pulse" />
+            )}
+            
+            {/* Subtle glow effect for active items */}
+            {isActive && (
+              <div className="absolute inset-0 rounded-lg bg-primary/5 animate-pulse" />
+            )}
           </Link>
         );
       })}
