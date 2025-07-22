@@ -1,128 +1,118 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { usePersonalTasks } from '@/hooks/usePersonalTasks';
-import { Task, TaskStatus } from '@/types';
-import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
-import TaskCommentsDialog from '@/components/TaskCommentsDialog';
-import EnhancedCreateTaskDialog from '@/components/task/EnhancedCreateTaskDialog';
-import TasksPageLoading from '@/components/task/TasksPageLoading';
-import TasksPageError from '@/components/task/TasksPageError';
-import TasksPageContent from '@/components/task/TasksPageContent';
-import { enhancedNotifications } from '@/utils/enhancedNotifications';
-import { useDebounce } from '@/utils/performanceUtils';
-import { toast } from '@/components/ui/sonner';
+
+import React from 'react';
 import { useTask } from '@/contexts/task';
+import TaskTabs from '@/components/task/TaskTabs';
+import EnhancedCreateTaskDialog from '@/components/task/EnhancedCreateTaskDialog';
+import FloatingActionButton from '@/components/mobile/FloatingActionButton';
+import PullToRefresh from '@/components/mobile/PullToRefresh';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const TasksPage = () => {
-  const navigate = useNavigate();
-  const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
+  const { 
+    tasks,
+    isLoading,
+    isCreateTaskOpen,
+    setIsCreateTaskOpen,
+    editingTask,
+    handleCreateTask,
+    handleEditTask,
+    updateTaskStatus,
+    refreshTasks
+  } = useTask();
   
-  useEffect(() => {
-    const path = window.location.pathname;
-    if (path.endsWith('/create')) {
-      setIsCreateTaskOpen(true);
-    }
-  }, []);
+  const isMobile = useIsMobile();
 
-  // Use new personal tasks hook for refined filtering
-  const { tasks, isLoading, error, refetch } = usePersonalTasks();
-  
-  // Use TaskContext for mutations (update, delete operations)
-  const { updateTaskStatus } = useTask();
-  
-  const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
-  const [sortBy, setSortBy] = useState('deadline');
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [showComments, setShowComments] = useState(false);
+  // Group tasks by status
+  const todoTasks = tasks.filter(task => task.status === 'To Do');
+  const inProgressTasks = tasks.filter(task => task.status === 'In Progress');
+  const completedTasks = tasks.filter(task => task.status === 'Completed');
 
-  // Setup keyboard shortcuts for this page
-  useKeyboardShortcuts({
-    onNewTask: () => {
-      setEditingTask(undefined);
-      setIsCreateTaskOpen(true);
-    },
-    onRefresh: () => {
-      refetch();
-      enhancedNotifications.info('Personal tasks refreshed', {
-        description: 'Your personal task list has been updated with latest data'
-      });
-    }
-  });
-  
-  // Debounced handlers to prevent rapid clicking
-  const debouncedEditTask = useDebounce((task: Task) => {
-    setEditingTask(task);
-    setIsCreateTaskOpen(true);
-  }, 200);
-  
-  const debouncedStatusChange = useDebounce(async (taskId: string, status: TaskStatus) => {
+  const handleRefresh = async () => {
+    await refreshTasks();
+  };
+
+  const handleTaskStatusChange = async (taskId: string, status: 'To Do' | 'In Progress' | 'Completed') => {
     try {
       await updateTaskStatus(taskId, status);
-      // Refresh personal tasks after status change
-      refetch();
     } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('TasksPage: Error updating task status:', error);
-      }
-      toast.error('Failed to update task status');
+      console.error('Failed to update task status:', error);
+      throw error;
     }
-  }, 300);
-  
-  // Memoized handlers
-  const handleEditTask = useMemo(() => debouncedEditTask, [debouncedEditTask]);
-  
-  // Fix: Return a Promise from the status change handler
-  const handleStatusChange = useMemo(() => async (taskId: string, status: TaskStatus) => {
-    return debouncedStatusChange(taskId, status);
-  }, [debouncedStatusChange]);
-  
-  const handleTaskDialogComplete = useMemo(() => () => {
-    setIsCreateTaskOpen(false);
-    setEditingTask(undefined);
-    // Refresh personal tasks after task creation/update
-    refetch();
-  }, [refetch]);
+  };
 
-  const handleNewTask = useMemo(() => () => {
-    setEditingTask(undefined);
-    setIsCreateTaskOpen(true);
-  }, []);
-  
-  // Show loading state
   if (isLoading) {
-    return <TasksPageLoading />;
-  }
-  
-  // Show error state if tasks is null or undefined
-  if (!tasks || error) {
-    return <TasksPageError error={error || new Error("Failed to load personal tasks")} />;
+    return (
+      <div className={cn(
+        "flex items-center justify-center",
+        isMobile ? "min-h-screen-mobile safe-area-inset" : "min-h-screen"
+      )}>
+        <div className="animate-pulse text-muted-foreground mobile-text-base">
+          Loading tasks...
+        </div>
+      </div>
+    );
   }
 
-  return (
-    <>
-      <TasksPageContent
-        tasks={tasks}
-        sortBy={sortBy}
-        setSortBy={setSortBy}
-        onNewTask={handleNewTask}
-        onEditTask={handleEditTask}
-        onStatusChange={handleStatusChange}
+  const TaskContent = () => (
+    <div className={cn(
+      "space-y-6",
+      isMobile ? "safe-area-left safe-area-right" : ""
+    )}>
+      <div className={cn(
+        isMobile ? "px-4 safe-area-top" : ""
+      )}>
+        <div>
+          <h1 className={cn(
+            "font-bold tracking-tight",
+            isMobile ? "text-2xl mobile-text-xl" : "text-3xl"
+          )}>
+            My Tasks
+          </h1>
+          <p className={cn(
+            "text-muted-foreground mt-1",
+            isMobile ? "text-sm mobile-text-sm" : "text-base"
+          )}>
+            Manage and track your assigned tasks
+          </p>
+        </div>
+      </div>
+
+      <TaskTabs
+        todoTasks={todoTasks}
+        inProgressTasks={inProgressTasks}
+        completedTasks={completedTasks}
+        onEdit={handleEditTask}
+        onNewTask={handleCreateTask}
+        onStatusChange={handleTaskStatusChange}
       />
-      
+
+      {/* Enhanced Create Task Dialog */}
       <EnhancedCreateTaskDialog
-        open={isCreateTaskOpen} 
+        open={isCreateTaskOpen}
         onOpenChange={setIsCreateTaskOpen}
         editingTask={editingTask}
-        onTaskComplete={handleTaskDialogComplete}
       />
-      
-      <TaskCommentsDialog
-        open={showComments}
-        onOpenChange={setShowComments}
-        task={selectedTask}
-      />
-    </>
+
+      {/* Mobile FAB */}
+      {isMobile && (
+        <FloatingActionButton
+          onCreateTask={handleCreateTask}
+          className="z-50"
+        />
+      )}
+    </div>
   );
+
+  // Wrap with pull-to-refresh on mobile
+  if (isMobile) {
+    return (
+      <PullToRefresh onRefresh={handleRefresh}>
+        <TaskContent />
+      </PullToRefresh>
+    );
+  }
+
+  return <TaskContent />;
 };
 
 export default TasksPage;
