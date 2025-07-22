@@ -24,14 +24,17 @@ import { isTaskOverdue } from '@/utils/taskUtils';
 import { calculateDailyScore } from '@/contexts/task/taskMetrics';
 import { useTaskRealtime } from '@/hooks/useTaskRealtime';
 import PullToRefresh from '@/components/mobile/PullToRefresh';
-import SwipeableTaskCard from '@/components/mobile/SwipeableTaskCard';
 import FloatingActionButton from '@/components/mobile/FloatingActionButton';
 import SkeletonCard from '@/components/mobile/SkeletonCard';
 import { toast } from 'sonner';
-import MobileStatusBar from '@/components/mobile/MobileStatusBar';
-import CompactMobileHeader from '@/components/mobile/CompactMobileHeader';
-import CompactSectionHeader from '@/components/mobile/CompactSectionHeader';
 import MobileBottomNav from '@/components/mobile/MobileBottomNav';
+import { motion } from 'framer-motion';
+
+// Enhanced mobile components
+import NativeMobileHeader from '@/components/mobile/NativeMobileHeader';
+import StatsHeroSection from '@/components/mobile/StatsHeroSection';
+import NativeTaskSection from '@/components/mobile/NativeTaskSection';
+import NativeMobileTimeTracking from '@/components/mobile/NativeMobileTimeTracking';
 
 const DashboardPage = () => {
   const { user } = useAuth();
@@ -225,20 +228,21 @@ const DashboardPage = () => {
     <PullToRefresh onRefresh={handlePullToRefresh}>
       <div className="min-h-screen bg-gradient-to-br from-background via-muted/5 to-background scrollbar-hide">
         {isMobile ? (
-          // Mobile Layout with fixed bottom elements
+          // Enhanced Mobile Layout
           <div className="flex flex-col min-h-screen">
-            {/* Fixed Header */}
+            {/* Enhanced Native Header */}
             <div className="flex-none">
-              <CompactMobileHeader
+              <NativeMobileHeader
                 userName={user?.name || 'User'}
                 onCreateTask={() => handleCreateTask()}
                 isLoading={isLoading}
+                dailyScore={personalDailyScore.percentage}
               />
             </div>
             
-            {/* Fixed Status Bar */}
-            <div className="flex-none py-3">
-              <MobileStatusBar 
+            {/* Enhanced Stats Hero Section */}
+            <div className="flex-none">
+              <StatsHeroSection 
                 dailyScore={personalDailyScore.percentage}
                 todaysTasks={todaysTasks}
                 upcomingTasks={upcomingTasks}
@@ -246,164 +250,115 @@ const DashboardPage = () => {
               />
             </div>
 
-            {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto pb-32">
-              <div className="space-y-4">
+            {/* Scrollable Content with Native Task Sections */}
+            <div className="flex-1 overflow-y-auto pb-32 scrollbar-hide">
+              <div className="space-y-6">
                 {/* Today's Tasks */}
-                <div>
-                  <CompactSectionHeader
-                    title="Today's Focus"
-                    count={todaysTasks.length}
-                    icon={Target}
-                    onAction={() => handleCreateTask()}
-                    viewAllLink="/dashboard/tasks"
-                  />
-                  <div className="px-4">
-                    {todaysTasks.length > 0 ? (
-                      <div className="space-y-2">
-                        {todaysTasks.slice(0, 3).map((task) => (
-                          <SwipeableTaskCard
-                            key={task.id}
-                            task={task}
-                            onEdit={handleEditTask}
-                            onStatusChange={onStatusChange}
-                            onDelete={() => {}}
-                            onClick={() => {}}
-                            isUpdating={isUpdatingStatus === task.id}
-                          />
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-6 px-4 bg-muted/30 rounded-lg">
-                        <Target className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                        <p className="text-sm text-muted-foreground">No tasks for today</p>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => handleCreateTask()}
-                          className="mt-2"
-                        >
-                          <Plus className="h-3 w-3 mr-1" />
-                          Add Task
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                <NativeTaskSection
+                  title="Today's Focus"
+                  tasks={todaysTasks}
+                  icon={Target}
+                  onCreateTask={() => handleCreateTask()}
+                  onEditTask={handleEditTask}
+                  onStatusChange={onStatusChange}
+                  emptyMessage="No tasks for today"
+                  emptyDescription="Perfect time to plan your day ahead!"
+                  gradient="from-blue-500 to-purple-600"
+                  maxVisible={3}
+                />
 
                 {/* Upcoming Tasks */}
-                <div>
-                  <CompactSectionHeader
-                    title="This Week"
-                    count={upcomingTasks.length}
-                    icon={Calendar}
-                    onAction={() => handleCreateTask()}
-                  />
-                  <div className="px-4">
-                    {upcomingTasks.length > 0 ? (
-                      <div className="space-y-2">
-                        {upcomingTasks.slice(0, 2).map((task) => (
-                          <SwipeableTaskCard
-                            key={task.id}
-                            task={task}
-                            onEdit={handleEditTask}
-                            onStatusChange={onStatusChange}
-                            onDelete={() => {}}
-                            onClick={() => {}}
-                            isUpdating={isUpdatingStatus === task.id}
-                          />
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-4 px-4 bg-muted/30 rounded-lg">
-                        <Calendar className="h-6 w-6 text-muted-foreground mx-auto mb-2" />
-                        <p className="text-xs text-muted-foreground">No upcoming tasks</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                <NativeTaskSection
+                  title="This Week"
+                  tasks={upcomingTasks}
+                  icon={Calendar}
+                  onCreateTask={() => handleCreateTask()}
+                  onEditTask={handleEditTask}
+                  onStatusChange={onStatusChange}
+                  emptyMessage="All caught up!"
+                  emptyDescription="No upcoming tasks this week"
+                  gradient="from-green-500 to-teal-600"
+                  maxVisible={2}
+                />
 
                 {/* Overdue Tasks - Only show if there are any */}
                 {overdueTasks.length > 0 && (
-                  <div>
-                    <CompactSectionHeader
-                      title="Overdue"
-                      count={overdueTasks.length}
-                      icon={AlertTriangle}
-                      onAction={() => handleCreateTask()}
-                    />
-                    <div className="px-4">
-                      <div className="space-y-2">
-                        {overdueTasks.slice(0, 2).map((task) => (
-                          <SwipeableTaskCard
-                            key={task.id}
-                            task={task}
-                            onEdit={handleEditTask}
-                            onStatusChange={onStatusChange}
-                            onDelete={() => {}}
-                            onClick={() => {}}
-                            isUpdating={isUpdatingStatus === task.id}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  </div>
+                  <NativeTaskSection
+                    title="Needs Attention"
+                    tasks={overdueTasks}
+                    icon={AlertTriangle}
+                    onCreateTask={() => handleCreateTask()}
+                    onEditTask={handleEditTask}
+                    onStatusChange={onStatusChange}
+                    emptyMessage="Nothing overdue!"
+                    emptyDescription="Great job staying on top of things"
+                    gradient="from-red-500 to-orange-600"
+                    maxVisible={2}
+                  />
                 )}
 
-                {/* Time Tracking - Compact */}
-                <div>
-                  <CompactSectionHeader
-                    title="Time Tracking"
-                    icon={Clock}
-                  />
-                  <div className="px-4">
-                    <div className="bg-card rounded-lg p-3">
-                      <EnhancedTimeTracking />
-                    </div>
-                  </div>
-                </div>
+                {/* Enhanced Time Tracking */}
+                <NativeMobileTimeTracking />
 
-                {/* Manager-only sections - Compact */}
+                {/* Manager-only sections with native design */}
                 {user?.role === 'manager' && (
                   <>
-                    <div>
-                      <CompactSectionHeader
-                        title="Active Projects"
-                        count={recentProjects.length}
-                        icon={FileText}
-                      />
-                      <div className="px-4">
-                        <div className="bg-card rounded-lg p-3">
-                          <RecentProjects 
-                            projects={recentProjects}
-                            onViewTasks={handleViewTasks}
-                            onCreateTask={handleCreateTaskForProject}
-                            onRefresh={refreshProjects}
-                          />
+                    <div className="px-4 py-2">
+                      <motion.div 
+                        className="flex items-center gap-3 mb-4"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <div className="p-2 rounded-xl bg-gradient-to-r from-purple-500 to-pink-600 shadow-lg">
+                          <FileText className="h-4 w-4 text-white" />
                         </div>
+                        <div>
+                          <h2 className="text-lg font-bold text-foreground">Active Projects</h2>
+                          <p className="text-xs text-muted-foreground">{recentProjects.length} projects</p>
+                        </div>
+                      </motion.div>
+                      <div className="bg-card rounded-2xl p-4 shadow-lg border border-border/50">
+                        <RecentProjects 
+                          projects={recentProjects}
+                          onViewTasks={handleViewTasks}
+                          onCreateTask={handleCreateTaskForProject}
+                          onRefresh={refreshProjects}
+                        />
                       </div>
                     </div>
 
-                    <div>
-                      <CompactSectionHeader
-                        title="Team"
-                        icon={Users}
-                      />
-                      <div className="px-4">
-                        <div className="bg-card rounded-lg p-3">
-                          <TeamManagement />
+                    <div className="px-4 py-2">
+                      <motion.div 
+                        className="flex items-center gap-3 mb-4"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <div className="p-2 rounded-xl bg-gradient-to-r from-indigo-500 to-blue-600 shadow-lg">
+                          <Users className="h-4 w-4 text-white" />
                         </div>
+                        <div>
+                          <h2 className="text-lg font-bold text-foreground">Team</h2>
+                          <p className="text-xs text-muted-foreground">Manage your team</p>
+                        </div>
+                      </motion.div>
+                      <div className="bg-card rounded-2xl p-4 shadow-lg border border-border/50">
+                        <TeamManagement />
                       </div>
                     </div>
                   </>
                 )}
+
+                {/* Add some bottom spacing */}
+                <div className="h-8" />
               </div>
             </div>
 
             {/* Fixed Bottom Navigation */}
             <MobileBottomNav />
 
-            {/* Fixed Floating Action Button */}
+            {/* Enhanced Floating Action Button */}
             <FloatingActionButton
               onCreateTask={() => handleCreateTask()}
               onStartTimer={() => {}}
