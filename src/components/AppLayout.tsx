@@ -8,14 +8,12 @@ import { TaskProvider } from '@/contexts/task';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 import { SidebarProvider, SidebarInset, useSidebar } from '@/components/ui/sidebar';
-import { useBreakpoint } from '@/hooks/use-mobile';
 import { Loader2 } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 
 // Professional main content component with enhanced navigation handling
 const MainContent = memo(({ children }: { children: React.ReactNode }) => {
   const { setOpen, setOpenMobile, isMobile, isTablet } = useSidebar();
-  const { isMobile: breakpointIsMobile, isTablet: breakpointIsTablet } = useBreakpoint();
 
   const handleMainContentClick = (e: React.MouseEvent) => {
     // Only handle clicks on the main content area itself, not child elements
@@ -23,10 +21,10 @@ const MainContent = memo(({ children }: { children: React.ReactNode }) => {
     const isClickOnMainContent = target === e.currentTarget || target.closest('main') === e.currentTarget;
     
     if (isClickOnMainContent) {
-      if (breakpointIsMobile) {
+      if (isMobile) {
         // Mobile: Close overlay drawer
         setOpenMobile(false);
-      } else if (breakpointIsTablet) {
+      } else if (isTablet) {
         // Tablet: Allow retraction for better UX
         setOpen(false);
       }

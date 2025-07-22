@@ -51,6 +51,22 @@ const SidebarNav: React.FC<SidebarNavProps> = memo(({ onNavigation, isCollapsed 
     { name: 'Profile', href: '/dashboard/profile', icon: User },
   ], []);
 
+  // Enhanced active route detection that handles nested routes
+  const isActiveRoute = useCallback((itemHref: string, currentPath: string) => {
+    // Exact match for dashboard root
+    if (itemHref === '/dashboard' && currentPath === '/dashboard') {
+      return true;
+    }
+    
+    // For other routes, check if current path starts with the item href
+    // This handles nested routes like /dashboard/projects/123
+    if (itemHref !== '/dashboard' && currentPath.startsWith(itemHref)) {
+      return true;
+    }
+    
+    return false;
+  }, []);
+
   // Memoize the navigation click handler
   const handleNavClick = useCallback(() => {
     if (onNavigation) {
@@ -61,12 +77,26 @@ const SidebarNav: React.FC<SidebarNavProps> = memo(({ onNavigation, isCollapsed 
   // Memoize the current path for comparison
   const currentPath = useMemo(() => location.pathname, [location.pathname]);
 
+  // Route validation - check if all navigation routes are valid
+  const validateRoutes = useMemo(() => {
+    const validRoutes = navigation.every(item => {
+      // Basic validation - ensure href starts with /dashboard
+      return item.href.startsWith('/dashboard') && item.href.length > '/dashboard'.length || item.href === '/dashboard';
+    });
+    
+    if (!validRoutes) {
+      console.warn('Some navigation routes may be invalid');
+    }
+    
+    return validRoutes;
+  }, [navigation]);
+
   if (!user) return null;
 
   return (
     <div className="flex flex-col space-y-1">
       {navigation.map((item: NavItemProps) => {
-        const isActive = currentPath === item.href;
+        const isActive = isActiveRoute(item.href, currentPath);
         
         return (
           <Link
@@ -74,15 +104,16 @@ const SidebarNav: React.FC<SidebarNavProps> = memo(({ onNavigation, isCollapsed 
             to={item.href}
             onClick={handleNavClick}
             className={cn(
-              "flex items-center space-x-2 rounded-md p-2 text-sm font-medium hover:bg-secondary hover:text-accent-foreground transition-colors",
+              "flex items-center space-x-2 rounded-md p-2 text-sm font-medium hover:bg-secondary hover:text-accent-foreground transition-colors duration-200",
               isActive
-                ? "bg-secondary text-accent-foreground"
+                ? "bg-secondary text-accent-foreground shadow-sm"
                 : "text-muted-foreground",
               isCollapsed && "justify-center"
             )}
+            aria-current={isActive ? 'page' : undefined}
           >
             <item.icon className="h-4 w-4 flex-shrink-0" />
-            {!isCollapsed && <span>{item.name}</span>}
+            {!isCollapsed && <span className="truncate">{item.name}</span>}
           </Link>
         );
       })}

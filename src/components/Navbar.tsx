@@ -1,10 +1,10 @@
+
 import React, { useEffect, memo, useMemo, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { enhancedNotifications } from '@/utils/enhancedNotifications';
 import { useNotifications } from '@/hooks/use-notifications';
-import { useBreakpoint } from '@/hooks/use-mobile';
-import { SidebarTrigger } from '@/components/ui/sidebar';
+import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import NavbarBrand from './navbar/NavbarBrand';
 import NotificationButton from './navbar/NotificationButton';
 import UserMenu from './navbar/UserMenu';
@@ -13,7 +13,7 @@ const Navbar = memo(() => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { markAsRead, fetchNotifications } = useNotifications();
-  const { isMobile } = useBreakpoint();
+  const { isMobile } = useSidebar();
 
   // Refresh notifications when component mounts
   useEffect(() => {
