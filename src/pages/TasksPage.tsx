@@ -1,26 +1,38 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useTask } from '@/contexts/task';
+import { Task } from '@/types';
 import TaskTabs from '@/components/task/TaskTabs';
 import EnhancedCreateTaskDialog from '@/components/task/EnhancedCreateTaskDialog';
 import FloatingActionButton from '@/components/mobile/FloatingActionButton';
 import PullToRefresh from '@/components/mobile/PullToRefresh';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
 
 const TasksPage = () => {
   const { 
     tasks,
     isLoading,
-    isCreateTaskOpen,
-    setIsCreateTaskOpen,
-    editingTask,
-    handleCreateTask,
-    handleEditTask,
     updateTaskStatus,
-    refreshTasks
+    refreshTasks,
+    createTask
   } = useTask();
   
   const isMobile = useIsMobile();
+  
+  // Local state for dialog management
+  const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
+
+  const handleCreateTask = () => {
+    setEditingTask(undefined);
+    setIsCreateTaskOpen(true);
+  };
+
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task);
+    setIsCreateTaskOpen(true);
+  };
 
   // Group tasks by status
   const todoTasks = tasks.filter(task => task.status === 'To Do');
