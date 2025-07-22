@@ -31,15 +31,16 @@ const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
   const [isInitialized, setIsInitialized] = useState(false);
   const [defaultPosition, setDefaultPosition] = useState({ x: 0, y: 0 });
   
+  // FAB and layout constants
+  const FAB_SIZE = 56; // 14 * 4px (w-14 h-14)
+  const MARGIN = 24;
+  const BOTTOM_NAV_HEIGHT = 80; // Bottom navigation height
+  
   // Calculate and set default position
   useEffect(() => {
     const calculatePosition = () => {
-      const fabSize = 56; // 14 * 4px (w-14 h-14)
-      const margin = 24;
-      const bottomNavHeight = 80; // Approximate bottom navigation height
-      
-      const defaultX = window.innerWidth - fabSize - margin;
-      const defaultY = window.innerHeight - fabSize - margin - bottomNavHeight;
+      const defaultX = window.innerWidth - FAB_SIZE - MARGIN;
+      const defaultY = window.innerHeight - FAB_SIZE - MARGIN - BOTTOM_NAV_HEIGHT;
       
       setDefaultPosition({ x: defaultX, y: defaultY });
       setIsInitialized(true);
@@ -54,11 +55,19 @@ const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Initialize draggable with calculated position
+  // Initialize draggable with calculated position and proper boundaries
   const { dragRef, position, isDragging, hasMoved, dragHandlers } = useDraggable({
     x: defaultPosition.x,
     y: defaultPosition.y,
+    width: FAB_SIZE,
+    height: FAB_SIZE,
     threshold: 10,
+    boundaries: {
+      top: MARGIN,
+      bottom: BOTTOM_NAV_HEIGHT + MARGIN,
+      left: MARGIN,
+      right: MARGIN
+    },
     onDragStart: () => {
       // Close expanded state when starting to drag
       if (isExpanded) {

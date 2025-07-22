@@ -13,16 +13,28 @@ interface DragState {
   currentPosition: Position;
 }
 
+interface BoundaryConstraints {
+  top?: number;
+  bottom?: number;
+  left?: number;
+  right?: number;
+}
+
 interface UseDraggableOptions {
   x?: number;
   y?: number;
   threshold?: number;
+  width?: number;
+  height?: number;
+  boundaries?: BoundaryConstraints;
   onDragStart?: () => void;
   onDragEnd?: () => void;
 }
 
 export const useDraggable = (options: UseDraggableOptions = {}) => {
   const threshold = options.threshold || 8;
+  const elementWidth = options.width || 56; // Default FAB size
+  const elementHeight = options.height || 56;
   
   const [position, setPosition] = useState<Position>(() => ({
     x: options.x || 0,
@@ -48,6 +60,22 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
     }
   }, [options.x, options.y]);
 
+  const getBoundaryConstraints = useCallback(() => {
+    const defaults = {
+      top: options.boundaries?.top || 16,
+      bottom: options.boundaries?.bottom || 16,
+      left: options.boundaries?.left || 16,
+      right: options.boundaries?.right || 16
+    };
+
+    return {
+      minX: defaults.left,
+      maxX: window.innerWidth - elementWidth - defaults.right,
+      minY: defaults.top,
+      maxY: window.innerHeight - elementHeight - defaults.bottom
+    };
+  }, [elementWidth, elementHeight, options.boundaries]);
+
   const handleStart = useCallback((clientX: number, clientY: number) => {
     if (!dragRef.current) return;
 
@@ -72,7 +100,7 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
   }, [options]);
 
   const handleMove = useCallback((clientX: number, clientY: number) => {
-    if (!dragState.isDragging || !dragRef.current) return;
+    if (!dragState.isDragging) return;
 
     const deltaX = clientX - initialMousePositionRef.current.x;
     const deltaY = clientY - initialMousePositionRef.current.y;
@@ -83,22 +111,20 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
       return;
     }
 
-    const rect = dragRef.current.parentElement?.getBoundingClientRect();
-    if (!rect) return;
+    const boundaries = getBoundaryConstraints();
+    
+    // Calculate new position relative to current position
+    const newX = position.x + deltaX;
+    const newY = position.y + deltaY;
 
-    const newX = clientX - rect.left - startPositionRef.current.x;
-    const newY = clientY - rect.top - startPositionRef.current.y;
-
-    // Improved boundary constraints with padding
-    const elementRect = dragRef.current.getBoundingClientRect();
-    const padding = 16; // 16px padding from edges
-    const maxX = window.innerWidth - elementRect.width - padding;
-    const maxY = window.innerHeight - elementRect.height - padding;
-
-    const constrainedX = Math.max(padding, Math.min(newX, maxX));
-    const constrainedY = Math.max(padding, Math.min(newY, maxY));
+    // Apply boundary constraints with buffer zones
+    const constrainedX = Math.max(boundaries.minX, Math.min(newX, boundaries.maxX));
+    const constrainedY = Math.max(boundaries.minY, Math.min(newY, boundaries.maxY));
 
     setPosition({ x: constrainedX, y: constrainedY });
+    
+    // Update initial mouse position for next move calculation
+    initialMousePositionRef.current = { x: clientX, y: clientY };
     
     if (!dragState.hasMoved) {
       setDragState(prev => ({
@@ -107,7 +133,7 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
         currentPosition: { x: constrainedX, y: constrainedY }
       }));
     }
-  }, [dragState.isDragging, dragState.hasMoved, threshold]);
+  }, [dragState.isDragging, dragState.hasMoved, threshold, position, getBoundaryConstraints]);
 
   const handleEnd = useCallback(() => {
     setDragState(prev => ({
