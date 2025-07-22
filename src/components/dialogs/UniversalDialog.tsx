@@ -107,18 +107,13 @@ const UniversalDialog: React.FC<UniversalDialogProps> = ({
         
         {/* Scrollable Content */}
         <div 
-          className="flex-1 overflow-y-auto"
+          className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden"
           style={{
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
             WebkitOverflowScrolling: 'touch',
           }}
         >
-          <style jsx>{`
-            div::-webkit-scrollbar {
-              display: none;
-            }
-          `}</style>
           {children}
         </div>
       </DialogContent>
