@@ -1,6 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import MobileOptimizedDialog from '@/components/mobile/MobileOptimizedDialog';
 import { Target, Briefcase, Users, Calendar, DollarSign } from 'lucide-react';
 import { format } from "date-fns";
 import { Task, User, Project, TaskPriority, UserRole } from '@/types';
@@ -11,6 +11,7 @@ import { useProjects } from '@/hooks/useProjects';
 import { useOrganizationTeamMembers } from '@/hooks/useOrganizationTeamMembers';
 import { useTaskSubmission } from '@/hooks/useTaskSubmission';
 import { useAuth } from '@/contexts/AuthContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { devLog } from '@/utils/devLogger';
 import { logger } from '@/utils/logger';
 import MobileTaskForm from './mobile/MobileTaskForm';
@@ -37,6 +38,7 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
   const { projects } = useProjects();
   const { users, isLoading: loadingUsers, refetch: refetchUsers } = useOrganizationTeamMembers();
   const { submitTask } = useTaskSubmission();
+  const isMobile = useIsMobile();
 
   const [selectedMember, setSelectedMember] = useState<string | undefined>("unassigned");
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
@@ -226,52 +228,70 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
     }
   };
 
+  const dialogContent = (
+    <div className="flex flex-col h-full">
+      <div className="flex-1 overflow-y-auto scrollbar-hide">
+        <MobileTaskForm
+          form={form}
+          projects={projects}
+          users={users}
+          loadingUsers={loadingUsers}
+          selectedMember={selectedMember}
+          selectedMembers={selectedMembers}
+          deadlineDate={deadlineDate}
+          timeInput={timeInput}
+          scheduledStartDate={scheduledStartDate}
+          scheduledEndDate={scheduledEndDate}
+          scheduledStartTime={scheduledStartTime}
+          scheduledEndTime={scheduledEndTime}
+          onAssign={handleAssign}
+          onMembersChange={handleMembersChange}
+          onDateChange={handleDateChange}
+          onTimeChange={handleTimeChange}
+          onScheduledStartDateChange={handleScheduledStartDateChange}
+          onScheduledEndDateChange={handleScheduledEndDateChange}
+          onScheduledStartTimeChange={handleScheduledStartTimeChange}
+          onScheduledEndTimeChange={handleScheduledEndTimeChange}
+          editingTask={editingTask}
+        />
+      </div>
+
+      <div className="p-4 border-t bg-background/95 backdrop-blur-sm">
+        <TaskDialogActions
+          isSubmitting={isSubmitting}
+          editingTask={editingTask}
+          onSubmit={handleSubmit}
+          onCancel={() => onOpenChange(false)}
+        />
+      </div>
+    </div>
+  );
+
+  if (isMobile) {
+    return (
+      <MobileOptimizedDialog
+        open={open}
+        onOpenChange={onOpenChange}
+        title={editingTask ? 'Edit Task' : 'Create New Task'}
+        showCloseButton={true}
+        className="flex flex-col h-full"
+      >
+        {dialogContent}
+      </MobileOptimizedDialog>
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-full max-w-sm mx-4 sm:mx-auto sm:max-w-2xl h-[90vh] p-0 gap-0 scrollbar-hide overflow-hidden">
-        <div className="flex flex-col h-full">
-          <DialogHeader className="px-4 py-3 border-b bg-gradient-to-r from-primary/5 to-accent/5">
-            <DialogTitle className="flex items-center gap-2 text-base sm:text-lg font-semibold">
-              <Target className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-              {editingTask ? 'Edit Task' : 'Create New Task'}
-            </DialogTitle>
-          </DialogHeader>
-          
-          <div className="flex-1 overflow-y-auto scrollbar-hide">
-            <MobileTaskForm
-              form={form}
-              projects={projects}
-              users={users}
-              loadingUsers={loadingUsers}
-              selectedMember={selectedMember}
-              selectedMembers={selectedMembers}
-              deadlineDate={deadlineDate}
-              timeInput={timeInput}
-              scheduledStartDate={scheduledStartDate}
-              scheduledEndDate={scheduledEndDate}
-              scheduledStartTime={scheduledStartTime}
-              scheduledEndTime={scheduledEndTime}
-              onAssign={handleAssign}
-              onMembersChange={handleMembersChange}
-              onDateChange={handleDateChange}
-              onTimeChange={handleTimeChange}
-              onScheduledStartDateChange={handleScheduledStartDateChange}
-              onScheduledEndDateChange={handleScheduledEndDateChange}
-              onScheduledStartTimeChange={handleScheduledStartTimeChange}
-              onScheduledEndTimeChange={handleScheduledEndTimeChange}
-              editingTask={editingTask}
-            />
-          </div>
-
-          <div className="p-4 border-t bg-background/95 backdrop-blur-sm">
-            <TaskDialogActions
-              isSubmitting={isSubmitting}
-              editingTask={editingTask}
-              onSubmit={handleSubmit}
-              onCancel={() => onOpenChange(false)}
-            />
-          </div>
-        </div>
+        <DialogHeader className="px-4 py-3 border-b bg-gradient-to-r from-primary/5 to-accent/5">
+          <DialogTitle className="flex items-center gap-2 text-base sm:text-lg font-semibold">
+            <Target className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+            {editingTask ? 'Edit Task' : 'Create New Task'}
+          </DialogTitle>
+        </DialogHeader>
+        
+        {dialogContent}
       </DialogContent>
     </Dialog>
   );

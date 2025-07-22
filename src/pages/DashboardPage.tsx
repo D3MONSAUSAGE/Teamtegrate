@@ -10,7 +10,6 @@ import QuickActionsPanel from '@/components/dashboard/QuickActionsPanel';
 import CreateTaskDialog from '@/components/dialogs/CreateTaskDialog';
 import CreateProjectDialog from '@/components/CreateProjectDialog';
 import TaskDetailDialog from '@/components/calendar/TaskDetailDialog';
-import FloatingActionButton from '@/components/mobile/FloatingActionButton';
 
 const DashboardPage = () => {
   const { user } = useAuth();
@@ -125,12 +124,6 @@ const DashboardPage = () => {
           onOpenChange={handleTaskDetailClose}
           task={selectedTask}
           onEdit={handleEditTask}
-        />
-
-        {/* Enhanced Floating Action Button */}
-        <FloatingActionButton 
-          onCreateTask={handleCreateTask}
-          onCreateProject={handleCreateProject}
         />
       </div>
     </div>
