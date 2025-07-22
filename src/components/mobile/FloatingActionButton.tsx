@@ -35,6 +35,7 @@ const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
   const FAB_SIZE = 56; // 14 * 4px (w-14 h-14)
   const MARGIN = 24;
   const BOTTOM_NAV_HEIGHT = 80; // Bottom navigation height
+  const BOTTOM_BUFFER = 8; // Reduced buffer for bottom boundary
   
   // Calculate and set default position
   useEffect(() => {
@@ -64,7 +65,7 @@ const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
     threshold: 10,
     boundaries: {
       top: MARGIN,
-      bottom: BOTTOM_NAV_HEIGHT + MARGIN,
+      bottom: BOTTOM_NAV_HEIGHT + BOTTOM_BUFFER, // Reduced from MARGIN (24px) to BOTTOM_BUFFER (8px)
       left: MARGIN,
       right: MARGIN
     },
