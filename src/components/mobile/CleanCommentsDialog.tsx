@@ -1,21 +1,21 @@
 
 import React, { useState } from 'react';
 import { Task } from '@/types';
-import TaskCommentsList from './TaskCommentsList';
 import { MessageCircle, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from '@/components/ui/sonner';
-import SimplifiedDialogWrapper from './mobile/SimplifiedDialogWrapper';
+import SimplifiedDialogWrapper from './SimplifiedDialogWrapper';
+import TaskCommentsList from '@/components/TaskCommentsList';
 
-interface TaskCommentsDialogProps {
+interface CleanCommentsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   task: Task | null;
 }
 
-const TaskCommentsDialog: React.FC<TaskCommentsDialogProps> = ({
+const CleanCommentsDialog: React.FC<CleanCommentsDialogProps> = ({
   open,
   onOpenChange,
   task
@@ -32,7 +32,7 @@ const TaskCommentsDialog: React.FC<TaskCommentsDialogProps> = ({
     try {
       // TODO: Implement actual comment submission
       setNewComment('');
-      toast.success('Comment added successfully');
+      toast.success('Comment added');
     } catch (error) {
       console.error('Error adding comment:', error);
       toast.error('Failed to add comment');
@@ -47,7 +47,7 @@ const TaskCommentsDialog: React.FC<TaskCommentsDialogProps> = ({
       handleAddComment();
     }
   };
-  
+
   return (
     <SimplifiedDialogWrapper
       open={open}
@@ -69,20 +69,20 @@ const TaskCommentsDialog: React.FC<TaskCommentsDialogProps> = ({
               </div>
               <h3 className="font-medium mb-2">No comments yet</h3>
               <p className="text-sm text-muted-foreground">
-                Be the first to share your thoughts on this task!
+                Be the first to share your thoughts!
               </p>
             </div>
           )}
         </ScrollArea>
         
-        {/* Comment Input - Fixed at bottom */}
-        <div className="p-6 pt-4 border-t bg-muted/10">
+        {/* Comment Input */}
+        <div className="p-6 pt-4 border-t bg-muted/20">
           <div className="space-y-3">
             <Textarea
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Share your thoughts..."
+              placeholder="Write a comment..."
               className="min-h-[80px] resize-none"
               rows={3}
             />
@@ -96,7 +96,6 @@ const TaskCommentsDialog: React.FC<TaskCommentsDialogProps> = ({
                 onClick={handleAddComment}
                 disabled={!newComment.trim() || isSubmitting}
                 size="sm"
-                className="bg-primary hover:bg-primary/90"
               >
                 {isSubmitting ? (
                   <div className="animate-spin h-3 w-3 border-2 border-current border-t-transparent rounded-full mr-2" />
@@ -113,4 +112,4 @@ const TaskCommentsDialog: React.FC<TaskCommentsDialogProps> = ({
   );
 };
 
-export default TaskCommentsDialog;
+export default CleanCommentsDialog;

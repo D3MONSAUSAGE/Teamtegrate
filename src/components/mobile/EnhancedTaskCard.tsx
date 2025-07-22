@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useTask } from '@/contexts/task';
 import { toast } from '@/components/ui/sonner';
-import ModernTaskDetailDialog from './ModernTaskDetailDialog';
+import CleanTaskDetailDialog from './CleanTaskDetailDialog';
 
 interface EnhancedTaskCardProps {
   task: Task;
@@ -37,10 +37,10 @@ const EnhancedTaskCard: React.FC<EnhancedTaskCardProps> = ({ task, className }) 
 
   const getPriorityColor = (priority: string) => {
     switch(priority) {
-      case 'Low': return 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 border-blue-200 dark:border-blue-800';
-      case 'Medium': return 'bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200 border-amber-200 dark:border-amber-800';
-      case 'High': return 'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-200 border-red-200 dark:border-red-800';
-      default: return 'bg-gray-100 dark:bg-gray-800/40 text-gray-800 dark:text-gray-200 border-gray-200 dark:border-gray-700';
+      case 'Low': return 'bg-emerald-100 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300';
+      case 'Medium': return 'bg-amber-100 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300';
+      case 'High': return 'bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300';
+      default: return 'bg-muted text-muted-foreground';
     }
   };
 
@@ -62,17 +62,17 @@ const EnhancedTaskCard: React.FC<EnhancedTaskCardProps> = ({ task, className }) 
   return (
     <>
       <div className={cn(
-        "bg-card rounded-2xl border border-border/60 p-5 space-y-4",
-        "shadow-sm hover:shadow-lg transition-all duration-300 hover:scale-[1.02]",
-        "touch-manipulation backdrop-blur-sm",
-        isOverdue && "ring-2 ring-red-400/60 bg-gradient-to-br from-red-50/80 to-background dark:from-red-950/20 dark:to-background",
+        "bg-card rounded-xl border p-4 space-y-4",
+        "shadow-sm hover:shadow-md transition-all duration-200",
+        "touch-manipulation",
+        isOverdue && "ring-2 ring-red-200 dark:ring-red-800/50",
         className
       )}>
         
-        {/* Header with Title and View Button */}
+        {/* Header */}
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
-            <h3 className="font-bold text-lg leading-tight text-foreground line-clamp-2 break-words">
+            <h3 className="font-semibold text-base leading-tight line-clamp-2">
               {task.title}
             </h3>
           </div>
@@ -80,22 +80,20 @@ const EnhancedTaskCard: React.FC<EnhancedTaskCardProps> = ({ task, className }) 
             variant="ghost"
             size="sm"
             onClick={() => setShowDetails(true)}
-            className="h-10 w-10 p-0 rounded-full hover:bg-primary/10 hover:scale-110 transition-all duration-200 flex-shrink-0"
+            className="h-8 w-8 p-0 rounded-full hover:bg-muted flex-shrink-0"
+            aria-label="View task details"
           >
-            <Eye className="h-4 w-4 text-primary" />
+            <Eye className="h-4 w-4" />
           </Button>
         </div>
 
-        {/* Priority and Status Badges */}
+        {/* Badges */}
         <div className="flex items-center gap-2 flex-wrap">
-          <Badge 
-            variant="outline"
-            className={cn("text-xs font-semibold px-3 py-1.5 border-2", getPriorityColor(task.priority))}
-          >
+          <Badge className={cn("text-xs font-medium", getPriorityColor(task.priority))}>
             {task.priority}
           </Badge>
           {isOverdue && (
-            <Badge className="bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border-red-200 dark:border-red-700 text-xs font-semibold px-3 py-1.5 border-2">
+            <Badge className="bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300 text-xs font-medium">
               <AlertCircle className="h-3 w-3 mr-1" />
               Overdue
             </Badge>
@@ -104,29 +102,29 @@ const EnhancedTaskCard: React.FC<EnhancedTaskCardProps> = ({ task, className }) 
 
         {/* Description */}
         {task.description && (
-          <div className="bg-gradient-to-r from-muted/30 to-muted/10 rounded-xl p-4 border-l-4 border-primary/30">
-            <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed">
+          <div className="bg-muted/30 rounded-lg p-3">
+            <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
               {task.description}
             </p>
           </div>
         )}
 
-        {/* Metadata */}
-        <div className="space-y-3">
-          <div className="flex items-center gap-3 text-sm text-muted-foreground bg-gradient-to-r from-muted/20 to-transparent px-4 py-3 rounded-xl">
-            <Clock className="h-4 w-4 flex-shrink-0 text-primary" />
-            <span className="font-semibold">{formatDeadline(new Date(task.deadline))}</span>
+        {/* Meta Information */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Clock className="h-4 w-4 flex-shrink-0" />
+            <span className="font-medium">{formatDeadline(new Date(task.deadline))}</span>
             {isOverdue && (
-              <span className="text-red-500 font-bold ml-auto">
+              <span className="text-red-500 font-semibold ml-auto">
                 OVERDUE
               </span>
             )}
           </div>
 
           {(task.assignedToName || task.assignedToNames?.length) && (
-            <div className="flex items-center gap-3 text-sm text-muted-foreground bg-gradient-to-r from-blue-50/80 to-transparent dark:from-blue-950/40 px-4 py-3 rounded-xl">
-              <User className="h-4 w-4 flex-shrink-0 text-blue-600 dark:text-blue-400" />
-              <span className="font-semibold">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <User className="h-4 w-4 flex-shrink-0" />
+              <span>
                 {task.assignedToNames?.length > 1 
                   ? `${task.assignedToNames[0]} +${task.assignedToNames.length - 1}`
                   : task.assignedToName || task.assignedToNames?.[0] || "Assigned"
@@ -137,7 +135,7 @@ const EnhancedTaskCard: React.FC<EnhancedTaskCardProps> = ({ task, className }) 
         </div>
 
         {/* Status Actions */}
-        <div className="flex gap-2 pt-4 border-t border-border/30">
+        <div className="flex gap-2 pt-2 border-t">
           {(['To Do', 'In Progress', 'Completed'] as TaskStatus[]).map((status) => (
             <Button
               key={status}
@@ -145,28 +143,20 @@ const EnhancedTaskCard: React.FC<EnhancedTaskCardProps> = ({ task, className }) 
               size="sm"
               onClick={() => handleStatusChange(status)}
               disabled={isUpdating || task.status === status}
-              className={cn(
-                "flex-1 text-xs h-10 font-semibold transition-all duration-200",
-                task.status === status && "shadow-md bg-gradient-to-r from-primary to-primary/80"
-              )}
+              className="flex-1 text-xs h-8"
             >
-              {isUpdating ? (
-                <div className="animate-spin h-3 w-3 border-2 border-current border-t-transparent rounded-full" />
-              ) : (
-                status
-              )}
+              {isUpdating ? '...' : status}
             </Button>
           ))}
         </div>
       </div>
 
-      {/* Modern Task Detail Dialog */}
-      <ModernTaskDetailDialog
+      {/* Clean Task Detail Dialog */}
+      <CleanTaskDetailDialog
         open={showDetails}
         onOpenChange={setShowDetails}
         task={task}
         onEdit={(task) => {
-          // TODO: Handle edit
           setShowDetails(false);
           toast.info('Edit functionality will be implemented soon');
         }}
