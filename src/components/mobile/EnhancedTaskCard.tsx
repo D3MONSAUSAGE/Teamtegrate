@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useTask } from '@/contexts/task';
 import { toast } from '@/components/ui/sonner';
-import MobileTaskDetailDialog from './MobileTaskDetailDialog';
+import ModernTaskDetailDialog from './ModernTaskDetailDialog';
 
 interface EnhancedTaskCardProps {
   task: Task;
@@ -62,64 +62,71 @@ const EnhancedTaskCard: React.FC<EnhancedTaskCardProps> = ({ task, className }) 
   return (
     <>
       <div className={cn(
-        "bg-card rounded-xl border border-border/60 p-4 space-y-4",
-        "shadow-sm hover:shadow-md transition-all duration-200",
-        "touch-manipulation",
-        isOverdue && "ring-2 ring-red-400/60 bg-red-50/20 dark:bg-red-950/20",
+        "bg-card rounded-2xl border border-border/60 p-5 space-y-4",
+        "shadow-sm hover:shadow-lg transition-all duration-300 hover:scale-[1.02]",
+        "touch-manipulation backdrop-blur-sm",
+        isOverdue && "ring-2 ring-red-400/60 bg-gradient-to-br from-red-50/80 to-background dark:from-red-950/20 dark:to-background",
         className
       )}>
         
-        {/* Header with Title and Priority */}
+        {/* Header with Title and View Button */}
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-base leading-tight text-foreground line-clamp-2 break-words">
+            <h3 className="font-bold text-lg leading-tight text-foreground line-clamp-2 break-words">
               {task.title}
             </h3>
           </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <Badge 
-              variant="outline"
-              className={cn("text-xs font-medium px-2 py-1 border", getPriorityColor(task.priority))}
-            >
-              {task.priority}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowDetails(true)}
+            className="h-10 w-10 p-0 rounded-full hover:bg-primary/10 hover:scale-110 transition-all duration-200 flex-shrink-0"
+          >
+            <Eye className="h-4 w-4 text-primary" />
+          </Button>
+        </div>
+
+        {/* Priority and Status Badges */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <Badge 
+            variant="outline"
+            className={cn("text-xs font-semibold px-3 py-1.5 border-2", getPriorityColor(task.priority))}
+          >
+            {task.priority}
+          </Badge>
+          {isOverdue && (
+            <Badge className="bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border-red-200 dark:border-red-700 text-xs font-semibold px-3 py-1.5 border-2">
+              <AlertCircle className="h-3 w-3 mr-1" />
+              Overdue
             </Badge>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowDetails(true)}
-              className="h-8 w-8 p-0 hover:bg-primary/10"
-            >
-              <Eye className="h-4 w-4 text-primary" />
-            </Button>
-          </div>
+          )}
         </div>
 
         {/* Description */}
         {task.description && (
-          <div className="bg-muted/20 rounded-md p-3 border-l-2 border-border/30">
-            <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+          <div className="bg-gradient-to-r from-muted/30 to-muted/10 rounded-xl p-4 border-l-4 border-primary/30">
+            <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed">
               {task.description}
             </p>
           </div>
         )}
 
         {/* Metadata */}
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/30 px-3 py-2 rounded-md">
-            <Clock className="h-3.5 w-3.5 flex-shrink-0" />
-            <span className="font-medium">{formatDeadline(new Date(task.deadline))}</span>
+        <div className="space-y-3">
+          <div className="flex items-center gap-3 text-sm text-muted-foreground bg-gradient-to-r from-muted/20 to-transparent px-4 py-3 rounded-xl">
+            <Clock className="h-4 w-4 flex-shrink-0 text-primary" />
+            <span className="font-semibold">{formatDeadline(new Date(task.deadline))}</span>
             {isOverdue && (
-              <>
-                <AlertCircle className="h-3.5 w-3.5 text-red-500 ml-auto" />
-                <span className="text-red-500 font-medium">Overdue</span>
-              </>
+              <span className="text-red-500 font-bold ml-auto">
+                OVERDUE
+              </span>
             )}
           </div>
 
           {(task.assignedToName || task.assignedToNames?.length) && (
-            <div className="flex items-center gap-2 text-xs text-muted-foreground bg-blue-50/80 dark:bg-blue-950/60 px-3 py-2 rounded-md">
-              <User className="h-3.5 w-3.5 flex-shrink-0" />
-              <span className="font-medium">
+            <div className="flex items-center gap-3 text-sm text-muted-foreground bg-gradient-to-r from-blue-50/80 to-transparent dark:from-blue-950/40 px-4 py-3 rounded-xl">
+              <User className="h-4 w-4 flex-shrink-0 text-blue-600 dark:text-blue-400" />
+              <span className="font-semibold">
                 {task.assignedToNames?.length > 1 
                   ? `${task.assignedToNames[0]} +${task.assignedToNames.length - 1}`
                   : task.assignedToName || task.assignedToNames?.[0] || "Assigned"
@@ -130,7 +137,7 @@ const EnhancedTaskCard: React.FC<EnhancedTaskCardProps> = ({ task, className }) 
         </div>
 
         {/* Status Actions */}
-        <div className="flex gap-2 pt-2 border-t border-border/30">
+        <div className="flex gap-2 pt-4 border-t border-border/30">
           {(['To Do', 'In Progress', 'Completed'] as TaskStatus[]).map((status) => (
             <Button
               key={status}
@@ -138,23 +145,30 @@ const EnhancedTaskCard: React.FC<EnhancedTaskCardProps> = ({ task, className }) 
               size="sm"
               onClick={() => handleStatusChange(status)}
               disabled={isUpdating || task.status === status}
-              className="flex-1 text-xs mobile-touch-target"
+              className={cn(
+                "flex-1 text-xs h-10 font-semibold transition-all duration-200",
+                task.status === status && "shadow-md bg-gradient-to-r from-primary to-primary/80"
+              )}
             >
-              {isUpdating ? '...' : status}
+              {isUpdating ? (
+                <div className="animate-spin h-3 w-3 border-2 border-current border-t-transparent rounded-full" />
+              ) : (
+                status
+              )}
             </Button>
           ))}
         </div>
       </div>
 
-      {/* Mobile Task Detail Dialog */}
-      <MobileTaskDetailDialog
+      {/* Modern Task Detail Dialog */}
+      <ModernTaskDetailDialog
         open={showDetails}
         onOpenChange={setShowDetails}
         task={task}
         onEdit={(task) => {
           // TODO: Handle edit
           setShowDetails(false);
-          toast.info('Edit functionality coming soon');
+          toast.info('Edit functionality will be implemented soon');
         }}
         onDelete={(taskId) => {
           setShowDetails(false);
