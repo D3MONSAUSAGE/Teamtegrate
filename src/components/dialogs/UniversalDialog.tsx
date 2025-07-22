@@ -39,7 +39,7 @@ const UniversalDialog: React.FC<UniversalDialogProps> = ({
   }, [open]);
 
   const getDialogStyles = () => {
-    const baseStyles = "p-0 gap-0 border bg-background shadow-2xl backdrop-blur-sm flex flex-col";
+    const baseStyles = "p-0 gap-0 border bg-background shadow-2xl backdrop-blur-sm";
     
     switch (variant) {
       case 'sheet':
@@ -50,13 +50,15 @@ const UniversalDialog: React.FC<UniversalDialogProps> = ({
           "data-[state=open]:duration-300 data-[state=closed]:duration-200",
           "sm:left-[50%] sm:right-auto sm:top-[50%] sm:w-full sm:max-w-2xl",
           "sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-3xl",
-          "h-[90vh] sm:h-auto sm:max-h-[85vh]"
+          "h-[90vh] sm:h-auto sm:max-h-[85vh]",
+          "flex flex-col"
         );
       case 'fullscreen':
         return cn(
           baseStyles,
           "fixed inset-0 rounded-none h-screen w-screen max-w-none",
-          "data-[state=open]:fade-in data-[state=closed]:fade-out"
+          "data-[state=open]:fade-in data-[state=closed]:fade-out",
+          "flex flex-col"
         );
       case 'modal':
       default:
@@ -67,7 +69,8 @@ const UniversalDialog: React.FC<UniversalDialogProps> = ({
           "data-[state=open]:zoom-in-95 data-[state=closed]:zoom-out-95",
           "data-[state=open]:fade-in data-[state=closed]:fade-out",
           "data-[state=open]:duration-300 data-[state=closed]:duration-200",
-          "max-h-[90vh] min-h-[300px]"
+          "max-h-[90vh] min-h-[300px]",
+          "flex flex-col"
         );
     }
   };
@@ -105,15 +108,23 @@ const UniversalDialog: React.FC<UniversalDialogProps> = ({
           </div>
         </DialogHeader>
         
-        {/* Scrollable Content */}
+        {/* Scrollable Content - Fixed height calculation */}
         <div 
-          className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden"
+          className="flex-1 overflow-y-auto overflow-x-hidden"
           style={{
+            height: variant === 'sheet' ? 'calc(90vh - 140px)' : variant === 'fullscreen' ? 'calc(100vh - 140px)' : 'calc(90vh - 140px)',
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
             WebkitOverflowScrolling: 'touch',
           }}
         >
+          <style>
+            {`
+              .overflow-y-auto::-webkit-scrollbar {
+                display: none;
+              }
+            `}
+          </style>
           {children}
         </div>
       </DialogContent>

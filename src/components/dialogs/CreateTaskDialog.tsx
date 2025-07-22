@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -90,7 +89,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
       description={editingTask ? "Update task details" : "Add a new task to your project"}
       variant="sheet"
     >
-      <div className="px-6 py-6 space-y-6 pb-8">
+      <div className="px-6 py-6 space-y-6">
         {/* Basic Information */}
         <div className="space-y-5">
           <div>
@@ -200,7 +199,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
         </div>
 
         {/* Action Buttons */}
-        <div className="grid grid-cols-2 gap-4 pt-6">
+        <div className="grid grid-cols-2 gap-4 pt-6 pb-8">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
