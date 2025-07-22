@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, PanInfo } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Task } from '@/types';
-import { Calendar, Clock, Edit3, CheckCircle, Circle, PlayCircle, Loader2, Flag } from 'lucide-react';
+import { Calendar, Clock, Edit3, CheckCircle, Circle, PlayCircle, Loader2, Flag, Eye } from 'lucide-react';
 import { format, isToday, isTomorrow, isPast } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -104,6 +105,12 @@ const EnhancedTaskCard: React.FC<EnhancedTaskCardProps> = ({
     clearAutoHideTimeout();
     onEdit(task);
     setIsRevealed(false);
+  };
+
+  const handleViewDetails = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    clearAutoHideTimeout();
+    onClick();
   };
 
   const getStatusIcon = () => {
@@ -228,18 +235,17 @@ const EnhancedTaskCard: React.FC<EnhancedTaskCardProps> = ({
       >
         <Card 
           className={cn(
-            "overflow-hidden border-2 transition-all duration-300 hover:shadow-xl active:scale-[0.98] mobile-touch-target tap-highlight-none",
+            "overflow-hidden border-2 transition-all duration-300 hover:shadow-xl mobile-touch-target tap-highlight-none cursor-pointer",
             priorityConfig.bg,
             priorityConfig.border,
             isUpdating && "opacity-70 pointer-events-none",
             isOverdue && "ring-2 ring-red-400 ring-opacity-50"
           )}
-          onClick={onClick}
         >
           {/* Priority indicator */}
           <div className={`h-1 bg-gradient-to-r ${priorityConfig.gradient}`} />
           
-          <CardContent className="p-5">
+          <CardContent className="p-5" onClick={handleViewDetails}>
             <div className="space-y-4">
               <div className="flex items-start justify-between">
                 <div className="flex-1 min-w-0">
@@ -263,6 +269,14 @@ const EnhancedTaskCard: React.FC<EnhancedTaskCardProps> = ({
                     transition={{ duration: 0.1 }}
                   >
                     {getStatusIcon()}
+                  </motion.div>
+                  <motion.div
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    className="p-1.5 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors"
+                    onClick={handleViewDetails}
+                  >
+                    <Eye className="h-4 w-4 text-primary" />
                   </motion.div>
                 </div>
               </div>

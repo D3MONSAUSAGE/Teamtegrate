@@ -13,6 +13,7 @@ interface NativeTaskSectionProps {
   onCreateTask: () => void;
   onEditTask: (task: Task) => void;
   onStatusChange: (taskId: string, status: string) => Promise<void>;
+  onViewTask: (task: Task) => void;
   emptyMessage: string;
   emptyDescription: string;
   maxVisible?: number;
@@ -28,6 +29,7 @@ const NativeTaskSection: React.FC<NativeTaskSectionProps> = ({
   onCreateTask,
   onEditTask,
   onStatusChange,
+  onViewTask,
   emptyMessage,
   emptyDescription,
   maxVisible = 3,
@@ -103,7 +105,7 @@ const NativeTaskSection: React.FC<NativeTaskSectionProps> = ({
               onEdit={onEditTask}
               onStatusChange={onStatusChange}
               onDelete={() => {}}
-              onClick={() => {}}
+              onClick={() => onViewTask(task)}
               index={index}
             />
           ))}

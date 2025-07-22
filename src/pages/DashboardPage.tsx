@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Task, Project } from '@/types';
 import { Plus, Sparkles, TrendingUp, Calendar } from 'lucide-react';
 import EnhancedCreateTaskDialog from '@/components/task/EnhancedCreateTaskDialog';
+import TaskDetailDialog from '@/components/calendar/TaskDetailDialog';
 import { format } from 'date-fns';
 import DailyTasksSection from '@/components/dashboard/DailyTasksSection';
 import UpcomingTasksSection from '@/components/dashboard/UpcomingTasksSection';
@@ -53,6 +54,11 @@ const DashboardPage = () => {
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState<string | null>(null);
+  
+  // Add task detail dialog state
+  const [isTaskDetailOpen, setIsTaskDetailOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  
   const isMobile = useIsMobile();
   
   // Use personal tasks for dashboard display
@@ -124,22 +130,37 @@ const DashboardPage = () => {
     }
   }, [refreshProjects]);
 
-  // Debounced click handlers to prevent rapid clicking issues
+  // Enhanced click handlers with proper state management
   const handleEditTask = useCallback((task: Task) => {
+    console.log('Editing task:', task.id);
     setEditingTask(task);
+    setSelectedProject(null);
     setIsCreateTaskOpen(true);
   }, []);
 
   const handleCreateTask = useCallback((project?: Project) => {
+    console.log('Creating new task', project ? `for project: ${project.title}` : '');
     setEditingTask(undefined);
     setSelectedProject(project || null);
     setIsCreateTaskOpen(true);
   }, []);
 
   const handleTaskDialogComplete = useCallback(() => {
+    console.log('Task dialog completed');
     setIsCreateTaskOpen(false);
     setEditingTask(undefined);
     setSelectedProject(null);
+    // Force refresh to show new/updated task
+    setTimeout(() => {
+      window.location.reload();
+    }, 500);
+  }, []);
+
+  // New handler for viewing task details
+  const handleViewTask = useCallback((task: Task) => {
+    console.log('Viewing task details:', task.id);
+    setSelectedTask(task);
+    setIsTaskDetailOpen(true);
   }, []);
 
   const handleViewTasks = useCallback((project: any) => {
@@ -261,6 +282,7 @@ const DashboardPage = () => {
                   onCreateTask={() => handleCreateTask()}
                   onEditTask={handleEditTask}
                   onStatusChange={onStatusChange}
+                  onViewTask={handleViewTask}
                   emptyMessage="No tasks for today"
                   emptyDescription="Perfect time to plan your day ahead!"
                   gradient="from-blue-500 to-purple-600"
@@ -275,6 +297,7 @@ const DashboardPage = () => {
                   onCreateTask={() => handleCreateTask()}
                   onEditTask={handleEditTask}
                   onStatusChange={onStatusChange}
+                  onViewTask={handleViewTask}
                   emptyMessage="All caught up!"
                   emptyDescription="No upcoming tasks this week"
                   gradient="from-green-500 to-teal-600"
@@ -290,6 +313,7 @@ const DashboardPage = () => {
                     onCreateTask={() => handleCreateTask()}
                     onEditTask={handleEditTask}
                     onStatusChange={onStatusChange}
+                    onViewTask={handleViewTask}
                     emptyMessage="Nothing overdue!"
                     emptyDescription="Great job staying on top of things"
                     gradient="from-red-500 to-orange-600"
@@ -505,12 +529,27 @@ const DashboardPage = () => {
           </div>
         )}
         
+        {/* Enhanced Create Task Dialog */}
         <EnhancedCreateTaskDialog 
           open={isCreateTaskOpen} 
           onOpenChange={setIsCreateTaskOpen}
           editingTask={editingTask}
           currentProjectId={selectedProject?.id}
           onTaskComplete={handleTaskDialogComplete}
+        />
+
+        {/* Task Detail Dialog */}
+        <TaskDetailDialog
+          open={isTaskDetailOpen}
+          onOpenChange={setIsTaskDetailOpen}
+          task={selectedTask}
+          onEdit={handleEditTask}
+          onDelete={(taskId) => {
+            console.log('Delete task:', taskId);
+            // Handle task deletion if needed
+            setIsTaskDetailOpen(false);
+            setSelectedTask(null);
+          }}
         />
       </div>
     </PullToRefresh>
