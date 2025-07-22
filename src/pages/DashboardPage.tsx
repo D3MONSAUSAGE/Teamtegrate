@@ -8,6 +8,7 @@ import DailyTasksSection from '@/components/dashboard/DailyTasksSection';
 import RecentProjects from '@/components/dashboard/RecentProjects';
 import QuickActionsPanel from '@/components/dashboard/QuickActionsPanel';
 import CreateTaskDialog from '@/components/dialogs/CreateTaskDialog';
+import CreateProjectDialog from '@/components/CreateProjectDialog';
 import TaskDetailDialog from '@/components/calendar/TaskDetailDialog';
 import FloatingActionButton from '@/components/mobile/FloatingActionButton';
 
@@ -15,13 +16,20 @@ const DashboardPage = () => {
   const { user } = useAuth();
   const { tasks, projects, dailyScore } = useTask();
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
+  const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isTaskDetailOpen, setIsTaskDetailOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
 
   const handleCreateTask = () => {
     console.log('DashboardPage: Opening create task dialog');
+    setEditingTask(null); // Clear any editing task
     setIsCreateTaskOpen(true);
+  };
+
+  const handleCreateProject = () => {
+    console.log('DashboardPage: Opening create project dialog');
+    setIsCreateProjectOpen(true);
   };
 
   const handleTaskSubmit = async (taskData: any) => {
@@ -44,6 +52,11 @@ const DashboardPage = () => {
   const handleTaskDetailClose = () => {
     setIsTaskDetailOpen(false);
     setSelectedTask(null);
+  };
+
+  const handleProjectCreated = () => {
+    // Refresh projects list if needed
+    console.log('DashboardPage: Project created successfully');
   };
 
   if (!user) return null;
@@ -93,11 +106,18 @@ const DashboardPage = () => {
           </div>
         </div>
 
+        {/* Dialogs */}
         <CreateTaskDialog
           open={isCreateTaskOpen}
           onOpenChange={setIsCreateTaskOpen}
           onSubmit={handleTaskSubmit}
           editingTask={editingTask}
+        />
+
+        <CreateProjectDialog
+          open={isCreateProjectOpen}
+          onOpenChange={setIsCreateProjectOpen}
+          onProjectCreated={handleProjectCreated}
         />
 
         <TaskDetailDialog
@@ -107,7 +127,11 @@ const DashboardPage = () => {
           onEdit={handleEditTask}
         />
 
-        <FloatingActionButton onCreateTask={handleCreateTask} />
+        {/* Enhanced Floating Action Button */}
+        <FloatingActionButton 
+          onCreateTask={handleCreateTask}
+          onCreateProject={handleCreateProject}
+        />
       </div>
     </div>
   );

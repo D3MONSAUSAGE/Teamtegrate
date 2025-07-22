@@ -16,11 +16,13 @@ interface DragState {
 interface UseDraggableOptions {
   x?: number;
   y?: number;
-  threshold?: number; // Movement threshold to distinguish drag from click
+  threshold?: number;
+  onDragStart?: () => void;
+  onDragEnd?: () => void;
 }
 
 export const useDraggable = (options: UseDraggableOptions = {}) => {
-  const threshold = options.threshold || 5; // 5px movement threshold
+  const threshold = options.threshold || 8;
   
   const [position, setPosition] = useState<Position>(() => ({
     x: options.x || 0,
@@ -37,6 +39,14 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
   const dragRef = useRef<HTMLDivElement>(null);
   const startPositionRef = useRef<Position>({ x: 0, y: 0 });
   const initialMousePositionRef = useRef<Position>({ x: 0, y: 0 });
+  const timeoutRef = useRef<NodeJS.Timeout>();
+
+  // Update position when options change
+  useEffect(() => {
+    if (options.x !== undefined && options.y !== undefined) {
+      setPosition({ x: options.x, y: options.y });
+    }
+  }, [options.x, options.y]);
 
   const handleStart = useCallback((clientX: number, clientY: number) => {
     if (!dragRef.current) return;
@@ -57,12 +67,13 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
       startPosition: startPos,
       currentPosition: startPos
     }));
-  }, []);
+
+    options.onDragStart?.();
+  }, [options]);
 
   const handleMove = useCallback((clientX: number, clientY: number) => {
     if (!dragState.isDragging || !dragRef.current) return;
 
-    // Calculate distance moved from initial position
     const deltaX = clientX - initialMousePositionRef.current.x;
     const deltaY = clientY - initialMousePositionRef.current.y;
     const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
@@ -78,20 +89,24 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
     const newX = clientX - rect.left - startPositionRef.current.x;
     const newY = clientY - rect.top - startPositionRef.current.y;
 
-    // Boundary constraints
+    // Improved boundary constraints with padding
     const elementRect = dragRef.current.getBoundingClientRect();
-    const maxX = window.innerWidth - elementRect.width;
-    const maxY = window.innerHeight - elementRect.height;
+    const padding = 16; // 16px padding from edges
+    const maxX = window.innerWidth - elementRect.width - padding;
+    const maxY = window.innerHeight - elementRect.height - padding;
 
-    const constrainedX = Math.max(0, Math.min(newX, maxX));
-    const constrainedY = Math.max(0, Math.min(newY, maxY));
+    const constrainedX = Math.max(padding, Math.min(newX, maxX));
+    const constrainedY = Math.max(padding, Math.min(newY, maxY));
 
     setPosition({ x: constrainedX, y: constrainedY });
-    setDragState(prev => ({
-      ...prev,
-      hasMoved: true,
-      currentPosition: { x: constrainedX, y: constrainedY }
-    }));
+    
+    if (!dragState.hasMoved) {
+      setDragState(prev => ({
+        ...prev,
+        hasMoved: true,
+        currentPosition: { x: constrainedX, y: constrainedY }
+      }));
+    }
   }, [dragState.isDragging, dragState.hasMoved, threshold]);
 
   const handleEnd = useCallback(() => {
@@ -100,24 +115,31 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
       isDragging: false
     }));
     
-    // Reset hasMoved after a short delay to allow click handlers to check it
-    setTimeout(() => {
+    options.onDragEnd?.();
+    
+    // Clear any existing timeout
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    
+    // Reset hasMoved after a delay to allow click handlers to check it
+    timeoutRef.current = setTimeout(() => {
       setDragState(prev => ({
         ...prev,
         hasMoved: false
       }));
-    }, 50);
-  }, []);
+    }, 100);
+  }, [options]);
 
   // Mouse events
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    // Don't prevent default immediately - let click events work
+    e.preventDefault();
     handleStart(e.clientX, e.clientY);
   }, [handleStart]);
 
   // Touch events
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    // Don't prevent default immediately - let click events work
+    e.preventDefault();
     const touch = e.touches[0];
     handleStart(touch.clientX, touch.clientY);
   }, [handleStart]);
@@ -127,15 +149,12 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
     if (!dragState.isDragging) return;
 
     const handleMouseMove = (e: MouseEvent) => {
-      e.preventDefault(); // Only prevent default during actual dragging
+      e.preventDefault();
       handleMove(e.clientX, e.clientY);
     };
 
     const handleTouchMove = (e: TouchEvent) => {
-      // Only prevent default if we're actually dragging (moved beyond threshold)
-      if (dragState.hasMoved) {
-        e.preventDefault();
-      }
+      e.preventDefault();
       const touch = e.touches[0];
       handleMove(touch.clientX, touch.clientY);
     };
@@ -154,7 +173,16 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
       document.removeEventListener('touchmove', handleTouchMove);
       document.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [dragState.isDragging, dragState.hasMoved, handleMove, handleEnd]);
+  }, [dragState.isDragging, handleMove, handleEnd]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
 
   return {
     dragRef,
