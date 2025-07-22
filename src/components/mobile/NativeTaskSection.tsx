@@ -164,7 +164,7 @@ const NativeTaskSection: React.FC<NativeTaskSectionProps> = ({
               Add Task
             </Button>
           </motion.div>
-        </div>
+        </motion.div>
       )}
     </div>
   );

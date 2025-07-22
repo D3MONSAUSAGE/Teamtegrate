@@ -120,8 +120,8 @@ const EnhancedTaskCard: React.FC<EnhancedTaskCardProps> = ({
     }
   };
 
-  const formatDeadline = (deadline: string) => {
-    const date = new Date(deadline);
+  const formatDeadline = (deadline: Date | string) => {
+    const date = deadline instanceof Date ? deadline : new Date(deadline);
     if (isToday(date)) return 'Today';
     if (isTomorrow(date)) return 'Tomorrow';
     return format(date, 'MMM dd');
