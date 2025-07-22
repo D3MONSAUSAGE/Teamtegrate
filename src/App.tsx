@@ -1,64 +1,79 @@
 
-import React from "react";
-import { Toaster } from "@/components/ui/sonner";
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "./contexts/AuthContext";
-import { ThemeProvider } from "next-themes";
-import Index from "./pages/Index";
-import LoginPage from "./pages/LoginPage";
-import SignupPage from "./pages/SignupPage";
-import DashboardPage from "./pages/DashboardPage";
-import TasksPage from "./pages/TasksPage";
-import ProjectsPage from "./pages/ProjectsPage";
-import ChatPage from "./pages/ChatPage";
-import NotificationsPage from "./pages/NotificationsPage";
-import CalendarPage from "./pages/CalendarPage";
-import DocumentsPage from "./pages/DocumentsPage";
-import TimeTrackingPage from "./pages/TimeTrackingPage";
-import JournalPage from "./pages/JournalPage";
-import AdminPage from "./pages/AdminPage";
-import AppLayout from "./components/AppLayout";
-import PushNotificationManager from "./components/PushNotificationManager";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { TaskProvider } from "@/contexts/TaskContext";
+import { ProjectProvider } from "@/contexts/ProjectContext";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import AuthPage from "@/pages/auth/AuthPage";
+import DashboardLayout from "@/components/layout/DashboardLayout";
+import Dashboard from "@/pages/Dashboard";
+import ProjectsPage from "@/pages/ProjectsPage";
+import TasksPage from "@/pages/TasksPage";
+import ChatPage from "@/pages/ChatPage";
+import CalendarPage from "@/pages/CalendarPage";
+import DocumentsPage from "@/pages/DocumentsPage";
+import ProfilePage from "@/pages/ProfilePage";
+import InvoicesPage from "@/pages/InvoicesPage";
+import NotificationsPage from "@/pages/NotificationsPage";
+import JournalPage from "@/pages/JournalPage";
+import MobileSetupPage from "@/pages/MobileSetupPage";
+import AdminUsersPage from "@/pages/admin/AdminUsersPage";
+import AdminInvitesPage from "@/pages/admin/AdminInvitesPage";
+import AdminTeamsPage from "@/pages/admin/AdminTeamsPage";
+import AdminOrganizationPage from "@/pages/admin/AdminOrganizationPage";
+import AdminAnalyticsPage from "@/pages/admin/AdminAnalyticsPage";
+import TimesheetPage from "@/pages/TimesheetPage";
+import SupabaseNotificationManager from "@/components/SupabaseNotificationManager";
 
 const queryClient = new QueryClient();
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-        <TooltipProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
           <AuthProvider>
-            <BrowserRouter>
-              <PushNotificationManager />
-              <div className="min-h-screen bg-background font-sans antialiased">
+            <TaskProvider>
+              <ProjectProvider>
                 <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/login" element={<LoginPage />} />
-                  <Route path="/signup" element={<SignupPage />} />
-                  
-                  <Route path="/dashboard" element={<AppLayout />}>
-                    <Route index element={<DashboardPage />} />
-                    <Route path="tasks" element={<TasksPage />} />
+                  <Route path="/auth" element={<AuthPage />} />
+                  <Route path="/mobile-setup" element={<MobileSetupPage />} />
+                  <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                  <Route path="/dashboard" element={
+                    <ProtectedRoute>
+                      <DashboardLayout />
+                    </ProtectedRoute>
+                  }>
+                    <Route index element={<Dashboard />} />
                     <Route path="projects" element={<ProjectsPage />} />
+                    <Route path="tasks" element={<TasksPage />} />
                     <Route path="chat" element={<ChatPage />} />
-                    <Route path="notifications" element={<NotificationsPage />} />
                     <Route path="calendar" element={<CalendarPage />} />
                     <Route path="documents" element={<DocumentsPage />} />
-                    <Route path="time-tracking" element={<TimeTrackingPage />} />
+                    <Route path="profile" element={<ProfilePage />} />
+                    <Route path="invoices" element={<InvoicesPage />} />
+                    <Route path="notifications" element={<NotificationsPage />} />
                     <Route path="journal" element={<JournalPage />} />
-                    <Route path="admin" element={<AdminPage />} />
+                    <Route path="timesheet" element={<TimesheetPage />} />
+                    <Route path="admin/users" element={<AdminUsersPage />} />
+                    <Route path="admin/invites" element={<AdminInvitesPage />} />
+                    <Route path="admin/teams" element={<AdminTeamsPage />} />
+                    <Route path="admin/organization" element={<AdminOrganizationPage />} />
+                    <Route path="admin/analytics" element={<AdminAnalyticsPage />} />
                   </Route>
-                  
-                  <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
-              </div>
-              <Toaster />
-            </BrowserRouter>
+                <SupabaseNotificationManager />
+              </ProjectProvider>
+            </TaskProvider>
           </AuthProvider>
-        </TooltipProvider>
-      </ThemeProvider>
+        </BrowserRouter>
+      </TooltipProvider>
     </QueryClientProvider>
   );
 }

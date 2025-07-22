@@ -7,11 +7,12 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface PushNotificationRequest {
+interface NotificationRequest {
   user_id: string;
   title: string;
-  body: string;
-  data?: Record<string, any>;
+  content: string;
+  type?: string;
+  metadata?: Record<string, any>;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -26,71 +27,58 @@ const handler = async (req: Request): Promise<Response> => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { user_id, title, body, data }: PushNotificationRequest = await req.json();
+    const { user_id, title, content, type = 'info', metadata }: NotificationRequest = await req.json();
 
-    // Get user's push token
+    // Validate user exists
     const { data: user, error: userError } = await supabase
       .from('users')
-      .select('push_token, name')
+      .select('id, name, organization_id')
       .eq('id', user_id)
       .single();
 
-    if (userError || !user?.push_token) {
-      console.log('No push token found for user:', user_id);
-      return new Response(JSON.stringify({ success: false, error: 'No push token' }), {
-        status: 200,
+    if (userError || !user) {
+      console.log('User not found:', user_id);
+      return new Response(JSON.stringify({ success: false, error: 'User not found' }), {
+        status: 404,
         headers: { 'Content-Type': 'application/json', ...corsHeaders },
       });
     }
 
-    // For now, we'll use Firebase Cloud Messaging (FCM) for both Android and iOS
-    // In a production app, you'd need to set up FCM and get server keys
-    const fcmServerKey = Deno.env.get('FCM_SERVER_KEY');
+    // Insert notification into database (this will trigger realtime updates)
+    const { data: notification, error: notificationError } = await supabase
+      .from('notifications')
+      .insert({
+        user_id,
+        title,
+        content,
+        type,
+        organization_id: user.organization_id,
+        metadata: metadata || {}
+      })
+      .select()
+      .single();
+
+    if (notificationError) {
+      console.error('Error creating notification:', notificationError);
+      return new Response(JSON.stringify({ success: false, error: 'Failed to create notification' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      });
+    }
+
+    console.log('Notification created successfully:', notification.id);
     
-    if (!fcmServerKey) {
-      console.log('FCM server key not configured');
-      return new Response(JSON.stringify({ success: false, error: 'FCM not configured' }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders },
-      });
-    }
-
-    // Send push notification via FCM
-    const fcmResponse = await fetch('https://fcm.googleapis.com/fcm/send', {
-      method: 'POST',
-      headers: {
-        'Authorization': `key=${fcmServerKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        to: user.push_token,
-        notification: {
-          title,
-          body,
-          icon: '/icon-192x192.png',
-          badge: '/icon-192x192.png',
-        },
-        data: data || {},
-        priority: 'high',
-        content_available: true,
-      }),
+    // The notification will be automatically delivered via Supabase Realtime
+    // to any connected clients subscribed to the user's notification channel
+    
+    return new Response(JSON.stringify({ 
+      success: true, 
+      notification_id: notification.id,
+      delivery_method: 'supabase_realtime'
+    }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json', ...corsHeaders },
     });
-
-    const fcmResult = await fcmResponse.json();
-    
-    if (fcmResponse.ok && fcmResult.success === 1) {
-      console.log('Push notification sent successfully');
-      return new Response(JSON.stringify({ success: true }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders },
-      });
-    } else {
-      console.error('FCM error:', fcmResult);
-      return new Response(JSON.stringify({ success: false, error: 'FCM send failed' }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders },
-      });
-    }
 
   } catch (error: any) {
     console.error('Error in send-push-notification:', error);
