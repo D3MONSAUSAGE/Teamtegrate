@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, PanInfo } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -30,11 +29,37 @@ const EnhancedTaskCard: React.FC<EnhancedTaskCardProps> = ({
 }) => {
   const [isRevealed, setIsRevealed] = useState(false);
   const [dragX, setDragX] = useState(0);
+  const autoHideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Auto-hide after 3 seconds
+  useEffect(() => {
+    if (isRevealed) {
+      autoHideTimeoutRef.current = setTimeout(() => {
+        setIsRevealed(false);
+        setDragX(0);
+      }, 3000);
+    }
+
+    return () => {
+      if (autoHideTimeoutRef.current) {
+        clearTimeout(autoHideTimeoutRef.current);
+      }
+    };
+  }, [isRevealed]);
+
+  // Clear timeout when user interacts
+  const clearAutoHideTimeout = () => {
+    if (autoHideTimeoutRef.current) {
+      clearTimeout(autoHideTimeoutRef.current);
+      autoHideTimeoutRef.current = null;
+    }
+  };
 
   const handleDragStart = () => {
+    clearAutoHideTimeout();
     // Add haptic feedback if available
     if (navigator.vibrate) {
-      navigator.vibrate(10);
+      navigator.vibrate(5);
     }
   };
 
@@ -43,16 +68,17 @@ const EnhancedTaskCard: React.FC<EnhancedTaskCardProps> = ({
   };
 
   const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    const threshold = 120;
-    const minVelocity = 400;
+    // Reduced thresholds for better responsiveness
+    const threshold = 80; // Reduced from 120px
+    const minVelocity = 250; // Reduced from 400
     
-    const isIntentionalSwipe = Math.abs(info.offset.x) > threshold && Math.abs(info.velocity.x) > minVelocity;
-    const isHorizontalGesture = Math.abs(info.offset.x) > Math.abs(info.offset.y) * 1.5;
+    const isIntentionalSwipe = Math.abs(info.offset.x) > threshold || Math.abs(info.velocity.x) > minVelocity;
+    const isHorizontalGesture = Math.abs(info.offset.x) > Math.abs(info.offset.y) * 1.2;
     
     if (isIntentionalSwipe && isHorizontalGesture) {
       setIsRevealed(true);
       if (navigator.vibrate) {
-        navigator.vibrate([15, 10, 15]);
+        navigator.vibrate([10, 5, 10]);
       }
     } else {
       setIsRevealed(false);
@@ -62,15 +88,22 @@ const EnhancedTaskCard: React.FC<EnhancedTaskCardProps> = ({
 
   const handleStatusChange = async (status: string) => {
     if (isUpdating) return;
+    clearAutoHideTimeout();
     try {
       await onStatusChange(task.id, status);
       setIsRevealed(false);
       if (navigator.vibrate) {
-        navigator.vibrate(25);
+        navigator.vibrate(15);
       }
     } catch (error) {
       console.error('Failed to update task status:', error);
     }
+  };
+
+  const handleEdit = () => {
+    clearAutoHideTimeout();
+    onEdit(task);
+    setIsRevealed(false);
   };
 
   const getStatusIcon = () => {
@@ -138,7 +171,7 @@ const EnhancedTaskCard: React.FC<EnhancedTaskCardProps> = ({
           <Button
             size="sm"
             variant="ghost"
-            className="h-12 w-12 rounded-full bg-blue-500 hover:bg-blue-600 text-white shadow-lg"
+            className="h-12 w-12 rounded-full bg-blue-500 hover:bg-blue-600 text-white shadow-lg mobile-touch-target"
             onClick={() => handleStatusChange('To Do')}
             disabled={isUpdating || task.status === 'To Do'}
           >
@@ -147,7 +180,7 @@ const EnhancedTaskCard: React.FC<EnhancedTaskCardProps> = ({
           <Button
             size="sm"
             variant="ghost"
-            className="h-12 w-12 rounded-full bg-orange-500 hover:bg-orange-600 text-white shadow-lg"
+            className="h-12 w-12 rounded-full bg-orange-500 hover:bg-orange-600 text-white shadow-lg mobile-touch-target"
             onClick={() => handleStatusChange('In Progress')}
             disabled={isUpdating || task.status === 'In Progress'}
           >
@@ -156,7 +189,7 @@ const EnhancedTaskCard: React.FC<EnhancedTaskCardProps> = ({
           <Button
             size="sm"
             variant="ghost"
-            className="h-12 w-12 rounded-full bg-green-500 hover:bg-green-600 text-white shadow-lg"
+            className="h-12 w-12 rounded-full bg-green-500 hover:bg-green-600 text-white shadow-lg mobile-touch-target"
             onClick={() => handleStatusChange('Completed')}
             disabled={isUpdating || task.status === 'Completed'}
           >
@@ -166,8 +199,8 @@ const EnhancedTaskCard: React.FC<EnhancedTaskCardProps> = ({
         <Button
           size="sm"
           variant="ghost"
-          className="h-12 w-12 rounded-full bg-purple-500 hover:bg-purple-600 text-white shadow-lg"
-          onClick={() => onEdit(task)}
+          className="h-12 w-12 rounded-full bg-purple-500 hover:bg-purple-600 text-white shadow-lg mobile-touch-target"
+          onClick={handleEdit}
           disabled={isUpdating}
         >
           <Edit3 className="h-5 w-5" />
@@ -177,14 +210,14 @@ const EnhancedTaskCard: React.FC<EnhancedTaskCardProps> = ({
       {/* Main card */}
       <motion.div
         drag="x"
-        dragConstraints={{ left: -200, right: 200 }}
-        dragElastic={0.1}
+        dragConstraints={{ left: -150, right: 150 }}
+        dragElastic={0.05}
         dragMomentum={false}
         onDragStart={handleDragStart}
         onDrag={handleDrag}
         onDragEnd={handleDragEnd}
-        animate={{ x: isRevealed ? (dragX > 0 ? 120 : -120) : 0 }}
-        transition={{ type: "spring", stiffness: 300, damping: 25 }}
+        animate={{ x: isRevealed ? (dragX > 0 ? 100 : -100) : 0 }}
+        transition={{ type: "spring", stiffness: 400, damping: 30 }}
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
@@ -195,7 +228,7 @@ const EnhancedTaskCard: React.FC<EnhancedTaskCardProps> = ({
       >
         <Card 
           className={cn(
-            "overflow-hidden border-2 transition-all duration-300 hover:shadow-xl active:scale-[0.98]",
+            "overflow-hidden border-2 transition-all duration-300 hover:shadow-xl active:scale-[0.98] mobile-touch-target tap-highlight-none",
             priorityConfig.bg,
             priorityConfig.border,
             isUpdating && "opacity-70 pointer-events-none",
@@ -208,7 +241,6 @@ const EnhancedTaskCard: React.FC<EnhancedTaskCardProps> = ({
           
           <CardContent className="p-5">
             <div className="space-y-4">
-              {/* Header */}
               <div className="flex items-start justify-between">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
@@ -235,7 +267,6 @@ const EnhancedTaskCard: React.FC<EnhancedTaskCardProps> = ({
                 </div>
               </div>
 
-              {/* Metadata */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className={cn(
@@ -255,7 +286,6 @@ const EnhancedTaskCard: React.FC<EnhancedTaskCardProps> = ({
                 </Badge>
               </div>
 
-              {/* Assignment info */}
               {(task.assignedToName || task.assignedToNames?.length) && (
                 <div className="flex items-center gap-2 pt-2 border-t border-border/50">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">

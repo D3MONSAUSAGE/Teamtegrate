@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Button } from "@/components/ui/button";
@@ -32,7 +31,8 @@ const NativeMobileHeader: React.FC<NativeMobileHeaderProps> = ({
 
   return (
     <motion.div 
-      className={`relative overflow-hidden bg-gradient-to-br ${getTimeBasedGradient()}`}
+      className={`relative overflow-hidden bg-gradient-to-br ${getTimeBasedGradient()} safe-area-top`}
+      style={{ paddingTop: 'max(env(safe-area-inset-top), 1rem)' }}
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
