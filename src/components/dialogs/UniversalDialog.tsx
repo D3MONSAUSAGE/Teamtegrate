@@ -78,7 +78,7 @@ const UniversalDialog: React.FC<UniversalDialogProps> = ({
       <DialogContent 
         className={cn(getDialogStyles(), className)} 
         onPointerDownOutside={(e) => e.preventDefault()}
-        style={{ display: 'flex !important', flexDirection: 'column !important' }}
+        style={{ display: 'flex', flexDirection: 'column' }}
       >
         {/* Fixed Header */}
         <DialogHeader className="px-6 py-6 border-b border-border/30 flex-shrink-0 bg-muted/20 rounded-t-3xl">
@@ -120,7 +120,7 @@ const UniversalDialog: React.FC<UniversalDialogProps> = ({
         </div>
 
         {/* Global styles for hiding scrollbar */}
-        <style jsx>{`
+        <style>{`
           .universal-dialog-scroll::-webkit-scrollbar {
             display: none;
           }
