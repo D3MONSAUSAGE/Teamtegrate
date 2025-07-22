@@ -55,15 +55,15 @@ const CommentsDialog: React.FC<CommentsDialogProps> = ({
       description={`Discussion for "${task.title}"`}
       variant="sheet"
     >
-      <div className="flex flex-col h-full">
+      <div className="px-6 py-6 pb-32">
         {/* Comments List */}
-        <div className="flex-1 px-6 py-6 min-h-0">
+        <div className="mb-8">
           {task.comments && task.comments.length > 0 ? (
             <div className="space-y-4">
               <TaskCommentsList taskComments={task.comments} />
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center h-full text-center py-12">
+            <div className="flex flex-col items-center justify-center py-16 text-center">
               <div className="w-20 h-20 bg-muted/50 rounded-full flex items-center justify-center mb-6">
                 <MessageCircle className="h-10 w-10 text-muted-foreground" />
               </div>
@@ -75,37 +75,35 @@ const CommentsDialog: React.FC<CommentsDialogProps> = ({
           )}
         </div>
         
-        {/* Comment Input - Fixed at bottom */}
-        <div className="flex-shrink-0 px-6 py-6 border-t border-border/30 bg-muted/10">
-          <div className="space-y-4">
-            <Textarea
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Write a comment..."
-              className="min-h-[100px] text-base rounded-2xl border-2 focus:border-primary transition-colors resize-none"
-              rows={4}
-            />
+        {/* Comment Input */}
+        <div className="space-y-4 border-t border-border/30 pt-6">
+          <Textarea
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder="Write a comment..."
+            className="min-h-[100px] text-base rounded-2xl border-2 focus:border-primary transition-colors resize-none"
+            rows={4}
+          />
+          
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">
+              Press Enter to send, Shift + Enter for new line
+            </span>
             
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">
-                Press Enter to send, Shift + Enter for new line
-              </span>
-              
-              <Button
-                onClick={handleAddComment}
-                disabled={!newComment.trim() || isSubmitting}
-                size="lg"
-                className="h-12 px-8 text-base font-medium rounded-2xl bg-gradient-to-r from-primary to-primary/80 hover:shadow-lg transition-all duration-200"
-              >
-                {isSubmitting ? (
-                  <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full mr-2" />
-                ) : (
-                  <Send className="h-4 w-4 mr-2" />
-                )}
-                {isSubmitting ? 'Sending...' : 'Send'}
-              </Button>
-            </div>
+            <Button
+              onClick={handleAddComment}
+              disabled={!newComment.trim() || isSubmitting}
+              size="lg"
+              className="h-12 px-8 text-base font-medium rounded-2xl bg-gradient-to-r from-primary to-primary/80 hover:shadow-lg transition-all duration-200"
+            >
+              {isSubmitting ? (
+                <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full mr-2" />
+              ) : (
+                <Send className="h-4 w-4 mr-2" />
+              )}
+              {isSubmitting ? 'Sending...' : 'Send'}
+            </Button>
           </div>
         </div>
       </div>

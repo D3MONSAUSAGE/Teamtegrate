@@ -39,7 +39,7 @@ const UniversalDialog: React.FC<UniversalDialogProps> = ({
   }, [open]);
 
   const getDialogStyles = () => {
-    const baseStyles = "p-0 gap-0 border bg-background shadow-2xl backdrop-blur-sm";
+    const baseStyles = "p-0 gap-0 border bg-background shadow-2xl backdrop-blur-sm overflow-hidden";
     
     switch (variant) {
       case 'sheet':
@@ -50,15 +50,13 @@ const UniversalDialog: React.FC<UniversalDialogProps> = ({
           "data-[state=open]:duration-300 data-[state=closed]:duration-200",
           "sm:left-[50%] sm:right-auto sm:top-[50%] sm:w-full sm:max-w-2xl",
           "sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-3xl",
-          "h-[90vh] sm:h-auto sm:max-h-[85vh]",
-          "safe-area-inset-bottom pb-[env(safe-area-inset-bottom)]"
+          "h-[90vh] sm:h-auto sm:max-h-[85vh]"
         );
       case 'fullscreen':
         return cn(
           baseStyles,
           "fixed inset-0 rounded-none h-screen w-screen max-w-none",
-          "data-[state=open]:fade-in data-[state=closed]:fade-out",
-          "safe-area-inset"
+          "data-[state=open]:fade-in data-[state=closed]:fade-out"
         );
       case 'modal':
       default:
@@ -69,8 +67,7 @@ const UniversalDialog: React.FC<UniversalDialogProps> = ({
           "data-[state=open]:zoom-in-95 data-[state=closed]:zoom-out-95",
           "data-[state=open]:fade-in data-[state=closed]:fade-out",
           "data-[state=open]:duration-300 data-[state=closed]:duration-200",
-          "max-h-[90vh] min-h-[300px]",
-          "safe-area-inset"
+          "max-h-[90vh] min-h-[300px]"
         );
     }
   };
@@ -80,11 +77,8 @@ const UniversalDialog: React.FC<UniversalDialogProps> = ({
       <DialogContent 
         className={cn(getDialogStyles(), className)} 
         onPointerDownOutside={(e) => e.preventDefault()}
-        style={{
-          paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))',
-          paddingTop: 'max(1.5rem, env(safe-area-inset-top))',
-        }}
       >
+        {/* Fixed Header */}
         <DialogHeader className="px-6 py-6 border-b border-border/30 flex-shrink-0 bg-muted/20 rounded-t-3xl">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
@@ -111,29 +105,23 @@ const UniversalDialog: React.FC<UniversalDialogProps> = ({
           </div>
         </DialogHeader>
         
+        {/* Scrollable Content */}
         <div 
-          className="flex-1 flex flex-col overflow-hidden"
+          className="flex-1 overflow-y-auto overflow-x-hidden"
           style={{
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
             WebkitOverflowScrolling: 'touch',
           }}
         >
-          <div 
-            className="flex-1 overflow-y-auto overflow-x-hidden"
-            style={{
-              scrollbarWidth: 'none',
-              msOverflowStyle: 'none',
-              WebkitOverflowScrolling: 'touch',
-            }}
-          >
-            <style dangerouslySetInnerHTML={{
-              __html: `
-                .dialog-content::-webkit-scrollbar {
-                  display: none;
-                }
-              `
-            }} />
+          <style dangerouslySetInnerHTML={{
+            __html: `
+              .dialog-scrollable::-webkit-scrollbar {
+                display: none;
+              }
+            `
+          }} />
+          <div className="dialog-scrollable">
             {children}
           </div>
         </div>
