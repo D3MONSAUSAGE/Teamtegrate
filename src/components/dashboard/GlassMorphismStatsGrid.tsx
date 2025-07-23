@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
@@ -78,6 +77,23 @@ const GlassMorphismStatsGrid: React.FC<GlassMorphismStatsGridProps> = ({ tasks, 
     const strokeDasharray = circumference;
     const strokeDashoffset = circumference - (progress / 100) * circumference;
 
+    // Safe color parsing with fallbacks
+    const parseGradientColors = (colorString: string) => {
+      const parts = colorString.split(' ');
+      
+      // Default fallback colors
+      const defaultFrom = 'dashboard-primary';
+      const defaultTo = 'dashboard-primary-light';
+      
+      // Extract from and to colors safely
+      const fromColor = parts.length > 0 && parts[0] ? parts[0].replace('from-', '') : defaultFrom;
+      const toColor = parts.length > 2 && parts[2] ? parts[2].replace('to-', '') : defaultTo;
+      
+      return { fromColor, toColor };
+    };
+
+    const { fromColor, toColor } = parseGradientColors(color);
+
     return (
       <div className="relative w-20 h-20">
         <svg className="w-20 h-20 transform -rotate-90" viewBox="0 0 80 80">
@@ -102,12 +118,12 @@ const GlassMorphismStatsGrid: React.FC<GlassMorphismStatsGridProps> = ({ tasks, 
             strokeLinecap="round"
             initial={{ strokeDashoffset: circumference }}
             animate={{ strokeDashoffset }}
-            transition={{ duration: 1.5, delay: 0.5, ease: "easeOut" }}
+            transition={{ duration: 1.5, delay: 0.5 }}
           />
           <defs>
             <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" className={color.split(' ')[0].replace('from-', 'stop-')} />
-              <stop offset="100%" className={color.split(' ')[2].replace('to-', 'stop-')} />
+              <stop offset="0%" className={`stop-${fromColor}`} />
+              <stop offset="100%" className={`stop-${toColor}`} />
             </linearGradient>
           </defs>
         </svg>
