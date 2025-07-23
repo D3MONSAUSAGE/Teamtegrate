@@ -9,17 +9,11 @@ import { Loader2 } from 'lucide-react';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import TimeTrackingErrorBoundary from '@/components/dashboard/time/TimeTrackingErrorBoundary';
 
-// Mobile components
+// Shared components for both mobile and desktop
 import EnhancedDashboardHeader from '@/components/dashboard/EnhancedDashboardHeader';
 import DailyTasksSection from '@/components/dashboard/DailyTasksSection';
 import RecentProjects from '@/components/dashboard/RecentProjects';
 import QuickActionsPanel from '@/components/dashboard/QuickActionsPanel';
-
-// Enterprise dashboard components
-import ExecutiveDashboardHeader from '@/components/dashboard/ExecutiveDashboardHeader';
-import MetricsCommandCenter from '@/components/dashboard/MetricsCommandCenter';
-import TaskIntelligenceHub from '@/components/dashboard/TaskIntelligenceHub';
-import AnalyticsInsightsPanel from '@/components/dashboard/AnalyticsInsightsPanel';
 
 // Preserved components
 import FloatingTimeTracker from '@/components/dashboard/FloatingTimeTracker';
@@ -89,10 +83,10 @@ const DashboardPage = () => {
   // Show loading state if user is not ready
   if (!user || !isReady) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50/30 via-indigo-50/30 to-purple-50/30 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-slate-600 mx-auto mb-4" />
-          <p className="text-slate-600">Loading your executive dashboard...</p>
+          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading your dashboard...</p>
         </div>
       </div>
     );
@@ -120,97 +114,45 @@ const DashboardPage = () => {
     projectsCount: projects.length
   };
 
-  // Mobile layout
-  if (isMobile) {
-    return (
-      <ErrorBoundary>
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
-          <div className="space-y-8 p-6">
-            <EnhancedDashboardHeader
-              userName={user?.name?.split(' ')[0] || 'User'}
-              onCreateTask={handleCreateTask}
-              isLoading={false}
-              stats={stats}
-            />
-            
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-              <div className="xl:col-span-2 space-y-8">
-                <DailyTasksSection 
-                  tasks={tasks} 
-                  onCreateTask={handleCreateTask}
-                  onTaskClick={handleTaskClick}
-                />
-                <RecentProjects projects={projects} />
-              </div>
-              
-              <div className="space-y-8">
-                <QuickActionsPanel onCreateTask={handleCreateTask} />
-              </div>
-            </div>
-
-            <CreateTaskDialog
-              open={isCreateTaskOpen}
-              onOpenChange={setIsCreateTaskOpen}
-              onSubmit={handleTaskSubmit}
-              editingTask={editingTask}
-            />
-
-            <CreateProjectDialog
-              open={isCreateProjectOpen}
-              onOpenChange={setIsCreateProjectOpen}
-              onProjectCreated={handleProjectCreated}
-            />
-
-            <TaskDetailDialog
-              open={isTaskDetailOpen}
-              onOpenChange={handleTaskDetailClose}
-              task={selectedTask}
-              onEdit={handleEditTask}
-            />
-          </div>
-        </div>
-      </ErrorBoundary>
-    );
-  }
-
-  // Enterprise Desktop Layout
+  // Unified colorful layout for both mobile and desktop
   return (
     <ErrorBoundary>
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.8 }}
-        className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100"
+        className="min-h-screen bg-gradient-to-br from-blue-50/30 via-indigo-50/30 to-purple-50/30 dark:from-blue-950/20 dark:via-indigo-950/20 dark:to-purple-950/20"
       >
-        {/* Executive Header */}
-        <ExecutiveDashboardHeader onCreateTask={handleCreateTask} />
-
-        {/* Main Content */}
-        <div className="max-w-7xl mx-auto px-6 py-6">
-          {/* Metrics Command Center */}
-          <ErrorBoundary>
-            <MetricsCommandCenter 
-              tasks={tasks}
-              dailyScore={dailyScore.percentage}
-            />
-          </ErrorBoundary>
-
-          {/* Main Dashboard Grid - Fixed layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left Column - Task Intelligence (2/3 width) */}
-            <div className="lg:col-span-2">
+        <div className="space-y-8 p-6">
+          {/* Colorful Header - Same for both mobile and desktop */}
+          <EnhancedDashboardHeader
+            userName={user?.name?.split(' ')[0] || 'User'}
+            onCreateTask={handleCreateTask}
+            isLoading={false}
+            stats={stats}
+          />
+          
+          {/* Main Dashboard Grid - App-like layout */}
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+            {/* Left Column - Tasks (2/3 width on desktop) */}
+            <div className="xl:col-span-2 space-y-8">
               <ErrorBoundary>
-                <TaskIntelligenceHub 
-                  tasks={tasks}
+                <DailyTasksSection 
+                  tasks={tasks} 
+                  onCreateTask={handleCreateTask}
                   onTaskClick={handleTaskClick}
                 />
               </ErrorBoundary>
-            </div>
-
-            {/* Right Column - Analytics & Insights (1/3 width) */}
-            <div className="lg:col-span-1">
+              
               <ErrorBoundary>
-                <AnalyticsInsightsPanel />
+                <RecentProjects projects={projects} />
+              </ErrorBoundary>
+            </div>
+            
+            {/* Right Column - Quick Actions (1/3 width on desktop) */}
+            <div className="xl:col-span-1 space-y-8">
+              <ErrorBoundary>
+                <QuickActionsPanel onCreateTask={handleCreateTask} />
               </ErrorBoundary>
             </div>
           </div>
