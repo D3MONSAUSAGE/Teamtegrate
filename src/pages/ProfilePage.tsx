@@ -1,6 +1,7 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useIsMobile } from '@/hooks/use-mobile';
+import MobileProfilePage from './MobileProfilePage';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProjects } from '@/hooks/useProjects';
 import ProfessionalProfileHeader from '@/components/profile/ProfessionalProfileHeader';
@@ -12,6 +13,13 @@ import SkillsCompetenciesSection from '@/components/profile/SkillsCompetenciesSe
 import AccountSecuritySection from '@/components/profile/AccountSecuritySection';
 
 const ProfilePage = () => {
+  const isMobile = useIsMobile();
+
+  // Render mobile version for mobile devices
+  if (isMobile) {
+    return <MobileProfilePage />;
+  }
+
   const navigate = useNavigate();
   const { user, isAuthenticated, loading } = useAuth();
   const { projects } = useProjects();

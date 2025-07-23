@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useIsMobile } from '@/hooks/use-mobile';
+import MobileTasksPage from './MobileTasksPage';
 import { usePersonalTasks } from '@/hooks/usePersonalTasks';
 import { Task, TaskStatus } from '@/types';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
@@ -14,6 +16,13 @@ import { toast } from '@/components/ui/sonner';
 import { useTask } from '@/contexts/task';
 
 const TasksPage = () => {
+  const isMobile = useIsMobile();
+
+  // Render mobile version for mobile devices
+  if (isMobile) {
+    return <MobileTasksPage />;
+  }
+
   const navigate = useNavigate();
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   

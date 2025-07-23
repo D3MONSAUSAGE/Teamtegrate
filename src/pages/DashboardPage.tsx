@@ -28,8 +28,16 @@ import SwipeableTaskCard from '@/components/mobile/SwipeableTaskCard';
 import FloatingActionButton from '@/components/mobile/FloatingActionButton';
 import SkeletonCard from '@/components/mobile/SkeletonCard';
 import { toast } from 'sonner';
+import MobileDashboardPage from './MobileDashboardPage';
 
 const DashboardPage = () => {
+  const isMobile = useIsMobile();
+
+  // Render mobile version for mobile devices
+  if (isMobile) {
+    return <MobileDashboardPage />;
+  }
+
   const { user } = useAuth();
   
   // Add real-time subscription for immediate updates
@@ -46,7 +54,6 @@ const DashboardPage = () => {
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState<string | null>(null);
-  const isMobile = useIsMobile();
   
   // Use personal tasks for dashboard display
   const tasks = personalTasks;
@@ -284,27 +291,11 @@ const DashboardPage = () => {
                 noPadding
               >
                 <div className="p-1">
-                  {isMobile ? (
-                    <div className="space-y-3">
-                      {todaysTasks.map((task) => (
-                        <SwipeableTaskCard
-                          key={task.id}
-                          task={task}
-                          onEdit={handleEditTask}
-                          onStatusChange={onStatusChange}
-                          onDelete={() => {}}
-                          onClick={() => {}}
-                          isUpdating={isUpdatingStatus === task.id}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <DailyTasksSection 
-                      tasks={todaysTasks}
-                      onCreateTask={() => handleCreateTask()}
-                      onEditTask={handleEditTask}
-                    />
-                  )}
+                  <DailyTasksSection 
+                    tasks={todaysTasks}
+                    onCreateTask={() => handleCreateTask()}
+                    onEditTask={handleEditTask}
+                  />
                 </div>
               </ModernSectionCard>
               
@@ -315,27 +306,11 @@ const DashboardPage = () => {
                 noPadding
               >
                 <div className="p-1">
-                  {isMobile ? (
-                    <div className="space-y-3">
-                      {upcomingTasks.map((task) => (
-                        <SwipeableTaskCard
-                          key={task.id}
-                          task={task}
-                          onEdit={handleEditTask}
-                          onStatusChange={onStatusChange}
-                          onDelete={() => {}}
-                          onClick={() => {}}
-                          isUpdating={isUpdatingStatus === task.id}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <UpcomingTasksSection 
-                      tasks={upcomingTasks}
-                      onCreateTask={() => handleCreateTask()}
-                      onEditTask={handleEditTask}
-                    />
-                  )}
+                  <UpcomingTasksSection 
+                    tasks={upcomingTasks}
+                    onCreateTask={() => handleCreateTask()}
+                    onEditTask={handleEditTask}
+                  />
                 </div>
               </ModernSectionCard>
 
@@ -347,27 +322,11 @@ const DashboardPage = () => {
                 noPadding
               >
                 <div className="p-1">
-                  {isMobile ? (
-                    <div className="space-y-3">
-                      {overdueTasks.map((task) => (
-                        <SwipeableTaskCard
-                          key={task.id}
-                          task={task}
-                          onEdit={handleEditTask}
-                          onStatusChange={onStatusChange}
-                          onDelete={() => {}}
-                          onClick={() => {}}
-                          isUpdating={isUpdatingStatus === task.id}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <OverdueTasksSection 
-                      tasks={overdueTasks}
-                      onCreateTask={() => handleCreateTask()}
-                      onEditTask={handleEditTask}
-                    />
-                  )}
+                  <OverdueTasksSection 
+                    tasks={overdueTasks}
+                    onCreateTask={() => handleCreateTask()}
+                    onEditTask={handleEditTask}
+                  />
                 </div>
               </ModernSectionCard>
             </div>
@@ -413,14 +372,6 @@ const DashboardPage = () => {
             onTaskComplete={handleTaskDialogComplete}
           />
         </div>
-
-        {/* Floating Action Button - Mobile Only */}
-        {isMobile && (
-          <FloatingActionButton
-            onCreateTask={() => handleCreateTask()}
-            onStartTimer={() => {}}
-          />
-        )}
       </div>
     </PullToRefresh>
   );
