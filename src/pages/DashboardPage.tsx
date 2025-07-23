@@ -4,6 +4,7 @@ import { useTask } from '@/contexts/task';
 import { Task } from '@/types';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { motion } from 'framer-motion';
+import { Loader2 } from 'lucide-react';
 
 // Mobile components (unchanged)
 import EnhancedDashboardHeader from '@/components/dashboard/EnhancedDashboardHeader';
@@ -25,7 +26,7 @@ import TaskDetailDialog from '@/components/calendar/TaskDetailDialog';
 import { isTaskOverdue } from '@/utils/taskUtils';
 
 const DashboardPage = () => {
-  const { user } = useAuth();
+  const { user, isReady, profileLoading } = useAuth();
   const { tasks, projects, dailyScore } = useTask();
   const isMobile = useIsMobile();
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
@@ -35,12 +36,20 @@ const DashboardPage = () => {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
 
   const handleCreateTask = () => {
+    if (!isReady) {
+      console.log('DashboardPage: User not ready for task creation');
+      return;
+    }
     console.log('DashboardPage: Opening create task dialog');
     setEditingTask(null);
     setIsCreateTaskOpen(true);
   };
 
   const handleCreateProject = () => {
+    if (!isReady) {
+      console.log('DashboardPage: User not ready for project creation');
+      return;
+    }
     console.log('DashboardPage: Opening create project dialog');
     setIsCreateProjectOpen(true);
   };
@@ -71,6 +80,18 @@ const DashboardPage = () => {
   };
 
   if (!user) return null;
+
+  // Show loading state if user is not ready
+  if (!user || !isReady) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-dashboard-bg via-dashboard-card to-dashboard-bg flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading your dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Calculate stats for the dashboard
   const todaysTasks = tasks.filter(task => {
