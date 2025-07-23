@@ -62,69 +62,69 @@ const ProgressInsights: React.FC = () => {
       className="h-full"
     >
       <Card className="h-full border-0 bg-white shadow-sm ring-1 ring-slate-200/50">
-        <CardHeader className="pb-4 border-b border-slate-100">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-sm">
-              <BarChart3 className="h-5 w-5 text-white" />
+        <CardHeader className="pb-2 border-b border-slate-100">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-sm">
+              <BarChart3 className="h-4 w-4 text-white" />
             </div>
             <div>
-              <CardTitle className="text-lg font-semibold text-slate-900">
+              <CardTitle className="text-base font-semibold text-slate-900">
                 Progress Insights
               </CardTitle>
-              <p className="text-sm text-slate-600 mt-0.5">
+              <p className="text-xs text-slate-600 mt-0">
                 Your productivity metrics
               </p>
             </div>
           </div>
         </CardHeader>
         
-        <CardContent className="p-6">
-          <div className="space-y-6">
+        <CardContent className="p-3">
+          <div className="space-y-3">
             {/* Progress Metrics */}
-            <div className="space-y-4">
+            <div className="space-y-2">
               {insights.map((insight, index) => (
                 <motion.div
                   key={insight.title}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className={`p-4 rounded-lg ${insight.bgColor} border border-slate-200/50`}
+                  className={`p-2 rounded-lg ${insight.bgColor} border border-slate-200/50`}
                 >
-                  <div className="flex items-center justify-between mb-3">
-                    <h4 className="font-medium text-slate-900">{insight.title}</h4>
-                    <div className="flex items-center gap-2">
-                      <span className={`text-lg font-bold ${insight.color}`}>
+                  <div className="flex items-center justify-between mb-1">
+                    <h4 className="font-medium text-slate-900 text-sm">{insight.title}</h4>
+                    <div className="flex items-center gap-1">
+                      <span className={`text-sm font-bold ${insight.color}`}>
                         {insight.value}
                       </span>
-                      <Badge variant="secondary" className="text-xs bg-white/60 text-emerald-700">
-                        <TrendingUp className="h-3 w-3 mr-1" />
+                      <Badge variant="secondary" className="text-xs bg-white/60 text-emerald-700 py-0">
+                        <TrendingUp className="h-2 w-2 mr-0.5" />
                         {insight.change}
                       </Badge>
                     </div>
                   </div>
-                  <Progress value={insight.progress} className="h-2" />
+                  <Progress value={insight.progress} className="h-1.5" />
                 </motion.div>
               ))}
             </div>
 
             {/* Achievements */}
-            <div className="pt-4 border-t border-slate-100">
-              <h4 className="font-medium text-slate-900 mb-3">Recent Achievements</h4>
-              <div className="space-y-3">
+            <div className="pt-2 border-t border-slate-100">
+              <h4 className="font-medium text-slate-900 mb-2 text-sm">Recent Achievements</h4>
+              <div className="space-y-2">
                 {achievements.map((achievement, index) => (
                   <motion.div
                     key={achievement.title}
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: index * 0.1 }}
-                    className={`p-3 rounded-lg ${achievement.bgColor} border border-slate-200/50`}
+                    className={`p-2 rounded-lg ${achievement.bgColor} border border-slate-200/50`}
                   >
-                    <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-white/60 flex items-center justify-center flex-shrink-0">
-                        <achievement.icon className={`h-4 w-4 ${achievement.color}`} />
+                    <div className="flex items-start gap-2">
+                      <div className="w-6 h-6 rounded-lg bg-white/60 flex items-center justify-center flex-shrink-0">
+                        <achievement.icon className={`h-3 w-3 ${achievement.color}`} />
                       </div>
                       <div className="flex-1">
-                        <h5 className="font-medium text-slate-900 text-sm">{achievement.title}</h5>
+                        <h5 className="font-medium text-slate-900 text-xs">{achievement.title}</h5>
                         <p className="text-xs text-slate-600 mt-0.5">{achievement.description}</p>
                       </div>
                     </div>

@@ -171,7 +171,7 @@ const DashboardPage = () => {
     );
   }
 
-  // Modern desktop layout with preserved elements
+  // Modern desktop layout with preserved elements - COMPACTED
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -183,21 +183,23 @@ const DashboardPage = () => {
         {/* Preserved: Premium Header */}
         <PremiumDashboardHeader onCreateTask={handleCreateTask} />
 
-        {/* Main Content */}
-        <div className="px-8 py-8 space-y-8">
-          {/* Preserved: Glass Morphism Stats Grid */}
-          <GlassMorphismStatsGrid 
-            tasks={tasks}
-            dailyScore={dailyScore.percentage}
-          />
+        {/* Main Content - Reduced spacing */}
+        <div className="px-6 py-4 space-y-4">
+          {/* Preserved: Glass Morphism Stats Grid - Reduced margin */}
+          <div className="mb-4">
+            <GlassMorphismStatsGrid 
+              tasks={tasks}
+              dailyScore={dailyScore.percentage}
+            />
+          </div>
 
           {/* Preserved: Floating Time Tracker */}
           <FloatingTimeTracker />
 
-          {/* New Modern Layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* New Modern Layout - Reduced gaps */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {/* Left Column - Main Content */}
-            <div className="lg:col-span-2 space-y-8">
+            <div className="lg:col-span-2 space-y-4">
               {/* Task Intelligence - Enhanced */}
               <IntelligentTaskVisualization 
                 tasks={tasks}
@@ -209,7 +211,7 @@ const DashboardPage = () => {
             </div>
 
             {/* Right Column - Sidebar */}
-            <div className="space-y-8">
+            <div className="space-y-4">
               {/* Modern Quick Actions - Redesigned */}
               <ModernQuickActions onCreateTask={handleCreateTask} />
 
