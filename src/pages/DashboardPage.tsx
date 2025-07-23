@@ -12,17 +12,14 @@ import DailyTasksSection from '@/components/dashboard/DailyTasksSection';
 import RecentProjects from '@/components/dashboard/RecentProjects';
 import QuickActionsPanel from '@/components/dashboard/QuickActionsPanel';
 
-// Preserved desktop components (as shown in user's image)
-import PremiumDashboardHeader from '@/components/dashboard/PremiumDashboardHeader';
-import GlassMorphismStatsGrid from '@/components/dashboard/GlassMorphismStatsGrid';
-import FloatingTimeTracker from '@/components/dashboard/FloatingTimeTracker';
+// New enterprise dashboard components
+import ExecutiveDashboardHeader from '@/components/dashboard/ExecutiveDashboardHeader';
+import MetricsCommandCenter from '@/components/dashboard/MetricsCommandCenter';
+import TaskIntelligenceHub from '@/components/dashboard/TaskIntelligenceHub';
+import AnalyticsInsightsPanel from '@/components/dashboard/AnalyticsInsightsPanel';
 
-// New modern desktop components
-import IntelligentTaskVisualization from '@/components/dashboard/IntelligentTaskVisualization';
-import RecentActivityFeed from '@/components/dashboard/RecentActivityFeed';
-import UpcomingDeadlines from '@/components/dashboard/UpcomingDeadlines';
-import ModernQuickActions from '@/components/dashboard/ModernQuickActions';
-import ProgressInsights from '@/components/dashboard/ProgressInsights';
+// Preserved components
+import FloatingTimeTracker from '@/components/dashboard/FloatingTimeTracker';
 
 // Dialogs
 import CreateTaskDialog from '@/components/dialogs/CreateTaskDialog';
@@ -89,10 +86,10 @@ const DashboardPage = () => {
   // Show loading state if user is not ready
   if (!user || !isReady) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-dashboard-bg via-dashboard-card to-dashboard-bg flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading your dashboard...</p>
+          <Loader2 className="h-8 w-8 animate-spin text-slate-600 mx-auto mb-4" />
+          <p className="text-slate-600">Loading your executive dashboard...</p>
         </div>
       </div>
     );
@@ -171,7 +168,7 @@ const DashboardPage = () => {
     );
   }
 
-  // Modern desktop layout with preserved elements - COMPACTED
+  // Enterprise Desktop Layout
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -179,72 +176,55 @@ const DashboardPage = () => {
       transition={{ duration: 0.8 }}
       className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100"
     >
-      <div className="max-w-7xl mx-auto">
-        {/* Preserved: Premium Header */}
-        <PremiumDashboardHeader onCreateTask={handleCreateTask} />
+      {/* Executive Header */}
+      <ExecutiveDashboardHeader onCreateTask={handleCreateTask} />
 
-        {/* Main Content - Reduced spacing */}
-        <div className="px-6 py-4 space-y-4">
-          {/* Preserved: Glass Morphism Stats Grid - Reduced margin */}
-          <div className="mb-4">
-            <GlassMorphismStatsGrid 
-              tasks={tasks}
-              dailyScore={dailyScore.percentage}
-            />
-          </div>
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-6 py-6">
+        {/* Metrics Command Center */}
+        <MetricsCommandCenter 
+          tasks={tasks}
+          dailyScore={dailyScore.percentage}
+        />
 
-          {/* Preserved: Floating Time Tracker */}
-          <FloatingTimeTracker />
+        {/* Main Dashboard Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column - Task Intelligence */}
+          <TaskIntelligenceHub 
+            tasks={tasks}
+            onTaskClick={handleTaskClick}
+          />
 
-          {/* New Modern Layout - Reduced gaps */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            {/* Left Column - Main Content */}
-            <div className="lg:col-span-2 space-y-4">
-              {/* Task Intelligence - Enhanced */}
-              <IntelligentTaskVisualization 
-                tasks={tasks}
-                onTaskClick={handleTaskClick}
-              />
-
-              {/* Recent Activity Feed - New */}
-              <RecentActivityFeed />
-            </div>
-
-            {/* Right Column - Sidebar */}
-            <div className="space-y-4">
-              {/* Modern Quick Actions - Redesigned */}
-              <ModernQuickActions onCreateTask={handleCreateTask} />
-
-              {/* Upcoming Deadlines - New */}
-              <UpcomingDeadlines />
-
-              {/* Progress Insights - New */}
-              <ProgressInsights />
-            </div>
+          {/* Right Column - Analytics & Insights */}
+          <div className="lg:col-span-1">
+            <AnalyticsInsightsPanel />
           </div>
         </div>
 
-        {/* Dialogs */}
-        <CreateTaskDialog
-          open={isCreateTaskOpen}
-          onOpenChange={setIsCreateTaskOpen}
-          onSubmit={handleTaskSubmit}
-          editingTask={editingTask}
-        />
-
-        <CreateProjectDialog
-          open={isCreateProjectOpen}
-          onOpenChange={setIsCreateProjectOpen}
-          onProjectCreated={handleProjectCreated}
-        />
-
-        <TaskDetailDialog
-          open={isTaskDetailOpen}
-          onOpenChange={handleTaskDetailClose}
-          task={selectedTask}
-          onEdit={handleEditTask}
-        />
+        {/* Preserved: Floating Time Tracker */}
+        <FloatingTimeTracker />
       </div>
+
+      {/* Dialogs */}
+      <CreateTaskDialog
+        open={isCreateTaskOpen}
+        onOpenChange={setIsCreateTaskOpen}
+        onSubmit={handleTaskSubmit}
+        editingTask={editingTask}
+      />
+
+      <CreateProjectDialog
+        open={isCreateProjectOpen}
+        onOpenChange={setIsCreateProjectOpen}
+        onProjectCreated={handleProjectCreated}
+      />
+
+      <TaskDetailDialog
+        open={isTaskDetailOpen}
+        onOpenChange={handleTaskDetailClose}
+        task={selectedTask}
+        onEdit={handleEditTask}
+      />
     </motion.div>
   );
 };
