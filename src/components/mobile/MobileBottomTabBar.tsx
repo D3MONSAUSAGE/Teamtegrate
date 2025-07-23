@@ -5,6 +5,7 @@ import { Home, CheckSquare, Calendar, User, Briefcase } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { Capacitor } from '@capacitor/core';
+import { useNotifications } from '@/hooks/use-notifications';
 
 interface TabItem {
   id: string;
@@ -17,13 +18,14 @@ interface TabItem {
 const MobileBottomTabBar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { unreadCount } = useNotifications();
 
   const tabs: TabItem[] = [
     { id: 'dashboard', label: 'Home', icon: Home, route: '/dashboard' },
     { id: 'tasks', label: 'Tasks', icon: CheckSquare, route: '/tasks' },
     { id: 'projects', label: 'Projects', icon: Briefcase, route: '/projects' },
     { id: 'calendar', label: 'Calendar', icon: Calendar, route: '/calendar' },
-    { id: 'profile', label: 'Profile', icon: User, route: '/profile' },
+    { id: 'profile', label: 'Profile', icon: User, route: '/profile', badge: unreadCount },
   ];
 
   const handleTabPress = async (route: string) => {

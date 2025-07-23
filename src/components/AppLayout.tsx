@@ -10,15 +10,17 @@ import Sidebar from './Sidebar';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { Loader2 } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
+import { Capacitor } from '@capacitor/core';
 
 // Professional main content component with enhanced navigation handling
-const MainContent = memo(({ children }: { children: React.ReactNode }) => {
+const MainContent = memo(({ children, isMobile }: { children: React.ReactNode; isMobile: boolean }) => {
   return (
     <SidebarInset 
       className="flex flex-col flex-1 overflow-hidden"
       style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
     >
-      <Navbar />
+      {/* Only show navbar on desktop */}
+      {!isMobile && <Navbar />}
       <main className="flex-1 overflow-y-auto overflow-x-hidden px-4 md:px-6 lg:px-12 safe-area-bottom" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
         <div className="space-y-6 py-4 pb-20 md:pb-6">
           {children}
@@ -47,6 +49,7 @@ LoadingScreen.displayName = 'LoadingScreen';
 
 const AppLayout = memo(() => {
   const { user, loading, isAuthenticated } = useAuth();
+  const isMobile = Capacitor.isNativePlatform() || window.innerWidth < 768;
 
   if (loading) {
     return <LoadingScreen />;
@@ -65,8 +68,9 @@ const AppLayout = memo(() => {
         <TaskProvider>
           <SidebarProvider defaultOpen={defaultSidebarOpen}>
             <div className="min-h-screen-mobile bg-background w-full flex overflow-hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-              <Sidebar />
-              <MainContent>
+              {/* Only show sidebar on desktop */}
+              {!isMobile && <Sidebar />}
+              <MainContent isMobile={isMobile}>
                 <Outlet />
               </MainContent>
             </div>

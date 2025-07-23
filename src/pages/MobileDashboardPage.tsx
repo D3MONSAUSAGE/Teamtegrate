@@ -55,9 +55,7 @@ const MobileDashboardPage: React.FC = () => {
       <PullToRefresh onRefresh={handleRefresh}>
         <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-muted/20">
           {/* Header */}
-          <MobileDashboardHeader
-            onNotificationPress={() => {/* TODO: Implement notifications */}}
-          />
+          <MobileDashboardHeader />
           
           {/* Content */}
           <div className="space-y-6 pb-6">
