@@ -5,14 +5,13 @@ import { useTask } from '@/contexts/task';
 import { Task } from '@/types';
 import { useIsMobile } from '@/hooks/use-mobile';
 import EnhancedDashboardHeader from '@/components/dashboard/EnhancedDashboardHeader';
-import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import DailyTasksSection from '@/components/dashboard/DailyTasksSection';
 import RecentProjects from '@/components/dashboard/RecentProjects';
 import QuickActionsPanel from '@/components/dashboard/QuickActionsPanel';
-import InteractiveStatsGrid from '@/components/dashboard/InteractiveStatsGrid';
-import QuickActionsSection from '@/components/dashboard/QuickActionsSection';
-import AndroidAppBanner from '@/components/dashboard/AndroidAppBanner';
-import BottomActionButtons from '@/components/dashboard/BottomActionButtons';
+import ModernDashboardHeader from '@/components/dashboard/ModernDashboardHeader';
+import ModernStatsGrid from '@/components/dashboard/ModernStatsGrid';
+import ModernQuickActions from '@/components/dashboard/ModernQuickActions';
+import ModernTasksOverview from '@/components/dashboard/ModernTasksOverview';
 import CreateTaskDialog from '@/components/dialogs/CreateTaskDialog';
 import CreateProjectDialog from '@/components/CreateProjectDialog';
 import TaskDetailDialog from '@/components/calendar/TaskDetailDialog';
@@ -139,37 +138,30 @@ const DashboardPage = () => {
     );
   }
 
-  // Desktop layout (original design)
+  // Desktop layout (modern redesign)
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900">
+    <div className="min-h-screen bg-dashboard-bg dark:bg-background">
       <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Original simple header */}
-        <DashboardHeader onCreateTask={handleCreateTask} />
+        {/* Modern Header */}
+        <ModernDashboardHeader onCreateTask={handleCreateTask} />
         
-        {/* Stats Grid */}
-        <div className="mt-8">
-          <InteractiveStatsGrid
-            dailyScore={dailyScore.percentage}
-            todaysTasks={todaysTasks}
-            upcomingTasks={upcomingTasks}
-            overdueTasks={overdueTasks}
-          />
-        </div>
+        {/* Modern Stats Grid */}
+        <ModernStatsGrid
+          dailyScore={dailyScore.percentage}
+          todaysTasks={todaysTasks}
+          upcomingTasks={upcomingTasks}
+          overdueTasks={overdueTasks}
+        />
 
-        {/* Quick Actions Section */}
-        <div className="mt-8">
-          <QuickActionsSection onCreateTask={handleCreateTask} />
-        </div>
+        {/* Modern Quick Actions */}
+        <ModernQuickActions onCreateTask={handleCreateTask} />
 
-        {/* Android App Banner */}
-        <div className="mt-8">
-          <AndroidAppBanner />
-        </div>
-
-        {/* Bottom Action Buttons */}
-        <div className="mt-8">
-          <BottomActionButtons onCreateTask={handleCreateTask} />
-        </div>
+        {/* Modern Tasks Overview */}
+        <ModernTasksOverview
+          tasks={tasks}
+          projects={projects}
+          onTaskClick={handleTaskClick}
+        />
 
         {/* Dialogs */}
         <CreateTaskDialog

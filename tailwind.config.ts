@@ -70,6 +70,16 @@ export default {
           border: 'hsl(var(--sidebar-border))',
           ring: 'hsl(var(--sidebar-ring))'
         },
+        dashboard: {
+          bg: 'hsl(var(--dashboard-bg))',
+          card: 'hsl(var(--dashboard-card))',
+          'card-hover': 'hsl(var(--dashboard-card-hover))',
+          accent: 'hsl(var(--dashboard-accent))',
+          'accent-light': 'hsl(var(--dashboard-accent-light))',
+          warning: 'hsl(var(--dashboard-warning))',
+          info: 'hsl(var(--dashboard-info))',
+          success: 'hsl(var(--dashboard-success))'
+        },
         priority: {
           low: '#34d399',      // emerald-400
           medium: '#bef264',   // lime-300
@@ -86,6 +96,17 @@ export default {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)'
+      },
+      boxShadow: {
+        'sm': 'var(--shadow-sm)',
+        'base': 'var(--shadow-base)',
+        'md': 'var(--shadow-md)',
+        'lg': 'var(--shadow-lg)',
+        'glow': 'var(--shadow-glow)'
+      },
+      backgroundImage: {
+        'dashboard-gradient': 'linear-gradient(135deg, hsl(var(--dashboard-gradient-start)), hsl(var(--dashboard-gradient-end)))',
+        'card-gradient': 'linear-gradient(145deg, hsl(var(--dashboard-card)), hsl(var(--dashboard-card-hover)))'
       },
       fontFamily: {
         'sans': ['Inter', 'ui-sans-serif', 'system-ui'],
