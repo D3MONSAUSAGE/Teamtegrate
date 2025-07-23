@@ -1,21 +1,22 @@
 
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Badge } from '@/components/ui/badge';
-import { CalendarIcon, Plus, Loader2, AlertTriangle } from 'lucide-react';
-import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
-import { Task } from '@/types';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Target } from 'lucide-react';
+import { format } from "date-fns";
+import { Task, User, Project, TaskPriority, UserRole } from '@/types';
+import { TaskFormData } from '@/types/forms';
+import { useForm } from 'react-hook-form';
+import { toast } from '@/components/ui/sonner';
+import { useProjects } from '@/hooks/useProjects';
+import { useOrganizationTeamMembers } from '@/hooks/useOrganizationTeamMembers';
+import { useTaskSubmission } from '@/hooks/useTaskSubmission';
 import { useAuth } from '@/contexts/AuthContext';
-import { useTask } from '@/contexts/task/TaskContext';
-import { toast } from 'sonner';
+import { devLog } from '@/utils/devLogger';
+import { logger } from '@/utils/logger';
+import TaskDetailsCard from './TaskDetailsCard';
+import EnhancedTaskAssignment from './form/assignment/EnhancedTaskAssignment';
+import TaskScheduleSection from './form/TaskScheduleSection';
+import TaskDialogActions from './TaskDialogActions';
 
 interface EnhancedCreateTaskDialogProps {
   open: boolean;
@@ -30,272 +31,271 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
   onOpenChange,
   editingTask,
   currentProjectId,
-  onTaskComplete
+  onTaskComplete,
 }) => {
-  const { user, isReady } = useAuth();
-  const { createTask, updateTask, projects } = useTask();
+  const { user: currentUser } = useAuth();
+  const { projects } = useProjects();
+  
+  // For managers, use organization team members (current behavior)
+  // For admins and superadmins, the enhanced assignment component will handle user loading
+  const { users, isLoading: loadingUsers, refetch: refetchUsers } = useOrganizationTeamMembers();
+  
+  const { submitTask } = useTaskSubmission();
+
+  const [selectedMember, setSelectedMember] = useState<string | undefined>("unassigned");
+  const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
+  const [deadlineDate, setDeadlineDate] = useState<Date | undefined>(undefined);
+  const [timeInput, setTimeInput] = useState('09:00');
+  
+  // New scheduled time states
+  const [scheduledStartDate, setScheduledStartDate] = useState<Date | undefined>(undefined);
+  const [scheduledEndDate, setScheduledEndDate] = useState<Date | undefined>(undefined);
+  const [scheduledStartTime, setScheduledStartTime] = useState('');
+  const [scheduledEndTime, setScheduledEndTime] = useState('');
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    priority: 'Medium' as 'High' | 'Medium' | 'Low',
-    status: 'To Do' as 'To Do' | 'In Progress' | 'Completed',
-    deadline: new Date(),
-    projectId: currentProjectId || '',
-    assignedToId: '',
-    assignedToName: ''
+
+  const form = useForm({
+    defaultValues: {
+      title: '',
+      description: '',
+      priority: 'Medium' as TaskPriority,
+      projectId: currentProjectId || 'none',
+      cost: ''
+    }
   });
 
+  // Force refresh users when dialog opens to ensure latest data
   useEffect(() => {
-    if (editingTask) {
-      setFormData({
-        title: editingTask.title,
-        description: editingTask.description || '',
-        priority: editingTask.priority,
-        status: editingTask.status,
-        deadline: new Date(editingTask.deadline),
-        projectId: editingTask.projectId || currentProjectId || '',
-        assignedToId: editingTask.assignedToId || '',
-        assignedToName: editingTask.assignedToName || ''
-      });
-    } else {
-      setFormData({
-        title: '',
-        description: '',
-        priority: 'Medium',
-        status: 'To Do',
-        deadline: new Date(),
-        projectId: currentProjectId || '',
-        assignedToId: '',
-        assignedToName: ''
-      });
+    if (open) {
+      devLog.taskOperation('Dialog opened, refreshing users');
+      refetchUsers();
     }
-  }, [editingTask, currentProjectId]);
+  }, [open, refetchUsers]);
+
+  // Initialize form data when editing
+  useEffect(() => {
+    if (editingTask && open) {
+      form.setValue('title', editingTask.title);
+      form.setValue('description', editingTask.description);
+      form.setValue('priority', editingTask.priority);
+      form.setValue('projectId', editingTask.projectId || 'none');
+      form.setValue('cost', editingTask.cost?.toString() || '');
+      
+      setDeadlineDate(new Date(editingTask.deadline));
+      setTimeInput(format(new Date(editingTask.deadline), 'HH:mm'));
+      
+      // Set scheduled times
+      if (editingTask.scheduledStart) {
+        setScheduledStartDate(new Date(editingTask.scheduledStart));
+        setScheduledStartTime(format(new Date(editingTask.scheduledStart), 'HH:mm'));
+      }
+      if (editingTask.scheduledEnd) {
+        setScheduledEndDate(new Date(editingTask.scheduledEnd));
+        setScheduledEndTime(format(new Date(editingTask.scheduledEnd), 'HH:mm'));
+      }
+      
+      // Set assigned users based on assignment type
+      if (editingTask.assignedToIds && editingTask.assignedToIds.length > 0) {
+        setSelectedMembers(editingTask.assignedToIds);
+        if (editingTask.assignedToIds.length === 1) {
+          setSelectedMember(editingTask.assignedToIds[0]);
+        }
+      } else if (editingTask.assignedToId) {
+        setSelectedMember(editingTask.assignedToId);
+        setSelectedMembers([editingTask.assignedToId]);
+      }
+    } else if (!editingTask && open) {
+      // Reset form for new task
+      form.reset();
+      setSelectedMember("unassigned");
+      setSelectedMembers([]);
+      setDeadlineDate(undefined);
+      setTimeInput('09:00');
+      setScheduledStartDate(undefined);
+      setScheduledEndDate(undefined);
+      setScheduledStartTime('');
+      setScheduledEndTime('');
+    }
+  }, [editingTask, open, users, form, currentProjectId]);
+
+  const handleAssign = (userId: string) => {
+    setSelectedMember(userId);
+  };
+
+  const handleMembersChange = (memberIds: string[]) => {
+    setSelectedMembers(memberIds);
+  };
+
+  const handleDateChange = (date: Date | undefined) => {
+    setDeadlineDate(date);
+  };
+
+  const handleTimeChange = (time: string) => {
+    setTimeInput(time);
+  };
+
+  // Scheduled time handlers
+  const handleScheduledStartDateChange = (date: Date | undefined) => {
+    setScheduledStartDate(date);
+  };
+
+  const handleScheduledEndDateChange = (date: Date | undefined) => {
+    setScheduledEndDate(date);
+  };
+
+  const handleScheduledStartTimeChange = (time: string) => {
+    setScheduledStartTime(time);
+  };
+
+  const handleScheduledEndTimeChange = (time: string) => {
+    setScheduledEndTime(time);
+  };
 
   const handleSubmit = async () => {
-    if (!isReady) {
-      toast.error('Please wait for your profile to load');
+    if (!deadlineDate) {
+      toast.error('Please select a deadline date');
       return;
     }
 
-    if (!user?.organizationId) {
-      toast.error('Organization not loaded. Please try again.');
-      return;
-    }
-
-    if (!formData.title.trim()) {
-      toast.error('Task title is required');
+    if (!form.getValues('title')?.trim()) {
+      toast.error('Please enter a task title');
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      const taskData = {
-        ...formData,
-        organizationId: user.organizationId,
-        userId: user.id,
-        createdById: user.id,
-        createdByName: user.name
-      };
+      // Combine date and time for deadline
+      const [hours, minutes] = timeInput.split(':');
+      const deadline = new Date(deadlineDate);
+      deadline.setHours(parseInt(hours, 10), parseInt(minutes, 10));
 
-      if (editingTask) {
-        await updateTask(editingTask.id, taskData);
-        toast.success('Task updated successfully');
-      } else {
-        await createTask(taskData);
-        toast.success('Task created successfully');
+      // Combine scheduled start date and time if provided
+      let scheduledStart: Date | undefined;
+      if (scheduledStartDate) {
+        scheduledStart = new Date(scheduledStartDate);
+        if (scheduledStartTime) {
+          const [startHours, startMinutes] = scheduledStartTime.split(':');
+          scheduledStart.setHours(parseInt(startHours, 10), parseInt(startMinutes, 10));
+        }
       }
 
-      onOpenChange(false);
-      onTaskComplete?.();
+      // Combine scheduled end date and time if provided
+      let scheduledEnd: Date | undefined;
+      if (scheduledEndDate) {
+        scheduledEnd = new Date(scheduledEndDate);
+        if (scheduledEndTime) {
+          const [endHours, endMinutes] = scheduledEndTime.split(':');
+          scheduledEnd.setHours(parseInt(endHours, 10), parseInt(endMinutes, 10));
+        }
+      }
+
+      const formData = form.getValues();
+      
+      // Get assigned users based on current selection
+      let assignedUsers: User[] = [];
+      if (selectedMembers.length > 0) {
+        assignedUsers = users.filter(user => selectedMembers.includes(user.id));
+      } else if (selectedMember && selectedMember !== "unassigned") {
+        const user = users.find(u => u.id === selectedMember);
+        if (user) assignedUsers = [user];
+      }
+
+      const taskData = {
+        ...formData,
+        deadline,
+        scheduledStart,
+        scheduledEnd,
+        cost: formData.cost ? parseFloat(formData.cost) : 0,
+        projectId: formData.projectId === 'none' ? undefined : formData.projectId,
+      };
+
+      const success = await submitTask(
+        taskData,
+        assignedUsers,
+        deadline,
+        '',
+        editingTask,
+        () => {
+          devLog.taskOperation('Task submission success callback');
+          logger.userAction('Task created/updated successfully');
+          onOpenChange(false);
+          onTaskComplete?.();
+        }
+      );
+
+      if (!success) {
+        logger.error('Task submission failed');
+        throw new Error('Failed to submit task');
+      }
+
+      devLog.taskOperation('Task submission completed successfully');
     } catch (error) {
-      console.error('Error saving task:', error);
-      toast.error('Failed to save task. Please try again.');
+      logger.error('Error in handleSubmit', error);
+      toast.error('Failed to save task');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleCancel = () => {
-    onOpenChange(false);
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[1200px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl font-semibold">
+          <DialogTitle className="flex items-center gap-2">
+            <Target className="h-5 w-5" />
             {editingTask ? 'Edit Task' : 'Create New Task'}
+            {currentUser?.role && (
+              <span className="text-sm text-muted-foreground">
+                ({currentUser.role} view)
+              </span>
+            )}
           </DialogTitle>
         </DialogHeader>
-
-        {!isReady && (
-          <div className="flex items-center gap-2 p-4 bg-orange-50 border border-orange-200 rounded-lg">
-            <AlertTriangle className="h-5 w-5 text-orange-600" />
-            <p className="text-sm text-orange-700">
-              Please wait for your profile to load before creating tasks.
-            </p>
-          </div>
-        )}
-
-        <div className="space-y-6 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="title">Task Title *</Label>
-            <Input
-              id="title"
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              placeholder="Enter task title"
-              disabled={isSubmitting || !isReady}
+        
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 py-4">
+          <div className="lg:col-span-2 space-y-6">
+            <TaskDetailsCard
+              form={form}
+              projects={projects}
+              deadlineDate={deadlineDate}
+              timeInput={timeInput}
+              onDateChange={handleDateChange}
+              onTimeChange={handleTimeChange}
+            />
+            
+            <TaskScheduleSection
+              scheduledStartDate={scheduledStartDate}
+              scheduledEndDate={scheduledEndDate}
+              scheduledStartTime={scheduledStartTime}
+              scheduledEndTime={scheduledEndTime}
+              onScheduledStartDateChange={handleScheduledStartDateChange}
+              onScheduledEndDateChange={handleScheduledEndDateChange}
+              onScheduledStartTimeChange={handleScheduledStartTimeChange}
+              onScheduledEndTimeChange={handleScheduledEndTimeChange}
             />
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Enter task description"
-              disabled={isSubmitting || !isReady}
-              rows={3}
+          
+          <div className="lg:col-span-1">
+            <EnhancedTaskAssignment
+              selectedMember={selectedMember}
+              selectedMembers={selectedMembers}
+              onAssign={handleAssign}
+              onMembersChange={handleMembersChange}
+              users={users}
+              isLoading={loadingUsers}
+              editingTask={editingTask}
             />
           </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Priority</Label>
-              <Select 
-                value={formData.priority} 
-                onValueChange={(value) => setFormData({ ...formData, priority: value as 'High' | 'Medium' | 'Low' })}
-                disabled={isSubmitting || !isReady}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="High">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-red-500 rounded-full" />
-                      High
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="Medium">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-yellow-500 rounded-full" />
-                      Medium
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="Low">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-green-500 rounded-full" />
-                      Low
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Status</Label>
-              <Select 
-                value={formData.status} 
-                onValueChange={(value) => setFormData({ ...formData, status: value as 'To Do' | 'In Progress' | 'Completed' })}
-                disabled={isSubmitting || !isReady}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="To Do">To Do</SelectItem>
-                  <SelectItem value="In Progress">In Progress</SelectItem>
-                  <SelectItem value="Completed">Completed</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Due Date</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !formData.deadline && "text-muted-foreground"
-                  )}
-                  disabled={isSubmitting || !isReady}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {formData.deadline ? format(formData.deadline, "PPP") : "Select date"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={formData.deadline}
-                  onSelect={(date) => date && setFormData({ ...formData, deadline: date })}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-
-          {projects.length > 0 && (
-            <div className="space-y-2">
-              <Label>Project</Label>
-              <Select 
-                value={formData.projectId} 
-                onValueChange={(value) => setFormData({ ...formData, projectId: value })}
-                disabled={isSubmitting || !isReady}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select project (optional)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">No project</SelectItem>
-                  {projects.map((project) => (
-                    <SelectItem key={project.id} value={project.id}>
-                      {project.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
         </div>
 
-        <div className="flex justify-end gap-3 pt-6 border-t">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleCancel}
-            disabled={isSubmitting}
-            className="px-6"
-          >
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            onClick={handleSubmit}
-            disabled={isSubmitting || !isReady}
-            className="px-6 bg-gradient-to-r from-primary to-emerald-500 hover:shadow-lg transition-all duration-200"
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                {editingTask ? 'Updating...' : 'Creating...'}
-              </>
-            ) : (
-              <>
-                <Plus className="h-4 w-4 mr-2" />
-                {editingTask ? 'Update Task' : 'Create Task'}
-              </>
-            )}
-          </Button>
-        </div>
+        <TaskDialogActions
+          isSubmitting={isSubmitting}
+          editingTask={editingTask}
+          onSubmit={handleSubmit}
+          onCancel={() => onOpenChange(false)}
+        />
       </DialogContent>
     </Dialog>
   );

@@ -46,7 +46,7 @@ export const useAuthState = () => {
       setTimeout(() => {
         console.log('AuthState: Profile enhancement should be complete');
         setProfileLoading(false);
-      }, 1000); // Increased timeout to ensure profile is fully loaded
+      }, 500);
     } else {
       // No session, clear everything
       await updateSession(newSession);
@@ -65,15 +65,12 @@ export const useAuthState = () => {
     setLoading 
   });
 
-  // Enhanced ready state check - ensure user has all required data
-  const isUserReady = !loading && !profileLoading && !!user && !!user.organizationId;
-
   return {
     user,
     session,
     loading,
     profileLoading,
-    isReady: isUserReady,
+    isReady: !loading && !profileLoading && !!user?.organizationId,
     setUser,
     setSession,
     setLoading,

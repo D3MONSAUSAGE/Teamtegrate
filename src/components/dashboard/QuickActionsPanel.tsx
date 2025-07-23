@@ -1,161 +1,155 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Calendar, Users, BarChart3, Zap, Clock, Target } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { 
+  Plus, 
+  Calendar, 
+  Users, 
+  FileText, 
+  Clock,
+  Zap,
+  Target,
+  Briefcase,
+  Smartphone
+} from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { toast } from '@/components/ui/use-toast';
 
 interface QuickActionsPanelProps {
   onCreateTask: () => void;
+  userRole: string;
 }
 
-const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({ onCreateTask }) => {
+const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({
+  onCreateTask,
+  userRole
+}) => {
+  const handleDownloadApp = () => {
+    try {
+      // Open download link in new tab
+      window.open('https://github.com/D3MONSAUSAGE/Teamtegrate/releases/download/v1.0.0/app-release.apk', '_blank');
+      
+      // Show success toast
+      toast({
+        title: "Download Started",
+        description: "The TeamTegrate Android app is being downloaded.",
+      });
+    } catch (error) {
+      // Show error toast
+      toast({
+        title: "Download Failed", 
+        description: "Unable to download the app. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const quickActions = [
     {
+      label: 'New Task',
       icon: Plus,
-      title: 'New Task',
-      description: 'Create a new task',
       action: onCreateTask,
-      gradient: 'from-blue-500 to-indigo-600',
-      hoverGradient: 'hover:from-blue-600 hover:to-indigo-700'
+      color: 'from-primary to-blue-600',
+      shortcut: 'Ctrl+N'
     },
     {
+      label: 'Calendar',
       icon: Calendar,
-      title: 'Schedule Meeting',
-      description: 'Plan team sync',
-      action: () => console.log('Schedule meeting'),
-      gradient: 'from-purple-500 to-pink-600',
-      hoverGradient: 'hover:from-purple-600 hover:to-pink-700'
+      href: '/dashboard/calendar',
+      color: 'from-emerald-500 to-green-600',
+      shortcut: 'Ctrl+C'
     },
     {
-      icon: Users,
-      title: 'Invite Member',
-      description: 'Add team member',
-      action: () => console.log('Invite member'),
-      gradient: 'from-emerald-500 to-teal-600',
-      hoverGradient: 'hover:from-emerald-600 hover:to-teal-700'
+      label: 'Focus Mode',
+      icon: Target,
+      href: '/dashboard/focus',
+      color: 'from-purple-500 to-violet-600',
+      shortcut: 'Ctrl+F'
     },
     {
-      icon: BarChart3,
-      title: 'View Reports',
-      description: 'Check analytics',
-      action: () => console.log('View reports'),
-      gradient: 'from-amber-500 to-orange-600',
-      hoverGradient: 'hover:from-amber-600 hover:to-orange-700'
+      label: 'Reports',
+      icon: FileText,
+      href: '/dashboard/reports',
+      color: 'from-orange-500 to-red-600',
+      shortcut: 'Ctrl+R'
     }
   ];
 
-  const productivityTips = [
-    {
-      icon: Zap,
-      tip: "Focus on 3 key tasks today",
-      color: "text-yellow-500"
-    },
-    {
-      icon: Clock,
-      tip: "Take breaks every 90 minutes",
-      color: "text-blue-500"
-    },
-    {
-      icon: Target,
-      tip: "Set clear daily goals",
-      color: "text-emerald-500"
-    }
-  ];
+  // Add manager-specific actions
+  if (userRole === 'manager') {
+    quickActions.push(
+      {
+        label: 'Projects',
+        icon: Briefcase,
+        href: '/dashboard/projects',
+        color: 'from-cyan-500 to-blue-600',
+        shortcut: 'Ctrl+P'
+      },
+      {
+        label: 'Team',
+        icon: Users,
+        href: '/dashboard/organization',
+        color: 'from-indigo-500 to-purple-600',
+        shortcut: 'Ctrl+T'
+      }
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Quick Actions */}
-      <Card className="overflow-hidden bg-gradient-to-br from-slate-50 to-gray-50 dark:from-slate-900/50 dark:to-gray-900/50 border-slate-200/50 dark:border-slate-700/30">
-        <CardHeader className="bg-gradient-to-r from-slate-600 to-gray-700 text-white">
-          <div className="flex items-center gap-3">
-            <Zap className="h-5 w-5" />
-            <CardTitle className="text-lg">Quick Actions</CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className="grid grid-cols-1 gap-4">
-            {quickActions.map((action, index) => {
-              const IconComponent = action.icon;
-              return (
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-foreground">Quick Actions</h3>
+        <Badge variant="secondary" className="text-xs">
+          <Zap className="h-3 w-3 mr-1" />
+          Fast Access
+        </Badge>
+      </div>
+      
+      {/* Android App Download Button */}
+      <div className="mb-6">
+        <Button
+          onClick={handleDownloadApp}
+          className="w-full h-16 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border-0"
+        >
+          <Smartphone className="h-6 w-6 mr-3" />
+          📲 Download Android App
+        </Button>
+      </div>
+      
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {quickActions.map((action, index) => (
+          <div key={action.label} className="group">
+            {action.href ? (
+              <Link to={action.href}>
                 <Button
-                  key={index}
-                  variant="ghost"
-                  onClick={action.action}
-                  className={`h-auto p-4 justify-start bg-gradient-to-r ${action.gradient} ${action.hoverGradient} text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105`}
+                  variant="outline"
+                  className={`w-full h-auto p-4 flex flex-col items-center gap-3 border-2 border-transparent hover:border-primary/20 bg-gradient-to-br ${action.color} text-white hover:shadow-lg transition-all duration-300 hover:scale-105`}
                 >
-                  <div className="flex items-center gap-4 w-full">
-                    <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-                      <IconComponent className="h-5 w-5" />
-                    </div>
-                    <div className="text-left">
-                      <div className="font-semibold">{action.title}</div>
-                      <div className="text-sm text-white/80">{action.description}</div>
-                    </div>
-                  </div>
+                  <action.icon className="h-6 w-6" />
+                  <span className="text-sm font-medium">{action.label}</span>
                 </Button>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Productivity Tips */}
-      <Card className="overflow-hidden bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20 border-indigo-200/50 dark:border-indigo-800/30">
-        <CardHeader className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white">
-          <div className="flex items-center gap-3">
-            <Target className="h-5 w-5" />
-            <CardTitle className="text-lg">Productivity Tips</CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className="space-y-4">
-            {productivityTips.map((tip, index) => {
-              const IconComponent = tip.icon;
-              return (
-                <div
-                  key={index}
-                  className="flex items-center gap-3 p-3 rounded-lg bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm border border-white/20"
-                >
-                  <IconComponent className={`h-5 w-5 ${tip.color}`} />
-                  <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                    {tip.tip}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Today's Focus */}
-      <Card className="overflow-hidden bg-gradient-to-br from-rose-50 to-pink-50 dark:from-rose-950/20 dark:to-pink-950/20 border-rose-200/50 dark:border-rose-800/30">
-        <CardHeader className="bg-gradient-to-r from-rose-500 to-pink-600 text-white">
-          <div className="flex items-center gap-3">
-            <Target className="h-5 w-5" />
-            <CardTitle className="text-lg">Today's Focus</CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className="text-center py-6">
-            <div className="w-16 h-16 mx-auto bg-gradient-to-br from-rose-400 to-pink-500 rounded-full flex items-center justify-center mb-4">
-              <Target className="h-8 w-8 text-white" />
+              </Link>
+            ) : (
+              <Button
+                variant="outline"
+                onClick={action.action}
+                className={`w-full h-auto p-4 flex flex-col items-center gap-3 border-2 border-transparent hover:border-primary/20 bg-gradient-to-br ${action.color} text-white hover:shadow-lg transition-all duration-300 hover:scale-105`}
+              >
+                <action.icon className="h-6 w-6" />
+                <span className="text-sm font-medium">{action.label}</span>
+              </Button>
+            )}
+            
+            {/* Keyboard shortcut hint */}
+            <div className="text-center mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
+                {action.shortcut}
+              </span>
             </div>
-            <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">
-              What's your main goal today?
-            </h3>
-            <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
-              Focus on what matters most
-            </p>
-            <Button 
-              onClick={onCreateTask}
-              className="bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white shadow-lg"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Set Today's Goal
-            </Button>
           </div>
-        </CardContent>
-      </Card>
+        ))}
+      </div>
     </div>
   );
 };
