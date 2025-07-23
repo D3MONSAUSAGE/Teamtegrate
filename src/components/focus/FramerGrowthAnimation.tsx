@@ -29,19 +29,15 @@ const FramerGrowthAnimation: React.FC<FramerGrowthAnimationProps> = ({
     initial: { opacity: 0, y: 20 },
     animate: { 
       opacity: 1, 
-      y: 0,
-      transition: {
-        duration: 0.6,
-        ease: "easeOut"
-      }
+      y: 0
     }
   };
 
   return (
     <motion.div
-      variants={cardVariants}
-      initial="initial"
-      animate="animate"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
     >
       <Card className="p-6 glass-card overflow-hidden relative">
         <GrowthAnimationHeader 

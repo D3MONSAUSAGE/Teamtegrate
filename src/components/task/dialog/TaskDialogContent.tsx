@@ -43,18 +43,18 @@ const TaskDialogContent: React.FC<TaskDialogContentProps> = ({
   form
 }) => {
   return (
-    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+    <DialogContent className="w-full max-w-sm sm:max-w-md lg:max-w-4xl max-h-[85vh] sm:max-h-[90vh] overflow-y-auto scrollbar-hide">
       <DialogHeader>
         <DialogTitle>
           {editingTask ? 'Edit Task' : 'Create New Task'}
         </DialogTitle>
       </DialogHeader>
 
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 lg:space-y-6">
         <Tabs defaultValue="details" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="details">Task Details</TabsTrigger>
-            <TabsTrigger value="assignment">Assignment</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 mb-4 lg:mb-6">
+            <TabsTrigger value="details" className="mobile-touch-target">Task Details</TabsTrigger>
+            <TabsTrigger value="assignment" className="mobile-touch-target">Assignment</TabsTrigger>
           </TabsList>
           
           <TabsContent value="details" className="space-y-4 mt-0">
@@ -91,18 +91,20 @@ const TaskDialogContent: React.FC<TaskDialogContentProps> = ({
           </TabsContent>
         </Tabs>
 
-        <div className="flex justify-end gap-3 pt-4 border-t">
+        <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t">
           <Button
             type="button"
             variant="outline"
             onClick={onCancel}
             disabled={isSubmitting}
+            className="mobile-touch-target"
           >
             Cancel
           </Button>
           <Button
             type="submit"
             disabled={isSubmitting}
+            className="mobile-touch-target"
           >
             {isSubmitting 
               ? (editingTask ? 'Updating...' : 'Creating...') 

@@ -28,14 +28,33 @@ const SwipeableTaskCard: React.FC<SwipeableTaskCardProps> = ({
 }) => {
   const [isRevealed, setIsRevealed] = useState(false);
   const [dragX, setDragX] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleDragStart = () => {
+    setIsDragging(true);
+  };
 
   const handleDrag = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    setDragX(info.offset.x);
+    // Only update drag position if we're intentionally swiping
+    if (isDragging) {
+      setDragX(info.offset.x);
+    }
   };
 
   const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    const threshold = 100;
-    if (Math.abs(info.offset.x) > threshold) {
+    setIsDragging(false);
+    
+    // Increased threshold and added velocity requirement for more intentional swipes
+    const threshold = 150; // Increased from 100px
+    const minVelocity = 300; // Minimum swipe velocity (px/s)
+    
+    // Check if this was an intentional swipe (distance + velocity)
+    const isIntentionalSwipe = Math.abs(info.offset.x) > threshold && Math.abs(info.velocity.x) > minVelocity;
+    
+    // Also check if the drag was primarily horizontal (not vertical scrolling)
+    const isHorizontalGesture = Math.abs(info.offset.x) > Math.abs(info.offset.y) * 2;
+    
+    if (isIntentionalSwipe && isHorizontalGesture) {
       setIsRevealed(true);
     } else {
       setIsRevealed(false);
@@ -130,7 +149,9 @@ const SwipeableTaskCard: React.FC<SwipeableTaskCardProps> = ({
       <motion.div
         drag="x"
         dragConstraints={{ left: -200, right: 200 }}
-        dragElastic={0.2}
+        dragElastic={0.05} // Reduced from 0.2 for less responsiveness
+        dragMomentum={false} // Disable momentum to prevent accidental triggers
+        onDragStart={handleDragStart}
         onDrag={handleDrag}
         onDragEnd={handleDragEnd}
         animate={{ x: isRevealed ? (dragX > 0 ? 100 : -100) : 0 }}

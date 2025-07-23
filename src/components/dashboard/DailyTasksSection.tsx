@@ -1,139 +1,222 @@
 
-import React, { useState, useMemo } from 'react';
-import { Button } from "@/components/ui/button";
-import TaskCard from '@/components/task-card';
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Task } from '@/types';
-import { Plus, ChevronRight, Calendar } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { useIsMobile } from '@/hooks/use-mobile';
-import TaskDetailDialog from '@/components/calendar/TaskDetailDialog';
-import { useDebounce } from '@/utils/performanceUtils';
+import { Plus, Calendar, Clock, AlertCircle, CheckCircle2, Target } from 'lucide-react';
+import { format, isToday, isTomorrow } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface DailyTasksSectionProps {
   tasks: Task[];
   onCreateTask: () => void;
-  onEditTask: (task: Task) => void;
+  onTaskClick: (task: Task) => void;
 }
 
-const DailyTasksSection: React.FC<DailyTasksSectionProps> = ({
-  tasks,
-  onCreateTask,
-  onEditTask
+const DailyTasksSection: React.FC<DailyTasksSectionProps> = ({ 
+  tasks, 
+  onCreateTask, 
+  onTaskClick 
 }) => {
-  const isMobile = useIsMobile();
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [showDetails, setShowDetails] = useState(false);
+  const isOverdue = (date: Date) => {
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    return date < today;
+  };
 
-  // Debounced handlers to prevent rapid clicking
-  const debouncedOpenDetails = useDebounce((task: Task) => {
-    setSelectedTask(task);
-    setShowDetails(true);
-  }, 200);
+  const todayTasks = tasks.filter(task => isToday(new Date(task.deadline)));
+  const tomorrowTasks = tasks.filter(task => isTomorrow(new Date(task.deadline)));
+  const overdueTasks = tasks.filter(task => isOverdue(new Date(task.deadline)) && task.status !== 'Completed');
 
-  const debouncedEditTask = useDebounce((task: Task) => {
-    onEditTask(task);
-  }, 200);
+  const getTaskStatusColor = (task: Task) => {
+    if (task.status === 'Completed') return 'from-green-500 to-emerald-600';
+    if (task.status === 'In Progress') return 'from-amber-500 to-orange-600';
+    if (isOverdue(new Date(task.deadline))) return 'from-red-500 to-rose-600';
+    return 'from-blue-500 to-indigo-600';
+  };
 
-  // Memoized handlers
-  const handleOpenDetails = useMemo(() => debouncedOpenDetails, [debouncedOpenDetails]);
-  const handleEditTask = useMemo(() => debouncedEditTask, [debouncedEditTask]);
-  
-  return (
-    <div className={`
-      space-y-6 bg-gradient-to-br from-blue-50/40 via-blue-50/20 to-purple-50/40 
-      dark:from-blue-950/20 dark:via-blue-950/10 dark:to-purple-950/20 
-      rounded-2xl backdrop-blur-sm
-      ${isMobile ? 'p-4' : 'p-6'}
-    `}>
-      <div className={`
-        flex items-center justify-between
-        ${isMobile ? 'flex-col gap-3 items-start' : ''}
-      `}>
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-full bg-gradient-to-r from-blue-500/20 to-purple-500/20">
-            <Calendar className={`text-blue-600 dark:text-blue-400 ${isMobile ? 'h-4 w-4' : 'h-5 w-5'}`} />
-          </div>
-          <h2 className={`
-            font-semibold bg-gradient-to-r from-foreground to-blue-600 bg-clip-text text-transparent
-            ${isMobile ? 'text-lg' : 'text-xl'}
-          `}>
-            Today's Tasks
-          </h2>
+  const getTaskStatusIcon = (task: Task) => {
+    if (task.status === 'Completed') return <CheckCircle2 className="h-4 w-4" />;
+    if (task.status === 'In Progress') return <Clock className="h-4 w-4" />;
+    if (isOverdue(new Date(task.deadline))) return <AlertCircle className="h-4 w-4" />;
+    return <Target className="h-4 w-4" />;
+  };
+
+  const TaskCard = ({ task, index }: { task: Task; index: number }) => (
+    <div
+      key={task.id}
+      className={cn(
+        "group p-4 rounded-xl border transition-all duration-300 cursor-pointer hover:shadow-md animate-fade-in",
+        "bg-card/80 hover:bg-card border-border/50 hover:border-primary/30 hover:scale-[1.02]"
+      )}
+      style={{ animationDelay: `${index * 0.1}s` }}
+      onClick={() => onTaskClick(task)}
+    >
+      <div className="flex items-start gap-3">
+        <div className={cn(
+          "p-2 rounded-lg bg-gradient-to-r text-white shadow-sm",
+          getTaskStatusColor(task)
+        )}>
+          {getTaskStatusIcon(task)}
         </div>
-        <Link to="/dashboard/tasks">
-          <Button 
-            variant="ghost" 
-            size={isMobile ? "sm" : "sm"} 
-            className={`
-              text-blue-600 hover:bg-blue-500/10 transition-colors
-              ${isMobile ? 'mobile-touch-target' : ''}
-            `}
-          >
-            View all <ChevronRight className="h-4 w-4 ml-1" />
-          </Button>
-        </Link>
+        
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="font-semibold text-sm truncate text-foreground">
+              {task.title}
+            </h3>
+            <Badge
+              variant={task.priority === 'High' ? 'destructive' : task.priority === 'Medium' ? 'default' : 'secondary'}
+              className="text-xs"
+            >
+              {task.priority}
+            </Badge>
+          </div>
+          
+          {task.description && (
+            <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
+              {task.description}
+            </p>
+          )}
+          
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <div className="flex items-center gap-1">
+              <Calendar className="h-3 w-3" />
+              <span>{format(new Date(task.deadline), 'MMM dd')}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className={cn(
+                "w-2 h-2 rounded-full",
+                task.status === 'Completed' ? 'bg-green-500' : 
+                task.status === 'In Progress' ? 'bg-amber-500' : 'bg-blue-500'
+              )} />
+              <span className="capitalize">{task.status}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const TaskSection = ({ 
+    title, 
+    tasks, 
+    icon: Icon, 
+    color, 
+    emptyMessage 
+  }: { 
+    title: string; 
+    tasks: Task[]; 
+    icon: React.ComponentType<any>; 
+    color: string;
+    emptyMessage: string;
+  }) => (
+    <div className="space-y-3">
+      <div className="flex items-center gap-3">
+        <div className={cn("p-2 rounded-lg bg-gradient-to-r text-white", color)}>
+          <Icon className="h-4 w-4" />
+        </div>
+        <div>
+          <h3 className="font-semibold text-foreground">{title}</h3>
+          <p className="text-sm text-muted-foreground">{tasks.length} task{tasks.length !== 1 ? 's' : ''}</p>
+        </div>
       </div>
       
-      {tasks.length > 0 ? (
-        <div className={`
-          grid gap-4
-          ${isMobile ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'}
-          ${isMobile ? 'md:gap-4' : 'md:gap-6'}
-        `}>
-          {tasks.slice(0, isMobile ? 2 : 3).map((task) => (
-            <div key={task.id} className={`
-              group transition-all duration-200
-              ${isMobile ? 'active:scale-[0.98]' : 'hover:scale-[1.01]'}
-            `}>
-              <TaskCard 
-                task={task} 
-                onEdit={() => handleEditTask(task)}
-                onClick={() => handleOpenDetails(task)} 
-              />
+      <div className="space-y-2">
+        {tasks.length === 0 ? (
+          <div className="text-center py-8">
+            <div className="w-12 h-12 mx-auto rounded-full bg-muted/50 flex items-center justify-center mb-3">
+              <Icon className="h-6 w-6 text-muted-foreground" />
             </div>
-          ))}
+            <p className="text-sm text-muted-foreground">{emptyMessage}</p>
+          </div>
+        ) : (
+          tasks.map((task, index) => (
+            <TaskCard key={task.id} task={task} index={index} />
+          ))
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <Card className="overflow-hidden bg-gradient-to-br from-card/50 via-card/80 to-card/50 backdrop-blur-sm border-border/50 shadow-lg">
+      <CardHeader className="bg-gradient-to-r from-primary/10 to-purple-500/10 border-b border-border/50">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-gradient-to-r from-primary to-purple-500 text-white">
+              <Calendar className="h-5 w-5" />
+            </div>
+            <div>
+              <CardTitle className="text-xl font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
+                Today's Tasks
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">Stay on top of your schedule</p>
+            </div>
+          </div>
+          
+          <Button
+            onClick={onCreateTask}
+            className="bg-gradient-to-r from-primary to-purple-500 hover:from-primary/90 hover:to-purple-600 text-white shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Task
+          </Button>
         </div>
-      ) : (
-        <div className={`
-          bg-gradient-to-br from-blue-100/70 via-blue-100/50 to-purple-100/70 
-          dark:from-blue-900/30 dark:via-blue-900/20 dark:to-purple-900/30 
-          backdrop-blur-sm border rounded-2xl text-center
-          ${isMobile ? 'p-6' : 'p-8'}
-        `}>
-          <div className="flex flex-col items-center gap-4">
-            <div className="p-4 rounded-full bg-gradient-to-r from-blue-500/20 to-purple-500/20">
-              <Calendar className={`text-blue-600 dark:text-blue-400 ${isMobile ? 'h-6 w-6' : 'h-8 w-8'}`} />
+      </CardHeader>
+
+      <CardContent className="p-6 space-y-8">
+        {/* Overdue Tasks */}
+        {overdueTasks.length > 0 && (
+          <TaskSection
+            title="Overdue"
+            tasks={overdueTasks}
+            icon={AlertCircle}
+            color="from-red-500 to-rose-600"
+            emptyMessage="No overdue tasks"
+          />
+        )}
+
+        {/* Today's Tasks */}
+        <TaskSection
+          title="Today"
+          tasks={todayTasks}
+          icon={Target}
+          color="from-blue-500 to-indigo-600"
+          emptyMessage="No tasks scheduled for today"
+        />
+
+        {/* Tomorrow's Tasks */}
+        {tomorrowTasks.length > 0 && (
+          <TaskSection
+            title="Tomorrow"
+            tasks={tomorrowTasks}
+            icon={Clock}
+            color="from-purple-500 to-pink-600"
+            emptyMessage="No tasks scheduled for tomorrow"
+          />
+        )}
+
+        {/* Empty State */}
+        {tasks.length === 0 && (
+          <div className="text-center py-12">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center">
+              <Calendar className="w-8 h-8 text-primary" />
             </div>
-            <div className="space-y-2">
-              <h3 className={`font-semibold text-card-foreground ${isMobile ? 'text-base' : 'text-lg'}`}>
-                No tasks scheduled for today
-              </h3>
-              <p className={`text-muted-foreground ${isMobile ? 'text-sm' : 'text-sm'}`}>
-                Start your productive day by creating a new task
-              </p>
-            </div>
-            <Button 
-              variant="outline" 
-              size={isMobile ? "default" : "default"}
-              className={`
-                mt-2 hover:bg-blue-500/10 hover:border-blue-500 transition-colors
-                ${isMobile ? 'mobile-touch-target' : ''}
-              `}
+            <h3 className="text-lg font-semibold text-foreground mb-2">No Tasks Yet</h3>
+            <p className="text-muted-foreground mb-6">Create your first task to get started</p>
+            <Button
               onClick={onCreateTask}
+              className="bg-gradient-to-r from-primary to-purple-500 hover:from-primary/90 hover:to-purple-600 text-white shadow-md"
             >
-              <Plus className="h-4 w-4 mr-2" /> Add Task
+              <Plus className="h-4 w-4 mr-2" />
+              Create First Task
             </Button>
           </div>
-        </div>
-      )}
-      
-      <TaskDetailDialog
-        open={showDetails}
-        onOpenChange={setShowDetails}
-        task={selectedTask}
-        onEdit={handleEditTask}
-      />
-    </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 
