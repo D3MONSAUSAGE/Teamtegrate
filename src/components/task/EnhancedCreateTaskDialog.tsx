@@ -94,6 +94,7 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
       const taskData = {
         ...formData,
         organizationId: user.organizationId,
+        userId: user.id,
         createdById: user.id,
         createdByName: user.name
       };
