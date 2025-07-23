@@ -8,12 +8,12 @@ import EnhancedDashboardHeader from '@/components/dashboard/EnhancedDashboardHea
 import DailyTasksSection from '@/components/dashboard/DailyTasksSection';
 import RecentProjects from '@/components/dashboard/RecentProjects';
 import QuickActionsPanel from '@/components/dashboard/QuickActionsPanel';
-import ProfessionalDashboardHeader from '@/components/dashboard/ProfessionalDashboardHeader';
-import ExecutiveMetricsGrid from '@/components/dashboard/ExecutiveMetricsGrid';
-import SmartInsightsPanel from '@/components/dashboard/SmartInsightsPanel';
-import IntelligentTaskQueue from '@/components/dashboard/IntelligentTaskQueue';
-import TeamPerformanceOverview from '@/components/dashboard/TeamPerformanceOverview';
-import ContextualActionsHub from '@/components/dashboard/ContextualActionsHub';
+import SimpleWelcomeHeader from '@/components/dashboard/SimpleWelcomeHeader';
+import QuickStatsRow from '@/components/dashboard/QuickStatsRow';
+import FunctionalMetricsGrid from '@/components/dashboard/FunctionalMetricsGrid';
+import SimpleTimeTrackingWidget from '@/components/dashboard/SimpleTimeTrackingWidget';
+import SimplifiedQuickActions from '@/components/dashboard/SimplifiedQuickActions';
+import TodaysTasksList from '@/components/dashboard/TodaysTasksList';
 import CreateTaskDialog from '@/components/dialogs/CreateTaskDialog';
 import CreateProjectDialog from '@/components/CreateProjectDialog';
 import TaskDetailDialog from '@/components/calendar/TaskDetailDialog';
@@ -67,7 +67,7 @@ const DashboardPage = () => {
 
   if (!user) return null;
 
-  // Calculate stats for the enhanced header (mobile)
+  // Calculate stats for the dashboard
   const todaysTasks = tasks.filter(task => {
     const today = new Date();
     const taskDate = new Date(task.deadline);
@@ -140,29 +140,44 @@ const DashboardPage = () => {
     );
   }
 
-  // Desktop layout (new professional design)
+  // Desktop layout (simplified and functional)
   return (
-    <div className="min-h-screen bg-dashboard-bg">
-      {/* Professional Header */}
-      <ProfessionalDashboardHeader onCreateTask={handleCreateTask} />
-      
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Executive Metrics */}
-        <ExecutiveMetricsGrid tasks={tasks} />
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="max-w-6xl mx-auto px-6 py-8">
+        {/* Simple Welcome Header */}
+        <SimpleWelcomeHeader 
+          userName={user?.name?.split(' ')[0] || 'User'}
+          onCreateTask={handleCreateTask}
+        />
+
+        {/* Quick Stats Row */}
+        <QuickStatsRow 
+          todaysCount={stats.todaysCount}
+          upcomingCount={stats.upcomingCount}
+          projectsCount={stats.projectsCount}
+        />
+
+        {/* Functional Metrics Grid */}
+        <FunctionalMetricsGrid 
+          tasks={tasks}
+          dailyScore={dailyScore}
+        />
+
+        {/* Time Tracking Widget */}
+        <SimpleTimeTrackingWidget />
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-          {/* Left Column - Insights & Task Queue */}
-          <div className="lg:col-span-2 space-y-8">
-            <SmartInsightsPanel tasks={tasks} />
-            <IntelligentTaskQueue tasks={tasks} onTaskClick={handleTaskClick} />
-          </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          {/* Today's Tasks */}
+          <TodaysTasksList 
+            tasks={tasks}
+            onTaskClick={handleTaskClick}
+          />
 
-          {/* Right Column - Team & Actions */}
-          <div className="space-y-8">
-            <TeamPerformanceOverview tasks={tasks} projects={projects} />
-            <ContextualActionsHub onCreateTask={handleCreateTask} />
-          </div>
+          {/* Quick Actions */}
+          <SimplifiedQuickActions 
+            onCreateTask={handleCreateTask}
+          />
         </div>
 
         {/* Dialogs */}
