@@ -1,19 +1,24 @@
-
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTask } from '@/contexts/task';
 import { Task } from '@/types';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { motion } from 'framer-motion';
+
+// Mobile components (unchanged)
 import EnhancedDashboardHeader from '@/components/dashboard/EnhancedDashboardHeader';
 import DailyTasksSection from '@/components/dashboard/DailyTasksSection';
 import RecentProjects from '@/components/dashboard/RecentProjects';
 import QuickActionsPanel from '@/components/dashboard/QuickActionsPanel';
-import SimpleWelcomeHeader from '@/components/dashboard/SimpleWelcomeHeader';
-import QuickStatsRow from '@/components/dashboard/QuickStatsRow';
-import FunctionalMetricsGrid from '@/components/dashboard/FunctionalMetricsGrid';
-import SimpleTimeTrackingWidget from '@/components/dashboard/SimpleTimeTrackingWidget';
-import SimplifiedQuickActions from '@/components/dashboard/SimplifiedQuickActions';
-import TodaysTasksList from '@/components/dashboard/TodaysTasksList';
+
+// New premium desktop components
+import PremiumDashboardHeader from '@/components/dashboard/PremiumDashboardHeader';
+import GlassMorphismStatsGrid from '@/components/dashboard/GlassMorphismStatsGrid';
+import FloatingTimeTracker from '@/components/dashboard/FloatingTimeTracker';
+import IntelligentTaskVisualization from '@/components/dashboard/IntelligentTaskVisualization';
+import InteractiveQuickActions from '@/components/dashboard/InteractiveQuickActions';
+
+// Dialogs
 import CreateTaskDialog from '@/components/dialogs/CreateTaskDialog';
 import CreateProjectDialog from '@/components/CreateProjectDialog';
 import TaskDetailDialog from '@/components/calendar/TaskDetailDialog';
@@ -89,7 +94,7 @@ const DashboardPage = () => {
     projectsCount: projects.length
   };
 
-  // Mobile layout (enhanced)
+  // Mobile layout (unchanged)
   if (isMobile) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
@@ -140,44 +145,42 @@ const DashboardPage = () => {
     );
   }
 
-  // Desktop layout (simplified and functional)
+  // Premium desktop layout
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-6xl mx-auto px-6 py-8">
-        {/* Simple Welcome Header */}
-        <SimpleWelcomeHeader 
-          userName={user?.name?.split(' ')[0] || 'User'}
-          onCreateTask={handleCreateTask}
-        />
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.8 }}
+      className="min-h-screen bg-gradient-to-br from-dashboard-bg via-dashboard-card to-dashboard-bg"
+    >
+      <div className="max-w-7xl mx-auto">
+        {/* Premium Header */}
+        <PremiumDashboardHeader onCreateTask={handleCreateTask} />
 
-        {/* Quick Stats Row */}
-        <QuickStatsRow 
-          todaysCount={stats.todaysCount}
-          upcomingCount={stats.upcomingCount}
-          projectsCount={stats.projectsCount}
-        />
-
-        {/* Functional Metrics Grid */}
-        <FunctionalMetricsGrid 
-          tasks={tasks}
-          dailyScore={dailyScore}
-        />
-
-        {/* Time Tracking Widget */}
-        <SimpleTimeTrackingWidget />
-
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {/* Today's Tasks */}
-          <TodaysTasksList 
+        {/* Main Content */}
+        <div className="px-8 py-8 space-y-8">
+          {/* Glass Morphism Stats Grid */}
+          <GlassMorphismStatsGrid 
             tasks={tasks}
-            onTaskClick={handleTaskClick}
+            dailyScore={dailyScore}
           />
 
-          {/* Quick Actions */}
-          <SimplifiedQuickActions 
-            onCreateTask={handleCreateTask}
-          />
+          {/* Floating Time Tracker */}
+          <FloatingTimeTracker />
+
+          {/* Main Content Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Intelligent Task Visualization */}
+            <IntelligentTaskVisualization 
+              tasks={tasks}
+              onTaskClick={handleTaskClick}
+            />
+
+            {/* Interactive Quick Actions */}
+            <InteractiveQuickActions 
+              onCreateTask={handleCreateTask}
+            />
+          </div>
         </div>
 
         {/* Dialogs */}
@@ -201,7 +204,7 @@ const DashboardPage = () => {
           onEdit={handleEditTask}
         />
       </div>
-    </div>
+    </motion.div>
   );
 };
 
