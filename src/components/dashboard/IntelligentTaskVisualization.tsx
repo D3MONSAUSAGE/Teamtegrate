@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, Clock, AlertTriangle, User, Calendar, ArrowRight, Filter } from 'lucide-react';
+import { CheckCircle2, Clock, AlertTriangle, User, Calendar, ArrowRight, TrendingUp, Target } from 'lucide-react';
 import { Task } from '@/types';
 import { isTaskOverdue } from '@/utils/taskUtils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -40,24 +40,44 @@ const IntelligentTaskVisualization: React.FC<IntelligentTaskVisualizationProps> 
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'Completed':
-        return <CheckCircle2 className="h-5 w-5 text-dashboard-success" />;
+        return <CheckCircle2 className="h-4 w-4 text-emerald-600" />;
       case 'In Progress':
-        return <Clock className="h-5 w-5 text-dashboard-warning" />;
+        return <Clock className="h-4 w-4 text-amber-600" />;
       default:
-        return <AlertTriangle className="h-5 w-5 text-dashboard-gray-500" />;
+        return <AlertTriangle className="h-4 w-4 text-slate-500" />;
     }
   };
 
-  const getPriorityColor = (priority: string) => {
+  const getPriorityStyles = (priority: string) => {
     switch (priority) {
       case 'High':
-        return 'bg-dashboard-error/10 text-dashboard-error border-dashboard-error/20';
+        return {
+          dot: 'bg-red-500',
+          bg: 'bg-red-50',
+          text: 'text-red-700',
+          border: 'border-red-200'
+        };
       case 'Medium':
-        return 'bg-dashboard-warning/10 text-dashboard-warning border-dashboard-warning/20';
+        return {
+          dot: 'bg-amber-500',
+          bg: 'bg-amber-50',
+          text: 'text-amber-700',
+          border: 'border-amber-200'
+        };
       case 'Low':
-        return 'bg-dashboard-success/10 text-dashboard-success border-dashboard-success/20';
+        return {
+          dot: 'bg-emerald-500',
+          bg: 'bg-emerald-50',
+          text: 'text-emerald-700',
+          border: 'border-emerald-200'
+        };
       default:
-        return 'bg-dashboard-gray-100 text-dashboard-gray-600 border-dashboard-gray-200';
+        return {
+          dot: 'bg-slate-400',
+          bg: 'bg-slate-50',
+          text: 'text-slate-600',
+          border: 'border-slate-200'
+        };
     }
   };
 
@@ -65,9 +85,30 @@ const IntelligentTaskVisualization: React.FC<IntelligentTaskVisualizationProps> 
     const isOverdue = isTaskOverdue(task);
     const dueToday = new Date(task.deadline).toDateString() === new Date().toDateString();
     
-    if (isOverdue) return { label: 'Overdue', color: 'text-dashboard-error', bgColor: 'bg-dashboard-error/10' };
-    if (dueToday) return { label: 'Due Today', color: 'text-dashboard-warning', bgColor: 'bg-dashboard-warning/10' };
-    return { label: 'Upcoming', color: 'text-dashboard-success', bgColor: 'bg-dashboard-success/10' };
+    if (isOverdue) return { 
+      label: 'Overdue', 
+      styles: {
+        bg: 'bg-red-50',
+        text: 'text-red-700',
+        border: 'border-red-200'
+      }
+    };
+    if (dueToday) return { 
+      label: 'Due Today', 
+      styles: {
+        bg: 'bg-amber-50',
+        text: 'text-amber-700',
+        border: 'border-amber-200'
+      }
+    };
+    return { 
+      label: 'Upcoming', 
+      styles: {
+        bg: 'bg-blue-50',
+        text: 'text-blue-700',
+        border: 'border-blue-200'
+      }
+    };
   };
 
   return (
@@ -75,21 +116,20 @@ const IntelligentTaskVisualization: React.FC<IntelligentTaskVisualizationProps> 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, delay: 0.2 }}
+      className="h-full"
     >
-      <Card className="border-0 bg-white/60 backdrop-blur-xl shadow-xl">
-        <div className="absolute inset-0 bg-gradient-to-br from-dashboard-primary/5 via-transparent to-dashboard-teal/5" />
-        
-        <CardHeader className="relative pb-6">
+      <Card className="h-full border-0 bg-white shadow-sm ring-1 ring-slate-200/50">
+        <CardHeader className="pb-6 border-b border-slate-100">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-dashboard-primary/10 flex items-center justify-center">
-                <Filter className="h-6 w-6 text-dashboard-primary" />
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-sm">
+                <Target className="h-5 w-5 text-white" />
               </div>
               <div>
-                <CardTitle className="text-2xl font-bold text-dashboard-gray-900">
+                <CardTitle className="text-lg font-semibold text-slate-900">
                   Task Intelligence
                 </CardTitle>
-                <p className="text-dashboard-gray-600 mt-1">
+                <p className="text-sm text-slate-600 mt-0.5">
                   Smart prioritization and insights
                 </p>
               </div>
@@ -97,97 +137,106 @@ const IntelligentTaskVisualization: React.FC<IntelligentTaskVisualizationProps> 
             
             <Button 
               variant="outline" 
+              size="sm"
               onClick={handleViewAll}
               disabled={!isReady}
-              className="border-dashboard-border bg-white/50 hover:bg-white/70 backdrop-blur-sm disabled:opacity-50"
+              className="border-slate-200 bg-white hover:bg-slate-50 text-slate-700 disabled:opacity-50 shadow-sm"
             >
               View All
-              <ArrowRight className="h-4 w-4 ml-2" />
+              <ArrowRight className="h-3 w-3 ml-1.5" />
             </Button>
           </div>
         </CardHeader>
         
-        <CardContent className="relative space-y-4">
-          {activeTasks.map((task, index) => {
-            const urgency = getTaskUrgency(task);
-            
-            return (
-              <motion.div
-                key={task.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                whileHover={{ scale: 1.02, y: -2 }}
-                onClick={() => handleTaskClick(task)}
-                className={`group relative p-6 rounded-2xl border border-dashboard-border/50 bg-white/40 hover:bg-white/60 backdrop-blur-sm transition-all duration-300 cursor-pointer ${
-                  !isReady ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
-              >
-                {/* Priority indicator */}
-                <div className={`absolute left-0 top-0 w-1 h-full rounded-l-2xl ${
-                  task.priority === 'High' ? 'bg-dashboard-error' :
-                  task.priority === 'Medium' ? 'bg-dashboard-warning' :
-                  'bg-dashboard-success'
-                }`} />
+        <CardContent className="p-0">
+          {activeTasks.length > 0 ? (
+            <div className="divide-y divide-slate-100">
+              {activeTasks.map((task, index) => {
+                const urgency = getTaskUrgency(task);
+                const priorityStyles = getPriorityStyles(task.priority);
                 
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start gap-4 flex-1">
-                    <div className="mt-1">
-                      {getStatusIcon(task.status)}
-                    </div>
+                return (
+                  <motion.div
+                    key={task.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.5, delay: index * 0.1 }}
+                    onClick={() => handleTaskClick(task)}
+                    className={`group relative p-6 hover:bg-slate-50/50 transition-all duration-200 cursor-pointer ${
+                      !isReady ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
+                  >
+                    {/* Priority indicator line */}
+                    <div className={`absolute left-0 top-0 w-0.5 h-full ${priorityStyles.dot}`} />
                     
-                    <div className="space-y-3 flex-1">
-                      <div className="flex items-start justify-between">
-                        <h4 className="font-semibold text-dashboard-gray-900 group-hover:text-dashboard-primary transition-colors text-lg">
-                          {task.title}
-                        </h4>
-                        <div className="flex items-center gap-2 ml-4">
-                          <Badge 
-                            variant="outline" 
-                            className={`text-xs ${getPriorityColor(task.priority)}`}
-                          >
-                            {task.priority}
-                          </Badge>
-                          <Badge 
-                            variant="outline" 
-                            className={`text-xs ${urgency.color} ${urgency.bgColor} border-current/20`}
-                          >
-                            {urgency.label}
-                          </Badge>
+                    <div className="flex items-start gap-4">
+                      <div className="mt-0.5 flex-shrink-0">
+                        {getStatusIcon(task.status)}
+                      </div>
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-4 mb-3">
+                          <h4 className="font-medium text-slate-900 group-hover:text-blue-600 transition-colors leading-snug">
+                            {task.title}
+                          </h4>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <Badge 
+                              variant="outline" 
+                              className={`text-xs font-medium ${priorityStyles.bg} ${priorityStyles.text} ${priorityStyles.border} px-2 py-0.5`}
+                            >
+                              <div className={`w-1.5 h-1.5 rounded-full ${priorityStyles.dot} mr-1.5`} />
+                              {task.priority}
+                            </Badge>
+                            <Badge 
+                              variant="outline" 
+                              className={`text-xs font-medium ${urgency.styles.bg} ${urgency.styles.text} ${urgency.styles.border} px-2 py-0.5`}
+                            >
+                              {urgency.label}
+                            </Badge>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-6 text-sm text-slate-600">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-3.5 w-3.5 text-slate-400" />
+                            <span className="font-medium">
+                              {new Date(task.deadline).toLocaleDateString('en-US', { 
+                                month: 'short', 
+                                day: 'numeric' 
+                              })}
+                            </span>
+                          </div>
+                          
+                          {task.assignedToName && (
+                            <div className="flex items-center gap-2">
+                              <User className="h-3.5 w-3.5 text-slate-400" />
+                              <span className="font-medium truncate max-w-32">
+                                {task.assignedToName}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </div>
                       
-                      <div className="flex items-center gap-6 text-sm text-dashboard-gray-600">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4" />
-                          <span>{new Date(task.deadline).toLocaleDateString()}</span>
-                        </div>
-                        
-                        {task.assignedToName && (
-                          <div className="flex items-center gap-2">
-                            <User className="h-4 w-4" />
-                            <span>{task.assignedToName}</span>
-                          </div>
-                        )}
-                      </div>
+                      <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-blue-600 transition-colors opacity-0 group-hover:opacity-100 flex-shrink-0" />
                     </div>
-                  </div>
-                  
-                  <ArrowRight className="h-5 w-5 text-dashboard-gray-400 group-hover:text-dashboard-primary transition-colors opacity-0 group-hover:opacity-100 ml-4" />
-                </div>
-              </motion.div>
-            );
-          })}
-          
-          {activeTasks.length === 0 && (
+                  </motion.div>
+                );
+              })}
+            </div>
+          ) : (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-center py-12"
+              className="text-center py-16 px-6"
             >
-              <CheckCircle2 className="h-16 w-16 mx-auto mb-4 text-dashboard-success opacity-50" />
-              <p className="text-xl font-semibold text-dashboard-gray-900 mb-2">All caught up!</p>
-              <p className="text-dashboard-gray-600">No pending tasks in your queue</p>
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-emerald-100 to-emerald-200 flex items-center justify-center">
+                <CheckCircle2 className="h-8 w-8 text-emerald-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-slate-900 mb-2">All caught up!</h3>
+              <p className="text-slate-600 max-w-sm mx-auto">
+                No pending tasks in your queue. Great work on staying organized!
+              </p>
             </motion.div>
           )}
         </CardContent>
