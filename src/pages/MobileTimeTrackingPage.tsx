@@ -78,13 +78,13 @@ const MobileTimeTrackingPage = () => {
             <div className="grid grid-cols-2 gap-4">
               <div className="text-center">
                 <div className="text-2xl font-bold text-blue-600">
-                  {formatTime(elapsedTime)}
+                  {formatTime(Number(elapsedTime) || 0)}
                 </div>
                 <div className="text-sm text-muted-foreground">Work Time</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-amber-600">
-                  {formatTime(breakElapsedTime)}
+                  {formatTime(Number(breakElapsedTime) || 0)}
                 </div>
                 <div className="text-sm text-muted-foreground">Break Time</div>
               </div>

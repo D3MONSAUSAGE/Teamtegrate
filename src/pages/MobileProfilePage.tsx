@@ -90,7 +90,7 @@ const MobileProfilePage = () => {
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
                   <Building className="h-4 w-4" />
-                  {user?.organizationName || 'No Organization'}
+                  {user?.organizationId || 'No Organization'}
                 </div>
               </div>
               <Badge variant="outline" className="capitalize">
