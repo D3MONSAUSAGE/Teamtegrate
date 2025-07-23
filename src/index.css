@@ -1,196 +1,150 @@
-
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap");
-@import "./styles/mobile.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 217 91% 60%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 220 14.3% 95.9%;
-    --secondary-foreground: 222.2 84% 4.9%;
-    --muted: 220 14.3% 95.9%;
-    --muted-foreground: 220 8.9% 46.1%;
-    --accent: 220 14.3% 95.9%;
-    --accent-foreground: 222.2 84% 4.9%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 217 91% 60%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
-    --radius: 0.75rem;
-    
-    /* Professional Dashboard Design System */
-    --dashboard-bg: 220 17% 97%;
-    --dashboard-card: 0 0% 100%;
-    --dashboard-card-hover: 220 14% 96%;
-    --dashboard-border: 220 13% 91%;
-    
-    /* Primary Blue Theme */
-    --dashboard-primary: 217 91% 60%;
-    --dashboard-primary-light: 217 91% 70%;
-    --dashboard-primary-dark: 217 91% 50%;
-    --dashboard-primary-foreground: 0 0% 100%;
-    
-    /* Teal Accent */
-    --dashboard-teal: 188 94% 43%;
-    --dashboard-teal-light: 188 94% 53%;
-    --dashboard-teal-dark: 188 94% 33%;
-    --dashboard-teal-foreground: 0 0% 100%;
-    
-    /* Purple Highlight */
-    --dashboard-purple: 262 83% 68%;
-    --dashboard-purple-light: 262 83% 78%;
-    --dashboard-purple-dark: 262 83% 58%;
-    --dashboard-purple-foreground: 0 0% 100%;
-    
-    /* Status Colors */
-    --dashboard-success: 142 76% 36%;
-    --dashboard-success-light: 142 76% 46%;
-    --dashboard-warning: 38 92% 50%;
-    --dashboard-warning-light: 38 92% 60%;
-    --dashboard-error: 0 84% 60%;
-    --dashboard-error-light: 0 84% 70%;
-    
-    /* Neutral Tones */
-    --dashboard-gray-50: 220 14% 96%;
-    --dashboard-gray-100: 220 13% 91%;
-    --dashboard-gray-200: 220 13% 84%;
-    --dashboard-gray-300: 220 9% 70%;
-    --dashboard-gray-400: 220 9% 56%;
-    --dashboard-gray-500: 220 9% 46%;
-    --dashboard-gray-600: 220 13% 35%;
-    --dashboard-gray-700: 220 13% 25%;
-    --dashboard-gray-800: 220 13% 18%;
-    --dashboard-gray-900: 220 13% 9%;
-    
-    /* Gradients */
-    --dashboard-gradient-primary: linear-gradient(135deg, hsl(var(--dashboard-primary)) 0%, hsl(var(--dashboard-teal)) 100%);
-    --dashboard-gradient-secondary: linear-gradient(135deg, hsl(var(--dashboard-purple)) 0%, hsl(var(--dashboard-primary)) 100%);
-    --dashboard-gradient-success: linear-gradient(135deg, hsl(var(--dashboard-success)) 0%, hsl(var(--dashboard-teal)) 100%);
-    
-    /* Shadows */
-    --dashboard-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-    --dashboard-shadow-base: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-    --dashboard-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-    --dashboard-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-    --dashboard-shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-    --dashboard-shadow-glow: 0 0 0 1px hsl(var(--dashboard-primary) / 0.3), 0 0 20px hsl(var(--dashboard-primary) / 0.2);
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217 91% 60%;
-    --primary-foreground: 222.2 84% 4.9%;
-    --secondary: 215 27.9% 16.9%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 215 27.9% 16.9%;
-    --muted-foreground: 217.9 10.6% 64.9%;
-    --accent: 215 27.9% 16.9%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 215 27.9% 16.9%;
-    --input: 215 27.9% 16.9%;
-    --ring: 217 91% 60%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-    
-    /* Professional Dashboard Design System - Dark Mode */
-    --dashboard-bg: 222.2 84% 4.9%;
-    --dashboard-card: 215 27.9% 16.9%;
-    --dashboard-card-hover: 215 25% 20%;
-    --dashboard-border: 215 27.9% 16.9%;
-    
-    /* Maintain same color scheme but adjust for dark mode */
-    --dashboard-primary: 217 91% 60%;
-    --dashboard-teal: 188 94% 43%;
-    --dashboard-purple: 262 83% 68%;
-    --dashboard-success: 142 76% 36%;
-    --dashboard-warning: 38 92% 50%;
-    --dashboard-error: 0 84% 60%;
-    
-    /* Shadows - Dark mode */
-    --dashboard-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
-    --dashboard-shadow-base: 0 1px 3px 0 rgb(0 0 0 / 0.5), 0 1px 2px -1px rgb(0 0 0 / 0.5);
-    --dashboard-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.5), 0 2px 4px -2px rgb(0 0 0 / 0.5);
-    --dashboard-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.5);
-    --dashboard-shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.5), 0 8px 10px -6px rgb(0 0 0 / 0.5);
-    --dashboard-shadow-glow: 0 0 0 1px hsl(var(--dashboard-primary) / 0.3), 0 0 20px hsl(var(--dashboard-primary) / 0.3);
-  }
-}
-
-@layer base {
   * {
     @apply border-border;
   }
-
   body {
-    @apply bg-background text-foreground font-sans;
-    font-feature-settings: "rlig" 1, "calt" 1;
-  }
-
-  /* Enhanced mobile body styles */
-  @media (max-width: 768px) {
-    body {
-      font-size: 16px; /* Prevent zoom on iOS */
-      -webkit-text-size-adjust: 100%;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-    }
+    @apply bg-background text-foreground;
+    font-feature-settings:
+      "rlig" 1,
+      "calt" 1;
   }
 }
 
-@layer utilities {
-  .min-h-screen-mobile {
-    min-height: 100vh;
-    min-height: 100dvh;
+@layer components {
+  .touch-manipulation {
+    touch-action: manipulation;
   }
+}
 
-  .h-screen-mobile {
-    height: 100vh;
-    height: 100dvh;
-  }
+:root {
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+  --primary: 221.2 83.2% 53.3%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 210 40% 96%;
+  --secondary-foreground: 222.2 84% 4.9%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --accent: 210 40% 96%;
+  --accent-foreground: 222.2 84% 4.9%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 221.2 83.2% 53.3%;
+  --radius: 0.5rem;
+  --chart-1: 12 76% 61%;
+  --chart-2: 173 58% 39%;
+  --chart-3: 197 37% 24%;
+  --chart-4: 43 74% 66%;
+  --chart-5: 27 87% 67%;
 
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
+  /* Dashboard specific colors */
+  --dashboard-bg: 220 15% 97%;
+  --dashboard-card: 0 0% 100%;
+  --dashboard-card-hover: 220 15% 95%;
+  --dashboard-border: 220 13% 91%;
+  --dashboard-primary: 221.2 83.2% 53.3%;
+  --dashboard-primary-dark: 221.2 83.2% 45%;
+  --dashboard-primary-foreground: 210 40% 98%;
+  --dashboard-gradient: linear-gradient(135deg, hsl(var(--dashboard-primary)) 0%, hsl(var(--dashboard-primary-dark)) 100%);
+  
+  /* Green button colors for create task */
+  --dashboard-success: 142 76% 36%;
+  --dashboard-success-hover: 142 76% 30%;
+  --dashboard-success-foreground: 0 0% 100%;
+  --dashboard-success-shadow: 142 76% 36%;
+  
+  /* Additional dashboard colors */
+  --dashboard-teal: 178 84% 48%;
+  --dashboard-purple: 262 83% 58%;
+  --dashboard-gray-50: 210 40% 98%;
+  --dashboard-gray-100: 210 40% 96%;
+  --dashboard-gray-600: 215.4 16.3% 46.9%;
+  --dashboard-gray-900: 222.2 84% 4.9%;
+  --dashboard-error: 0 84.2% 60.2%;
+  --shadow-glow: 0 10px 40px -10px rgba(34, 197, 94, 0.3);
+}
 
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
+.dark {
+  --background: 222.2 84% 4.9%;
+  --foreground: 210 40% 98%;
+  --card: 222.2 84% 4.9%;
+  --card-foreground: 210 40% 98%;
+  --popover: 222.2 84% 4.9%;
+  --popover-foreground: 210 40% 98%;
+  --primary: 217.2 91.2% 59.8%;
+  --primary-foreground: 222.2 84% 4.9%;
+  --secondary: 217.2 32.6% 17.5%;
+  --secondary-foreground: 210 40% 98%;
+  --muted: 217.2 32.6% 17.5%;
+  --muted-foreground: 215 20.2% 65.1%;
+  --accent: 217.2 32.6% 17.5%;
+  --accent-foreground: 210 40% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 217.2 32.6% 17.5%;
+  --input: 217.2 32.6% 17.5%;
+  --ring: 224.3 76.3% 94.1%;
+  --chart-1: 220 70% 50%;
+  --chart-2: 160 60% 45%;
+  --chart-3: 30 80% 55%;
+  --chart-4: 280 65% 60%;
+  --chart-5: 340 75% 55%;
 
-  .dashboard-gradient-primary {
-    background: var(--dashboard-gradient-primary);
-  }
+  /* Dashboard dark theme colors */
+  --dashboard-bg: 222.2 84% 4.9%;
+  --dashboard-card: 217.2 32.6% 17.5%;
+  --dashboard-card-hover: 217.2 32.6% 20%;
+  --dashboard-border: 217.2 32.6% 17.5%;
+  --dashboard-primary: 217.2 91.2% 59.8%;
+  --dashboard-primary-dark: 217.2 91.2% 50%;
+  --dashboard-primary-foreground: 222.2 84% 4.9%;
+  --dashboard-gradient: linear-gradient(135deg, hsl(var(--dashboard-primary)) 0%, hsl(var(--dashboard-primary-dark)) 100%);
+  
+  /* Green button colors for create task (dark theme) */
+  --dashboard-success: 142 76% 36%;
+  --dashboard-success-hover: 142 76% 30%;
+  --dashboard-success-foreground: 0 0% 100%;
+  --dashboard-success-shadow: 142 76% 36%;
+  
+  /* Additional dashboard colors (dark theme) */
+  --dashboard-teal: 178 84% 48%;
+  --dashboard-purple: 262 83% 58%;
+  --dashboard-gray-50: 217.2 32.6% 17.5%;
+  --dashboard-gray-100: 217.2 32.6% 20%;
+  --dashboard-gray-600: 215 20.2% 65.1%;
+  --dashboard-gray-900: 210 40% 98%;
+  --dashboard-error: 0 62.8% 30.6%;
+  --shadow-glow: 0 10px 40px -10px rgba(34, 197, 94, 0.2);
+}
 
-  .dashboard-gradient-secondary {
-    background: var(--dashboard-gradient-secondary);
-  }
+/* ===== Scrollbar CSS ===== */
+/* Firefox */
+* {
+  scrollbar-width: auto;
+  scrollbar-color: #8f54a0 #ffffff;
+}
 
-  .dashboard-gradient-success {
-    background: var(--dashboard-gradient-success);
-  }
+/* Chrome, Edge, and Safari */
+*::-webkit-scrollbar {
+  width: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--dashboard-card);
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: rgb(161, 161, 170);
+  border-radius: 10px;
+  border: 0px solid var(--border);
 }
