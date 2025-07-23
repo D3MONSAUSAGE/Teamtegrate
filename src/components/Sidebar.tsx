@@ -1,4 +1,3 @@
-
 import React, { memo, useMemo, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDarkMode } from '@/hooks/useDarkMode';
@@ -76,7 +75,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ onNavigation }) => {
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <ShadcnSidebarHeader className="border-b border-sidebar-border/30 bg-sidebar-background">
+      <ShadcnSidebarHeader className="border-b border-sidebar-border/30">
         <SidebarHeader 
           isDark={isDark} 
           onToggleDarkMode={toggle} 
@@ -85,7 +84,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ onNavigation }) => {
         />
       </ShadcnSidebarHeader>
       
-      <SidebarContent className="overflow-y-auto overflow-x-hidden scrollbar-hide bg-sidebar-background">
+      <SidebarContent className="overflow-y-auto overflow-x-hidden">
         <div className="p-2">
           <SidebarNav 
             onNavigation={handleNavigation} 

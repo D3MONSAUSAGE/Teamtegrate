@@ -15,6 +15,17 @@ const GrowthProgressBar: React.FC<GrowthProgressBarProps> = ({
 }) => {
   const reducedMotion = shouldReduceMotion();
 
+  const progressBarVariants = {
+    initial: { width: 0 },
+    animate: { 
+      width: `${progress}%`,
+      transition: {
+        duration: 1.2,
+        ease: "easeOut",
+        delay: 0.3
+      }
+    }
+  };
 
   return (
     <div className="w-full bg-muted/30 rounded-full h-3 overflow-hidden relative">
@@ -23,9 +34,8 @@ const GrowthProgressBar: React.FC<GrowthProgressBarProps> = ({
           "h-full rounded-full relative",
           isActive ? "bg-gradient-to-r from-primary to-primary/70" : "bg-muted-foreground/50"
         )}
-        initial={{ width: 0 }}
-        animate={{ 
-          width: `${progress}%`,
+        variants={progressBarVariants}
+        animate={{
           boxShadow: isActive && !reducedMotion ? [
             '0 0 0px rgba(34, 197, 94, 0.5)',
             '0 0 15px rgba(34, 197, 94, 0.5)',
@@ -33,11 +43,6 @@ const GrowthProgressBar: React.FC<GrowthProgressBarProps> = ({
           ] : 'none'
         }}
         transition={{
-          width: { 
-            duration: 1.2, 
-            ease: [0.4, 0, 0.2, 1], 
-            delay: 0.3 
-          },
           boxShadow: {
             duration: 2,
             repeat: Infinity,
@@ -75,7 +80,7 @@ const GrowthProgressBar: React.FC<GrowthProgressBarProps> = ({
           }}
           transition={{
             duration: 0.5,
-            ease: [0.4, 0, 0.2, 1]
+            ease: "easeOut"
           }}
         />
       ))}

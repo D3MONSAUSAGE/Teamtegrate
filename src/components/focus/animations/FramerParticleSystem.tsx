@@ -56,14 +56,25 @@ const FramerParticleSystem: React.FC<FramerParticleSystemProps> = ({
       y: [-20, 20, -20],
       x: [-10, 10, -10],
       scale: [1, 1.1, 1],
-      rotate: [0, 10, -10, 0]
+      rotate: [0, 10, -10, 0],
+      transition: {
+        duration: 4,
+        repeat: Infinity,
+        ease: "easeInOut"
+      }
     }
   }), []);
 
   const magneticVariants = useMemo(() => ({
     animate: (custom: number) => ({
       x: [0, Math.sin(custom) * 30, 0],
-      y: [0, Math.cos(custom) * 20, 0]
+      y: [0, Math.cos(custom) * 20, 0],
+      transition: {
+        duration: 3 + custom * 0.5,
+        repeat: Infinity,
+        ease: "easeInOut",
+        delay: custom * 0.2
+      }
     })
   }), []);
 
@@ -99,30 +110,13 @@ const FramerParticleSystem: React.FC<FramerParticleSystemProps> = ({
             animate={{
               opacity: [0, 1, 1, 0],
               scale: [0, data.size, data.size, 0],
-              y: [-20, 20, -20],
-              x: [-10, 10, -10],
-              rotate: [0, 10, -10, 0]
+              ...floatingVariants.animate
             }}
             transition={{
               opacity: {
                 duration: 8,
                 repeat: Infinity,
                 delay: data.id * 0.3
-              },
-              y: {
-                duration: 4,
-                repeat: Infinity,
-                ease: "easeInOut"
-              },
-              x: {
-                duration: 4,
-                repeat: Infinity,
-                ease: "easeInOut"
-              },
-              rotate: {
-                duration: 4,
-                repeat: Infinity,
-                ease: "easeInOut"
               },
               scale: {
                 duration: 8,

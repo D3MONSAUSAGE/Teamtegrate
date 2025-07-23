@@ -23,7 +23,7 @@ import { TaskContextType } from './index';
 export const TaskContext = React.createContext<TaskContextType | undefined>(undefined);
 
 export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, isReady } = useAuth();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -55,22 +55,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       cacheKeys.map(key => queryClient.invalidateQueries({ queryKey: key }))
     );
   }, [queryClient, user?.organizationId, user?.id]);
-
-  // Enhanced user validation with better error messages
-  const validateUserContext = () => {
-    if (!user) {
-      toast.error('Please sign in to continue');
-      throw new Error('User not authenticated');
-    }
-    if (!user.organizationId) {
-      toast.error('Organization data not loaded. Please wait or refresh the page.');
-      throw new Error('User organization not loaded');
-    }
-    if (!isReady) {
-      toast.error('Please wait for your profile to load completely');
-      throw new Error('User profile not ready');
-    }
-  };
 
   const fetchTasks = useCallback(async () => {
     if (!user) return;
@@ -118,45 +102,24 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const createTask = useCallback(async (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>): Promise<Task | undefined> => {
-    console.log('TaskContext.createTask: Starting task creation');
-    
-    try {
-      validateUserContext();
-      console.log('TaskContext.createTask: User validation passed');
-    } catch (error) {
-      console.error('TaskContext.createTask: User validation failed:', error);
-      return;
-    }
-
+    if (!user) return;
     setLoading(true);
     try {
-      console.log('TaskContext.createTask: Calling API with organizationId:', user.organizationId);
       const newTask = await createTaskAPI({ ...task, organizationId: user.organizationId || '' });
       setTasks(prevTasks => [...prevTasks, newTask]);
       
       // Invalidate all task-related caches
       await invalidateAllTaskCaches();
       
-      console.log('TaskContext.createTask: Task created successfully');
+      toast.success('Task created successfully');
       return newTask;
     } catch (err: any) {
-      console.error('TaskContext.createTask: API error:', err);
       setError(err.message || 'Failed to create task');
-      
-      // More specific error messages
-      if (err.message?.includes('organization')) {
-        toast.error('Organization access error. Please refresh and try again.');
-      } else if (err.message?.includes('authentication')) {
-        toast.error('Authentication error. Please sign in again.');
-      } else {
-        toast.error('Failed to create task. Please try again.');
-      }
-      
-      throw err;
+      toast.error('Failed to create task');
     } finally {
       setLoading(false);
     }
-  }, [user, isReady, invalidateAllTaskCaches]);
+  }, [user, invalidateAllTaskCaches]);
 
   const addTask = useCallback(async (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>): Promise<Task | undefined> => {
     if (!user) return;
@@ -172,13 +135,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [user]);
 
   const updateTask = useCallback(async (taskId: string, task: Partial<Task>) => {
-    try {
-      validateUserContext();
-    } catch (error) {
-      console.error('TaskContext.updateTask: User validation failed:', error);
-      return;
-    }
-
     setLoading(true);
     try {
       await updateTaskAPI(taskId, task);
@@ -191,23 +147,16 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       toast.success('Task updated successfully');
     } catch (err: any) {
-      console.error('TaskContext.updateTask: API error:', err);
       setError(err.message || 'Failed to update task');
-      toast.error('Failed to update task. Please try again.');
+      toast.error('Failed to update task');
     } finally {
       setLoading(false);
     }
-  }, [isReady, invalidateAllTaskCaches]);
+  }, [invalidateAllTaskCaches]);
 
   const deleteTask = useCallback(async (taskId: string) => {
     console.log('🎯 TaskContext.deleteTask called', { taskId });
-    
-    try {
-      validateUserContext();
-    } catch (error) {
-      console.error('TaskContext.deleteTask: User validation failed:', error);
-      return;
-    }
+    console.log('🔗 User context:', { userId: user?.id, orgId: user?.organizationId });
     
     setLoading(true);
     try {
@@ -228,22 +177,16 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (err: any) {
       console.error('❌ Error in TaskContext.deleteTask:', err);
       setError(err.message || 'Failed to delete task');
-      toast.error('Failed to delete task. Please try again.');
-      throw err;
+      toast.error('Failed to delete task');
+      throw err; // Re-throw to let calling code handle it
     } finally {
       setLoading(false);
     }
-  }, [isReady, invalidateAllTaskCaches]);
+  }, [user, invalidateAllTaskCaches]);
 
   const updateTaskStatus = useCallback(async (taskId: string, status: Task['status']): Promise<void> => {
     console.log('🎯 TaskContext.updateTaskStatus called', { taskId, status });
-    
-    try {
-      validateUserContext();
-    } catch (error) {
-      console.error('TaskContext.updateTaskStatus: User validation failed:', error);
-      return;
-    }
+    console.log('🔗 User context:', { userId: user?.id, orgId: user?.organizationId });
     
     setLoading(true);
     try {
@@ -278,21 +221,14 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (err: any) {
       console.error('❌ Error in TaskContext.updateTaskStatus:', err);
       setError(err.message || 'Failed to update task status');
-      toast.error('Failed to update task status. Please try again.');
-      throw err;
+      toast.error('Failed to update task status');
+      throw err; // Re-throw to let calling code handle it
     } finally {
       setLoading(false);
     }
-  }, [user, isReady, invalidateAllTaskCaches]);
+  }, [user, invalidateAllTaskCaches]);
 
   const assignTaskToUser = useCallback(async (taskId: string, userId: string, userName: string) => {
-    try {
-      validateUserContext();
-    } catch (error) {
-      console.error('TaskContext.assignTaskToUser: User validation failed:', error);
-      return;
-    }
-
     setLoading(true);
     try {
       await assignTaskToUserAPI(taskId, userId, userName);
@@ -307,13 +243,12 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       toast.success('Task assigned successfully');
     } catch (err: any) {
-      console.error('TaskContext.assignTaskToUser: API error:', err);
       setError(err.message || 'Failed to assign task');
-      toast.error('Failed to assign task. Please try again.');
+      toast.error('Failed to assign task');
     } finally {
       setLoading(false);
     }
-  }, [isReady, invalidateAllTaskCaches]);
+  }, [invalidateAllTaskCaches]);
 
   const addCommentToTask = useCallback(async (taskId: string, commentText: string) => {
     if (!user) return;

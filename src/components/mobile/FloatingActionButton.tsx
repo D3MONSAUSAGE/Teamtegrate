@@ -1,9 +1,8 @@
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Plus, X, Edit, Clock, FolderPlus, StickyNote } from 'lucide-react';
+import React, { useState } from 'react';
+import { Plus, X, Edit, Clock, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { EnhancedButton } from '@/components/ui/enhanced-button';
-import { useDraggable } from '@/hooks/useDraggable';
+import EnhancedButton from './EnhancedButton';
 
 interface FABAction {
   icon: React.ComponentType<any>;
@@ -14,7 +13,6 @@ interface FABAction {
 
 interface FloatingActionButtonProps {
   onCreateTask: () => void;
-  onCreateProject?: () => void;
   onStartTimer?: () => void;
   onQuickNote?: () => void;
   className?: string;
@@ -22,222 +20,99 @@ interface FloatingActionButtonProps {
 
 const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
   onCreateTask,
-  onCreateProject,
   onStartTimer,
   onQuickNote,
   className
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false);
-  const [defaultPosition, setDefaultPosition] = useState({ x: 0, y: 0 });
-  
-  // FAB and layout constants
-  const FAB_SIZE = 56; // 14 * 4px (w-14 h-14)
-  const MARGIN = 24;
-  const BOTTOM_NAV_HEIGHT = 80; // Bottom navigation height
-  const BOTTOM_BUFFER = 8; // Reduced buffer for bottom boundary
-  
-  // Calculate and set default position
-  useEffect(() => {
-    const calculatePosition = () => {
-      const defaultX = window.innerWidth - FAB_SIZE - MARGIN;
-      const defaultY = window.innerHeight - FAB_SIZE - MARGIN - BOTTOM_NAV_HEIGHT;
-      
-      setDefaultPosition({ x: defaultX, y: defaultY });
-      setIsInitialized(true);
-    };
 
-    calculatePosition();
-    
-    // Recalculate on window resize
-    const handleResize = () => calculatePosition();
-    window.addEventListener('resize', handleResize);
-    
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  // Initialize draggable with calculated position and proper boundaries
-  const { dragRef, position, isDragging, hasMoved, dragHandlers } = useDraggable({
-    x: defaultPosition.x,
-    y: defaultPosition.y,
-    width: FAB_SIZE,
-    height: FAB_SIZE,
-    threshold: 10,
-    boundaries: {
-      top: MARGIN,
-      bottom: BOTTOM_NAV_HEIGHT + BOTTOM_BUFFER, // Reduced from MARGIN (24px) to BOTTOM_BUFFER (8px)
-      left: MARGIN,
-      right: MARGIN
-    },
-    onDragStart: () => {
-      // Close expanded state when starting to drag
-      if (isExpanded) {
-        setIsExpanded(false);
-      }
-    }
-  });
-
-  // Haptic feedback function
-  const triggerHaptic = useCallback(() => {
-    if ('vibrate' in navigator) {
-      try {
-        navigator.vibrate(10);
-      } catch (error) {
-        // Silently fail if vibration is not supported
-      }
-    }
-  }, []);
-
-  // Memoized actions to prevent unnecessary re-renders
-  const actions = useMemo<FABAction[]>(() => [
+  const actions: FABAction[] = [
     {
       icon: Edit,
       label: 'Create Task',
       onClick: () => {
-        if (hasMoved) return;
-        triggerHaptic();
         onCreateTask();
         setIsExpanded(false);
       },
       color: 'bg-blue-500 hover:bg-blue-600'
     },
-    ...(onCreateProject ? [{
-      icon: FolderPlus,
-      label: 'Create Project',
-      onClick: () => {
-        if (hasMoved) return;
-        triggerHaptic();
-        onCreateProject();
-        setIsExpanded(false);
-      },
-      color: 'bg-emerald-500 hover:bg-emerald-600'
-    }] : []),
     ...(onStartTimer ? [{
       icon: Clock,
       label: 'Start Timer',
       onClick: () => {
-        if (hasMoved) return;
-        triggerHaptic();
         onStartTimer();
         setIsExpanded(false);
       },
       color: 'bg-green-500 hover:bg-green-600'
     }] : []),
     ...(onQuickNote ? [{
-      icon: StickyNote,
+      icon: Users,
       label: 'Quick Note',
       onClick: () => {
-        if (hasMoved) return;
-        triggerHaptic();
         onQuickNote();
         setIsExpanded(false);
       },
       color: 'bg-purple-500 hover:bg-purple-600'
     }] : [])
-  ], [onCreateTask, onCreateProject, onStartTimer, onQuickNote, hasMoved, triggerHaptic]);
-
-  const handleMainFABClick = useCallback(() => {
-    if (hasMoved || isDragging) return;
-    triggerHaptic();
-    setIsExpanded(!isExpanded);
-  }, [hasMoved, isDragging, isExpanded, triggerHaptic]);
-
-  const handleBackdropClick = useCallback(() => {
-    setIsExpanded(false);
-  }, []);
-
-  // Don't render until position is calculated
-  if (!isInitialized) {
-    return null;
-  }
+  ];
 
   return (
-    <>
+    <div className={cn(
+      "fixed bottom-6 right-6 z-50 flex flex-col-reverse items-end gap-3",
+      className
+    )}>
+      {/* Action buttons */}
+      {isExpanded && actions.map((action, index) => (
+        <div
+          key={action.label}
+          className="flex items-center gap-3 animate-fade-in"
+          style={{ animationDelay: `${index * 50}ms` }}
+        >
+          <div className="bg-background/95 backdrop-blur-sm border border-border/50 rounded-full px-3 py-1 shadow-lg">
+            <span className="text-sm font-medium text-foreground whitespace-nowrap">
+              {action.label}
+            </span>
+          </div>
+          <EnhancedButton
+            size="icon"
+            className={cn(
+              "w-12 h-12 rounded-full shadow-lg border-0",
+              "transition-all duration-200 hover:scale-110",
+              action.color || "bg-primary hover:bg-primary/90"
+            )}
+            onClick={action.onClick}
+          >
+            <action.icon className="h-5 w-5 text-white" />
+          </EnhancedButton>
+        </div>
+      ))}
+
+      {/* Main FAB */}
+      <EnhancedButton
+        size="icon"
+        className={cn(
+          "w-14 h-14 rounded-full shadow-xl border-0",
+          "bg-primary hover:bg-primary/90",
+          "transition-all duration-300",
+          isExpanded ? "rotate-45 scale-110" : "rotate-0 scale-100"
+        )}
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        {isExpanded ? (
+          <X className="h-6 w-6 text-white" />
+        ) : (
+          <Plus className="h-6 w-6 text-white" />
+        )}
+      </EnhancedButton>
+
       {/* Backdrop */}
       {isExpanded && (
         <div
-          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[60] transition-opacity duration-200"
-          onClick={handleBackdropClick}
+          className="fixed inset-0 bg-black/20 backdrop-blur-sm -z-10"
+          onClick={() => setIsExpanded(false)}
         />
       )}
-
-      <div 
-        ref={dragRef}
-        className={cn(
-          "fixed z-[70] flex flex-col-reverse items-end gap-3",
-          "touch-none select-none",
-          isDragging && "transition-none cursor-grabbing",
-          !isDragging && "transition-all duration-200 cursor-grab",
-          className
-        )}
-        style={{
-          transform: `translate(${position.x}px, ${position.y}px)`,
-          left: 0,
-          top: 0,
-        }}
-      >
-        {/* Action buttons */}
-        {isExpanded && (
-          <div className="flex flex-col-reverse items-end gap-3">
-            {actions.map((action, index) => (
-              <div
-                key={action.label}
-                className="flex items-center gap-3 animate-fade-in"
-                style={{ 
-                  animationDelay: `${index * 75}ms`,
-                  animationFillMode: 'both'
-                }}
-              >
-                <div className="bg-background/95 backdrop-blur-sm border border-border/50 rounded-full px-3 py-1.5 shadow-lg">
-                  <span className="text-sm font-medium text-foreground whitespace-nowrap">
-                    {action.label}
-                  </span>
-                </div>
-                <EnhancedButton
-                  size="icon"
-                  ripple={true}
-                  haptic={false} // We handle haptic ourselves
-                  className={cn(
-                    "w-12 h-12 rounded-full shadow-lg border-0",
-                    "transition-all duration-200 hover:scale-110 active:scale-95",
-                    "transform-gpu will-change-transform",
-                    action.color || "bg-primary hover:bg-primary/90"
-                  )}
-                  onClick={action.onClick}
-                >
-                  <action.icon className="h-5 w-5 text-white" />
-                </EnhancedButton>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Main FAB */}
-        <EnhancedButton
-          size="icon"
-          ripple={false} // Disable ripple to prevent grey box
-          haptic={false} // We handle haptic ourselves
-          className={cn(
-            "w-14 h-14 rounded-full shadow-xl border-0",
-            "bg-primary hover:bg-primary/90 text-primary-foreground",
-            "transition-all duration-300 active:scale-95",
-            "transform-gpu will-change-transform",
-            isExpanded ? "rotate-45 scale-110" : "rotate-0 scale-100",
-            isDragging && "scale-110 shadow-2xl cursor-grabbing opacity-90",
-            !isDragging && !isExpanded && "hover:scale-105",
-            !isDragging && "cursor-grab"
-          )}
-          onClick={handleMainFABClick}
-          {...dragHandlers}
-        >
-          {isExpanded ? (
-            <X className="h-6 w-6 text-white" />
-          ) : (
-            <Plus className="h-6 w-6 text-white" />
-          )}
-        </EnhancedButton>
-      </div>
-    </>
+    </div>
   );
 };
 
