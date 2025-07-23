@@ -1,25 +1,24 @@
-import React, { useState } from 'react';
+
+import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Skeleton } from '@/components/ui/skeleton';
 import { 
   Brain, 
-  CheckCircle2, 
-  Clock, 
-  AlertTriangle, 
-  User, 
-  Calendar, 
-  ArrowRight,
-  Filter,
-  ArrowUpDown,
-  MoreHorizontal,
-  Zap,
-  Target
+  ArrowUpDown, 
+  Filter, 
+  Calendar,
+  Clock,
+  AlertTriangle,
+  CheckCircle2,
+  Circle,
+  PlayCircle,
+  User,
+  ArrowRight
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Task } from '@/types';
-import { isTaskOverdue } from '@/utils/taskUtils';
 
 interface TaskIntelligenceHubProps {
   tasks: Task[];
@@ -27,275 +26,276 @@ interface TaskIntelligenceHubProps {
 }
 
 const TaskIntelligenceHub: React.FC<TaskIntelligenceHubProps> = ({ tasks, onTaskClick }) => {
-  const [viewMode, setViewMode] = useState<'priority' | 'timeline' | 'smart'>('smart');
-  
-  const activeTasks = tasks.filter(task => task.status !== 'Completed');
-  
-  // AI-powered task prioritization
-  const getTaskPriority = (task: Task) => {
-    const isOverdue = isTaskOverdue(task);
-    const dueToday = new Date(task.deadline).toDateString() === new Date().toDateString();
-    const dueTomorrow = new Date(task.deadline).toDateString() === new Date(Date.now() + 24 * 60 * 60 * 1000).toDateString();
+  const { prioritizedTasks, tasksByStatus, insights } = useMemo(() => {
+    const today = new Date();
+    const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
     
-    let score = 0;
-    
-    // Base priority score
-    if (task.priority === 'High') score += 40;
-    else if (task.priority === 'Medium') score += 20;
-    else score += 10;
-    
-    // Deadline urgency
-    if (isOverdue) score += 50;
-    else if (dueToday) score += 30;
-    else if (dueTomorrow) score += 20;
-    
-    // Status consideration
-    if (task.status === 'In Progress') score += 15;
-    
-    return score;
-  };
+    // Prioritize tasks based on deadline, priority, and status
+    const prioritized = [...tasks]
+      .filter(task => task.status !== 'Completed')
+      .sort((a, b) => {
+        const aDeadline = new Date(a.deadline);
+        const bDeadline = new Date(b.deadline);
+        
+        // Overdue tasks first
+        const aOverdue = aDeadline < today;
+        const bOverdue = bDeadline < today;
+        if (aOverdue && !bOverdue) return -1;
+        if (!aOverdue && bOverdue) return 1;
+        
+        // Then by priority
+        const priorityOrder = { High: 3, Medium: 2, Low: 1 };
+        const priorityDiff = priorityOrder[b.priority] - priorityOrder[a.priority];
+        if (priorityDiff !== 0) return priorityDiff;
+        
+        // Then by deadline
+        return aDeadline.getTime() - bDeadline.getTime();
+      })
+      .slice(0, 8);
 
-  const smartSortedTasks = [...activeTasks]
-    .sort((a, b) => getTaskPriority(b) - getTaskPriority(a))
-    .slice(0, 8);
+    // Group by status
+    const byStatus = {
+      'To Do': tasks.filter(t => t.status === 'To Do'),
+      'In Progress': tasks.filter(t => t.status === 'In Progress'),
+      'Completed': tasks.filter(t => t.status === 'Completed')
+    };
+
+    // Generate insights
+    const overdueTasks = tasks.filter(task => {
+      const taskDate = new Date(task.deadline);
+      return taskDate < today && task.status !== 'Completed';
+    });
+
+    const dueTodayTasks = tasks.filter(task => {
+      const taskDate = new Date(task.deadline);
+      return taskDate.toDateString() === today.toDateString();
+    });
+
+    const taskInsights = [
+      {
+        title: 'Overdue Tasks',
+        count: overdueTasks.length,
+        type: 'warning' as const,
+        description: 'Tasks that need immediate attention'
+      },
+      {
+        title: 'Due Today',
+        count: dueTodayTasks.length,
+        type: 'info' as const,
+        description: 'Tasks due by end of day'
+      },
+      {
+        title: 'In Progress',
+        count: byStatus['In Progress'].length,
+        type: 'success' as const,
+        description: 'Tasks currently being worked on'
+      },
+      {
+        title: 'Completed',
+        count: byStatus['Completed'].length,
+        type: 'neutral' as const,
+        description: 'Tasks finished this period'
+      }
+    ];
+
+    return {
+      prioritizedTasks: prioritized,
+      tasksByStatus: byStatus,
+      insights: taskInsights
+    };
+  }, [tasks]);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'Completed':
-        return <CheckCircle2 className="h-4 w-4 text-emerald-600" />;
+      case 'To Do':
+        return <Circle className="h-4 w-4 text-slate-500" />;
       case 'In Progress':
-        return <Clock className="h-4 w-4 text-amber-600" />;
+        return <PlayCircle className="h-4 w-4 text-blue-500" />;
+      case 'Completed':
+        return <CheckCircle2 className="h-4 w-4 text-green-500" />;
       default:
-        return <AlertTriangle className="h-4 w-4 text-slate-500" />;
+        return <Circle className="h-4 w-4 text-slate-500" />;
     }
   };
 
-  const getPriorityStyles = (priority: string) => {
+  const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'High':
-        return {
-          bg: 'bg-red-50',
-          text: 'text-red-700',
-          border: 'border-red-200',
-          dot: 'bg-red-500'
-        };
+        return 'bg-red-100 text-red-800 border-red-200';
       case 'Medium':
-        return {
-          bg: 'bg-amber-50',
-          text: 'text-amber-700',
-          border: 'border-amber-200',
-          dot: 'bg-amber-500'
-        };
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'Low':
+        return 'bg-green-100 text-green-800 border-green-200';
       default:
-        return {
-          bg: 'bg-emerald-50',
-          text: 'text-emerald-700',
-          border: 'border-emerald-200',
-          dot: 'bg-emerald-500'
-        };
+        return 'bg-slate-100 text-slate-800 border-slate-200';
     }
   };
 
-  const getTaskUrgency = (task: Task) => {
-    const isOverdue = isTaskOverdue(task);
-    const dueToday = new Date(task.deadline).toDateString() === new Date().toDateString();
-    const priorityScore = getTaskPriority(task);
-    
-    if (isOverdue) return { 
-      label: 'Overdue', 
-      color: 'bg-red-100 text-red-800 border-red-200',
-      urgency: 'critical'
-    };
-    if (dueToday) return { 
-      label: 'Due Today', 
-      color: 'bg-amber-100 text-amber-800 border-amber-200',
-      urgency: 'high'
-    };
-    if (priorityScore > 40) return {
-      label: 'High Priority',
-      color: 'bg-violet-100 text-violet-800 border-violet-200',
-      urgency: 'elevated'
-    };
-    
-    return { 
-      label: 'Normal', 
-      color: 'bg-slate-100 text-slate-800 border-slate-200',
-      urgency: 'normal'
-    };
+  const getInsightColor = (type: string) => {
+    switch (type) {
+      case 'warning':
+        return 'text-red-600 bg-red-50 border-red-200';
+      case 'info':
+        return 'text-blue-600 bg-blue-50 border-blue-200';
+      case 'success':
+        return 'text-green-600 bg-green-50 border-green-200';
+      default:
+        return 'text-slate-600 bg-slate-50 border-slate-200';
+    }
   };
+
+  const isOverdue = (deadline: Date) => {
+    return new Date(deadline) < new Date() && new Date(deadline).toDateString() !== new Date().toDateString();
+  };
+
+  const formatDeadline = (deadline: Date) => {
+    const today = new Date();
+    const taskDate = new Date(deadline);
+    const diffTime = taskDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Tomorrow';
+    if (diffDays === -1) return 'Yesterday';
+    if (diffDays < 0) return `${Math.abs(diffDays)} days ago`;
+    return `${diffDays} days`;
+  };
+
+  // Loading state
+  if (!tasks || tasks.length === 0) {
+    return (
+      <div className="space-y-6">
+        <Card className="border-0 bg-white shadow-sm ring-1 ring-slate-200/50">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <Skeleton className="w-48 h-6" />
+              <Skeleton className="w-24 h-8" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <div key={index} className="flex items-center gap-4 p-3 border rounded-lg">
+                  <Skeleton className="w-4 h-4 rounded-full" />
+                  <div className="flex-1">
+                    <Skeleton className="w-3/4 h-4 mb-2" />
+                    <Skeleton className="w-1/2 h-3" />
+                  </div>
+                  <Skeleton className="w-16 h-6 rounded-full" />
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, delay: 0.2 }}
-      className="col-span-2"
+      className="space-y-6"
     >
-      <Card className="h-full border-0 bg-white shadow-sm ring-1 ring-slate-200/50">
+      {/* Task Intelligence Header */}
+      <Card className="border-0 bg-white shadow-sm ring-1 ring-slate-200/50">
         <CardHeader className="pb-4 border-b border-slate-100">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center shadow-sm">
-                <Brain className="h-5 w-5 text-white" />
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center shadow-sm">
+                <Brain className="h-4 w-4 text-white" />
               </div>
               <div>
-                <CardTitle className="text-lg font-semibold text-slate-900">
+                <CardTitle className="text-base font-semibold text-slate-900">
                   Task Intelligence Hub
                 </CardTitle>
-                <p className="text-sm text-slate-600 mt-0.5">
-                  AI-powered prioritization and insights
+                <p className="text-xs text-slate-600 mt-0">
+                  AI-powered task prioritization and insights
                 </p>
               </div>
             </div>
             
             <div className="flex items-center gap-2">
-              <div className="flex items-center bg-slate-100 rounded-lg p-1">
-                <Button
-                  variant={viewMode === 'smart' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('smart')}
-                  className="h-7 px-3 text-xs"
-                >
-                  <Zap className="h-3 w-3 mr-1" />
-                  Smart
-                </Button>
-                <Button
-                  variant={viewMode === 'priority' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('priority')}
-                  className="h-7 px-3 text-xs"
-                >
-                  <Target className="h-3 w-3 mr-1" />
-                  Priority
-                </Button>
-                <Button
-                  variant={viewMode === 'timeline' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('timeline')}
-                  className="h-7 px-3 text-xs"
-                >
-                  <Calendar className="h-3 w-3 mr-1" />
-                  Timeline
-                </Button>
-              </div>
-              
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" className="text-xs">
                 <Filter className="h-3 w-3 mr-1" />
                 Filter
+              </Button>
+              <Button variant="outline" size="sm" className="text-xs">
+                <ArrowUpDown className="h-3 w-3 mr-1" />
+                Sort
               </Button>
             </div>
           </div>
         </CardHeader>
         
-        <CardContent className="p-0">
-          {smartSortedTasks.length > 0 ? (
-            <div className="divide-y divide-slate-100">
-              {smartSortedTasks.map((task, index) => {
-                const urgency = getTaskUrgency(task);
-                const priorityStyles = getPriorityStyles(task.priority);
-                const priorityScore = getTaskPriority(task);
-                
-                return (
-                  <motion.div
-                    key={task.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.4, delay: index * 0.05 }}
-                    onClick={() => onTaskClick(task)}
-                    className="group relative p-4 hover:bg-slate-50/50 transition-all duration-200 cursor-pointer"
-                  >
-                    {/* Priority Score Indicator */}
-                    <div className="absolute left-0 top-0 w-1 h-full bg-gradient-to-b from-slate-800 to-slate-600" 
-                         style={{ opacity: Math.min(priorityScore / 100, 1) }} />
-                    
-                    <div className="flex items-start gap-4">
-                      <div className="mt-1 flex-shrink-0">
-                        {getStatusIcon(task.status)}
+        <CardContent className="p-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            {insights.map((insight, index) => (
+              <motion.div
+                key={insight.title}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.3, delay: index * 0.1 }}
+                className={`p-3 rounded-lg border ${getInsightColor(insight.type)}`}
+              >
+                <div className="text-2xl font-bold">{insight.count}</div>
+                <div className="text-sm font-medium">{insight.title}</div>
+                <div className="text-xs mt-1 opacity-75">{insight.description}</div>
+              </motion.div>
+            ))}
+          </div>
+          
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="font-medium text-slate-900">Priority Tasks</h4>
+              <span className="text-xs text-slate-500">{prioritizedTasks.length} items</span>
+            </div>
+            
+            <div className="space-y-2">
+              {prioritizedTasks.map((task, index) => (
+                <motion.div
+                  key={task.id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.3, delay: index * 0.05 }}
+                  className="group flex items-center gap-3 p-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg cursor-pointer transition-all duration-200"
+                  onClick={() => onTaskClick(task)}
+                >
+                  <div className="flex items-center gap-2">
+                    {getStatusIcon(task.status)}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h5 className="font-medium text-slate-900 truncate">{task.title}</h5>
+                        <Badge variant="outline" className={`text-xs ${getPriorityColor(task.priority)}`}>
+                          {task.priority}
+                        </Badge>
                       </div>
-                      
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-4 mb-3">
-                          <div className="flex-1">
-                            <h4 className="font-medium text-slate-900 group-hover:text-slate-700 transition-colors leading-snug mb-1">
-                              {task.title}
-                            </h4>
-                            <div className="flex items-center gap-2 text-xs text-slate-500">
-                              <span className="font-medium">Priority Score: {priorityScore}</span>
-                              <span>•</span>
-                              <span>{urgency.urgency}</span>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            <Badge 
-                              variant="outline" 
-                              className={`text-xs font-medium ${priorityStyles.bg} ${priorityStyles.text} ${priorityStyles.border} px-2 py-1`}
-                            >
-                              <div className={`w-1.5 h-1.5 rounded-full ${priorityStyles.dot} mr-1.5`} />
-                              {task.priority}
-                            </Badge>
-                            <Badge 
-                              variant="outline" 
-                              className={`text-xs font-medium ${urgency.color} px-2 py-1`}
-                            >
-                              {urgency.label}
-                            </Badge>
-                          </div>
+                      <div className="flex items-center gap-4 text-xs text-slate-500">
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          <span className={isOverdue(task.deadline) ? 'text-red-600' : ''}>
+                            {formatDeadline(task.deadline)}
+                          </span>
                         </div>
-                        
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-4 text-sm text-slate-600">
-                            <div className="flex items-center gap-2">
-                              <Calendar className="h-3.5 w-3.5 text-slate-400" />
-                              <span className="font-medium">
-                                {new Date(task.deadline).toLocaleDateString('en-US', { 
-                                  month: 'short', 
-                                  day: 'numeric' 
-                                })}
-                              </span>
-                            </div>
-                            
-                            {task.assignedToName && (
-                              <div className="flex items-center gap-2">
-                                <Avatar className="h-4 w-4">
-                                  <AvatarFallback className="bg-slate-200 text-slate-600 text-xs">
-                                    {task.assignedToName.split(' ').map(n => n[0]).join('')}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <span className="font-medium truncate max-w-24">
-                                  {task.assignedToName}
-                                </span>
-                              </div>
-                            )}
+                        {task.assignedToName && (
+                          <div className="flex items-center gap-1">
+                            <User className="h-3 w-3" />
+                            <span>{task.assignedToName}</span>
                           </div>
-                          
-                          <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-slate-600 transition-colors opacity-0 group-hover:opacity-100" />
-                        </div>
+                        )}
                       </div>
                     </div>
-                  </motion.div>
-                );
-              })}
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-slate-600 transition-colors" />
+                </motion.div>
+              ))}
             </div>
-          ) : (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-center py-12 px-6"
-            >
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-emerald-100 to-emerald-200 flex items-center justify-center">
-                <CheckCircle2 className="h-8 w-8 text-emerald-600" />
-              </div>
-              <h3 className="text-lg font-semibold text-slate-900 mb-2">All systems optimal</h3>
-              <p className="text-slate-600 max-w-sm mx-auto">
-                Your task queue is clear. Great work on maintaining operational excellence!
-              </p>
-            </motion.div>
-          )}
+          </div>
         </CardContent>
       </Card>
     </motion.div>
   );
 };
 
-export default TaskIntelligenceHub;
+export default React.memo(TaskIntelligenceHub);

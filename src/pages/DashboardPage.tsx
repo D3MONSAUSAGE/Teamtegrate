@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTask } from '@/contexts/task';
@@ -5,14 +6,16 @@ import { Task } from '@/types';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
+import ErrorBoundary from '@/components/ErrorBoundary';
+import TimeTrackingErrorBoundary from '@/components/dashboard/time/TimeTrackingErrorBoundary';
 
-// Mobile components (unchanged)
+// Mobile components
 import EnhancedDashboardHeader from '@/components/dashboard/EnhancedDashboardHeader';
 import DailyTasksSection from '@/components/dashboard/DailyTasksSection';
 import RecentProjects from '@/components/dashboard/RecentProjects';
 import QuickActionsPanel from '@/components/dashboard/QuickActionsPanel';
 
-// New enterprise dashboard components
+// Enterprise dashboard components
 import ExecutiveDashboardHeader from '@/components/dashboard/ExecutiveDashboardHeader';
 import MetricsCommandCenter from '@/components/dashboard/MetricsCommandCenter';
 import TaskIntelligenceHub from '@/components/dashboard/TaskIntelligenceHub';
@@ -117,115 +120,129 @@ const DashboardPage = () => {
     projectsCount: projects.length
   };
 
-  // Mobile layout (unchanged)
+  // Mobile layout
   if (isMobile) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
-        <div className="space-y-8 p-6">
-          <EnhancedDashboardHeader
-            userName={user?.name?.split(' ')[0] || 'User'}
-            onCreateTask={handleCreateTask}
-            isLoading={false}
-            stats={stats}
-          />
-          
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-            <div className="xl:col-span-2 space-y-8">
-              <DailyTasksSection 
-                tasks={tasks} 
-                onCreateTask={handleCreateTask}
-                onTaskClick={handleTaskClick}
-              />
-              <RecentProjects projects={projects} />
-            </div>
+      <ErrorBoundary>
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+          <div className="space-y-8 p-6">
+            <EnhancedDashboardHeader
+              userName={user?.name?.split(' ')[0] || 'User'}
+              onCreateTask={handleCreateTask}
+              isLoading={false}
+              stats={stats}
+            />
             
-            <div className="space-y-8">
-              <QuickActionsPanel onCreateTask={handleCreateTask} />
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+              <div className="xl:col-span-2 space-y-8">
+                <DailyTasksSection 
+                  tasks={tasks} 
+                  onCreateTask={handleCreateTask}
+                  onTaskClick={handleTaskClick}
+                />
+                <RecentProjects projects={projects} />
+              </div>
+              
+              <div className="space-y-8">
+                <QuickActionsPanel onCreateTask={handleCreateTask} />
+              </div>
             </div>
+
+            <CreateTaskDialog
+              open={isCreateTaskOpen}
+              onOpenChange={setIsCreateTaskOpen}
+              onSubmit={handleTaskSubmit}
+              editingTask={editingTask}
+            />
+
+            <CreateProjectDialog
+              open={isCreateProjectOpen}
+              onOpenChange={setIsCreateProjectOpen}
+              onProjectCreated={handleProjectCreated}
+            />
+
+            <TaskDetailDialog
+              open={isTaskDetailOpen}
+              onOpenChange={handleTaskDetailClose}
+              task={selectedTask}
+              onEdit={handleEditTask}
+            />
           </div>
-
-          <CreateTaskDialog
-            open={isCreateTaskOpen}
-            onOpenChange={setIsCreateTaskOpen}
-            onSubmit={handleTaskSubmit}
-            editingTask={editingTask}
-          />
-
-          <CreateProjectDialog
-            open={isCreateProjectOpen}
-            onOpenChange={setIsCreateProjectOpen}
-            onProjectCreated={handleProjectCreated}
-          />
-
-          <TaskDetailDialog
-            open={isTaskDetailOpen}
-            onOpenChange={handleTaskDetailClose}
-            task={selectedTask}
-            onEdit={handleEditTask}
-          />
         </div>
-      </div>
+      </ErrorBoundary>
     );
   }
 
   // Enterprise Desktop Layout
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.8 }}
-      className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100"
-    >
-      {/* Executive Header */}
-      <ExecutiveDashboardHeader onCreateTask={handleCreateTask} />
+    <ErrorBoundary>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.8 }}
+        className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100"
+      >
+        {/* Executive Header */}
+        <ExecutiveDashboardHeader onCreateTask={handleCreateTask} />
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-6">
-        {/* Metrics Command Center */}
-        <MetricsCommandCenter 
-          tasks={tasks}
-          dailyScore={dailyScore.percentage}
-        />
+        {/* Main Content */}
+        <div className="max-w-7xl mx-auto px-6 py-6">
+          {/* Metrics Command Center */}
+          <ErrorBoundary>
+            <MetricsCommandCenter 
+              tasks={tasks}
+              dailyScore={dailyScore.percentage}
+            />
+          </ErrorBoundary>
 
-        {/* Main Dashboard Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Task Intelligence */}
-          <TaskIntelligenceHub 
-            tasks={tasks}
-            onTaskClick={handleTaskClick}
-          />
+          {/* Main Dashboard Grid - Fixed layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left Column - Task Intelligence (2/3 width) */}
+            <div className="lg:col-span-2">
+              <ErrorBoundary>
+                <TaskIntelligenceHub 
+                  tasks={tasks}
+                  onTaskClick={handleTaskClick}
+                />
+              </ErrorBoundary>
+            </div>
 
-          {/* Right Column - Analytics & Insights */}
-          <div className="lg:col-span-1">
-            <AnalyticsInsightsPanel />
+            {/* Right Column - Analytics & Insights (1/3 width) */}
+            <div className="lg:col-span-1">
+              <ErrorBoundary>
+                <AnalyticsInsightsPanel />
+              </ErrorBoundary>
+            </div>
           </div>
+
+          {/* Preserved: Floating Time Tracker */}
+          <TimeTrackingErrorBoundary>
+            <FloatingTimeTracker />
+          </TimeTrackingErrorBoundary>
         </div>
 
-        {/* Preserved: Floating Time Tracker */}
-        <FloatingTimeTracker />
-      </div>
+        {/* Dialogs */}
+        <CreateTaskDialog
+          open={isCreateTaskOpen}
+          onOpenChange={setIsCreateTaskOpen}
+          onSubmit={handleTaskSubmit}
+          editingTask={editingTask}
+        />
 
-      {/* Dialogs */}
-      <CreateTaskDialog
-        open={isCreateTaskOpen}
-        onOpenChange={setIsCreateTaskOpen}
-        onSubmit={handleTaskSubmit}
-        editingTask={editingTask}
-      />
+        <CreateProjectDialog
+          open={isCreateProjectOpen}
+          onOpenChange={setIsCreateProjectOpen}
+          onProjectCreated={handleProjectCreated}
+        />
 
-      <CreateProjectDialog
-        open={isCreateProjectOpen}
-        onOpenChange={setIsCreateProjectOpen}
-        onProjectCreated={handleProjectCreated}
-      />
-
-      <TaskDetailDialog
-        open={isTaskDetailOpen}
-        onOpenChange={handleTaskDetailClose}
-        task={selectedTask}
-        onEdit={handleEditTask}
-      />
-    </motion.div>
+        <TaskDetailDialog
+          open={isTaskDetailOpen}
+          onOpenChange={handleTaskDetailClose}
+          task={selectedTask}
+          onEdit={handleEditTask}
+        />
+      </motion.div>
+    </ErrorBoundary>
   );
 };
 
