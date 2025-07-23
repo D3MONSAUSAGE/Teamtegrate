@@ -2,16 +2,14 @@
 import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import MobileDashboardPage from './MobileDashboardPage';
-import CleanDashboardHeader from '@/components/dashboard/CleanDashboardHeader';
-import DashboardStatsCards from '@/components/dashboard/DashboardStatsCards';
 import QuickActionsPanel from '@/components/dashboard/QuickActionsPanel';
-import TaskSections from '@/components/dashboard/TaskSections';
-import AndroidAppBanner from '@/components/dashboard/AndroidAppBanner';
 import { useTask } from '@/contexts/task/TaskContext';
+import { useAuth } from '@/contexts/auth/AuthProvider';
 import { toast } from 'sonner';
 
 const DashboardPage = () => {
   const { createTask } = useTask();
+  const { user } = useAuth();
   const isMobile = Capacitor.isNativePlatform() || window.innerWidth < 768;
 
   // Return mobile version for mobile devices
@@ -26,16 +24,12 @@ const DashboardPage = () => {
         description: '',
         priority: 'Medium' as const,
         status: 'To Do' as const,
-        deadline: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-        assignedTo: '',
-        assignedToName: '',
-        estimatedHours: 1,
+        deadline: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        userId: user?.id || '',
+        projectId: null,
         tags: [],
         comments: [],
-        projectId: null,
-        createdBy: '',
-        createdByName: '',
-        organizationId: ''
+        organizationId: user?.organizationId || ''
       };
       
       await createTask(newTask);
@@ -56,27 +50,12 @@ const DashboardPage = () => {
       <div className="relative z-10 w-full px-2 sm:px-4 lg:px-6 py-8 space-y-8">
         {/* Header */}
         <div className="animate-fade-in">
-          <CleanDashboardHeader onCreateTask={handleNewTask} />
-        </div>
-
-        {/* Stats Cards */}
-        <div className="animate-fade-in delay-100">
-          <DashboardStatsCards />
+          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
         </div>
 
         {/* Quick Actions */}
         <div className="animate-fade-in delay-200">
-          <QuickActionsPanel />
-        </div>
-
-        {/* Task Sections */}
-        <div className="animate-fade-in delay-300">
-          <TaskSections />
-        </div>
-
-        {/* Android App Banner */}
-        <div className="animate-fade-in delay-400">
-          <AndroidAppBanner />
+          <QuickActionsPanel onCreateTask={handleNewTask} userRole={user?.role || 'user'} />
         </div>
       </div>
     </div>
