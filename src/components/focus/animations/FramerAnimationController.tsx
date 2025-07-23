@@ -48,19 +48,8 @@ const FramerAnimationController: React.FC<FramerAnimationControllerProps> = ({
 
   const containerVariants = {
     initial: { opacity: 0 },
-    animate: { 
-      opacity: 1,
-      transition: {
-        duration: 0.8,
-        ease: "easeOut"
-      }
-    },
-    exit: { 
-      opacity: 0,
-      transition: {
-        duration: 0.5
-      }
-    }
+    animate: { opacity: 1 },
+    exit: { opacity: 0 }
   };
 
   const getBackgroundGradient = () => {
@@ -108,16 +97,6 @@ const FramerAnimationController: React.FC<FramerAnimationControllerProps> = ({
     }
   };
 
-  const backgroundVariants = {
-    animate: {
-      background: getBackgroundGradient(),
-      transition: {
-        duration: 6,
-        repeat: Infinity,
-        ease: "easeInOut"
-      }
-    }
-  };
 
   const getParticleTheme = () => {
     switch (animationType) {
@@ -137,19 +116,29 @@ const FramerAnimationController: React.FC<FramerAnimationControllerProps> = ({
   return (
     <motion.div 
       className="relative w-full h-80 rounded-xl overflow-hidden cursor-pointer"
-      variants={backgroundVariants}
-      animate="animate"
+      animate={{ background: getBackgroundGradient() }}
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
-      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      transition={{ 
+        type: "spring", 
+        stiffness: 300, 
+        damping: 30,
+        background: {
+          duration: 6,
+          repeat: Infinity,
+          ease: "easeInOut"
+        }
+      }}
     >
       <AnimatePresence mode="wait">
         <motion.div
           key={animationType}
-          variants={containerVariants}
-          initial="initial"
-          animate="animate"
-          exit="exit"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ 
+            opacity: { duration: 0.8, ease: [0.4, 0, 0.2, 1] }
+          }}
           className="absolute inset-0"
         >
           {/* Render the appropriate animation based on type */}

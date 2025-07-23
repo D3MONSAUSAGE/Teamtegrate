@@ -162,7 +162,7 @@ const DashboardPage = () => {
           {/* Glass Morphism Stats Grid */}
           <GlassMorphismStatsGrid 
             tasks={tasks}
-            dailyScore={dailyScore}
+            dailyScore={dailyScore.percentage}
           />
 
           {/* Floating Time Tracker */}
