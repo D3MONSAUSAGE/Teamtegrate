@@ -13,7 +13,7 @@
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 262.1 83.3% 57.8%;
+    --primary: 217 91% 60%;
     --primary-foreground: 210 40% 98%;
     --secondary: 220 14.3% 95.9%;
     --secondary-foreground: 222.2 84% 4.9%;
@@ -25,7 +25,7 @@
     --destructive-foreground: 210 40% 98%;
     --border: 220 13% 91%;
     --input: 220 13% 91%;
-    --ring: 262.1 83.3% 57.8%;
+    --ring: 217 91% 60%;
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
     --chart-3: 197 37% 24%;
@@ -33,24 +33,62 @@
     --chart-5: 27 87% 67%;
     --radius: 0.75rem;
     
-    /* Dashboard-specific design tokens */
-    --dashboard-bg: 251 91% 95%;
+    /* Professional Dashboard Design System */
+    --dashboard-bg: 220 17% 97%;
     --dashboard-card: 0 0% 100%;
-    --dashboard-card-hover: 240 9% 97.5%;
-    --dashboard-accent: 142 76% 36%;
-    --dashboard-accent-light: 142 69% 58%;
-    --dashboard-warning: 38 92% 50%;
-    --dashboard-info: 217 91% 60%;
-    --dashboard-success: 142 76% 36%;
-    --dashboard-gradient-start: 262.1 83.3% 57.8%;
-    --dashboard-gradient-end: 142 76% 36%;
+    --dashboard-card-hover: 220 14% 96%;
+    --dashboard-border: 220 13% 91%;
     
-    /* Shadow system */
-    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-    --shadow-base: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-    --shadow-glow: 0 0 20px 0 hsl(var(--primary) / 0.15);
+    /* Primary Blue Theme */
+    --dashboard-primary: 217 91% 60%;
+    --dashboard-primary-light: 217 91% 70%;
+    --dashboard-primary-dark: 217 91% 50%;
+    --dashboard-primary-foreground: 0 0% 100%;
+    
+    /* Teal Accent */
+    --dashboard-teal: 188 94% 43%;
+    --dashboard-teal-light: 188 94% 53%;
+    --dashboard-teal-dark: 188 94% 33%;
+    --dashboard-teal-foreground: 0 0% 100%;
+    
+    /* Purple Highlight */
+    --dashboard-purple: 262 83% 68%;
+    --dashboard-purple-light: 262 83% 78%;
+    --dashboard-purple-dark: 262 83% 58%;
+    --dashboard-purple-foreground: 0 0% 100%;
+    
+    /* Status Colors */
+    --dashboard-success: 142 76% 36%;
+    --dashboard-success-light: 142 76% 46%;
+    --dashboard-warning: 38 92% 50%;
+    --dashboard-warning-light: 38 92% 60%;
+    --dashboard-error: 0 84% 60%;
+    --dashboard-error-light: 0 84% 70%;
+    
+    /* Neutral Tones */
+    --dashboard-gray-50: 220 14% 96%;
+    --dashboard-gray-100: 220 13% 91%;
+    --dashboard-gray-200: 220 13% 84%;
+    --dashboard-gray-300: 220 9% 70%;
+    --dashboard-gray-400: 220 9% 56%;
+    --dashboard-gray-500: 220 9% 46%;
+    --dashboard-gray-600: 220 13% 35%;
+    --dashboard-gray-700: 220 13% 25%;
+    --dashboard-gray-800: 220 13% 18%;
+    --dashboard-gray-900: 220 13% 9%;
+    
+    /* Gradients */
+    --dashboard-gradient-primary: linear-gradient(135deg, hsl(var(--dashboard-primary)) 0%, hsl(var(--dashboard-teal)) 100%);
+    --dashboard-gradient-secondary: linear-gradient(135deg, hsl(var(--dashboard-purple)) 0%, hsl(var(--dashboard-primary)) 100%);
+    --dashboard-gradient-success: linear-gradient(135deg, hsl(var(--dashboard-success)) 0%, hsl(var(--dashboard-teal)) 100%);
+    
+    /* Shadows */
+    --dashboard-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --dashboard-shadow-base: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    --dashboard-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --dashboard-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --dashboard-shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    --dashboard-shadow-glow: 0 0 0 1px hsl(var(--dashboard-primary) / 0.3), 0 0 20px hsl(var(--dashboard-primary) / 0.2);
   }
 
   .dark {
@@ -60,8 +98,8 @@
     --card-foreground: 210 40% 98%;
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-    --primary: 263.4 70% 50.4%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 222.2 84% 4.9%;
     --secondary: 215 27.9% 16.9%;
     --secondary-foreground: 210 40% 98%;
     --muted: 215 27.9% 16.9%;
@@ -72,31 +110,34 @@
     --destructive-foreground: 210 40% 98%;
     --border: 215 27.9% 16.9%;
     --input: 215 27.9% 16.9%;
-    --ring: 263.4 70% 50.4%;
+    --ring: 217 91% 60%;
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
     
-    /* Dashboard-specific design tokens - dark mode */
+    /* Professional Dashboard Design System - Dark Mode */
     --dashboard-bg: 222.2 84% 4.9%;
     --dashboard-card: 215 27.9% 16.9%;
     --dashboard-card-hover: 215 25% 20%;
-    --dashboard-accent: 142 76% 36%;
-    --dashboard-accent-light: 142 69% 58%;
-    --dashboard-warning: 38 92% 50%;
-    --dashboard-info: 217 91% 60%;
-    --dashboard-success: 142 76% 36%;
-    --dashboard-gradient-start: 263.4 70% 50.4%;
-    --dashboard-gradient-end: 142 76% 36%;
+    --dashboard-border: 215 27.9% 16.9%;
     
-    /* Shadow system - dark mode */
-    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
-    --shadow-base: 0 1px 3px 0 rgb(0 0 0 / 0.5), 0 1px 2px -1px rgb(0 0 0 / 0.5);
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.5), 0 2px 4px -2px rgb(0 0 0 / 0.5);
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.5);
-    --shadow-glow: 0 0 20px 0 hsl(var(--primary) / 0.3);
+    /* Maintain same color scheme but adjust for dark mode */
+    --dashboard-primary: 217 91% 60%;
+    --dashboard-teal: 188 94% 43%;
+    --dashboard-purple: 262 83% 68%;
+    --dashboard-success: 142 76% 36%;
+    --dashboard-warning: 38 92% 50%;
+    --dashboard-error: 0 84% 60%;
+    
+    /* Shadows - Dark mode */
+    --dashboard-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+    --dashboard-shadow-base: 0 1px 3px 0 rgb(0 0 0 / 0.5), 0 1px 2px -1px rgb(0 0 0 / 0.5);
+    --dashboard-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.5), 0 2px 4px -2px rgb(0 0 0 / 0.5);
+    --dashboard-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.5);
+    --dashboard-shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.5), 0 8px 10px -6px rgb(0 0 0 / 0.5);
+    --dashboard-shadow-glow: 0 0 0 1px hsl(var(--dashboard-primary) / 0.3), 0 0 20px hsl(var(--dashboard-primary) / 0.3);
   }
 }
 
@@ -139,5 +180,17 @@
 
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
+  }
+
+  .dashboard-gradient-primary {
+    background: var(--dashboard-gradient-primary);
+  }
+
+  .dashboard-gradient-secondary {
+    background: var(--dashboard-gradient-secondary);
+  }
+
+  .dashboard-gradient-success {
+    background: var(--dashboard-gradient-success);
   }
 }

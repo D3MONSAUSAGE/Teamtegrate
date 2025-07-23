@@ -8,10 +8,12 @@ import EnhancedDashboardHeader from '@/components/dashboard/EnhancedDashboardHea
 import DailyTasksSection from '@/components/dashboard/DailyTasksSection';
 import RecentProjects from '@/components/dashboard/RecentProjects';
 import QuickActionsPanel from '@/components/dashboard/QuickActionsPanel';
-import ModernDashboardHeader from '@/components/dashboard/ModernDashboardHeader';
-import ModernStatsGrid from '@/components/dashboard/ModernStatsGrid';
-import ModernQuickActions from '@/components/dashboard/ModernQuickActions';
-import ModernTasksOverview from '@/components/dashboard/ModernTasksOverview';
+import ProfessionalDashboardHeader from '@/components/dashboard/ProfessionalDashboardHeader';
+import ExecutiveMetricsGrid from '@/components/dashboard/ExecutiveMetricsGrid';
+import SmartInsightsPanel from '@/components/dashboard/SmartInsightsPanel';
+import IntelligentTaskQueue from '@/components/dashboard/IntelligentTaskQueue';
+import TeamPerformanceOverview from '@/components/dashboard/TeamPerformanceOverview';
+import ContextualActionsHub from '@/components/dashboard/ContextualActionsHub';
 import CreateTaskDialog from '@/components/dialogs/CreateTaskDialog';
 import CreateProjectDialog from '@/components/CreateProjectDialog';
 import TaskDetailDialog from '@/components/calendar/TaskDetailDialog';
@@ -138,30 +140,30 @@ const DashboardPage = () => {
     );
   }
 
-  // Desktop layout (modern redesign)
+  // Desktop layout (new professional design)
   return (
-    <div className="min-h-screen bg-dashboard-bg dark:bg-background">
+    <div className="min-h-screen bg-dashboard-bg">
+      {/* Professional Header */}
+      <ProfessionalDashboardHeader onCreateTask={handleCreateTask} />
+      
       <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Modern Header */}
-        <ModernDashboardHeader onCreateTask={handleCreateTask} />
-        
-        {/* Modern Stats Grid */}
-        <ModernStatsGrid
-          dailyScore={dailyScore.percentage}
-          todaysTasks={todaysTasks}
-          upcomingTasks={upcomingTasks}
-          overdueTasks={overdueTasks}
-        />
+        {/* Executive Metrics */}
+        <ExecutiveMetricsGrid tasks={tasks} />
 
-        {/* Modern Quick Actions */}
-        <ModernQuickActions onCreateTask={handleCreateTask} />
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+          {/* Left Column - Insights & Task Queue */}
+          <div className="lg:col-span-2 space-y-8">
+            <SmartInsightsPanel tasks={tasks} />
+            <IntelligentTaskQueue tasks={tasks} onTaskClick={handleTaskClick} />
+          </div>
 
-        {/* Modern Tasks Overview */}
-        <ModernTasksOverview
-          tasks={tasks}
-          projects={projects}
-          onTaskClick={handleTaskClick}
-        />
+          {/* Right Column - Team & Actions */}
+          <div className="space-y-8">
+            <TeamPerformanceOverview tasks={tasks} projects={projects} />
+            <ContextualActionsHub onCreateTask={handleCreateTask} />
+          </div>
+        </div>
 
         {/* Dialogs */}
         <CreateTaskDialog

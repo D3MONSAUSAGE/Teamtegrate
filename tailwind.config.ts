@@ -74,11 +74,45 @@ export default {
           bg: 'hsl(var(--dashboard-bg))',
           card: 'hsl(var(--dashboard-card))',
           'card-hover': 'hsl(var(--dashboard-card-hover))',
-          accent: 'hsl(var(--dashboard-accent))',
-          'accent-light': 'hsl(var(--dashboard-accent-light))',
+          border: 'hsl(var(--dashboard-border))',
+          
+          // Primary blue theme
+          primary: 'hsl(var(--dashboard-primary))',
+          'primary-light': 'hsl(var(--dashboard-primary-light))',
+          'primary-dark': 'hsl(var(--dashboard-primary-dark))',
+          'primary-foreground': 'hsl(var(--dashboard-primary-foreground))',
+          
+          // Teal accent
+          teal: 'hsl(var(--dashboard-teal))',
+          'teal-light': 'hsl(var(--dashboard-teal-light))',
+          'teal-dark': 'hsl(var(--dashboard-teal-dark))',
+          'teal-foreground': 'hsl(var(--dashboard-teal-foreground))',
+          
+          // Purple highlight
+          purple: 'hsl(var(--dashboard-purple))',
+          'purple-light': 'hsl(var(--dashboard-purple-light))',
+          'purple-dark': 'hsl(var(--dashboard-purple-dark))',
+          'purple-foreground': 'hsl(var(--dashboard-purple-foreground))',
+          
+          // Status colors
+          success: 'hsl(var(--dashboard-success))',
+          'success-light': 'hsl(var(--dashboard-success-light))',
           warning: 'hsl(var(--dashboard-warning))',
-          info: 'hsl(var(--dashboard-info))',
-          success: 'hsl(var(--dashboard-success))'
+          'warning-light': 'hsl(var(--dashboard-warning-light))',
+          error: 'hsl(var(--dashboard-error))',
+          'error-light': 'hsl(var(--dashboard-error-light))',
+          
+          // Neutral grays
+          'gray-50': 'hsl(var(--dashboard-gray-50))',
+          'gray-100': 'hsl(var(--dashboard-gray-100))',
+          'gray-200': 'hsl(var(--dashboard-gray-200))',
+          'gray-300': 'hsl(var(--dashboard-gray-300))',
+          'gray-400': 'hsl(var(--dashboard-gray-400))',
+          'gray-500': 'hsl(var(--dashboard-gray-500))',
+          'gray-600': 'hsl(var(--dashboard-gray-600))',
+          'gray-700': 'hsl(var(--dashboard-gray-700))',
+          'gray-800': 'hsl(var(--dashboard-gray-800))',
+          'gray-900': 'hsl(var(--dashboard-gray-900))',
         },
         priority: {
           low: '#34d399',      // emerald-400
@@ -98,15 +132,17 @@ export default {
         sm: 'calc(var(--radius) - 4px)'
       },
       boxShadow: {
-        'sm': 'var(--shadow-sm)',
-        'base': 'var(--shadow-base)',
-        'md': 'var(--shadow-md)',
-        'lg': 'var(--shadow-lg)',
-        'glow': 'var(--shadow-glow)'
+        'sm': 'var(--dashboard-shadow-sm)',
+        'base': 'var(--dashboard-shadow-base)',
+        'md': 'var(--dashboard-shadow-md)',
+        'lg': 'var(--dashboard-shadow-lg)',
+        'xl': 'var(--dashboard-shadow-xl)',
+        'glow': 'var(--dashboard-shadow-glow)'
       },
       backgroundImage: {
-        'dashboard-gradient': 'linear-gradient(135deg, hsl(var(--dashboard-gradient-start)), hsl(var(--dashboard-gradient-end)))',
-        'card-gradient': 'linear-gradient(145deg, hsl(var(--dashboard-card)), hsl(var(--dashboard-card-hover)))'
+        'dashboard-gradient-primary': 'var(--dashboard-gradient-primary)',
+        'dashboard-gradient-secondary': 'var(--dashboard-gradient-secondary)',
+        'dashboard-gradient-success': 'var(--dashboard-gradient-success)',
       },
       fontFamily: {
         'sans': ['Inter', 'ui-sans-serif', 'system-ui'],
@@ -151,6 +187,10 @@ export default {
         'slide-out-right': {
           '0%': { transform: 'translateX(0)' },
           '100%': { transform: 'translateX(100%)' }
+        },
+        'pulse-glow': {
+          '0%, 100%': { boxShadow: 'var(--dashboard-shadow-glow)' },
+          '50%': { boxShadow: 'var(--dashboard-shadow-base)' }
         }
       },
       animation: {
@@ -161,7 +201,8 @@ export default {
         'scale-in': 'scale-in 0.18s cubic-bezier(0.4,0,0.2,1)',
         'scale-out': 'scale-out 0.18s cubic-bezier(0.4,0,0.2,1)',
         'slide-in-right': 'slide-in-right 0.3s cubic-bezier(0.33,1,0.68,1)',
-        'slide-out-right': 'slide-out-right 0.3s cubic-bezier(0.33,1,0.68,1)'
+        'slide-out-right': 'slide-out-right 0.3s cubic-bezier(0.33,1,0.68,1)',
+        'pulse-glow': 'pulse-glow 2s ease-in-out infinite'
       }
     }
   },
