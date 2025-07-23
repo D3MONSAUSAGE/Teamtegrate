@@ -5,8 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Smartphone, Download } from 'lucide-react';
 
 const AndroidAppBanner: React.FC = () => {
+  const handleDownload = () => {
+    // Open the Google Play Store link
+    window.open('https://play.google.com/store/apps/details?id=com.taskmanager.app', '_blank');
+  };
+
   return (
-    <Card className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 border-green-200 dark:border-green-800">
+    <Card className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 border-green-200 dark:border-green-800 shadow-lg">
       <CardContent className="p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -22,7 +27,10 @@ const AndroidAppBanner: React.FC = () => {
               </p>
             </div>
           </div>
-          <Button className="bg-green-600 hover:bg-green-700 text-white">
+          <Button 
+            onClick={handleDownload}
+            className="bg-green-600 hover:bg-green-700 text-white"
+          >
             <Download className="h-4 w-4 mr-2" />
             Download
           </Button>
