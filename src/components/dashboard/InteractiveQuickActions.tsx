@@ -15,6 +15,8 @@ import {
   Loader2
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 interface InteractiveQuickActionsProps {
   onCreateTask: () => void;
@@ -22,13 +24,70 @@ interface InteractiveQuickActionsProps {
 
 const InteractiveQuickActions: React.FC<InteractiveQuickActionsProps> = ({ onCreateTask }) => {
   const { isReady, profileLoading } = useAuth();
+  const navigate = useNavigate();
 
   const handleCreateTask = () => {
     if (!isReady) {
-      console.log('User not ready for task creation');
+      toast.error('Please wait for your profile to load');
       return;
     }
     onCreateTask();
+  };
+
+  const handleCreateProject = () => {
+    if (!isReady) {
+      toast.error('Please wait for your profile to load');
+      return;
+    }
+    navigate('/dashboard/projects');
+  };
+
+  const handleSchedule = () => {
+    if (!isReady) {
+      toast.error('Please wait for your profile to load');
+      return;
+    }
+    navigate('/dashboard/calendar');
+  };
+
+  const handleTeam = () => {
+    if (!isReady) {
+      toast.error('Please wait for your profile to load');
+      return;
+    }
+    navigate('/dashboard/team');
+  };
+
+  const handleAnalytics = () => {
+    if (!isReady) {
+      toast.error('Please wait for your profile to load');
+      return;
+    }
+    navigate('/dashboard/reports');
+  };
+
+  const handleSettings = () => {
+    if (!isReady) {
+      toast.error('Please wait for your profile to load');
+      return;
+    }
+    navigate('/dashboard/settings');
+  };
+
+  const handleUpload = () => {
+    if (!isReady) {
+      toast.error('Please wait for your profile to load');
+      return;
+    }
+    toast.info('Upload feature coming soon!');
+  };
+
+  const handleMessages = () => {
+    if (!isReady) {
+      toast.error('Please wait for your profile to load');
+      return;
+    }
+    toast.info('Messages feature coming soon!');
   };
 
   const primaryActions = [
@@ -45,19 +104,19 @@ const InteractiveQuickActions: React.FC<InteractiveQuickActionsProps> = ({ onCre
       title: 'New Project',
       description: 'Start a new project',
       icon: FolderPlus,
-      action: () => console.log('Create project'),
+      action: handleCreateProject,
       gradient: 'from-dashboard-info to-blue-400',
       disabled: !isReady
     }
   ];
 
   const secondaryActions = [
-    { title: 'Schedule', icon: Calendar, action: () => console.log('Schedule'), disabled: !isReady },
-    { title: 'Team', icon: Users, action: () => console.log('Team'), disabled: !isReady },
-    { title: 'Analytics', icon: BarChart3, action: () => console.log('Analytics'), disabled: !isReady },
-    { title: 'Settings', icon: Settings, action: () => console.log('Settings'), disabled: !isReady },
-    { title: 'Upload', icon: Upload, action: () => console.log('Upload'), disabled: !isReady },
-    { title: 'Messages', icon: MessageSquare, action: () => console.log('Messages'), disabled: !isReady }
+    { title: 'Schedule', icon: Calendar, action: handleSchedule, disabled: !isReady },
+    { title: 'Team', icon: Users, action: handleTeam, disabled: !isReady },
+    { title: 'Analytics', icon: BarChart3, action: handleAnalytics, disabled: !isReady },
+    { title: 'Settings', icon: Settings, action: handleSettings, disabled: !isReady },
+    { title: 'Upload', icon: Upload, action: handleUpload, disabled: !isReady },
+    { title: 'Messages', icon: MessageSquare, action: handleMessages, disabled: !isReady }
   ];
 
   return (

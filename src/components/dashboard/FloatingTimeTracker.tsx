@@ -3,13 +3,46 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Clock, Play, Square, Zap } from 'lucide-react';
+import { Clock, Play, Square, Zap, Loader2 } from 'lucide-react';
 import { useTimeTrackingPage } from '@/hooks/useTimeTrackingPage';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 const FloatingTimeTracker: React.FC = () => {
   const { currentEntry, elapsedTime, clockIn, clockOut, isLoading, breakState } = useTimeTrackingPage();
+  const { isReady } = useAuth();
   
   const isActivelyWorking = currentEntry.isClocked && !breakState.isOnBreak;
+
+  const handleClockIn = async () => {
+    if (!isReady) {
+      toast.error('Please wait for your profile to load');
+      return;
+    }
+    
+    try {
+      await clockIn();
+      toast.success('Clock in successful!');
+    } catch (error) {
+      console.error('Clock in error:', error);
+      toast.error('Failed to clock in. Please try again.');
+    }
+  };
+
+  const handleClockOut = async () => {
+    if (!isReady) {
+      toast.error('Please wait for your profile to load');
+      return;
+    }
+    
+    try {
+      await clockOut();
+      toast.success('Clock out successful!');
+    } catch (error) {
+      console.error('Clock out error:', error);
+      toast.error('Failed to clock out. Please try again.');
+    }
+  };
 
   return (
     <motion.div
@@ -81,10 +114,10 @@ const FloatingTimeTracker: React.FC = () => {
               whileTap={{ scale: 0.95 }}
             >
               <Button
-                onClick={isActivelyWorking ? () => clockOut() : () => clockIn()}
-                disabled={isLoading}
+                onClick={isActivelyWorking ? handleClockOut : handleClockIn}
+                disabled={isLoading || !isReady}
                 size="lg"
-                className={`relative group px-8 py-6 rounded-2xl font-semibold transition-all duration-300 ${
+                className={`relative group px-8 py-6 rounded-2xl font-semibold transition-all duration-300 disabled:opacity-50 ${
                   isActivelyWorking
                     ? 'bg-gradient-to-r from-dashboard-error to-red-500 hover:from-dashboard-error-light hover:to-red-400 text-white shadow-lg hover:shadow-xl'
                     : 'bg-gradient-to-r from-dashboard-success to-green-500 hover:from-dashboard-success-light hover:to-green-400 text-white shadow-lg hover:shadow-xl'
@@ -92,7 +125,9 @@ const FloatingTimeTracker: React.FC = () => {
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl" />
                 <div className="relative flex items-center gap-3">
-                  {isActivelyWorking ? (
+                  {isLoading ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : isActivelyWorking ? (
                     <>
                       <Square className="h-5 w-5" />
                       Clock Out

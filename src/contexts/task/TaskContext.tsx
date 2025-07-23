@@ -56,15 +56,18 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
   }, [queryClient, user?.organizationId, user?.id]);
 
-  // Helper function to validate user context
+  // Enhanced user validation with better error messages
   const validateUserContext = () => {
     if (!user) {
+      toast.error('Please sign in to continue');
       throw new Error('User not authenticated');
     }
     if (!user.organizationId) {
+      toast.error('Organization data not loaded. Please wait or refresh the page.');
       throw new Error('User organization not loaded');
     }
     if (!isReady) {
+      toast.error('Please wait for your profile to load completely');
       throw new Error('User profile not ready');
     }
   };
@@ -115,28 +118,41 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const createTask = useCallback(async (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>): Promise<Task | undefined> => {
+    console.log('TaskContext.createTask: Starting task creation');
+    
     try {
       validateUserContext();
+      console.log('TaskContext.createTask: User validation passed');
     } catch (error) {
       console.error('TaskContext.createTask: User validation failed:', error);
-      toast.error('Please wait for your profile to load before creating tasks');
       return;
     }
 
     setLoading(true);
     try {
+      console.log('TaskContext.createTask: Calling API with organizationId:', user.organizationId);
       const newTask = await createTaskAPI({ ...task, organizationId: user.organizationId || '' });
       setTasks(prevTasks => [...prevTasks, newTask]);
       
       // Invalidate all task-related caches
       await invalidateAllTaskCaches();
       
-      toast.success('Task created successfully');
+      console.log('TaskContext.createTask: Task created successfully');
       return newTask;
     } catch (err: any) {
       console.error('TaskContext.createTask: API error:', err);
       setError(err.message || 'Failed to create task');
-      toast.error('Failed to create task. Please try again.');
+      
+      // More specific error messages
+      if (err.message?.includes('organization')) {
+        toast.error('Organization access error. Please refresh and try again.');
+      } else if (err.message?.includes('authentication')) {
+        toast.error('Authentication error. Please sign in again.');
+      } else {
+        toast.error('Failed to create task. Please try again.');
+      }
+      
+      throw err;
     } finally {
       setLoading(false);
     }
@@ -160,7 +176,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       validateUserContext();
     } catch (error) {
       console.error('TaskContext.updateTask: User validation failed:', error);
-      toast.error('Please wait for your profile to load before updating tasks');
       return;
     }
 
@@ -191,7 +206,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       validateUserContext();
     } catch (error) {
       console.error('TaskContext.deleteTask: User validation failed:', error);
-      toast.error('Please wait for your profile to load before deleting tasks');
       return;
     }
     
@@ -228,7 +242,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       validateUserContext();
     } catch (error) {
       console.error('TaskContext.updateTaskStatus: User validation failed:', error);
-      toast.error('Please wait for your profile to load before updating task status');
       return;
     }
     
@@ -277,7 +290,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       validateUserContext();
     } catch (error) {
       console.error('TaskContext.assignTaskToUser: User validation failed:', error);
-      toast.error('Please wait for your profile to load before assigning tasks');
       return;
     }
 

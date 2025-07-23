@@ -7,6 +7,9 @@ import { Button } from '@/components/ui/button';
 import { CheckCircle2, Clock, AlertTriangle, User, Calendar, ArrowRight, Filter } from 'lucide-react';
 import { Task } from '@/types';
 import { isTaskOverdue } from '@/utils/taskUtils';
+import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 interface IntelligentTaskVisualizationProps {
   tasks: Task[];
@@ -14,7 +17,25 @@ interface IntelligentTaskVisualizationProps {
 }
 
 const IntelligentTaskVisualization: React.FC<IntelligentTaskVisualizationProps> = ({ tasks, onTaskClick }) => {
+  const { isReady } = useAuth();
+  const navigate = useNavigate();
   const activeTasks = tasks.filter(task => task.status !== 'Completed').slice(0, 6);
+
+  const handleViewAll = () => {
+    if (!isReady) {
+      toast.error('Please wait for your profile to load');
+      return;
+    }
+    navigate('/dashboard/tasks');
+  };
+
+  const handleTaskClick = (task: Task) => {
+    if (!isReady) {
+      toast.error('Please wait for your profile to load');
+      return;
+    }
+    onTaskClick(task);
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -76,7 +97,9 @@ const IntelligentTaskVisualization: React.FC<IntelligentTaskVisualizationProps> 
             
             <Button 
               variant="outline" 
-              className="border-dashboard-border bg-white/50 hover:bg-white/70 backdrop-blur-sm"
+              onClick={handleViewAll}
+              disabled={!isReady}
+              className="border-dashboard-border bg-white/50 hover:bg-white/70 backdrop-blur-sm disabled:opacity-50"
             >
               View All
               <ArrowRight className="h-4 w-4 ml-2" />
@@ -95,8 +118,10 @@ const IntelligentTaskVisualization: React.FC<IntelligentTaskVisualizationProps> 
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 whileHover={{ scale: 1.02, y: -2 }}
-                onClick={() => onTaskClick(task)}
-                className="group relative p-6 rounded-2xl border border-dashboard-border/50 bg-white/40 hover:bg-white/60 backdrop-blur-sm transition-all duration-300 cursor-pointer"
+                onClick={() => handleTaskClick(task)}
+                className={`group relative p-6 rounded-2xl border border-dashboard-border/50 bg-white/40 hover:bg-white/60 backdrop-blur-sm transition-all duration-300 cursor-pointer ${
+                  !isReady ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
               >
                 {/* Priority indicator */}
                 <div className={`absolute left-0 top-0 w-1 h-full rounded-l-2xl ${
