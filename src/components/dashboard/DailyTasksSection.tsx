@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Task } from '@/types';
 import { Plus, Calendar, Clock, AlertCircle, CheckCircle2, Target } from 'lucide-react';
-import { format, isToday, isTomorrow, isOverdue } from 'date-fns';
+import { format, isToday, isTomorrow } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 interface DailyTasksSectionProps {
@@ -19,20 +19,26 @@ const DailyTasksSection: React.FC<DailyTasksSectionProps> = ({
   onCreateTask, 
   onTaskClick 
 }) => {
+  const isOverdue = (date: Date) => {
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    return date < today;
+  };
+
   const todayTasks = tasks.filter(task => isToday(new Date(task.deadline)));
   const tomorrowTasks = tasks.filter(task => isTomorrow(new Date(task.deadline)));
-  const overdueTasks = tasks.filter(task => isOverdue(new Date(task.deadline)) && task.status !== 'completed');
+  const overdueTasks = tasks.filter(task => isOverdue(new Date(task.deadline)) && task.status !== 'Completed');
 
   const getTaskStatusColor = (task: Task) => {
-    if (task.status === 'completed') return 'from-green-500 to-emerald-600';
-    if (task.status === 'inprogress') return 'from-amber-500 to-orange-600';
+    if (task.status === 'Completed') return 'from-green-500 to-emerald-600';
+    if (task.status === 'In Progress') return 'from-amber-500 to-orange-600';
     if (isOverdue(new Date(task.deadline))) return 'from-red-500 to-rose-600';
     return 'from-blue-500 to-indigo-600';
   };
 
   const getTaskStatusIcon = (task: Task) => {
-    if (task.status === 'completed') return <CheckCircle2 className="h-4 w-4" />;
-    if (task.status === 'inprogress') return <Clock className="h-4 w-4" />;
+    if (task.status === 'Completed') return <CheckCircle2 className="h-4 w-4" />;
+    if (task.status === 'In Progress') return <Clock className="h-4 w-4" />;
     if (isOverdue(new Date(task.deadline))) return <AlertCircle className="h-4 w-4" />;
     return <Target className="h-4 w-4" />;
   };
@@ -61,7 +67,7 @@ const DailyTasksSection: React.FC<DailyTasksSectionProps> = ({
               {task.title}
             </h3>
             <Badge
-              variant={task.priority === 'high' ? 'destructive' : task.priority === 'medium' ? 'default' : 'secondary'}
+              variant={task.priority === 'High' ? 'destructive' : task.priority === 'Medium' ? 'default' : 'secondary'}
               className="text-xs"
             >
               {task.priority}
@@ -82,8 +88,8 @@ const DailyTasksSection: React.FC<DailyTasksSectionProps> = ({
             <div className="flex items-center gap-1">
               <div className={cn(
                 "w-2 h-2 rounded-full",
-                task.status === 'completed' ? 'bg-green-500' : 
-                task.status === 'inprogress' ? 'bg-amber-500' : 'bg-blue-500'
+                task.status === 'Completed' ? 'bg-green-500' : 
+                task.status === 'In Progress' ? 'bg-amber-500' : 'bg-blue-500'
               )} />
               <span className="capitalize">{task.status}</span>
             </div>
