@@ -12,12 +12,17 @@ import DailyTasksSection from '@/components/dashboard/DailyTasksSection';
 import RecentProjects from '@/components/dashboard/RecentProjects';
 import QuickActionsPanel from '@/components/dashboard/QuickActionsPanel';
 
-// New premium desktop components
+// Preserved desktop components (as shown in user's image)
 import PremiumDashboardHeader from '@/components/dashboard/PremiumDashboardHeader';
 import GlassMorphismStatsGrid from '@/components/dashboard/GlassMorphismStatsGrid';
 import FloatingTimeTracker from '@/components/dashboard/FloatingTimeTracker';
+
+// New modern desktop components
 import IntelligentTaskVisualization from '@/components/dashboard/IntelligentTaskVisualization';
-import InteractiveQuickActions from '@/components/dashboard/InteractiveQuickActions';
+import RecentActivityFeed from '@/components/dashboard/RecentActivityFeed';
+import UpcomingDeadlines from '@/components/dashboard/UpcomingDeadlines';
+import ModernQuickActions from '@/components/dashboard/ModernQuickActions';
+import ProgressInsights from '@/components/dashboard/ProgressInsights';
 
 // Dialogs
 import CreateTaskDialog from '@/components/dialogs/CreateTaskDialog';
@@ -166,41 +171,54 @@ const DashboardPage = () => {
     );
   }
 
-  // Premium desktop layout
+  // Modern desktop layout with preserved elements
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.8 }}
-      className="min-h-screen bg-gradient-to-br from-dashboard-bg via-dashboard-card to-dashboard-bg"
+      className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100"
     >
       <div className="max-w-7xl mx-auto">
-        {/* Premium Header */}
+        {/* Preserved: Premium Header */}
         <PremiumDashboardHeader onCreateTask={handleCreateTask} />
 
         {/* Main Content */}
         <div className="px-8 py-8 space-y-8">
-          {/* Glass Morphism Stats Grid */}
+          {/* Preserved: Glass Morphism Stats Grid */}
           <GlassMorphismStatsGrid 
             tasks={tasks}
             dailyScore={dailyScore.percentage}
           />
 
-          {/* Floating Time Tracker */}
+          {/* Preserved: Floating Time Tracker */}
           <FloatingTimeTracker />
 
-          {/* Main Content Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Intelligent Task Visualization */}
-            <IntelligentTaskVisualization 
-              tasks={tasks}
-              onTaskClick={handleTaskClick}
-            />
+          {/* New Modern Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Left Column - Main Content */}
+            <div className="lg:col-span-2 space-y-8">
+              {/* Task Intelligence - Enhanced */}
+              <IntelligentTaskVisualization 
+                tasks={tasks}
+                onTaskClick={handleTaskClick}
+              />
 
-            {/* Interactive Quick Actions */}
-            <InteractiveQuickActions 
-              onCreateTask={handleCreateTask}
-            />
+              {/* Recent Activity Feed - New */}
+              <RecentActivityFeed />
+            </div>
+
+            {/* Right Column - Sidebar */}
+            <div className="space-y-8">
+              {/* Modern Quick Actions - Redesigned */}
+              <ModernQuickActions onCreateTask={handleCreateTask} />
+
+              {/* Upcoming Deadlines - New */}
+              <UpcomingDeadlines />
+
+              {/* Progress Insights - New */}
+              <ProgressInsights />
+            </div>
           </div>
         </div>
 
