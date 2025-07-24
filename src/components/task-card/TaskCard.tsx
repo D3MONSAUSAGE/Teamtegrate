@@ -3,6 +3,9 @@ import React from "react";
 import { Card } from "@/components/ui/card";
 import { Task, TaskStatus } from "@/types";
 import { cn } from "@/lib/utils";
+import { Eye } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Capacitor } from "@capacitor/core";
 import TaskDetailDialog from "../calendar/TaskDetailDialog";
 import TaskCardActions from "./TaskCardActions";
 import TaskCardContent from "./TaskCardContent";
@@ -37,12 +40,19 @@ const TaskCard: React.FC<TaskCardProps> = ({
     commentCount,
   } = useTaskCard(task);
 
+  const isNativeMobile = Capacitor.isNativePlatform();
+
   const handleCardClick = () => {
     if (onClick) {
       onClick();
     } else {
       setShowDrawer(true);
     }
+  };
+
+  const handleViewClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowDrawer(true);
   };
 
   const handleStatusChange = async (status: TaskStatus): Promise<void> => {
@@ -112,7 +122,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
           !isOverdue && priorityStyles.glow,
           // Smooth transitions with enhanced effects
           "transition-all duration-300 ease-out",
-          "hover:scale-[1.02] hover:-translate-y-1",
+          !isNativeMobile && "hover:scale-[1.02] hover:-translate-y-1",
+          isNativeMobile && "active:scale-[0.98]",
           // Backdrop blur for glass effect
           "backdrop-blur-sm",
           // Overdue state with intense styling
@@ -135,19 +146,35 @@ const TaskCard: React.FC<TaskCardProps> = ({
           "pointer-events-none"
         )} />
         
-        {/* Floating action menu */}
-        <div className="absolute top-3 right-3 z-20 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-1 group-hover:translate-y-0">
-          <div className="bg-background/95 backdrop-blur-md rounded-xl p-1.5 shadow-2xl border border-border/50 ring-1 ring-white/10">
-            <TaskCardActions
-              task={task}
-              onEdit={onEdit}
-              onAssign={onAssign}
-              onStatusChange={handleStatusChange}
-              onDelete={handleDelete}
-              onShowComments={() => setShowDrawer(true)}
-            />
+        {/* Native mobile view button */}
+        {isNativeMobile && (
+          <div className="absolute top-3 right-3 z-20">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleViewClick}
+              className="h-8 w-8 bg-background/80 backdrop-blur-sm hover:bg-background/90 shadow-sm"
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
           </div>
-        </div>
+        )}
+        
+        {/* Desktop floating action menu */}
+        {!isNativeMobile && (
+          <div className="absolute top-3 right-3 z-20 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-1 group-hover:translate-y-0">
+            <div className="bg-background/95 backdrop-blur-md rounded-xl p-1.5 shadow-2xl border border-border/50 ring-1 ring-white/10">
+              <TaskCardActions
+                task={task}
+                onEdit={onEdit}
+                onAssign={onAssign}
+                onStatusChange={handleStatusChange}
+                onDelete={handleDelete}
+                onShowComments={() => setShowDrawer(true)}
+              />
+            </div>
+          </div>
+        )}
 
         {/* Main content with enhanced padding and spacing */}
         <div className="relative p-5 flex-1 flex flex-col justify-between min-h-0 z-10">          

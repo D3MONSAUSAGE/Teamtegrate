@@ -105,13 +105,13 @@
   }
 }
 
-/* Safe area handling for native mobile */
+/* Enhanced safe area handling for native mobile */
 .safe-area-top {
-  padding-top: env(safe-area-inset-top);
+  padding-top: max(env(safe-area-inset-top), 16px);
 }
 
 .safe-area-bottom {
-  padding-bottom: env(safe-area-inset-bottom);
+  padding-bottom: max(env(safe-area-inset-bottom), 16px);
 }
 
 .safe-area-left {

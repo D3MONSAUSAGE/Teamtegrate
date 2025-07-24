@@ -17,7 +17,8 @@ const SupabaseNotificationManager: React.FC = () => {
   useNotificationChannels();
   useBackgroundSync();
 
-  if (!user || !Capacitor.isNativePlatform()) {
+  // Hide on native mobile platforms
+  if (!user || Capacitor.isNativePlatform()) {
     return null;
   }
 

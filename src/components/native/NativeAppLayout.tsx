@@ -50,7 +50,7 @@ const NativeAppLayout = memo(() => {
   return (
     <TooltipProvider>
       <TaskProvider>
-        <div className="min-h-screen bg-background flex flex-col overflow-hidden">
+        <div className="min-h-screen bg-background flex flex-col overflow-hidden safe-area-top">
           {/* Native Header */}
           <NativeHeader
             title="TeamTegrate"
