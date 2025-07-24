@@ -1,12 +1,13 @@
-
 import React, { memo } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNativePlatform } from '@/hooks/useNativePlatform';
 import ProtectedRoute from '@/routes/ProtectedRoute';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { TaskProvider } from '@/contexts/task';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
+import NativeAppLayout from './native/NativeAppLayout';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { Loader2 } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
@@ -47,6 +48,7 @@ LoadingScreen.displayName = 'LoadingScreen';
 
 const AppLayout = memo(() => {
   const { user, loading, isAuthenticated } = useAuth();
+  const { isNativeAndMobile } = useNativePlatform();
 
   if (loading) {
     return <LoadingScreen />;
@@ -56,7 +58,16 @@ const AppLayout = memo(() => {
     return <Navigate to="/login" replace />;
   }
 
-  // Start collapsed on all devices for consistent hover-to-expand UX on desktop
+  // Render native layout for mobile native platforms
+  if (isNativeAndMobile) {
+    return (
+      <ProtectedRoute>
+        <NativeAppLayout />
+      </ProtectedRoute>
+    );
+  }
+
+  // Desktop/browser layout (unchanged)
   const defaultSidebarOpen = false;
 
   return (
