@@ -1,19 +1,10 @@
+
 import React from 'react';
-import { useIsMobile } from '@/hooks/use-mobile';
-import MobileTimeTrackingPage from './MobileTimeTrackingPage';
 import { useTimeTrackingPage } from '@/hooks/useTimeTrackingPage';
 import MobileTimeTrackingWidget from '@/components/mobile/MobileTimeTrackingWidget';
 import EmployeeTimeTracking from '@/components/dashboard/EmployeeTimeTracking';
 
 const TimeTrackingPage = () => {
-  const isMobile = useIsMobile();
-
-  // Render mobile version for mobile devices
-  if (isMobile) {
-    return <MobileTimeTrackingPage />;
-  }
-
-  // Keep all existing desktop code unchanged
   const {
     currentEntry,
     elapsedTime,
@@ -27,6 +18,9 @@ const TimeTrackingPage = () => {
     isOnline
   } = useTimeTrackingPage();
 
+  // Check if mobile view should be used
+  const isMobile = window.innerWidth < 768;
+
   return (
     <div className="space-y-6 p-6">
       <div className="flex items-center justify-between">
@@ -38,9 +32,28 @@ const TimeTrackingPage = () => {
         </div>
       </div>
       
-      <EmployeeTimeTracking />
+      {isMobile ? (
+        <div className="space-y-6">
+          <MobileTimeTrackingWidget
+            currentEntry={currentEntry}
+            elapsedTime={elapsedTime}
+            isOnBreak={breakState.isOnBreak}
+            breakElapsedTime={breakElapsedTime}
+            lastBreakType={breakState.breakType}
+            onClockIn={clockIn}
+            onClockOut={clockOut}
+            onStartBreak={handleBreak}
+            onResumeFromBreak={resumeFromBreak}
+            isLoading={isLoading}
+            isOnline={isOnline}
+          />
+        </div>
+      ) : (
+        <EmployeeTimeTracking />
+      )}
     </div>
   );
 };
 
 export default TimeTrackingPage;
+

@@ -10,11 +10,9 @@ import Sidebar from './Sidebar';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { Loader2 } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
-import { useIsMobile } from '@/hooks/use-mobile';
-import MobileAppLayout from './mobile/MobileAppLayout';
 
-// Professional main content component for desktop
-const DesktopMainContent = memo(({ children }: { children: React.ReactNode }) => {
+// Professional main content component with enhanced navigation handling
+const MainContent = memo(({ children }: { children: React.ReactNode }) => {
   return (
     <SidebarInset 
       className="flex flex-col flex-1 overflow-hidden"
@@ -30,7 +28,7 @@ const DesktopMainContent = memo(({ children }: { children: React.ReactNode }) =>
   );
 });
 
-DesktopMainContent.displayName = 'DesktopMainContent';
+MainContent.displayName = 'MainContent';
 
 // Enhanced loading screen with mobile optimization
 const LoadingScreen = memo(() => (
@@ -49,7 +47,6 @@ LoadingScreen.displayName = 'LoadingScreen';
 
 const AppLayout = memo(() => {
   const { user, loading, isAuthenticated } = useAuth();
-  const isMobile = useIsMobile();
 
   if (loading) {
     return <LoadingScreen />;
@@ -59,16 +56,7 @@ const AppLayout = memo(() => {
     return <Navigate to="/login" replace />;
   }
 
-  // Render mobile layout for mobile devices
-  if (isMobile) {
-    return (
-      <ProtectedRoute>
-        <MobileAppLayout />
-      </ProtectedRoute>
-    );
-  }
-
-  // Render desktop layout for desktop devices
+  // Start collapsed on all devices for consistent hover-to-expand UX on desktop
   const defaultSidebarOpen = false;
 
   return (
@@ -78,9 +66,9 @@ const AppLayout = memo(() => {
           <SidebarProvider defaultOpen={defaultSidebarOpen}>
             <div className="min-h-screen-mobile bg-background w-full flex overflow-hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
               <Sidebar />
-              <DesktopMainContent>
+              <MainContent>
                 <Outlet />
-              </DesktopMainContent>
+              </MainContent>
             </div>
           </SidebarProvider>
         </TaskProvider>
