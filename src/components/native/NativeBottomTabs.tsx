@@ -49,8 +49,8 @@ const NativeBottomTabs: React.FC = memo(() => {
   }, [location.pathname]);
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border safe-area-bottom">
-      <div className="flex items-center justify-around h-16 px-2">
+    <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t border-border/40 safe-area-bottom shadow-lg">
+      <div className="flex items-center justify-around h-20 px-4">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const active = isActive(tab.path);
@@ -60,27 +60,44 @@ const NativeBottomTabs: React.FC = memo(() => {
               key={tab.id}
               onClick={() => handleTabPress(tab)}
               className={cn(
-                "flex flex-col items-center justify-center min-w-0 flex-1 h-full rounded-lg transition-all duration-200 active:scale-95",
-                "focus:outline-none focus:ring-2 focus:ring-primary/20",
+                "flex flex-col items-center justify-center min-w-0 flex-1 h-full rounded-2xl transition-all duration-300 active:scale-95",
+                "focus:outline-none focus:ring-2 focus:ring-primary/30 min-h-[56px] min-w-[56px]",
+                "relative overflow-hidden",
                 active 
-                  ? "text-primary bg-primary/10" 
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                  ? "text-primary bg-primary/15 shadow-sm scale-105" 
+                  : "text-muted-foreground active:bg-muted/30"
               )}
             >
-              <div className="relative">
-                <Icon className={cn("h-5 w-5", active ? "text-primary" : "text-muted-foreground")} />
-                {tab.badge && tab.badge > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                    {tab.badge > 9 ? '9+' : tab.badge}
-                  </span>
-                )}
+              {/* Active indicator background */}
+              {active && (
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/5 rounded-2xl" />
+              )}
+              
+              {/* Icon container with enhanced padding */}
+              <div className="relative flex flex-col items-center justify-center space-y-1 z-10">
+                <div className={cn(
+                  "relative p-1.5 rounded-xl transition-all duration-300",
+                  active && "bg-primary/10 shadow-sm"
+                )}>
+                  <Icon className={cn(
+                    "h-6 w-6 transition-all duration-300", 
+                    active ? "text-primary scale-110" : "text-muted-foreground"
+                  )} />
+                  {tab.badge && tab.badge > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium shadow-md">
+                      {tab.badge > 9 ? '9+' : tab.badge}
+                    </span>
+                  )}
+                </div>
+                
+                {/* Enhanced label with better typography */}
+                <span className={cn(
+                  "text-xs font-medium tracking-wide transition-all duration-300",
+                  active ? "text-primary font-semibold" : "text-muted-foreground"
+                )}>
+                  {tab.label}
+                </span>
               </div>
-              <span className={cn(
-                "text-xs mt-1 font-medium",
-                active ? "text-primary" : "text-muted-foreground"
-              )}>
-                {tab.label}
-              </span>
             </button>
           );
         })}

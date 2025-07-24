@@ -94,7 +94,7 @@
   }
 }
 
-/* Native mobile optimizations */
+/* Enhanced native mobile optimizations */
 @media (max-width: 768px) {
   .native-mobile-only {
     @apply block;
@@ -102,6 +102,33 @@
   
   .desktop-only {
     @apply hidden;
+  }
+  
+  /* Enhanced mobile touch targets */
+  .mobile-touch-target {
+    min-height: 56px;
+    min-width: 56px;
+  }
+  
+  /* Better mobile card spacing */
+  .mobile-card-spacing {
+    @apply mx-4 mb-4;
+  }
+  
+  /* Mobile-optimized text sizing */
+  .mobile-text-base {
+    font-size: 16px;
+    line-height: 1.5;
+  }
+  
+  .mobile-text-sm {
+    font-size: 14px;
+    line-height: 1.4;
+  }
+  
+  .mobile-text-xs {
+    font-size: 12px;
+    line-height: 1.3;
   }
 }
 
@@ -122,10 +149,11 @@
   padding-right: env(safe-area-inset-right);
 }
 
-/* Native touch interactions */
+/* Enhanced native touch interactions */
 .native-touch-target {
-  min-height: 44px;
-  min-width: 44px;
+  min-height: 56px;
+  min-width: 56px;
+  touch-action: manipulation;
 }
 
 /* Remove hover effects on native platforms */
@@ -154,13 +182,29 @@
   display: none;
 }
 
-/* Native animations */
+/* Enhanced native animations */
 .native-transition {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .native-scale-active:active {
   transform: scale(0.95);
+}
+
+/* Professional mobile button animations */
+.mobile-button-press:active {
+  transform: scale(0.96);
+  transition: transform 0.1s ease-out;
+}
+
+/* Enhanced mobile card animations */
+.mobile-card-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mobile-card-hover:active {
+  transform: scale(0.98);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 /* Height utilities for mobile */
@@ -174,12 +218,38 @@
   height: 100dvh;
 }
 
-/* Disable selection on native */
+/* Enhanced mobile UX utilities */
 @media (max-width: 768px) {
   .native-no-select {
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
+  }
+  
+  /* Professional mobile focus states */
+  .mobile-focus:focus {
+    outline: 2px solid hsl(var(--primary));
+    outline-offset: 2px;
+    border-radius: 8px;
+  }
+  
+  /* Enhanced mobile backdrop effects */
+  .mobile-backdrop {
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+  
+  /* Better mobile shadow system */
+  .mobile-shadow-sm {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .mobile-shadow-md {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+  
+  .mobile-shadow-lg {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
   }
 }

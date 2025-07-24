@@ -50,7 +50,7 @@ const NativeAppLayout = memo(() => {
   return (
     <TooltipProvider>
       <TaskProvider>
-        <div className="min-h-screen bg-background flex flex-col overflow-hidden safe-area-top">
+        <div className="min-h-screen bg-gradient-to-br from-background to-background/95 flex flex-col overflow-hidden safe-area-top">
           {/* Native Header */}
           <NativeHeader
             title="TeamTegrate"
@@ -58,9 +58,9 @@ const NativeAppLayout = memo(() => {
             onMenuPress={handleDrawerToggle}
           />
 
-          {/* Main Content */}
-          <main className="flex-1 overflow-y-auto pb-20">
-            <div className="h-full">
+          {/* Main Content with enhanced mobile layout */}
+          <main className="flex-1 overflow-y-auto pb-24 native-scroll">
+            <div className="h-full px-1">
               <Outlet />
             </div>
           </main>

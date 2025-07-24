@@ -40,39 +40,42 @@ const NativeDrawer: React.FC<NativeDrawerProps> = memo(({
       <SheetContent 
         side="left" 
         className={cn(
-          "w-80 p-0 bg-sidebar border-r border-sidebar-border/60",
+          "w-80 p-0 bg-sidebar/95 backdrop-blur-md border-r border-sidebar-border/40 shadow-2xl",
           className
         )}
       >
         <div className="flex flex-col h-full">
-          {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-sidebar-border/30">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm">T</span>
+          {/* Enhanced Header with better visual hierarchy */}
+          <div className="flex items-center justify-between p-6 border-b border-sidebar-border/40 bg-gradient-to-r from-sidebar-background to-sidebar-background/80">
+            <div className="flex items-center space-x-4">
+              <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center shadow-lg">
+                <span className="text-primary-foreground font-bold text-lg">T</span>
               </div>
-              <h1 className="text-lg font-semibold">TeamTegrate</h1>
+              <div>
+                <h1 className="text-xl font-bold text-sidebar-foreground">TeamTegrate</h1>
+                <p className="text-xs text-sidebar-foreground/60 font-medium">Mobile Workspace</p>
+              </div>
             </div>
             <Button 
               variant="ghost" 
               size="icon"
               onClick={() => onOpenChange(false)}
-              className="h-8 w-8"
+              className="h-10 w-10 rounded-xl hover:bg-sidebar-accent/50 active:scale-95 transition-all duration-200"
             >
-              <X className="h-4 w-4" />
+              <X className="h-5 w-5" />
             </Button>
           </div>
 
-          {/* Navigation */}
-          <div className="flex-1 overflow-y-auto p-2">
+          {/* Enhanced Navigation with better spacing */}
+          <div className="flex-1 overflow-y-auto px-4 py-6 native-scroll">
             <SidebarNav 
               onNavigation={handleNavigation}
               isCollapsed={false}
             />
           </div>
 
-          {/* Footer */}
-          <div className="border-t border-sidebar-border/30 bg-gradient-to-t from-sidebar-background/80 to-transparent">
+          {/* Enhanced Footer with improved visual design */}
+          <div className="border-t border-sidebar-border/40 bg-gradient-to-t from-sidebar-background/90 to-transparent backdrop-blur-sm">
             <SidebarFooter 
               user={sidebarUser}
               isCollapsed={false}

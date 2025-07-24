@@ -81,17 +81,17 @@ const NativeHeader: React.FC<NativeHeaderProps> = memo(({
 
   return (
     <div className={cn(
-      "flex items-center justify-between h-14 px-4 bg-background border-b border-border safe-area-top",
+      "flex items-center justify-between h-16 px-5 bg-background/95 backdrop-blur-md border-b border-border/30 shadow-sm safe-area-top",
       className
     )}>
-      {/* Left side */}
-      <div className="flex items-center space-x-2">
+      {/* Left side with enhanced spacing */}
+      <div className="flex items-center space-x-3 min-w-0 flex-1">
         {showBack && (
           <Button
             variant="ghost"
             size="icon"
             onClick={handleBack}
-            className="h-10 w-10 -ml-2"
+            className="h-11 w-11 -ml-2 rounded-xl hover:bg-muted/50 active:scale-95 transition-all duration-200"
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
@@ -102,25 +102,30 @@ const NativeHeader: React.FC<NativeHeaderProps> = memo(({
             variant="ghost"
             size="icon"
             onClick={handleMenu}
-            className="h-10 w-10 -ml-2"
+            className="h-11 w-11 -ml-2 rounded-xl hover:bg-muted/50 active:scale-95 transition-all duration-200"
           >
             <Menu className="h-5 w-5" />
           </Button>
         )}
         
-        <h1 className="text-lg font-semibold truncate">{title}</h1>
+        {/* Enhanced title with better typography */}
+        <h1 className="text-xl font-bold tracking-tight truncate bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text">
+          {title}
+        </h1>
       </div>
 
-      {/* Right side */}
-      <div className="flex items-center space-x-2">
+      {/* Right side with improved spacing */}
+      <div className="flex items-center space-x-2 flex-shrink-0">
         {rightContent}
         
         {showNotifications && user && (
-          <NotificationButton
-            onNotificationsOpen={handleNotificationsOpen}
-            onNotificationClick={handleNotificationClick}
-            formatNotificationTime={formatNotificationTime}
-          />
+          <div className="relative">
+            <NotificationButton
+              onNotificationsOpen={handleNotificationsOpen}
+              onNotificationClick={handleNotificationClick}
+              formatNotificationTime={formatNotificationTime}
+            />
+          </div>
         )}
       </div>
     </div>
