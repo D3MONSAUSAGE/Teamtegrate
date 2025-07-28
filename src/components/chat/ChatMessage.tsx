@@ -10,6 +10,7 @@ import ChatMessageActions from './ChatMessageActions';
 import { useMessageDisplayName } from './hooks/useMessageDisplayName';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import DOMPurify from 'dompurify';
 
 interface Attachment {
   id: string;
@@ -68,7 +69,12 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
 
   const renderMentions = (content: string) => {
     const mentionRegex = /@([\w\s]+?)(?=\s|$|[^\w\s])/g;
-    return content.replace(mentionRegex, '<span class="bg-primary/20 text-primary px-1 rounded">@$1</span>');
+    const processedContent = content.replace(mentionRegex, '<span class="bg-primary/20 text-primary px-1 rounded">@$1</span>');
+    // Sanitize the HTML to prevent XSS attacks
+    return DOMPurify.sanitize(processedContent, {
+      ALLOWED_TAGS: ['span'],
+      ALLOWED_ATTR: ['class']
+    });
   };
   
   if (message.type === 'system') {
