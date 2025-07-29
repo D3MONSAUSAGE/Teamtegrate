@@ -93,12 +93,31 @@ const TaskReports: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <TaskStatusDistribution statusCounts={statusCounts} />
-        <TaskPriorityDistribution priorityCounts={priorityCounts} />
+        <TaskStatusDistribution data={statusCounts.map(item => ({ ...item, color: getStatusColor(item.name) }))} />
+        <TaskPriorityDistribution data={priorityCounts.map(item => ({ ...item, color: getPriorityColor(item.name) }))} />
       </div>
-      <TaskCompletionTrend completionTrend={completionTrend} />
+      <TaskCompletionTrend data={completionTrend.map(item => ({ ...item, created: item.total }))} />
     </div>
   );
+};
+
+// Helper functions for colors
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'To Do': return '#94a3b8';
+    case 'In Progress': return '#3b82f6';
+    case 'Completed': return '#10b981';
+    default: return '#6b7280';
+  }
+};
+
+const getPriorityColor = (priority: string) => {
+  switch (priority) {
+    case 'Low': return '#10b981';
+    case 'Medium': return '#f59e0b';
+    case 'High': return '#ef4444';
+    default: return '#6b7280';
+  }
 };
 
 export default TaskReports;

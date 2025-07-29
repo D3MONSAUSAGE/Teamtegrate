@@ -45,9 +45,9 @@ export const useAdvancedAnalytics = (tasks: Task[], timeRange: string = '30 days
     const today = new Date();
     const startDate = subDays(today, days);
 
-    // Filter tasks within time range
+    // Filter tasks within time range - handle missing dates
     const filteredTasks = tasks.filter(task => {
-      const taskDate = new Date(task.createdAt || task.updatedAt);
+      const taskDate = task.createdAt ? new Date(task.createdAt) : (task.updatedAt ? new Date(task.updatedAt) : new Date());
       return isAfter(taskDate, startDate) && isBefore(taskDate, endOfDay(today));
     });
 
@@ -59,6 +59,7 @@ export const useAdvancedAnalytics = (tasks: Task[], timeRange: string = '30 days
       const dayEnd = endOfDay(date);
       
       const dayTasks = filteredTasks.filter(task => {
+        if (!task.deadline) return false;
         const deadline = new Date(task.deadline);
         return isAfter(deadline, dayStart) && isBefore(deadline, dayEnd);
       });
@@ -122,11 +123,12 @@ export const useAdvancedAnalytics = (tasks: Task[], timeRange: string = '30 days
       const weekEnd = subDays(today, i * 7);
       
       const weekTasks = tasks.filter(task => {
-        const taskDate = new Date(task.createdAt || task.updatedAt);
+        const taskDate = task.createdAt ? new Date(task.createdAt) : (task.updatedAt ? new Date(task.updatedAt) : new Date());
         return isAfter(taskDate, weekStart) && isBefore(taskDate, weekEnd);
       });
       
       const weekDeadlineTasks = tasks.filter(task => {
+        if (!task.deadline) return false;
         const deadline = new Date(task.deadline);
         return isAfter(deadline, weekStart) && isBefore(deadline, weekEnd);
       });
@@ -147,6 +149,7 @@ export const useAdvancedAnalytics = (tasks: Task[], timeRange: string = '30 days
     for (let i = 83; i >= 0; i--) { // 12 weeks of data
       const date = subDays(today, i);
       const dayTasks = tasks.filter(task => {
+        if (!task.deadline) return false;
         const deadline = new Date(task.deadline);
         return format(deadline, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd');
       });
@@ -168,6 +171,7 @@ export const useAdvancedAnalytics = (tasks: Task[], timeRange: string = '30 days
     const totalTasks = filteredTasks.length;
     const completedTasks = filteredTasks.filter(task => task.status === 'Completed').length;
     const overdueTasks = filteredTasks.filter(task => {
+      if (!task.deadline) return false;
       const deadline = new Date(task.deadline);
       return isBefore(deadline, today) && task.status !== 'Completed';
     }).length;

@@ -9,6 +9,8 @@ import AnalyticsOverview from '@/components/reports/AnalyticsOverview';
 import EnhancedTeamAnalytics from '@/components/reports/EnhancedTeamAnalytics';
 import SmartInsightsPanel from '@/components/reports/SmartInsightsPanel';
 import ReportsFilters from '@/components/reports/ReportsFilters';
+import { ReportsLoadingSkeleton } from '@/components/reports/LoadingSkeleton';
+import { ReportsErrorBoundary } from '@/components/reports/ErrorBoundary';
 import TimelinePage from './TimelinePage';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useTask } from '@/contexts/task';
@@ -126,9 +128,32 @@ const ReportsPage: React.FC = () => {
     setSelectedMembers([]);
   };
   
-  const handleExport = () => {
-    // Export functionality would be implemented here
-    console.log('Exporting reports...');
+  const handleExport = async () => {
+    try {
+      const exportData = [
+        ['Metric', 'Value'],
+        ['Total Tasks', overviewMetrics.totalTasks.toString()],
+        ['Completed Tasks', overviewMetrics.completedTasks.toString()],
+        ['Team Members', overviewMetrics.teamMembers.toString()],
+        ['Average Completion Rate', `${overviewMetrics.averageCompletionRate}%`],
+        ['Overdue Tasks', overviewMetrics.overdueTasks.toString()],
+        ['High Priority Tasks', overviewMetrics.highPriorityTasks.toString()],
+        ['Active Projects', overviewMetrics.activeProjects.toString()]
+      ];
+      
+      const csvContent = exportData.map(row => row.join(',')).join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `team-report-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Export failed:', error);
+    }
   };
   
   return (
@@ -210,42 +235,60 @@ const ReportsPage: React.FC = () => {
         </div>
 
         <TabsContent value="overview" className="space-y-6">
-          <AnalyticsOverview {...overviewMetrics} />
+          <ReportsErrorBoundary>
+            <AnalyticsOverview {...overviewMetrics} />
+          </ReportsErrorBoundary>
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
             <div className="xl:col-span-2">
-              <EnhancedTeamAnalytics teamMembers={enhancedTeamData} />
+              <ReportsErrorBoundary>
+                <EnhancedTeamAnalytics teamMembers={enhancedTeamData} />
+              </ReportsErrorBoundary>
             </div>
             <div>
-              <SmartInsightsPanel 
-                teamData={overviewMetrics}
-                performanceData={teamMembersPerformance}
-              />
+              <ReportsErrorBoundary>
+                <SmartInsightsPanel 
+                  teamData={overviewMetrics}
+                  performanceData={teamMembersPerformance}
+                />
+              </ReportsErrorBoundary>
             </div>
           </div>
         </TabsContent>
         
         <TabsContent value="team" className="space-y-4">
-          <EnhancedTeamAnalytics teamMembers={enhancedTeamData} />
+          <ReportsErrorBoundary>
+            <EnhancedTeamAnalytics teamMembers={enhancedTeamData} />
+          </ReportsErrorBoundary>
         </TabsContent>
         
         <TabsContent value="performance" className="space-y-4">
-          <DailyPerformanceReport />
+          <ReportsErrorBoundary>
+            <DailyPerformanceReport />
+          </ReportsErrorBoundary>
         </TabsContent>
         
         <TabsContent value="tasks" className="space-y-4">
-          <TaskReports />
+          <ReportsErrorBoundary>
+            <TaskReports />
+          </ReportsErrorBoundary>
         </TabsContent>
         
         <TabsContent value="projects" className="space-y-4">
-          <ProjectReports />
+          <ReportsErrorBoundary>
+            <ProjectReports />
+          </ReportsErrorBoundary>
         </TabsContent>
         
         <TabsContent value="time" className="space-y-4">
-          <TeamTimeReports />
+          <ReportsErrorBoundary>
+            <TeamTimeReports />
+          </ReportsErrorBoundary>
         </TabsContent>
         
         <TabsContent value="timeline" className="space-y-4">
-          <TimelinePage />
+          <ReportsErrorBoundary>
+            <TimelinePage />
+          </ReportsErrorBoundary>
         </TabsContent>
       </Tabs>
     </div>
