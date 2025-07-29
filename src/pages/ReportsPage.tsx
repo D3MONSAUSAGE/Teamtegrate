@@ -11,9 +11,11 @@ import SmartInsightsPanel from '@/components/reports/SmartInsightsPanel';
 import ReportsFilters from '@/components/reports/ReportsFilters';
 import { ReportsLoadingSkeleton } from '@/components/reports/LoadingSkeleton';
 import { ReportsErrorBoundary } from '@/components/reports/ErrorBoundary';
+import ManagerDashboard from '@/components/reports/manager/ManagerDashboard';
 import TimelinePage from './TimelinePage';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useTask } from '@/contexts/task';
+import { useAuth } from '@/contexts/AuthContext';
 import useTeamMembers from '@/hooks/useTeamMembers';
 import { useAdvancedAnalytics } from '@/hooks/useAdvancedAnalytics';
 import { DateRange } from "react-day-picker";
@@ -24,6 +26,7 @@ const ReportsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState("overview");
   
   // Data hooks
+  const { user } = useAuth();
   const { tasks, projects } = useTask();
   const { teamMembersPerformance, managerPerformance } = useTeamMembers();
   
@@ -120,6 +123,9 @@ const ReportsPage: React.FC = () => {
   const availableProjects = projects.map(p => ({ id: p.id, title: p.title }));
   const availableMembers = teamMembersPerformance.map(m => ({ id: m.id, name: m.name }));
   
+  // Check if user has manager+ access
+  const hasManagerAccess = user?.role && ['manager', 'admin', 'superadmin'].includes(user.role);
+  
   // Filter handlers
   const handleResetFilters = () => {
     setDateRange(undefined);
@@ -194,6 +200,14 @@ const ReportsPage: React.FC = () => {
               >
                 Overview
               </TabsTrigger>
+              {hasManagerAccess && (
+                <TabsTrigger 
+                  value="manager" 
+                  className="flex-1 md:flex-none px-3 min-w-[120px] data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
+                >
+                  Manager Dashboard
+                </TabsTrigger>
+              )}
               <TabsTrigger 
                 value="team" 
                 className="flex-1 md:flex-none px-3 min-w-[80px] data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
@@ -254,6 +268,17 @@ const ReportsPage: React.FC = () => {
             </div>
           </div>
         </TabsContent>
+        
+        {hasManagerAccess && (
+          <TabsContent value="manager" className="space-y-4">
+            <ReportsErrorBoundary>
+              <ManagerDashboard 
+                timeRange={timeRange}
+                teamMembers={teamMembersPerformance}
+              />
+            </ReportsErrorBoundary>
+          </TabsContent>
+        )}
         
         <TabsContent value="team" className="space-y-4">
           <ReportsErrorBoundary>
