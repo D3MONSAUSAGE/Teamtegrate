@@ -81,120 +81,109 @@ const SwipeableTaskCard: React.FC<SwipeableTaskCardProps> = ({
   };
 
   return (
-    <div className="relative overflow-hidden rounded-2xl shadow-sm">
-      {/* Enhanced Action buttons background with better gradients */}
-      <div className="absolute inset-0 flex items-center justify-between px-6 bg-gradient-to-r from-blue-500/90 via-indigo-500/90 to-green-500/90 backdrop-blur-sm">
-        <div className="flex space-x-3">
+    <div className="relative overflow-hidden rounded-lg">
+      {/* Action buttons background */}
+      <div className="absolute inset-0 flex items-center justify-between px-4 bg-gradient-to-r from-blue-500 to-green-500">
+        <div className="flex space-x-2">
           <Button
             size="sm"
             variant="ghost"
-            className="text-white hover:bg-white/25 active:scale-95 transition-all duration-200 h-10 w-10 rounded-xl"
+            className="text-white hover:bg-white/20"
             onClick={() => handleStatusChange('To Do')}
             disabled={isUpdating || task.status === 'To Do'}
           >
-            <Circle className="h-5 w-5" />
+            <Circle className="h-4 w-4" />
           </Button>
           <Button
             size="sm"
             variant="ghost"
-            className="text-white hover:bg-white/25 active:scale-95 transition-all duration-200 h-10 w-10 rounded-xl"
+            className="text-white hover:bg-white/20"
             onClick={() => handleStatusChange('In Progress')}
             disabled={isUpdating || task.status === 'In Progress'}
           >
-            <PlayCircle className="h-5 w-5" />
+            <PlayCircle className="h-4 w-4" />
           </Button>
           <Button
             size="sm"
             variant="ghost"
-            className="text-white hover:bg-white/25 active:scale-95 transition-all duration-200 h-10 w-10 rounded-xl"
+            className="text-white hover:bg-white/20"
             onClick={() => handleStatusChange('Completed')}
             disabled={isUpdating || task.status === 'Completed'}
           >
-            <CheckCircle className="h-5 w-5" />
+            <CheckCircle className="h-4 w-4" />
           </Button>
         </div>
-        <div className="flex space-x-3">
+        <div className="flex space-x-2">
           <Button
             size="sm"
             variant="ghost"
-            className="text-white hover:bg-white/25 active:scale-95 transition-all duration-200 h-10 w-10 rounded-xl"
+            className="text-white hover:bg-white/20"
             onClick={() => onEdit(task)}
             disabled={isUpdating}
           >
-            <Edit3 className="h-5 w-5" />
+            <Edit3 className="h-4 w-4" />
           </Button>
         </div>
       </div>
 
-      {/* Enhanced Main card with better animations */}
+      {/* Main card */}
       <motion.div
         drag="x"
         dragConstraints={{ left: -200, right: 200 }}
-        dragElastic={0.15}
+        dragElastic={0.2}
         onDrag={handleDrag}
         onDragEnd={handleDragEnd}
-        animate={{ x: isRevealed ? (dragX > 0 ? 120 : -120) : 0 }}
-        transition={{ type: "spring", stiffness: 400, damping: 35 }}
+        animate={{ x: isRevealed ? (dragX > 0 ? 100 : -100) : 0 }}
+        transition={{ type: "spring", stiffness: 300, damping: 30 }}
         className="relative z-10"
       >
         <Card 
           className={cn(
-            "cursor-pointer transition-all duration-300 active:scale-[0.97] shadow-md hover:shadow-lg",
-            "bg-gradient-to-br from-card/98 to-card/95 backdrop-blur-sm",
-            "border border-border/60 rounded-2xl overflow-hidden",
-            "min-h-[120px]",
+            "mobile-touch-target cursor-pointer transition-all duration-200 active:scale-[0.98]",
             isUpdating && "opacity-70 pointer-events-none"
           )}
           onClick={onClick}
         >
-          <CardContent className="p-5">
-            <div className="space-y-4">
-              {/* Enhanced Header */}
+          <CardContent className="p-4">
+            <div className="space-y-3">
+              {/* Header */}
               <div className="flex items-start justify-between">
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-base leading-6 text-card-foreground truncate mb-1">
+                  <h3 className="font-medium text-sm leading-5 text-card-foreground truncate">
                     {task.title}
                   </h3>
                   {task.description && (
-                    <p className="text-sm text-muted-foreground leading-5 line-clamp-2">
+                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                       {task.description}
                     </p>
                   )}
                 </div>
-                <div className="flex items-center gap-2 ml-4 flex-shrink-0">
-                  <div className="p-2 rounded-xl bg-muted/50">
-                    {getStatusIcon()}
-                  </div>
+                <div className="flex items-center gap-2 ml-3 flex-shrink-0">
+                  {getStatusIcon()}
                 </div>
               </div>
 
-              {/* Enhanced Metadata with better spacing */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <div className="p-1.5 rounded-lg bg-muted/30">
-                      <Calendar className="h-4 w-4" />
-                    </div>
-                    <span className="text-sm font-medium">{format(new Date(task.deadline), 'MMM dd')}</span>
+              {/* Metadata */}
+              <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 text-muted-foreground">
+                    <Calendar className="h-3 w-3" />
+                    <span>{format(new Date(task.deadline), 'MMM dd')}</span>
                   </div>
                 </div>
                 <Badge 
                   variant="secondary" 
-                  className={cn(
-                    "text-sm px-3 py-1.5 rounded-xl font-medium shadow-sm", 
-                    getPriorityColor(task.priority)
-                  )}
+                  className={cn("text-xs px-2 py-0.5", getPriorityColor(task.priority))}
                 >
                   {task.priority}
                 </Badge>
               </div>
 
-              {/* Enhanced Assignment info */}
+              {/* Assignment info */}
               {(task.assignedToName || task.assignedToNames?.length) && (
-                <div className="flex items-center gap-2 p-3 bg-muted/20 rounded-xl border border-border/30">
-                  <div className="w-2 h-2 rounded-full bg-primary/60"></div>
-                  <span className="text-sm text-muted-foreground">Assigned to:</span>
-                  <span className="text-sm font-semibold text-foreground">
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <span>Assigned to:</span>
+                  <span className="font-medium">
                     {task.assignedToNames?.length > 1 
                       ? `${task.assignedToNames[0]} +${task.assignedToNames.length - 1} more`
                       : task.assignedToName || task.assignedToNames?.[0]

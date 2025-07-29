@@ -24,7 +24,6 @@ import AdminPage from "@/pages/AdminPage";
 import LandingPage from "@/pages/LandingPage";
 import Index from "@/pages/Index";
 import OrganizationDashboard from "@/pages/OrganizationDashboard";
-import ProjectTasksPage from "@/pages/ProjectTasksPage";
 import SupabaseNotificationManager from "@/components/SupabaseNotificationManager";
 
 const queryClient = new QueryClient();
@@ -47,7 +46,6 @@ function App() {
               <Route path="/dashboard" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
                 <Route index element={<DashboardPage />} />
                 <Route path="projects" element={<ProjectsPage />} />
-                <Route path="projects/:projectId/tasks" element={<ProjectTasksPage />} />
                 <Route path="tasks" element={<TasksPage />} />
                 <Route path="chat" element={<ChatPage />} />
                 <Route path="calendar" element={<CalendarPage />} />

@@ -64,60 +64,37 @@ const ProjectsPage = () => {
     };
   }, [projects]);
 
-  // Direct navigation handlers with enhanced logging
-  const handleDirectNavigate = (path: string) => {
-    console.log('ProjectsPage: Direct navigation to:', path);
-    try {
-      navigate(path);
-      console.log('ProjectsPage: Navigation successful to:', path);
-    } catch (error) {
-      console.error('ProjectsPage: Navigation failed to:', path, error);
-    }
-  };
+  // Debounced navigation to prevent rapid clicking
+  const debouncedNavigate = useDebounce((path: string) => {
+    navigate(path);
+  }, 200);
 
-  const handleDirectCreateTask = (projectId: string) => {
-    console.log('ProjectsPage: Direct create task for project:', projectId);
-    try {
-      setSelectedProjectId(projectId);
-      setIsCreateTaskOpen(true);
-      console.log('ProjectsPage: Create task dialog opened for project:', projectId);
-    } catch (error) {
-      console.error('ProjectsPage: Failed to open create task dialog:', error);
-    }
-  };
+  const debouncedCreateTask = useDebounce((projectId: string) => {
+    setSelectedProjectId(projectId);
+    setIsCreateTaskOpen(true);
+  }, 200);
 
-  // Memoized handlers with direct navigation
+  // Memoized handlers
   const handleViewTasks = useMemo(() => (projectId: string) => {
-    console.log('ProjectsPage: handleViewTasks called for project:', projectId);
-    
-    if (!projectId) {
-      console.error('ProjectsPage: Invalid projectId provided to handleViewTasks');
-      return;
-    }
-
     try {
       const targetUrl = `/dashboard/projects/${projectId}/tasks`;
-      console.log('ProjectsPage: Navigating to project tasks:', targetUrl);
-      handleDirectNavigate(targetUrl);
+      debouncedNavigate(targetUrl);
     } catch (error) {
-      console.error('ProjectsPage: Navigation error:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('ProjectsPage: Navigation error:', error);
+      }
     }
-  }, [navigate]);
+  }, [debouncedNavigate]);
 
   const handleCreateTask = useMemo(() => (projectId: string) => {
-    console.log('ProjectsPage: handleCreateTask called for project:', projectId);
-    
-    if (!projectId) {
-      console.error('ProjectsPage: Invalid projectId provided to handleCreateTask');
-      return;
-    }
-
     try {
-      handleDirectCreateTask(projectId);
+      debouncedCreateTask(projectId);
     } catch (error) {
-      console.error('ProjectsPage: Error opening task dialog:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('ProjectsPage: Error opening task dialog:', error);
+      }
     }
-  }, []);
+  }, [debouncedCreateTask]);
 
   const handleProjectCreated = useMemo(() => () => {
     refetch();
