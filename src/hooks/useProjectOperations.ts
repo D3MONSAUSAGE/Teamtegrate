@@ -31,12 +31,22 @@ export const useProjectOperations = () => {
       // Handle date conversion properly - ensure we always get strings
       let startDateString = nowISO;
       if (project.startDate) {
-        startDateString = typeof project.startDate === 'string' ? project.startDate : nowISO;
+        if (typeof project.startDate === 'string') {
+          startDateString = project.startDate;
+        } else {
+          // Handle Date objects or any other type by converting to string
+          startDateString = new Date(project.startDate as any).toISOString();
+        }
       }
 
       let endDateString = nowISO;
       if (project.endDate) {
-        endDateString = typeof project.endDate === 'string' ? project.endDate : nowISO;
+        if (typeof project.endDate === 'string') {
+          endDateString = project.endDate;
+        } else {
+          // Handle Date objects or any other type by converting to string
+          endDateString = new Date(project.endDate as any).toISOString();
+        }
       }
 
       console.log('Creating project with data:', {
