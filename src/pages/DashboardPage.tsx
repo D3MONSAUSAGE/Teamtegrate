@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { usePersonalTasks } from '@/hooks/usePersonalTasks';
 import { useProjects } from '@/hooks/useProjects';
@@ -31,6 +32,7 @@ import { toast } from 'sonner';
 
 const DashboardPage = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   
   // Add real-time subscription for immediate updates
   useTaskRealtime();
@@ -136,10 +138,8 @@ const DashboardPage = () => {
   }, []);
 
   const handleViewTasks = useCallback((project: any) => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log("View tasks for project:", project.title);
-    }
-  }, []);
+    navigate(`/dashboard/projects/${project.id}/tasks`);
+  }, [navigate]);
 
   const handleCreateTaskForProject = useCallback((project: any) => {
     const convertedProject: Project = {
