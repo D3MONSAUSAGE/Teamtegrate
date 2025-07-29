@@ -1,26 +1,180 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ProjectReports from '@/components/reports/ProjectReports';
 import TeamReports from '@/components/reports/TeamReports';
 import TaskReports from '@/components/reports/TaskReports';
 import TeamTimeReports from '@/components/reports/TeamTimeReports';
 import DailyPerformanceReport from '@/components/reports/DailyPerformanceReport';
-import { Timeline } from "@/components/ui/timeline";
+import AnalyticsOverview from '@/components/reports/AnalyticsOverview';
+import EnhancedTeamAnalytics from '@/components/reports/EnhancedTeamAnalytics';
+import SmartInsightsPanel from '@/components/reports/SmartInsightsPanel';
+import ReportsFilters from '@/components/reports/ReportsFilters';
 import TimelinePage from './TimelinePage';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useTask } from '@/contexts/task';
+import useTeamMembers from '@/hooks/useTeamMembers';
+import { useAdvancedAnalytics } from '@/hooks/useAdvancedAnalytics';
+import { DateRange } from "react-day-picker";
+import { subDays, format, isAfter, isBefore } from 'date-fns';
 
 const ReportsPage: React.FC = () => {
   const isMobile = useIsMobile();
-  const [activeTab, setActiveTab] = useState("performance");
+  const [activeTab, setActiveTab] = useState("overview");
+  
+  // Data hooks
+  const { tasks, projects } = useTask();
+  const { teamMembersPerformance, managerPerformance } = useTeamMembers();
+  
+  // Filter states
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  const [timeRange, setTimeRange] = useState("30 days");
+  const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
+  const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
+  
+  // Filter and analyze data
+  const filteredTasks = useMemo(() => {
+    let filtered = tasks;
+    
+    // Apply time range filter
+    if (timeRange !== "custom") {
+      const days = timeRange === "7 days" ? 7 : timeRange === "30 days" ? 30 : 90;
+      const cutoffDate = subDays(new Date(), days);
+      filtered = filtered.filter(task => {
+        const taskDate = new Date(task.createdAt || task.updatedAt);
+        return isAfter(taskDate, cutoffDate);
+      });
+    } else if (dateRange?.from && dateRange?.to) {
+      filtered = filtered.filter(task => {
+        const taskDate = new Date(task.createdAt || task.updatedAt);
+        return isAfter(taskDate, dateRange.from!) && isBefore(taskDate, dateRange.to!);
+      });
+    }
+    
+    // Apply project filter
+    if (selectedProjects.length > 0) {
+      filtered = filtered.filter(task => 
+        task.projectId && selectedProjects.includes(task.projectId)
+      );
+    }
+    
+    // Apply member filter
+    if (selectedMembers.length > 0) {
+      filtered = filtered.filter(task => 
+        task.assignedToId && selectedMembers.includes(task.assignedToId)
+      );
+    }
+    
+    return filtered;
+  }, [tasks, timeRange, dateRange, selectedProjects, selectedMembers]);
+  
+  // Analytics data
+  const analyticsData = useAdvancedAnalytics(filteredTasks, timeRange);
+  
+  // Team data for enhanced analytics
+  const enhancedTeamData = useMemo(() => {
+    return teamMembersPerformance.map(member => ({
+      ...member,
+      recentActivity: Array.from({ length: 7 }, (_, i) => ({
+        date: format(subDays(new Date(), 6 - i), 'MMM dd'),
+        tasksCompleted: Math.floor(Math.random() * 5) + 1
+      })),
+      workloadScore: Math.min(100, (member.totalTasks / 15) * 100),
+      qualityScore: Math.floor(Math.random() * 20) + 80,
+      collaborationScore: Math.floor(Math.random() * 15) + 85
+    }));
+  }, [teamMembersPerformance]);
+  
+  // Calculate overview metrics
+  const overviewMetrics = useMemo(() => {
+    const totalTasks = filteredTasks.length;
+    const completedTasks = filteredTasks.filter(task => task.status === 'Completed').length;
+    const overdueTasks = filteredTasks.filter(task => {
+      const deadline = new Date(task.deadline);
+      return isBefore(deadline, new Date()) && task.status !== 'Completed';
+    }).length;
+    const highPriorityTasks = filteredTasks.filter(task => task.priority === 'High').length;
+    
+    const averageCompletionRate = teamMembersPerformance.length > 0 
+      ? teamMembersPerformance.reduce((sum, member) => sum + member.completionRate, 0) / teamMembersPerformance.length
+      : 0;
+    
+    return {
+      totalTasks,
+      completedTasks,
+      teamMembers: teamMembersPerformance.length,
+      activeProjects: projects.filter(p => p.status !== 'Completed').length,
+      averageCompletionRate: Math.round(averageCompletionRate),
+      overdueTasks,
+      highPriorityTasks,
+      trendsData: {
+        tasksChange: 5, // Mock data - would be calculated from historical data
+        completionRateChange: 8,
+        productivityScore: analyticsData.productivityScore
+      }
+    };
+  }, [filteredTasks, teamMembersPerformance, projects, analyticsData]);
+  
+  // Available options for filters
+  const availableProjects = projects.map(p => ({ id: p.id, title: p.title }));
+  const availableMembers = teamMembersPerformance.map(m => ({ id: m.id, name: m.name }));
+  
+  // Filter handlers
+  const handleResetFilters = () => {
+    setDateRange(undefined);
+    setTimeRange("30 days");
+    setSelectedProjects([]);
+    setSelectedMembers([]);
+  };
+  
+  const handleExport = () => {
+    // Export functionality would be implemented here
+    console.log('Exporting reports...');
+  };
   
   return (
     <div className="space-y-6 px-2 sm:px-4 pb-10">
-      <h1 className="text-2xl font-bold">Reports & Analytics</h1>
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+            Reports & Analytics
+          </h1>
+          <p className="text-muted-foreground">
+            Comprehensive insights into team performance and project progress
+          </p>
+        </div>
+      </div>
+      
+      <ReportsFilters
+        dateRange={dateRange}
+        onDateRangeChange={setDateRange}
+        timeRange={timeRange}
+        onTimeRangeChange={setTimeRange}
+        selectedProjects={selectedProjects}
+        onProjectsChange={setSelectedProjects}
+        selectedMembers={selectedMembers}
+        onMembersChange={setSelectedMembers}
+        availableProjects={availableProjects}
+        availableMembers={availableMembers}
+        onReset={handleResetFilters}
+        onExport={handleExport}
+      />
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <div className="relative w-full overflow-hidden">
           <TabsList className="relative w-full flex gap-1 overflow-x-auto scrollbar-none before:absolute before:right-0 before:top-0 before:bottom-0 before:w-4 before:bg-gradient-to-l before:from-background before:z-10 after:absolute after:left-0 after:top-0 after:bottom-0 after:w-4 after:bg-gradient-to-r after:from-background after:z-10">
             <div className="flex gap-1 px-4 py-1 min-w-full justify-between md:justify-start">
+              <TabsTrigger 
+                value="overview" 
+                className="flex-1 md:flex-none px-3 min-w-[100px] data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
+              >
+                Overview
+              </TabsTrigger>
+              <TabsTrigger 
+                value="team" 
+                className="flex-1 md:flex-none px-3 min-w-[80px] data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
+              >
+                Team Analytics
+              </TabsTrigger>
               <TabsTrigger 
                 value="performance" 
                 className="flex-1 md:flex-none px-3 min-w-[100px] data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
@@ -40,12 +194,6 @@ const ReportsPage: React.FC = () => {
                 Projects
               </TabsTrigger>
               <TabsTrigger 
-                value="team" 
-                className="flex-1 md:flex-none px-3 min-w-[80px] data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
-              >
-                Team
-              </TabsTrigger>
-              <TabsTrigger 
                 value="time" 
                 className="flex-1 md:flex-none px-3 min-w-[80px] data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
               >
@@ -61,21 +209,41 @@ const ReportsPage: React.FC = () => {
           </TabsList>
         </div>
 
+        <TabsContent value="overview" className="space-y-6">
+          <AnalyticsOverview {...overviewMetrics} />
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            <div className="xl:col-span-2">
+              <EnhancedTeamAnalytics teamMembers={enhancedTeamData} />
+            </div>
+            <div>
+              <SmartInsightsPanel 
+                teamData={overviewMetrics}
+                performanceData={teamMembersPerformance}
+              />
+            </div>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="team" className="space-y-4">
+          <EnhancedTeamAnalytics teamMembers={enhancedTeamData} />
+        </TabsContent>
+        
         <TabsContent value="performance" className="space-y-4">
           <DailyPerformanceReport />
         </TabsContent>
+        
         <TabsContent value="tasks" className="space-y-4">
           <TaskReports />
         </TabsContent>
+        
         <TabsContent value="projects" className="space-y-4">
           <ProjectReports />
         </TabsContent>
-        <TabsContent value="team" className="space-y-4">
-          <TeamReports />
-        </TabsContent>
+        
         <TabsContent value="time" className="space-y-4">
           <TeamTimeReports />
         </TabsContent>
+        
         <TabsContent value="timeline" className="space-y-4">
           <TimelinePage />
         </TabsContent>
