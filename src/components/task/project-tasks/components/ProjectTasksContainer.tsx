@@ -25,9 +25,17 @@ const ProjectTasksContainer: React.FC<ProjectTasksContainerProps> = ({ projectId
   const { tasks, isLoading, refetch } = useProjectTasks(projectId);
   const { users, isLoading: isLoadingTeamMembers, refetch: refetchTeamMembers } = useOrganizationTeamMembers();
   
+  // Search handling with debounce
+  const [searchQuery, setSearchQuery] = React.useState('');
+  const [sortBy, setSortBy] = React.useState('deadline');
+
+  const handleSearchQueryChange = useDebounce((value: string) => {
+    setSearchQuery(value);
+  }, 300);
+
   // Custom hooks
   const { project, isLoadingProject, refetchProject } = useProjectData(projectId);
-  const { todoTasks, inProgressTasks, completedTasks, progress } = useProjectTasksData(tasks);
+  const { todoTasks, inProgressTasks, completedTasks, progress } = useProjectTasksData(tasks, searchQuery, sortBy);
   const { handleAddTeamMember: addTeamMemberToProject, handleRemoveTeamMember } = useProjectTeamManagement(project, refetchTeamMembers);
   const {
     isCreateTaskOpen,
@@ -82,14 +90,6 @@ const ProjectTasksContainer: React.FC<ProjectTasksContainerProps> = ({ projectId
       toast.error('Failed to update task status');
     }
   }, [refetch]);
-
-  // Search handling with debounce
-  const [searchQuery, setSearchQuery] = React.useState('');
-  const [sortBy, setSortBy] = React.useState('deadline');
-
-  const handleSearchQueryChange = useDebounce((value: string) => {
-    setSearchQuery(value);
-  }, 300);
 
   // Add team member handler - this creates a wrapper that doesn't take parameters
   const handleAddTeamMember = useCallback(() => {
