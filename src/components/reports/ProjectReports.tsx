@@ -2,6 +2,8 @@ import React from 'react';
 import { useTask } from '@/contexts/task';
 import { Project } from '@/types';
 import { ProjectStatusDistribution, ProjectBudgetOverview } from './project/ProjectCharts';
+import { ProjectTeamPerformanceView } from './project/ProjectTeamPerformanceView';
+import { ProjectTeamMatrix } from './project/ProjectTeamMatrix';
 
 const ProjectReports: React.FC = () => {
   const { projects } = useTask();
@@ -45,6 +47,10 @@ const ProjectReports: React.FC = () => {
         <ProjectStatusDistribution statusCounts={statusCounts} />
         <ProjectBudgetOverview budgetData={budgetData} />
       </div>
+      
+      <ProjectTeamPerformanceView projects={projectList} />
+      
+      <ProjectTeamMatrix projects={projectList} />
     </div>
   );
 };
