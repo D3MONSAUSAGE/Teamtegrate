@@ -5,7 +5,10 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Settings, 
   Edit3, 
-  MoreHorizontal
+  MoreHorizontal,
+  Calendar,
+  Grid3X3,
+  List
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -20,8 +23,8 @@ interface ProjectActionToolbarProps {
   project: Project;
   onEditProject: () => void;
   onManageTeam: () => void;
-  viewMode: 'compact' | 'detailed' | 'board' | 'list';
-  onViewModeChange: (mode: 'compact' | 'detailed' | 'board' | 'list') => void;
+  viewMode: 'compact' | 'detailed' | 'board' | 'list' | 'timeline';
+  onViewModeChange: (mode: 'compact' | 'detailed' | 'board' | 'list' | 'timeline') => void;
 }
 
 const ProjectActionToolbar: React.FC<ProjectActionToolbarProps> = ({
@@ -59,6 +62,34 @@ const ProjectActionToolbar: React.FC<ProjectActionToolbarProps> = ({
       </div>
 
       <div className="flex items-center gap-2">
+        {/* View Mode Toggle */}
+        <div className="flex items-center border rounded-lg p-1 bg-muted/50">
+          <Button
+            variant={viewMode === 'board' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => onViewModeChange('board')}
+            className="h-8 px-3"
+          >
+            <Grid3X3 className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={viewMode === 'list' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => onViewModeChange('list')}
+            className="h-8 px-3"
+          >
+            <List className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={viewMode === 'timeline' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => onViewModeChange('timeline')}
+            className="h-8 px-3"
+          >
+            <Calendar className="h-4 w-4" />
+          </Button>
+        </div>
+
         {/* Edit Project */}
         <Button 
           variant="outline" 

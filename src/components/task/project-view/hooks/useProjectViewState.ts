@@ -3,7 +3,7 @@ import { useState, useMemo } from 'react';
 import { Task } from '@/types';
 
 export const useProjectViewState = (tasks: Task[]) => {
-  const [viewMode, setViewMode] = useState<'compact' | 'detailed' | 'board' | 'list'>('compact');
+  const [viewMode, setViewMode] = useState<'compact' | 'detailed' | 'board' | 'list' | 'timeline'>('compact');
   const [selectedAssignee, setSelectedAssignee] = useState<string | undefined>();
   const [selectedPriority, setSelectedPriority] = useState<string | undefined>();
 

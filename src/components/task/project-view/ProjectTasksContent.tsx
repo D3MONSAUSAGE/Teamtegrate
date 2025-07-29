@@ -6,6 +6,7 @@ import { Plus } from 'lucide-react';
 import ProjectOverview from './ProjectOverview';
 import ProjectTasksFilters from './ProjectTasksFilters';
 import ProjectTasksGrid from './ProjectTasksGrid';
+import ProjectTimeline from './ProjectTimeline';
 import ProjectActionToolbar from './ProjectActionToolbar';
 import TeamManagementDialog from './TeamManagementDialog';
 import ViewControlsPanel from './ViewControlsPanel';
@@ -186,17 +187,26 @@ const ProjectTasksContent: React.FC<ProjectTasksContentProps> = ({
         />
       </div>
 
-      {/* Tasks Display - Uniform Grid Layout */}
+      {/* Tasks Display - Timeline or Grid */}
       <div className="px-4 sm:px-6 lg:px-8">
-        <ProjectTasksGrid
-          todoTasks={filteredTodoTasks || []}
-          inProgressTasks={filteredInProgressTasks || []}
-          completedTasks={filteredCompletedTasks || []}
-          onEditTask={onEditTask}
-          onStatusChange={onTaskStatusChange}
-          teamMembers={teamMembers || []}
-          isLoadingTeamMembers={isLoadingTeamMembers}
-        />
+        {viewMode === 'timeline' ? (
+          <ProjectTimeline
+            project={project}
+            tasks={allTasks}
+            teamMembers={teamMembers || []}
+            comments={comments}
+          />
+        ) : (
+          <ProjectTasksGrid
+            todoTasks={filteredTodoTasks || []}
+            inProgressTasks={filteredInProgressTasks || []}
+            completedTasks={filteredCompletedTasks || []}
+            onEditTask={onEditTask}
+            onStatusChange={onTaskStatusChange}
+            teamMembers={teamMembers || []}
+            isLoadingTeamMembers={isLoadingTeamMembers}
+          />
+        )}
       </div>
 
       {/* Team Management Dialog */}
