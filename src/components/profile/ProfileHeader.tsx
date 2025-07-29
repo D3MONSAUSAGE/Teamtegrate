@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 
 const ProfileHeader = () => {
   console.log("ProfileHeader rendering");
-  const { user, refreshUserSession } = useAuth();
+  const { user, refreshUserSession, updateUserProfile } = useAuth();
   const navigate = useNavigate();
   const [name, setName] = useState<string>(user?.name || user?.email || "");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -58,14 +58,7 @@ const ProfileHeader = () => {
 
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.updateUser({
-        data: { name }
-      });
-
-      if (error) {
-        throw error;
-      }
-
+      await updateUserProfile({ name });
       toast.success("Profile updated successfully!");
     } catch (error) {
       console.error("Error updating profile:", error);
