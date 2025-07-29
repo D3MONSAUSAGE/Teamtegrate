@@ -5,7 +5,7 @@ import { format, isAfter, isBefore, parseISO } from 'date-fns';
 export interface TimelineEvent {
   id: string;
   date: Date;
-  type: 'project_start' | 'task_completed' | 'status_change' | 'team_change' | 'budget_update' | 'comment' | 'deadline' | 'project_completed';
+  type: 'project_start' | 'task_created' | 'task_status_changed' | 'task_completed' | 'status_change' | 'team_change' | 'budget_update' | 'comment' | 'deadline' | 'project_completed';
   title: string;
   description: string;
   icon: string;
@@ -39,22 +39,69 @@ export const useProjectTimeline = ({ project, tasks, teamMembers, comments = [] 
       });
     }
 
-    // Task completion events
-    tasks
-      .filter(task => task.completedAt)
-      .forEach(task => {
-        const completedDate = new Date(task.completedAt!);
+    // All task events (creation, status changes, completion)
+    tasks.forEach(task => {
+      // Task creation event
+      if (task.createdAt) {
+        const createdDate = new Date(task.createdAt);
+        events.push({
+          id: `task-created-${task.id}`,
+          date: createdDate,
+          type: 'task_created',
+          title: 'Task Created',
+          description: `"${task.title}" was created${task.priority ? ` with ${task.priority} priority` : ''}`,
+          icon: '📋',
+          status: 'completed',
+          metadata: { 
+            taskId: task.id, 
+            priority: task.priority,
+            assignedTo: task.assignedToNames?.join(', ') || 'Unassigned'
+          }
+        });
+      }
+
+      // Task status change events
+      if (task.status === 'In Progress' && task.createdAt) {
+        // For now, we'll use a heuristic: if task is in progress and was created more than 1 hour ago
+        const createdDate = new Date(task.createdAt);
+        const statusChangeDate = new Date(createdDate.getTime() + (1000 * 60 * 60)); // Add 1 hour as estimate
+        
+        events.push({
+          id: `task-status-${task.id}-in-progress`,
+          date: statusChangeDate,
+          type: 'task_status_changed',
+          title: 'Task In Progress',
+          description: `"${task.title}" status changed to In Progress`,
+          icon: '🔄',
+          status: 'in_progress',
+          metadata: { 
+            taskId: task.id, 
+            priority: task.priority,
+            fromStatus: 'To Do',
+            toStatus: 'In Progress'
+          }
+        });
+      }
+
+      // Task completion events
+      if (task.completedAt) {
+        const completedDate = new Date(task.completedAt);
         events.push({
           id: `task-completed-${task.id}`,
           date: completedDate,
           type: 'task_completed',
           title: 'Task Completed',
-          description: `"${task.title}" was completed by ${task.completedByName || 'Unknown'}`,
+          description: `"${task.title}" was completed${task.assignedToNames?.length ? ` by ${task.assignedToNames[0]}` : ''}`,
           icon: '✅',
           status: 'completed',
-          metadata: { taskId: task.id, priority: task.priority }
+          metadata: { 
+            taskId: task.id, 
+            priority: task.priority,
+            assignedTo: task.assignedToNames?.join(', ') || 'Unassigned'
+          }
         });
-      });
+      }
+    });
 
     // Status change events (we'll track current status as an event)
     if (project.status === 'Completed' && project.updatedAt) {

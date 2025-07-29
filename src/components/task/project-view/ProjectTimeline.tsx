@@ -38,13 +38,38 @@ const ProjectTimeline: React.FC<ProjectTimelineProps> = ({
   const getEventStatusColor = (status: TimelineEvent['status']) => {
     switch (status) {
       case 'completed':
-        return 'text-green-600 bg-green-50 border-green-200';
+        return 'text-green-700 bg-green-100 border-green-300';
       case 'in_progress':
-        return 'text-blue-600 bg-blue-50 border-blue-200';
+        return 'text-blue-700 bg-blue-100 border-blue-300';
       case 'upcoming':
-        return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+        return 'text-yellow-700 bg-yellow-100 border-yellow-300';
       case 'overdue':
-        return 'text-red-600 bg-red-50 border-red-200';
+        return 'text-red-700 bg-red-100 border-red-300';
+      default:
+        return 'text-muted-foreground bg-muted border-muted';
+    }
+  };
+
+  const getEventTypeColor = (type: TimelineEvent['type']) => {
+    switch (type) {
+      case 'task_created':
+        return 'text-blue-700 bg-blue-100 border-blue-300';
+      case 'task_status_changed':
+        return 'text-yellow-700 bg-yellow-100 border-yellow-300';
+      case 'task_completed':
+        return 'text-green-700 bg-green-100 border-green-300';
+      case 'project_start':
+        return 'text-purple-700 bg-purple-100 border-purple-300';
+      case 'project_completed':
+        return 'text-green-700 bg-green-100 border-green-300';
+      case 'budget_update':
+        return 'text-orange-700 bg-orange-100 border-orange-300';
+      case 'team_change':
+        return 'text-indigo-700 bg-indigo-100 border-indigo-300';
+      case 'comment':
+        return 'text-gray-700 bg-gray-100 border-gray-300';
+      case 'deadline':
+        return 'text-red-700 bg-red-100 border-red-300';
       default:
         return 'text-muted-foreground bg-muted border-muted';
     }
@@ -95,16 +120,26 @@ const ProjectTimeline: React.FC<ProjectTimelineProps> = ({
               <h4 className="font-medium text-foreground">{event.title}</h4>
               <Badge 
                 variant="outline" 
-                className={`text-xs ${getEventStatusColor(event.status)}`}
+                className={`text-xs ${getEventTypeColor(event.type)}`}
               >
-                {event.status.replace('_', ' ')}
+                {event.type.replace(/_/g, ' ')}
               </Badge>
             </div>
             <p className="text-sm text-muted-foreground">{event.description}</p>
             {event.metadata && (
-              <div className="mt-2 text-xs text-muted-foreground">
-                {event.type === 'task_completed' && event.metadata.priority && (
-                  <span>Priority: {event.metadata.priority}</span>
+              <div className="mt-2 text-xs text-muted-foreground space-y-1">
+                {(event.type === 'task_created' || event.type === 'task_completed' || event.type === 'task_status_changed') && (
+                  <div className="flex flex-wrap gap-3">
+                    {event.metadata.priority && (
+                      <span>Priority: <span className="font-medium">{event.metadata.priority}</span></span>
+                    )}
+                    {event.metadata.assignedTo && (
+                      <span>Assigned: <span className="font-medium">{event.metadata.assignedTo}</span></span>
+                    )}
+                    {event.metadata.fromStatus && event.metadata.toStatus && (
+                      <span>Status: <span className="font-medium">{event.metadata.fromStatus} → {event.metadata.toStatus}</span></span>
+                    )}
+                  </div>
                 )}
                 {event.type === 'budget_update' && event.metadata.budgetSpent && (
                   <span>
