@@ -51,8 +51,30 @@ const SimpleDeleteUserDialog: React.FC<SimpleDeleteUserDialogProps> = ({
 
     // Check if this would leave organization without superadmin
     if (user.role === 'superadmin') {
-      toast.error('Cannot delete the only superadmin. Promote another user to superadmin first.');
-      return;
+      try {
+        const { data: validationResult, error: validationError } = await supabase.rpc(
+          'would_leave_org_without_superadmin', 
+          { 
+            target_user_id: user.id, 
+            target_org_id: currentUser.organizationId 
+          }
+        );
+
+        if (validationError) {
+          console.error('Validation error:', validationError);
+          toast.error('Unable to validate deletion. Please try again.');
+          return;
+        }
+
+        if (validationResult) {
+          toast.error('Cannot delete the only superadmin. Promote another user to superadmin first.');
+          return;
+        }
+      } catch (error) {
+        console.error('Error during validation:', error);
+        toast.error('Unable to validate deletion. Please try again.');
+        return;
+      }
     }
 
     setIsDeleting(true);
