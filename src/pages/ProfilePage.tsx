@@ -2,19 +2,12 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useProjects } from '@/hooks/useProjects';
-import ProfessionalProfileHeader from '@/components/profile/ProfessionalProfileHeader';
-import ProfessionalProfileStats from '@/components/profile/ProfessionalProfileStats';
-import ProfessionalActivity from '@/components/profile/ProfessionalActivity';
-import ProfileTeamOverview from '@/components/profile/ProfileTeamOverview';
-import ProfessionalQuickActions from '@/components/profile/ProfessionalQuickActions';
-import SkillsCompetenciesSection from '@/components/profile/SkillsCompetenciesSection';
+import ProfileHeader from '@/components/profile/ProfileHeader';
 import AccountSecuritySection from '@/components/profile/AccountSecuritySection';
 
 const ProfilePage = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated, loading } = useAuth();
-  const { projects } = useProjects();
 
   if (loading) {
     return (
@@ -30,28 +23,10 @@ const ProfilePage = () => {
   }
 
   return (
-    <div className="p-3 sm:p-6 max-w-7xl mx-auto bg-gray-50 dark:bg-background min-h-screen">
+    <div className="p-3 sm:p-6 max-w-4xl mx-auto bg-gray-50 dark:bg-background min-h-screen">
       <div className="space-y-8">
-        {/* Professional Profile Header */}
-        <ProfessionalProfileHeader />
-        
-        {/* Performance Dashboard */}
-        <ProfessionalProfileStats />
-        
-        {/* Skills & Competencies */}
-        <div className="space-y-6">
-          <h2 className="text-xl font-semibold text-foreground">Skills & Development</h2>
-          <SkillsCompetenciesSection />
-        </div>
-        
-        {/* Professional Actions */}
-        <ProfessionalQuickActions />
-        
-        {/* Team & Project Overview */}
-        <ProfileTeamOverview projects={projects} user={user} />
-        
-        {/* Professional Activity Feed */}
-        <ProfessionalActivity />
+        {/* Profile Header */}
+        <ProfileHeader />
         
         {/* Account Security Section */}
         <div className="space-y-6">
