@@ -24,6 +24,9 @@ import AdminPage from "@/pages/AdminPage";
 import LandingPage from "@/pages/LandingPage";
 import Index from "@/pages/Index";
 import OrganizationDashboard from "@/pages/OrganizationDashboard";
+import FocusZonePage from "@/pages/FocusZonePage";
+import ReportsPage from "@/pages/ReportsPage";
+import FinancePage from "@/pages/FinancePage";
 import SupabaseNotificationManager from "@/components/SupabaseNotificationManager";
 
 const queryClient = new QueryClient();
@@ -58,6 +61,9 @@ function App() {
                 <Route path="team" element={<TeamPage />} />
                 <Route path="admin" element={<AdminPage />} />
                 <Route path="organization" element={<OrganizationDashboard />} />
+                <Route path="focus" element={<FocusZonePage />} />
+                <Route path="reports" element={<ReportsPage />} />
+                <Route path="finance" element={<FinancePage />} />
               </Route>
               
               {/* Fallback for unmatched routes */}
