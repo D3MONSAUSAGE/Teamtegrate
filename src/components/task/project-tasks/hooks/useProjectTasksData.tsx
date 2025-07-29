@@ -1,10 +1,10 @@
 
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import { Task } from '@/types';
 
 export const useProjectTasksData = (tasks: Task[], searchQuery: string = '', sortBy: string = 'deadline') => {
-  // Filter and sort tasks
-  const filteredAndSortedTasks = useMemo(() => {
+  // Filter tasks first
+  const filteredTasks = useMemo(() => {
     let filtered = tasks;
     
     // Apply search filter
@@ -15,8 +15,12 @@ export const useProjectTasksData = (tasks: Task[], searchQuery: string = '', sor
       );
     }
 
-    // Apply sorting
-    return filtered.sort((a, b) => {
+    return filtered;
+  }, [tasks, searchQuery]);
+
+  // Sort function to apply within each status category
+  const sortTasks = useCallback((tasksToSort: Task[]) => {
+    return [...tasksToSort].sort((a, b) => {
       switch (sortBy) {
         case 'deadline':
           return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
@@ -32,15 +36,16 @@ export const useProjectTasksData = (tasks: Task[], searchQuery: string = '', sor
           return 0;
       }
     });
-  }, [tasks, searchQuery, sortBy]);
+  }, [sortBy]);
 
-  // Task categorization from filtered and sorted tasks
+  // Task categorization and sorting within each category
   const { todoTasks, inProgressTasks, completedTasks } = useMemo(() => {
     const todo: Task[] = [];
     const inProgress: Task[] = [];
     const completed: Task[] = [];
 
-    filteredAndSortedTasks.forEach(task => {
+    // First categorize the filtered tasks
+    filteredTasks.forEach(task => {
       if (task.status === 'To Do') {
         todo.push(task);
       } else if (task.status === 'In Progress') {
@@ -50,12 +55,13 @@ export const useProjectTasksData = (tasks: Task[], searchQuery: string = '', sor
       }
     });
 
+    // Then sort within each category
     return {
-      todoTasks: todo,
-      inProgressTasks: inProgress,
-      completedTasks: completed
+      todoTasks: sortTasks(todo),
+      inProgressTasks: sortTasks(inProgress),
+      completedTasks: sortTasks(completed)
     };
-  }, [filteredAndSortedTasks]);
+  }, [filteredTasks, sortTasks]);
 
   // Calculate progress based on original tasks count (not filtered)
   const progress = useMemo(() => {
