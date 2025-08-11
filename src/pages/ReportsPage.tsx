@@ -12,6 +12,7 @@ import ReportsFilters from '@/components/reports/ReportsFilters';
 import { ReportsLoadingSkeleton } from '@/components/reports/LoadingSkeleton';
 import { ReportsErrorBoundary } from '@/components/reports/ErrorBoundary';
 import ManagerDashboard from '@/components/reports/manager/ManagerDashboard';
+import EmployeeReports from '@/components/reports/EmployeeReports';
 import TimelinePage from './TimelinePage';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useTask } from '@/contexts/task';
@@ -244,8 +245,12 @@ const ReportsPage: React.FC = () => {
               >
                 Timeline
               </TabsTrigger>
-            </div>
-          </TabsList>
+              <TabsTrigger 
+                value="employee" 
+                className="flex-1 md:flex-none px-3 min-w-[110px] data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
+              >
+                Employee
+              </TabsTrigger>
         </div>
 
         <TabsContent value="overview" className="space-y-6">
@@ -313,6 +318,16 @@ const ReportsPage: React.FC = () => {
         <TabsContent value="timeline" className="space-y-4">
           <ReportsErrorBoundary>
             <TimelinePage />
+          </ReportsErrorBoundary>
+        </TabsContent>
+
+        <TabsContent value="employee" className="space-y-4">
+          <ReportsErrorBoundary>
+            <EmployeeReports 
+              timeRange={timeRange}
+              dateRange={dateRange}
+              selectedMembers={selectedMembers}
+            />
           </ReportsErrorBoundary>
         </TabsContent>
       </Tabs>

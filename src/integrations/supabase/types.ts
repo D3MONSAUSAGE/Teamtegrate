@@ -1433,6 +1433,30 @@ export type Database = {
         Args: { target_user_id: string; target_date?: string }
         Returns: Json
       }
+      get_employee_hours_stats: {
+        Args: { target_user_id: string; start_date: string; end_date: string }
+        Returns: {
+          day: string
+          minutes: number
+        }[]
+      }
+      get_employee_project_contributions: {
+        Args: { target_user_id: string; start_date: string; end_date: string }
+        Returns: {
+          project_id: string
+          project_title: string
+          task_count: number
+          percent: number
+        }[]
+      }
+      get_employee_task_stats: {
+        Args: { target_user_id: string; start_date: string; end_date: string }
+        Returns: {
+          day: string
+          completed_count: number
+          assigned_count: number
+        }[]
+      }
       get_organization_stats: {
         Args: { org_id: string }
         Returns: Json
