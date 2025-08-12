@@ -252,8 +252,9 @@ const ReportsPage: React.FC = () => {
                 Employee
               </TabsTrigger>
         </div>
+      </TabsList>
 
-        <TabsContent value="overview" className="space-y-6">
+      <TabsContent value="overview" className="space-y-6">
           <ReportsErrorBoundary>
             <AnalyticsOverview {...overviewMetrics} />
           </ReportsErrorBoundary>
@@ -330,7 +331,8 @@ const ReportsPage: React.FC = () => {
             />
           </ReportsErrorBoundary>
         </TabsContent>
-      </Tabs>
+      </div>
+    </Tabs>
     </div>
   );
 };
