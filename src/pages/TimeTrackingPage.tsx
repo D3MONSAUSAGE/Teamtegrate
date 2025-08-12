@@ -3,6 +3,8 @@ import React from 'react';
 import { useTimeTrackingPage } from '@/hooks/useTimeTrackingPage';
 import MobileTimeTrackingWidget from '@/components/mobile/MobileTimeTrackingWidget';
 import EmployeeTimeTracking from '@/components/dashboard/EmployeeTimeTracking';
+import { Button } from '@/components/ui/button';
+import PastTimeEntriesManager from '@/components/time-entries/PastTimeEntriesManager';
 
 const TimeTrackingPage = () => {
   const {
@@ -18,6 +20,7 @@ const TimeTrackingPage = () => {
     isOnline
   } = useTimeTrackingPage();
 
+  const [manageOpen, setManageOpen] = React.useState(false);
   // Check if mobile view should be used
   const isMobile = window.innerWidth < 768;
 
@@ -30,6 +33,9 @@ const TimeTrackingPage = () => {
             Professional time management with compliance monitoring and automated controls
           </p>
         </div>
+        <Button variant="secondary" onClick={() => setManageOpen((v) => !v)}>
+          {manageOpen ? 'Close Manage Entries' : 'Manage Entries'}
+        </Button>
       </div>
       
       {isMobile ? (
@@ -50,6 +56,11 @@ const TimeTrackingPage = () => {
         </div>
       ) : (
         <EmployeeTimeTracking />
+      )}
+      {manageOpen && (
+        <div className="mt-6">
+          <PastTimeEntriesManager />
+        </div>
       )}
     </div>
   );
