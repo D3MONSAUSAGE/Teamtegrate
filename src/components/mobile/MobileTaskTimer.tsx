@@ -19,11 +19,12 @@ const MobileTaskTimer: React.FC<MobileTaskTimerProps> = ({
   compact = false,
   className 
 }) => {
-  const { timerState, isLoading, startTaskWork, stopTaskWork, pauseTaskWork, resumeTaskWork, getTaskTotalTime } = useTaskTimeTracking();
+  const { timerState, isLoading, startTaskWork, stopTaskWork, pauseTaskWork, resumeTaskWork, getTaskTotalTime, getTaskTotalTimeAllTime } = useTaskTimeTracking();
   
   const isActive = timerState.activeTaskId === taskId;
   const isPaused = isActive && timerState.isPaused;
   const totalMinutes = getTaskTotalTime(taskId);
+  const totalAllMinutes = getTaskTotalTimeAllTime(taskId);
   
   // Calculate progress based on elapsed time (assuming 2-hour session target)
   const progressPercentage = isActive 
@@ -104,7 +105,7 @@ const MobileTaskTimer: React.FC<MobileTaskTimerProps> = ({
             </div>
           ) : (
             <div className="text-sm text-muted-foreground">
-              Total: {formatTotalTime(totalMinutes)}
+              Today: {formatTotalTime(totalMinutes)} • Total: {formatTotalTime(totalAllMinutes)}
             </div>
           )}
         </div>
@@ -176,6 +177,9 @@ const MobileTaskTimer: React.FC<MobileTaskTimerProps> = ({
       <div className="text-center">
         <div className="text-sm text-muted-foreground">
           Total today: {formatTotalTime(totalMinutes)}
+        </div>
+        <div className="text-xs text-muted-foreground">
+          Total tracked: {formatTotalTime(totalAllMinutes)}
         </div>
       </div>
       

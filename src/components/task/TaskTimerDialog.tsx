@@ -15,11 +15,12 @@ const TaskTimerDialog: React.FC<TaskTimerDialogProps> = ({
   taskTitle, 
   className 
 }) => {
-  const { timerState, isLoading, startTaskWork, stopTaskWork, pauseTaskWork, resumeTaskWork, getTaskTotalTime } = useTaskTimeTracking();
+  const { timerState, isLoading, startTaskWork, stopTaskWork, pauseTaskWork, resumeTaskWork, getTaskTotalTime, getTaskTotalTimeAllTime } = useTaskTimeTracking();
   
   const isActive = timerState.activeTaskId === taskId;
   const isPaused = isActive && timerState.isPaused;
   const totalMinutes = getTaskTotalTime(taskId);
+  const totalAllMinutes = getTaskTotalTimeAllTime(taskId);
   
   // Format time display
   const formatTime = (seconds: number) => {
@@ -97,9 +98,12 @@ const TaskTimerDialog: React.FC<TaskTimerDialogProps> = ({
         )}
       </div>
 
-      {/* Total Time Today */}
+      {/* Total Time */}
       <div className="text-center text-sm text-muted-foreground">
         Total today: {totalMinutes > 0 ? formatTotalTime(totalMinutes) : '0m'}
+      </div>
+      <div className="text-center text-xs text-muted-foreground">
+        Total tracked: {formatTotalTime(totalAllMinutes)}
       </div>
 
       {/* Control Buttons */}

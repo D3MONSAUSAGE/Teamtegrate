@@ -19,11 +19,12 @@ const TaskTimer: React.FC<TaskTimerProps> = ({
   showControls = true,
   className 
 }) => {
-  const { timerState, isLoading, startTaskWork, stopTaskWork, pauseTaskWork, resumeTaskWork, getTaskTotalTime } = useTaskTimeTracking();
+  const { timerState, isLoading, startTaskWork, stopTaskWork, pauseTaskWork, resumeTaskWork, getTaskTotalTime, getTaskTotalTimeAllTime } = useTaskTimeTracking();
   
   const isActive = timerState.activeTaskId === taskId;
   const isPaused = isActive && timerState.isPaused;
   const totalMinutes = getTaskTotalTime(taskId);
+  const totalAllMinutes = getTaskTotalTimeAllTime(taskId);
   
   // Format time display
   const formatTime = (seconds: number) => {
@@ -107,6 +108,9 @@ const TaskTimer: React.FC<TaskTimerProps> = ({
           <Clock className="h-3.5 w-3.5 flex-shrink-0" />
           <span className="font-medium">
             {totalMinutes > 0 ? formatTotalTime(totalMinutes) : '0m'}
+          </span>
+          <span className="text-xs">
+            • Total: {formatTotalTime(totalAllMinutes)}
           </span>
         </div>
         
@@ -198,6 +202,9 @@ const TaskTimer: React.FC<TaskTimerProps> = ({
         
         <div className="text-sm text-muted-foreground">
           Total today: {totalMinutes > 0 ? formatTotalTime(totalMinutes) : '0m'}
+        </div>
+        <div className="text-xs text-muted-foreground">
+          Total tracked: {formatTotalTime(totalAllMinutes)}
         </div>
       </div>
 

@@ -25,6 +25,7 @@ export interface TaskTimerState {
   startTime?: Date;
   elapsedSeconds: number;
   totalTimeToday: Record<string, number>; // taskId -> minutes
+  totalTimeAllTime: Record<string, number>; // taskId -> minutes (all-time)
   isPaused: boolean;
   pausedAt?: Date;
   totalPausedDuration: number; // milliseconds
@@ -51,6 +52,7 @@ export const useTaskTimeTracking = () => {
   const [timerState, setTimerState] = useState<TaskTimerState>({
     elapsedSeconds: 0,
     totalTimeToday: {},
+    totalTimeAllTime: {},
     isPaused: false,
     totalPausedDuration: 0
   });
@@ -177,6 +179,28 @@ export const useTaskTimeTracking = () => {
 
       console.log('📊 Total time today:', totalTimeToday);
 
+      // Fetch all-time totals (completed sessions)
+      const { data: allTimeEntries, error: allTimeError } = await supabase
+        .from('time_entries')
+        .select('task_id, duration_minutes')
+        .eq('user_id', user.id)
+        .not('task_id', 'is', null)
+        .not('clock_out', 'is', null);
+
+      if (allTimeError) {
+        console.error('❌ Error fetching all-time entries:', allTimeError);
+        throw allTimeError;
+      }
+
+      const totalTimeAllTime: Record<string, number> = {};
+      allTimeEntries?.forEach(entry => {
+        if (entry.task_id && entry.duration_minutes) {
+          totalTimeAllTime[entry.task_id] = (totalTimeAllTime[entry.task_id] || 0) + entry.duration_minutes;
+        }
+      });
+
+      console.log('🧮 Total time all-time:', totalTimeAllTime);
+
       // Update state
       if (activeSession) {
         const startTime = new Date(activeSession.clock_in);
@@ -223,6 +247,7 @@ export const useTaskTimeTracking = () => {
           startTime,
           elapsedSeconds,
           totalTimeToday,
+          totalTimeAllTime,
           isPaused,
           pausedAt,
           totalPausedDuration: totalPausedMs,
@@ -233,6 +258,7 @@ export const useTaskTimeTracking = () => {
         setTimerState({
           elapsedSeconds: 0,
           totalTimeToday,
+          totalTimeAllTime,
           isPaused: false,
           totalPausedDuration: 0
         });
@@ -489,6 +515,18 @@ export const useTaskTimeTracking = () => {
     return total;
   }, [timerState.totalTimeToday, timerState.activeTaskId, timerState.elapsedSeconds]);
 
+  // Get total time for a specific task (all time)
+  const getTaskTotalTimeAllTime = useCallback((taskId: string): number => {
+    let total = timerState.totalTimeAllTime?.[taskId] || 0;
+
+    // Add current session time if this task is active
+    if (timerState.activeTaskId === taskId) {
+      total += Math.floor(timerState.elapsedSeconds / 60);
+    }
+
+    return total;
+  }, [timerState.totalTimeAllTime, timerState.activeTaskId, timerState.elapsedSeconds]);
+
   // Initialize on mount
   useEffect(() => {
     if (user?.id) {
@@ -505,6 +543,7 @@ export const useTaskTimeTracking = () => {
     pauseTaskWork,
     resumeTaskWork,
     getTaskTotalTime,
+    getTaskTotalTimeAllTime,
     refreshState: fetchTaskTimeState
   };
 };
