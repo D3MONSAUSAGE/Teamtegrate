@@ -10,6 +10,7 @@ import { format } from 'date-fns';
 import { useTask } from '@/contexts/task';
 import { toast } from '@/components/ui/sonner';
 import TaskTimerDialog from '@/components/task/TaskTimerDialog';
+import { useTaskDetailHelpers } from '@/components/task/hooks/useTaskDetailHelpers';
 
 interface TaskDetailDialogProps {
   open: boolean;
@@ -29,6 +30,7 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
   const { updateTaskStatus, deleteTask } = useTask();
   const [isUpdating, setIsUpdating] = useState(false);
   const [newComment, setNewComment] = useState('');
+  const { getAssignedToName } = useTaskDetailHelpers(task!);
 
   if (!task) return null;
 
@@ -123,12 +125,10 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
                 </div>
               )}
 
-              {task.userId && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <User className="h-4 w-4" />
-                  <span>Assigned to: {task.userId}</span>
-                </div>
-              )}
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <User className="h-4 w-4" />
+                <span>Assigned to: {getAssignedToName()}</span>
+              </div>
             </div>
 
             <div className="space-y-3">
