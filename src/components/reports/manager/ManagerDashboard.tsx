@@ -3,6 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { UserSelector } from "@/components/ui/user-selector";
 import { 
   AlertTriangle, 
   Users, 
@@ -32,6 +33,7 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({
   const { user } = useAuth();
   const { tasks, projects } = useTask();
   const [activeTab, setActiveTab] = useState("overview");
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
 
   // Filter tasks based on user role and organization
   const accessibleTasks = useMemo(() => {
@@ -116,6 +118,32 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({
 
   // Check if user has manager+ permissions
   const hasManagerAccess = user?.role && ['manager', 'admin', 'superadmin'].includes(user.role);
+
+  // Filter team members based on role permissions for user selection
+  const selectableUsers = useMemo(() => {
+    if (!user) return [];
+    
+    // Convert team members to the format expected by UserSelector
+    const users = teamMembers.map(member => ({
+      id: member.id,
+      name: member.name,
+      email: member.email,
+      role: member.role,
+      avatar: member.avatar
+    }));
+
+    // Apply role-based filtering
+    if (user.role === 'superadmin' || user.role === 'admin') {
+      // Superadmin and Admin can see all users in their organization
+      return users;
+    } else if (user.role === 'manager') {
+      // Managers can see all users in their organization
+      return users;
+    } else {
+      // Regular users can only see themselves
+      return users.filter(u => u.id === user.id);
+    }
+  }, [teamMembers, user]);
 
   if (!hasManagerAccess) {
     return (
@@ -310,10 +338,37 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({
         </TabsContent>
 
         <TabsContent value="performance" className="space-y-4">
+          {/* User Selection for Performance Matrix */}
+          {selectableUsers.length > 1 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Team Member Selection</CardTitle>
+                <CardDescription>
+                  Select up to 4 team members to display in the performance matrix. Leave empty to show all members.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <UserSelector
+                  users={selectableUsers}
+                  selectedUserIds={selectedUserIds}
+                  onSelectionChange={setSelectedUserIds}
+                  maxSelection={4}
+                  placeholder="Select team members to display..."
+                />
+                {selectedUserIds.length > 0 && (
+                  <div className="mt-3 text-sm text-muted-foreground">
+                    Showing {selectedUserIds.length} of {teamMembers.length} team members
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+          
           <TeamPerformanceMatrix 
             tasks={accessibleTasks}
             teamMembers={teamMembers}
             timeRange={timeRange}
+            selectedUserIds={selectedUserIds}
           />
         </TabsContent>
       </Tabs>

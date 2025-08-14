@@ -22,6 +22,7 @@ interface TeamPerformanceMatrixProps {
   tasks: Task[];
   teamMembers: any[];
   timeRange: string;
+  selectedUserIds?: string[];
 }
 
 interface PerformanceMetrics {
@@ -46,12 +47,17 @@ interface PerformanceMetrics {
   collaborationScore: number; // based on cross-project work
 }
 
-const TeamPerformanceMatrix: React.FC<TeamPerformanceMatrixProps> = ({
-  tasks,
-  teamMembers,
-  timeRange
+const TeamPerformanceMatrix: React.FC<TeamPerformanceMatrixProps> = ({ 
+  tasks, 
+  teamMembers, 
+  timeRange,
+  selectedUserIds = []
 }) => {
   const performanceData = useMemo(() => {
+    console.log("🔄 Calculating performance data...");
+    console.log("📊 Input - Tasks:", tasks.length, "Team Members:", teamMembers.length);
+    console.log("👥 Selected User IDs:", selectedUserIds);
+    
     const days = timeRange === "7 days" ? 7 : timeRange === "30 days" ? 30 : 90;
     const cutoffDate = subDays(new Date(), days);
     const recentTasks = tasks.filter(task => {
@@ -59,7 +65,14 @@ const TeamPerformanceMatrix: React.FC<TeamPerformanceMatrixProps> = ({
       return isAfter(taskDate, cutoffDate);
     });
 
-    const memberMetrics: PerformanceMetrics[] = teamMembers.map(member => {
+    // Filter team members if selectedUserIds is provided and not empty
+    const filteredMembers = selectedUserIds.length > 0 
+      ? teamMembers.filter(member => selectedUserIds.includes(member.id))
+      : teamMembers;
+    
+    console.log("👥 Filtered members:", filteredMembers.length, "of", teamMembers.length);
+
+    const memberMetrics: PerformanceMetrics[] = filteredMembers.map(member => {
       // Get member's tasks
       const memberTasks = recentTasks.filter(task => 
         task.assignedToId === member.id || task.userId === member.id
@@ -185,7 +198,7 @@ const TeamPerformanceMatrix: React.FC<TeamPerformanceMatrixProps> = ({
 
     // Sort by completion rate descending
     return memberMetrics.sort((a, b) => b.completionRate - a.completionRate);
-  }, [tasks, teamMembers, timeRange]);
+  }, [tasks, teamMembers, timeRange, selectedUserIds]);
 
   const getRiskColor = (riskLevel: 'low' | 'medium' | 'high') => {
     switch (riskLevel) {
