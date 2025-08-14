@@ -41,37 +41,56 @@ const ReportsPage: React.FC = () => {
   
   // Filter and analyze data
   const filteredTasks = useMemo(() => {
-    let filtered = tasks;
+    let filtered = [...tasks];
+    console.log('Starting task filtering with', filtered.length, 'total tasks');
     
     // Apply time range filter
     if (timeRange !== "custom") {
       const days = timeRange === "7 days" ? 7 : timeRange === "30 days" ? 30 : 90;
       const cutoffDate = subDays(new Date(), days);
+      console.log('Applying time range filter:', timeRange, 'cutoff date:', cutoffDate);
       filtered = filtered.filter(task => {
         const taskDate = new Date(task.createdAt || task.updatedAt);
-        return isAfter(taskDate, cutoffDate);
+        return taskDate >= cutoffDate; // Use >= instead of isAfter for inclusive filtering
       });
+      console.log('After time range filter:', filtered.length, 'tasks');
     } else if (dateRange?.from && dateRange?.to) {
+      console.log('Applying custom date range filter:', dateRange.from, 'to', dateRange.to);
       filtered = filtered.filter(task => {
         const taskDate = new Date(task.createdAt || task.updatedAt);
-        return isAfter(taskDate, dateRange.from!) && isBefore(taskDate, dateRange.to!);
+        // Use >= and <= for inclusive date range filtering
+        return taskDate >= dateRange.from! && taskDate <= dateRange.to!;
       });
+      console.log('After custom date range filter:', filtered.length, 'tasks');
     }
     
     // Apply project filter
     if (selectedProjects.length > 0) {
+      console.log('Applying project filter for projects:', selectedProjects);
       filtered = filtered.filter(task => 
         task.projectId && selectedProjects.includes(task.projectId)
       );
+      console.log('After project filter:', filtered.length, 'tasks');
     }
     
-    // Apply member filter
+    // Apply member filter - check both single and multiple assignees
     if (selectedMembers.length > 0) {
-      filtered = filtered.filter(task => 
-        task.assignedToId && selectedMembers.includes(task.assignedToId)
-      );
+      console.log('Applying member filter for members:', selectedMembers);
+      filtered = filtered.filter(task => {
+        // Check single assignee
+        if (task.assignedToId && selectedMembers.includes(task.assignedToId)) {
+          return true;
+        }
+        // Check multiple assignees
+        if (task.assignedToIds && task.assignedToIds.some(id => selectedMembers.includes(id))) {
+          return true;
+        }
+        return false;
+      });
+      console.log('After member filter:', filtered.length, 'tasks');
     }
     
+    console.log('Final filtered tasks count:', filtered.length);
     return filtered;
   }, [tasks, timeRange, dateRange, selectedProjects, selectedMembers]);
   

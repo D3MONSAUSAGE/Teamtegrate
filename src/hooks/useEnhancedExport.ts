@@ -87,33 +87,57 @@ export const useEnhancedExport = (
       }
     }
 
+    console.log('Enhanced export starting with', tasks.length, 'tasks');
+    console.log('Date range for export:', startDate, 'to', endDate);
+    
     // Filter tasks by date range
-    const filteredTasks = tasks.filter(task => {
-      const taskDate = new Date(task.createdAt);
+    let filteredTasks = tasks.filter(task => {
+      const taskDate = new Date(task.createdAt || task.updatedAt);
       return taskDate >= startDate && taskDate <= endDate;
-    }).filter(task => {
-      // Filter by selected projects
-      if (selectedProjects.length > 0 && task.projectId) {
-        return selectedProjects.includes(task.projectId);
-      }
-      return selectedProjects.length === 0 || !task.projectId;
-    }).filter(task => {
-      // Filter by selected members
-      if (selectedMembers.length > 0) {
-        return selectedMembers.includes(task.userId) || 
-               (task.assignedToId && selectedMembers.includes(task.assignedToId)) ||
-               (task.assignedToIds && task.assignedToIds.some(id => selectedMembers.includes(id)));
-      }
-      return true;
-    }).filter(task => {
-      // Filter by specific user if selected
-      if (selectedUser) {
-        return task.userId === selectedUser || 
-               task.assignedToId === selectedUser ||
-               (task.assignedToIds && task.assignedToIds.includes(selectedUser));
-      }
-      return true;
     });
+    console.log('After date filter:', filteredTasks.length, 'tasks');
+    
+    // Filter by selected projects
+    if (selectedProjects.length > 0) {
+      filteredTasks = filteredTasks.filter(task => 
+        task.projectId && selectedProjects.includes(task.projectId)
+      );
+      console.log('After project filter:', filteredTasks.length, 'tasks');
+    }
+    
+    // Filter by selected members - check both single and multiple assignees
+    if (selectedMembers.length > 0) {
+      filteredTasks = filteredTasks.filter(task => {
+        // Check single assignee
+        if (task.assignedToId && selectedMembers.includes(task.assignedToId)) {
+          return true;
+        }
+        // Check multiple assignees
+        if (task.assignedToIds && task.assignedToIds.some(id => selectedMembers.includes(id))) {
+          return true;
+        }
+        return false;
+      });
+      console.log('After member filter:', filteredTasks.length, 'tasks');
+    }
+    
+    // Filter by specific user if selected
+    if (selectedUser) {
+      filteredTasks = filteredTasks.filter(task => {
+        // Check single assignee
+        if (task.assignedToId === selectedUser) {
+          return true;
+        }
+        // Check multiple assignees
+        if (task.assignedToIds && task.assignedToIds.includes(selectedUser)) {
+          return true;
+        }
+        return false;
+      });
+      console.log('After specific user filter:', filteredTasks.length, 'tasks');
+    }
+    
+    console.log('Final filtered tasks for export:', filteredTasks.length);
 
     const generateExportData = (): { headers: string[], rows: string[][] } => {
       switch (type) {
