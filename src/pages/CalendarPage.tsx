@@ -23,6 +23,7 @@ const CalendarPage = () => {
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState<boolean>(false);
   const [quickCreateDate, setQuickCreateDate] = useState<Date>(new Date());
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
+  const [isMeetingDialogOpen, setIsMeetingDialogOpen] = useState<boolean>(false);
 
   // Handle task click to open dialog with details
   const handleTaskClick = (task: Task) => {
@@ -51,6 +52,10 @@ const CalendarPage = () => {
   const handleTaskDialogComplete = () => {
     setIsCreateTaskOpen(false);
     setEditingTask(undefined);
+  };
+
+  const handleScheduleMeeting = () => {
+    setIsMeetingDialogOpen(true);
   };
 
   const todayTasksCount = tasks.filter(task => {
@@ -103,6 +108,7 @@ const CalendarPage = () => {
                 onNextMonth={goToNextMonth}
                 onToday={goToToday}
                 onAddTask={() => handleDateCreate(selectedDate)}
+                onScheduleMeeting={handleScheduleMeeting}
               />
             </div>
           </ModernSectionCard>
@@ -122,6 +128,8 @@ const CalendarPage = () => {
                 todayTasksCount={todayTasksCount}
                 upcomingTasksCount={upcomingTasksCount}
                 overdueTasksCount={overdueTasksCount}
+                upcomingMeetingsCount={0} // TODO: Add meeting data when available
+                pendingInvitationsCount={0} // TODO: Add invitation data when available
               />
             </div>
           </ModernSectionCard>
@@ -145,7 +153,9 @@ const CalendarPage = () => {
             <div className="p-4 border-b">
               <div className="flex justify-between items-center">
                 <h3 className="text-lg font-semibold">Schedule</h3>
-                <MeetingRequestDialog defaultDate={selectedDate} />
+                <div className="flex gap-2">
+                  <MeetingRequestDialog defaultDate={selectedDate} />
+                </div>
               </div>
             </div>
             <CalendarContent
@@ -171,6 +181,13 @@ const CalendarPage = () => {
         onOpenChange={setIsCreateTaskOpen}
         editingTask={editingTask}
         onTaskComplete={handleTaskDialogComplete}
+      />
+
+      <MeetingRequestDialog 
+        trigger={null}
+        defaultDate={selectedDate}
+        open={isMeetingDialogOpen}
+        onOpenChange={setIsMeetingDialogOpen}
       />
     </div>
   );

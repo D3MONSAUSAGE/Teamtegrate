@@ -12,13 +12,19 @@ import { useOrganizationUsers } from '@/hooks/useOrganizationUsers';
 interface MeetingRequestDialogProps {
   trigger?: React.ReactNode;
   defaultDate?: Date;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export const MeetingRequestDialog: React.FC<MeetingRequestDialogProps> = ({ 
   trigger,
-  defaultDate = new Date()
+  defaultDate = new Date(),
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange
 }) => {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen ?? internalOpen;
+  const setOpen = controlledOnOpenChange ?? setInternalOpen;
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
@@ -58,14 +64,19 @@ export const MeetingRequestDialog: React.FC<MeetingRequestDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger || (
+      {trigger && (
+        <DialogTrigger asChild>
+          {trigger}
+        </DialogTrigger>
+      )}
+      {!trigger && trigger !== null && (
+        <DialogTrigger asChild>
           <Button className="gap-2">
             <Plus className="h-4 w-4" />
             Schedule Meeting
           </Button>
-        )}
-      </DialogTrigger>
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
