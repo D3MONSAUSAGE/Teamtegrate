@@ -1,11 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Filter, RotateCcw, Download, Share2 } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Calendar, Filter, RotateCcw, Download, Share2, ChevronDown, User, FileText } from 'lucide-react';
 import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 import { DateRange } from "react-day-picker";
+import { getTimeRangeOptions, getExportTypeOptions } from '@/utils/exportUtils';
+import type { ExportType } from '@/hooks/useEnhancedExport';
 
 interface ReportsFiltersProps {
   dateRange: DateRange | undefined;
@@ -19,7 +23,7 @@ interface ReportsFiltersProps {
   availableProjects: Array<{ id: string; title: string }>;
   availableMembers: Array<{ id: string; name: string }>;
   onReset: () => void;
-  onExport: () => void;
+  onExport: (exportType: ExportType, selectedUser?: string) => void;
 }
 
 const ReportsFilters: React.FC<ReportsFiltersProps> = ({
@@ -36,11 +40,41 @@ const ReportsFilters: React.FC<ReportsFiltersProps> = ({
   onReset,
   onExport
 }) => {
+  const [isProjectsOpen, setIsProjectsOpen] = useState(false);
+  const [isMembersOpen, setIsMembersOpen] = useState(false);
+  const [isExportOpen, setIsExportOpen] = useState(false);
+  const [selectedExportType, setSelectedExportType] = useState<ExportType>('overview');
+  const [selectedUserForExport, setSelectedUserForExport] = useState<string>('');
+
   const activeFiltersCount = [
     dateRange ? 1 : 0,
     selectedProjects.length,
     selectedMembers.length
   ].reduce((sum, count) => sum + count, 0);
+
+  const timeRangeOptions = getTimeRangeOptions();
+  const exportTypeOptions = getExportTypeOptions();
+
+  const handleProjectToggle = (projectId: string) => {
+    if (selectedProjects.includes(projectId)) {
+      onProjectsChange(selectedProjects.filter(id => id !== projectId));
+    } else {
+      onProjectsChange([...selectedProjects, projectId]);
+    }
+  };
+
+  const handleMemberToggle = (memberId: string) => {
+    if (selectedMembers.includes(memberId)) {
+      onMembersChange(selectedMembers.filter(id => id !== memberId));
+    } else {
+      onMembersChange([...selectedMembers, memberId]);
+    }
+  };
+
+  const handleExportClick = () => {
+    onExport(selectedExportType, selectedUserForExport || undefined);
+    setIsExportOpen(false);
+  };
 
   return (
     <Card className="mb-6">
@@ -50,14 +84,15 @@ const ReportsFilters: React.FC<ReportsFiltersProps> = ({
           <div className="flex items-center gap-2">
             <Calendar className="w-4 h-4 text-muted-foreground" />
             <Select value={timeRange} onValueChange={onTimeRangeChange}>
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-48">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="7 days">Last 7 days</SelectItem>
-                <SelectItem value="30 days">Last 30 days</SelectItem>
-                <SelectItem value="90 days">Last 90 days</SelectItem>
-                <SelectItem value="custom">Custom range</SelectItem>
+                {timeRangeOptions.map(option => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -71,53 +106,111 @@ const ReportsFilters: React.FC<ReportsFiltersProps> = ({
             />
           )}
 
-          {/* Project Filter */}
-          <Select
-            value={selectedProjects.length === 1 ? selectedProjects[0] : ""}
-            onValueChange={(value) => {
-              if (value === "all") {
-                onProjectsChange([]);
-              } else {
-                onProjectsChange([value]);
-              }
-            }}
-          >
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="All Projects" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Projects</SelectItem>
-              {availableProjects.map((project) => (
-                <SelectItem key={project.id} value={project.id}>
-                  {project.title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {/* Project Filter - Multi-select */}
+          <Popover open={isProjectsOpen} onOpenChange={setIsProjectsOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className="w-48 justify-between"
+              >
+                <span className="truncate">
+                  {selectedProjects.length === 0 
+                    ? "All Projects" 
+                    : selectedProjects.length === 1 
+                      ? availableProjects.find(p => p.id === selectedProjects[0])?.title || "Projects"
+                      : `${selectedProjects.length} Projects`
+                  }
+                </span>
+                <ChevronDown className="w-4 h-4 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 p-0">
+              <div className="max-h-64 overflow-auto">
+                <div className="p-2 border-b">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="all-projects"
+                      checked={selectedProjects.length === 0}
+                      onCheckedChange={() => onProjectsChange([])}
+                    />
+                    <label htmlFor="all-projects" className="text-sm font-medium">
+                      All Projects
+                    </label>
+                  </div>
+                </div>
+                <div className="p-1">
+                  {availableProjects.map((project) => (
+                    <div key={project.id} className="flex items-center space-x-2 p-2 hover:bg-accent rounded-sm">
+                      <Checkbox
+                        id={`project-${project.id}`}
+                        checked={selectedProjects.includes(project.id)}
+                        onCheckedChange={() => handleProjectToggle(project.id)}
+                      />
+                      <label 
+                        htmlFor={`project-${project.id}`} 
+                        className="text-sm flex-1 cursor-pointer"
+                      >
+                        {project.title}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
 
-          {/* Team Member Filter */}
-          <Select
-            value={selectedMembers.length === 1 ? selectedMembers[0] : ""}
-            onValueChange={(value) => {
-              if (value === "all") {
-                onMembersChange([]);
-              } else {
-                onMembersChange([value]);
-              }
-            }}
-          >
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="All Team Members" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Team Members</SelectItem>
-              {availableMembers.map((member) => (
-                <SelectItem key={member.id} value={member.id}>
-                  {member.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {/* Team Member Filter - Multi-select */}
+          <Popover open={isMembersOpen} onOpenChange={setIsMembersOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className="w-48 justify-between"
+              >
+                <span className="truncate">
+                  {selectedMembers.length === 0 
+                    ? "All Team Members" 
+                    : selectedMembers.length === 1 
+                      ? availableMembers.find(m => m.id === selectedMembers[0])?.name || "Members"
+                      : `${selectedMembers.length} Members`
+                  }
+                </span>
+                <ChevronDown className="w-4 h-4 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 p-0">
+              <div className="max-h-64 overflow-auto">
+                <div className="p-2 border-b">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="all-members"
+                      checked={selectedMembers.length === 0}
+                      onCheckedChange={() => onMembersChange([])}
+                    />
+                    <label htmlFor="all-members" className="text-sm font-medium">
+                      All Team Members
+                    </label>
+                  </div>
+                </div>
+                <div className="p-1">
+                  {availableMembers.map((member) => (
+                    <div key={member.id} className="flex items-center space-x-2 p-2 hover:bg-accent rounded-sm">
+                      <Checkbox
+                        id={`member-${member.id}`}
+                        checked={selectedMembers.includes(member.id)}
+                        onCheckedChange={() => handleMemberToggle(member.id)}
+                      />
+                      <label 
+                        htmlFor={`member-${member.id}`} 
+                        className="text-sm flex-1 cursor-pointer"
+                      >
+                        {member.name}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
 
           {/* Action Buttons */}
           <div className="flex items-center gap-2 ml-auto">
@@ -139,15 +232,67 @@ const ReportsFilters: React.FC<ReportsFiltersProps> = ({
               </div>
             )}
             
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onExport}
-              className="gap-1"
-            >
-              <Download className="w-3 h-3" />
-              Export
-            </Button>
+            {/* Enhanced Export Button */}
+            <Popover open={isExportOpen} onOpenChange={setIsExportOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1"
+                >
+                  <Download className="w-3 h-3" />
+                  Export
+                  <ChevronDown className="w-3 h-3" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-4">
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Export Type</label>
+                    <Select value={selectedExportType} onValueChange={(value) => setSelectedExportType(value as ExportType)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {exportTypeOptions.map(option => (
+                          <SelectItem key={option.value} value={option.value}>
+                            <div>
+                              <div className="font-medium">{option.label}</div>
+                              <div className="text-xs text-muted-foreground">{option.description}</div>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">
+                      <User className="w-3 h-3 inline mr-1" />
+                      Specific User (Optional)
+                    </label>
+                    <Select value={selectedUserForExport} onValueChange={setSelectedUserForExport}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="All users" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">All users</SelectItem>
+                        {availableMembers.map(member => (
+                          <SelectItem key={member.id} value={member.id}>
+                            {member.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <Button onClick={handleExportClick} className="w-full gap-2">
+                    <FileText className="w-4 h-4" />
+                    Generate Report
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
             
             <Button
               variant="outline"

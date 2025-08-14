@@ -21,6 +21,8 @@ import useTeamMembers from '@/hooks/useTeamMembers';
 import { useAdvancedAnalytics } from '@/hooks/useAdvancedAnalytics';
 import { DateRange } from "react-day-picker";
 import { subDays, format, isAfter, isBefore } from 'date-fns';
+import { toast } from 'sonner';
+import type { ExportType } from '@/hooks/useEnhancedExport';
 
 const ReportsPage: React.FC = () => {
   const isMobile = useIsMobile();
@@ -135,32 +137,193 @@ const ReportsPage: React.FC = () => {
     setSelectedMembers([]);
   };
   
-  const handleExport = async () => {
+  const handleExport = async (exportType: ExportType, selectedUser?: string) => {
     try {
-      const exportData = [
-        ['Metric', 'Value'],
-        ['Total Tasks', overviewMetrics.totalTasks.toString()],
-        ['Completed Tasks', overviewMetrics.completedTasks.toString()],
-        ['Team Members', overviewMetrics.teamMembers.toString()],
-        ['Average Completion Rate', `${overviewMetrics.averageCompletionRate}%`],
-        ['Overdue Tasks', overviewMetrics.overdueTasks.toString()],
-        ['High Priority Tasks', overviewMetrics.highPriorityTasks.toString()],
-        ['Active Projects', overviewMetrics.activeProjects.toString()]
-      ];
+      const { downloadCSV } = await import('@/utils/exportUtils');
       
-      const csvContent = exportData.map(row => row.join(',')).join('\n');
-      const blob = new Blob([csvContent], { type: 'text/csv' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `team-report-${format(new Date(), 'yyyy-MM-dd')}.csv`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      // Calculate date range
+      const today = new Date();
+      let startDate: Date, endDate: Date;
+
+      if (dateRange?.from && dateRange?.to) {
+        startDate = dateRange.from;
+        endDate = dateRange.to;
+      } else {
+        const days = timeRange === "7 days" ? 7 : timeRange === "30 days" ? 30 : 90;
+        startDate = subDays(today, days);
+        endDate = today;
+      }
+
+      // Create export options
+      const exportOptions = {
+        type: exportType,
+        dateRange,
+        timeRange,
+        selectedProjects,
+        selectedMembers,
+        selectedUser
+      };
+
+      // Generate export data based on type
+      let exportData;
+      switch (exportType) {
+        case 'detailed-tasks':
+          exportData = generateDetailedTasksExport(filteredTasks, projects, availableMembers);
+          break;
+        case 'user-performance':
+          exportData = generateUserPerformanceExport(filteredTasks, availableMembers, selectedUser);
+          break;
+        case 'project-breakdown':
+          exportData = generateProjectBreakdownExport(filteredTasks, projects, availableMembers);
+          break;
+        default:
+          exportData = generateOverviewExport(filteredTasks, projects, availableMembers);
+      }
+
+      // Add metadata
+      const metadata = {
+        exportType,
+        dateRange: `${format(startDate, 'yyyy-MM-dd')} to ${format(endDate, 'yyyy-MM-dd')}`,
+        filters: [
+          selectedProjects.length > 0 && `Projects: ${selectedProjects.length} selected`,
+          selectedMembers.length > 0 && `Members: ${selectedMembers.length} selected`,
+          selectedUser && `User: ${availableMembers.find(m => m.id === selectedUser)?.name || 'Unknown'}`
+        ].filter(Boolean).join(', ') || 'No filters applied',
+        generatedAt: format(new Date(), 'yyyy-MM-dd HH:mm:ss'),
+        totalRecords: exportData.rows.length
+      };
+
+      const finalExportData = {
+        ...exportData,
+        metadata
+      };
+      
+      downloadCSV(finalExportData);
+      toast.success('Report exported successfully!');
     } catch (error) {
       console.error('Export failed:', error);
+      toast.error('Failed to export report. Please try again.');
     }
+  };
+
+  // Export generation functions
+  const generateOverviewExport = (tasks: any[], projects: any[], teamMembers: any[]) => {
+    const totalTasks = tasks.length;
+    const completedTasks = tasks.filter(t => t.status === 'Completed').length;
+    const overdueTasks = tasks.filter(t => new Date(t.deadline) < new Date() && t.status !== 'Completed').length;
+    const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+    return {
+      filename: `overview-report-${format(new Date(), 'yyyy-MM-dd')}.csv`,
+      headers: ['Metric', 'Value'],
+      rows: [
+        ['Total Tasks', totalTasks.toString()],
+        ['Completed Tasks', completedTasks.toString()],
+        ['Overdue Tasks', overdueTasks.toString()],
+        ['Completion Rate', `${completionRate}%`],
+        ['Active Projects', projects.filter(p => p.status !== 'Completed').length.toString()],
+        ['Team Members', teamMembers.length.toString()]
+      ]
+    };
+  };
+
+  const generateDetailedTasksExport = (tasks: any[], projects: any[], teamMembers: any[]) => {
+    const headers = [
+      'Task ID', 'Title', 'Description', 'Status', 'Priority', 'Created Date', 
+      'Deadline', 'Assigned To', 'Project', 'Overdue'
+    ];
+
+    const rows = tasks.map(task => [
+      task.id,
+      task.title,
+      task.description || '',
+      task.status,
+      task.priority,
+      format(new Date(task.createdAt), 'yyyy-MM-dd'),
+      format(new Date(task.deadline), 'yyyy-MM-dd'),
+      task.assignedToName || teamMembers.find(m => m.id === task.assignedToId)?.name || 'Unassigned',
+      projects.find(p => p.id === task.projectId)?.title || 'No Project',
+      (new Date(task.deadline) < new Date() && task.status !== 'Completed') ? 'Yes' : 'No'
+    ]);
+
+    return {
+      filename: `detailed-tasks-${format(new Date(), 'yyyy-MM-dd')}.csv`,
+      headers,
+      rows
+    };
+  };
+
+  const generateUserPerformanceExport = (tasks: any[], teamMembers: any[], selectedUser?: string) => {
+    const usersToAnalyze = selectedUser 
+      ? teamMembers.filter(m => m.id === selectedUser)
+      : teamMembers;
+
+    const headers = [
+      'User Name', 'Total Tasks', 'Completed Tasks', 'In Progress Tasks', 
+      'Overdue Tasks', 'Completion Rate', 'High Priority Tasks'
+    ];
+
+    const rows = usersToAnalyze.map(member => {
+      const userTasks = tasks.filter(t => 
+        t.userId === member.id || t.assignedToId === member.id
+      );
+      
+      const totalTasks = userTasks.length;
+      const completedTasks = userTasks.filter(t => t.status === 'Completed').length;
+      const inProgressTasks = userTasks.filter(t => t.status === 'In Progress').length;
+      const overdueTasks = userTasks.filter(t => 
+        new Date(t.deadline) < new Date() && t.status !== 'Completed'
+      ).length;
+      const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+      const highPriorityTasks = userTasks.filter(t => t.priority === 'High').length;
+
+      return [
+        member.name,
+        totalTasks.toString(),
+        completedTasks.toString(),
+        inProgressTasks.toString(),
+        overdueTasks.toString(),
+        `${completionRate}%`,
+        highPriorityTasks.toString()
+      ];
+    });
+
+    const filename = selectedUser 
+      ? `user-performance-${usersToAnalyze[0]?.name?.replace(/\s+/g, '-') || 'user'}-${format(new Date(), 'yyyy-MM-dd')}.csv`
+      : `team-performance-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+
+    return { filename, headers, rows };
+  };
+
+  const generateProjectBreakdownExport = (tasks: any[], projects: any[], teamMembers: any[]) => {
+    const headers = [
+      'Project Name', 'Status', 'Manager', 'Total Tasks', 'Completed Tasks', 
+      'Completion Rate', 'Team Members'
+    ];
+
+    const rows = projects.map(project => {
+      const projectTasks = tasks.filter(t => t.projectId === project.id);
+      const totalTasks = projectTasks.length;
+      const completedTasks = projectTasks.filter(t => t.status === 'Completed').length;
+      const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+      const manager = teamMembers.find(m => m.id === project.managerId)?.name || 'Unassigned';
+
+      return [
+        project.title,
+        project.status || 'To Do',
+        manager,
+        totalTasks.toString(),
+        completedTasks.toString(),
+        `${completionRate}%`,
+        (project.teamMembers?.length || 0).toString()
+      ];
+    });
+
+    return {
+      filename: `project-breakdown-${format(new Date(), 'yyyy-MM-dd')}.csv`,
+      headers,
+      rows
+    };
   };
   
   return (
