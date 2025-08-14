@@ -20,9 +20,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import useTeamMembers from '@/hooks/useTeamMembers';
 import { useAdvancedAnalytics } from '@/hooks/useAdvancedAnalytics';
 import { DateRange } from "react-day-picker";
-import { subDays, format, isAfter, isBefore } from 'date-fns';
+import { format, subDays, isBefore } from 'date-fns';
 import { toast } from 'sonner';
 import type { ExportType } from '@/hooks/useEnhancedExport';
+import { calculateDateRange, formatDateRangeForExport } from '@/utils/dateRangeUtils';
 
 const ReportsPage: React.FC = () => {
   const isMobile = useIsMobile();
@@ -39,30 +40,30 @@ const ReportsPage: React.FC = () => {
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   
+  // Calculate date range based on timeRange selection
+  const calculatedDateRange = useMemo(() => {
+    return calculateDateRange(timeRange, dateRange);
+  }, [timeRange, dateRange]);
+
   // Filter and analyze data
   const filteredTasks = useMemo(() => {
     let filtered = [...tasks];
-    console.log('Starting task filtering with', filtered.length, 'total tasks');
+    console.log('🔍 Starting task filtering with', filtered.length, 'total tasks');
+    console.log('📅 Calculated date range:', calculatedDateRange);
     
-    // Apply time range filter
-    if (timeRange !== "custom") {
-      const days = timeRange === "7 days" ? 7 : timeRange === "30 days" ? 30 : 90;
-      const cutoffDate = subDays(new Date(), days);
-      console.log('Applying time range filter:', timeRange, 'cutoff date:', cutoffDate);
-      filtered = filtered.filter(task => {
-        const taskDate = new Date(task.createdAt || task.updatedAt);
-        return taskDate >= cutoffDate; // Use >= instead of isAfter for inclusive filtering
-      });
-      console.log('After time range filter:', filtered.length, 'tasks');
-    } else if (dateRange?.from && dateRange?.to) {
-      console.log('Applying custom date range filter:', dateRange.from, 'to', dateRange.to);
-      filtered = filtered.filter(task => {
-        const taskDate = new Date(task.createdAt || task.updatedAt);
-        // Use >= and <= for inclusive date range filtering
-        return taskDate >= dateRange.from! && taskDate <= dateRange.to!;
-      });
-      console.log('After custom date range filter:', filtered.length, 'tasks');
-    }
+    // Apply date filter using calculated date range
+    const { from: startDate, to: endDate } = calculatedDateRange;
+    console.log('🗓️ Date filter range:', startDate, 'to', endDate);
+    
+    filtered = filtered.filter(task => {
+      const taskDate = new Date(task.createdAt || task.updatedAt);
+      const isInRange = taskDate >= startDate && taskDate <= endDate;
+      if (!isInRange) {
+        console.log('❌ Filtered out task (date):', task.title, 'created:', taskDate);
+      }
+      return isInRange;
+    });
+    console.log('✅ After date filtering:', filtered.length, 'tasks');
     
     // Apply project filter
     if (selectedProjects.length > 0) {
@@ -90,9 +91,9 @@ const ReportsPage: React.FC = () => {
       console.log('After member filter:', filtered.length, 'tasks');
     }
     
-    console.log('Final filtered tasks count:', filtered.length);
+    console.log('🎯 Final filtered tasks count:', filtered.length);
     return filtered;
-  }, [tasks, timeRange, dateRange, selectedProjects, selectedMembers]);
+  }, [tasks, timeRange, dateRange, selectedProjects, selectedMembers, calculatedDateRange]);
   
   // Analytics data
   const analyticsData = useAdvancedAnalytics(filteredTasks, timeRange);
@@ -160,18 +161,8 @@ const ReportsPage: React.FC = () => {
     try {
       const { downloadCSV } = await import('@/utils/exportUtils');
       
-      // Calculate date range
-      const today = new Date();
-      let startDate: Date, endDate: Date;
-
-      if (dateRange?.from && dateRange?.to) {
-        startDate = dateRange.from;
-        endDate = dateRange.to;
-      } else {
-        const days = timeRange === "7 days" ? 7 : timeRange === "30 days" ? 30 : 90;
-        startDate = subDays(today, days);
-        endDate = today;
-      }
+      // Use the calculated date range for exports
+      const { from: startDate, to: endDate } = calculatedDateRange;
 
       // Create export options
       const exportOptions = {
@@ -202,7 +193,7 @@ const ReportsPage: React.FC = () => {
       // Add metadata
       const metadata = {
         exportType,
-        dateRange: `${format(startDate, 'yyyy-MM-dd')} to ${format(endDate, 'yyyy-MM-dd')}`,
+        dateRange: formatDateRangeForExport(calculatedDateRange),
         filters: [
           selectedProjects.length > 0 && `Projects: ${selectedProjects.length} selected`,
           selectedMembers.length > 0 && `Members: ${selectedMembers.length} selected`,

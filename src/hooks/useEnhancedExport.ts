@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear, subWeeks, subMonths, subQuarters, subYears } from 'date-fns';
+import { format } from 'date-fns';
 import { Task, Project, User } from '@/types';
 import { DateRange } from 'react-day-picker';
+import { calculateDateRange, formatDateRangeForExport } from '@/utils/dateRangeUtils';
 
 export type ExportType = 'overview' | 'detailed-tasks' | 'user-performance' | 'project-breakdown' | 'time-tracking';
 
@@ -36,56 +37,9 @@ export const useEnhancedExport = (
   return useMemo(() => {
     const { type, dateRange, timeRange, selectedProjects, selectedMembers, selectedUser } = options;
     
-    // Calculate date range
-    const today = new Date();
-    let startDate: Date, endDate: Date;
-
-    if (dateRange?.from && dateRange?.to) {
-      startDate = dateRange.from;
-      endDate = dateRange.to;
-    } else {
-      switch (timeRange) {
-        case 'This Week':
-          startDate = startOfWeek(today);
-          endDate = endOfWeek(today);
-          break;
-        case 'Last Week':
-          startDate = startOfWeek(subWeeks(today, 1));
-          endDate = endOfWeek(subWeeks(today, 1));
-          break;
-        case 'This Month':
-          startDate = startOfMonth(today);
-          endDate = endOfMonth(today);
-          break;
-        case 'Last Month':
-          startDate = startOfMonth(subMonths(today, 1));
-          endDate = endOfMonth(subMonths(today, 1));
-          break;
-        case 'This Quarter':
-          startDate = startOfQuarter(today);
-          endDate = endOfQuarter(today);
-          break;
-        case 'This Year':
-          startDate = startOfYear(today);
-          endDate = endOfYear(today);
-          break;
-        case '7 days':
-          startDate = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-          endDate = today;
-          break;
-        case '30 days':
-          startDate = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
-          endDate = today;
-          break;
-        case '90 days':
-          startDate = new Date(today.getTime() - 90 * 24 * 60 * 60 * 1000);
-          endDate = today;
-          break;
-        default:
-          startDate = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
-          endDate = today;
-      }
-    }
+    // Calculate date range using the new utility
+    const calculatedDateRange = calculateDateRange(timeRange, dateRange);
+    const { from: startDate, to: endDate } = calculatedDateRange;
 
     console.log('Enhanced export starting with', tasks.length, 'tasks');
     console.log('Date range for export:', startDate, 'to', endDate);
@@ -178,7 +132,7 @@ export const useEnhancedExport = (
 
     const metadata = {
       exportType: type,
-      dateRange: `${format(startDate, 'yyyy-MM-dd')} to ${format(endDate, 'yyyy-MM-dd')}`,
+      dateRange: formatDateRangeForExport(calculatedDateRange),
       filters: filterStrings.length > 0 ? filterStrings.join(', ') : 'No filters applied',
       generatedAt: format(new Date(), 'yyyy-MM-dd HH:mm:ss'),
       totalRecords: rows.length
