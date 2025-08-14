@@ -9,41 +9,41 @@ export const MeetingNotifications: React.FC = () => {
   const { user } = useAuth();
   const { meetingRequests, loading } = useMeetingRequests();
 
-  // Filter for meetings where user is invited and hasn't responded
-  const pendingInvitations = meetingRequests.filter(meeting => {
+  // Filter for all meetings where user is involved (organizer or participant)
+  const userMeetings = meetingRequests.filter(meeting => {
     const userParticipant = meeting.participants.find(p => p.user_id === user?.id);
-    return userParticipant?.response_status === 'invited' && meeting.organizer_id !== user?.id;
-  });
+    return meeting.organizer_id === user?.id || userParticipant;
+  }).sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
 
   if (loading) {
     return (
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Bell className="h-5 w-5" />
-            Meeting Invitations
+            <Calendar className="h-5 w-5" />
+            My Meetings
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-sm text-muted-foreground">Loading invitations...</div>
+          <div className="text-sm text-muted-foreground">Loading meetings...</div>
         </CardContent>
       </Card>
     );
   }
 
-  if (pendingInvitations.length === 0) {
+  if (userMeetings.length === 0) {
     return (
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Bell className="h-5 w-5" />
-            Meeting Invitations
+            <Calendar className="h-5 w-5" />
+            My Meetings
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8 text-muted-foreground">
             <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>No pending meeting invitations</p>
+            <p>No meetings scheduled</p>
           </div>
         </CardContent>
       </Card>
@@ -54,14 +54,21 @@ export const MeetingNotifications: React.FC = () => {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Bell className="h-5 w-5" />
-          Meeting Invitations ({pendingInvitations.length})
+          <Calendar className="h-5 w-5" />
+          My Meetings ({userMeetings.length})
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {pendingInvitations.map(meeting => (
-          <MeetingInvitationCard key={meeting.id} meeting={meeting} />
-        ))}
+        {userMeetings.map(meeting => {
+          const isOrganizer = meeting.organizer_id === user?.id;
+          return (
+            <MeetingInvitationCard 
+              key={meeting.id} 
+              meeting={meeting} 
+              showActions={!isOrganizer}
+            />
+          );
+        })}
       </CardContent>
     </Card>
   );
