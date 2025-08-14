@@ -165,8 +165,8 @@ const FeatureSlideshow: React.FC = () => {
         </CarouselContent>
         
         {/* Navigation Buttons */}
-        <CarouselPrevious className="absolute -left-12 top-1/2 -translate-y-1/2 bg-white/90 dark:bg-card/90 backdrop-blur-sm border border-border/60 hover:bg-primary hover:text-primary-foreground transition-all duration-200" />
-        <CarouselNext className="absolute -right-12 top-1/2 -translate-y-1/2 bg-white/90 dark:bg-card/90 backdrop-blur-sm border border-border/60 hover:bg-primary hover:text-primary-foreground transition-all duration-200" />
+        <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 dark:bg-card/90 backdrop-blur-sm border border-border/60 hover:bg-primary hover:text-primary-foreground transition-all duration-200" />
+        <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 dark:bg-card/90 backdrop-blur-sm border border-border/60 hover:bg-primary hover:text-primary-foreground transition-all duration-200" />
       </Carousel>
 
       {/* Slide Indicators */}
