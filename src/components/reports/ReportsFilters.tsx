@@ -44,7 +44,7 @@ const ReportsFilters: React.FC<ReportsFiltersProps> = ({
   const [isMembersOpen, setIsMembersOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [selectedExportType, setSelectedExportType] = useState<ExportType>('overview');
-  const [selectedUserForExport, setSelectedUserForExport] = useState<string>('');
+  const [selectedUserForExport, setSelectedUserForExport] = useState<string>('all');
 
   const activeFiltersCount = [
     dateRange ? 1 : 0,
@@ -72,7 +72,7 @@ const ReportsFilters: React.FC<ReportsFiltersProps> = ({
   };
 
   const handleExportClick = () => {
-    onExport(selectedExportType, selectedUserForExport || undefined);
+    onExport(selectedExportType, selectedUserForExport === 'all' ? undefined : selectedUserForExport || undefined);
     setIsExportOpen(false);
   };
 
@@ -276,7 +276,7 @@ const ReportsFilters: React.FC<ReportsFiltersProps> = ({
                         <SelectValue placeholder="All users" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All users</SelectItem>
+                        <SelectItem value="all">All users</SelectItem>
                         {availableMembers.map(member => (
                           <SelectItem key={member.id} value={member.id}>
                             {member.name}
