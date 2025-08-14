@@ -159,6 +159,7 @@ export const MeetingRequestDialog: React.FC<MeetingRequestDialogProps> = ({
               onSelectionChange={setSelectedParticipants}
               placeholder="Select team members to invite"
               multiple
+              maxSelection={50}
             />
           </div>
 
