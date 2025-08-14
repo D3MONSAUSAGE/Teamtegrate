@@ -149,6 +149,24 @@ export const useRealtimeNotifications = () => {
       )
       .subscribe();
 
+    // Subscribe to meeting requests for notifications
+    const meetingChannel = supabase
+      .channel(`user_meetings_${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'meeting_participants',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('New meeting invitation received:', payload);
+          // Meeting notifications are handled via the notifications table
+        }
+      )
+      .subscribe();
+
     // Subscribe to chat messages in rooms where user is a participant
     const chatChannel = supabase
       .channel(`user_chat_${user.id}`)
@@ -198,6 +216,7 @@ export const useRealtimeNotifications = () => {
       console.log('🔔 Cleaning up realtime notifications');
       supabase.removeChannel(notificationsChannel);
       supabase.removeChannel(tasksChannel);
+      supabase.removeChannel(meetingChannel);
       supabase.removeChannel(chatChannel);
     };
   }, [user, handleRealtimeNotification]);

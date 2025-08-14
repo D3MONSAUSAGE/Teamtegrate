@@ -10,6 +10,8 @@ import CalendarStats from '@/components/calendar/CalendarStats';
 import CalendarContent from '@/components/calendar/CalendarContent';
 import ModernSectionCard from '@/components/dashboard/ModernSectionCard';
 import SectionContainer from '@/components/shared/SectionContainer';
+import { MeetingRequestDialog } from '@/components/meetings/MeetingRequestDialog';
+import { MeetingNotifications } from '@/components/meetings/MeetingNotifications';
 import { Calendar as CalendarIcon, Navigation, BarChart } from 'lucide-react';
 
 const CalendarPage = () => {
@@ -125,8 +127,13 @@ const CalendarPage = () => {
           </ModernSectionCard>
         </div>
 
-        {/* Calendar Content Card */}
+        {/* Meeting Notifications */}
         <div className="animate-fade-in delay-150">
+          <MeetingNotifications />
+        </div>
+
+        {/* Calendar Content Card */}
+        <div className="animate-fade-in delay-200">
           <ModernSectionCard
             title="Calendar"
             subtitle="Organize and manage your tasks by date"
@@ -135,6 +142,12 @@ const CalendarPage = () => {
             className="min-h-[600px]"
             noPadding
           >
+            <div className="p-4 border-b">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold">Schedule</h3>
+                <MeetingRequestDialog defaultDate={selectedDate} />
+              </div>
+            </div>
             <CalendarContent
               viewType={viewType}
               onViewChange={setViewType}

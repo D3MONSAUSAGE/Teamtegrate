@@ -16,21 +16,23 @@ interface User {
 }
 
 interface UserSelectorProps {
-  users: User[];
+  users?: User[];
   selectedUserIds: string[];
   onSelectionChange: (userIds: string[]) => void;
   maxSelection?: number;
   placeholder?: string;
   className?: string;
+  multiple?: boolean;
 }
 
 export const UserSelector: React.FC<UserSelectorProps> = ({
-  users,
+  users = [],
   selectedUserIds,
   onSelectionChange,
   maxSelection = 4,
   placeholder = "Select team members...",
-  className
+  className,
+  multiple = false
 }) => {
   const [open, setOpen] = useState(false);
 
