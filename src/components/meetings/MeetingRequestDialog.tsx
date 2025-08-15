@@ -1,15 +1,14 @@
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Calendar, Clock, MapPin, Users, Plus } from 'lucide-react';
-import { UserSelector } from '@/components/ui/user-selector';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Calendar } from 'lucide-react';
+import { toast } from 'sonner';
 import { useMeetingRequests } from '@/hooks/useMeetingRequests';
 import { useOrganizationUsers } from '@/hooks/useOrganizationUsers';
-import { toDateTimeLocalString, validateTimeRange, validateFutureDate, addMinutesToDateTime } from '@/utils/dateUtils';
-import { toast } from 'sonner';
+import { UserSelector } from '@/components/ui/user-selector';
+import MeetingDateTimeSection from './MeetingDateTimeSection';
 
 interface MeetingRequestDialogProps {
   trigger?: React.ReactNode;
@@ -27,21 +26,24 @@ export const MeetingRequestDialog: React.FC<MeetingRequestDialogProps> = ({
   const [internalOpen, setInternalOpen] = useState(false);
   const open = controlledOpen ?? internalOpen;
   const setOpen = controlledOnOpenChange ?? setInternalOpen;
+  
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [startDateObj, setStartDateObj] = useState<Date | undefined>();
+  const [startTime, setStartTime] = useState('09:00');
+  const [endDateObj, setEndDateObj] = useState<Date | undefined>();
+  const [endTime, setEndTime] = useState('10:00');
   const [selectedParticipants, setSelectedParticipants] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
   // Initialize form when dialog opens
   React.useEffect(() => {
     if (open) {
-      const initialStart = toDateTimeLocalString(defaultDate);
-      const initialEnd = addMinutesToDateTime(initialStart, 60);
-      setStartDate(initialStart);
-      setEndDate(initialEnd);
+      setStartDateObj(defaultDate);
+      setEndDateObj(defaultDate);
+      setStartTime('09:00');
+      setEndTime('10:00');
       // Reset other fields
       setTitle('');
       setDescription('');
@@ -56,57 +58,59 @@ export const MeetingRequestDialog: React.FC<MeetingRequestDialogProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validation
     if (!title.trim()) {
       toast.error('Please enter a meeting title');
       return;
     }
-    
+
     if (selectedParticipants.length === 0) {
       toast.error('Please select at least one participant');
       return;
     }
 
-    if (!validateFutureDate(startDate)) {
-      toast.error('Meeting start time must be in the future');
+    if (!startDateObj || !endDateObj) {
+      toast.error('Please select meeting dates');
       return;
     }
 
-    if (!validateTimeRange(startDate, endDate)) {
-      toast.error('Meeting end time must be after start time');
+    // Combine date and time into full Date objects
+    const [startHour, startMinute] = startTime.split(':').map(Number);
+    const [endHour, endMinute] = endTime.split(':').map(Number);
+    
+    const startDateTime = new Date(startDateObj);
+    startDateTime.setHours(startHour, startMinute, 0, 0);
+    
+    const endDateTime = new Date(endDateObj);
+    endDateTime.setHours(endHour, endMinute, 0, 0);
+
+    if (startDateTime <= new Date()) {
+      toast.error('Meeting must be scheduled for a future date and time');
+      return;
+    }
+
+    if (endDateTime <= startDateTime) {
+      toast.error('End time must be after start time');
       return;
     }
 
     setLoading(true);
     try {
-      const result = await createMeetingRequest(
+      await createMeetingRequest(
         title,
         description,
-        new Date(startDate),
-        new Date(endDate),
+        startDateTime,
+        endDateTime,
         selectedParticipants,
-        location || undefined
+        location
       );
-
-      if (result) {
-        setOpen(false);
-        toast.success('Meeting invitation sent successfully');
-      }
+      
+      toast.success('Meeting request sent successfully!');
+      setOpen(false);
     } catch (error) {
-      toast.error('Failed to send meeting invitation');
+      console.error('Error creating meeting request:', error);
+      toast.error('Failed to send meeting request');
     } finally {
       setLoading(false);
-    }
-  };
-
-  // Handle start date change and auto-adjust end date if needed
-  const handleStartDateChange = (value: string) => {
-    setStartDate(value);
-    
-    // If end date is before new start date, adjust it
-    if (value && endDate && new Date(value) >= new Date(endDate)) {
-      const newEndDate = addMinutesToDateTime(value, 60);
-      setEndDate(newEndDate);
     }
   };
 
@@ -120,12 +124,12 @@ export const MeetingRequestDialog: React.FC<MeetingRequestDialogProps> = ({
       {!trigger && trigger !== null && (
         <DialogTrigger asChild>
           <Button className="gap-2">
-            <Plus className="h-4 w-4" />
+            <Calendar className="h-4 w-4" />
             Schedule Meeting
           </Button>
         </DialogTrigger>
       )}
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
@@ -133,93 +137,83 @@ export const MeetingRequestDialog: React.FC<MeetingRequestDialogProps> = ({
           </DialogTitle>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="title">Meeting Title</Label>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label htmlFor="title" className="block text-sm font-medium mb-1">
+              Meeting Title *
+            </label>
             <Input
               id="title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Team standup"
+              placeholder="Enter meeting title"
               required
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
+          <div>
+            <label htmlFor="description" className="block text-sm font-medium mb-1">
+              Description
+            </label>
             <Textarea
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Discuss project progress and blockers"
+              placeholder="Enter meeting description"
               rows={3}
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="start-time" className="flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                Start Time
-              </Label>
-              <Input
-                id="start-time"
-                type="datetime-local"
-                value={startDate}
-                onChange={(e) => handleStartDateChange(e.target.value)}
-                min={toDateTimeLocalString(new Date())}
-                required
-              />
-            </div>
+          <MeetingDateTimeSection
+            label="Start Date & Time"
+            date={startDateObj}
+            onDateChange={setStartDateObj}
+            timeInput={startTime}
+            onTimeChange={setStartTime}
+            required
+          />
+          
+          <MeetingDateTimeSection
+            label="End Date & Time"
+            date={endDateObj}
+            onDateChange={setEndDateObj}
+            timeInput={endTime}
+            onTimeChange={setEndTime}
+            required
+          />
 
-            <div className="space-y-2">
-              <Label htmlFor="end-time">End Time</Label>
-              <Input
-                id="end-time"
-                type="datetime-local"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                min={startDate || toDateTimeLocalString(new Date())}
-                required
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="location" className="flex items-center gap-2">
-              <MapPin className="h-4 w-4" />
-              Location (Optional)
-            </Label>
+          <div>
+            <label htmlFor="location" className="block text-sm font-medium mb-1">
+              Location
+            </label>
             <Input
               id="location"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              placeholder="Conference Room A or Zoom link"
+              placeholder="Enter meeting location"
             />
           </div>
 
-          <div className="space-y-2">
-            <Label className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Participants
-            </Label>
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Participants *
+            </label>
             <UserSelector
               users={users}
               selectedUserIds={selectedParticipants}
               onSelectionChange={setSelectedParticipants}
-              placeholder="Select team members to invite"
+              placeholder="Select participants"
               multiple
-              maxSelection={50}
             />
           </div>
 
-          <div className="flex gap-2 pt-4">
+          <div className="flex gap-3 pt-4">
             <Button type="button" variant="outline" onClick={() => setOpen(false)} className="flex-1">
               Cancel
             </Button>
             <Button 
               type="submit" 
-              disabled={loading || !title.trim() || selectedParticipants.length === 0 || !startDate || !endDate}
+              disabled={loading || !title.trim() || selectedParticipants.length === 0 || !startDateObj || !endDateObj}
               className="flex-1"
             >
               {loading ? 'Sending...' : 'Send Invitations'}
