@@ -8,6 +8,8 @@ import { Calendar, Clock, MapPin, Users, Plus } from 'lucide-react';
 import { UserSelector } from '@/components/ui/user-selector';
 import { useMeetingRequests } from '@/hooks/useMeetingRequests';
 import { useOrganizationUsers } from '@/hooks/useOrganizationUsers';
+import { toDateTimeLocalString, validateTimeRange, validateFutureDate, addMinutesToDateTime } from '@/utils/dateUtils';
+import { toast } from 'sonner';
 
 interface MeetingRequestDialogProps {
   trigger?: React.ReactNode;
@@ -28,38 +30,89 @@ export const MeetingRequestDialog: React.FC<MeetingRequestDialogProps> = ({
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
-  const [startDate, setStartDate] = useState(defaultDate.toISOString().slice(0, 16));
-  const [endDate, setEndDate] = useState(
-    new Date(defaultDate.getTime() + 60 * 60 * 1000).toISOString().slice(0, 16)
-  );
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [selectedParticipants, setSelectedParticipants] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // Initialize form when dialog opens or defaultDate changes
+  React.useEffect(() => {
+    if (open) {
+      const initialStart = toDateTimeLocalString(defaultDate);
+      const initialEnd = addMinutesToDateTime(initialStart, 60);
+      setStartDate(initialStart);
+      setEndDate(initialEnd);
+    }
+  }, [open, defaultDate]);
+
+  // Reset form when dialog closes
+  React.useEffect(() => {
+    if (!open) {
+      setTitle('');
+      setDescription('');
+      setLocation('');
+      setSelectedParticipants([]);
+    }
+  }, [open]);
 
   const { createMeetingRequest } = useMeetingRequests();
   const { users } = useOrganizationUsers();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || selectedParticipants.length === 0) return;
+    
+    // Validation
+    if (!title.trim()) {
+      toast.error('Please enter a meeting title');
+      return;
+    }
+    
+    if (selectedParticipants.length === 0) {
+      toast.error('Please select at least one participant');
+      return;
+    }
+
+    if (!validateFutureDate(startDate)) {
+      toast.error('Meeting start time must be in the future');
+      return;
+    }
+
+    if (!validateTimeRange(startDate, endDate)) {
+      toast.error('Meeting end time must be after start time');
+      return;
+    }
 
     setLoading(true);
-    const result = await createMeetingRequest(
-      title,
-      description,
-      new Date(startDate),
-      new Date(endDate),
-      selectedParticipants,
-      location || undefined
-    );
+    try {
+      const result = await createMeetingRequest(
+        title,
+        description,
+        new Date(startDate),
+        new Date(endDate),
+        selectedParticipants,
+        location || undefined
+      );
 
-    if (result) {
-      setOpen(false);
-      setTitle('');
-      setDescription('');
-      setLocation('');
-      setSelectedParticipants([]);
+      if (result) {
+        setOpen(false);
+        toast.success('Meeting invitation sent successfully');
+      }
+    } catch (error) {
+      toast.error('Failed to send meeting invitation');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
+  };
+
+  // Handle start date change and auto-adjust end date if needed
+  const handleStartDateChange = (value: string) => {
+    setStartDate(value);
+    
+    // If end date is before new start date, adjust it
+    if (value && endDate && new Date(value) >= new Date(endDate)) {
+      const newEndDate = addMinutesToDateTime(value, 60);
+      setEndDate(newEndDate);
+    }
   };
 
   return (
@@ -118,7 +171,8 @@ export const MeetingRequestDialog: React.FC<MeetingRequestDialogProps> = ({
                 id="start-time"
                 type="datetime-local"
                 value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
+                onChange={(e) => handleStartDateChange(e.target.value)}
+                min={toDateTimeLocalString(new Date())}
                 required
               />
             </div>
@@ -130,6 +184,7 @@ export const MeetingRequestDialog: React.FC<MeetingRequestDialogProps> = ({
                 type="datetime-local"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
+                min={startDate || toDateTimeLocalString(new Date())}
                 required
               />
             </div>
@@ -169,7 +224,7 @@ export const MeetingRequestDialog: React.FC<MeetingRequestDialogProps> = ({
             </Button>
             <Button 
               type="submit" 
-              disabled={loading || !title.trim() || selectedParticipants.length === 0}
+              disabled={loading || !title.trim() || selectedParticipants.length === 0 || !startDate || !endDate}
               className="flex-1"
             >
               {loading ? 'Sending...' : 'Send Invitations'}
