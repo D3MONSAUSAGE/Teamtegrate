@@ -153,9 +153,6 @@ const CalendarPage = () => {
             <div className="p-4 border-b">
               <div className="flex justify-between items-center">
                 <h3 className="text-lg font-semibold">Schedule</h3>
-                <div className="flex gap-2">
-                  <MeetingRequestDialog defaultDate={selectedDate} />
-                </div>
               </div>
             </div>
             <CalendarContent

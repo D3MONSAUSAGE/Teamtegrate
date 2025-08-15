@@ -35,25 +35,20 @@ export const MeetingRequestDialog: React.FC<MeetingRequestDialogProps> = ({
   const [selectedParticipants, setSelectedParticipants] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Initialize form when dialog opens or defaultDate changes
+  // Initialize form when dialog opens
   React.useEffect(() => {
     if (open) {
       const initialStart = toDateTimeLocalString(defaultDate);
       const initialEnd = addMinutesToDateTime(initialStart, 60);
       setStartDate(initialStart);
       setEndDate(initialEnd);
-    }
-  }, [open, defaultDate]);
-
-  // Reset form when dialog closes
-  React.useEffect(() => {
-    if (!open) {
+      // Reset other fields
       setTitle('');
       setDescription('');
       setLocation('');
       setSelectedParticipants([]);
     }
-  }, [open]);
+  }, [open, defaultDate]);
 
   const { createMeetingRequest } = useMeetingRequests();
   const { users } = useOrganizationUsers();
