@@ -61,8 +61,8 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({ onClose }) => {
   };
 
   return (
-    <Card className={`shadow-xl animate-in slide-in-from-bottom-2 transition-all duration-300 ${
-      activeTab === 'team' ? 'w-full max-w-sm sm:max-w-md h-[600px]' : 'w-full max-w-xs sm:max-w-sm h-96'
+    <Card className={`shadow-xl animate-in slide-in-from-bottom-2 transition-all duration-300 overflow-hidden ${
+      activeTab === 'team' ? 'w-full max-w-[calc(100vw-1rem)] sm:max-w-md h-[600px]' : 'w-full max-w-[calc(100vw-1rem)] sm:max-w-sm h-96'
     }`}>
       {/* Streamlined Header - Only show when not in message view */}
       {!(activeTab === 'team' && selectedRoomId) && (

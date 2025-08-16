@@ -21,7 +21,7 @@ const AIChatBubble: React.FC = () => {
     <>
       {/* Chat Widget */}
       {isOpen && (
-        <div className="fixed bottom-20 right-4 z-50">
+        <div className="fixed bottom-20 right-2 left-2 sm:right-4 sm:left-auto z-50 w-full max-w-[calc(100vw-16px)] sm:max-w-none">
           <AIChatWidget onClose={() => setIsOpen(false)} />
         </div>
       )}
