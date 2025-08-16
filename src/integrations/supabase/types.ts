@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -1386,9 +1386,9 @@ export type Database = {
       audit_organization_data: {
         Args: Record<PropertyKey, never>
         Returns: {
-          table_name: string
-          records_without_org: number
           orphaned_records: number
+          records_without_org: number
+          table_name: string
         }[]
       }
       auto_close_stale_sessions: {
@@ -1398,8 +1398,8 @@ export type Database = {
       can_change_user_role: {
         Args: {
           manager_user_id: string
-          target_user_id: string
           new_role: string
+          target_user_id: string
         }
         Returns: Json
       }
@@ -1447,34 +1447,34 @@ export type Database = {
       find_missing_users: {
         Args: Record<PropertyKey, never>
         Returns: {
-          auth_user_id: string
-          auth_email: string
           auth_created_at: string
+          auth_email: string
+          auth_user_id: string
           missing_from_public: boolean
         }[]
       }
       generate_invite_code: {
         Args: {
-          org_id: string
           created_by_id: string
           expires_days?: number
           max_uses_param?: number
+          org_id: string
         }
         Returns: string
       }
       generate_invite_code_with_role: {
         Args: {
-          org_id: string
           created_by_id: string
+          expires_days?: number
           invited_role?: string
           invited_team_id?: string
-          expires_days?: number
           max_uses_param?: number
+          org_id: string
         }
         Returns: string
       }
       generate_invoice_file_path: {
-        Args: { org_id: string; user_id: string; filename: string }
+        Args: { filename: string; org_id: string; user_id: string }
         Returns: string
       }
       get_all_projects: {
@@ -1507,31 +1507,31 @@ export type Database = {
         Returns: string
       }
       get_daily_task_summary: {
-        Args: { target_user_id: string; target_date?: string }
+        Args: { target_date?: string; target_user_id: string }
         Returns: Json
       }
       get_employee_hours_stats: {
-        Args: { target_user_id: string; start_date: string; end_date: string }
+        Args: { end_date: string; start_date: string; target_user_id: string }
         Returns: {
           day: string
           minutes: number
         }[]
       }
       get_employee_project_contributions: {
-        Args: { target_user_id: string; start_date: string; end_date: string }
+        Args: { end_date: string; start_date: string; target_user_id: string }
         Returns: {
+          percent: number
           project_id: string
           project_title: string
           task_count: number
-          percent: number
         }[]
       }
       get_employee_task_stats: {
-        Args: { target_user_id: string; start_date: string; end_date: string }
+        Args: { end_date: string; start_date: string; target_user_id: string }
         Returns: {
-          day: string
-          completed_count: number
           assigned_count: number
+          completed_count: number
+          day: string
         }[]
       }
       get_organization_stats: {
@@ -1576,16 +1576,16 @@ export type Database = {
       }
       log_data_access: {
         Args:
-          | { table_name: string; action_type: string; record_count: number }
-          | { table_name: string; operation: string; user_id: string }
+          | { action_type: string; record_count: number; table_name: string }
+          | { operation: string; table_name: string; user_id: string }
         Returns: undefined
       }
       pause_time_entry: {
-        Args: { p_user_id: string; p_task_id?: string }
+        Args: { p_task_id?: string; p_user_id: string }
         Returns: Json
       }
       resume_time_entry: {
-        Args: { p_user_id: string; p_task_id?: string }
+        Args: { p_task_id?: string; p_user_id: string }
         Returns: Json
       }
       send_daily_emails_and_reminders: {
@@ -1609,11 +1609,11 @@ export type Database = {
         Returns: Json
       }
       update_daily_summary: {
-        Args: { target_user_id: string; target_date: string }
+        Args: { target_date: string; target_user_id: string }
         Returns: undefined
       }
       update_time_entry_clock_out: {
-        Args: { p_user_id: string; p_task_id: string }
+        Args: { p_task_id: string; p_user_id: string }
         Returns: undefined
       }
       user_is_admin_or_superadmin: {
@@ -1645,7 +1645,7 @@ export type Database = {
         Returns: Json
       }
       would_leave_org_without_superadmin: {
-        Args: { target_user_id: string; target_org_id: string }
+        Args: { target_org_id: string; target_user_id: string }
         Returns: boolean
       }
     }
