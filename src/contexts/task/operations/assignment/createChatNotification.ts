@@ -43,12 +43,7 @@ export const createChatMessageNotification = async (
       title: `New message in ${roomName}`,
       content: `${senderName}: ${messageContent.length > 100 ? messageContent.substring(0, 100) + '...' : messageContent}`,
       type: 'chat_message',
-      organization_id: organizationId,
-      metadata: {
-        room_id: roomId,
-        sender_id: senderId,
-        route: '/dashboard/chat'
-      }
+      organization_id: organizationId
     }));
 
     const { error } = await supabase
@@ -80,10 +75,7 @@ export const createChatInviteNotification = async (
       title: 'Chat Room Invitation',
       content: `${inviterName} invited you to join "${roomName}"`,
       type: 'chat_invitation',
-      organization_id: organizationId,
-      metadata: {
-        route: '/dashboard/chat'
-      }
+      organization_id: organizationId
     });
     
     console.log('Chat invitation notification created for user:', userId);

@@ -16,10 +16,20 @@ interface CompactMessageAreaProps {
 
 const CompactMessageArea: React.FC<CompactMessageAreaProps> = ({ roomId }) => {
   const [input, setInput] = useState('');
-  const { messages, loading, sendMessage } = useMessages(roomId);
+  const { messages, loading, sendMessage, error } = useMessages(roomId);
   const { user } = useAuth();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [isSending, setIsSending] = useState(false);
+
+  // Debug logging
+  console.log('CompactMessageArea render:', { 
+    roomId, 
+    loading, 
+    error, 
+    messageCount: messages.length,
+    user: !!user,
+    userDetails: user ? { id: user.id, name: user.name, email: user.email } : null
+  });
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -99,6 +109,25 @@ const CompactMessageArea: React.FC<CompactMessageAreaProps> = ({ roomId }) => {
         <div className="flex flex-col items-center gap-2">
           <Loader2 className="h-6 w-6 animate-spin" />
           <div className="text-xs text-muted-foreground">Loading messages...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="flex flex-col items-center gap-2 text-center">
+          <div className="text-sm text-destructive">Failed to load messages</div>
+          <div className="text-xs text-muted-foreground">{error}</div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.location.reload()}
+            className="mt-2"
+          >
+            Retry
+          </Button>
         </div>
       </div>
     );

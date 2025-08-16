@@ -13,10 +13,16 @@ export function useMessages(roomId: string | null) {
   const { user } = useAuth();
 
   const fetchMessages = async () => {
-    if (!roomId || !user) return;
+    if (!roomId || !user) {
+      console.log('fetchMessages: Missing roomId or user', { roomId, user: !!user });
+      return;
+    }
     
     try {
       setLoading(true);
+      setError(null);
+      console.log('fetchMessages: Starting fetch for room', roomId);
+      
       const { data, error } = await supabase
         .from('chat_messages')
         .select('*')
@@ -24,7 +30,12 @@ export function useMessages(roomId: string | null) {
         .is('deleted_at', null)
         .order('created_at', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('fetchMessages: Database error', error);
+        throw error;
+      }
+      
+      console.log('fetchMessages: Fetched data', { count: data?.length, data });
       
       // Cast the data to match our ChatMessage type
       const typedMessages: ChatMessage[] = (data || []).map(msg => ({
@@ -33,7 +44,9 @@ export function useMessages(roomId: string | null) {
       }));
       
       setMessages(typedMessages);
+      console.log('fetchMessages: Set messages', typedMessages.length);
     } catch (err: any) {
+      console.error('fetchMessages: Error', err);
       setError(err.message);
       toast.error('Failed to load messages');
     } finally {
@@ -42,9 +55,14 @@ export function useMessages(roomId: string | null) {
   };
 
   const sendMessage = async (content: string, messageType: 'text' | 'file' | 'image' = 'text') => {
-    if (!roomId || !user || !content.trim()) return;
+    if (!roomId || !user || !content.trim()) {
+      console.log('sendMessage: Missing required data', { roomId, user: !!user, content });
+      return;
+    }
 
     try {
+      console.log('sendMessage: Sending message', { roomId, userId: user.id, content: content.trim() });
+      
       const { data, error } = await supabase
         .from('chat_messages')
         .insert({
@@ -56,21 +74,31 @@ export function useMessages(roomId: string | null) {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('sendMessage: Database error', error);
+        throw error;
+      }
+
+      console.log('sendMessage: Message sent successfully', data);
 
       // Create notifications for other room participants
       if (user.organizationId) {
-        await createChatMessageNotification(
-          roomId,
-          user.id,
-          user.name || user.email,
-          content.trim(),
-          user.organizationId
-        );
+        try {
+          await createChatMessageNotification(
+            roomId,
+            user.id,
+            user.name || user.email,
+            content.trim(),
+            user.organizationId
+          );
+        } catch (notifError) {
+          console.error('sendMessage: Notification error (non-blocking)', notifError);
+        }
       }
 
       return data;
     } catch (err: any) {
+      console.error('sendMessage: Error', err);
       toast.error('Failed to send message');
       throw err;
     }
