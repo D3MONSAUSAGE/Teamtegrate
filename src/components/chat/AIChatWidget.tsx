@@ -92,7 +92,7 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({ onClose }) => {
         </CardHeader>
       )}
       
-      <CardContent className="flex flex-col flex-1 p-0 min-h-0 overflow-hidden">
+      <CardContent className="flex flex-col flex-1 p-0 min-h-0">
         <Tabs 
           value={state.activeTab} 
           onValueChange={actions.setActiveTab} 
@@ -112,9 +112,9 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({ onClose }) => {
             </TabsList>
           )}
 
-          <TabsContent value="ai" className="flex-1 flex flex-col mt-0 min-h-0">
+          <TabsContent value="ai" className="flex-1 flex flex-col mt-0 min-h-0 data-[state=active]:flex">
             {/* AI Chat Messages Area */}
-            <div className="flex-1 min-h-0 overflow-hidden">
+            <div className="flex-1 min-h-0">
               <ScrollArea className="h-full px-3 min-h-0" ref={scrollAreaRef}>
                 <div className="space-y-3 py-3">
                   {messages.length === 0 ? (
@@ -138,8 +138,8 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({ onClose }) => {
               </ScrollArea>
             </div>
 
-            {/* AI Input Area */}
-            <div className="border-t bg-card/95 backdrop-blur-sm p-3 flex-shrink-0">
+            {/* AI Input Area - Protected from being hidden */}
+            <div className="border-t bg-card/95 backdrop-blur-sm p-3 flex-shrink-0 sticky bottom-0">
               <form onSubmit={handleSubmit} className="flex gap-2">
                 <Input
                   value={input}
@@ -161,10 +161,10 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({ onClose }) => {
             </div>
           </TabsContent>
 
-          <TabsContent value="team" className="flex-1 flex flex-col mt-0 min-h-0">
+          <TabsContent value="team" className="flex-1 flex flex-col mt-0 min-h-0 data-[state=active]:flex">
             {!state.selectedRoomId ? (
               /* Room List View */
-              <div className="flex-1 min-h-0 overflow-hidden">
+              <div className="flex-1 min-h-0">
                 <CompactRoomList
                   selectedRoomId={state.selectedRoomId}
                   onRoomSelect={actions.setSelectedRoomId}
@@ -172,7 +172,7 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({ onClose }) => {
               </div>
             ) : (
               /* Message View - Full height usage */
-              <div className="flex-1 min-h-0 overflow-hidden">
+              <div className="flex-1 min-h-0">
                 <CompactMessageArea roomId={state.selectedRoomId} />
               </div>
             )}

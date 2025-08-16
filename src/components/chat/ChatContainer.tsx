@@ -48,10 +48,10 @@ const ChatContainer: React.FC<ChatContainerProps> = ({ children, className }) =>
           'bg-card/95 animate-scale-in',
           'transition-all duration-300 ease-out',
           currentSize,
-          // Mobile-specific optimizations
-          'max-w-[calc(100vw-1rem)] max-h-[calc(100vh-6rem)]',
-          // Ensure proper stacking
-          'relative overflow-hidden'
+          // Mobile-specific optimizations - safer height constraints
+          'max-w-[calc(100vw-1rem)] max-h-[85vh]',
+          // Remove overflow-hidden to prevent input clipping
+          'relative flex flex-col'
         )}
       >
         {children}
