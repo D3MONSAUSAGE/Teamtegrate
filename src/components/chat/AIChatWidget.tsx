@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Loader2, Bot, Users, X } from 'lucide-react';
+import { Send, Loader2, Bot, Users, X, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -137,18 +137,38 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({ onClose }) => {
           </TabsContent>
 
           <TabsContent value="team" className="flex-1 flex flex-col mt-0 min-h-0 overflow-hidden">
-            {/* Team Chat Room List */}
-            <div className="border-b flex-shrink-0">
-              <CompactRoomList
-                selectedRoomId={selectedRoomId}
-                onRoomSelect={setSelectedRoomId}
-              />
-            </div>
-
-            {/* Team Chat Messages */}
-            <div className="flex-1 min-h-0 overflow-hidden">
-              <CompactMessageArea roomId={selectedRoomId} />
-            </div>
+            {!selectedRoomId ? (
+              /* Room List View */
+              <div className="flex-1 overflow-hidden">
+                <CompactRoomList
+                  selectedRoomId={selectedRoomId}
+                  onRoomSelect={setSelectedRoomId}
+                />
+              </div>
+            ) : (
+              /* Message View */
+              <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+                {/* Room Header with Back Button */}
+                <div className="border-b px-4 py-3 flex items-center gap-3 flex-shrink-0">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedRoomId(null)}
+                    className="h-6 w-6 p-0"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                  <div className="flex-1">
+                    <h3 className="font-medium text-sm">Chat Room</h3>
+                  </div>
+                </div>
+                
+                {/* Messages Area */}
+                <div className="flex-1 min-h-0 overflow-hidden">
+                  <CompactMessageArea roomId={selectedRoomId} />
+                </div>
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </CardContent>
