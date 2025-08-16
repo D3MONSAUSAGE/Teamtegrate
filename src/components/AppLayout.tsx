@@ -10,6 +10,7 @@ import Sidebar from './Sidebar';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { Loader2 } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
+import AIChatBubble from './chat/AIChatBubble';
 
 // Professional main content component with enhanced navigation handling
 const MainContent = memo(({ children }: { children: React.ReactNode }) => {
@@ -69,6 +70,7 @@ const AppLayout = memo(() => {
               <MainContent>
                 <Outlet />
               </MainContent>
+              <AIChatBubble />
             </div>
           </SidebarProvider>
         </TaskProvider>
