@@ -34,10 +34,13 @@ const CompactMessageArea: React.FC<CompactMessageAreaProps> = ({ roomId }) => {
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     if (scrollAreaRef.current) {
-      const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
-      if (scrollContainer) {
-        scrollContainer.scrollTop = scrollContainer.scrollHeight;
-      }
+      // Use requestAnimationFrame to ensure DOM has updated
+      requestAnimationFrame(() => {
+        const scrollContainer = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+        if (scrollContainer) {
+          scrollContainer.scrollTop = scrollContainer.scrollHeight;
+        }
+      });
     }
   }, [messages]);
 
@@ -136,9 +139,9 @@ const CompactMessageArea: React.FC<CompactMessageAreaProps> = ({ roomId }) => {
   const messageGroups = groupMessages(messages);
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full min-h-0 overflow-hidden">
       {/* Messages Area - Maximized height */}
-      <ScrollArea className="flex-1 px-1 sm:px-2" ref={scrollAreaRef}>
+      <ScrollArea className="flex-1 px-1 sm:px-2 min-h-0 max-h-full overflow-hidden" ref={scrollAreaRef}>
         <div className="space-y-1 py-1">
           {messages.length === 0 ? (
             <div className="text-center py-6">
