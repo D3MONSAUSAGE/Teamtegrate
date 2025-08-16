@@ -43,6 +43,25 @@ const AccountSecuritySection = () => {
 
     setIsUpdatingPassword(true);
     try {
+      // First, verify the current password by attempting to reauthenticate
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.email) {
+        toast.error('Unable to verify current user');
+        return;
+      }
+
+      // Verify current password by attempting to sign in
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: currentPassword,
+      });
+
+      if (authError) {
+        toast.error('Current password is incorrect');
+        return;
+      }
+
+      // Now update the password
       const { error } = await supabase.auth.updateUser({
         password: newPassword
       });
