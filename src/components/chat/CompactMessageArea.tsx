@@ -164,48 +164,75 @@ const CompactMessageArea: React.FC<CompactMessageAreaProps> = ({ roomId }) => {
           ) : (
             messageGroups.map((group, groupIndex) => {
               const isOwn = group.userId === user?.id;
-              return (
-                <div key={groupIndex} className={cn("flex gap-2 mb-2", isOwn && "flex-row-reverse")}>
-                  {!isOwn && (
-                    <div className="flex-shrink-0 mt-auto">
-                      <ChatMessageAvatar userId={group.userId} className="h-6 w-6" />
-                    </div>
-                  )}
-                  <div className={cn("flex-1 space-y-0.5 min-w-0", isOwn && "flex-1")}>
-                    {group.messages.map((message, messageIndex) => (
-                      <div
-                        key={message.id}
-                        className={cn(
-                          "group",
-                          isOwn && "flex justify-end"
-                        )}
-                      >
-                        <div
-                          className={cn(
-                            "max-w-[65%] sm:max-w-[75%] px-2 sm:px-2.5 py-1.5 rounded-lg text-sm break-words",
-                            isOwn 
-                              ? "bg-primary text-primary-foreground rounded-br-sm" 
-                              : "bg-muted text-foreground rounded-bl-sm",
-                            messageIndex === 0 && !isOwn && "rounded-tl-lg",
-                            messageIndex === 0 && isOwn && "rounded-tr-lg"
-                          )}
-                        >
-                          <p className="whitespace-pre-wrap break-words leading-relaxed">{message.content}</p>
-                          {messageIndex === group.messages.length - 1 && (
-                            <div className={cn(
-                              "text-xs mt-1 opacity-60 flex items-center gap-1",
-                              isOwn ? "text-primary-foreground justify-end" : "text-muted-foreground"
-                            )}>
-                              <Clock className="h-3 w-3" />
-                              {formatMessageTime(message.created_at)}
-                            </div>
-                          )}
-                        </div>
+              const groupKey = `${group.userId}-${group.messages[0]?.id || groupIndex}`;
+              
+              console.log('Rendering group:', { 
+                groupIndex, 
+                groupKey, 
+                userId: group.userId, 
+                isOwn, 
+                messageCount: group.messages.length,
+                firstMessageId: group.messages[0]?.id 
+              });
+              
+              try {
+                return (
+                  <div key={groupKey} className={cn("flex gap-2 mb-2", isOwn && "flex-row-reverse")}>
+                    {!isOwn && (
+                      <div className="flex-shrink-0 mt-auto">
+                        <ChatMessageAvatar userId={group.userId} className="h-6 w-6" />
                       </div>
-                    ))}
+                    )}
+                    <div className={cn("flex-1 space-y-0.5 min-w-0", isOwn && "flex-1")}>
+                      {group.messages.map((message, messageIndex) => {
+                        if (!message || !message.id) {
+                          console.warn('Invalid message in group:', message);
+                          return null;
+                        }
+                        
+                        return (
+                          <div
+                            key={message.id}
+                            className={cn(
+                              "group",
+                              isOwn && "flex justify-end"
+                            )}
+                          >
+                            <div
+                              className={cn(
+                                "max-w-[65%] sm:max-w-[75%] px-2 sm:px-2.5 py-1.5 rounded-lg text-sm break-words",
+                                isOwn 
+                                  ? "bg-primary text-primary-foreground rounded-br-sm" 
+                                  : "bg-muted text-foreground rounded-bl-sm",
+                                messageIndex === 0 && !isOwn && "rounded-tl-lg",
+                                messageIndex === 0 && isOwn && "rounded-tr-lg"
+                              )}
+                            >
+                              <p className="whitespace-pre-wrap break-words leading-relaxed">{message.content || ''}</p>
+                              {messageIndex === group.messages.length - 1 && (
+                                <div className={cn(
+                                  "text-xs mt-1 opacity-60 flex items-center gap-1",
+                                  isOwn ? "text-primary-foreground justify-end" : "text-muted-foreground"
+                                )}>
+                                  <Clock className="h-3 w-3" />
+                                  {formatMessageTime(message.created_at)}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              );
+                );
+              } catch (error) {
+                console.error('Error rendering message group:', error, { group, groupIndex });
+                return (
+                  <div key={groupKey} className="text-xs text-destructive p-2">
+                    Error rendering message group {groupIndex}
+                  </div>
+                );
+              }
             })
           )}
           

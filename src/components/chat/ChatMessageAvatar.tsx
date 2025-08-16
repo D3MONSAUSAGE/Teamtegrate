@@ -10,21 +10,39 @@ interface ChatMessageAvatarProps {
 }
 
 const ChatMessageAvatar: React.FC<ChatMessageAvatarProps> = ({ userId, className }) => {
-  const { data: user } = useQuery({
+  const { data: user, error, isLoading } = useQuery({
     queryKey: ['user', userId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('users')
-        .select('name, avatar_url')
-        .eq('id', userId)
-        .single();
-      
-      if (error) throw error;
-      return data;
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .select('name, avatar_url')
+          .eq('id', userId)
+          .single();
+        
+        if (error) {
+          console.warn('Failed to fetch user for avatar:', userId, error);
+          return { name: 'Unknown User', avatar_url: null };
+        }
+        return data;
+      } catch (err) {
+        console.warn('Error in avatar query:', err);
+        return { name: 'Unknown User', avatar_url: null };
+      }
     },
+    retry: 1,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    initialData: { name: 'Loading...', avatar_url: null }
   });
 
-  const initials = user?.name ? user.name.substring(0, 2).toUpperCase() : 'U';
+  const initials = user?.name && user.name !== 'Loading...' 
+    ? user.name.substring(0, 2).toUpperCase() 
+    : userId.substring(0, 2).toUpperCase();
+
+  if (error) {
+    console.warn('Avatar error for user:', userId, error);
+  }
 
   return (
     <Avatar className={className}>
