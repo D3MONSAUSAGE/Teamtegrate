@@ -43,8 +43,14 @@ export function useMessages(roomId: string | null) {
         message_type: msg.message_type as 'text' | 'file' | 'image' | 'system'
       }));
       
+      console.log('fetchMessages: About to set messages', { 
+        totalFetched: typedMessages.length, 
+        currentCount: messages.length,
+        messages: typedMessages.map(m => ({ id: m.id, content: m.content.substring(0, 50) }))
+      });
+      
       setMessages(typedMessages);
-      console.log('fetchMessages: Set messages', typedMessages.length);
+      console.log('fetchMessages: Set messages complete', typedMessages.length);
     } catch (err: any) {
       console.error('fetchMessages: Error', err);
       setError(err.message);
@@ -170,7 +176,13 @@ export function useMessages(roomId: string | null) {
             ...payload.new,
             message_type: payload.new.message_type as 'text' | 'file' | 'image' | 'system'
           } as ChatMessage;
-          setMessages(prev => [...prev, newMessage]);
+          console.log('Real-time INSERT: Adding new message', { newMessage, currentCount: messages.length });
+          setMessages(prev => {
+            console.log('Real-time INSERT: Previous messages count', prev.length);
+            const updated = [...prev, newMessage];
+            console.log('Real-time INSERT: Updated messages count', updated.length);
+            return updated;
+          });
         }
       )
       .on('postgres_changes',
@@ -187,8 +199,14 @@ export function useMessages(roomId: string | null) {
           } as ChatMessage;
           
           if (updatedMessage.deleted_at) {
-            setMessages(prev => prev.filter(msg => msg.id !== updatedMessage.id));
+            console.log('Real-time UPDATE: Deleting message', { messageId: updatedMessage.id });
+            setMessages(prev => {
+              const filtered = prev.filter(msg => msg.id !== updatedMessage.id);
+              console.log('Real-time UPDATE: After delete, count', filtered.length);
+              return filtered;
+            });
           } else {
+            console.log('Real-time UPDATE: Updating message', { messageId: updatedMessage.id });
             setMessages(prev => prev.map(msg => 
               msg.id === updatedMessage.id ? updatedMessage : msg
             ));

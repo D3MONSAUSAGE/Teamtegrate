@@ -137,9 +137,22 @@ const CompactMessageArea: React.FC<CompactMessageAreaProps> = ({ roomId }) => {
   }
 
   const messageGroups = groupMessages(messages);
+  
+  console.log('CompactMessageArea render:', { 
+    totalMessages: messages.length, 
+    messageGroups: messageGroups.length,
+    roomId,
+    loading,
+    error,
+    messageGroupDetails: messageGroups.map((g, i) => ({ groupIndex: i, userId: g.userId, messageCount: g.messages.length }))
+  });
 
   return (
     <div className="flex flex-col h-full min-h-0">
+      {/* Debug Info - Temporary */}
+      <div className="bg-yellow-100 text-yellow-800 text-xs p-1 border-b">
+        Debug: {messages.length} messages | {messageGroups.length} groups | Room: {roomId}
+      </div>
       {/* Messages Area - Maximized height */}
       <ScrollArea className="flex-1 px-1 sm:px-2 min-h-0" ref={scrollAreaRef}>
         <div className="space-y-1 py-1">
