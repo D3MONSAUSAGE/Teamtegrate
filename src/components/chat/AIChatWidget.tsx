@@ -61,8 +61,8 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({ onClose }) => {
   };
 
   return (
-    <Card className={`shadow-xl animate-in slide-in-from-bottom-2 ${
-      activeTab === 'team' ? 'w-96 h-[480px]' : 'w-80 h-96'
+    <Card className={`shadow-xl animate-in slide-in-from-bottom-2 transition-all duration-300 ${
+      activeTab === 'team' ? 'w-[420px] h-[520px]' : 'w-80 h-96'
     }`}>
       <CardHeader className="pb-3 flex flex-row items-center justify-between">
         <CardTitle className="text-lg">Chat Hub</CardTitle>
