@@ -29,6 +29,8 @@ import FocusZonePage from "@/pages/FocusZonePage";
 import ReportsPage from "@/pages/ReportsPage";
 import FinancePage from "@/pages/FinancePage";
 import NotificationBootstrap from "@/components/NotificationBootstrap";
+import AIChatBubble from "@/components/chat/AIChatBubble";
+import { ChatBubbleProvider } from "@/contexts/chat/ChatBubbleContext";
 
 const queryClient = new QueryClient();
 
@@ -40,38 +42,41 @@ function App() {
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<Index />} />
-              <Route path="/landing" element={<LandingPage />} />
-              <Route path="/login" element={<LoginPage />} />
-              
-              {/* Protected Dashboard Routes */}
-              <Route path="/dashboard" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-                <Route index element={<DashboardPage />} />
-                <Route path="projects" element={<ProjectsPage />} />
-                <Route path="projects/:projectId/tasks" element={<ProjectTasksPage />} />
-                <Route path="tasks" element={<TasksPage />} />
-                <Route path="chat" element={<ChatPage />} />
-                <Route path="calendar" element={<CalendarPage />} />
-                <Route path="documents" element={<DocumentsPage />} />
-                <Route path="profile" element={<ProfilePage />} />
-                <Route path="journal" element={<JournalPage />} />
-                <Route path="time-tracking" element={<TimeTrackingPage />} />
-                <Route path="notebook" element={<NotebookPage />} />
-                <Route path="settings" element={<SettingsPage />} />
-                <Route path="team" element={<TeamPage />} />
-                <Route path="admin" element={<AdminPage />} />
-                <Route path="organization" element={<OrganizationDashboard />} />
-                <Route path="focus" element={<FocusZonePage />} />
-                <Route path="reports" element={<ReportsPage />} />
-                <Route path="finance" element={<FinancePage />} />
-              </Route>
-              
-              {/* Fallback for unmatched routes */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-            <NotificationBootstrap />
+            <ChatBubbleProvider>
+              <Routes>
+                {/* Public Routes */}
+                <Route path="/" element={<Index />} />
+                <Route path="/landing" element={<LandingPage />} />
+                <Route path="/login" element={<LoginPage />} />
+                
+                {/* Protected Dashboard Routes */}
+                <Route path="/dashboard" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+                  <Route index element={<DashboardPage />} />
+                  <Route path="projects" element={<ProjectsPage />} />
+                  <Route path="projects/:projectId/tasks" element={<ProjectTasksPage />} />
+                  <Route path="tasks" element={<TasksPage />} />
+                  <Route path="chat" element={<ChatPage />} />
+                  <Route path="calendar" element={<CalendarPage />} />
+                  <Route path="documents" element={<DocumentsPage />} />
+                  <Route path="profile" element={<ProfilePage />} />
+                  <Route path="journal" element={<JournalPage />} />
+                  <Route path="time-tracking" element={<TimeTrackingPage />} />
+                  <Route path="notebook" element={<NotebookPage />} />
+                  <Route path="settings" element={<SettingsPage />} />
+                  <Route path="team" element={<TeamPage />} />
+                  <Route path="admin" element={<AdminPage />} />
+                  <Route path="organization" element={<OrganizationDashboard />} />
+                  <Route path="focus" element={<FocusZonePage />} />
+                  <Route path="reports" element={<ReportsPage />} />
+                  <Route path="finance" element={<FinancePage />} />
+                </Route>
+                
+                {/* Fallback for unmatched routes */}
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+              <NotificationBootstrap />
+              <AIChatBubble />
+            </ChatBubbleProvider>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
