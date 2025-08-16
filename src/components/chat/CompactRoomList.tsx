@@ -34,7 +34,7 @@ const CompactRoomList: React.FC<CompactRoomListProps> = ({
   }
 
   return (
-    <ScrollArea className="h-40">
+    <ScrollArea className="h-28">
       <div className="space-y-1 p-2">
         {rooms.map((room) => (
           <Button

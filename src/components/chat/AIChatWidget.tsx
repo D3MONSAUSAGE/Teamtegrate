@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Loader2, Bot, Users } from 'lucide-react';
+import { Send, Loader2, Bot, Users, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -62,15 +62,23 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({ onClose }) => {
 
   return (
     <Card className={`shadow-xl animate-in slide-in-from-bottom-2 ${
-      activeTab === 'team' ? 'w-96 h-[500px]' : 'w-80 h-96'
+      activeTab === 'team' ? 'w-96 h-[480px]' : 'w-80 h-96'
     }`}>
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-3 flex flex-row items-center justify-between">
         <CardTitle className="text-lg">Chat Hub</CardTitle>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onClose}
+          className="h-6 w-6 p-0"
+        >
+          <X className="h-4 w-4" />
+        </Button>
       </CardHeader>
       
-      <CardContent className="flex flex-col h-full p-0">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-          <TabsList className="grid w-full grid-cols-2 mx-4 mb-3">
+      <CardContent className="flex flex-col h-full p-0 overflow-hidden">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
+          <TabsList className="grid w-full grid-cols-2 mx-4 mb-3 flex-shrink-0">
             <TabsTrigger value="ai" className="flex items-center gap-2">
               <Bot className="h-4 w-4" />
               AI Assistant
@@ -128,9 +136,9 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({ onClose }) => {
             </div>
           </TabsContent>
 
-          <TabsContent value="team" className="flex-1 flex flex-col mt-0">
+          <TabsContent value="team" className="flex-1 flex flex-col mt-0 min-h-0 overflow-hidden">
             {/* Team Chat Room List */}
-            <div className="border-b">
+            <div className="border-b flex-shrink-0">
               <CompactRoomList
                 selectedRoomId={selectedRoomId}
                 onRoomSelect={setSelectedRoomId}
@@ -138,7 +146,7 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({ onClose }) => {
             </div>
 
             {/* Team Chat Messages */}
-            <div className="flex-1">
+            <div className="flex-1 min-h-0 overflow-hidden">
               <CompactMessageArea roomId={selectedRoomId} />
             </div>
           </TabsContent>
