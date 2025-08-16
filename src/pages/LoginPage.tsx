@@ -94,27 +94,30 @@ const LoginPage = () => {
     
     try {
       console.log('LoginPage: Attempting login for:', email);
-      await login(email, password);
+      const { error } = await login(email, password);
+
+      if (error) {
+        console.error('LoginPage: Authentication error:', error);
+        let errorMessage = 'Login failed. Please try again.';
+
+        if (error?.message) {
+          if (error.message.includes('Invalid login credentials')) {
+            errorMessage = 'Invalid email or password. Please check your credentials and try again.';
+          } else if (error.message.includes('Email not confirmed')) {
+            errorMessage = 'Please confirm your email address before signing in.';
+          } else if (error.message.includes('Too many requests')) {
+            errorMessage = 'Too many login attempts. Please wait a moment and try again.';
+          } else if (error.message.includes('network') || error.message.includes('fetch')) {
+            errorMessage = 'Connection error. Please check your internet connection and try again.';
+          }
+        }
+
+        toast.error(errorMessage);
+        return;
+      }
+
       console.log('LoginPage: Login successful');
       toast.success('Welcome back!');
-    } catch (error: any) {
-      console.error('LoginPage: Authentication error:', error);
-      
-      let errorMessage = 'Login failed. Please try again.';
-      
-      if (error?.message) {
-        if (error.message.includes('Invalid login credentials')) {
-          errorMessage = 'Invalid email or password. Please check your credentials and try again.';
-        } else if (error.message.includes('Email not confirmed')) {
-          errorMessage = 'Please confirm your email address before signing in.';
-        } else if (error.message.includes('Too many requests')) {
-          errorMessage = 'Too many login attempts. Please wait a moment and try again.';
-        } else if (error.message.includes('network') || error.message.includes('fetch')) {
-          errorMessage = 'Connection error. Please check your internet connection and try again.';
-        }
-      }
-      
-      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }

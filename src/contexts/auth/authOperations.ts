@@ -14,7 +14,6 @@ export const login = async (email: string, password: string) => {
 
     if (error) {
       console.error('Login error:', error);
-      toast.error(error.message);
       throw error;
     }
 
