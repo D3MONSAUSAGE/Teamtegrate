@@ -1,11 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Loader2 } from 'lucide-react';
+import { Send, Loader2, Bot, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAIChat } from '@/hooks/use-ai-chat';
 import AIChatMessage from './AIChatMessage';
+import CompactRoomList from './CompactRoomList';
+import CompactMessageArea from './CompactMessageArea';
 
 interface AIChatWidgetProps {
   onClose: () => void;
@@ -13,8 +16,23 @@ interface AIChatWidgetProps {
 
 const AIChatWidget: React.FC<AIChatWidgetProps> = ({ onClose }) => {
   const [input, setInput] = useState('');
+  const [activeTab, setActiveTab] = useState('ai');
+  const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const { messages, isProcessing, sendMessage } = useAIChat();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+  // Load last active tab from session storage
+  useEffect(() => {
+    const savedTab = sessionStorage.getItem('chatWidgetTab');
+    if (savedTab && ['ai', 'team'].includes(savedTab)) {
+      setActiveTab(savedTab);
+    }
+  }, []);
+
+  // Save active tab to session storage
+  useEffect(() => {
+    sessionStorage.setItem('chatWidgetTab', activeTab);
+  }, [activeTab]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -43,58 +61,88 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({ onClose }) => {
   };
 
   return (
-    <Card className="w-80 h-96 shadow-xl animate-in slide-in-from-bottom-2">
+    <Card className={`shadow-xl animate-in slide-in-from-bottom-2 ${
+      activeTab === 'team' ? 'w-96 h-[500px]' : 'w-80 h-96'
+    }`}>
       <CardHeader className="pb-3">
-        <CardTitle className="text-lg flex items-center gap-2">
-          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-          AI Assistant
-        </CardTitle>
+        <CardTitle className="text-lg">Chat Hub</CardTitle>
       </CardHeader>
       
       <CardContent className="flex flex-col h-full p-0">
-        {/* Messages Area */}
-        <ScrollArea className="flex-1 px-4" ref={scrollAreaRef}>
-          <div className="space-y-3 pb-4">
-            {messages.length === 0 ? (
-              <div className="text-center text-muted-foreground text-sm py-8">
-                Hi! I'm your AI assistant. How can I help you today?
-              </div>
-            ) : (
-              messages.map((message) => (
-                <AIChatMessage key={message.id} message={message} />
-              ))
-            )}
-            
-            {isProcessing && (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span className="text-sm">AI is thinking...</span>
-              </div>
-            )}
-          </div>
-        </ScrollArea>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+          <TabsList className="grid w-full grid-cols-2 mx-4 mb-3">
+            <TabsTrigger value="ai" className="flex items-center gap-2">
+              <Bot className="h-4 w-4" />
+              AI Assistant
+            </TabsTrigger>
+            <TabsTrigger value="team" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Team Chat
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Input Area */}
-        <div className="border-t p-4">
-          <form onSubmit={handleSubmit} className="flex gap-2">
-            <Input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Ask me anything..."
-              disabled={isProcessing}
-              className="flex-1 text-sm"
-            />
-            <Button
-              type="submit"
-              size="sm"
-              disabled={!input.trim() || isProcessing}
-              className="px-3"
-            >
-              <Send className="h-4 w-4" />
-            </Button>
-          </form>
-        </div>
+          <TabsContent value="ai" className="flex-1 flex flex-col mt-0">
+            {/* AI Chat Messages Area */}
+            <ScrollArea className="flex-1 px-4" ref={scrollAreaRef}>
+              <div className="space-y-3 pb-4">
+                {messages.length === 0 ? (
+                  <div className="text-center text-muted-foreground text-sm py-8">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse mx-auto mb-2" />
+                    Hi! I'm your AI assistant. How can I help you today?
+                  </div>
+                ) : (
+                  messages.map((message) => (
+                    <AIChatMessage key={message.id} message={message} />
+                  ))
+                )}
+                
+                {isProcessing && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="text-sm">AI is thinking...</span>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+
+            {/* AI Input Area */}
+            <div className="border-t p-4">
+              <form onSubmit={handleSubmit} className="flex gap-2">
+                <Input
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Ask me anything..."
+                  disabled={isProcessing}
+                  className="flex-1 text-sm"
+                />
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={!input.trim() || isProcessing}
+                  className="px-3"
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              </form>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="team" className="flex-1 flex flex-col mt-0">
+            {/* Team Chat Room List */}
+            <div className="border-b">
+              <CompactRoomList
+                selectedRoomId={selectedRoomId}
+                onRoomSelect={setSelectedRoomId}
+              />
+            </div>
+
+            {/* Team Chat Messages */}
+            <div className="flex-1">
+              <CompactMessageArea roomId={selectedRoomId} />
+            </div>
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );
