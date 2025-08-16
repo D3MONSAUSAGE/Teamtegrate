@@ -28,7 +28,7 @@ import OrganizationDashboard from "@/pages/OrganizationDashboard";
 import FocusZonePage from "@/pages/FocusZonePage";
 import ReportsPage from "@/pages/ReportsPage";
 import FinancePage from "@/pages/FinancePage";
-
+import NotificationBootstrap from "@/components/NotificationBootstrap";
 
 const queryClient = new QueryClient();
 
@@ -71,7 +71,7 @@ function App() {
               {/* Fallback for unmatched routes */}
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
-            
+            <NotificationBootstrap />
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
