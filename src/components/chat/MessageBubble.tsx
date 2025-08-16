@@ -22,7 +22,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isCurrentUser })
       isCurrentUser ? 'justify-end' : 'justify-start'
     )}>
       <div className={cn(
-        'max-w-[70%] rounded-lg px-3 py-2 text-sm',
+        'max-w-[75%] sm:max-w-[70%] rounded-lg px-2 sm:px-3 py-2 text-sm',
         isCurrentUser 
           ? 'bg-primary text-primary-foreground' 
           : 'bg-muted'

@@ -35,7 +35,7 @@ const AIChatMessage: React.FC<AIChatMessageProps> = ({ message }) => {
       {/* Message Content */}
       <div className={cn("flex-1 min-w-0", isUser && "text-right")}>
         <div className={cn(
-          "inline-block max-w-[85%] px-3 py-2 rounded-lg text-sm",
+          "inline-block max-w-[75%] sm:max-w-[85%] px-2 sm:px-3 py-2 rounded-lg text-sm",
           isUser 
             ? "bg-primary text-primary-foreground rounded-br-sm" 
             : "bg-muted text-foreground rounded-bl-sm"

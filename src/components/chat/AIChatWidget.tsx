@@ -62,7 +62,7 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({ onClose }) => {
 
   return (
     <Card className={`shadow-xl animate-in slide-in-from-bottom-2 transition-all duration-300 ${
-      activeTab === 'team' ? 'w-[420px] h-[600px]' : 'w-80 h-96'
+      activeTab === 'team' ? 'w-full max-w-sm sm:max-w-md h-[600px]' : 'w-full max-w-xs sm:max-w-sm h-96'
     }`}>
       {/* Streamlined Header - Only show when not in message view */}
       {!(activeTab === 'team' && selectedRoomId) && (
@@ -122,7 +122,7 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({ onClose }) => {
 
           <TabsContent value="ai" className="flex-1 flex flex-col mt-0 min-h-0 overflow-hidden">
             {/* AI Chat Messages Area */}
-            <ScrollArea className="flex-1 px-3" ref={scrollAreaRef}>
+            <ScrollArea className="flex-1 px-1 sm:px-3" ref={scrollAreaRef}>
               <div className="space-y-2 py-2">
                 {messages.length === 0 ? (
                   <div className="text-center text-muted-foreground text-sm py-6">
@@ -145,7 +145,7 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({ onClose }) => {
             </ScrollArea>
 
             {/* AI Input Area */}
-            <div className="border-t bg-background/95 backdrop-blur p-2 flex-shrink-0">
+            <div className="border-t bg-background/95 backdrop-blur p-1 sm:p-2 flex-shrink-0">
               <form onSubmit={handleSubmit} className="flex gap-2">
                 <Input
                   value={input}
