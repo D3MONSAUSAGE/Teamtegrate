@@ -62,7 +62,7 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({ onClose }) => {
 
   return (
     <Card className={`shadow-xl animate-in slide-in-from-bottom-2 transition-all duration-300 ${
-      activeTab === 'team' ? 'w-[420px] h-[520px]' : 'w-80 h-96'
+      activeTab === 'team' ? 'w-[420px] h-[600px]' : 'w-80 h-96'
     }`}>
       <CardHeader className="pb-3 flex flex-row items-center justify-between">
         <CardTitle className="text-lg">Chat Hub</CardTitle>
@@ -149,17 +149,17 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({ onClose }) => {
               /* Message View */
               <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
                 {/* Room Header with Back Button */}
-                <div className="border-b px-4 py-3 flex items-center gap-3 flex-shrink-0">
+                <div className="border-b px-3 py-1.5 flex items-center gap-2 flex-shrink-0 bg-background/95">
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setSelectedRoomId(null)}
-                    className="h-6 w-6 p-0"
+                    className="h-7 w-7 p-0 hover:bg-muted/50"
                   >
                     <ArrowLeft className="h-4 w-4" />
                   </Button>
                   <div className="flex-1">
-                    <h3 className="font-medium text-sm">Chat Room</h3>
+                    <h3 className="font-medium text-sm truncate">Chat Room</h3>
                   </div>
                 </div>
                 
