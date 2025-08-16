@@ -138,7 +138,7 @@ const CompactMessageArea: React.FC<CompactMessageAreaProps> = ({ roomId }) => {
   return (
     <div className="flex flex-col h-full">
       {/* Messages Area - Maximized height */}
-      <ScrollArea className="flex-1 px-2" ref={scrollAreaRef}>
+      <ScrollArea className="flex-1 px-1 sm:px-2" ref={scrollAreaRef}>
         <div className="space-y-1 py-1">
           {messages.length === 0 ? (
             <div className="text-center py-6">
@@ -166,7 +166,7 @@ const CompactMessageArea: React.FC<CompactMessageAreaProps> = ({ roomId }) => {
                       >
                         <div
                           className={cn(
-                            "max-w-[85%] px-2.5 py-1.5 rounded-lg text-sm break-words",
+                            "max-w-[65%] sm:max-w-[75%] px-2 sm:px-2.5 py-1.5 rounded-lg text-sm break-words",
                             isOwn 
                               ? "bg-primary text-primary-foreground rounded-br-sm" 
                               : "bg-muted text-foreground rounded-bl-sm",
@@ -206,7 +206,7 @@ const CompactMessageArea: React.FC<CompactMessageAreaProps> = ({ roomId }) => {
 
       {/* Compact Input Area */}
       <div className="border-t bg-background/95 backdrop-blur flex-shrink-0">
-        <form onSubmit={handleSubmit} className="flex gap-1.5 p-1.5">
+        <form onSubmit={handleSubmit} className="flex gap-1 sm:gap-1.5 p-1 sm:p-1.5">
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}

@@ -70,7 +70,7 @@ const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
       )}
 
       <div className={cn(
-        "flex flex-col max-w-[70%] sm:max-w-[60%]",
+        "flex flex-col max-w-[65%] sm:max-w-[70%]",
         isCurrentUser ? "items-end" : "items-start"
       )}>
         {/* User name for non-current users */}

@@ -97,7 +97,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
           />
         )}
         
-        <div className={`max-w-[85%] sm:max-w-[70%] ${isCurrentUser ? 'items-end' : 'items-start'}`}>
+        <div className={`max-w-[65%] sm:max-w-[75%] ${isCurrentUser ? 'items-end' : 'items-start'}`}>
           <div className="space-y-1">
             {parentMessage && (
               <ChatMessageReplySnippet parentMessage={parentMessage} />
