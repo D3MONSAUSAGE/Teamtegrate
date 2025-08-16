@@ -64,37 +64,68 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({ onClose }) => {
     <Card className={`shadow-xl animate-in slide-in-from-bottom-2 transition-all duration-300 ${
       activeTab === 'team' ? 'w-[420px] h-[600px]' : 'w-80 h-96'
     }`}>
-      <CardHeader className="pb-3 flex flex-row items-center justify-between">
-        <CardTitle className="text-lg">Chat Hub</CardTitle>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onClose}
-          className="h-6 w-6 p-0"
-        >
-          <X className="h-4 w-4" />
-        </Button>
-      </CardHeader>
+      {/* Streamlined Header - Only show when not in message view */}
+      {!(activeTab === 'team' && selectedRoomId) && (
+        <CardHeader className="py-2 px-3 flex flex-row items-center justify-between border-b bg-background/95 backdrop-blur">
+          <CardTitle className="text-sm font-medium">Chat Hub</CardTitle>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onClose}
+            className="h-6 w-6 p-0 hover:bg-muted/50"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </CardHeader>
+      )}
       
-      <CardContent className="flex flex-col h-full p-0 overflow-hidden">
+      {/* Message View Header - Show when in chat room */}
+      {activeTab === 'team' && selectedRoomId && (
+        <CardHeader className="py-2 px-3 flex flex-row items-center justify-between border-b bg-background/95 backdrop-blur">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSelectedRoomId(null)}
+              className="h-6 w-6 p-0 hover:bg-muted/50 shrink-0"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <h3 className="font-medium text-sm truncate">Chat Room</h3>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onClose}
+            className="h-6 w-6 p-0 hover:bg-muted/50 shrink-0"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </CardHeader>
+      )}
+      
+      <CardContent className="flex flex-col flex-1 p-0 overflow-hidden min-h-0">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
-          <TabsList className="grid w-full grid-cols-2 mx-4 mb-3 flex-shrink-0">
-            <TabsTrigger value="ai" className="flex items-center gap-2">
-              <Bot className="h-4 w-4" />
-              AI Assistant
-            </TabsTrigger>
-            <TabsTrigger value="team" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Team Chat
-            </TabsTrigger>
-          </TabsList>
+          {/* Only show tabs when not in message view */}
+          {!(activeTab === 'team' && selectedRoomId) && (
+            <TabsList className="grid w-full grid-cols-2 mx-3 my-2 flex-shrink-0 h-8">
+              <TabsTrigger value="ai" className="flex items-center gap-1 text-xs py-1">
+                <Bot className="h-3 w-3" />
+                AI Assistant
+              </TabsTrigger>
+              <TabsTrigger value="team" className="flex items-center gap-1 text-xs py-1">
+                <Users className="h-3 w-3" />
+                Team Chat
+              </TabsTrigger>
+            </TabsList>
+          )}
 
-          <TabsContent value="ai" className="flex-1 flex flex-col mt-0">
+          <TabsContent value="ai" className="flex-1 flex flex-col mt-0 min-h-0 overflow-hidden">
             {/* AI Chat Messages Area */}
-            <ScrollArea className="flex-1 px-4" ref={scrollAreaRef}>
-              <div className="space-y-3 pb-4">
+            <ScrollArea className="flex-1 px-3" ref={scrollAreaRef}>
+              <div className="space-y-2 py-2">
                 {messages.length === 0 ? (
-                  <div className="text-center text-muted-foreground text-sm py-8">
+                  <div className="text-center text-muted-foreground text-sm py-6">
                     <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse mx-auto mb-2" />
                     Hi! I'm your AI assistant. How can I help you today?
                   </div>
@@ -105,7 +136,7 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({ onClose }) => {
                 )}
                 
                 {isProcessing && (
-                  <div className="flex items-center gap-2 text-muted-foreground">
+                  <div className="flex items-center gap-2 text-muted-foreground px-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     <span className="text-sm">AI is thinking...</span>
                   </div>
@@ -114,7 +145,7 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({ onClose }) => {
             </ScrollArea>
 
             {/* AI Input Area */}
-            <div className="border-t p-4">
+            <div className="border-t bg-background/95 backdrop-blur p-2 flex-shrink-0">
               <form onSubmit={handleSubmit} className="flex gap-2">
                 <Input
                   value={input}
@@ -122,13 +153,13 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({ onClose }) => {
                   onKeyPress={handleKeyPress}
                   placeholder="Ask me anything..."
                   disabled={isProcessing}
-                  className="flex-1 text-sm"
+                  className="flex-1 text-sm border-0 bg-muted/50 focus-visible:ring-1 h-9"
                 />
                 <Button
                   type="submit"
                   size="sm"
                   disabled={!input.trim() || isProcessing}
-                  className="px-3"
+                  className="px-3 h-9"
                 >
                   <Send className="h-4 w-4" />
                 </Button>
@@ -146,27 +177,9 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({ onClose }) => {
                 />
               </div>
             ) : (
-              /* Message View */
-              <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-                {/* Room Header with Back Button */}
-                <div className="border-b px-3 py-1.5 flex items-center gap-2 flex-shrink-0 bg-background/95">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setSelectedRoomId(null)}
-                    className="h-7 w-7 p-0 hover:bg-muted/50"
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                  </Button>
-                  <div className="flex-1">
-                    <h3 className="font-medium text-sm truncate">Chat Room</h3>
-                  </div>
-                </div>
-                
-                {/* Messages Area */}
-                <div className="flex-1 min-h-0 overflow-hidden">
-                  <CompactMessageArea roomId={selectedRoomId} />
-                </div>
+              /* Message View - Full height usage */
+              <div className="flex-1 min-h-0 overflow-hidden">
+                <CompactMessageArea roomId={selectedRoomId} />
               </div>
             )}
           </TabsContent>

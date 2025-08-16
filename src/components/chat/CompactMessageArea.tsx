@@ -137,25 +137,25 @@ const CompactMessageArea: React.FC<CompactMessageAreaProps> = ({ roomId }) => {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Messages Area */}
-      <ScrollArea className="flex-1 px-3 py-1" ref={scrollAreaRef}>
-        <div className="space-y-2">
+      {/* Messages Area - Maximized height */}
+      <ScrollArea className="flex-1 px-2" ref={scrollAreaRef}>
+        <div className="space-y-1 py-1">
           {messages.length === 0 ? (
-            <div className="text-center py-8">
-              <div className="text-muted-foreground text-sm mb-2">No messages yet</div>
+            <div className="text-center py-6">
+              <div className="text-muted-foreground text-sm mb-1">No messages yet</div>
               <div className="text-xs text-muted-foreground/70">Start the conversation!</div>
             </div>
           ) : (
             messageGroups.map((group, groupIndex) => {
               const isOwn = group.userId === user?.id;
               return (
-                <div key={groupIndex} className={cn("flex gap-2", isOwn && "flex-row-reverse")}>
+                <div key={groupIndex} className={cn("flex gap-2 mb-2", isOwn && "flex-row-reverse")}>
                   {!isOwn && (
-                    <div className="flex-shrink-0">
-                      <ChatMessageAvatar userId={group.userId} className="h-7 w-7" />
+                    <div className="flex-shrink-0 mt-auto">
+                      <ChatMessageAvatar userId={group.userId} className="h-6 w-6" />
                     </div>
                   )}
-                  <div className={cn("flex-1 space-y-1 min-w-0", isOwn && "flex-1")}>
+                  <div className={cn("flex-1 space-y-0.5 min-w-0", isOwn && "flex-1")}>
                     {group.messages.map((message, messageIndex) => (
                       <div
                         key={message.id}
@@ -166,7 +166,7 @@ const CompactMessageArea: React.FC<CompactMessageAreaProps> = ({ roomId }) => {
                       >
                         <div
                           className={cn(
-                            "max-w-[85%] px-3 py-2 rounded-lg text-sm break-words",
+                            "max-w-[85%] px-2.5 py-1.5 rounded-lg text-sm break-words",
                             isOwn 
                               ? "bg-primary text-primary-foreground rounded-br-sm" 
                               : "bg-muted text-foreground rounded-bl-sm",
@@ -174,7 +174,7 @@ const CompactMessageArea: React.FC<CompactMessageAreaProps> = ({ roomId }) => {
                             messageIndex === 0 && isOwn && "rounded-tr-lg"
                           )}
                         >
-                          <p className="whitespace-pre-wrap break-words">{message.content}</p>
+                          <p className="whitespace-pre-wrap break-words leading-relaxed">{message.content}</p>
                           {messageIndex === group.messages.length - 1 && (
                             <div className={cn(
                               "text-xs mt-1 opacity-60 flex items-center gap-1",
@@ -194,8 +194,8 @@ const CompactMessageArea: React.FC<CompactMessageAreaProps> = ({ roomId }) => {
           )}
           
           {isSending && (
-            <div className="flex justify-end">
-              <div className="bg-muted/50 px-3 py-2 rounded-lg text-sm flex items-center gap-2">
+            <div className="flex justify-end mb-2">
+              <div className="bg-muted/50 px-2.5 py-1.5 rounded-lg text-sm flex items-center gap-2">
                 <Loader2 className="h-3 w-3 animate-spin" />
                 <span className="text-xs text-muted-foreground">Sending...</span>
               </div>
@@ -204,26 +204,26 @@ const CompactMessageArea: React.FC<CompactMessageAreaProps> = ({ roomId }) => {
         </div>
       </ScrollArea>
 
-      {/* Input Area */}
-      <div className="border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex-shrink-0">
-        <form onSubmit={handleSubmit} className="flex gap-2 p-2">
+      {/* Compact Input Area */}
+      <div className="border-t bg-background/95 backdrop-blur flex-shrink-0">
+        <form onSubmit={handleSubmit} className="flex gap-1.5 p-1.5">
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Type a message..."
             disabled={isSending}
-            className="flex-1 text-sm border-0 bg-muted/50 focus-visible:ring-1"
+            className="flex-1 text-sm border-0 bg-muted/50 focus-visible:ring-1 h-8 rounded-md"
           />
           <Button
             type="submit"
             size="sm"
             disabled={!input.trim() || isSending}
-            className="px-3 shrink-0"
+            className="px-2.5 shrink-0 h-8"
           >
             {isSending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
             ) : (
-              <Send className="h-4 w-4" />
+              <Send className="h-3.5 w-3.5" />
             )}
           </Button>
         </form>
