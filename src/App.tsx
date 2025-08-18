@@ -29,8 +29,6 @@ import FocusZonePage from "@/pages/FocusZonePage";
 import ReportsPage from "@/pages/ReportsPage";
 import FinancePage from "@/pages/FinancePage";
 import NotificationBootstrap from "@/components/NotificationBootstrap";
-import AIChatBubble from "@/components/chat/AIChatBubble";
-import { ChatBubbleProvider } from "@/contexts/chat/ChatBubbleContext";
 
 const queryClient = new QueryClient();
 
@@ -42,8 +40,7 @@ function App() {
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
-            <ChatBubbleProvider>
-              <Routes>
+            <Routes>
                 {/* Public Routes */}
                 <Route path="/" element={<Index />} />
                 <Route path="/landing" element={<LandingPage />} />
@@ -73,10 +70,8 @@ function App() {
                 
                 {/* Fallback for unmatched routes */}
                 <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-              <NotificationBootstrap />
-              <AIChatBubble />
-            </ChatBubbleProvider>
+            </Routes>
+            <NotificationBootstrap />
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
