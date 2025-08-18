@@ -3,7 +3,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-application-name',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS'
 }
 
 interface DeleteUserRequest {
@@ -68,7 +69,7 @@ Deno.serve(async (req) => {
     // Get the requesting user's role from the database
     const { data: requestingUserData, error: userError } = await supabaseAdmin
       .from('users')
-      .select('role, email, name')
+      .select('role, email, name, organization_id')
       .eq('id', user.id)
       .single();
 
@@ -95,7 +96,7 @@ Deno.serve(async (req) => {
     // Get target user info before deletion for logging
     const { data: targetUserData, error: targetUserError } = await supabaseAdmin
       .from('users')
-      .select('name, email, role')
+      .select('name, email, role, organization_id')
       .eq('id', targetUserId)
       .single();
 
@@ -105,6 +106,12 @@ Deno.serve(async (req) => {
     }
 
     console.log('Target user to delete:', targetUserData);
+
+    // Enforce organization scope - requester and target must be in same organization
+    if (requestingUserData.organization_id !== targetUserData.organization_id) {
+      console.error('Cross-organization deletion attempt blocked');
+      throw new Error('Permission denied - users must be in the same organization');
+    }
 
     // Get deletion impact analysis
     const { data: impactData, error: impactError } = await supabaseAdmin
