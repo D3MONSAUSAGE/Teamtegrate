@@ -7,11 +7,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import TimeSelector from '@/components/ui/time-selector';
+import { WeekPicker } from '@/components/ui/week-picker';
 import { useScheduleManagement } from '@/hooks/useScheduleManagement';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Plus, User, Calendar, Clock } from 'lucide-react';
-import { format, addDays } from 'date-fns';
+import { Plus, User, Calendar, Clock, Edit } from 'lucide-react';
+import { format, addDays, startOfWeek, eachDayOfInterval, endOfWeek, isSameDay } from 'date-fns';
 import { toast } from 'sonner';
 
 interface Employee {
@@ -20,10 +21,23 @@ interface Employee {
   email: string;
 }
 
+interface EmployeeSchedule {
+  id: string;
+  scheduled_date: string;
+  scheduled_start_time: string;
+  scheduled_end_time: string;
+  status: string;
+  notes?: string;
+  shift_template_id?: string;
+}
+
 export const EmployeeScheduleManager: React.FC = () => {
   const { user } = useAuth();
   const { shiftTemplates, createEmployeeSchedule, isLoading } = useScheduleManagement();
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [selectedEmployee, setSelectedEmployee] = useState<string>('');
+  const [selectedWeek, setSelectedWeek] = useState<Date>(new Date());
+  const [weeklySchedules, setWeeklySchedules] = useState<EmployeeSchedule[]>([]);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     employee_id: '',
@@ -38,6 +52,12 @@ export const EmployeeScheduleManager: React.FC = () => {
     fetchEmployees();
   }, []);
 
+  useEffect(() => {
+    if (selectedEmployee) {
+      fetchWeeklySchedules();
+    }
+  }, [selectedEmployee, selectedWeek]);
+
   const fetchEmployees = async () => {
     try {
       const { data, error } = await supabase
@@ -51,6 +71,28 @@ export const EmployeeScheduleManager: React.FC = () => {
       setEmployees(data || []);
     } catch (error) {
       console.error('Failed to fetch employees:', error);
+    }
+  };
+
+  const fetchWeeklySchedules = async () => {
+    if (!selectedEmployee) return;
+    
+    try {
+      const weekStart = startOfWeek(selectedWeek, { weekStartsOn: 1 });
+      const weekEnd = endOfWeek(selectedWeek, { weekStartsOn: 1 });
+      
+      const { data, error } = await supabase
+        .from('employee_schedules')
+        .select('*')
+        .eq('employee_id', selectedEmployee)
+        .gte('scheduled_date', format(weekStart, 'yyyy-MM-dd'))
+        .lte('scheduled_date', format(weekEnd, 'yyyy-MM-dd'))
+        .order('scheduled_date');
+
+      if (error) throw error;
+      setWeeklySchedules(data || []);
+    } catch (error) {
+      console.error('Failed to fetch weekly schedules:', error);
     }
   };
 
@@ -106,65 +148,174 @@ export const EmployeeScheduleManager: React.FC = () => {
         custom_start_time: '',
         custom_end_time: ''
       });
+      fetchWeeklySchedules(); // Refresh the schedule view
     } catch (error) {
       toast.error('Failed to assign shift');
     }
   };
 
-  const generateQuickSchedules = () => {
-    const today = new Date();
-    const nextWeek = Array.from({ length: 7 }, (_, i) => addDays(today, i + 1));
-    
+  const renderWeeklyScheduleGrid = () => {
+    const weekStart = startOfWeek(selectedWeek, { weekStartsOn: 1 });
+    const weekDays = eachDayOfInterval({
+      start: weekStart,
+      end: endOfWeek(selectedWeek, { weekStartsOn: 1 })
+    });
+
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {nextWeek.map((date) => (
-          <Card key={date.toISOString()} className="hover:shadow-md transition-shadow">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">
-                {format(date, 'EEEE')}
-              </CardTitle>
-              <CardDescription>
-                {format(date, 'MMMM d, yyyy')}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="w-full"
-                  onClick={() => {
-                    setFormData({
-                      ...formData,
-                      scheduled_date: format(date, 'yyyy-MM-dd'),
-                      custom_start_time: '',
-                      custom_end_time: ''
-                    });
-                    setIsAssignDialogOpen(true);
-                  }}
-                >
-                  <Plus className="h-3 w-3 mr-2" />
-                  Assign Shift
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-4">
+        {weekDays.map((date) => {
+          const dateStr = format(date, 'yyyy-MM-dd');
+          const daySchedule = weeklySchedules.find(schedule => 
+            isSameDay(new Date(schedule.scheduled_date), date)
+          );
+          
+          return (
+            <Card key={dateStr} className="hover:shadow-md transition-shadow">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">
+                  {format(date, 'EEE')}
+                </CardTitle>
+                <CardDescription>
+                  {format(date, 'MMM d')}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {daySchedule ? (
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium">
+                      {format(new Date(daySchedule.scheduled_start_time), 'HH:mm')} - 
+                      {format(new Date(daySchedule.scheduled_end_time), 'HH:mm')}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Status: {daySchedule.status}
+                    </div>
+                    {daySchedule.notes && (
+                      <div className="text-xs text-muted-foreground">
+                        {daySchedule.notes}
+                      </div>
+                    )}
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full"
+                      onClick={() => {
+                        setFormData({
+                          employee_id: selectedEmployee,
+                          shift_template_id: daySchedule.shift_template_id || '',
+                          scheduled_date: dateStr,
+                          notes: daySchedule.notes || '',
+                          custom_start_time: format(new Date(daySchedule.scheduled_start_time), 'HH:mm'),
+                          custom_end_time: format(new Date(daySchedule.scheduled_end_time), 'HH:mm')
+                        });
+                        setIsAssignDialogOpen(true);
+                      }}
+                    >
+                      <Edit className="h-3 w-3 mr-2" />
+                      Edit Shift
+                    </Button>
+                  </div>
+                ) : (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full"
+                    onClick={() => {
+                      setFormData({
+                        employee_id: selectedEmployee,
+                        shift_template_id: '',
+                        scheduled_date: dateStr,
+                        notes: '',
+                        custom_start_time: '',
+                        custom_end_time: ''
+                      });
+                      setIsAssignDialogOpen(true);
+                    }}
+                  >
+                    <Plus className="h-3 w-3 mr-2" />
+                    Add Shift
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     );
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Employee Scheduling</h2>
-          <p className="text-muted-foreground">
-            Assign shifts to employees and manage schedules
-          </p>
-        </div>
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight">Employee Scheduling</h2>
+        <p className="text-muted-foreground">
+          Select an employee and week to manage their schedule
+        </p>
+      </div>
+
+      {/* Step 1: Employee Selection */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <User className="h-5 w-5" />
+            Select Employee
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Choose an employee to schedule" />
+            </SelectTrigger>
+            <SelectContent>
+              {employees.map((employee) => (
+                <SelectItem key={employee.id} value={employee.id}>
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    {employee.name} ({employee.email})
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </CardContent>
+      </Card>
+
+      {/* Step 2: Week Selection */}
+      {selectedEmployee && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              Select Week
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <WeekPicker 
+              selectedWeek={selectedWeek}
+              onWeekChange={setSelectedWeek}
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Step 3: Weekly Schedule Grid */}
+      {selectedEmployee && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5" />
+              Weekly Schedule
+            </CardTitle>
+            <CardDescription>
+              {employees.find(e => e.id === selectedEmployee)?.name}'s schedule for the week of {format(startOfWeek(selectedWeek, { weekStartsOn: 1 }), 'MMMM d, yyyy')}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {renderWeeklyScheduleGrid()}
+          </CardContent>
+        </Card>
+      )}
         
-        <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
+      <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
@@ -180,27 +331,17 @@ export const EmployeeScheduleManager: React.FC = () => {
             </DialogHeader>
             
             <form onSubmit={handleAssignShift} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="employee">Employee</Label>
-                <Select
-                  value={formData.employee_id}
-                  onValueChange={(value) => setFormData({ ...formData, employee_id: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select an employee" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {employees.map((employee) => (
-                      <SelectItem key={employee.id} value={employee.id}>
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4" />
-                          {employee.name} ({employee.email})
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {/* Show selected employee info */}
+              {formData.employee_id && (
+                <div className="p-3 bg-muted rounded-lg">
+                  <div className="flex items-center gap-2 text-sm">
+                    <User className="h-4 w-4" />
+                    <span className="font-medium">
+                      {employees.find(e => e.id === formData.employee_id)?.name}
+                    </span>
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="shift_template">Shift Template</Label>
@@ -307,58 +448,6 @@ export const EmployeeScheduleManager: React.FC = () => {
             </form>
           </DialogContent>
         </Dialog>
-      </div>
-
-      {/* Quick Schedule for Next Week */}
-      <div>
-        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <Calendar className="h-5 w-5" />
-          Quick Schedule - Next 7 Days
-        </h3>
-        {generateQuickSchedules()}
-      </div>
-
-      {/* Employee List */}
-      <div>
-        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <User className="h-5 w-5" />
-          Team Members
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {employees.map((employee) => (
-            <Card key={employee.id} className="hover:shadow-md transition-shadow">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">{employee.name}</CardTitle>
-                <CardDescription>{employee.email}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="w-full"
-                    onClick={() => {
-                      setFormData({
-                        ...formData,
-                        employee_id: employee.id,
-                        custom_start_time: '',
-                        custom_end_time: ''
-                      });
-                      setIsAssignDialogOpen(true);
-                    }}
-                  >
-                    <Plus className="h-3 w-3 mr-2" />
-                    Assign Shift
-                  </Button>
-                  <Button variant="ghost" size="sm" className="w-full">
-                    View Schedule
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
     </div>
   );
 };
