@@ -233,27 +233,30 @@ export const extractSalesMetrics = (pdfText: string): Partial<SalesData> & { ext
 
   // Direct non-cash extraction with expanded patterns (use exact value from PDF, no calculations)
   const directNonCash = findValue([
-    'Non[-\s]?Cash Payments[\s:$]*([0-9,]+\.?[0-9]*)',
-    'NON[-\s]?CASH PAYMENTS[\s:$]*([0-9,]+\.?[0-9]*)',
-    'Noncash Payments[\s:$]*([0-9,]+\.?[0-9]*)',
-    'Non Cash[\s:$]*([0-9,]+\.?[0-9]*)',
-    'Non-Cash[\s:$]*([0-9,]+\.?[0-9]*)',
-    'NonCash[\s:$]*([0-9,]+\.?[0-9]*)',
-    'NON CASH[\s:$]*([0-9,]+\.?[0-9]*)',
-    'NON-CASH[\s:$]*([0-9,]+\.?[0-9]*)',
-    'Total Non Cash[\s:$]*([0-9,]+\.?[0-9]*)',
-    'Non Cash Total[\s:$]*([0-9,]+\.?[0-9]*)',
-    'Noncash[\s:$]*([0-9,]+\.?[0-9]*)',
-    'Noncash Total[\s:$]*([0-9,]+\.?[0-9]*)',
-    'Electronic Payments[\s:$]*([0-9,]+\.?[0-9]*)',
-    'Card Total[\s:$]*([0-9,]+\.?[0-9]*)',
-    'Total Card[\s:$]*([0-9,]+\.?[0-9]*)',
-    'Credit Card[\s:$]*([0-9,]+\.?[0-9]*)'
+    'Non[\\-–—‑\\s]?Cash\\s+Payments?[\\s:$]*([0-9,]+\\.?[0-9]*)',
+    'NON[\\-–—‑\\s]?CASH\\s+PAYMENTS?[\\s:$]*([0-9,]+\\.?[0-9]*)',
+    'Noncash\\s+Payments?[\\s:$]*([0-9,]+\\.?[0-9]*)',
+    'Non[\\-–—‑\\s]?Cash\\s+Total[\\s:$]*([0-9,]+\\.?[0-9]*)',
+    'Total\\s+Non[\\-–—‑\\s]?Cash[\\s:$]*([0-9,]+\\.?[0-9]*)',
+    'Electronic\\s+Payments[\\s:$]*([0-9,]+\\.?[0-9]*)',
+    'Card\\s+Total[\\s:$]*([0-9,]+\\.?[0-9]*)',
+    'Total\\s+Card[\\s:$]*([0-9,]+\\.?[0-9]*)',
+    'Credit\\s+Card[\\s:$]*([0-9,]+\\.?[0-9]*)'
   ], normalizedText);
 
+  // Secondary broad match to catch unusual dash/spacing variants
+  let broadNonCash = 0;
+  try {
+    const broadMatch = normalizedText.match(/Non[\-–—‑\s]?Cash(?:\s+Payments?)?[^0-9]{0,20}([0-9,]+\.?[0-9]*)/i);
+    if (broadMatch && broadMatch[1]) {
+      broadNonCash = parseFloat(broadMatch[1].replace(/[,$\s]/g, '')) || 0;
+      console.log('[pdfParser] Broad non-cash match:', broadMatch[0], '=>', broadNonCash);
+    }
+  } catch {}
+
   // Use direct non-cash value from PDF only - no calculations
-  const nonCash = directNonCash;
-  console.log('[pdfParser] Using direct non-cash value from PDF:', nonCash);
+  const nonCash = directNonCash || broadNonCash;
+  console.log('[pdfParser] Using non-cash value from PDF:', { directNonCash, broadNonCash, chosen: nonCash });
 
   // Extract labor and tips after payments to keep flow readable
   const laborHours = findValue([
