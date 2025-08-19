@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar, Users, Clock, Settings, Plus } from 'lucide-react';
 import { ScheduleCalendarView } from './ScheduleCalendarView';
-import { ShiftTemplateManager } from './ShiftTemplateManager';
+
 import { EmployeeScheduleManager } from './EmployeeScheduleManager';
 import { ScheduleTemplateManager } from './ScheduleTemplateManager';
 
@@ -69,13 +69,13 @@ const ScheduleManagerDashboard: React.FC = () => {
         
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Templates</CardTitle>
+            <CardTitle className="text-sm font-medium">Coverage</CardTitle>
             <Settings className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">5</div>
+            <div className="text-2xl font-bold">92%</div>
             <p className="text-xs text-muted-foreground">
-              Active templates
+              Schedule coverage
             </p>
           </CardContent>
         </Card>
@@ -86,7 +86,6 @@ const ScheduleManagerDashboard: React.FC = () => {
         <TabsList>
           <TabsTrigger value="calendar">Schedule Calendar</TabsTrigger>
           <TabsTrigger value="employees">Assign Employees</TabsTrigger>
-          <TabsTrigger value="templates">Shift Templates</TabsTrigger>
           <TabsTrigger value="schedules">Schedule Templates</TabsTrigger>
         </TabsList>
 
@@ -96,10 +95,6 @@ const ScheduleManagerDashboard: React.FC = () => {
 
         <TabsContent value="employees" className="space-y-4">
           <EmployeeScheduleManager />
-        </TabsContent>
-
-        <TabsContent value="templates" className="space-y-4">
-          <ShiftTemplateManager />
         </TabsContent>
 
         <TabsContent value="schedules" className="space-y-4">

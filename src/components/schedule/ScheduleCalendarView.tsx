@@ -77,9 +77,6 @@ export const ScheduleCalendarView: React.FC = () => {
                             {format(new Date(schedule.scheduled_start_time), 'HH:mm')} -
                             {format(new Date(schedule.scheduled_end_time), 'HH:mm')}
                           </div>
-                          <Badge variant="secondary" className="text-xs">
-                            {schedule.shift_template?.name}
-                          </Badge>
                         </div>
                       ))}
                     </div>

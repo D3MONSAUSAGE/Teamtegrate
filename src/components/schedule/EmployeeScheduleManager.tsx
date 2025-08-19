@@ -33,19 +33,19 @@ interface EmployeeSchedule {
 
 export const EmployeeScheduleManager: React.FC = () => {
   const { user } = useAuth();
-  const { shiftTemplates, createEmployeeSchedule, isLoading } = useScheduleManagement();
+  const { createEmployeeSchedule, isLoading } = useScheduleManagement();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [selectedEmployee, setSelectedEmployee] = useState<string>('');
   const [selectedWeek, setSelectedWeek] = useState<Date>(new Date());
   const [weeklySchedules, setWeeklySchedules] = useState<EmployeeSchedule[]>([]);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+  const [editingSchedule, setEditingSchedule] = useState<EmployeeSchedule | null>(null);
   const [formData, setFormData] = useState({
     employee_id: '',
-    shift_template_id: '',
     scheduled_date: '',
     notes: '',
-    custom_start_time: '',
-    custom_end_time: ''
+    start_time: '',
+    end_time: ''
   });
 
   useEffect(() => {
@@ -112,57 +112,40 @@ export const EmployeeScheduleManager: React.FC = () => {
       return;
     }
     
-    if (!formData.shift_template_id) {
-      toast.error('Please select a shift template');
-      return;
-    }
-    
     if (!formData.scheduled_date) {
       toast.error('Please select a date');
       return;
     }
     
-    if (!formData.custom_start_time) {
+    if (!formData.start_time) {
       toast.error('Please set a start time');
       return;
     }
     
-    if (!formData.custom_end_time) {
+    if (!formData.end_time) {
       toast.error('Please set an end time');
       return;
     }
 
     try {
-      const selectedShift = shiftTemplates.find(s => s.id === formData.shift_template_id);
-      if (!selectedShift) {
-        toast.error('Selected shift template not found');
-        return;
-      }
-
-      // Calculate start and end times - use custom times if provided, otherwise use template times
+      // Calculate start and end times
       const scheduledDate = new Date(formData.scheduled_date);
+      const startTime = formData.start_time;
+      const endTime = formData.end_time;
       
-      const startTime = formData.custom_start_time || selectedShift.start_time;
-      const endTime = formData.custom_end_time || selectedShift.end_time;
+      // Create full datetime objects
+      const scheduledStartTime = new Date(`${formData.scheduled_date}T${startTime}`);
+      const scheduledEndTime = new Date(`${formData.scheduled_date}T${endTime}`);
       
-      const [startHour, startMinute] = startTime.split(':').map(Number);
-      const [endHour, endMinute] = endTime.split(':').map(Number);
-      
-      const scheduledStartTime = new Date(scheduledDate);
-      scheduledStartTime.setHours(startHour, startMinute, 0, 0);
-      
-      const scheduledEndTime = new Date(scheduledDate);
-      scheduledEndTime.setHours(endHour, endMinute, 0, 0);
-      
-      // Handle overnight shifts (when end time is before start time)
-      if (endHour < startHour || (endHour === startHour && endMinute < startMinute)) {
+      // Handle overnight shifts (end time is before start time)
+      if (scheduledEndTime <= scheduledStartTime) {
         scheduledEndTime.setDate(scheduledEndTime.getDate() + 1);
       }
 
       const scheduleData = {
         organization_id: user.organizationId,
         employee_id: formData.employee_id,
-        shift_template_id: formData.shift_template_id,
+        shift_template_id: null, // No longer using templates
         scheduled_date: formData.scheduled_date,
         scheduled_start_time: scheduledStartTime.toISOString(),
         scheduled_end_time: scheduledEndTime.toISOString(),
@@ -179,11 +162,10 @@ export const EmployeeScheduleManager: React.FC = () => {
       setIsAssignDialogOpen(false);
       setFormData({
         employee_id: '',
-        shift_template_id: '',
         scheduled_date: '',
         notes: '',
-        custom_start_time: '',
-        custom_end_time: ''
+        start_time: '',
+        end_time: ''
       });
       // Refresh the schedule view
       await fetchWeeklySchedules();
@@ -239,13 +221,13 @@ export const EmployeeScheduleManager: React.FC = () => {
                       size="sm" 
                       className="w-full"
                       onClick={() => {
+                        setEditingSchedule(daySchedule);
                         setFormData({
                           employee_id: selectedEmployee,
-                          shift_template_id: daySchedule.shift_template_id || '',
                           scheduled_date: dateStr,
                           notes: daySchedule.notes || '',
-                          custom_start_time: format(new Date(daySchedule.scheduled_start_time), 'HH:mm'),
-                          custom_end_time: format(new Date(daySchedule.scheduled_end_time), 'HH:mm')
+                          start_time: format(new Date(daySchedule.scheduled_start_time), 'HH:mm'),
+                          end_time: format(new Date(daySchedule.scheduled_end_time), 'HH:mm')
                         });
                         setIsAssignDialogOpen(true);
                       }}
@@ -262,11 +244,10 @@ export const EmployeeScheduleManager: React.FC = () => {
                     onClick={() => {
                       setFormData({
                         employee_id: selectedEmployee,
-                        shift_template_id: '',
                         scheduled_date: dateStr,
                         notes: '',
-                        custom_start_time: '',
-                        custom_end_time: ''
+                        start_time: '',
+                        end_time: ''
                       });
                       setIsAssignDialogOpen(true);
                     }}
@@ -364,10 +345,12 @@ export const EmployeeScheduleManager: React.FC = () => {
           </DialogTrigger>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
-              <DialogTitle>Assign Employee Shift</DialogTitle>
-              <DialogDescription>
-                Assign a shift to an employee for a specific date
-              </DialogDescription>
+          <DialogTitle>
+            {editingSchedule ? 'Edit Shift' : 'Assign New Shift'}
+          </DialogTitle>
+          <DialogDescription>
+            {editingSchedule ? 'Update shift details' : 'Assign a shift to an employee for a specific date'}
+          </DialogDescription>
             </DialogHeader>
             
             <form onSubmit={handleAssignShift} className="space-y-4">
@@ -383,35 +366,6 @@ export const EmployeeScheduleManager: React.FC = () => {
                 </div>
               )}
 
-              <div className="space-y-2">
-                <Label htmlFor="shift_template">Shift Template</Label>
-                <Select
-                  value={formData.shift_template_id}
-                  onValueChange={(value) => {
-                    const selectedTemplate = shiftTemplates.find(t => t.id === value);
-                    setFormData({ 
-                      ...formData, 
-                      shift_template_id: value,
-                      custom_start_time: selectedTemplate?.start_time || '',
-                      custom_end_time: selectedTemplate?.end_time || ''
-                    });
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a shift template" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {shiftTemplates.map((template) => (
-                      <SelectItem key={template.id} value={template.id}>
-                        <div className="flex items-center gap-2">
-                          <Clock className="h-4 w-4" />
-                          {template.name} ({template.start_time} - {template.end_time})
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
 
               <div className="space-y-2">
                 <Label htmlFor="scheduled_date">Date</Label>
@@ -436,8 +390,8 @@ export const EmployeeScheduleManager: React.FC = () => {
                   <div className="space-y-2">
                     <Label htmlFor="start_time">Start Time</Label>
                     <TimeSelector
-                      value={formData.custom_start_time}
-                      onChange={(time) => setFormData({ ...formData, custom_start_time: time })}
+                      value={formData.start_time}
+                      onChange={(time) => setFormData({ ...formData, start_time: time })}
                       placeholder="Select start time"
                     />
                   </div>
@@ -445,18 +399,18 @@ export const EmployeeScheduleManager: React.FC = () => {
                   <div className="space-y-2">
                     <Label htmlFor="end_time">End Time</Label>
                     <TimeSelector
-                      value={formData.custom_end_time}
-                      onChange={(time) => setFormData({ ...formData, custom_end_time: time })}
+                      value={formData.end_time}
+                      onChange={(time) => setFormData({ ...formData, end_time: time })}
                       placeholder="Select end time"
                     />
                   </div>
                 </div>
                 
-                {formData.custom_start_time && formData.custom_end_time && (
+                {formData.start_time && formData.end_time && (
                   <div className="text-sm text-muted-foreground">
                     {(() => {
-                      const [startHour] = formData.custom_start_time.split(':').map(Number);
-                      const [endHour] = formData.custom_end_time.split(':').map(Number);
+                      const [startHour] = formData.start_time.split(':').map(Number);
+                      const [endHour] = formData.end_time.split(':').map(Number);
                       return endHour < startHour ? 'This is an overnight shift (ends next day)' : 'Same day shift';
                     })()}
                   </div>
@@ -482,7 +436,7 @@ export const EmployeeScheduleManager: React.FC = () => {
                   Cancel
                 </Button>
                 <Button type="submit" disabled={isLoading}>
-                  Assign Shift
+                  {editingSchedule ? 'Update Shift' : 'Assign Shift'}
                 </Button>
               </div>
             </form>

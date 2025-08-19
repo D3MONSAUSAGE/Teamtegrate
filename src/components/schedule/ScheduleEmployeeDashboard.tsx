@@ -75,7 +75,7 @@ const ScheduleEmployeeDashboard: React.FC = () => {
                     className="p-2 rounded-lg bg-muted text-xs space-y-1"
                   >
                     <div className="font-medium">
-                      {schedule.shift_template?.name || 'Shift'}
+                      Scheduled Shift
                     </div>
                     <div className="text-muted-foreground">
                       {format(new Date(schedule.scheduled_start_time), 'HH:mm')} -
@@ -227,7 +227,7 @@ const ScheduleEmployeeDashboard: React.FC = () => {
                     >
                       <div>
                         <h4 className="font-medium">
-                          {schedule.shift_template?.name || 'Shift'}
+                          Scheduled Shift
                         </h4>
                         <p className="text-sm text-muted-foreground">
                           {format(new Date(schedule.scheduled_date), 'EEEE, MMM d')} •{' '}

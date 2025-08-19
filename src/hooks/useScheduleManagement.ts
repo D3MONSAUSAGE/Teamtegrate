@@ -13,27 +13,12 @@ export interface ScheduleTemplate {
   updated_at: string;
 }
 
-export interface ShiftTemplate {
-  id: string;
-  organization_id: string;
-  template_id?: string;
-  name: string;
-  start_time: string;
-  end_time: string;
-  break_duration_minutes: number;
-  is_recurring: boolean;
-  recurrence_pattern?: string;
-  max_employees: number;
-  min_employees: number;
-  created_at: string;
-  updated_at: string;
-}
 
 export interface EmployeeSchedule {
   id: string;
   organization_id: string;
   employee_id: string;
-  shift_template_id: string;
+  shift_template_id?: string | null;
   scheduled_date: string;
   scheduled_start_time: string;
   scheduled_end_time: string;
@@ -44,7 +29,6 @@ export interface EmployeeSchedule {
   created_by: string;
   created_at: string;
   updated_at: string;
-  shift_template?: ShiftTemplate;
   employee?: {
     id: string;
     name: string;
@@ -69,7 +53,7 @@ export interface EmployeeAvailability {
 export const useScheduleManagement = () => {
   const { user } = useAuth();
   const [scheduleTemplates, setScheduleTemplates] = useState<ScheduleTemplate[]>([]);
-  const [shiftTemplates, setShiftTemplates] = useState<ShiftTemplate[]>([]);
+  
   const [employeeSchedules, setEmployeeSchedules] = useState<EmployeeSchedule[]>([]);
   const [employeeAvailability, setEmployeeAvailability] = useState<EmployeeAvailability[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -94,23 +78,6 @@ export const useScheduleManagement = () => {
     }
   };
 
-  // Fetch shift templates
-  const fetchShiftTemplates = async () => {
-    try {
-      setIsLoading(true);
-      const { data, error } = await supabase
-        .from('shift_templates')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setShiftTemplates(data || []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch shift templates');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   // Fetch employee schedules for a date range
   const fetchEmployeeSchedules = async (startDate: string, endDate: string) => {
@@ -118,10 +85,7 @@ export const useScheduleManagement = () => {
       setIsLoading(true);
       const { data, error } = await supabase
         .from('employee_schedules')
-        .select(`
-          *,
-          shift_template:shift_templates(*)
-        `)
+        .select('*')
         .gte('scheduled_date', startDate)
         .lte('scheduled_date', endDate)
         .order('scheduled_start_time', { ascending: true });
@@ -197,26 +161,6 @@ export const useScheduleManagement = () => {
     }
   };
 
-  // Create shift template
-  const createShiftTemplate = async (template: Omit<ShiftTemplate, 'id' | 'created_at' | 'updated_at'>) => {
-    try {
-      setIsLoading(true);
-      const { data, error } = await supabase
-        .from('shift_templates')
-        .insert([template])
-        .select()
-        .single();
-
-      if (error) throw error;
-      setShiftTemplates(prev => [data, ...prev]);
-      return data;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create shift template');
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   // Create employee schedule
   const createEmployeeSchedule = async (schedule: Omit<EmployeeSchedule, 'id' | 'created_at' | 'updated_at'>) => {
@@ -323,23 +267,19 @@ export const useScheduleManagement = () => {
   useEffect(() => {
     if (user) {
       fetchScheduleTemplates();
-      fetchShiftTemplates();
     }
   }, [user]);
 
   return {
     scheduleTemplates,
-    shiftTemplates,
     employeeSchedules,
     employeeAvailability,
     isLoading,
     error,
     fetchScheduleTemplates,
-    fetchShiftTemplates,
     fetchEmployeeSchedules,
     fetchEmployeeAvailability,
     createScheduleTemplate,
-    createShiftTemplate,
     createEmployeeSchedule,
     updateEmployeeSchedule,
     setEmployeeAvailabilityData
