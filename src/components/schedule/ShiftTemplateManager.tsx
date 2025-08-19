@@ -27,12 +27,12 @@ export const ShiftTemplateManager: React.FC = () => {
 
   const handleCreateShift = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user?.organization_id) return;
+    if (!user?.organizationId) return;
 
     try {
       await createShiftTemplate({
         ...formData,
-        organization_id: user.organization_id
+        organization_id: user.organizationId
       });
       toast.success('Shift template created successfully');
       setIsCreateDialogOpen(false);

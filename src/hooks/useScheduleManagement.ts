@@ -49,7 +49,7 @@ export interface EmployeeSchedule {
     id: string;
     name: string;
     email: string;
-  };
+  } | null;
 }
 
 export interface EmployeeAvailability {
@@ -121,7 +121,7 @@ export const useScheduleManagement = () => {
         .select(`
           *,
           shift_template:shift_templates(*),
-          employee:users!employee_schedules_employee_id_fkey(id, name, email)
+          employee:users!employee_id(id, name, email)
         `)
         .gte('scheduled_date', startDate)
         .lte('scheduled_date', endDate)

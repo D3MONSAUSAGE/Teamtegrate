@@ -22,12 +22,12 @@ export const ScheduleTemplateManager: React.FC = () => {
 
   const handleCreateTemplate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user?.organization_id) return;
+    if (!user?.organizationId) return;
 
     try {
       await createScheduleTemplate({
         ...formData,
-        organization_id: user.organization_id,
+        organization_id: user.organizationId,
         is_active: true,
         created_by: user.id
       });

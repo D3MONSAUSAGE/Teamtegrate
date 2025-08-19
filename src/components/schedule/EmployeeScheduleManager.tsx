@@ -52,7 +52,7 @@ export const EmployeeScheduleManager: React.FC = () => {
 
   const handleAssignShift = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user?.organization_id || !formData.employee_id || !formData.shift_template_id || !formData.scheduled_date) {
+    if (!user?.organizationId || !formData.employee_id || !formData.shift_template_id || !formData.scheduled_date) {
       return;
     }
 
