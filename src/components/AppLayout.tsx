@@ -16,7 +16,7 @@ import { Navigate } from 'react-router-dom';
 const MainContent = memo(({ children }: { children: React.ReactNode }) => {
   return (
     <SidebarInset 
-      className="flex flex-col flex-1 overflow-hidden"
+      className="flex flex-col flex-1"
       style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
     >
       <Navbar />
@@ -65,7 +65,7 @@ const AppLayout = memo(() => {
       <TooltipProvider>
         <TaskProvider>
           <SidebarProvider defaultOpen={defaultSidebarOpen}>
-            <div className="min-h-screen-mobile bg-background w-full flex overflow-hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+            <div className="min-h-screen-mobile bg-background w-full flex" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
               <Sidebar />
               <MainContent>
                 <Outlet />
