@@ -262,14 +262,9 @@ export const extractSalesMetrics = (pdfText: string): Partial<SalesData> & { ext
   const laborPercentage = grossSales > 0 ? (laborCost / grossSales) * 100 : 0;
   const salesPerLaborHour = laborHours > 0 ? grossSales / laborHours : 0;
   
-  // Use direct non-cash value if available, otherwise calculate
-  let nonCash = directNonCash;
-  if (nonCash === 0 && (grossSales > 0 && totalCash > 0)) {
-    nonCash = Math.max(0, grossSales - totalCash);
-    console.log('[pdfParser] Using calculated non-cash value (gross - cash):', nonCash);
-  } else if (directNonCash > 0) {
-    console.log('[pdfParser] Using direct non-cash value from PDF:', nonCash);
-  }
+  // Use direct non-cash value from PDF only - no calculations
+  const nonCash = directNonCash;
+  console.log('[pdfParser] Using direct non-cash value from PDF:', nonCash);
   
   // Validation logging
   if (Math.abs((grossSales - totalCash) - nonCash) > 1) {

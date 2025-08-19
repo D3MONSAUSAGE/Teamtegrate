@@ -19,9 +19,14 @@ const WeeklySalesTable: React.FC<WeeklySalesTableProps> = ({ weeklyData }) => {
 
   const getDailySalesForDay = (dayIndex: number) => {
     const targetDate = addDays(weeklyData.weekStart, dayIndex);
-    return weeklyData.dailySales.find(sale => 
-      format(new Date(sale.date), 'yyyy-MM-dd') === format(targetDate, 'yyyy-MM-dd')
-    );
+    const found = weeklyData.dailySales.find(sale => {
+      const saleDate = format(new Date(sale.date), 'yyyy-MM-dd');
+      const target = format(targetDate, 'yyyy-MM-dd');
+      console.log(`[WeeklySalesTable] Looking for ${target}, checking ${saleDate} (match: ${saleDate === target})`);
+      return saleDate === target;
+    });
+    console.log(`[WeeklySalesTable] Day ${dayIndex} (${format(targetDate, 'yyyy-MM-dd')}):`, found ? 'FOUND DATA' : 'NO DATA');
+    return found;
   };
 
   const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
