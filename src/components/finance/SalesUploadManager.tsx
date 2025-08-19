@@ -1,0 +1,408 @@
+import React, { useState, useCallback } from 'react';
+import { useDropzone } from 'react-dropzone';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
+import { 
+  CalendarIcon, 
+  Upload, 
+  Loader2, 
+  CheckCircle, 
+  AlertCircle, 
+  FileText,
+  X,
+  Sparkles 
+} from 'lucide-react';
+import { toast } from '@/components/ui/sonner';
+import { SalesData } from '@/types/sales';
+import { parseBrinkPOSReport } from '@/utils/pdfParser';
+
+interface SalesUploadManagerProps {
+  onUpload: (data: SalesData) => Promise<void>;
+  onDateExtracted?: (date: Date) => void;
+  isUploading?: boolean;
+}
+
+type UploadStatus = 'idle' | 'processing' | 'success' | 'error';
+
+interface FileWithPreview extends File {
+  preview?: string;
+  extractedDate?: Date;
+}
+
+const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({ 
+  onUpload, 
+  onDateExtracted, 
+  isUploading = false 
+}) => {
+  const [uploadStatus, setUploadStatus] = useState<UploadStatus>('idle');
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [salesDate, setSalesDate] = useState<Date | undefined>(new Date());
+  const [location, setLocation] = useState('Santa Clarita');
+  const [files, setFiles] = useState<FileWithPreview[]>([]);
+  const [error, setError] = useState<string>('');
+  const [isDateExtracted, setIsDateExtracted] = useState(false);
+  
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    const newFiles: FileWithPreview[] = acceptedFiles.map(file => 
+      Object.assign(file, {
+        preview: URL.createObjectURL(file)
+      })
+    );
+    
+    setFiles(newFiles);
+    setUploadStatus('idle');
+    setError('');
+    setIsDateExtracted(false);
+    
+    // Auto-extract date from PDF
+    if (newFiles.length > 0) {
+      await extractDateFromPDF(newFiles[0]);
+    }
+  }, []);
+  
+  const { getRootProps, getInputProps, isDragActive, isDragReject } = useDropzone({
+    accept: {
+      'application/pdf': ['.pdf']
+    },
+    maxFiles: 1,
+    onDrop,
+    onDropRejected: (fileRejections) => {
+      const rejection = fileRejections[0];
+      if (rejection.errors[0]?.code === 'file-invalid-type') {
+        setError('Please select a PDF file');
+        toast.error('Only PDF files are supported');
+      }
+    }
+  });
+  
+  const extractDateFromPDF = async (file: FileWithPreview) => {
+    try {
+      setUploadStatus('processing');
+      setUploadProgress(25);
+      
+      const arrayBuffer = await file.arrayBuffer();
+      const { parseRealPDFContent, extractSalesMetrics } = await import('@/utils/pdfParser');
+      
+      setUploadProgress(50);
+      const pdfText = await parseRealPDFContent(arrayBuffer);
+      
+      setUploadProgress(75);
+      const metrics = extractSalesMetrics(pdfText);
+      
+      if (metrics.extractedDate) {
+        file.extractedDate = metrics.extractedDate;
+        setSalesDate(metrics.extractedDate);
+        setIsDateExtracted(true);
+        onDateExtracted?.(metrics.extractedDate);
+        
+        toast.success(
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4" />
+            Date auto-detected: {format(metrics.extractedDate, "PPP")}
+          </div>
+        );
+      }
+      
+      setUploadProgress(100);
+      setTimeout(() => {
+        setUploadStatus('idle');
+        setUploadProgress(0);
+      }, 1000);
+    } catch (error) {
+      console.warn('Could not extract date from PDF:', error);
+      setUploadStatus('idle');
+      setUploadProgress(0);
+      // Don't show error for date extraction failure
+    }
+  };
+  
+  const handleUpload = async () => {
+    if (!salesDate) {
+      setError('Please select a date');
+      toast.error("Please select a date");
+      return;
+    }
+    
+    if (files.length === 0) {
+      setError('Please select a PDF file');
+      toast.error("Please select a PDF file");
+      return;
+    }
+    
+    setUploadStatus('processing');
+    setError('');
+    setUploadProgress(0);
+    
+    try {
+      // Simulate realistic progress
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev >= 85) {
+            clearInterval(progressInterval);
+            return 85;
+          }
+          return prev + 15;
+        });
+      }, 300);
+      
+      // Parse the PDF
+      const parseResult = await parseBrinkPOSReport(files[0], location, salesDate);
+      
+      clearInterval(progressInterval);
+      setUploadProgress(90);
+      
+      if (parseResult.success && parseResult.data) {
+        // Upload to database
+        await onUpload(parseResult.data);
+        
+        setUploadProgress(100);
+        setUploadStatus('success');
+        
+        // Reset form after success
+        setTimeout(() => {
+          setSalesDate(new Date());
+          setFiles([]);
+          setUploadProgress(0);
+          setUploadStatus('idle');
+          setIsDateExtracted(false);
+        }, 2000);
+        
+      } else {
+        setUploadStatus('error');
+        setError(parseResult.error || 'Unknown parsing error');
+        toast.error(`Failed to parse PDF: ${parseResult.error}`);
+      }
+      
+    } catch (error) {
+      console.error('Error processing sales data:', error);
+      setUploadStatus('error');
+      setError(error instanceof Error ? error.message : 'Unknown error');
+    }
+  };
+
+  const removeFile = () => {
+    setFiles([]);
+    setUploadStatus('idle');
+    setError('');
+    setIsDateExtracted(false);
+    setUploadProgress(0);
+  };
+
+  const getStatusIcon = () => {
+    switch (uploadStatus) {
+      case 'processing':
+        return <Loader2 className="h-5 w-5 animate-spin text-primary" />;
+      case 'success':
+        return <CheckCircle className="h-5 w-5 text-green-500" />;
+      case 'error':
+        return <AlertCircle className="h-5 w-5 text-destructive" />;
+      default:
+        return <FileText className="h-5 w-5 text-muted-foreground" />;
+    }
+  };
+
+  const getStatusText = () => {
+    switch (uploadStatus) {
+      case 'processing':
+        return 'Processing PDF...';
+      case 'success':
+        return 'Upload successful!';
+      case 'error':
+        return 'Upload failed';
+      default:
+        return 'Ready to upload';
+    }
+  };
+
+  const getStatusColor = () => {
+    switch (uploadStatus) {
+      case 'processing':
+        return 'bg-primary/10 text-primary';
+      case 'success':
+        return 'bg-green-50 text-green-700';
+      case 'error':
+        return 'bg-destructive/10 text-destructive';
+      default:
+        return 'bg-muted text-muted-foreground';
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Form Inputs */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Sales Date</label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-full justify-start text-left font-normal",
+                  !salesDate && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {salesDate ? format(salesDate, "PPP") : <span>Pick a date</span>}
+                {isDateExtracted && (
+                  <Badge variant="secondary" className="ml-auto">
+                    Auto-detected
+                  </Badge>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={salesDate}
+                onSelect={(date) => {
+                  setSalesDate(date);
+                  setIsDateExtracted(false);
+                }}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+        
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Location</label>
+          <Input
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            placeholder="Enter location"
+          />
+        </div>
+      </div>
+      
+      {/* Upload Zone */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Upload className="h-5 w-5" />
+            Upload Brink POS Report
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div
+            {...getRootProps()}
+            className={cn(
+              "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all duration-200",
+              isDragActive && !isDragReject && "border-primary bg-primary/5 scale-105",
+              isDragReject && "border-destructive bg-destructive/5",
+              !isDragActive && "border-muted-foreground/25 hover:border-primary hover:bg-primary/5"
+            )}
+          >
+            <input {...getInputProps()} />
+            
+            {files.length === 0 ? (
+              <div className="space-y-4">
+                <div className={cn(
+                  "mx-auto h-16 w-16 rounded-full flex items-center justify-center transition-colors",
+                  isDragActive ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
+                )}>
+                  <Upload className="h-8 w-8" />
+                </div>
+                
+                <div>
+                  <p className="text-lg font-medium">
+                    {isDragActive
+                      ? "Drop your PDF file here"
+                      : "Drag & drop your Brink POS report here"}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    or click to browse files
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Only PDF files from Brink POS are supported
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-background rounded-lg border">
+                  <div className="flex items-center gap-3">
+                    {getStatusIcon()}
+                    <div className="text-left">
+                      <p className="font-medium text-sm truncate max-w-48">
+                        {files[0].name}
+                      </p>
+                      <p className={cn("text-xs", getStatusColor().split(' ')[1])}>
+                        {getStatusText()}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <Badge className={getStatusColor()}>
+                      {uploadStatus === 'idle' ? 'Ready' : uploadStatus}
+                    </Badge>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeFile();
+                      }}
+                      disabled={uploadStatus === 'processing'}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                
+                {uploadStatus === 'processing' && (
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Processing...</span>
+                      <span>{uploadProgress}%</span>
+                    </div>
+                    <Progress value={uploadProgress} className="h-2" />
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          
+          {error && (
+            <Alert className="mt-4" variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+        </CardContent>
+      </Card>
+      
+      {/* Upload Button */}
+      <div className="flex justify-end">
+        <Button 
+          onClick={handleUpload} 
+          disabled={!salesDate || files.length === 0 || uploadStatus === 'processing' || isUploading}
+          size="lg"
+        >
+          {uploadStatus === 'processing' || isUploading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              {uploadStatus === 'processing' ? 'Processing PDF...' : 'Uploading...'}
+            </>
+          ) : (
+            <>
+              <Upload className="mr-2 h-4 w-4" />
+              Upload Sales Data
+            </>
+          )}
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+export default SalesUploadManager;

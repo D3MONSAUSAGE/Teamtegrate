@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useIsMobile } from '@/hooks/use-mobile';
 import ProfitAndLoss from '@/components/finance/ProfitAndLoss';
-import DailySales from '@/components/finance/DailySales';
+import DailySalesManager from '@/components/finance/DailySalesManager';
 import InvoiceManager from '@/components/finance/InvoiceManager';
 import {
   Drawer,
@@ -37,7 +37,7 @@ const FinancePage: React.FC = () => {
           <ProfitAndLoss />
         </TabsContent>
         <TabsContent value="daily-sales" className="space-y-4">
-          <DailySales />
+          <DailySalesManager />
         </TabsContent>
         <TabsContent value="invoices" className="space-y-4">
           <InvoiceManager />
