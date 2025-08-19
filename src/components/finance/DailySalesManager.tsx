@@ -8,9 +8,7 @@ import { useSalesManager } from '@/hooks/useSalesManager';
 import { SalesData } from '@/types/sales';
 import SalesUploadManager from './SalesUploadManager';
 import WeeklySalesView from './WeeklySalesView';
-import SalesReport from './SalesReport';
-import SalesDateFilter from './SalesDateFilter';
-import { useSalesData } from '@/hooks/useSalesData';
+import WeeklyDetailedReport from './WeeklyDetailedReport';
 import { toast } from '@/components/ui/sonner';
 
 const DailySalesManager: React.FC = () => {
@@ -33,15 +31,11 @@ const DailySalesManager: React.FC = () => {
     error
   } = useSalesManager();
 
-  // For the daily report view, we still use the existing useSalesData hook
-  const {
-    dateRange,
-    startDate,
-    endDate,
-    filteredData,
-    handleDateRangeChange,
-    handleCustomDateChange
-  } = useSalesData(salesData);
+  // Parse sales data to the format expected by WeeklyDetailedReport
+  const parsedSalesData = salesData.map(item => ({
+    ...item,
+    date: typeof item.date === 'string' ? new Date(item.date) : item.date
+  }));
 
   const handleSalesDataUpload = async (newData: SalesData) => {
     console.log('[DailySalesManager] Uploading new sales data:', newData);
@@ -104,7 +98,7 @@ const DailySalesManager: React.FC = () => {
           <Tabs defaultValue="weekly" className="w-full">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="weekly">Weekly View</TabsTrigger>
-              <TabsTrigger value="daily">Daily Report</TabsTrigger>
+              <TabsTrigger value="report">Weekly Report</TabsTrigger>
               <TabsTrigger value="upload">Upload Data</TabsTrigger>
             </TabsList>
             
@@ -123,19 +117,17 @@ const DailySalesManager: React.FC = () => {
               />
             </TabsContent>
             
-            <TabsContent value="daily" className="mt-6 space-y-6">
-              <SalesDateFilter 
-                dateRange={dateRange}
-                onDateRangeChange={handleDateRangeChange}
-                startDate={startDate}
-                endDate={endDate}
-                onCustomDateChange={handleCustomDateChange}
-              />
-              
-              <SalesReport 
-                data={filteredData}
-                startDate={startDate}
-                endDate={endDate}
+            <TabsContent value="report" className="mt-6">
+              <WeeklyDetailedReport
+                weeklyData={weeklyData}
+                selectedWeek={selectedWeek}
+                setSelectedWeek={setSelectedWeek}
+                selectedLocation={selectedLocation}
+                setSelectedLocation={setSelectedLocation}
+                locations={locations}
+                weeksWithData={weeksWithData}
+                salesData={parsedSalesData}
+                isLoading={isLoading}
               />
             </TabsContent>
             
