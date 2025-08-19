@@ -222,18 +222,26 @@ export const useScheduleManagement = () => {
   const createEmployeeSchedule = async (schedule: Omit<EmployeeSchedule, 'id' | 'created_at' | 'updated_at'>) => {
     try {
       setIsLoading(true);
+      console.log('Creating employee schedule with data:', schedule);
+      
       const { data, error } = await supabase
         .from('employee_schedules')
         .insert([schedule])
         .select()
         .single();
 
-      if (error) throw error;
-      // Refresh schedules to get updated data with joins
+      if (error) {
+        console.error('Supabase error creating schedule:', error);
+        throw new Error(error.message || 'Failed to create employee schedule');
+      }
+      
+      console.log('Successfully created schedule:', data);
       return data;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create employee schedule');
-      throw err;
+      console.error('Error in createEmployeeSchedule:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create employee schedule';
+      setError(errorMessage);
+      throw new Error(errorMessage);
     } finally {
       setIsLoading(false);
     }

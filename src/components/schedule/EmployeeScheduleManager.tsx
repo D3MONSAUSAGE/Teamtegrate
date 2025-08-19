@@ -98,13 +98,46 @@ export const EmployeeScheduleManager: React.FC = () => {
 
   const handleAssignShift = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user?.organizationId || !formData.employee_id || !formData.shift_template_id || !formData.scheduled_date) {
+    
+    // Enhanced validation with user feedback
+    console.log('Form submission data:', formData);
+    
+    if (!user?.organizationId) {
+      toast.error('Organization ID is missing');
+      return;
+    }
+    
+    if (!formData.employee_id) {
+      toast.error('Please select an employee');
+      return;
+    }
+    
+    if (!formData.shift_template_id) {
+      toast.error('Please select a shift template');
+      return;
+    }
+    
+    if (!formData.scheduled_date) {
+      toast.error('Please select a date');
+      return;
+    }
+    
+    if (!formData.custom_start_time) {
+      toast.error('Please set a start time');
+      return;
+    }
+    
+    if (!formData.custom_end_time) {
+      toast.error('Please set an end time');
       return;
     }
 
     try {
       const selectedShift = shiftTemplates.find(s => s.id === formData.shift_template_id);
-      if (!selectedShift) return;
+      if (!selectedShift) {
+        toast.error('Selected shift template not found');
+        return;
+      }
 
       // Calculate start and end times - use custom times if provided, otherwise use template times
       const scheduledDate = new Date(formData.scheduled_date);
@@ -126,7 +159,7 @@ export const EmployeeScheduleManager: React.FC = () => {
         scheduledEndTime.setDate(scheduledEndTime.getDate() + 1);
       }
 
-      await createEmployeeSchedule({
+      const scheduleData = {
         organization_id: user.organizationId,
         employee_id: formData.employee_id,
         shift_template_id: formData.shift_template_id,
@@ -136,7 +169,11 @@ export const EmployeeScheduleManager: React.FC = () => {
         status: 'scheduled',
         notes: formData.notes || undefined,
         created_by: user.id
-      });
+      };
+
+      console.log('Creating schedule with data:', scheduleData);
+
+      await createEmployeeSchedule(scheduleData);
 
       toast.success('Shift assigned successfully');
       setIsAssignDialogOpen(false);
@@ -148,9 +185,12 @@ export const EmployeeScheduleManager: React.FC = () => {
         custom_start_time: '',
         custom_end_time: ''
       });
-      fetchWeeklySchedules(); // Refresh the schedule view
+      // Refresh the schedule view
+      await fetchWeeklySchedules();
     } catch (error) {
-      toast.error('Failed to assign shift');
+      console.error('Shift assignment error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      toast.error(`Failed to assign shift: ${errorMessage}`);
     }
   };
 
