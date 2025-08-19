@@ -86,7 +86,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ onNavigation }) => {
       </ShadcnSidebarHeader>
       
       <SidebarContent>
-        <ScrollArea className="flex-1">
+        <ScrollArea className="h-full flex-1">
           <div className="p-2">
             <SidebarNav 
               onNavigation={handleNavigation} 
