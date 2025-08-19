@@ -1665,6 +1665,10 @@ export type Database = {
         Args: { p_task_id?: string; p_user_id: string }
         Returns: Json
       }
+      purge_sales_data: {
+        Args: { p_date_from?: string; p_date_to?: string; p_location?: string }
+        Returns: Json
+      }
       resume_time_entry: {
         Args: { p_task_id?: string; p_user_id: string }
         Returns: Json
