@@ -231,17 +231,47 @@ export const extractSalesMetrics = (pdfText: string): Partial<SalesData> & { ext
     'CASH[\\s:$]*([0-9,]+\\.?[0-9]*)'
   ], normalizedText);
 
-  // Direct non-cash extraction - this should be more accurate than calculation
+  // Direct non-cash extraction with expanded patterns
   const directNonCash = findValue([
     'Non Cash[\\s:$]*([0-9,]+\\.?[0-9]*)',
     'Non-Cash[\\s:$]*([0-9,]+\\.?[0-9]*)',
     'NonCash[\\s:$]*([0-9,]+\\.?[0-9]*)',
     'NON CASH[\\s:$]*([0-9,]+\\.?[0-9]*)',
     'NON-CASH[\\s:$]*([0-9,]+\\.?[0-9]*)',
-    'Credit Card[\\s:$]*([0-9,]+\\.?[0-9]*)',
-    'Electronic Payments[\\s:$]*([0-9,]+\\.?[0-9]*)'
+    'Total Non Cash[\\s:$]*([0-9,]+\\.?[0-9]*)',
+    'Non Cash Total[\\s:$]*([0-9,]+\\.?[0-9]*)',
+    'Noncash[\\s:$]*([0-9,]+\\.?[0-9]*)',
+    'Noncash Total[\\s:$]*([0-9,]+\\.?[0-9]*)',
+    'Electronic Payments[\\s:$]*([0-9,]+\\.?[0-9]*)',
+    'Card Total[\\s:$]*([0-9,]+\\.?[0-9]*)',
+    'Total Card[\\s:$]*([0-9,]+\\.?[0-9]*)',
+    'Credit Card[\\s:$]*([0-9,]+\\.?[0-9]*)'
   ], normalizedText);
 
+  // Fallback calculation: use Net Sales if available, otherwise Gross Sales
+  const round2 = (n: number) => Math.round(n * 100) / 100;
+  const calcBase = netSales > 0 ? netSales : grossSales;
+  const calculatedNonCash = calcBase > 0 && totalCash >= 0 ? Math.max(calcBase - totalCash, 0) : 0;
+
+  // Choose final non-cash: prefer direct extraction if present, else fallback
+  let nonCash = directNonCash && directNonCash > 0 ? directNonCash : calculatedNonCash;
+  nonCash = round2(nonCash);
+
+  // Validation logging and soft correction if wildly off (>5% or >$5)
+  const discrepancy = Math.abs(nonCash - calculatedNonCash);
+  const threshold = Math.max(5, calculatedNonCash * 0.05);
+  if (calculatedNonCash > 0 && discrepancy > threshold) {
+    console.warn('[pdfParser] Non-cash discrepancy detected', {
+      grossSales,
+      netSales,
+      totalCash,
+      directNonCash,
+      calculatedNonCash,
+      chosenNonCash: nonCash
+    });
+  }
+
+  // Extract labor and tips after payments to keep flow readable
   const laborHours = findValue([
     'Labor Hours[\\s:]*([0-9,]+\\.?[0-9]*)',
     'Hours[\\s:]*([0-9,]+\\.?[0-9]*)',
@@ -256,26 +286,11 @@ export const extractSalesMetrics = (pdfText: string): Partial<SalesData> & { ext
     'TIPS[\\s:$]*([0-9,]+\\.?[0-9]*)'
   ], normalizedText);
 
-  // Calculate derived values
+  // Derived metrics
   const orderAverage = orderCount > 0 ? grossSales / orderCount : 0;
   const laborCost = laborHours * 15; // Estimate based on $15/hour
   const laborPercentage = grossSales > 0 ? (laborCost / grossSales) * 100 : 0;
   const salesPerLaborHour = laborHours > 0 ? grossSales / laborHours : 0;
-  
-  // Use direct non-cash value from PDF only - no calculations
-  const nonCash = directNonCash;
-  console.log('[pdfParser] Using direct non-cash value from PDF:', nonCash);
-  
-  // Validation logging
-  if (Math.abs((grossSales - totalCash) - nonCash) > 1) {
-    console.warn('[pdfParser] Discrepancy detected:', {
-      grossSales,
-      totalCash,
-      calculatedNonCash: grossSales - totalCash,
-      extractedNonCash: directNonCash,
-      finalNonCash: nonCash
-    });
-  }
 
   console.log('[pdfParser] Extracted metrics:', {
     grossSales,
