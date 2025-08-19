@@ -734,6 +734,95 @@ export type Database = {
         }
         Relationships: []
       }
+      petty_cash_boxes: {
+        Row: {
+          created_at: string
+          current_balance: number
+          id: string
+          initial_amount: number
+          is_active: boolean | null
+          location: string
+          name: string
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_balance?: number
+          id?: string
+          initial_amount?: number
+          is_active?: boolean | null
+          location: string
+          name: string
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_balance?: number
+          id?: string
+          initial_amount?: number
+          is_active?: boolean | null
+          location?: string
+          name?: string
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      petty_cash_transactions: {
+        Row: {
+          amount: number
+          approved_by: string | null
+          created_at: string
+          date: string
+          description: string
+          id: string
+          organization_id: string
+          petty_cash_box_id: string
+          receipt_url: string | null
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          approved_by?: string | null
+          created_at?: string
+          date: string
+          description: string
+          id?: string
+          organization_id: string
+          petty_cash_box_id: string
+          receipt_url?: string | null
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          approved_by?: string | null
+          created_at?: string
+          date?: string
+          description?: string
+          id?: string
+          organization_id?: string
+          petty_cash_box_id?: string
+          receipt_url?: string | null
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "petty_cash_transactions_petty_cash_box_id_fkey"
+            columns: ["petty_cash_box_id"]
+            isOneToOne: false
+            referencedRelation: "petty_cash_boxes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_team_members: {
         Row: {
           created_at: string | null
@@ -838,6 +927,71 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recurring_transactions: {
+        Row: {
+          amount: number
+          category_id: string | null
+          created_at: string
+          description: string
+          end_date: string | null
+          frequency: string
+          id: string
+          is_active: boolean | null
+          location: string | null
+          next_generation_date: string | null
+          organization_id: string
+          start_date: string
+          type: string
+          updated_at: string
+          user_id: string
+          vendor_name: string | null
+        }
+        Insert: {
+          amount: number
+          category_id?: string | null
+          created_at?: string
+          description: string
+          end_date?: string | null
+          frequency: string
+          id?: string
+          is_active?: boolean | null
+          location?: string | null
+          next_generation_date?: string | null
+          organization_id: string
+          start_date: string
+          type: string
+          updated_at?: string
+          user_id: string
+          vendor_name?: string | null
+        }
+        Update: {
+          amount?: number
+          category_id?: string | null
+          created_at?: string
+          description?: string
+          end_date?: string | null
+          frequency?: string
+          id?: string
+          is_active?: boolean | null
+          location?: string | null
+          next_generation_date?: string | null
+          organization_id?: string
+          start_date?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+          vendor_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recurring_transactions_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "transaction_categories"
             referencedColumns: ["id"]
           },
         ]
@@ -1249,6 +1403,107 @@ export type Database = {
             columns: ["task_id"]
             isOneToOne: false
             referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transaction_categories: {
+        Row: {
+          color: string | null
+          created_at: string
+          id: string
+          is_default: boolean | null
+          name: string
+          organization_id: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          name: string
+          organization_id: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          name?: string
+          organization_id?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number
+          category_id: string | null
+          created_at: string
+          date: string
+          description: string
+          id: string
+          is_recurring: boolean | null
+          location: string | null
+          notes: string | null
+          organization_id: string
+          receipt_url: string | null
+          recurring_template_id: string | null
+          tags: string[] | null
+          type: string
+          updated_at: string
+          user_id: string
+          vendor_name: string | null
+        }
+        Insert: {
+          amount: number
+          category_id?: string | null
+          created_at?: string
+          date: string
+          description: string
+          id?: string
+          is_recurring?: boolean | null
+          location?: string | null
+          notes?: string | null
+          organization_id: string
+          receipt_url?: string | null
+          recurring_template_id?: string | null
+          tags?: string[] | null
+          type: string
+          updated_at?: string
+          user_id: string
+          vendor_name?: string | null
+        }
+        Update: {
+          amount?: number
+          category_id?: string | null
+          created_at?: string
+          date?: string
+          description?: string
+          id?: string
+          is_recurring?: boolean | null
+          location?: string | null
+          notes?: string | null
+          organization_id?: string
+          receipt_url?: string | null
+          recurring_template_id?: string | null
+          tags?: string[] | null
+          type?: string
+          updated_at?: string
+          user_id?: string
+          vendor_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "transaction_categories"
             referencedColumns: ["id"]
           },
         ]

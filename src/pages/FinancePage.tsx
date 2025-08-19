@@ -5,6 +5,8 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import ProfitAndLoss from '@/components/finance/ProfitAndLoss';
 import DailySalesManager from '@/components/finance/DailySalesManager';
 import InvoiceManager from '@/components/finance/InvoiceManager';
+import TransactionManager from '@/components/finance/TransactionManager';
+import { useSalesManager } from '@/hooks/useSalesManager';
 import {
   Drawer,
   DrawerClose,
@@ -19,6 +21,14 @@ import { Button } from '@/components/ui/button';
 const FinancePage: React.FC = () => {
   const isMobile = useIsMobile();
   const [transactionsOpen, setTransactionsOpen] = useState(false);
+  
+  // Get sales data for locations and week selection
+  const {
+    selectedWeek,
+    selectedLocation,
+    locations,
+    weeksWithData
+  } = useSalesManager();
 
   return (
     <div className="space-y-6 pb-10">
@@ -43,13 +53,11 @@ const FinancePage: React.FC = () => {
           <InvoiceManager />
         </TabsContent>
         <TabsContent value="transactions" className="space-y-4">
-          <div className="bg-muted/50 p-8 rounded-lg flex flex-col items-center justify-center">
-            <h2 className="text-xl font-medium text-muted-foreground">Transactions Coming Soon</h2>
-            <p className="text-muted-foreground">This feature is currently under development.</p>
-            <Button onClick={() => setTransactionsOpen(true)} className="mt-4">
-              Open Transactions Preview
-            </Button>
-          </div>
+          <TransactionManager
+            selectedWeek={selectedWeek}
+            selectedLocation={selectedLocation}
+            locations={locations}
+          />
         </TabsContent>
       </Tabs>
 
