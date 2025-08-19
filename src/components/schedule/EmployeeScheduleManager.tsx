@@ -5,6 +5,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import TimeSelector from '@/components/ui/time-selector';
 import { useScheduleManagement } from '@/hooks/useScheduleManagement';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -27,7 +29,9 @@ export const EmployeeScheduleManager: React.FC = () => {
     employee_id: '',
     shift_template_id: '',
     scheduled_date: '',
-    notes: ''
+    notes: '',
+    custom_start_time: '',
+    custom_end_time: ''
   });
 
   useEffect(() => {
@@ -60,10 +64,14 @@ export const EmployeeScheduleManager: React.FC = () => {
       const selectedShift = shiftTemplates.find(s => s.id === formData.shift_template_id);
       if (!selectedShift) return;
 
-      // Calculate start and end times based on shift template and selected date
+      // Calculate start and end times - use custom times if provided, otherwise use template times
       const scheduledDate = new Date(formData.scheduled_date);
-      const [startHour, startMinute] = selectedShift.start_time.split(':').map(Number);
-      const [endHour, endMinute] = selectedShift.end_time.split(':').map(Number);
+      
+      const startTime = formData.custom_start_time || selectedShift.start_time;
+      const endTime = formData.custom_end_time || selectedShift.end_time;
+      
+      const [startHour, startMinute] = startTime.split(':').map(Number);
+      const [endHour, endMinute] = endTime.split(':').map(Number);
       
       const scheduledStartTime = new Date(scheduledDate);
       scheduledStartTime.setHours(startHour, startMinute, 0, 0);
@@ -71,8 +79,8 @@ export const EmployeeScheduleManager: React.FC = () => {
       const scheduledEndTime = new Date(scheduledDate);
       scheduledEndTime.setHours(endHour, endMinute, 0, 0);
       
-      // Handle overnight shifts
-      if (endHour < startHour) {
+      // Handle overnight shifts (when end time is before start time)
+      if (endHour < startHour || (endHour === startHour && endMinute < startMinute)) {
         scheduledEndTime.setDate(scheduledEndTime.getDate() + 1);
       }
 
@@ -94,7 +102,9 @@ export const EmployeeScheduleManager: React.FC = () => {
         employee_id: '',
         shift_template_id: '',
         scheduled_date: '',
-        notes: ''
+        notes: '',
+        custom_start_time: '',
+        custom_end_time: ''
       });
     } catch (error) {
       toast.error('Failed to assign shift');
@@ -126,7 +136,9 @@ export const EmployeeScheduleManager: React.FC = () => {
                   onClick={() => {
                     setFormData({
                       ...formData,
-                      scheduled_date: format(date, 'yyyy-MM-dd')
+                      scheduled_date: format(date, 'yyyy-MM-dd'),
+                      custom_start_time: '',
+                      custom_end_time: ''
                     });
                     setIsAssignDialogOpen(true);
                   }}
@@ -194,7 +206,15 @@ export const EmployeeScheduleManager: React.FC = () => {
                 <Label htmlFor="shift_template">Shift Template</Label>
                 <Select
                   value={formData.shift_template_id}
-                  onValueChange={(value) => setFormData({ ...formData, shift_template_id: value })}
+                  onValueChange={(value) => {
+                    const selectedTemplate = shiftTemplates.find(t => t.id === value);
+                    setFormData({ 
+                      ...formData, 
+                      shift_template_id: value,
+                      custom_start_time: selectedTemplate?.start_time || '',
+                      custom_end_time: selectedTemplate?.end_time || ''
+                    });
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select a shift template" />
@@ -221,6 +241,45 @@ export const EmployeeScheduleManager: React.FC = () => {
                   onChange={(e) => setFormData({ ...formData, scheduled_date: e.target.value })}
                   required
                 />
+              </div>
+
+              <Separator className="my-4" />
+
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  <Label className="text-base font-medium">Shift Times</Label>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="start_time">Start Time</Label>
+                    <TimeSelector
+                      value={formData.custom_start_time}
+                      onChange={(time) => setFormData({ ...formData, custom_start_time: time })}
+                      placeholder="Select start time"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="end_time">End Time</Label>
+                    <TimeSelector
+                      value={formData.custom_end_time}
+                      onChange={(time) => setFormData({ ...formData, custom_end_time: time })}
+                      placeholder="Select end time"
+                    />
+                  </div>
+                </div>
+                
+                {formData.custom_start_time && formData.custom_end_time && (
+                  <div className="text-sm text-muted-foreground">
+                    {(() => {
+                      const [startHour] = formData.custom_start_time.split(':').map(Number);
+                      const [endHour] = formData.custom_end_time.split(':').map(Number);
+                      return endHour < startHour ? 'This is an overnight shift (ends next day)' : 'Same day shift';
+                    })()}
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -281,7 +340,9 @@ export const EmployeeScheduleManager: React.FC = () => {
                     onClick={() => {
                       setFormData({
                         ...formData,
-                        employee_id: employee.id
+                        employee_id: employee.id,
+                        custom_start_time: '',
+                        custom_end_time: ''
                       });
                       setIsAssignDialogOpen(true);
                     }}

@@ -120,15 +120,31 @@ export const useScheduleManagement = () => {
         .from('employee_schedules')
         .select(`
           *,
-          shift_template:shift_templates(*),
-          employee:users!employee_id(id, name, email)
+          shift_template:shift_templates(*)
         `)
         .gte('scheduled_date', startDate)
         .lte('scheduled_date', endDate)
         .order('scheduled_start_time', { ascending: true });
 
       if (error) throw error;
-      setEmployeeSchedules(data || []);
+      
+      // Fetch employee data separately for each schedule
+      const schedulesWithEmployees = await Promise.all(
+        (data || []).map(async (schedule) => {
+          const { data: employeeData } = await supabase
+            .from('users')
+            .select('id, name, email')
+            .eq('id', schedule.employee_id)
+            .single();
+          
+          return {
+            ...schedule,
+            employee: employeeData
+          };
+        })
+      );
+      
+      setEmployeeSchedules(schedulesWithEmployees);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch employee schedules');
     } finally {
