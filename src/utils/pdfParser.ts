@@ -37,7 +37,7 @@ export const parseBrinkPOSReport = async (file: File, location: string, date: Da
 
     const totalCash = (extracted as any).paymentBreakdown?.totalCash ?? (extracted as any).cashTotal ?? 0;
     const tips = (extracted as any).paymentBreakdown?.tips ?? (extracted as any).tips ?? 0;
-    const nonCash = (extracted as any).paymentBreakdown?.nonCash ?? (netSales && totalCash ? Math.max(netSales - totalCash, 0) : 0);
+    const nonCash = (extracted as any).paymentBreakdown?.nonCash ?? 0;
 
     const labor: LaborData = {
       cost: extracted.labor?.cost ?? 0,
@@ -231,45 +231,29 @@ export const extractSalesMetrics = (pdfText: string): Partial<SalesData> & { ext
     'CASH[\\s:$]*([0-9,]+\\.?[0-9]*)'
   ], normalizedText);
 
-  // Direct non-cash extraction with expanded patterns
+  // Direct non-cash extraction with expanded patterns (use exact value from PDF, no calculations)
   const directNonCash = findValue([
-    'Non Cash[\\s:$]*([0-9,]+\\.?[0-9]*)',
-    'Non-Cash[\\s:$]*([0-9,]+\\.?[0-9]*)',
-    'NonCash[\\s:$]*([0-9,]+\\.?[0-9]*)',
-    'NON CASH[\\s:$]*([0-9,]+\\.?[0-9]*)',
-    'NON-CASH[\\s:$]*([0-9,]+\\.?[0-9]*)',
-    'Total Non Cash[\\s:$]*([0-9,]+\\.?[0-9]*)',
-    'Non Cash Total[\\s:$]*([0-9,]+\\.?[0-9]*)',
-    'Noncash[\\s:$]*([0-9,]+\\.?[0-9]*)',
-    'Noncash Total[\\s:$]*([0-9,]+\\.?[0-9]*)',
-    'Electronic Payments[\\s:$]*([0-9,]+\\.?[0-9]*)',
-    'Card Total[\\s:$]*([0-9,]+\\.?[0-9]*)',
-    'Total Card[\\s:$]*([0-9,]+\\.?[0-9]*)',
-    'Credit Card[\\s:$]*([0-9,]+\\.?[0-9]*)'
+    'Non[-\s]?Cash Payments[\s:$]*([0-9,]+\.?[0-9]*)',
+    'NON[-\s]?CASH PAYMENTS[\s:$]*([0-9,]+\.?[0-9]*)',
+    'Noncash Payments[\s:$]*([0-9,]+\.?[0-9]*)',
+    'Non Cash[\s:$]*([0-9,]+\.?[0-9]*)',
+    'Non-Cash[\s:$]*([0-9,]+\.?[0-9]*)',
+    'NonCash[\s:$]*([0-9,]+\.?[0-9]*)',
+    'NON CASH[\s:$]*([0-9,]+\.?[0-9]*)',
+    'NON-CASH[\s:$]*([0-9,]+\.?[0-9]*)',
+    'Total Non Cash[\s:$]*([0-9,]+\.?[0-9]*)',
+    'Non Cash Total[\s:$]*([0-9,]+\.?[0-9]*)',
+    'Noncash[\s:$]*([0-9,]+\.?[0-9]*)',
+    'Noncash Total[\s:$]*([0-9,]+\.?[0-9]*)',
+    'Electronic Payments[\s:$]*([0-9,]+\.?[0-9]*)',
+    'Card Total[\s:$]*([0-9,]+\.?[0-9]*)',
+    'Total Card[\s:$]*([0-9,]+\.?[0-9]*)',
+    'Credit Card[\s:$]*([0-9,]+\.?[0-9]*)'
   ], normalizedText);
 
-  // Fallback calculation: use Net Sales if available, otherwise Gross Sales
-  const round2 = (n: number) => Math.round(n * 100) / 100;
-  const calcBase = netSales > 0 ? netSales : grossSales;
-  const calculatedNonCash = calcBase > 0 && totalCash >= 0 ? Math.max(calcBase - totalCash, 0) : 0;
-
-  // Choose final non-cash: prefer direct extraction if present, else fallback
-  let nonCash = directNonCash && directNonCash > 0 ? directNonCash : calculatedNonCash;
-  nonCash = round2(nonCash);
-
-  // Validation logging and soft correction if wildly off (>5% or >$5)
-  const discrepancy = Math.abs(nonCash - calculatedNonCash);
-  const threshold = Math.max(5, calculatedNonCash * 0.05);
-  if (calculatedNonCash > 0 && discrepancy > threshold) {
-    console.warn('[pdfParser] Non-cash discrepancy detected', {
-      grossSales,
-      netSales,
-      totalCash,
-      directNonCash,
-      calculatedNonCash,
-      chosenNonCash: nonCash
-    });
-  }
+  // Use direct non-cash value from PDF only - no calculations
+  const nonCash = directNonCash;
+  console.log('[pdfParser] Using direct non-cash value from PDF:', nonCash);
 
   // Extract labor and tips after payments to keep flow readable
   const laborHours = findValue([
