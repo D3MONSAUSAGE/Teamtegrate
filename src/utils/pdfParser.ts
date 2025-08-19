@@ -84,7 +84,7 @@ export const parseBrinkPOSReport = async (file: File, location: string, date: Da
       tenders: [],
       discounts: [],
       promotions: [],
-      taxes: [],
+      taxes: (extracted as any).taxes ?? [],
       voids: (extracted as any).voids ?? 0,
       refunds: (extracted as any).refunds ?? 0,
       surcharges: (extracted as any).surcharges ?? 0,
@@ -273,6 +273,16 @@ export const extractSalesMetrics = (pdfText: string): Partial<SalesData> & { ext
     'TIPS[\\s:$]*([0-9,]+\\.?[0-9]*)'
   ], normalizedText);
 
+  // Extract "+ Tax" as Tax Paid (use exact value from PDF)
+  const plusTax = findValue([
+    '\\+\\s*Sales?\\s*Tax[\\s:$]*([0-9,]+\\.?[0-9]*)',
+    '\\+\\s*Tax[\\s:$]*([0-9,]+\\.?[0-9]*)',
+    'Sales?\\s*Tax[\\s:$]*([0-9,]+\\.?[0-9]*)',
+    'Tax\\s*Total[\\s:$]*([0-9,]+\\.?[0-9]*)'
+  ], normalizedText);
+  const taxesEntries = plusTax > 0 ? [{ name: '+ Tax', quantity: 1, total: plusTax, percent: 0 }] : [];
+  console.log('[pdfParser] Extracted + Tax as taxPaid:', plusTax);
+
   // Derived metrics
   const orderAverage = orderCount > 0 ? grossSales / orderCount : 0;
   const laborCost = laborHours * 15; // Estimate based on $15/hour
@@ -328,6 +338,6 @@ export const extractSalesMetrics = (pdfText: string): Partial<SalesData> & { ext
     tenders: [],
     discounts: [],
     promotions: [],
-    taxes: []
+    taxes: taxesEntries
   };
 };
