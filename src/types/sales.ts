@@ -30,6 +30,7 @@ export interface SalesData {
   id: string;
   date: string;
   location: string;
+  fileName?: string;
   grossSales: number;
   netSales: number;
   orderCount: number;
@@ -116,6 +117,7 @@ export const sampleSalesData: SalesData[] = [
     id: '1',
     date: '2025-02-23',
     location: 'Santa Clarita',
+    fileName: 'santa-clarita-02-23-sales.pdf',
     grossSales: 9545.49,
     netSales: 8684.61,
     orderCount: 291,

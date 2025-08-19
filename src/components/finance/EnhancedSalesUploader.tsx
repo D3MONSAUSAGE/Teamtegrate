@@ -29,7 +29,8 @@ const EnhancedSalesUploader: React.FC<EnhancedSalesUploaderProps> = ({ onUpload 
   
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: {
-      'application/pdf': ['.pdf']
+      'application/pdf': ['.pdf'],
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx']
     },
     maxFiles: 1,
     onDrop: (acceptedFiles) => {
@@ -46,7 +47,7 @@ const EnhancedSalesUploader: React.FC<EnhancedSalesUploaderProps> = ({ onUpload 
     }
     
     if (files.length === 0) {
-      toast.error("Please select a PDF file");
+      toast.error("Please select a file");
       return;
     }
     
@@ -167,9 +168,9 @@ const EnhancedSalesUploader: React.FC<EnhancedSalesUploaderProps> = ({ onUpload 
         <p className="mt-2 text-sm text-gray-600">
           {isDragActive
             ? "Drop the Brink POS report here"
-            : "Drag and drop your Brink POS daily sales report (PDF) here or click to browse"}
+            : "Drag and drop your Brink POS daily sales report (PDF or Excel) here or click to browse"}
         </p>
-        <p className="text-xs text-gray-500 mt-1">Only PDF files from Brink POS are supported</p>
+        <p className="text-xs text-gray-500 mt-1">PDF and Excel (.xlsx) files from Brink POS are supported</p>
       </div>
       
       {files.length > 0 && (
@@ -216,7 +217,7 @@ const EnhancedSalesUploader: React.FC<EnhancedSalesUploaderProps> = ({ onUpload 
           {isUploading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Processing PDF...
+              Processing File...
             </>
           ) : (
             <>
