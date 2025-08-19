@@ -28,6 +28,7 @@ const DailySalesManager: React.FC = () => {
     totalRecords,
     addSalesData,
     deleteSalesData,
+    deleteSalesDataByDate,
     refreshData,
     error
   } = useSalesManager();
@@ -118,6 +119,7 @@ const DailySalesManager: React.FC = () => {
                 weeksWithData={weeksWithData}
                 totalRecords={totalRecords}
                 isLoading={isLoading}
+                onDeleteDay={deleteSalesDataByDate}
               />
             </TabsContent>
             

@@ -265,6 +265,34 @@ class SalesDataService {
     }
   }
 
+  async deleteSalesDataByDate(date: string, location: string): Promise<void> {
+    try {
+      const user = await this.getCurrentUser();
+      
+      const { error } = await supabase
+        .from('sales_data')
+        .delete()
+        .eq('date', date)
+        .eq('location', location)
+        .eq('organization_id', user.organization_id);
+
+      if (error) {
+        console.error('[SalesDataService] Delete by date error:', error);
+        throw new Error(`Failed to delete sales data: ${error.message}`);
+      }
+
+      // Clear cache to force refresh
+      this.clearCache();
+      
+      console.log('[SalesDataService] Successfully deleted sales data for', date, location);
+      toast.success(`Sales data for ${date} deleted successfully`);
+    } catch (error) {
+      console.error('[SalesDataService] Error deleting sales data by date:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to delete sales data');
+      throw error;
+    }
+  }
+
   async getSalesStats(filters: SalesDataFilters = {}): Promise<SalesDataStats> {
     try {
       const user = await this.getCurrentUser();

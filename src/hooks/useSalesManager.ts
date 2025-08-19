@@ -26,6 +26,7 @@ interface UseSalesManagerReturn {
   // Data operations
   addSalesData: (data: SalesData, replaceExisting?: boolean) => Promise<void>;
   deleteSalesData: (id: string) => Promise<void>;
+  deleteSalesDataByDate: (date: string, location: string) => Promise<void>;
   refreshData: () => Promise<void>;
   
   // Statistics
@@ -215,6 +216,20 @@ export const useSalesManager = (initialFilters: SalesDataFilters = {}): UseSales
     }
   }, [fetchData]);
 
+  const deleteSalesDataByDate = useCallback(async (date: string, location: string) => {
+    setError(null);
+    
+    try {
+      await salesDataService.deleteSalesDataByDate(date, location);
+      // Refresh data after successful deletion
+      await fetchData(false);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete sales data';
+      setError(errorMessage);
+      throw err;
+    }
+  }, [fetchData]);
+
   const refreshData = useCallback(async () => {
     await fetchData(true);
   }, [fetchData]);
@@ -278,6 +293,7 @@ export const useSalesManager = (initialFilters: SalesDataFilters = {}): UseSales
     // Data operations
     addSalesData,
     deleteSalesData,
+    deleteSalesDataByDate,
     refreshData,
     
     // Statistics

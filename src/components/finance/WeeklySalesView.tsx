@@ -28,6 +28,7 @@ interface WeeklySalesViewProps {
   weeksWithData: Date[];
   totalRecords: number;
   isLoading: boolean;
+  onDeleteDay?: (date: string, location: string) => Promise<void>;
 }
 
 const WeeklySalesView: React.FC<WeeklySalesViewProps> = ({
@@ -39,7 +40,8 @@ const WeeklySalesView: React.FC<WeeklySalesViewProps> = ({
   locations,
   weeksWithData,
   totalRecords,
-  isLoading
+  isLoading,
+  onDeleteDay
 }) => {
   
   const handleExportWeekly = () => {
@@ -242,7 +244,10 @@ const WeeklySalesView: React.FC<WeeklySalesViewProps> = ({
 
       {/* Weekly Data Display */}
       {weeklyData && weeklyData.dailySales.length > 0 ? (
-        <WeeklySalesTable weeklyData={weeklyData} />
+        <WeeklySalesTable 
+          weeklyData={weeklyData} 
+          onDeleteDay={onDeleteDay}
+        />
       ) : (
         <Card>
           <CardContent className="p-8">
