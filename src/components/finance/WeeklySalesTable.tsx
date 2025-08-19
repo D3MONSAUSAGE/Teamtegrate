@@ -24,13 +24,11 @@ const WeeklySalesTable: React.FC<WeeklySalesTableProps> = ({ weeklyData, onDelet
 
   const getDailySalesForDay = (dayIndex: number) => {
     const targetDate = addDays(weeklyData.weekStart, dayIndex);
+    const target = format(targetDate, 'yyyy-MM-dd');
     const found = weeklyData.dailySales.find(sale => {
-      const saleDate = format(new Date(sale.date), 'yyyy-MM-dd');
-      const target = format(targetDate, 'yyyy-MM-dd');
-      console.log(`[WeeklySalesTable] Looking for ${target}, checking ${saleDate} (match: ${saleDate === target})`);
-      return saleDate === target;
+      // sale.date is already in 'yyyy-MM-dd' format, no conversion needed
+      return sale.date === target;
     });
-    console.log(`[WeeklySalesTable] Day ${dayIndex} (${format(targetDate, 'yyyy-MM-dd')}):`, found ? 'FOUND DATA' : 'NO DATA');
     return found;
   };
 
