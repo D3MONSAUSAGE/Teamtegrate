@@ -107,6 +107,35 @@ const SalesReport: React.FC<SalesReportProps> = ({ data, startDate, endDate }) =
     })).sort((a, b) => b.value - a.value);
   }, [data]);
   
+  // Aggregate Discounts & Taxes across range
+  const discountsData = useMemo(() => {
+    const map: Record<string, { total: number; quantity: number }> = {};
+    data.forEach(day => {
+      day.discounts.forEach(d => {
+        if (!map[d.name]) map[d.name] = { total: 0, quantity: 0 };
+        map[d.name].total += d.total;
+        map[d.name].quantity += d.quantity;
+      });
+    });
+    return Object.entries(map)
+      .map(([name, v]) => ({ name, value: v.total, quantity: v.quantity }))
+      .sort((a, b) => b.value - a.value);
+  }, [data]);
+
+  const taxesData = useMemo(() => {
+    const map: Record<string, { total: number; quantity: number }> = {};
+    data.forEach(day => {
+      day.taxes.forEach(t => {
+        if (!map[t.name]) map[t.name] = { total: 0, quantity: 0 };
+        map[t.name].total += t.total;
+        map[t.name].quantity += t.quantity;
+      });
+    });
+    return Object.entries(map)
+      .map(([name, v]) => ({ name, value: v.total, quantity: v.quantity }))
+      .sort((a, b) => b.value - a.value);
+  }, [data]);
+
   // Calculate totals across all days
   const totals = useMemo(() => {
     if (data.length === 0) return { grossSales: 0, netSales: 0, orderCount: 0, orderAverage: 0 };
@@ -188,6 +217,7 @@ const SalesReport: React.FC<SalesReportProps> = ({ data, startDate, endDate }) =
           <TabsTrigger value="destinations">Sales by Destination</TabsTrigger>
           <TabsTrigger value="items">Top Items</TabsTrigger>
           <TabsTrigger value="payments">Payment Methods</TabsTrigger>
+          <TabsTrigger value="discounts">Discounts & Taxes</TabsTrigger>
         </TabsList>
         
         <TabsContent value="overview">
@@ -376,6 +406,61 @@ const SalesReport: React.FC<SalesReportProps> = ({ data, startDate, endDate }) =
                   </TableHeader>
                   <TableBody>
                     {paymentMethodData.map((item) => (
+                      <TableRow key={item.name}>
+                        <TableCell>{item.name}</TableCell>
+                        <TableCell className="text-right">{item.quantity}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(item.value)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+        <TabsContent value="discounts">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Discounts</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Discount</TableHead>
+                      <TableHead className="text-right">Count</TableHead>
+                      <TableHead className="text-right">Total</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {discountsData.map((item) => (
+                      <TableRow key={item.name}>
+                        <TableCell>{item.name}</TableCell>
+                        <TableCell className="text-right">{item.quantity}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(item.value)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Taxes</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Tax</TableHead>
+                      <TableHead className="text-right">Count</TableHead>
+                      <TableHead className="text-right">Total</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {taxesData.map((item) => (
                       <TableRow key={item.name}>
                         <TableCell>{item.name}</TableCell>
                         <TableCell className="text-right">{item.quantity}</TableCell>

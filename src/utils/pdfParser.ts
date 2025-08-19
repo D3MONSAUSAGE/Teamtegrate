@@ -79,11 +79,11 @@ export const parseBrinkPOSReport = async (file: File, location: string, date: Da
       cashManagement,
       giftCards,
       paymentBreakdown,
-      destinations: [],
-      revenueItems: [],
-      tenders: [],
-      discounts: [],
-      promotions: [],
+      destinations: (extracted as any).destinations ?? [],
+      revenueItems: (extracted as any).revenueItems ?? [],
+      tenders: (extracted as any).tenders ?? [],
+      discounts: (extracted as any).discounts ?? [],
+      promotions: (extracted as any).promotions ?? [],
       taxes: (extracted as any).taxes ?? [],
       voids: (extracted as any).voids ?? 0,
       refunds: (extracted as any).refunds ?? 0,
@@ -283,6 +283,72 @@ export const extractSalesMetrics = (pdfText: string): Partial<SalesData> & { ext
   const taxesEntries = plusTax > 0 ? [{ name: '+ Tax', quantity: 1, total: plusTax, percent: 0 }] : [];
   console.log('[pdfParser] Extracted + Tax as taxPaid:', plusTax);
 
+  // Parse multi-page sections (Revenue Items, Tenders, Destinations, Discounts, Promotions)
+  const getSectionText = (startPatterns: string[], text: string): string => {
+    let startIdx = -1;
+    for (const p of startPatterns) {
+      const m = new RegExp(p, 'i').exec(text);
+      if (m) { startIdx = m.index + m[0].length; break; }
+    }
+    if (startIdx === -1) return '';
+    const nextTitles = ['Destinations?', 'Revenue\\s+(?:Centers?|Items?)', 'Tenders?', 'Tender\\s+Summary', 'Discounts?', 'Promotions?', 'Taxes?', '\\+\\s*Tax'];
+    let endIdx = text.length;
+    for (const nt of nextTitles) {
+      const r = new RegExp(nt, 'i');
+      const m2 = r.exec(text.slice(startIdx));
+      if (m2) {
+        const idx = startIdx + m2.index;
+        if (idx < endIdx) endIdx = idx;
+      }
+    }
+    return text.slice(startIdx, endIdx);
+  };
+
+  const parseEntries = (segment: string) => {
+    const cleaned = segment.replace(/\s{2,}/g, ' ').trim();
+    const results: { name: string; quantity: number; total: number; percent: number }[] = [];
+    const seen: Record<string, number> = {};
+    // Pattern with quantity and total
+    const re1 = /([A-Za-z][A-Za-z0-9&\/\-\.\s\(\)%]+?)\s+([0-9,]+)\s+\$?\s*([0-9,]+(?:\.[0-9]{2})?)/g;
+    let m: RegExpExecArray | null;
+    while ((m = re1.exec(cleaned)) !== null) {
+      const name = m[1].trim();
+      if (/^total(s)?$/i.test(name)) continue;
+      const quantity = parseInt((m[2] || '0').replace(/[,]/g, ''), 10) || 0;
+      const total = parseFloat((m[3] || '0').replace(/[,$]/g, '')) || 0;
+      const key = name.toLowerCase();
+      if (seen[key] !== undefined) {
+        results[seen[key]].quantity += quantity;
+        results[seen[key]].total += total;
+      } else {
+        seen[key] = results.length;
+        results.push({ name, quantity, total, percent: 0 });
+      }
+    }
+    // Fallback pattern: name + total only
+    const re2 = /([A-Za-z][A-Za-z0-9&\/\-\.\s\(\)%]+?)\s+\$?\s*([0-9,]+(?:\.[0-9]{2})?)/g;
+    while ((m = re2.exec(cleaned)) !== null) {
+      const name = m[1].trim();
+      if (/^total(s)?$/i.test(name)) continue;
+      const total = parseFloat((m[2] || '0').replace(/[,$]/g, '')) || 0;
+      const key = name.toLowerCase();
+      if (seen[key] !== undefined) {
+        if (results[seen[key]].total === 0) results[seen[key]].total = total;
+      } else {
+        seen[key] = results.length;
+        results.push({ name, quantity: 0, total, percent: 0 });
+      }
+    }
+    return results;
+  };
+
+  const revenueItems = parseEntries(getSectionText(['Revenue\\s+(?:Centers?|Items?)'], normalizedText));
+  const tendersRaw = parseEntries(getSectionText(['Tenders?', 'Tender\\s+Summary'], normalizedText));
+  const tenders = tendersRaw.map(e => ({ ...e, payments: e.total, tips: 0 }));
+  const destinations = parseEntries(getSectionText(['Destinations?'], normalizedText));
+  const discounts = parseEntries(getSectionText(['Discounts?'], normalizedText));
+  const promotions = parseEntries(getSectionText(['Promotions?'], normalizedText));
+
   // Derived metrics
   const orderAverage = orderCount > 0 ? grossSales / orderCount : 0;
   const laborCost = laborHours * 15; // Estimate based on $15/hour
@@ -333,11 +399,11 @@ export const extractSalesMetrics = (pdfText: string): Partial<SalesData> & { ext
       reloadAmount: 0,
       reloadCount: 0
     },
-    destinations: [],
-    revenueItems: [],
-    tenders: [],
-    discounts: [],
-    promotions: [],
+    destinations: destinations,
+    revenueItems: revenueItems,
+    tenders: tenders,
+    discounts: discounts,
+    promotions: promotions,
     taxes: taxesEntries
   };
 };
