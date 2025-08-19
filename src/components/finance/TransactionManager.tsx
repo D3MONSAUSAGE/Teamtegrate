@@ -22,7 +22,7 @@ const TransactionManager: React.FC<TransactionManagerProps> = ({
   locations
 }) => {
   const [showTransactionForm, setShowTransactionForm] = useState(false);
-  const [editingTransaction, setEditingTransaction] = useState(null);
+  const [editingTransaction, setEditingTransaction] = useState<any>(null);
   
   const {
     transactions,

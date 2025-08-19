@@ -69,7 +69,7 @@ const RecurringTransactionManager: React.FC<RecurringTransactionManagerProps> = 
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setRecurringTransactions(data || []);
+      setRecurringTransactions((data as any[]) || []);
     } catch (error: any) {
       console.error('Error fetching recurring transactions:', error);
       toast({
@@ -125,7 +125,7 @@ const RecurringTransactionManager: React.FC<RecurringTransactionManagerProps> = 
       if (editingTransaction) {
         const { data, error } = await supabase
           .from('recurring_transactions')
-          .update(transactionData)
+          .update(transactionData as any)
           .eq('id', editingTransaction.id)
           .select(`
             *,
@@ -136,7 +136,7 @@ const RecurringTransactionManager: React.FC<RecurringTransactionManagerProps> = 
         if (error) throw error;
 
         setRecurringTransactions(prev => 
-          prev.map(rt => rt.id === editingTransaction.id ? data : rt)
+          prev.map(rt => rt.id === editingTransaction.id ? data as any : rt)
         );
         
         toast({
@@ -146,7 +146,7 @@ const RecurringTransactionManager: React.FC<RecurringTransactionManagerProps> = 
       } else {
         const { data, error } = await supabase
           .from('recurring_transactions')
-          .insert([transactionData])
+          .insert(transactionData as any)
           .select(`
             *,
             category:transaction_categories(*)
@@ -155,7 +155,7 @@ const RecurringTransactionManager: React.FC<RecurringTransactionManagerProps> = 
 
         if (error) throw error;
 
-        setRecurringTransactions(prev => [data, ...prev]);
+        setRecurringTransactions(prev => [data as any, ...prev]);
         
         toast({
           title: "Success",
@@ -270,17 +270,17 @@ const RecurringTransactionManager: React.FC<RecurringTransactionManagerProps> = 
       // Create a new transaction from the recurring template
       const { error } = await supabase
         .from('transactions')
-        .insert([{
+        .insert({
           category_id: recurring.category_id,
           type: recurring.type,
           amount: recurring.amount,
           description: `${recurring.description} (Auto-generated)`,
           date: format(new Date(), 'yyyy-MM-dd'),
-          location: recurring.location,
-          vendor_name: recurring.vendor_name,
+          location: recurring.location || null,
+          vendor_name: recurring.vendor_name || null,
           is_recurring: true,
           recurring_template_id: recurring.id
-        }]);
+        } as any);
 
       if (error) throw error;
 

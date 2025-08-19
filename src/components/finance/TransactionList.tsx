@@ -14,7 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger
-} from "@/components/ui/dialog";
+} from "@/components/ui/alert-dialog";
 import { Edit, Trash2, Search, Filter, TrendingUp, TrendingDown, Receipt } from "lucide-react";
 import { format } from "date-fns";
 import { Transaction, TransactionCategory } from '@/types/transactions';

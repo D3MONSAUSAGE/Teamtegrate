@@ -30,7 +30,7 @@ export const useTransactions = (selectedWeek: Date, selectedLocation?: string) =
         return;
       }
 
-      setCategories(data);
+      setCategories(data as any[]);
     } catch (error: any) {
       console.error('Error fetching categories:', error);
       setError(error.message);
@@ -54,11 +54,11 @@ export const useTransactions = (selectedWeek: Date, selectedLocation?: string) =
     try {
       const { data, error } = await supabase
         .from('transaction_categories')
-        .insert(defaultCategories)
+        .insert(defaultCategories as any)
         .select();
 
       if (error) throw error;
-      setCategories(data);
+      setCategories(data as any[]);
     } catch (error: any) {
       console.error('Error creating default categories:', error);
       setError(error.message);
@@ -85,7 +85,7 @@ export const useTransactions = (selectedWeek: Date, selectedLocation?: string) =
       const { data, error } = await query;
 
       if (error) throw error;
-      setTransactions(data || []);
+      setTransactions((data as any[]) || []);
     } catch (error: any) {
       console.error('Error fetching transactions:', error);
       setError(error.message);
@@ -94,11 +94,11 @@ export const useTransactions = (selectedWeek: Date, selectedLocation?: string) =
     }
   };
 
-  const addTransaction = async (transaction: Omit<Transaction, 'id' | 'organization_id' | 'user_id' | 'created_at' | 'updated_at'>) => {
+  const addTransaction = async (transaction: any) => {
     try {
       const { data, error } = await supabase
         .from('transactions')
-        .insert([transaction])
+        .insert(transaction as any)
         .select(`
           *,
           category:transaction_categories(*)
@@ -107,7 +107,7 @@ export const useTransactions = (selectedWeek: Date, selectedLocation?: string) =
 
       if (error) throw error;
 
-      setTransactions(prev => [data, ...prev]);
+      setTransactions(prev => [data as any, ...prev]);
       toast({
         title: "Success",
         description: "Transaction added successfully"
@@ -125,7 +125,7 @@ export const useTransactions = (selectedWeek: Date, selectedLocation?: string) =
     }
   };
 
-  const updateTransaction = async (id: string, updates: Partial<Transaction>) => {
+  const updateTransaction = async (id: string, updates: any) => {
     try {
       const { data, error } = await supabase
         .from('transactions')
@@ -139,7 +139,7 @@ export const useTransactions = (selectedWeek: Date, selectedLocation?: string) =
 
       if (error) throw error;
 
-      setTransactions(prev => prev.map(t => t.id === id ? data : t));
+      setTransactions(prev => prev.map(t => t.id === id ? data as any : t));
       toast({
         title: "Success",
         description: "Transaction updated successfully"

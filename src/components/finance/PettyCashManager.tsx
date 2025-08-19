@@ -73,7 +73,7 @@ const PettyCashManager: React.FC<PettyCashManagerProps> = ({ locations }) => {
         .limit(50);
 
       if (error) throw error;
-      setTransactions(data || []);
+      setTransactions((data as any[]) || []);
     } catch (error: any) {
       console.error('Error fetching transactions:', error);
       toast({
@@ -101,12 +101,12 @@ const PettyCashManager: React.FC<PettyCashManagerProps> = ({ locations }) => {
       
       const { data, error } = await supabase
         .from('petty_cash_boxes')
-        .insert([{
+        .insert({
           name: newBoxForm.name,
           location: newBoxForm.location,
           initial_amount: initialAmount,
           current_balance: initialAmount
-        }])
+        } as any)
         .select()
         .single();
 
@@ -167,11 +167,13 @@ const PettyCashManager: React.FC<PettyCashManagerProps> = ({ locations }) => {
       // Add transaction
       const { data: transactionData, error: transactionError } = await supabase
         .from('petty_cash_transactions')
-        .insert([{
-          ...newTransactionForm,
+        .insert({
+          petty_cash_box_id: newTransactionForm.petty_cash_box_id,
+          type: newTransactionForm.type,
           amount,
+          description: newTransactionForm.description,
           date: newTransactionForm.date
-        }])
+        } as any)
         .select(`
           *,
           petty_cash_box:petty_cash_boxes(*)
@@ -189,7 +191,7 @@ const PettyCashManager: React.FC<PettyCashManagerProps> = ({ locations }) => {
       if (updateError) throw updateError;
 
       // Update local state
-      setTransactions(prev => [transactionData, ...prev]);
+      setTransactions(prev => [transactionData as any, ...prev]);
       setCashBoxes(prev => prev.map(box => 
         box.id === newTransactionForm.petty_cash_box_id 
           ? { ...box, current_balance: newBalance }
