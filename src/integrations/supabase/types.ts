@@ -367,6 +367,107 @@ export type Database = {
           },
         ]
       }
+      employee_availability: {
+        Row: {
+          created_at: string
+          day_of_week: number
+          effective_from: string
+          effective_until: string | null
+          employee_id: string
+          end_time: string
+          id: string
+          is_available: boolean | null
+          organization_id: string
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week: number
+          effective_from?: string
+          effective_until?: string | null
+          employee_id: string
+          end_time: string
+          id?: string
+          is_available?: boolean | null
+          organization_id: string
+          start_time: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: number
+          effective_from?: string
+          effective_until?: string | null
+          employee_id?: string
+          end_time?: string
+          id?: string
+          is_available?: boolean | null
+          organization_id?: string
+          start_time?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      employee_schedules: {
+        Row: {
+          actual_end_time: string | null
+          actual_start_time: string | null
+          created_at: string
+          created_by: string
+          employee_id: string
+          id: string
+          notes: string | null
+          organization_id: string
+          scheduled_date: string
+          scheduled_end_time: string
+          scheduled_start_time: string
+          shift_template_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          actual_end_time?: string | null
+          actual_start_time?: string | null
+          created_at?: string
+          created_by: string
+          employee_id: string
+          id?: string
+          notes?: string | null
+          organization_id: string
+          scheduled_date: string
+          scheduled_end_time: string
+          scheduled_start_time: string
+          shift_template_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          actual_end_time?: string | null
+          actual_start_time?: string | null
+          created_at?: string
+          created_by?: string
+          employee_id?: string
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          scheduled_date?: string
+          scheduled_end_time?: string
+          scheduled_start_time?: string
+          shift_template_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_schedules_shift_template_id_fkey"
+            columns: ["shift_template_id"]
+            isOneToOne: false
+            referencedRelation: "shift_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
           created_at: string
@@ -1077,6 +1178,81 @@ export type Database = {
         }
         Relationships: []
       }
+      schedule_periods: {
+        Row: {
+          created_at: string
+          created_by: string
+          end_date: string
+          id: string
+          is_published: boolean | null
+          name: string
+          organization_id: string
+          published_at: string | null
+          published_by: string | null
+          start_date: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          end_date: string
+          id?: string
+          is_published?: boolean | null
+          name: string
+          organization_id: string
+          published_at?: string | null
+          published_by?: string | null
+          start_date: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          end_date?: string
+          id?: string
+          is_published?: boolean | null
+          name?: string
+          organization_id?: string
+          published_at?: string | null
+          published_by?: string | null
+          start_date?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      schedule_templates: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       shared_folders: {
         Row: {
           created_at: string
@@ -1126,6 +1302,122 @@ export type Database = {
             columns: ["shared_with_user_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shift_swap_requests: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          id: string
+          organization_id: string
+          reason: string | null
+          requester_id: string
+          schedule_id: string | null
+          status: string
+          target_employee_id: string | null
+          target_schedule_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          id?: string
+          organization_id: string
+          reason?: string | null
+          requester_id: string
+          schedule_id?: string | null
+          status?: string
+          target_employee_id?: string | null
+          target_schedule_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          id?: string
+          organization_id?: string
+          reason?: string | null
+          requester_id?: string
+          schedule_id?: string | null
+          status?: string
+          target_employee_id?: string | null
+          target_schedule_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shift_swap_requests_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "employee_schedules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shift_swap_requests_target_schedule_id_fkey"
+            columns: ["target_schedule_id"]
+            isOneToOne: false
+            referencedRelation: "employee_schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shift_templates: {
+        Row: {
+          break_duration_minutes: number | null
+          created_at: string
+          end_time: string
+          id: string
+          is_recurring: boolean | null
+          max_employees: number | null
+          min_employees: number | null
+          name: string
+          organization_id: string
+          recurrence_pattern: string | null
+          start_time: string
+          template_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          break_duration_minutes?: number | null
+          created_at?: string
+          end_time: string
+          id?: string
+          is_recurring?: boolean | null
+          max_employees?: number | null
+          min_employees?: number | null
+          name: string
+          organization_id: string
+          recurrence_pattern?: string | null
+          start_time: string
+          template_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          break_duration_minutes?: number | null
+          created_at?: string
+          end_time?: string
+          id?: string
+          is_recurring?: boolean | null
+          max_employees?: number | null
+          min_employees?: number | null
+          name?: string
+          organization_id?: string
+          recurrence_pattern?: string | null
+          start_time?: string
+          template_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shift_templates_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "schedule_templates"
             referencedColumns: ["id"]
           },
         ]
