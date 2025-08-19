@@ -12,6 +12,7 @@ export interface ParsedPDFData {
   success: boolean;
   data?: SalesData;
   error?: string;
+  extractedDate?: Date;
 }
 
 // Mock PDF parser - in production, you'd use a library like pdf-parse or pdf2pic
@@ -25,6 +26,10 @@ export const parseBrinkPOSReport = async (file: File, location: string, date: Da
     }
 
     const extracted = extractSalesMetrics(pdfText);
+    const extractedDate = extracted.extractedDate;
+    
+    // Use extracted date if available, otherwise use provided date
+    const salesDate = extractedDate || date;
 
     const orderCount = extracted.orderCount ?? 0;
     const netSales = extracted.netSales ?? 0;
@@ -64,7 +69,7 @@ export const parseBrinkPOSReport = async (file: File, location: string, date: Da
 
     const salesData: SalesData = {
       id: uuidv4(),
-      date: date.toISOString().split('T')[0],
+      date: salesDate.toISOString().split('T')[0],
       location,
       grossSales,
       netSales,
@@ -86,7 +91,7 @@ export const parseBrinkPOSReport = async (file: File, location: string, date: Da
       expenses: (extracted as any).expenses ?? 0,
     };
 
-    return { success: true, data: salesData };
+    return { success: true, data: salesData, extractedDate };
   } catch (error) {
     return {
       success: false,
@@ -128,13 +133,58 @@ export const parseRealPDFContent = async (fileContent: ArrayBuffer): Promise<str
 
 
 // Extract specific data patterns from PDF text
-export const extractSalesMetrics = (pdfText: string): Partial<SalesData> => {
+export const extractSalesMetrics = (pdfText: string): Partial<SalesData> & { extractedDate?: Date } => {
   console.log('[pdfParser] Starting sales metrics extraction');
   console.log('[pdfParser] PDF text length:', pdfText.length);
   console.log('[pdfParser] First 500 chars of PDF text:', pdfText.slice(0, 500));
   
   // Normalize the text by removing extra spaces but preserve line structure
   const normalizedText = pdfText.replace(/\s+/g, ' ').trim();
+  
+  // Extract date from PDF - Brink POS format includes day name and full date
+  const extractDate = (text: string): Date | undefined => {
+    // Pattern: "Friday, August 15, 2025" or similar formats
+    const datePatterns = [
+      /(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),?\s+([A-Za-z]+)\s+(\d{1,2}),?\s+(\d{4})/i,
+      /(\d{1,2})\/(\d{1,2})\/(\d{4})/,
+      /(\d{4})-(\d{1,2})-(\d{1,2})/
+    ];
+    
+    for (const pattern of datePatterns) {
+      const match = text.match(pattern);
+      if (match) {
+        try {
+          if (match.length === 4 && isNaN(Number(match[1]))) {
+            // Format: "Month DD, YYYY"
+            const [, month, day, year] = match;
+            const monthIndex = new Date(`${month} 1, 2000`).getMonth();
+            const extractedDate = new Date(parseInt(year), monthIndex, parseInt(day));
+            console.log('[pdfParser] Extracted date from PDF:', extractedDate);
+            return extractedDate;
+          } else if (match.length === 4) {
+            // Format: "MM/DD/YYYY" or "YYYY-MM-DD"
+            let [, part1, part2, part3] = match;
+            let extractedDate: Date;
+            
+            if (part1.length === 4) {
+              // YYYY-MM-DD format
+              extractedDate = new Date(parseInt(part1), parseInt(part2) - 1, parseInt(part3));
+            } else {
+              // MM/DD/YYYY format
+              extractedDate = new Date(parseInt(part3), parseInt(part1) - 1, parseInt(part2));
+            }
+            console.log('[pdfParser] Extracted date from PDF:', extractedDate);
+            return extractedDate;
+          }
+        } catch (error) {
+          console.warn('[pdfParser] Failed to parse extracted date:', match[0]);
+        }
+      }
+    }
+    return undefined;
+  };
+  
+  const extractedDate = extractDate(pdfText);
   
   // Helper function to find numeric values after specific keywords - updated for Brink POS format
   const findValue = (patterns: string[], text: string): number => {
@@ -217,6 +267,7 @@ export const extractSalesMetrics = (pdfText: string): Partial<SalesData> => {
     netSales,
     orderCount,
     orderAverage,
+    extractedDate,
     labor: {
       cost: laborCost,
       hours: laborHours,

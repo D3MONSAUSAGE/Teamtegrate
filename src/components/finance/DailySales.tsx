@@ -309,7 +309,13 @@ const DailySales: React.FC = () => {
             </TabsContent>
             
             <TabsContent value="upload">
-              <EnhancedSalesUploader onUpload={handleSalesDataUpload} />
+              <EnhancedSalesUploader 
+                onUpload={handleSalesDataUpload}
+                onDateExtracted={(date) => {
+                  // Navigate to the week containing the extracted date
+                  setSelectedWeek(date);
+                }}
+              />
             </TabsContent>
           </Tabs>
         </CardContent>

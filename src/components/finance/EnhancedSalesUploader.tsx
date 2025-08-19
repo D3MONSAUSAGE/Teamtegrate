@@ -16,9 +16,10 @@ import { parseBrinkPOSReport } from '@/utils/pdfParser';
 
 interface EnhancedSalesUploaderProps {
   onUpload: (data: SalesData) => void;
+  onDateExtracted?: (date: Date) => void;
 }
 
-const EnhancedSalesUploader: React.FC<EnhancedSalesUploaderProps> = ({ onUpload }) => {
+const EnhancedSalesUploader: React.FC<EnhancedSalesUploaderProps> = ({ onUpload, onDateExtracted }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [salesDate, setSalesDate] = useState<Date | undefined>(new Date());
@@ -36,8 +37,31 @@ const EnhancedSalesUploader: React.FC<EnhancedSalesUploaderProps> = ({ onUpload 
       setFiles(acceptedFiles);
       setParseStatus('idle');
       setParseError('');
+      
+      // Try to extract date from PDF when file is dropped
+      if (acceptedFiles.length > 0) {
+        extractDateFromPDF(acceptedFiles[0]);
+      }
     }
   });
+  
+  const extractDateFromPDF = async (file: File) => {
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const { parseRealPDFContent, extractSalesMetrics } = await import('@/utils/pdfParser');
+      const pdfText = await parseRealPDFContent(arrayBuffer);
+      const metrics = extractSalesMetrics(pdfText);
+      
+      if (metrics.extractedDate) {
+        setSalesDate(metrics.extractedDate);
+        onDateExtracted?.(metrics.extractedDate);
+        toast.success(`Date auto-populated: ${format(metrics.extractedDate, "PPP")}`);
+      }
+    } catch (error) {
+      console.warn('Could not extract date from PDF:', error);
+      // Don't show error toast for date extraction failure
+    }
+  };
   
   const handleUpload = async () => {
     if (!salesDate) {
@@ -75,7 +99,12 @@ const EnhancedSalesUploader: React.FC<EnhancedSalesUploaderProps> = ({ onUpload 
       if (parseResult.success && parseResult.data) {
         setParseStatus('success');
         onUpload(parseResult.data);
-        toast.success("Sales data uploaded and parsed successfully!");
+        
+        // Show success message with date info
+        const usedDate = parseResult.extractedDate ? 
+          `Sales data for ${format(parseResult.extractedDate, "PPP")} uploaded successfully!` :
+          "Sales data uploaded and parsed successfully!";
+        toast.success(usedDate);
         
         // Reset form
         setSalesDate(new Date());
