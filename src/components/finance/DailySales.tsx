@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Calendar as CalendarIcon, Download } from "lucide-react";
+import { Calendar as CalendarIcon, Download, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import { useSalesData } from '@/hooks/useSalesData';
 import { useWeeklySalesData } from '@/hooks/useWeeklySalesData';
@@ -14,7 +14,7 @@ import EnhancedSalesUploader from './EnhancedSalesUploader';
 import SalesReport from './SalesReport';
 import SalesDateFilter from './SalesDateFilter';
 import WeeklySalesTable from './WeeklySalesTable';
-import { format, addWeeks, subWeeks } from 'date-fns';
+import { format, addWeeks, subWeeks, endOfWeek } from 'date-fns';
 
 const DailySales: React.FC = () => {
   const {
@@ -42,7 +42,9 @@ const DailySales: React.FC = () => {
     setSelectedWeek,
     selectedLocation,
     setSelectedLocation,
-    locations
+    locations,
+    weeksWithData,
+    totalRecords
   } = useWeeklySalesData(salesData);
   
   const handleSalesDataUpload = async (newData: SalesData) => {
@@ -157,52 +159,132 @@ const DailySales: React.FC = () => {
                 </div>
               ) : (
                 <>
-                  <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-                    <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setSelectedWeek(subWeeks(selectedWeek, 1))}
-                        >
-                          ← Previous Week
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setSelectedWeek(addWeeks(selectedWeek, 1))}
-                        >
-                          Next Week →
-                        </Button>
+                  <div className="space-y-4">
+                    {/* Data Summary */}
+                    <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between p-4 bg-muted/50 rounded-lg">
+                      <div className="flex flex-col sm:flex-row gap-4 text-sm">
+                        <span className="font-medium">
+                          Total Records: {totalRecords}
+                        </span>
+                        <span>
+                          Selected Week: {format(selectedWeek, 'MMM dd')} - {format(endOfWeek(selectedWeek, { weekStartsOn: 1 }), 'MMM dd, yyyy')}
+                        </span>
+                        <span>
+                          Weeks with Data: {weeksWithData.length}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Week Navigation */}
+                    <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+                      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setSelectedWeek(subWeeks(selectedWeek, 1))}
+                          >
+                            <ChevronLeft className="h-4 w-4" />
+                            Previous
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setSelectedWeek(new Date())}
+                          >
+                            Current Week
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setSelectedWeek(addWeeks(selectedWeek, 1))}
+                          >
+                            Next
+                            <ChevronRight className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        
+                        {/* Quick navigation to weeks with data */}
+                        {weeksWithData.length > 0 && (
+                          <Select 
+                            value={format(selectedWeek, 'yyyy-MM-dd')} 
+                            onValueChange={(value) => setSelectedWeek(new Date(value))}
+                          >
+                            <SelectTrigger className="w-52">
+                              <CalendarIcon className="h-4 w-4 mr-2" />
+                              <SelectValue placeholder="Jump to week..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {weeksWithData.map(week => (
+                                <SelectItem key={format(week, 'yyyy-MM-dd')} value={format(week, 'yyyy-MM-dd')}>
+                                  {format(week, 'MMM dd')} - {format(endOfWeek(week, { weekStartsOn: 1 }), 'MMM dd, yyyy')}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                        
+                        <Select value={selectedLocation} onValueChange={setSelectedLocation}>
+                          <SelectTrigger className="w-48">
+                            <SelectValue placeholder="Select location" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {locations.map(location => (
+                              <SelectItem key={location} value={location}>
+                                {location === 'all' ? 'All Locations' : location}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                       
-                      <Select value={selectedLocation} onValueChange={setSelectedLocation}>
-                        <SelectTrigger className="w-48">
-                          <SelectValue placeholder="Select location" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {locations.map(location => (
-                            <SelectItem key={location} value={location}>
-                              {location === 'all' ? 'All Locations' : location}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Button onClick={handleExportWeekly} variant="outline" size="sm" disabled={!weeklyData}>
+                        <Download className="h-4 w-4 mr-2" />
+                        Export Weekly Report
+                      </Button>
                     </div>
-                    
-                    <Button onClick={handleExportWeekly} variant="outline" size="sm">
-                      <Download className="h-4 w-4 mr-2" />
-                      Export Weekly Report
-                    </Button>
                   </div>
                   
-                  {weeklyData ? (
+                  {weeklyData && weeklyData.dailySales.length > 0 ? (
                     <WeeklySalesTable weeklyData={weeklyData} />
                   ) : (
                     <Card>
-                      <CardContent className="p-8 text-center">
-                        <p className="text-muted-foreground">No sales data available for the selected week and location.</p>
-                        <p className="text-sm text-muted-foreground mt-2">Upload sales data using the "Upload Data" tab above.</p>
+                      <CardContent className="p-8 text-center space-y-4">
+                        <div>
+                          <p className="text-muted-foreground">
+                            No sales data found for {format(selectedWeek, 'MMM dd')} - {format(endOfWeek(selectedWeek, { weekStartsOn: 1 }), 'MMM dd, yyyy')}
+                            {selectedLocation !== 'all' && ` at ${selectedLocation}`}
+                          </p>
+                          {totalRecords > 0 ? (
+                            <div className="mt-4 space-y-2">
+                              <p className="text-sm text-muted-foreground">
+                                You have {totalRecords} sales records uploaded.
+                              </p>
+                              {weeksWithData.length > 0 && (
+                                <div className="flex flex-wrap gap-2 justify-center">
+                                  <span className="text-sm text-muted-foreground">Jump to a week with data:</span>
+                                  {weeksWithData.slice(0, 3).map(week => (
+                                    <Button
+                                      key={format(week, 'yyyy-MM-dd')}
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => setSelectedWeek(week)}
+                                    >
+                                      {format(week, 'MMM dd')}
+                                    </Button>
+                                  ))}
+                                  {weeksWithData.length > 3 && (
+                                    <span className="text-sm text-muted-foreground">+{weeksWithData.length - 3} more</span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-muted-foreground mt-2">
+                              Upload sales data using the "Upload Data" tab above to get started.
+                            </p>
+                          )}
+                        </div>
                       </CardContent>
                     </Card>
                   )}

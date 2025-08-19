@@ -4,7 +4,15 @@ import { SalesData, WeeklySalesData, ParsedSalesData } from '@/types/sales';
 import { startOfWeek, endOfWeek, format, parseISO, isSameWeek } from 'date-fns';
 
 export const useWeeklySalesData = (salesData: SalesData[]) => {
-  const [selectedWeek, setSelectedWeek] = useState<Date>(new Date());
+  // Initialize with the most recent data's week or current week
+  const [selectedWeek, setSelectedWeek] = useState<Date>(() => {
+    if (salesData.length === 0) return new Date();
+    // Find the most recent data and set the week to that data's week
+    const mostRecentData = salesData.reduce((latest, current) => {
+      return new Date(current.date) > new Date(latest.date) ? current : latest;
+    });
+    return new Date(mostRecentData.date);
+  });
   const [selectedLocation, setSelectedLocation] = useState<string>('all');
   
   // Parse dates and filter by location
@@ -22,6 +30,31 @@ export const useWeeklySalesData = (salesData: SalesData[]) => {
     const uniqueLocations = [...new Set(salesData.map(item => item.location))];
     return ['all', ...uniqueLocations];
   }, [salesData]);
+
+  // Get weeks that have data for quick navigation
+  const weeksWithData = useMemo(() => {
+    const weeks = new Map<string, Date>();
+    salesData.forEach(sale => {
+      const weekStart = startOfWeek(parseISO(sale.date), { weekStartsOn: 1 });
+      const weekKey = format(weekStart, 'yyyy-MM-dd');
+      if (!weeks.has(weekKey)) {
+        weeks.set(weekKey, weekStart);
+      }
+    });
+    return Array.from(weeks.values()).sort((a, b) => b.getTime() - a.getTime());
+  }, [salesData]);
+
+  // Update selectedWeek when salesData changes and no week is selected yet
+  useEffect(() => {
+    if (salesData.length > 0 && weeksWithData.length > 0) {
+      const currentWeekHasData = weeksWithData.some(week => 
+        isSameWeek(week, selectedWeek, { weekStartsOn: 1 })
+      );
+      if (!currentWeekHasData) {
+        setSelectedWeek(weeksWithData[0]); // Set to most recent week with data
+      }
+    }
+  }, [salesData, weeksWithData, selectedWeek]);
   
   // Calculate weekly data
   const weeklyData = useMemo((): WeeklySalesData | null => {
@@ -109,6 +142,8 @@ export const useWeeklySalesData = (salesData: SalesData[]) => {
     setSelectedWeek,
     selectedLocation,
     setSelectedLocation,
-    locations
+    locations,
+    weeksWithData,
+    totalRecords: salesData.length
   };
 };
