@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { 
@@ -18,14 +19,16 @@ import {
   AlertCircle, 
   FileText,
   X,
-  Sparkles 
+  Sparkles,
+  AlertTriangle
 } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 import { SalesData } from '@/types/sales';
 import { parseBrinkPOSReport } from '@/utils/pdfParser';
+import { salesDataService } from '@/services/SalesDataService';
 
 interface SalesUploadManagerProps {
-  onUpload: (data: SalesData) => Promise<void>;
+  onUpload: (data: SalesData, replaceExisting?: boolean) => Promise<void>;
   onDateExtracted?: (date: Date) => void;
   isUploading?: boolean;
 }
@@ -49,6 +52,9 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
   const [files, setFiles] = useState<FileWithPreview[]>([]);
   const [error, setError] = useState<string>('');
   const [isDateExtracted, setIsDateExtracted] = useState(false);
+  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
+  const [existingData, setExistingData] = useState<any>(null);
+  const [pendingUpload, setPendingUpload] = useState<SalesData | null>(null);
   
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const newFiles: FileWithPreview[] = acceptedFiles.map(file => 
@@ -124,7 +130,7 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
     }
   };
   
-  const handleUpload = async () => {
+  const handleUpload = async (replaceExisting: boolean = false) => {
     if (!salesDate) {
       setError('Please select a date');
       toast.error("Please select a date");
@@ -142,6 +148,26 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
     setUploadProgress(0);
     
     try {
+      // First check for existing data if not replacing
+      if (!replaceExisting) {
+        const existingCheck = await salesDataService.checkForExistingSalesData(
+          salesDate.toISOString().split('T')[0], 
+          location
+        );
+        
+        if (existingCheck.exists) {
+          // Parse the PDF first to show comparison
+          const parseResult = await parseBrinkPOSReport(files[0], location, salesDate);
+          if (parseResult.success && parseResult.data) {
+            setExistingData(existingCheck.data);
+            setPendingUpload(parseResult.data);
+            setShowDuplicateDialog(true);
+            setUploadStatus('idle');
+            return;
+          }
+        }
+      }
+      
       // Simulate realistic progress
       const progressInterval = setInterval(() => {
         setUploadProgress(prev => {
@@ -160,8 +186,8 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
       setUploadProgress(90);
       
       if (parseResult.success && parseResult.data) {
-        // Upload to database
-        await onUpload(parseResult.data);
+        // Upload to database with replace flag
+        await onUpload(parseResult.data, replaceExisting);
         
         setUploadProgress(100);
         setUploadStatus('success');
@@ -183,9 +209,45 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
       
     } catch (error) {
       console.error('Error processing sales data:', error);
-      setUploadStatus('error');
-      setError(error instanceof Error ? error.message : 'Unknown error');
+      
+      if (error instanceof Error && error.message.startsWith('DUPLICATE_EXISTS:')) {
+        // This shouldn't happen with our new logic, but just in case
+        const message = error.message.replace('DUPLICATE_EXISTS:', '');
+        setError(message);
+        toast.error(message);
+      } else {
+        setUploadStatus('error');
+        setError(error instanceof Error ? error.message : 'Unknown error');
+        toast.error('Upload failed');
+      }
     }
+  };
+
+  const handleDuplicateReplace = async () => {
+    setShowDuplicateDialog(false);
+    if (pendingUpload) {
+      try {
+        await onUpload(pendingUpload, true);
+        toast.success('Sales data replaced successfully');
+        
+        // Reset form
+        setSalesDate(new Date());
+        setFiles([]);
+        setIsDateExtracted(false);
+        setExistingData(null);
+        setPendingUpload(null);
+      } catch (error) {
+        console.error('Error replacing data:', error);
+        toast.error('Failed to replace existing data');
+      }
+    }
+  };
+
+  const handleDuplicateCancel = () => {
+    setShowDuplicateDialog(false);
+    setExistingData(null);
+    setPendingUpload(null);
+    setUploadStatus('idle');
   };
 
   const removeFile = () => {
@@ -384,7 +446,7 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
       {/* Upload Button */}
       <div className="flex justify-end">
         <Button 
-          onClick={handleUpload} 
+          onClick={() => handleUpload()} 
           disabled={!salesDate || files.length === 0 || uploadStatus === 'processing' || isUploading}
           size="lg"
         >
@@ -401,6 +463,79 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
           )}
         </Button>
       </div>
+
+      {/* Duplicate Detection Dialog */}
+      <Dialog open={showDuplicateDialog} onOpenChange={setShowDuplicateDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              Duplicate Sales Data Detected
+            </DialogTitle>
+            <DialogDescription>
+              Sales data for {salesDate && format(salesDate, "PPP")} at {location} already exists. 
+              Would you like to replace it with the new data?
+            </DialogDescription>
+          </DialogHeader>
+          
+          {existingData && pendingUpload && (
+            <div className="grid grid-cols-2 gap-4 py-4">
+              <div className="space-y-3">
+                <h4 className="font-medium text-sm">Existing Data</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span>Gross Sales:</span>
+                    <span>${Number(existingData.gross_sales).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Net Sales:</span>
+                    <span>${Number(existingData.net_sales).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Non-Cash:</span>
+                    <span>${Number(existingData.non_cash).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Orders:</span>
+                    <span>{existingData.order_count}</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="space-y-3">
+                <h4 className="font-medium text-sm">New Data (from PDF)</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span>Gross Sales:</span>
+                    <span>${pendingUpload.grossSales.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Net Sales:</span>
+                    <span>${pendingUpload.netSales.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Non-Cash:</span>
+                    <span>${pendingUpload.paymentBreakdown.nonCash.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Orders:</span>
+                    <span>{pendingUpload.orderCount}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={handleDuplicateCancel}>
+              Cancel Upload
+            </Button>
+            <Button onClick={handleDuplicateReplace} className="bg-amber-600 hover:bg-amber-700">
+              Replace Existing Data
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

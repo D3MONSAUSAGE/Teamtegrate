@@ -146,21 +146,42 @@ class SalesDataService {
     }
   }
 
-  async addSalesData(salesData: SalesData): Promise<void> {
+  async checkForExistingSalesData(date: string, location: string): Promise<{ exists: boolean; data?: any }> {
     try {
       const user = await this.getCurrentUser();
       
-      // Check for existing record to prevent duplicates
       const { data: existing } = await supabase
         .from('sales_data')
-        .select('id')
+        .select('*')
         .eq('organization_id', user.organization_id)
-        .eq('date', salesData.date)
-        .eq('location', salesData.location)
+        .eq('date', date)
+        .eq('location', location)
         .limit(1);
 
-      if (existing && existing.length > 0) {
-        throw new Error(`Sales data for ${salesData.date} at ${salesData.location} already exists`);
+      return {
+        exists: existing && existing.length > 0,
+        data: existing?.[0] || null
+      };
+    } catch (error) {
+      console.error('[SalesDataService] Error checking existing data:', error);
+      return { exists: false };
+    }
+  }
+
+  async addSalesData(salesData: SalesData, replaceExisting: boolean = false): Promise<void> {
+    try {
+      const user = await this.getCurrentUser();
+      
+      // Check for existing record
+      const existingCheck = await this.checkForExistingSalesData(salesData.date, salesData.location);
+      
+      if (existingCheck.exists && !replaceExisting) {
+        throw new Error(`DUPLICATE_EXISTS:Sales data for ${salesData.date} at ${salesData.location} already exists`);
+      }
+      
+      // If replacing, delete the existing record first
+      if (existingCheck.exists && replaceExisting && existingCheck.data) {
+        await this.deleteSalesData(existingCheck.data.id);
       }
 
       const insertData = {

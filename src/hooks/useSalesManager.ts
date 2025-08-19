@@ -24,7 +24,7 @@ interface UseSalesManagerReturn {
   locations: string[];
   
   // Data operations
-  addSalesData: (data: SalesData) => Promise<void>;
+  addSalesData: (data: SalesData, replaceExisting?: boolean) => Promise<void>;
   deleteSalesData: (id: string) => Promise<void>;
   refreshData: () => Promise<void>;
   
@@ -184,12 +184,12 @@ export const useSalesManager = (initialFilters: SalesDataFilters = {}): UseSales
   }, [filters, selectedLocation, weeksWithData.length]);
 
   // CRUD operations
-  const addSalesData = useCallback(async (newData: SalesData) => {
+  const addSalesData = useCallback(async (newData: SalesData, replaceExisting: boolean = false) => {
     setIsUploading(true);
     setError(null);
     
     try {
-      await salesDataService.addSalesData(newData);
+      await salesDataService.addSalesData(newData, replaceExisting);
       // Refresh data after successful upload
       await fetchData(false);
     } catch (err) {

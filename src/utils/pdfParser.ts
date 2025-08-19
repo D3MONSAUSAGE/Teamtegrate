@@ -223,22 +223,37 @@ export const extractSalesMetrics = (pdfText: string): Partial<SalesData> & { ext
     'Count[\\s:]*([0-9,]+)'
   ], normalizedText);
 
+  // Enhanced cash extraction patterns for Brink POS
   const totalCash = findValue([
     'Total Cash[\\s:$]*([0-9,]+\\.?[0-9]*)',
     'Cash Total[\\s:$]*([0-9,]+\\.?[0-9]*)',
-    'Cash[\\s:$]*([0-9,]+\\.?[0-9]*)'
+    'Cash[\\s:$]*([0-9,]+\\.?[0-9]*)',
+    'CASH[\\s:$]*([0-9,]+\\.?[0-9]*)'
+  ], normalizedText);
+
+  // Direct non-cash extraction - this should be more accurate than calculation
+  const directNonCash = findValue([
+    'Non Cash[\\s:$]*([0-9,]+\\.?[0-9]*)',
+    'Non-Cash[\\s:$]*([0-9,]+\\.?[0-9]*)',
+    'NonCash[\\s:$]*([0-9,]+\\.?[0-9]*)',
+    'NON CASH[\\s:$]*([0-9,]+\\.?[0-9]*)',
+    'NON-CASH[\\s:$]*([0-9,]+\\.?[0-9]*)',
+    'Credit Card[\\s:$]*([0-9,]+\\.?[0-9]*)',
+    'Electronic Payments[\\s:$]*([0-9,]+\\.?[0-9]*)'
   ], normalizedText);
 
   const laborHours = findValue([
     'Labor Hours[\\s:]*([0-9,]+\\.?[0-9]*)',
     'Hours[\\s:]*([0-9,]+\\.?[0-9]*)',
-    'Total Hours[\\s:]*([0-9,]+\\.?[0-9]*)'
+    'Total Hours[\\s:]*([0-9,]+\\.?[0-9]*)',
+    'LABOR HOURS[\\s:]*([0-9,]+\\.?[0-9]*)'
   ], normalizedText);
 
   const tips = findValue([
     'Tips[\\s:$]*([0-9,]+\\.?[0-9]*)',
     'Total Tips[\\s:$]*([0-9,]+\\.?[0-9]*)',
-    'Tip Total[\\s:$]*([0-9,]+\\.?[0-9]*)'
+    'Tip Total[\\s:$]*([0-9,]+\\.?[0-9]*)',
+    'TIPS[\\s:$]*([0-9,]+\\.?[0-9]*)'
   ], normalizedText);
 
   // Calculate derived values
@@ -246,7 +261,26 @@ export const extractSalesMetrics = (pdfText: string): Partial<SalesData> & { ext
   const laborCost = laborHours * 15; // Estimate based on $15/hour
   const laborPercentage = grossSales > 0 ? (laborCost / grossSales) * 100 : 0;
   const salesPerLaborHour = laborHours > 0 ? grossSales / laborHours : 0;
-  const nonCash = grossSales - totalCash;
+  
+  // Use direct non-cash value if available, otherwise calculate
+  let nonCash = directNonCash;
+  if (nonCash === 0 && (grossSales > 0 && totalCash > 0)) {
+    nonCash = Math.max(0, grossSales - totalCash);
+    console.log('[pdfParser] Using calculated non-cash value (gross - cash):', nonCash);
+  } else if (directNonCash > 0) {
+    console.log('[pdfParser] Using direct non-cash value from PDF:', nonCash);
+  }
+  
+  // Validation logging
+  if (Math.abs((grossSales - totalCash) - nonCash) > 1) {
+    console.warn('[pdfParser] Discrepancy detected:', {
+      grossSales,
+      totalCash,
+      calculatedNonCash: grossSales - totalCash,
+      extractedNonCash: directNonCash,
+      finalNonCash: nonCash
+    });
+  }
 
   console.log('[pdfParser] Extracted metrics:', {
     grossSales,
