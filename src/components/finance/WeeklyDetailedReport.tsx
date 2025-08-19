@@ -76,12 +76,12 @@ const WeeklyDetailedReport: React.FC<WeeklyDetailedReportProps> = ({
       item.destinations.forEach(dest => {
         const existing = acc.find(d => d.name === dest.name);
         if (existing) {
-          existing.sales += dest.netSales || 0;
+          existing.sales += dest.total || 0;
           existing.quantity += dest.quantity || 0;
         } else {
           acc.push({
             name: dest.name,
-            sales: dest.netSales || 0,
+            sales: dest.total || 0,
             quantity: dest.quantity || 0
           });
         }
@@ -96,12 +96,12 @@ const WeeklyDetailedReport: React.FC<WeeklyDetailedReportProps> = ({
       item.revenueItems.forEach(revenue => {
         const existing = acc.find(r => r.name === revenue.name);
         if (existing) {
-          existing.sales += revenue.netSales || 0;
+          existing.sales += revenue.total || 0;
           existing.quantity += revenue.quantity || 0;
         } else {
           acc.push({
             name: revenue.name,
-            sales: revenue.netSales || 0,
+            sales: revenue.total || 0,
             quantity: revenue.quantity || 0
           });
         }
@@ -116,12 +116,12 @@ const WeeklyDetailedReport: React.FC<WeeklyDetailedReportProps> = ({
       item.tenders.forEach(tender => {
         const existing = acc.find(t => t.name === tender.name);
         if (existing) {
-          existing.amount += tender.amount || 0;
+          existing.amount += tender.total || 0;
           existing.quantity += tender.quantity || 0;
         } else {
           acc.push({
             name: tender.name,
-            amount: tender.amount || 0,
+            amount: tender.total || 0,
             quantity: tender.quantity || 0
           });
         }
@@ -136,12 +136,12 @@ const WeeklyDetailedReport: React.FC<WeeklyDetailedReportProps> = ({
       item.discounts.forEach(discount => {
         const existing = acc.find(d => d.name === discount.name);
         if (existing) {
-          existing.amount += discount.amount || 0;
+          existing.amount += discount.total || 0;
           existing.quantity += discount.quantity || 0;
         } else {
           acc.push({
             name: discount.name,
-            amount: discount.amount || 0,
+            amount: discount.total || 0,
             quantity: discount.quantity || 0
           });
         }
@@ -155,11 +155,11 @@ const WeeklyDetailedReport: React.FC<WeeklyDetailedReportProps> = ({
       item.taxes.forEach(tax => {
         const existing = acc.find(t => t.name === tax.name);
         if (existing) {
-          existing.amount += tax.amount || 0;
+          existing.amount += tax.total || 0;
         } else {
           acc.push({
             name: tax.name,
-            amount: tax.amount || 0
+            amount: tax.total || 0
           });
         }
       });
@@ -196,9 +196,20 @@ const WeeklyDetailedReport: React.FC<WeeklyDetailedReportProps> = ({
 
   const handleCurrentWeek = () => {
     if (weeksWithData.length > 0) {
-      setSelectedWeek(weeksWithData[weeksWithData.length - 1]);
+      // weeksWithData is sorted with most recent first, so use index 0
+      setSelectedWeek(weeksWithData[0]);
     }
   };
+
+  // Debug logging
+  console.log('WeeklyDetailedReport Debug:', {
+    selectedWeek: format(selectedWeek, 'yyyy-MM-dd'),
+    weeksWithData: weeksWithData.map(w => format(w, 'yyyy-MM-dd')),
+    selectedLocation,
+    locations,
+    weeklyData: weeklyData ? 'exists' : 'null',
+    salesDataCount: salesData.length
+  });
 
   const handleExportReport = () => {
     if (!weeklyData) return;
