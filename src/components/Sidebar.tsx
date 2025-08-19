@@ -4,7 +4,6 @@ import { useDarkMode } from '@/hooks/useDarkMode';
 import SidebarHeader from './sidebar/SidebarHeader';
 import SidebarNav from './sidebar/SidebarNav';
 import SidebarFooter from './sidebar/SidebarFooter';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Sidebar as ShadcnSidebar,
   SidebarContent,
@@ -85,15 +84,13 @@ const Sidebar: React.FC<SidebarProps> = memo(({ onNavigation }) => {
         />
       </ShadcnSidebarHeader>
       
-      <SidebarContent className="flex flex-col overflow-hidden">
-        <ScrollArea className="flex-1">
-          <div className="p-2">
-            <SidebarNav 
-              onNavigation={handleNavigation} 
-              isCollapsed={isCollapsed}
-            />
-          </div>
-        </ScrollArea>
+      <SidebarContent className="overflow-y-auto overflow-x-hidden">
+        <div className="p-2">
+          <SidebarNav 
+            onNavigation={handleNavigation} 
+            isCollapsed={isCollapsed}
+          />
+        </div>
       </SidebarContent>
       
       <ShadcnSidebarFooter className="border-t border-sidebar-border/30 bg-gradient-to-t from-sidebar-background/80 to-transparent">

@@ -42,16 +42,15 @@ const WeeklySalesTable: React.FC<WeeklySalesTableProps> = ({ weeklyData }) => {
             <TableHeader>
               <TableRow className="bg-muted/50">
                 <TableHead className="font-semibold">Day</TableHead>
-                <TableHead className="font-semibold">File</TableHead>
                 <TableHead className="text-right">Non Cash</TableHead>
                 <TableHead className="text-right">Total Cash</TableHead>
                 <TableHead className="text-right">Gross Total</TableHead>
                 <TableHead className="text-right">Discount</TableHead>
-                <TableHead className="text-right text-destructive">Tax Paid</TableHead>
+                <TableHead className="text-right">Tax Paid</TableHead>
                 <TableHead className="text-right">Tips</TableHead>
                 <TableHead className="text-right">Net Sales</TableHead>
                 <TableHead className="text-right">Calculated Cash</TableHead>
-                <TableHead className="text-right text-destructive">Expenses</TableHead>
+                <TableHead className="text-right">Expenses</TableHead>
                 <TableHead className="text-right">Total In-House Cash</TableHead>
               </TableRow>
             </TableHeader>
@@ -65,9 +64,6 @@ const WeeklySalesTable: React.FC<WeeklySalesTableProps> = ({ weeklyData }) => {
                 return (
                   <TableRow key={day} className={dailySale ? "" : "opacity-50"}>
                     <TableCell className="font-medium">{day}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {dailySale?.fileName ? dailySale.fileName.replace(/\.[^/.]+$/, "") : '-'}
-                    </TableCell>
                     <TableCell className="text-right">
                       {dailySale ? formatCurrency(dailySale.paymentBreakdown.nonCash) : '-'}
                     </TableCell>
@@ -80,7 +76,7 @@ const WeeklySalesTable: React.FC<WeeklySalesTableProps> = ({ weeklyData }) => {
                     <TableCell className="text-right">
                       {dailySale ? formatCurrency(totalDiscount) : '-'}
                     </TableCell>
-                    <TableCell className="text-right text-destructive">
+                    <TableCell className="text-right">
                       {dailySale ? formatCurrency(totalTax) : '-'}
                     </TableCell>
                     <TableCell className="text-right">
@@ -92,7 +88,7 @@ const WeeklySalesTable: React.FC<WeeklySalesTableProps> = ({ weeklyData }) => {
                     <TableCell className="text-right">
                       {dailySale ? formatCurrency(dailySale.paymentBreakdown.calculatedCash) : '-'}
                     </TableCell>
-                    <TableCell className="text-right text-destructive">
+                    <TableCell className="text-right">
                       {dailySale ? formatCurrency(dailySale.expenses || 0) : '-'}
                     </TableCell>
                     <TableCell className="text-right">
@@ -103,19 +99,18 @@ const WeeklySalesTable: React.FC<WeeklySalesTableProps> = ({ weeklyData }) => {
               })}
               
               {/* Weekly Totals Row */}
-              <TableRow className="bg-muted/30 font-semibold border-t-2">
-                <TableCell className="font-bold">WEEK TOTAL</TableCell>
-                <TableCell></TableCell>
+              <TableRow className="bg-muted/30 font-semibold">
+                <TableCell>WEEK TOTAL</TableCell>
                 <TableCell className="text-right">{formatCurrency(weeklyData.totals.nonCash)}</TableCell>
                 <TableCell className="text-right">{formatCurrency(weeklyData.totals.totalCash)}</TableCell>
                 <TableCell className="text-right">{formatCurrency(weeklyData.totals.grossTotal)}</TableCell>
                 <TableCell className="text-right">{formatCurrency(weeklyData.totals.discount)}</TableCell>
-                <TableCell className="text-right text-destructive">{formatCurrency(weeklyData.totals.taxPaid)}</TableCell>
+                <TableCell className="text-right">{formatCurrency(weeklyData.totals.taxPaid)}</TableCell>
                 <TableCell className="text-right">{formatCurrency(weeklyData.totals.tips)}</TableCell>
                 <TableCell className="text-right">{formatCurrency(weeklyData.totals.netSales)}</TableCell>
                 <TableCell className="text-right">{formatCurrency(weeklyData.totals.calculatedCash)}</TableCell>
-                <TableCell className="text-right text-destructive">{formatCurrency(weeklyData.totals.expenses)}</TableCell>
-                <TableCell className="text-right font-bold">{formatCurrency(weeklyData.totals.totalInHouseCash)}</TableCell>
+                <TableCell className="text-right">{formatCurrency(weeklyData.totals.expenses)}</TableCell>
+                <TableCell className="text-right">{formatCurrency(weeklyData.totals.totalInHouseCash)}</TableCell>
               </TableRow>
             </TableBody>
           </Table>
