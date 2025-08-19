@@ -118,13 +118,13 @@ const TaskFormFieldsEnhanced: React.FC<TaskFormFieldsEnhancedProps> = ({
           <Label>Project</Label>
           <Select
             value={watch('projectId') || ''}
-            onValueChange={(value) => setValue('projectId', value || undefined)}
+            onValueChange={(value) => setValue('projectId', value === 'none' ? undefined : value)}
           >
             <SelectTrigger>
               <SelectValue placeholder="Select project (optional)" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">No Project</SelectItem>
+              <SelectItem value="none">No Project</SelectItem>
               {projects.map((project) => (
                 <SelectItem key={project.id} value={project.id}>
                   {project.title}
@@ -140,17 +140,17 @@ const TaskFormFieldsEnhanced: React.FC<TaskFormFieldsEnhancedProps> = ({
           <Label>Assign To</Label>
           <Select
             value={watch('assignedToId') || ''}
-            onValueChange={(value) => {
-              const member = teamMembers.find(m => m.id === value);
-              setValue('assignedToId', value || undefined);
-              setValue('assignedToName', member?.name || undefined);
-            }}
+             onValueChange={(value) => {
+               const member = teamMembers.find(m => m.id === value);
+               setValue('assignedToId', value === 'unassigned' ? undefined : value);
+               setValue('assignedToName', value === 'unassigned' ? undefined : member?.name);
+             }}
           >
             <SelectTrigger>
               <SelectValue placeholder="Select team member (optional)" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Unassigned</SelectItem>
+              <SelectItem value="unassigned">Unassigned</SelectItem>
               {teamMembers.map((member) => (
                 <SelectItem key={member.id} value={member.id}>
                   {member.name} ({member.email})

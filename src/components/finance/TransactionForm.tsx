@@ -51,7 +51,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
         amount: editingTransaction.amount.toString(),
         description: editingTransaction.description,
         date: new Date(editingTransaction.date),
-        location: editingTransaction.location || '',
+        location: editingTransaction.location === 'none' ? '' : editingTransaction.location || '',
         vendor_name: editingTransaction.vendor_name || '',
         notes: editingTransaction.notes || '',
         tags: editingTransaction.tags || []
@@ -78,6 +78,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
         ...formData,
         amount: parseFloat(formData.amount),
         date: format(formData.date, 'yyyy-MM-dd'),
+        location: formData.location === 'none' ? null : formData.location || null,
         tags: formData.tags.length > 0 ? formData.tags : null
       });
     } catch (error) {
@@ -233,7 +234,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
                   <SelectValue placeholder="Select location" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No specific location</SelectItem>
+                  <SelectItem value="none">No specific location</SelectItem>
                   {locations.map((location) => (
                     <SelectItem key={location} value={location}>
                       {location}

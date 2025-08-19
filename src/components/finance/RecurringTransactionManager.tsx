@@ -119,7 +119,7 @@ const RecurringTransactionManager: React.FC<RecurringTransactionManagerProps> = 
         end_date: hasEndDate && formData.end_date ? format(formData.end_date, 'yyyy-MM-dd') : null,
         next_generation_date: format(nextGenDate, 'yyyy-MM-dd'),
         vendor_name: formData.vendor_name || null,
-        location: formData.location || null
+        location: formData.location === 'none' ? '' : formData.location || null
       };
 
       if (editingTransaction) {
@@ -592,7 +592,7 @@ const RecurringTransactionManager: React.FC<RecurringTransactionManagerProps> = 
                       <SelectValue placeholder="Select location" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">No specific location</SelectItem>
+                      <SelectItem value="none">No specific location</SelectItem>
                       {locations.map((location) => (
                         <SelectItem key={location} value={location}>
                           {location}

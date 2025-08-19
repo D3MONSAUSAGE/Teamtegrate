@@ -250,7 +250,7 @@ const PettyCashManager: React.FC<PettyCashManagerProps> = ({ locations }) => {
     loadData();
   }, []);
 
-  const filteredTransactions = selectedBoxId 
+  const filteredTransactions = selectedBoxId && selectedBoxId !== 'all'
     ? transactions.filter(t => t.petty_cash_box_id === selectedBoxId)
     : transactions;
 
@@ -395,7 +395,7 @@ const PettyCashManager: React.FC<PettyCashManagerProps> = ({ locations }) => {
                     <SelectValue placeholder="All cash boxes" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All cash boxes</SelectItem>
+                    <SelectItem value="all">All cash boxes</SelectItem>
                     {cashBoxes.map((box) => (
                       <SelectItem key={box.id} value={box.id}>
                         {box.name} - {box.location}

@@ -20,7 +20,7 @@ import { Button } from '@/components/ui/button';
 
 const FinancePage: React.FC = () => {
   const isMobile = useIsMobile();
-  const [transactionsOpen, setTransactionsOpen] = useState(false);
+  
   
   // Get sales data for locations and week selection
   const {
@@ -39,7 +39,7 @@ const FinancePage: React.FC = () => {
           <TabsTrigger value="pnl" className="flex-1 md:flex-none">Profit & Loss</TabsTrigger>
           <TabsTrigger value="daily-sales" className="flex-1 md:flex-none">Daily Sales</TabsTrigger>
           <TabsTrigger value="invoices" className="flex-1 md:flex-none">Invoices</TabsTrigger>
-          <TabsTrigger value="transactions" className="flex-1 md:flex-none" onClick={() => setTransactionsOpen(true)}>
+          <TabsTrigger value="transactions" className="flex-1 md:flex-none">
             Transactions
           </TabsTrigger>
         </TabsList>
@@ -61,40 +61,6 @@ const FinancePage: React.FC = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Transactions Drawer */}
-      <Drawer open={transactionsOpen} onOpenChange={setTransactionsOpen}>
-        <DrawerContent>
-          <div className="mx-auto w-full max-w-sm">
-            <DrawerHeader>
-              <DrawerTitle>Transactions</DrawerTitle>
-              <DrawerDescription>
-                A comprehensive view of financial transactions.
-              </DrawerDescription>
-            </DrawerHeader>
-            <div className="p-4 pb-0">
-              <div className="flex flex-col space-y-4">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
-                    <div>
-                      <div className="font-medium">Transaction #{i+1}</div>
-                      <div className="text-sm text-muted-foreground">April {15 + i}, 2025</div>
-                    </div>
-                    <div className={`text-${i % 2 === 0 ? 'green' : 'red'}-600 font-medium`}>
-                      {i % 2 === 0 ? '+' : '-'}${(123 * (i + 1)).toFixed(2)}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <DrawerFooter>
-              <Button>View All Transactions</Button>
-              <DrawerClose asChild>
-                <Button variant="outline">Cancel</Button>
-              </DrawerClose>
-            </DrawerFooter>
-          </div>
-        </DrawerContent>
-      </Drawer>
     </div>
   );
 };
