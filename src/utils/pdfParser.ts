@@ -3,8 +3,10 @@ import { SalesData, LaborData, CashManagementData, GiftCardData, PaymentBreakdow
 import { v4 as uuidv4 } from 'uuid';
 import { GlobalWorkerOptions, getDocument } from 'pdfjs-dist';
 
-// Configure PDF.js worker (served from public folder)
-GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
+// Vite + PDF.js worker setup
+// @ts-ignore - Vite worker import type
+import PdfWorker from 'pdfjs-dist/build/pdf.worker.mjs?worker';
+GlobalWorkerOptions.workerPort = new PdfWorker();
 
 export interface ParsedPDFData {
   success: boolean;
@@ -95,19 +97,35 @@ export const parseBrinkPOSReport = async (file: File, location: string, date: Da
 
 // Real PDF parsing function placeholder
 export const parseRealPDFContent = async (fileContent: ArrayBuffer): Promise<string> => {
-  const loadingTask = getDocument({ data: fileContent });
-  const pdf = await loadingTask.promise;
-  let text = '';
-  for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-    const page = await pdf.getPage(pageNum);
-    const content: any = await page.getTextContent();
-    const strings = (content.items || [])
-      .map((item: any) => (item && typeof item.str === 'string' ? item.str : ''))
-      .join(' ');
-    text += `\n${strings}`;
+  try {
+    const loadingTask = getDocument({ data: fileContent });
+    const pdf = await loadingTask.promise;
+    let text = '';
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+      const page = await pdf.getPage(pageNum);
+      const content: any = await page.getTextContent();
+      const strings = (content.items || [])
+        .map((item: any) => (item && typeof item.str === 'string' ? item.str : ''))
+        .join(' ');
+      text += `\n${strings}`;
+    }
+    if (text && text.trim().length > 0) {
+      console.debug('[pdfParser] Extracted text length:', text.length);
+      console.debug('[pdfParser] Text preview:', text.slice(0, 500));
+    } else {
+      console.warn('[pdfParser] Extracted empty text from PDF');
+    }
+    return text;
+  } catch (err: any) {
+    console.error('[pdfParser] PDF parsing failed:', err);
+    const msg = String(err?.message || err);
+    if (msg.toLowerCase().includes('worker')) {
+      throw new Error('PDF parsing failed due to worker load issue. The PDF.js worker could not start. This is usually fixed by bundling the worker via Vite (?worker import).');
+    }
+    throw err;
   }
-  return text;
 };
+
 
 // Extract specific data patterns from PDF text
 export const extractSalesMetrics = (pdfText: string): Partial<SalesData> => {
