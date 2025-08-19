@@ -120,7 +120,34 @@ export const useSalesDataSupabase = () => {
   const fetchSalesData = async () => {
     try {
       setIsLoading(true);
-      console.log('[useSalesDataSupabase] Fetching sales data from Supabase...');
+      console.log('[useSalesDataSupabase] Starting to fetch sales data from Supabase...');
+      
+      // Check authentication first
+      const { data: authData, error: authError } = await supabase.auth.getUser();
+      console.log('[useSalesDataSupabase] Auth check:', { user: authData.user?.id, error: authError });
+      
+      if (authError || !authData.user) {
+        console.error('[useSalesDataSupabase] Not authenticated:', authError);
+        toast.error('Authentication required to load sales data');
+        return;
+      }
+
+      // Get user profile to check organization
+      const { data: userProfile, error: profileError } = await supabase
+        .from('users')
+        .select('organization_id, name, email')
+        .eq('id', authData.user.id)
+        .single();
+      
+      console.log('[useSalesDataSupabase] User profile:', { userProfile, profileError });
+      
+      if (profileError || !userProfile?.organization_id) {
+        console.error('[useSalesDataSupabase] No organization found for user:', profileError);
+        toast.error('User organization not found');
+        return;
+      }
+
+      console.log('[useSalesDataSupabase] Fetching sales data for organization:', userProfile.organization_id);
       
       const { data, error } = await supabase
         .from('sales_data')
@@ -129,15 +156,24 @@ export const useSalesDataSupabase = () => {
 
       if (error) {
         console.error('[useSalesDataSupabase] Error fetching sales data:', error);
+        toast.error(`Failed to load sales data: ${error.message}`);
         throw error;
       }
 
-      console.log('[useSalesDataSupabase] Fetched sales data:', data);
+      console.log('[useSalesDataSupabase] Raw fetched data:', data);
+      console.log('[useSalesDataSupabase] Data count:', data?.length || 0);
+      
       const convertedData = convertFromSupabase(data || []);
+      console.log('[useSalesDataSupabase] Converted data:', convertedData);
+      
       setSalesData(convertedData);
+      
+      if (convertedData.length === 0) {
+        console.warn('[useSalesDataSupabase] No sales data found for this organization');
+      }
     } catch (error) {
       console.error('[useSalesDataSupabase] Failed to fetch sales data:', error);
-      toast.error('Failed to load sales data');
+      toast.error(`Failed to load sales data: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsLoading(false);
     }
@@ -206,9 +242,24 @@ export const useSalesDataSupabase = () => {
     }
   };
 
-  // Load data on mount
+  // Load data on mount - wait for auth to be ready
   useEffect(() => {
-    fetchSalesData();
+    const initializeData = async () => {
+      console.log('[useSalesDataSupabase] Initializing data fetch...');
+      
+      // Wait for auth to be ready
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('[useSalesDataSupabase] Session check:', !!session);
+      
+      if (session) {
+        await fetchSalesData();
+      } else {
+        console.log('[useSalesDataSupabase] No session found, skipping data fetch');
+        setIsLoading(false);
+      }
+    };
+
+    initializeData();
   }, []);
 
   return {

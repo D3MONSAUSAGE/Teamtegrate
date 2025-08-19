@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Calendar as CalendarIcon, Download, ChevronLeft, ChevronRight } from "lucide-react";
+import { Calendar as CalendarIcon, Download, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import { useSalesData } from '@/hooks/useSalesData';
 import { useWeeklySalesData } from '@/hooks/useWeeklySalesData';
@@ -138,6 +138,15 @@ const DailySales: React.FC = () => {
             Upload, analyze, and track your daily sales data with weekly reporting
           </p>
         </div>
+        <Button
+          onClick={refreshData}
+          variant="outline"
+          disabled={isLoading}
+          size="sm"
+        >
+          <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+          Refresh Data
+        </Button>
       </div>
       
       <Card>
