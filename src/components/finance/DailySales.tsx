@@ -8,7 +8,8 @@ import { Calendar as CalendarIcon, Download } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import { useSalesData } from '@/hooks/useSalesData';
 import { useWeeklySalesData } from '@/hooks/useWeeklySalesData';
-import { sampleSalesData, SalesData } from '@/types/sales';
+import { useSalesDataSupabase } from '@/hooks/useSalesDataSupabase';
+import { SalesData } from '@/types/sales';
 import EnhancedSalesUploader from './EnhancedSalesUploader';
 import SalesReport from './SalesReport';
 import SalesDateFilter from './SalesDateFilter';
@@ -16,6 +17,14 @@ import WeeklySalesTable from './WeeklySalesTable';
 import { format, addWeeks, subWeeks } from 'date-fns';
 
 const DailySales: React.FC = () => {
+  const {
+    salesData: supabaseSalesData,
+    isLoading,
+    addSalesData,
+    deleteSalesData,
+    refreshData
+  } = useSalesDataSupabase();
+
   const {
     salesData,
     setSalesData,
@@ -25,7 +34,7 @@ const DailySales: React.FC = () => {
     filteredData,
     handleDateRangeChange,
     handleCustomDateChange
-  } = useSalesData(sampleSalesData);
+  } = useSalesData(supabaseSalesData);
   
   const {
     weeklyData,
@@ -36,9 +45,15 @@ const DailySales: React.FC = () => {
     locations
   } = useWeeklySalesData(salesData);
   
-  const handleSalesDataUpload = (newData: SalesData) => {
-    setSalesData(prevData => [...prevData, newData]);
-    toast.success("Sales data uploaded and parsed successfully!");
+  const handleSalesDataUpload = async (newData: SalesData) => {
+    console.log('[DailySales] Uploading new sales data:', newData);
+    try {
+      await addSalesData(newData);
+      // Data will be automatically updated via the hook
+    } catch (error) {
+      console.error('[DailySales] Error uploading sales data:', error);
+      // Error toast is handled in the hook
+    }
   };
 
   const handleExportWeekly = () => {
@@ -136,53 +151,62 @@ const DailySales: React.FC = () => {
             </TabsList>
             
             <TabsContent value="weekly" className="space-y-4">
-              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-                <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setSelectedWeek(subWeeks(selectedWeek, 1))}
-                    >
-                      ← Previous Week
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setSelectedWeek(addWeeks(selectedWeek, 1))}
-                    >
-                      Next Week →
+              {isLoading ? (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">Loading sales data...</p>
+                </div>
+              ) : (
+                <>
+                  <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+                    <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setSelectedWeek(subWeeks(selectedWeek, 1))}
+                        >
+                          ← Previous Week
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setSelectedWeek(addWeeks(selectedWeek, 1))}
+                        >
+                          Next Week →
+                        </Button>
+                      </div>
+                      
+                      <Select value={selectedLocation} onValueChange={setSelectedLocation}>
+                        <SelectTrigger className="w-48">
+                          <SelectValue placeholder="Select location" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {locations.map(location => (
+                            <SelectItem key={location} value={location}>
+                              {location === 'all' ? 'All Locations' : location}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <Button onClick={handleExportWeekly} variant="outline" size="sm">
+                      <Download className="h-4 w-4 mr-2" />
+                      Export Weekly Report
                     </Button>
                   </div>
                   
-                  <Select value={selectedLocation} onValueChange={setSelectedLocation}>
-                    <SelectTrigger className="w-48">
-                      <SelectValue placeholder="Select location" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {locations.map(location => (
-                        <SelectItem key={location} value={location}>
-                          {location === 'all' ? 'All Locations' : location}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <Button onClick={handleExportWeekly} variant="outline" size="sm">
-                  <Download className="h-4 w-4 mr-2" />
-                  Export Weekly Report
-                </Button>
-              </div>
-              
-              {weeklyData ? (
-                <WeeklySalesTable weeklyData={weeklyData} />
-              ) : (
-                <Card>
-                  <CardContent className="p-8 text-center">
-                    <p className="text-muted-foreground">No sales data available for the selected week and location.</p>
-                  </CardContent>
-                </Card>
+                  {weeklyData ? (
+                    <WeeklySalesTable weeklyData={weeklyData} />
+                  ) : (
+                    <Card>
+                      <CardContent className="p-8 text-center">
+                        <p className="text-muted-foreground">No sales data available for the selected week and location.</p>
+                        <p className="text-sm text-muted-foreground mt-2">Upload sales data using the "Upload Data" tab above.</p>
+                      </CardContent>
+                    </Card>
+                  )}
+                </>
               )}
             </TabsContent>
             

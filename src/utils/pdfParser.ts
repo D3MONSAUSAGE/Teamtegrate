@@ -129,107 +129,123 @@ export const parseRealPDFContent = async (fileContent: ArrayBuffer): Promise<str
 
 // Extract specific data patterns from PDF text
 export const extractSalesMetrics = (pdfText: string): Partial<SalesData> => {
-  const text = pdfText.replace(/\s+/g, ' ').trim();
-
-  const findNumber = (patterns: RegExp[]): number | undefined => {
+  console.log('[pdfParser] Starting sales metrics extraction');
+  console.log('[pdfParser] PDF text length:', pdfText.length);
+  console.log('[pdfParser] First 500 chars of PDF text:', pdfText.slice(0, 500));
+  
+  // Normalize the text by removing extra spaces but preserve line structure
+  const normalizedText = pdfText.replace(/\s+/g, ' ').trim();
+  
+  // Helper function to find numeric values after specific keywords - updated for Brink POS format
+  const findValue = (patterns: string[], text: string): number => {
     for (const pattern of patterns) {
-      const m = text.match(pattern);
-      if (m && m[1]) {
-        const val = parseFloat(m[1].replace(/[,$]/g, ''));
-        if (!Number.isNaN(val)) return val;
+      const regex = new RegExp(pattern, 'i');
+      const match = text.match(regex);
+      if (match && match[1]) {
+        const cleanValue = match[1].replace(/[,$\s]/g, '');
+        const value = parseFloat(cleanValue);
+        if (!isNaN(value)) {
+          console.log(`[pdfParser] Found ${pattern}: ${value}`);
+          return value;
+        }
       }
     }
-    return undefined;
+    return 0;
   };
 
-  const grossSales = findNumber([
-    /Gross Sales[\s:$]+([\d,]+(?:\.\d+)?)/i,
-    /Total Sales[\s:$]+([\d,]+(?:\.\d+)?)/i,
-  ]);
+  // Updated patterns for Brink POS format based on user's report
+  const grossSales = findValue([
+    'Gross Sales[\\s:$]*([0-9,]+\\.?[0-9]*)',
+    'Total Gross[\\s:$]*([0-9,]+\\.?[0-9]*)',
+    'Gross[\\s:$]*([0-9,]+\\.?[0-9]*)'
+  ], normalizedText);
 
-  const netSales = findNumber([
-    /Net Sales[\s:$]+([\d,]+(?:\.\d+)?)/i,
-  ]);
+  const netSales = findValue([
+    'Net Sales[\\s:$]*([0-9,]+\\.?[0-9]*)',
+    'Total Net[\\s:$]*([0-9,]+\\.?[0-9]*)',
+    'Net[\\s:$]*([0-9,]+\\.?[0-9]*)'
+  ], normalizedText);
 
-  const orderCount = findNumber([
-    /Orders? Count[\s:]+([\d,]+)/i,
-    /Total Orders?[\s:]+([\d,]+)/i,
-    /Guests?[\s:]+([\d,]+)/i,
-  ]);
+  const orderCount = findValue([
+    'Order Count[\\s:]*([0-9,]+)',
+    'Total Orders[\\s:]*([0-9,]+)',
+    'Orders[\\s:]*([0-9,]+)',
+    'Count[\\s:]*([0-9,]+)'
+  ], normalizedText);
 
-  const laborCost = findNumber([
-    /Labor Cost[\s:$]+([\d,]+(?:\.\d+)?)/i,
-  ]);
+  const totalCash = findValue([
+    'Total Cash[\\s:$]*([0-9,]+\\.?[0-9]*)',
+    'Cash Total[\\s:$]*([0-9,]+\\.?[0-9]*)',
+    'Cash[\\s:$]*([0-9,]+\\.?[0-9]*)'
+  ], normalizedText);
 
-  const laborHours = findNumber([
-    /Labor (?:Hrs|Hours)[\s:]+([\d,]+(?:\.\d+)?)/i,
-  ]);
+  const laborHours = findValue([
+    'Labor Hours[\\s:]*([0-9,]+\\.?[0-9]*)',
+    'Hours[\\s:]*([0-9,]+\\.?[0-9]*)',
+    'Total Hours[\\s:]*([0-9,]+\\.?[0-9]*)'
+  ], normalizedText);
 
-  const laborPct = findNumber([
-    /Labor (?:Percent|%)[\s:]+([\d.,]+)%/i,
-    /Labor %[\s:]+([\d.,]+)%/i,
-  ]);
+  const tips = findValue([
+    'Tips[\\s:$]*([0-9,]+\\.?[0-9]*)',
+    'Total Tips[\\s:$]*([0-9,]+\\.?[0-9]*)',
+    'Tip Total[\\s:$]*([0-9,]+\\.?[0-9]*)'
+  ], normalizedText);
 
-  const splh = findNumber([
-    /Sales\/Labor Hour[\s:$]+([\d,]+(?:\.\d+)?)/i,
-    /SPLH[\s:$]+([\d,]+(?:\.\d+)?)/i,
-  ]);
+  // Calculate derived values
+  const orderAverage = orderCount > 0 ? grossSales / orderCount : 0;
+  const laborCost = laborHours * 15; // Estimate based on $15/hour
+  const laborPercentage = grossSales > 0 ? (laborCost / grossSales) * 100 : 0;
+  const salesPerLaborHour = laborHours > 0 ? grossSales / laborHours : 0;
+  const nonCash = grossSales - totalCash;
 
-  const totalCash = findNumber([
-    /Total Cash[\s:$]+([\d,]+(?:\.\d+)?)/i,
-    /Cash Total[\s:$]+([\d,]+(?:\.\d+)?)/i,
-  ]);
-
-  const tips = findNumber([
-    /Tips?[\s:$]+([\d,]+(?:\.\d+)?)/i,
-    /Gratuity[\s:$]+([\d,]+(?:\.\d+)?)/i,
-  ]);
-
-  const paidIn = findNumber([
-    /Paid In[\s:$]+([\d,]+(?:\.\d+)?)/i,
-  ]);
-
-  const paidOut = findNumber([
-    /Paid Out[\s:$]+([\d,]+(?:\.\d+)?)/i,
-  ]);
-
-  const depAcc = findNumber([
-    /Deposits Accepted[\s:$]+([\d,]+(?:\.\d+)?)/i,
-  ]);
-
-  const depRed = findNumber([
-    /Deposits Redeemed[\s:$]+([\d,]+(?:\.\d+)?)/i,
-  ]);
-
-  const voids = findNumber([/Voids?[\s:]+([\d,]+)/i]);
-  const refunds = findNumber([/Refunds?[\s:]+([\d,]+)/i]);
-  const surcharges = findNumber([/Surcharges?[\s:$]+([\d,]+(?:\.\d+)?)/i]);
-  const expenses = findNumber([/Expenses?[\s:$]+([\d,]+(?:\.\d+)?)/i]);
-
-  const result: Partial<SalesData> = {
+  console.log('[pdfParser] Extracted metrics:', {
     grossSales,
     netSales,
-    orderCount: orderCount ? Math.round(orderCount) : undefined,
+    orderCount,
+    orderAverage,
+    totalCash,
+    nonCash,
+    laborCost,
+    laborHours,
+    laborPercentage,
+    salesPerLaborHour,
+    tips
+  });
+
+  return {
+    grossSales,
+    netSales,
+    orderCount,
+    orderAverage,
     labor: {
-      cost: laborCost ?? 0,
-      hours: laborHours ?? 0,
-      percentage: laborPct ?? 0,
-      salesPerLaborHour: splh ?? 0,
+      cost: laborCost,
+      hours: laborHours,
+      percentage: laborPercentage,
+      salesPerLaborHour
+    },
+    paymentBreakdown: {
+      nonCash,
+      totalCash,
+      calculatedCash: totalCash,
+      tips
     },
     cashManagement: {
-      depositsAccepted: depAcc ?? 0,
-      depositsRedeemed: depRed ?? 0,
-      paidIn: paidIn ?? 0,
-      paidOut: paidOut ?? 0,
+      depositsAccepted: 0,
+      depositsRedeemed: 0,
+      paidIn: 0,
+      paidOut: 0
     },
-    voids: voids ?? 0,
-    refunds: refunds ?? 0,
-    surcharges: surcharges ?? 0,
-    expenses: expenses ?? 0,
-  } as Partial<SalesData> & { cashTotal?: number; tips?: number };
-
-  (result as any).cashTotal = totalCash;
-  (result as any).tips = tips;
-
-  return result;
+    giftCards: {
+      issueAmount: 0,
+      issueCount: 0,
+      reloadAmount: 0,
+      reloadCount: 0
+    },
+    destinations: [],
+    revenueItems: [],
+    tenders: [],
+    discounts: [],
+    promotions: [],
+    taxes: []
+  };
 };

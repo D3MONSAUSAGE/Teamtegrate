@@ -842,6 +842,87 @@ export type Database = {
           },
         ]
       }
+      sales_data: {
+        Row: {
+          calculated_cash: number
+          created_at: string
+          date: string
+          expenses: number | null
+          gross_sales: number
+          id: string
+          labor_cost: number
+          labor_hours: number
+          labor_percentage: number
+          location: string
+          net_sales: number
+          non_cash: number
+          order_average: number
+          order_count: number
+          organization_id: string
+          raw_data: Json | null
+          refunds: number | null
+          sales_per_labor_hour: number
+          surcharges: number | null
+          tips: number
+          total_cash: number
+          updated_at: string
+          user_id: string
+          voids: number | null
+        }
+        Insert: {
+          calculated_cash?: number
+          created_at?: string
+          date: string
+          expenses?: number | null
+          gross_sales?: number
+          id?: string
+          labor_cost?: number
+          labor_hours?: number
+          labor_percentage?: number
+          location: string
+          net_sales?: number
+          non_cash?: number
+          order_average?: number
+          order_count?: number
+          organization_id: string
+          raw_data?: Json | null
+          refunds?: number | null
+          sales_per_labor_hour?: number
+          surcharges?: number | null
+          tips?: number
+          total_cash?: number
+          updated_at?: string
+          user_id: string
+          voids?: number | null
+        }
+        Update: {
+          calculated_cash?: number
+          created_at?: string
+          date?: string
+          expenses?: number | null
+          gross_sales?: number
+          id?: string
+          labor_cost?: number
+          labor_hours?: number
+          labor_percentage?: number
+          location?: string
+          net_sales?: number
+          non_cash?: number
+          order_average?: number
+          order_count?: number
+          organization_id?: string
+          raw_data?: Json | null
+          refunds?: number | null
+          sales_per_labor_hour?: number
+          surcharges?: number | null
+          tips?: number
+          total_cash?: number
+          updated_at?: string
+          user_id?: string
+          voids?: number | null
+        }
+        Relationships: []
+      }
       shared_folders: {
         Row: {
           created_at: string
