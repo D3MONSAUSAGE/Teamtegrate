@@ -152,6 +152,7 @@ export const useSalesDataSupabase = () => {
       const { data, error } = await supabase
         .from('sales_data')
         .select('*')
+        .eq('organization_id', userProfile.organization_id)
         .order('date', { ascending: false });
 
       if (error) {
@@ -244,13 +245,13 @@ export const useSalesDataSupabase = () => {
 
   // Load data on mount - wait for auth to be ready
   useEffect(() => {
+    let isMounted = true;
+
     const initializeData = async () => {
       console.log('[useSalesDataSupabase] Initializing data fetch...');
-      
       // Wait for auth to be ready
       const { data: { session } } = await supabase.auth.getSession();
       console.log('[useSalesDataSupabase] Session check:', !!session);
-      
       if (session) {
         await fetchSalesData();
       } else {
@@ -260,6 +261,21 @@ export const useSalesDataSupabase = () => {
     };
 
     initializeData();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!isMounted) return;
+      if (session) {
+        fetchSalesData();
+      } else {
+        setSalesData([]);
+        setIsLoading(false);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      subscription?.unsubscribe();
+    };
   }, []);
 
   return {
