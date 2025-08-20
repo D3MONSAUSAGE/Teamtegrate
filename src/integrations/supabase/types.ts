@@ -47,6 +47,58 @@ export type Database = {
         }
         Relationships: []
       }
+      archive_settings: {
+        Row: {
+          auto_archive_enabled: boolean | null
+          created_at: string | null
+          id: string
+          organization_id: string | null
+          threshold_days: number | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          auto_archive_enabled?: boolean | null
+          created_at?: string | null
+          id?: string
+          organization_id?: string | null
+          threshold_days?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          auto_archive_enabled?: boolean | null
+          created_at?: string | null
+          id?: string
+          organization_id?: string | null
+          threshold_days?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "archive_settings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "archive_settings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "archive_settings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_attachments: {
         Row: {
           created_at: string
@@ -1424,6 +1476,7 @@ export type Database = {
       }
       tasks: {
         Row: {
+          archived_at: string | null
           assigned_to_id: string | null
           assigned_to_ids: string[] | null
           assigned_to_names: string[] | null
@@ -1433,6 +1486,7 @@ export type Database = {
           deadline: string | null
           description: string | null
           id: string
+          is_archived: boolean | null
           organization_id: string
           priority: string | null
           project_id: string | null
@@ -1444,6 +1498,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          archived_at?: string | null
           assigned_to_id?: string | null
           assigned_to_ids?: string[] | null
           assigned_to_names?: string[] | null
@@ -1453,6 +1508,7 @@ export type Database = {
           deadline?: string | null
           description?: string | null
           id: string
+          is_archived?: boolean | null
           organization_id: string
           priority?: string | null
           project_id?: string | null
@@ -1464,6 +1520,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          archived_at?: string | null
           assigned_to_id?: string | null
           assigned_to_ids?: string[] | null
           assigned_to_names?: string[] | null
@@ -1473,6 +1530,7 @@ export type Database = {
           deadline?: string | null
           description?: string | null
           id?: string
+          is_archived?: boolean | null
           organization_id?: string
           priority?: string | null
           project_id?: string | null
@@ -2125,6 +2183,10 @@ export type Database = {
           title: string | null
           updated_at: string | null
         }[]
+      }
+      get_archive_threshold_days: {
+        Args: { user_id_param: string }
+        Returns: number
       }
       get_current_user_organization_id: {
         Args: Record<PropertyKey, never>
