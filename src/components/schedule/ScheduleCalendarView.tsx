@@ -13,7 +13,7 @@ export const ScheduleCalendarView: React.FC = () => {
   useEffect(() => {
     const weekStart = format(startOfWeek(selectedWeek), 'yyyy-MM-dd');
     const weekEnd = format(endOfWeek(selectedWeek), 'yyyy-MM-dd');
-    fetchEmployeeSchedules(weekStart, weekEnd);
+    fetchEmployeeSchedules(weekStart, weekEnd, true);
   }, [selectedWeek, fetchEmployeeSchedules]);
 
   const navigateWeek = (direction: 'prev' | 'next') => {

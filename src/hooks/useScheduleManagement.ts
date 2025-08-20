@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -51,14 +51,14 @@ export interface EmployeeAvailability {
 }
 
 export const useScheduleManagement = () => {
-  const { user } = useAuth();
+  const { user, hasRoleAccess } = useAuth();
   const [scheduleTemplates, setScheduleTemplates] = useState<ScheduleTemplate[]>([]);
   
   const [employeeSchedules, setEmployeeSchedules] = useState<EmployeeSchedule[]>([]);
   const [employeeAvailability, setEmployeeAvailability] = useState<EmployeeAvailability[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
+  const lastRangeRef = useRef<{ start: string; end: string; includeAll: boolean } | null>(null);
   // Fetch schedule templates
   const fetchScheduleTemplates = async () => {
     try {
@@ -80,15 +80,25 @@ export const useScheduleManagement = () => {
 
 
   // Fetch employee schedules for a date range
-  const fetchEmployeeSchedules = async (startDate: string, endDate: string) => {
+  const fetchEmployeeSchedules = async (startDate: string, endDate: string, includeAll: boolean = false) => {
     try {
       setIsLoading(true);
-      const { data, error } = await supabase
+      // Remember last requested range for realtime refresh
+      lastRangeRef.current = { start: startDate, end: endDate, includeAll };
+
+      let query = supabase
         .from('employee_schedules')
         .select('*')
         .gte('scheduled_date', startDate)
         .lte('scheduled_date', endDate)
         .order('scheduled_start_time', { ascending: true });
+
+      // If not a manager/admin and not explicitly requesting all, scope to current user
+      if (!includeAll && !hasRoleAccess('manager') && user?.id) {
+        query = query.eq('employee_id', user.id);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       
@@ -268,6 +278,29 @@ export const useScheduleManagement = () => {
     if (user) {
       fetchScheduleTemplates();
     }
+  }, [user]);
+
+  // Realtime refresh for schedules within last requested range
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('employee_schedules_realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'employee_schedules' },
+        () => {
+          const last = lastRangeRef.current;
+          if (last) {
+            fetchEmployeeSchedules(last.start, last.end, last.includeAll);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   return {

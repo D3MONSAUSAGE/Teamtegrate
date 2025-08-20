@@ -158,6 +158,19 @@ export const EmployeeScheduleManager: React.FC = () => {
 
       await createEmployeeSchedule(scheduleData);
 
+      // Fire a notification to the assigned employee (non-blocking)
+      try {
+        await supabase.from('notifications').insert({
+          user_id: formData.employee_id,
+          title: 'New Shift Assigned',
+          content: `Shift on ${format(new Date(scheduleData.scheduled_start_time), 'MMM d, HH:mm')} - ${format(new Date(scheduleData.scheduled_end_time), 'HH:mm')}`,
+          type: 'schedule_assignment',
+          organization_id: user.organizationId
+        });
+      } catch (notifyErr) {
+        console.warn('Failed to create schedule assignment notification:', notifyErr);
+      }
+
       toast.success('Shift assigned successfully');
       setIsAssignDialogOpen(false);
       setFormData({

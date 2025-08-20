@@ -30,6 +30,8 @@ export const useRealtimeNotifications = () => {
           break;
         case 'task_assignment':
         case 'task_status_change':
+        case 'schedule_assignment':
+        case 'schedule_update':
           await playStatusChangeSound(0.8);
           break;
         default:
