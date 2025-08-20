@@ -49,7 +49,8 @@ const TaskReports: React.FC = () => {
     const counts: Record<TaskStatus, number> = {
       'To Do': 0,
       'In Progress': 0,
-      'Completed': 0
+      'Completed': 0,
+      'Archived': 0
     };
     
     taskList.forEach(task => {

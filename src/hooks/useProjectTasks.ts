@@ -24,6 +24,7 @@ export const useProjectTasks = (projectId: string | null) => {
         .select('*')
         .eq('project_id', projectId)
         .eq('organization_id', user.organizationId)
+        .or('is_archived.is.null,is_archived.eq.false')
         .order('deadline', { ascending: true }); // Order by deadline (earliest first) to match frontend default
 
       if (tasksError) {

@@ -14,7 +14,7 @@ export interface User {
 
 export type TaskPriority = 'Low' | 'Medium' | 'High';
 
-export type TaskStatus = 'To Do' | 'In Progress' | 'Completed';
+export type TaskStatus = 'To Do' | 'In Progress' | 'Completed' | 'Archived';
 
 export interface TaskComment {
   id: string;
@@ -47,6 +47,8 @@ export interface Task {
   createdAt: Date;
   updatedAt: Date;
   completedAt?: Date;
+  archivedAt?: Date;
+  isArchived?: boolean;
   assignedToId?: string;
   assignedToName?: string;
   assignedToIds?: string[];
@@ -57,6 +59,7 @@ export interface Task {
   comments?: TaskComment[];
   cost?: number;
   organizationId: string;
+  projectTitle?: string;
 }
 
 export type ProjectStatus = 'To Do' | 'In Progress' | 'Completed';

@@ -48,6 +48,7 @@ export const usePersonalTasks = () => {
             .select('*')
             .eq('organization_id', user.organizationId)
             .eq('user_id', user.id)
+            .or('is_archived.is.null,is_archived.eq.false')
             .order('created_at', { ascending: false });
 
           // Query 2: Tasks assigned to user (single assignment)
@@ -56,6 +57,7 @@ export const usePersonalTasks = () => {
             .select('*')
             .eq('organization_id', user.organizationId)
             .eq('assigned_to_id', user.id)
+            .or('is_archived.is.null,is_archived.eq.false')
             .order('created_at', { ascending: false });
 
           // Query 3: Tasks where user is in the assigned_to_ids array
@@ -63,6 +65,7 @@ export const usePersonalTasks = () => {
             .from('tasks')
             .select('*')
             .eq('organization_id', user.organizationId)
+            .or('is_archived.is.null,is_archived.eq.false')
             .contains('assigned_to_ids', [user.id])
             .order('created_at', { ascending: false });
 
