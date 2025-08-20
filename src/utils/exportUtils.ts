@@ -64,6 +64,7 @@ export const getExportTypeOptions = () => [
   { value: 'overview', label: 'Overview Report', description: 'High-level metrics and summary statistics' },
   { value: 'detailed-tasks', label: 'Detailed Tasks Report', description: 'Complete task data with all fields and metadata' },
   { value: 'user-performance', label: 'User Performance Report', description: 'Individual team member performance metrics' },
+  { value: 'comprehensive-user', label: 'Comprehensive User Report', description: 'Complete workload analysis for a specific user' },
   { value: 'project-breakdown', label: 'Project Breakdown Report', description: 'Project-focused data with task distributions' },
   { value: 'time-tracking', label: 'Time Tracking Report', description: 'Task duration and efficiency metrics' }
 ];

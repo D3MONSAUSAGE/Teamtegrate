@@ -4,7 +4,7 @@ import { Task, Project, User } from '@/types';
 import { DateRange } from 'react-day-picker';
 import { calculateDateRange, formatDateRangeForExport } from '@/utils/dateRangeUtils';
 
-export type ExportType = 'overview' | 'detailed-tasks' | 'user-performance' | 'project-breakdown' | 'time-tracking';
+export type ExportType = 'overview' | 'detailed-tasks' | 'user-performance' | 'comprehensive-user' | 'project-breakdown' | 'time-tracking';
 
 export interface ExportOptions {
   type: ExportType;

@@ -32,7 +32,7 @@ const ReportsPage: React.FC = () => {
   // Data hooks
   const { user } = useAuth();
   const { tasks, projects } = useTask();
-  const { teamMembersPerformance, managerPerformance } = useTeamMembers();
+  const { teamMembersPerformance, managerPerformance, teamMembers } = useTeamMembers();
   
   // Filter states
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
@@ -98,19 +98,23 @@ const ReportsPage: React.FC = () => {
   // Analytics data
   const analyticsData = useAdvancedAnalytics(filteredTasks, timeRange);
   
-  // Team data for enhanced analytics
+  // Team data for enhanced analytics - include email for compatibility
   const enhancedTeamData = useMemo(() => {
-    return teamMembersPerformance.map(member => ({
-      ...member,
-      recentActivity: Array.from({ length: 7 }, (_, i) => ({
-        date: format(subDays(new Date(), 6 - i), 'MMM dd'),
-        tasksCompleted: Math.floor(Math.random() * 5) + 1
-      })),
-      workloadScore: Math.min(100, (member.totalTasks / 15) * 100),
-      qualityScore: Math.floor(Math.random() * 20) + 80,
-      collaborationScore: Math.floor(Math.random() * 15) + 85
-    }));
-  }, [teamMembersPerformance]);
+    return teamMembersPerformance.map(member => {
+      const user = teamMembers.find(u => u.id === member.id);
+      return {
+        ...member,
+        email: user?.email || '',
+        recentActivity: Array.from({ length: 7 }, (_, i) => ({
+          date: format(subDays(new Date(), 6 - i), 'MMM dd'),
+          tasksCompleted: Math.floor(Math.random() * 5) + 1
+        })),
+        workloadScore: Math.min(100, (member.totalTasks / 15) * 100),
+        qualityScore: Math.floor(Math.random() * 20) + 80,
+        collaborationScore: Math.floor(Math.random() * 15) + 85
+      };
+    });
+  }, [teamMembersPerformance, teamMembers]);
   
   // Calculate overview metrics
   const overviewMetrics = useMemo(() => {
@@ -182,6 +186,11 @@ const ReportsPage: React.FC = () => {
           break;
         case 'user-performance':
           exportData = generateUserPerformanceExport(filteredTasks, availableMembers, selectedUser);
+          break;
+        case 'comprehensive-user':
+          exportData = selectedUser 
+            ? generateComprehensiveUserReport(filteredTasks, projects, availableMembers, selectedUser)
+            : generateOverviewExport(filteredTasks, projects, availableMembers);
           break;
         case 'project-breakdown':
           exportData = generateProjectBreakdownExport(filteredTasks, projects, availableMembers);
@@ -275,7 +284,8 @@ const ReportsPage: React.FC = () => {
 
     const rows = usersToAnalyze.map(member => {
       const userTasks = tasks.filter(t => 
-        t.userId === member.id || t.assignedToId === member.id
+        t.userId === member.id || t.assignedToId === member.id ||
+        (t.assignedToIds && t.assignedToIds.includes(member.id))
       );
       
       const totalTasks = userTasks.length;
@@ -303,6 +313,55 @@ const ReportsPage: React.FC = () => {
       : `team-performance-${format(new Date(), 'yyyy-MM-dd')}.csv`;
 
     return { filename, headers, rows };
+  };
+
+  const generateComprehensiveUserReport = (tasks: any[], projects: any[], teamMembers: any[], selectedUser: string) => {
+    const user = teamMembers.find(m => m.id === selectedUser);
+    if (!user) return { filename: '', headers: [], rows: [] };
+
+    const userTasks = tasks.filter(t => 
+      t.userId === selectedUser || t.assignedToId === selectedUser ||
+      (t.assignedToIds && t.assignedToIds.includes(selectedUser))
+    );
+
+    const headers = [
+      'Task ID', 'Title', 'Description', 'Status', 'Priority', 'Project', 
+      'Created Date', 'Deadline', 'Completed Date', 'Days to Complete', 
+      'Is Overdue', 'Task Type'
+    ];
+
+    const rows = userTasks.map(task => {
+      const project = projects.find(p => p.id === task.projectId);
+      const createdDate = new Date(task.createdAt);
+      const deadline = new Date(task.deadline);
+      const completedDate = task.status === 'Completed' ? new Date(task.updatedAt) : null;
+      const daysToComplete = completedDate ? 
+        Math.ceil((completedDate.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24)) : 
+        '';
+      const isOverdue = deadline < new Date() && task.status !== 'Completed';
+      const taskType = task.userId === selectedUser ? 'Created' : 'Assigned';
+
+      return [
+        task.id,
+        task.title || '',
+        task.description || '',
+        task.status || '',
+        task.priority || '',
+        project?.title || 'No Project',
+        format(createdDate, 'yyyy-MM-dd'),
+        format(deadline, 'yyyy-MM-dd'),
+        completedDate ? format(completedDate, 'yyyy-MM-dd') : '',
+        daysToComplete.toString(),
+        isOverdue ? 'Yes' : 'No',
+        taskType
+      ];
+    });
+
+    return {
+      filename: `comprehensive-user-report-${user.name.replace(/\s+/g, '-')}-${format(new Date(), 'yyyy-MM-dd')}.csv`,
+      headers,
+      rows
+    };
   };
 
   const generateProjectBreakdownExport = (tasks: any[], projects: any[], teamMembers: any[]) => {
