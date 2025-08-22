@@ -147,7 +147,24 @@ const UserList: React.FC<UserListProps> = ({
                         </>
                       )}
                       
-                      <DropdownMenuSeparator />
+                      {/* Role Change Options */}
+                      {canManageRole(user.role) && user.id !== currentUser?.id && getAvailableRoles(user.role).length > 0 && (
+                        <>
+                          <DropdownMenuLabel>Change Role</DropdownMenuLabel>
+                          {getAvailableRoles(user.role).map((role) => (
+                            <DropdownMenuItem
+                              key={role}
+                              onClick={() => onRoleChange(user.id, role)}
+                              disabled={updatingUserId === user.id}
+                              className="flex items-center gap-2 pl-6"
+                            >
+                              Change to {role.charAt(0).toUpperCase() + role.slice(1)}
+                            </DropdownMenuItem>
+                          ))}
+                          <DropdownMenuSeparator />
+                        </>
+                      )}
+                      
                       <DropdownMenuItem
                         onClick={() => onEditUser(user)}
                         className="flex items-center gap-2"
