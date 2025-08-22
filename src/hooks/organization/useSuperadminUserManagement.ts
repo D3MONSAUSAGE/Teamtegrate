@@ -7,6 +7,7 @@ import { useResilientUserData } from '../userManagement/useResilientUserData';
 import { useEnhancedUserOperations } from '../userManagement/useEnhancedUserOperations';
 import { useRoleManagement } from '../userManagement/useRoleManagement';
 import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 export const useSuperadminUserManagement = () => {
   const { user: currentUser } = useAuth();
@@ -112,6 +113,32 @@ export const useSuperadminUserManagement = () => {
     setDeleteDialogOpen(true);
   };
 
+  const deleteUser = async (userId: string, deletionReason?: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('delete-user', {
+        body: {
+          targetUserId: userId,
+          deletionReason: deletionReason || 'User deleted by admin'
+        }
+      });
+
+      if (error) {
+        console.error('Delete user edge function error:', error);
+        throw new Error(error.message || 'Failed to delete user');
+      }
+
+      if (!data?.success) {
+        console.error('Delete user failed:', data);
+        throw new Error(data?.error || 'Failed to delete user');
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      throw error;
+    }
+  };
+
   const onUserCreated = () => {
     setCreateDialogOpen(false);
     refetchUsers();
@@ -168,6 +195,7 @@ export const useSuperadminUserManagement = () => {
     handleSuperadminTransfer,
     handleEditUser,
     handleDeleteUser,
+    deleteUser,
     onUserCreated,
     onUserUpdated,
     onUserDeleted

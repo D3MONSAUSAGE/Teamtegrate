@@ -43,9 +43,10 @@ const SuperadminUserManagement: React.FC = () => {
     handleSuperadminTransfer,
     handleEditUser,
     handleDeleteUser,
-    onUserDeleted,
+    deleteUser,
+    onUserCreated,
     onUserUpdated,
-    onUserCreated
+    onUserDeleted
   } = useSuperadminUserManagement();
 
   if (!isSuperadmin) {
@@ -175,12 +176,13 @@ const SuperadminUserManagement: React.FC = () => {
         onUserUpdated={onUserUpdated}
       />
 
-      <SimpleDeleteUserDialog
-        open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
-        user={selectedUser}
-        onUserDeleted={onUserDeleted}
-      />
+        <SimpleDeleteUserDialog
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          user={selectedUser}
+          onUserDeleted={onUserDeleted}
+          deleteUser={deleteUser}
+        />
 
       <SuperadminTransferDialog
         open={transferDialogOpen}

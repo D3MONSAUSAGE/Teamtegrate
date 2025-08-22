@@ -20,13 +20,15 @@ interface SimpleDeleteUserDialogProps {
   onOpenChange: (open: boolean) => void;
   user: any;
   onUserDeleted: () => void;
+  deleteUser: (userId: string, deletionReason?: string) => Promise<any>;
 }
 
 const SimpleDeleteUserDialog: React.FC<SimpleDeleteUserDialogProps> = ({
   open,
   onOpenChange,
   user,
-  onUserDeleted
+  onUserDeleted,
+  deleteUser
 }) => {
   const { user: currentUser } = useAuth();
   const [isDeleting, setIsDeleting] = useState(false);
@@ -81,23 +83,8 @@ const SimpleDeleteUserDialog: React.FC<SimpleDeleteUserDialogProps> = ({
     try {
       console.log('Starting user deletion process for:', user.email);
       
-      // Use the consolidated edge function for deletion
-      const { data, error } = await supabase.functions.invoke('delete-user', {
-        body: {
-          targetUserId: user.id,
-          deletionReason: 'User deleted by admin'
-        }
-      });
-
-      if (error) {
-        console.error('Edge Function error:', error);
-        throw error;
-      }
-
-      if (!data?.success) {
-        console.error('Edge Function returned failure:', data);
-        throw new Error(data?.error || 'Failed to delete user');
-      }
+      // Use the deleteUser function passed from the hook
+      const result = await deleteUser(user.id, 'User deleted by admin');
 
       console.log('User deletion completed successfully');
       toast.success(`User ${user.name} has been deleted successfully`);
