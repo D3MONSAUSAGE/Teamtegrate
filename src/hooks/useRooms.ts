@@ -46,7 +46,11 @@ export function useRooms() {
 
   const createRoom = async (name: string, description?: string, isPublic = false) => {
     if (!user?.id || !user?.organizationId) {
-      console.error('useRooms: Missing user or organization info:', { userId: user?.id, orgId: user?.organizationId });
+      console.error('useRooms: Missing user or organization info:', { 
+        userId: user?.id, 
+        orgId: user?.organizationId,
+        userObject: user 
+      });
       toast.error('Unable to create room: User not properly authenticated');
       return;
     }
