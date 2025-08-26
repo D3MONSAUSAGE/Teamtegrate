@@ -6,7 +6,7 @@ import { LocalNotifications } from '@capacitor/local-notifications';
 import { Capacitor } from '@capacitor/core';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { toast } from 'sonner';
-import { playNotificationSound, playChatSound, playStatusChangeSound } from '@/utils/sounds';
+import { playChatNotification, playAppSound } from '@/utils/chatSounds';
 
 interface RealtimeNotification {
   id: string;
@@ -22,23 +22,27 @@ export const useRealtimeNotifications = () => {
   const { user } = useAuth();
 
   const playNotificationSoundEffect = useCallback(async (notificationType: string) => {
+    const soundSettings = JSON.parse(localStorage.getItem('appSoundSettings') || '{"enabled":true,"volume":0.5}');
+    
+    if (!soundSettings.enabled) return;
+
     try {
       switch (notificationType) {
         case 'chat_message':
         case 'chat_invitation':
-          await playChatSound(0.7);
+          await playChatNotification(soundSettings);
           break;
         case 'task_assignment':
         case 'task_status_change':
         case 'schedule_assignment':
         case 'schedule_update':
-          await playStatusChangeSound(0.8);
+          await playAppSound('status-change', soundSettings.volume);
           break;
         default:
-          await playNotificationSound(0.6);
+          await playAppSound('success', soundSettings.volume);
       }
     } catch (error) {
-      console.log('Sound playback failed:', error);
+      console.log('Sound playback failed (this is normal):', error);
     }
   }, []);
 

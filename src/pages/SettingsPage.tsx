@@ -5,6 +5,8 @@ import { Navigate } from 'react-router-dom';
 import SettingsLayout from '@/components/settings/SettingsLayout';
 import AppSettingsSection from '@/components/settings/AppSettingsSection';
 import NotificationSettings from '@/components/settings/NotificationSettings';
+import SoundSettings from '@/components/settings/SoundSettings';
+import NotificationTester from '@/components/NotificationTester';
 
 const SettingsPage = () => {
   const { user, isLoading } = useAuth();
@@ -33,6 +35,8 @@ const SettingsPage = () => {
         </div>
         
         <NotificationSettings />
+        <SoundSettings />
+        <NotificationTester />
         <AppSettingsSection />
       </div>
     </SettingsLayout>
