@@ -116,6 +116,18 @@ export const useMeetingRequests = () => {
 
   const respondToMeeting = async (participantId: string, response: 'accepted' | 'declined' | 'tentative') => {
     try {
+      console.log('🔄 Responding to meeting:', { participantId, response });
+      
+      // Optimistic update - immediately update local state
+      setMeetingRequests(prev => prev.map(meeting => ({
+        ...meeting,
+        participants: meeting.participants.map(participant => 
+          participant.id === participantId 
+            ? { ...participant, response_status: response, responded_at: new Date().toISOString() }
+            : participant
+        )
+      })));
+
       const { error } = await supabase
         .from('meeting_participants')
         .update({
@@ -124,14 +136,22 @@ export const useMeetingRequests = () => {
         })
         .eq('id', participantId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Database update failed:', error);
+        // Revert optimistic update on error
+        await fetchMeetingRequests();
+        throw error;
+      }
 
+      console.log('✅ Meeting response updated successfully');
+      
       toast({
         title: "Success",
         description: `Meeting invitation ${response}`,
       });
 
-      fetchMeetingRequests();
+      // Fetch fresh data to ensure consistency
+      await fetchMeetingRequests();
     } catch (error) {
       console.error('Error responding to meeting:', error);
       toast({
@@ -146,6 +166,7 @@ export const useMeetingRequests = () => {
     fetchMeetingRequests();
 
     // Subscribe to real-time updates
+    console.log('🔄 Setting up real-time subscription for meetings');
     const channel = supabase
       .channel('meeting-requests-changes')
       .on(
@@ -155,7 +176,10 @@ export const useMeetingRequests = () => {
           schema: 'public',
           table: 'meeting_requests'
         },
-        () => fetchMeetingRequests()
+        (payload) => {
+          console.log('📡 Meeting request real-time update:', payload);
+          fetchMeetingRequests();
+        }
       )
       .on(
         'postgres_changes',
@@ -164,7 +188,10 @@ export const useMeetingRequests = () => {
           schema: 'public',
           table: 'meeting_participants'
         },
-        () => fetchMeetingRequests()
+        (payload) => {
+          console.log('📡 Meeting participant real-time update:', payload);
+          fetchMeetingRequests();
+        }
       )
       .subscribe();
 
