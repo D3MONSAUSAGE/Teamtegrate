@@ -12,10 +12,13 @@ import { useChatPermissions } from '@/hooks/use-chat-permissions';
 import { useRooms } from '@/hooks/useRooms';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMessagePerformance } from '@/hooks/useMessagePerformance';
+import { useTypingIndicator } from '@/hooks/useTypingIndicator';
+import { useInputTyping } from '@/hooks/useInputTyping';
 import { ChatRoom } from '@/types/chat';
 import EnhancedMessageBubble from './EnhancedMessageBubble';
 import DeleteChatRoomDialog from './DeleteChatRoomDialog';
 import { MessagePagination } from './MessagePagination';
+import { TypingIndicator } from './TypingIndicator';
 
 interface ModernMessageAreaProps {
   room: ChatRoom;
@@ -36,7 +39,6 @@ const ModernMessageArea: React.FC<ModernMessageAreaProps> = ({
 }) => {
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
-  const [isTyping, setIsTyping] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -49,6 +51,19 @@ const ModernMessageArea: React.FC<ModernMessageAreaProps> = ({
 
   // Performance monitoring
   useMessagePerformance(room.id, messages.length, loading);
+
+  // Typing indicators
+  const { typingUsers, startTyping, stopTyping } = useTypingIndicator({
+    roomId: room.id,
+    enabled: isParticipant
+  });
+
+  // Input typing handlers
+  const { handleInputChange, handleInputFocus, handleInputBlur, handleKeyDown } = useInputTyping({
+    onStartTyping: startTyping,
+    onStopTyping: stopTyping,
+    debounceMs: 500
+  });
 
   const showDeleteButton = user && room && canDeleteRoom(room.created_by);
 
@@ -71,6 +86,8 @@ const ModernMessageArea: React.FC<ModernMessageAreaProps> = ({
 
     try {
       setSending(true);
+      // Stop typing when sending
+      stopTyping();
       await sendMessage(newMessage);
       setNewMessage('');
     } catch (error) {
@@ -80,20 +97,26 @@ const ModernMessageArea: React.FC<ModernMessageAreaProps> = ({
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage(e);
+  const handleMessageInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    setNewMessage(value);
+    
+    // Handle typing detection
+    if (value.trim()) {
+      handleInputChange(value);
+    } else {
+      stopTyping();
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setNewMessage(e.target.value);
+  const handleMessageKeyDown = (e: React.KeyboardEvent) => {
+    // Handle typing detection
+    handleKeyDown(e);
     
-    // Simple typing indicator logic
-    if (!isTyping && e.target.value.length > 0) {
-      setIsTyping(true);
-      setTimeout(() => setIsTyping(false), 3000);
+    // Send message on Enter (without Shift)
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage(e);
     }
   };
 
@@ -257,19 +280,17 @@ const ModernMessageArea: React.FC<ModernMessageAreaProps> = ({
         </ScrollArea>
 
         {/* Typing indicator */}
-        {isTyping && (
-          <div className="px-6 py-2 text-sm text-muted-foreground">
-            Someone is typing...
-          </div>
-        )}
+        <TypingIndicator typingUsers={typingUsers} />
 
         <div className="p-4 border-t border-border/50 bg-muted/30">
           <form onSubmit={handleSendMessage} className="flex gap-2">
             <div className="relative flex-1">
               <Textarea
                 value={newMessage}
-                onChange={handleInputChange}
-                onKeyDown={handleKeyDown}
+                onChange={handleMessageInputChange}
+                onKeyDown={handleMessageKeyDown}
+                onFocus={handleInputFocus}
+                onBlur={handleInputBlur}
                 placeholder="Type your message..."
                 className="min-h-[40px] max-h-[120px] resize-none pr-10"
                 disabled={sending}
