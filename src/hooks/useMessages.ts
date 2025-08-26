@@ -9,39 +9,103 @@ import { createChatMessageNotification } from '@/contexts/task/operations/assign
 export function useMessages(roomId: string | null) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [oldestMessageId, setOldestMessageId] = useState<string | null>(null);
   const { user } = useAuth();
 
-  const fetchMessages = async () => {
+  const MESSAGES_PER_PAGE = 50;
+
+  const fetchMessages = async (reset = true) => {
     if (!roomId || !user) return;
     
     try {
-      setLoading(true);
+      if (reset) {
+        setLoading(true);
+        setMessages([]);
+        setOldestMessageId(null);
+        setHasMore(true);
+      }
       setError(null);
       
+      // Fetch latest messages (most recent first, then reverse)
       const { data, error } = await supabase
         .from('chat_messages')
         .select('*')
         .eq('room_id', roomId)
         .is('deleted_at', null)
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: false })
+        .limit(MESSAGES_PER_PAGE);
 
       if (error) throw error;
       
       // Validate and cast messages with error handling
       const typedMessages: ChatMessage[] = (data || [])
-        .filter(msg => msg && msg.id && msg.content) // Filter out malformed messages
+        .filter(msg => msg && msg.id && msg.content)
         .map(msg => ({
           ...msg,
           message_type: msg.message_type as 'text' | 'file' | 'image' | 'system'
-        }));
+        }))
+        .reverse(); // Reverse to get chronological order
       
       setMessages(typedMessages);
+      
+      // Track pagination state
+      if (typedMessages.length > 0) {
+        setOldestMessageId(typedMessages[0].id);
+        setHasMore(typedMessages.length === MESSAGES_PER_PAGE);
+      } else {
+        setHasMore(false);
+      }
     } catch (err: any) {
       setError(err.message);
       toast.error('Failed to load messages');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadMoreMessages = async () => {
+    if (!roomId || !user || !oldestMessageId || loadingMore || !hasMore) return;
+    
+    try {
+      setLoadingMore(true);
+      setError(null);
+      
+      // Fetch older messages using cursor-based pagination
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .select('*')
+        .eq('room_id', roomId)
+        .is('deleted_at', null)
+        .lt('created_at', (messages.find(m => m.id === oldestMessageId)?.created_at))
+        .order('created_at', { ascending: false })
+        .limit(MESSAGES_PER_PAGE);
+
+      if (error) throw error;
+      
+      const typedMessages: ChatMessage[] = (data || [])
+        .filter(msg => msg && msg.id && msg.content)
+        .map(msg => ({
+          ...msg,
+          message_type: msg.message_type as 'text' | 'file' | 'image' | 'system'
+        }))
+        .reverse();
+      
+      if (typedMessages.length > 0) {
+        // Prepend older messages to the beginning
+        setMessages(prev => [...typedMessages, ...prev]);
+        setOldestMessageId(typedMessages[0].id);
+        setHasMore(typedMessages.length === MESSAGES_PER_PAGE);
+      } else {
+        setHasMore(false);
+      }
+    } catch (err: any) {
+      setError(err.message);
+      toast.error('Failed to load more messages');
+    } finally {
+      setLoadingMore(false);
     }
   };
 
@@ -126,12 +190,11 @@ export function useMessages(roomId: string | null) {
 
   useEffect(() => {
     if (roomId) {
-      setMessages([]);
-      fetchMessages();
+      fetchMessages(true);
     }
   }, [roomId, user]);
 
-  // Subscribe to real-time updates with proper cleanup
+  // Subscribe to real-time updates with pagination awareness
   useEffect(() => {
     if (!roomId || !user) return;
 
@@ -152,6 +215,7 @@ export function useMessages(roomId: string | null) {
             message_type: payload.new.message_type as 'text' | 'file' | 'image' | 'system'
           } as ChatMessage;
           
+          // Always add new messages to the end (most recent)
           setMessages(prev => [...prev, newMessage]);
         }
       )
@@ -187,10 +251,13 @@ export function useMessages(roomId: string | null) {
   return {
     messages,
     loading,
+    loadingMore,
+    hasMore,
     error,
     sendMessage,
     deleteMessage,
     editMessage,
-    fetchMessages
+    fetchMessages,
+    loadMoreMessages
   };
 }

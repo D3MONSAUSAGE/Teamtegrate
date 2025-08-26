@@ -11,9 +11,11 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { useChatPermissions } from '@/hooks/use-chat-permissions';
 import { useRooms } from '@/hooks/useRooms';
 import { useAuth } from '@/contexts/AuthContext';
+import { useMessagePerformance } from '@/hooks/useMessagePerformance';
 import { ChatRoom } from '@/types/chat';
 import EnhancedMessageBubble from './EnhancedMessageBubble';
 import DeleteChatRoomDialog from './DeleteChatRoomDialog';
+import { MessagePagination } from './MessagePagination';
 
 interface ModernMessageAreaProps {
   room: ChatRoom;
@@ -40,10 +42,13 @@ const ModernMessageArea: React.FC<ModernMessageAreaProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   
-  const { messages, loading, sendMessage } = useMessages(room.id);
+  const { messages, loading, loadingMore, hasMore, sendMessage, loadMoreMessages } = useMessages(room.id);
   const { isParticipant, canManageRoom } = usePermissions(room.id);
   const { canDeleteRoom } = useChatPermissions();
   const { deleteRoom } = useRooms();
+
+  // Performance monitoring
+  useMessagePerformance(room.id, messages.length, loading);
 
   const showDeleteButton = user && room && canDeleteRoom(room.created_by);
 
@@ -51,9 +56,12 @@ const ModernMessageArea: React.FC<ModernMessageAreaProps> = ({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // Smart scrolling - only scroll to bottom for new messages, not when loading more
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    if (!loadingMore) {
+      scrollToBottom();
+    }
+  }, [messages.length, loadingMore]);
 
   // Sound notifications are handled by useRealtimeNotifications hook
 
@@ -198,46 +206,54 @@ const ModernMessageArea: React.FC<ModernMessageAreaProps> = ({
 
       <CardContent className="flex-1 p-0 flex flex-col">
         <ScrollArea className="flex-1">
-          <div className="p-6 space-y-1">
-            {loading ? (
-              <div className="flex justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          {loading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          ) : messages.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center">
+                <Send className="w-8 h-8 text-primary" />
               </div>
-            ) : messages.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center">
-                  <Send className="w-8 h-8 text-primary" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">Start the conversation!</h3>
-                <p className="text-muted-foreground">
-                  Be the first to send a message in this room.
-                </p>
+              <h3 className="text-lg font-semibold mb-2">Start the conversation!</h3>
+              <p className="text-muted-foreground">
+                Be the first to send a message in this room.
+              </p>
+            </div>
+          ) : (
+            <>
+              <MessagePagination
+                hasMore={hasMore}
+                loadingMore={loadingMore}
+                onLoadMore={loadMoreMessages}
+                messagesCount={messages.length}
+              />
+              <div className="p-6 space-y-1">
+                {messages.map((message, index) => {
+                  try {
+                    if (!message?.id || !message?.content) return null;
+                    
+                    const prevMessage = messages[index - 1];
+                    const showAvatar = !prevMessage || prevMessage.user_id !== message.user_id;
+                    
+                    return (
+                      <EnhancedMessageBubble
+                        key={message.id}
+                        message={message}
+                        isCurrentUser={message.user_id === user?.id}
+                        showAvatar={showAvatar}
+                        userName={message.user_id === user?.id ? 'You' : 'User'}
+                      />
+                    );
+                  } catch (error) {
+                    console.error('[MESSAGE_RENDER_ERROR]', error);
+                    return null;
+                  }
+                }).filter(Boolean)}
+                <div ref={messagesEndRef} />
               </div>
-            ) : (
-              messages.map((message, index) => {
-                try {
-                  if (!message?.id || !message?.content) return null;
-                  
-                  const prevMessage = messages[index - 1];
-                  const showAvatar = !prevMessage || prevMessage.user_id !== message.user_id;
-                  
-                  return (
-                    <EnhancedMessageBubble
-                      key={message.id}
-                      message={message}
-                      isCurrentUser={message.user_id === user?.id}
-                      showAvatar={showAvatar}
-                      userName={message.user_id === user?.id ? 'You' : 'User'}
-                    />
-                  );
-                } catch (error) {
-                  console.error('[MESSAGE_RENDER_ERROR]', error);
-                  return null;
-                }
-              }).filter(Boolean)
-            )}
-            <div ref={messagesEndRef} />
-          </div>
+            </>
+          )}
         </ScrollArea>
 
         {/* Typing indicator */}
