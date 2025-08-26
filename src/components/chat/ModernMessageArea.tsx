@@ -45,6 +45,18 @@ const ModernMessageArea: React.FC<ModernMessageAreaProps> = ({
   const { canDeleteRoom } = useChatPermissions();
   const { deleteRoom } = useRooms();
 
+  // Debug logging for delete button visibility
+  const showDeleteButton = user && room && canDeleteRoom(room.created_by);
+  
+  console.log('Delete Button Debug:', {
+    user: user ? { id: user.id, role: user.role } : 'No user',
+    room: room ? { id: room.id, created_by: room.created_by, name: room.name } : 'No room',
+    canDeleteResult: user && room ? canDeleteRoom(room.created_by) : 'Cannot check - missing data',
+    showDeleteButton,
+    userIdType: user?.id ? typeof user.id : 'undefined',
+    roomCreatedByType: room?.created_by ? typeof room.created_by : 'undefined'
+  });
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -180,7 +192,7 @@ const ModernMessageArea: React.FC<ModernMessageAreaProps> = ({
               </Button>
             )}
 
-            {canDeleteRoom(room.created_by) && (
+            {showDeleteButton && (
               <Button 
                 variant="ghost" 
                 size="sm" 
