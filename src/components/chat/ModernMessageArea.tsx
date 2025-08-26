@@ -14,11 +14,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useMessagePerformance } from '@/hooks/useMessagePerformance';
 import { useTypingIndicator } from '@/hooks/useTypingIndicator';
 import { useInputTyping } from '@/hooks/useInputTyping';
+import { useChatConnectionStatus } from '@/hooks/useChatConnectionStatus';
 import { ChatRoom } from '@/types/chat';
 import EnhancedMessageBubble from './EnhancedMessageBubble';
 import DeleteChatRoomDialog from './DeleteChatRoomDialog';
 import { MessagePagination } from './MessagePagination';
 import { TypingIndicator } from './TypingIndicator';
+import { ChatConnectionIndicator } from './ChatConnectionIndicator';
 
 interface ModernMessageAreaProps {
   room: ChatRoom;
@@ -65,6 +67,12 @@ const ModernMessageArea: React.FC<ModernMessageAreaProps> = ({
     debounceMs: 500
   });
 
+  // Chat connection status
+  const chatConnection = useChatConnectionStatus({ 
+    roomId: room.id, 
+    enableRealtime: true 
+  });
+
   const showDeleteButton = user && room && canDeleteRoom(room.created_by);
 
   const scrollToBottom = () => {
@@ -88,6 +96,8 @@ const ModernMessageArea: React.FC<ModernMessageAreaProps> = ({
       setSending(true);
       // Stop typing when sending
       stopTyping();
+      // Record message attempt for connection tracking
+      chatConnection.recordMessageSent();
       await sendMessage(newMessage);
       setNewMessage('');
     } catch (error) {
@@ -185,6 +195,10 @@ const ModernMessageArea: React.FC<ModernMessageAreaProps> = ({
                   {room.description && (
                     <span className="text-xs text-muted-foreground">• {room.description}</span>
                   )}
+                  <ChatConnectionIndicator 
+                    roomId={room.id}
+                    onRetry={() => window.location.reload()}
+                  />
                 </div>
               </div>
             </div>
@@ -307,7 +321,7 @@ const ModernMessageArea: React.FC<ModernMessageAreaProps> = ({
             <Button 
               type="submit" 
               size="icon"
-              disabled={!newMessage.trim() || sending}
+              disabled={!newMessage.trim() || sending || !chatConnection.canSendMessages}
               className="h-10 w-10"
             >
               {sending ? (
