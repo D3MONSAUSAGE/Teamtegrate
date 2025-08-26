@@ -3,14 +3,17 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ArrowLeft, Send, Loader2, Users, Settings, UserPlus, Smile } from 'lucide-react';
+import { ArrowLeft, Send, Loader2, Users, Settings, UserPlus, Smile, Trash2 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { useMessages } from '@/hooks/useMessages';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useChatPermissions } from '@/hooks/use-chat-permissions';
+import { useRooms } from '@/hooks/useRooms';
 import { useAuth } from '@/contexts/AuthContext';
 import { ChatRoom } from '@/types/chat';
 import EnhancedMessageBubble from './EnhancedMessageBubble';
+import DeleteChatRoomDialog from './DeleteChatRoomDialog';
 
 interface ModernMessageAreaProps {
   room: ChatRoom;
@@ -18,6 +21,7 @@ interface ModernMessageAreaProps {
   onToggleMembers?: () => void;
   onShowSettings?: () => void;
   onAddMember?: () => void;
+  onRoomDeleted?: () => void;
 }
 
 const ModernMessageArea: React.FC<ModernMessageAreaProps> = ({ 
@@ -25,16 +29,21 @@ const ModernMessageArea: React.FC<ModernMessageAreaProps> = ({
   onBack,
   onToggleMembers,
   onShowSettings,
-  onAddMember
+  onAddMember,
+  onRoomDeleted
 }) => {
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   
   const { messages, loading, sendMessage } = useMessages(room.id);
   const { isParticipant, canManageRoom } = usePermissions(room.id);
+  const { canDeleteRoom } = useChatPermissions();
+  const { deleteRoom } = useRooms();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -75,6 +84,19 @@ const ModernMessageArea: React.FC<ModernMessageAreaProps> = ({
     if (!isTyping && e.target.value.length > 0) {
       setIsTyping(true);
       setTimeout(() => setIsTyping(false), 3000);
+    }
+  };
+
+  const handleDeleteRoom = async () => {
+    try {
+      setIsDeleting(true);
+      await deleteRoom(room.id);
+      setShowDeleteDialog(false);
+      onRoomDeleted?.();
+    } catch (error) {
+      console.error('Failed to delete room:', error);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -155,6 +177,17 @@ const ModernMessageArea: React.FC<ModernMessageAreaProps> = ({
             {canManageRoom && onShowSettings && (
               <Button variant="ghost" size="sm" onClick={onShowSettings}>
                 <Settings className="h-4 w-4" />
+              </Button>
+            )}
+
+            {canDeleteRoom(room.created_by) && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setShowDeleteDialog(true)}
+                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+              >
+                <Trash2 className="h-4 w-4" />
               </Button>
             )}
           </div>
@@ -240,6 +273,13 @@ const ModernMessageArea: React.FC<ModernMessageAreaProps> = ({
           </form>
         </div>
       </CardContent>
+
+      <DeleteChatRoomDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        onConfirm={handleDeleteRoom}
+        isDeleting={isDeleting}
+      />
     </Card>
   );
 };

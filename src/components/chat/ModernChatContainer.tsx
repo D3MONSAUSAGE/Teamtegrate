@@ -45,6 +45,10 @@ const ModernChatContainer: React.FC = () => {
     setSelectedRoomId(room.id);
   };
 
+  const handleRoomDeleted = () => {
+    setSelectedRoomId(null);
+  };
+
   if (isMobile) {
     return (
       <div className="h-full flex flex-col bg-background">
@@ -60,6 +64,7 @@ const ModernChatContainer: React.FC = () => {
             onToggleMembers={() => setShowMembers(!showMembers)}
             onShowSettings={() => setShowRoomSettings(true)}
             onAddMember={() => setShowAddMember(true)}
+            onRoomDeleted={handleRoomDeleted}
           />
         ) : null}
         
@@ -107,6 +112,7 @@ const ModernChatContainer: React.FC = () => {
                 onToggleMembers={() => setShowMembers(!showMembers)}
                 onShowSettings={() => setShowRoomSettings(true)}
                 onAddMember={() => setShowAddMember(true)}
+                onRoomDeleted={handleRoomDeleted}
               />
             ) : (
               <div className="h-full flex items-center justify-center">
