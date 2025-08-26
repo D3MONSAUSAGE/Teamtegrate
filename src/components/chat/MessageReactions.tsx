@@ -109,27 +109,38 @@ const MessageReactions: React.FC<MessageReactionsProps> = ({ messageId }) => {
 
       if (existingReaction) {
         // Remove reaction
+        console.log('Removing reaction:', { reactionId: existingReaction.id, emoji });
         const { error } = await supabase
           .from('message_reactions')
           .delete()
           .eq('id', existingReaction.id);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error removing reaction:', error);
+          throw error;
+        }
+        console.log('Reaction removed successfully');
       } else {
         // Add reaction - organization_id will be set by the trigger
+        console.log('Adding reaction:', { messageId, userId: user.id, emoji });
         const { error } = await supabase
           .from('message_reactions')
           .insert({
             message_id: messageId,
             user_id: user.id,
             emoji,
-            organization_id: '00000000-0000-0000-0000-000000000000' // Placeholder, will be set by trigger
+            organization_id: '00000000-0000-0000-0000-000000000000' // Placeholder, will be overwritten by trigger
           });
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error adding reaction:', error);
+          throw error;
+        }
+        console.log('Reaction added successfully');
       }
     } catch (error) {
       console.error('Error handling reaction:', error);
+      // You could add a toast notification here if needed
     } finally {
       setLoading(false);
     }

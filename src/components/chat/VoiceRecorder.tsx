@@ -46,24 +46,50 @@ export function VoiceRecorder({
   };
 
   const handleStartRecording = async () => {
-    setHasRecording(false);
-    setCurrentRecording(null);
-    await startRecording();
+    console.log('Starting voice recording...');
+    try {
+      setHasRecording(false);
+      setCurrentRecording(null);
+      await startRecording();
+      console.log('Voice recording started successfully');
+    } catch (error) {
+      console.error('Error starting voice recording:', error);
+      // Handle microphone permission errors
+      if (error instanceof Error && error.message.includes('Permission')) {
+        alert('Microphone permission is required to record voice messages. Please allow access and try again.');
+      }
+    }
   };
 
   const handleStopRecording = async () => {
-    const recording = await stopRecording();
-    if (recording) {
-      setCurrentRecording(recording);
-      setHasRecording(true);
+    console.log('Stopping voice recording...');
+    try {
+      const recording = await stopRecording();
+      if (recording) {
+        console.log('Voice recording completed:', { duration: recording.duration, hasTranscript: !!recording.transcript });
+        setCurrentRecording(recording);
+        setHasRecording(true);
+      } else {
+        console.warn('No recording returned from stopRecording');
+      }
+    } catch (error) {
+      console.error('Error stopping voice recording:', error);
     }
   };
 
   const handleSendRecording = () => {
+    console.log('Sending voice recording...');
     if (currentRecording) {
-      onRecordingComplete(currentRecording);
-      setHasRecording(false);
-      setCurrentRecording(null);
+      try {
+        onRecordingComplete(currentRecording);
+        setHasRecording(false);
+        setCurrentRecording(null);
+        console.log('Voice recording sent successfully');
+      } catch (error) {
+        console.error('Error sending voice recording:', error);
+      }
+    } else {
+      console.warn('No recording to send');
     }
   };
 
