@@ -91,25 +91,27 @@ export const MeetingManagementModal: React.FC<MeetingManagementModalProps> = ({
   const counts = getTabCounts();
 
   const MeetingList = ({ meetings, emptyMessage }: { meetings: any[], emptyMessage: string }) => (
-    <ScrollArea className="h-[500px]">
-      {meetings.length === 0 ? (
-        <div className="text-center py-12 text-muted-foreground">
-          <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-          <p>{emptyMessage}</p>
-        </div>
-      ) : (
-        <div className="space-y-3 p-1">
-          {meetings.map(meeting => (
-            <div key={meeting.id} className="transform hover:scale-[1.02] transition-transform">
-              <MeetingInvitationCard 
-                meeting={meeting} 
-                showActions={meeting.organizer_id !== user?.id}
-              />
-            </div>
-          ))}
-        </div>
-      )}
-    </ScrollArea>
+    <div className="h-[400px] border rounded-md">
+      <ScrollArea className="h-full">
+        {meetings.length === 0 ? (
+          <div className="text-center py-12 text-muted-foreground">
+            <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p>{emptyMessage}</p>
+          </div>
+        ) : (
+          <div className="space-y-3 p-4">
+            {meetings.map(meeting => (
+              <div key={meeting.id} className="transform hover:scale-[1.02] transition-transform">
+                <MeetingInvitationCard 
+                  meeting={meeting} 
+                  showActions={meeting.organizer_id !== user?.id}
+                />
+              </div>
+            ))}
+          </div>
+        )}
+      </ScrollArea>
+    </div>
   );
 
   return (
