@@ -268,8 +268,8 @@ const ModernMessageArea: React.FC<ModernMessageAreaProps> = ({
         </div>
       </CardHeader>
 
-      <CardContent className="flex-1 p-0 flex flex-col">
-        <ScrollArea className="flex-1">
+      <CardContent className="flex-1 p-0 flex flex-col overflow-hidden">
+        <ScrollArea className="flex-1 h-0">
           {messagesLoading ? (
             <div className="flex justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
