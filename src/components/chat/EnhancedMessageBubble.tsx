@@ -51,18 +51,16 @@ const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
 
   return (
     <div className={cn(
-      "flex gap-3 mb-4 group animate-fade-in",
+      "flex gap-2 mb-3 group",
       isCurrentUser ? "flex-row-reverse" : "flex-row"
     )}>
       {/* Avatar */}
       {showAvatar && (
-        <Avatar className="w-10 h-10 border-2 border-background shadow-md">
+        <Avatar className="w-8 h-8 border border-border">
           <AvatarImage src={userAvatar} />
           <AvatarFallback className={cn(
-            "text-xs font-semibold",
-            isCurrentUser 
-              ? "bg-gradient-to-br from-primary to-purple-500 text-white"
-              : "bg-gradient-to-br from-blue-500 to-indigo-500 text-white"
+            "text-xs font-medium",
+            isCurrentUser ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
           )}>
             {getInitials(userName)}
           </AvatarFallback>
@@ -70,46 +68,37 @@ const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
       )}
 
       <div className={cn(
-        "flex flex-col max-w-[65%] sm:max-w-[70%]",
+        "flex flex-col max-w-[70%]",
         isCurrentUser ? "items-end" : "items-start"
       )}>
         {/* User name for non-current users */}
         {!isCurrentUser && showAvatar && (
-          <span className="text-xs font-medium text-muted-foreground mb-1 px-1">
+          <span className="text-xs text-muted-foreground mb-1 px-2">
             {userName}
           </span>
         )}
 
         {/* Message bubble */}
         <div className={cn(
-          "relative px-4 py-3 rounded-2xl shadow-sm border transition-all duration-200 group-hover:shadow-md",
+          "px-3 py-2 rounded-lg text-sm",
           isCurrentUser
-            ? "bg-gradient-to-br from-primary to-primary/90 text-primary-foreground rounded-br-md border-primary/20"
-            : "bg-card/90 border-border/50 rounded-bl-md hover:bg-card"
+            ? "bg-primary text-primary-foreground"
+            : "bg-muted"
         )}>
-          <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
+          <p className="leading-relaxed whitespace-pre-wrap break-words">
             {message.content}
           </p>
 
           {/* Message timestamp */}
           {showTimestamp && (
             <div className={cn(
-              "text-xs mt-2 opacity-0 group-hover:opacity-70 transition-opacity duration-200",
+              "text-xs mt-1 opacity-70",
               isCurrentUser ? "text-primary-foreground/70" : "text-muted-foreground"
             )}>
               {formatTime(message.created_at)}
               {message.updated_at !== message.created_at && (
                 <span className="ml-1">(edited)</span>
               )}
-            </div>
-          )}
-
-          {/* Message status indicators */}
-          {isCurrentUser && (
-            <div className="absolute -bottom-1 -right-1">
-              <div className="w-4 h-4 bg-background rounded-full border-2 border-primary/20 flex items-center justify-center">
-                <div className="w-2 h-2 bg-green-500 rounded-full" />
-              </div>
             </div>
           )}
         </div>

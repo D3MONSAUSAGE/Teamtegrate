@@ -11,8 +11,6 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { useAuth } from '@/contexts/AuthContext';
 import { ChatRoom } from '@/types/chat';
 import EnhancedMessageBubble from './EnhancedMessageBubble';
-import { playChatNotification } from '@/utils/chatSounds';
-import { useSoundSettings } from '@/hooks/useSoundSettings';
 
 interface ModernMessageAreaProps {
   room: ChatRoom;
@@ -34,7 +32,6 @@ const ModernMessageArea: React.FC<ModernMessageAreaProps> = ({
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
-  const soundSettings = useSoundSettings();
   
   const { messages, loading, sendMessage } = useMessages(room.id);
   const { isParticipant, canManageRoom } = usePermissions(room.id);
@@ -47,13 +44,7 @@ const ModernMessageArea: React.FC<ModernMessageAreaProps> = ({
     scrollToBottom();
   }, [messages]);
 
-  // Play sound for new messages (not from current user)
-  useEffect(() => {
-    const lastMessage = messages[messages.length - 1];
-    if (lastMessage && lastMessage.user_id !== user?.id) {
-      playChatNotification(soundSettings);
-    }
-  }, [messages, user?.id, soundSettings]);
+  // Sound notifications are handled by useRealtimeNotifications hook
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -112,8 +103,8 @@ const ModernMessageArea: React.FC<ModernMessageAreaProps> = ({
   }
 
   return (
-    <Card className="h-full border-0 rounded-3xl bg-gradient-to-br from-card/50 via-card/80 to-card/50 backdrop-blur-sm shadow-lg flex flex-col">
-      <CardHeader className="pb-4 border-b border-border/50">
+    <Card className="h-full bg-card border border-border/50 rounded-xl shadow-sm flex flex-col">
+      <CardHeader className="pb-3 border-b border-border/50">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             {onBack && (
@@ -122,31 +113,31 @@ const ModernMessageArea: React.FC<ModernMessageAreaProps> = ({
               </Button>
             )}
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center">
-                <span className="text-lg font-semibold text-primary">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <span className="text-sm font-semibold text-primary">
                   {room.name.charAt(0).toUpperCase()}
                 </span>
               </div>
               <div>
-                <h2 className="font-semibold text-lg">{room.name}</h2>
+                <h2 className="font-semibold text-base">{room.name}</h2>
                 <div className="flex items-center gap-2">
-                  {room.description && (
-                    <p className="text-sm text-muted-foreground">{room.description}</p>
-                  )}
                   <Badge 
                     variant={room.is_public ? "default" : "secondary"}
-                    className="text-xs"
+                    className="text-xs h-5"
                   >
                     {room.is_public ? "Public" : "Private"}
                   </Badge>
+                  {room.description && (
+                    <span className="text-xs text-muted-foreground">• {room.description}</span>
+                  )}
                 </div>
               </div>
             </div>
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             {onToggleMembers && (
-              <Button variant="ghost" size="icon" onClick={onToggleMembers} className="hover:bg-primary/10">
+              <Button variant="ghost" size="sm" onClick={onToggleMembers}>
                 <Users className="h-4 w-4" />
               </Button>
             )}
@@ -156,15 +147,13 @@ const ModernMessageArea: React.FC<ModernMessageAreaProps> = ({
                 variant="outline" 
                 size="sm" 
                 onClick={onAddMember}
-                className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-green-500/20 hover:from-green-500/20 hover:to-emerald-500/20"
               >
-                <UserPlus className="h-4 w-4 mr-1" />
-                Add
+                <UserPlus className="h-4 w-4" />
               </Button>
             )}
             
             {canManageRoom && onShowSettings && (
-              <Button variant="ghost" size="icon" onClick={onShowSettings} className="hover:bg-primary/10">
+              <Button variant="ghost" size="sm" onClick={onShowSettings}>
                 <Settings className="h-4 w-4" />
               </Button>
             )}
@@ -216,22 +205,22 @@ const ModernMessageArea: React.FC<ModernMessageAreaProps> = ({
           </div>
         )}
 
-        <div className="p-6 border-t border-border/50 bg-card/30">
-          <form onSubmit={handleSendMessage} className="flex gap-3">
+        <div className="p-4 border-t border-border/50 bg-muted/30">
+          <form onSubmit={handleSendMessage} className="flex gap-2">
             <div className="relative flex-1">
               <Textarea
                 value={newMessage}
                 onChange={handleInputChange}
                 onKeyDown={handleKeyDown}
                 placeholder="Type your message..."
-                className="min-h-[44px] max-h-[120px] resize-none bg-background/80 border-border/50 focus:bg-background focus:border-primary/50 transition-all duration-200 pr-12"
+                className="min-h-[40px] max-h-[120px] resize-none pr-10"
                 disabled={sending}
               />
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="absolute right-2 top-2 h-8 w-8 hover:bg-primary/10"
+                className="absolute right-1 top-1 h-7 w-7"
               >
                 <Smile className="h-4 w-4" />
               </Button>
@@ -240,7 +229,7 @@ const ModernMessageArea: React.FC<ModernMessageAreaProps> = ({
               type="submit" 
               size="icon"
               disabled={!newMessage.trim() || sending}
-              className="bg-gradient-to-r from-primary to-purple-500 hover:from-primary/90 hover:to-purple-600 text-white shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 h-11 w-11"
+              className="h-10 w-10"
             >
               {sending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />

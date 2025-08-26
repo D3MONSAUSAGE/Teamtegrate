@@ -47,7 +47,7 @@ const ModernChatContainer: React.FC = () => {
 
   if (isMobile) {
     return (
-      <div className="h-full flex flex-col bg-gradient-to-br from-blue-50/30 via-indigo-50/30 to-purple-50/30 dark:from-blue-950/20 dark:via-indigo-950/20 dark:to-purple-950/20">
+      <div className="h-full flex flex-col bg-background">
         {!selectedRoomId ? (
           <ModernRoomList
             selectedRoom={selectedRoom}
@@ -84,7 +84,7 @@ const ModernChatContainer: React.FC = () => {
   }
 
   return (
-    <div className="h-full bg-gradient-to-br from-blue-50/30 via-indigo-50/30 to-purple-50/30 dark:from-blue-950/20 dark:via-indigo-950/20 dark:to-purple-950/20">
+    <div className="h-full bg-background">
       <ResizablePanelGroup direction="horizontal" className="h-full">
         {/* Room List */}
         <ResizablePanel defaultSize={25} minSize={20} maxSize={35}>
@@ -110,7 +110,7 @@ const ModernChatContainer: React.FC = () => {
               />
             ) : (
               <div className="h-full flex items-center justify-center">
-                <div className="text-center p-8 rounded-3xl bg-card/50 backdrop-blur-sm border border-border/50">
+                <div className="text-center p-8 rounded-xl bg-card border border-border/50">
                   <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center">
                     <svg className="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -134,7 +134,7 @@ const ModernChatContainer: React.FC = () => {
             <ResizableHandle />
             <ResizablePanel defaultSize={25} minSize={20} maxSize={35}>
               <div className="h-full p-4 pl-2">
-                <div className="h-full rounded-3xl bg-card/50 backdrop-blur-sm border border-border/50 shadow-lg">
+                <div className="h-full rounded-xl bg-card border border-border/50">
                   <RoomMembersPanel
                     roomId={selectedRoomId}
                     canManage={canManageRoom}
