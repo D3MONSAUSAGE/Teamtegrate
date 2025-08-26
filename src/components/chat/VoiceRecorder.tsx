@@ -19,7 +19,6 @@ export function VoiceRecorder({
   isActive,
   className 
 }: VoiceRecorderProps) {
-  const [hasRecording, setHasRecording] = useState(false);
   const [currentRecording, setCurrentRecording] = useState<VoiceRecording | null>(null);
   
   const {
@@ -46,14 +45,13 @@ export function VoiceRecorder({
   };
 
   const handleStartRecording = async () => {
-    console.log('Starting voice recording...');
+    console.log('🎤 Starting voice recording...');
     try {
-      setHasRecording(false);
       setCurrentRecording(null);
       await startRecording();
-      console.log('Voice recording started successfully');
+      console.log('✅ Voice recording started successfully');
     } catch (error) {
-      console.error('Error starting voice recording:', error);
+      console.error('❌ Error starting voice recording:', error);
       // Handle microphone permission errors
       if (error instanceof Error && error.message.includes('Permission')) {
         alert('Microphone permission is required to record voice messages. Please allow access and try again.');
@@ -62,40 +60,43 @@ export function VoiceRecorder({
   };
 
   const handleStopRecording = async () => {
-    console.log('Stopping voice recording...');
+    console.log('🛑 Stopping voice recording...');
     try {
       const recording = await stopRecording();
       if (recording) {
-        console.log('Voice recording completed:', { duration: recording.duration, hasTranscript: !!recording.transcript });
+        console.log('✅ Voice recording completed:', { 
+          duration: recording.duration, 
+          hasTranscript: !!recording.transcript,
+          hasBlob: !!recording.audioBlob 
+        });
         setCurrentRecording(recording);
-        setHasRecording(true);
+        console.log('📝 Current recording state updated - send button should be visible');
       } else {
-        console.warn('No recording returned from stopRecording');
+        console.warn('⚠️ No recording returned from stopRecording');
       }
     } catch (error) {
-      console.error('Error stopping voice recording:', error);
+      console.error('❌ Error stopping voice recording:', error);
     }
   };
 
   const handleSendRecording = () => {
-    console.log('Sending voice recording...');
+    console.log('📤 Sending voice recording...');
     if (currentRecording) {
       try {
         onRecordingComplete(currentRecording);
-        setHasRecording(false);
         setCurrentRecording(null);
-        console.log('Voice recording sent successfully');
+        console.log('✅ Voice recording sent successfully');
       } catch (error) {
-        console.error('Error sending voice recording:', error);
+        console.error('❌ Error sending voice recording:', error);
       }
     } else {
-      console.warn('No recording to send');
+      console.warn('⚠️ No recording to send');
     }
   };
 
   const handleCancelRecording = () => {
+    console.log('❌ Cancelling voice recording...');
     cancelRecording();
-    setHasRecording(false);
     setCurrentRecording(null);
     onCancel();
   };
@@ -123,10 +124,10 @@ export function VoiceRecorder({
             <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
           )}
           <span className="text-sm font-medium">
-            {!isRecording && !hasRecording && "Ready to record"}
+            {!isRecording && !currentRecording && "Ready to record"}
             {isRecording && !isPaused && "Recording..."}
             {isRecording && isPaused && "Paused"}
-            {hasRecording && "Recording complete"}
+            {currentRecording && !isProcessing && "Recording complete"}
             {isProcessing && "Processing..."}
           </span>
         </div>
@@ -155,7 +156,7 @@ export function VoiceRecorder({
 
       {/* Controls */}
       <div className="flex items-center justify-center gap-2">
-        {!isRecording && !hasRecording && (
+        {!isRecording && !currentRecording && (
           <>
             <Button
               variant="outline"
@@ -207,7 +208,7 @@ export function VoiceRecorder({
           </>
         )}
 
-        {hasRecording && !isProcessing && (
+        {currentRecording && (
           <>
             <Button
               variant="outline"
@@ -232,6 +233,7 @@ export function VoiceRecorder({
               size="icon"
               onClick={handleSendRecording}
               className="bg-primary hover:bg-primary/90"
+              disabled={isProcessing}
             >
               <Send className="h-4 w-4" />
             </Button>

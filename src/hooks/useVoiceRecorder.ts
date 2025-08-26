@@ -88,10 +88,12 @@ export function useVoiceRecorder({
 
   const transcribeAudio = useCallback(async (audioBlob: Blob): Promise<string | undefined> => {
     if (!enableTranscription || !('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      console.log('🚫 Transcription not available or disabled');
       return undefined;
     }
 
     try {
+      console.log('🎯 Starting transcription...');
       setIsProcessing(true);
       
       // Convert blob to audio URL for playback during transcription
@@ -107,6 +109,23 @@ export function useVoiceRecorder({
         recognition.lang = 'en-US';
         
         let transcript = '';
+        let timeoutId: NodeJS.Timeout;
+        
+        // Add timeout to prevent infinite processing
+        const TRANSCRIPTION_TIMEOUT = 10000; // 10 seconds
+        
+        const cleanup = () => {
+          URL.revokeObjectURL(audioUrl);
+          if (timeoutId) clearTimeout(timeoutId);
+          setIsProcessing(false);
+        };
+        
+        timeoutId = setTimeout(() => {
+          console.log('⏰ Transcription timeout - proceeding without transcript');
+          recognition.stop();
+          cleanup();
+          resolve(undefined);
+        }, TRANSCRIPTION_TIMEOUT);
         
         recognition.onresult = (event: any) => {
           for (let i = event.resultIndex; i < event.results.length; i++) {
@@ -117,13 +136,14 @@ export function useVoiceRecorder({
         };
         
         recognition.onend = () => {
-          URL.revokeObjectURL(audioUrl);
+          console.log('✅ Transcription completed:', transcript.trim() || 'No transcript');
+          cleanup();
           resolve(transcript.trim() || undefined);
         };
         
         recognition.onerror = (event: any) => {
-          console.error('Speech recognition error:', event.error);
-          URL.revokeObjectURL(audioUrl);
+          console.error('❌ Speech recognition error:', event.error);
+          cleanup();
           resolve(undefined);
         };
         
@@ -131,14 +151,15 @@ export function useVoiceRecorder({
         audio.play().then(() => {
           recognition.start();
         }).catch(() => {
+          console.log('⚠️ Audio playback failed - skipping transcription');
+          cleanup();
           resolve(undefined);
         });
       });
     } catch (error) {
-      console.error('Transcription error:', error);
-      return undefined;
-    } finally {
+      console.error('❌ Transcription error:', error);
       setIsProcessing(false);
+      return undefined;
     }
   }, [enableTranscription]);
 
@@ -232,21 +253,31 @@ export function useVoiceRecorder({
         setIsRecording(false);
         setIsPaused(false);
         
-        // Transcribe audio if enabled
-        let transcript: string | undefined;
-        if (enableTranscription) {
-          transcript = await transcribeAudio(audioBlob);
-        }
-        
-        // Return the recording data
+        // Create recording object first
         const recording: VoiceRecording = {
           audioBlob,
           duration: finalDuration,
           waveform: [...waveform],
-          transcript
+          transcript: undefined
         };
         
+        console.log('🎵 Recording stopped, blob created:', { size: audioBlob.size, duration: finalDuration });
+        
+        // Immediately resolve with recording, then transcribe in background
         resolve(recording);
+        
+        // Transcribe audio in background if enabled
+        if (enableTranscription) {
+          console.log('🎯 Starting background transcription...');
+          transcribeAudio(audioBlob).then(transcript => {
+            if (transcript) {
+              console.log('✅ Background transcription completed:', transcript);
+              recording.transcript = transcript;
+            }
+          }).catch(error => {
+            console.error('❌ Background transcription failed:', error);
+          });
+        }
       };
       
       // Set up the stop handler
