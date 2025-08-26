@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { ChatMessage } from '@/types/chat';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
+import MessageReactions from './MessageReactions';
 
 interface EnhancedMessageBubbleProps {
   message: ChatMessage;
@@ -78,29 +79,38 @@ const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
           </span>
         )}
 
-        {/* Message bubble */}
+        {/* Message bubble and reactions container */}
         <div className={cn(
-          "px-3 py-2 rounded-lg text-sm",
-          isCurrentUser
-            ? "bg-primary text-primary-foreground"
-            : "bg-muted"
+          "flex flex-col",
+          isCurrentUser ? "items-end" : "items-start"
         )}>
-          <p className="leading-relaxed whitespace-pre-wrap break-words">
-            {message.content}
-          </p>
+          {/* Message bubble */}
+          <div className={cn(
+            "px-3 py-2 rounded-lg text-sm",
+            isCurrentUser
+              ? "bg-primary text-primary-foreground"
+              : "bg-muted"
+          )}>
+            <p className="leading-relaxed whitespace-pre-wrap break-words">
+              {message.content}
+            </p>
 
-          {/* Message timestamp */}
-          {showTimestamp && (
-            <div className={cn(
-              "text-xs mt-1 opacity-70",
-              isCurrentUser ? "text-primary-foreground/70" : "text-muted-foreground"
-            )}>
-              {formatTime(message.created_at)}
-              {message.updated_at !== message.created_at && (
-                <span className="ml-1">(edited)</span>
-              )}
-            </div>
-          )}
+            {/* Message timestamp */}
+            {showTimestamp && (
+              <div className={cn(
+                "text-xs mt-1 opacity-70",
+                isCurrentUser ? "text-primary-foreground/70" : "text-muted-foreground"
+              )}>
+                {formatTime(message.created_at)}
+                {message.updated_at !== message.created_at && (
+                  <span className="ml-1">(edited)</span>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Message reactions */}
+          <MessageReactions messageId={message.id} />
         </div>
       </div>
     </div>
