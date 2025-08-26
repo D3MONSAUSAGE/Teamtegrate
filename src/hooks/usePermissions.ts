@@ -11,14 +11,19 @@ export function usePermissions(roomId: string | null) {
   const { user } = useAuth();
 
   const fetchParticipants = async () => {
-    if (!roomId || !user) {
-      console.log('usePermissions: Missing roomId or user');
+    if (!roomId) {
+      console.log('usePermissions: Missing roomId');
+      return;
+    }
+
+    if (!user) {
+      console.log('usePermissions: No user available yet, will retry when user loads');
       return;
     }
 
     try {
       setLoading(true);
-      console.log('usePermissions: Fetching participants for room:', roomId);
+      console.log('usePermissions: Fetching participants for room:', roomId, 'user:', user.id);
       
       const { data, error } = await supabase
         .from('chat_participants')
@@ -42,19 +47,37 @@ export function usePermissions(roomId: string | null) {
       
       // Find current user's role - first check participants, then check if user is room creator
       const currentUserParticipant = typedParticipants.find(p => p.user_id === user.id);
+      console.log('usePermissions: Current user participant:', currentUserParticipant);
+      
       if (currentUserParticipant) {
+        console.log('usePermissions: User found as participant with role:', currentUserParticipant.role);
         setUserRole(currentUserParticipant.role);
       } else {
+        console.log('usePermissions: User not found as participant, checking if room creator');
         // Check if user is the room creator
         const { data: roomData } = await supabase
           .from('chat_rooms')
-          .select('created_by')
+          .select('created_by, is_public')
           .eq('id', roomId)
           .single();
         
+        console.log('usePermissions: Room data:', roomData);
+        
         if (roomData?.created_by === user.id) {
+          console.log('usePermissions: User is room creator, setting as admin');
           setUserRole('admin');
+        } else if (roomData?.is_public) {
+          console.log('usePermissions: Public room, auto-adding user as member');
+          // For public rooms, automatically add the user as a member
+          try {
+            await addParticipant(user.id, 'member');
+            setUserRole('member');
+          } catch (addError) {
+            console.error('usePermissions: Failed to auto-add user to public room:', addError);
+            setUserRole(null);
+          }
         } else {
+          console.log('usePermissions: User has no access to this room');
           setUserRole(null);
         }
       }
@@ -138,13 +161,16 @@ export function usePermissions(roomId: string | null) {
   const isParticipant = userRole !== null;
 
   useEffect(() => {
+    console.log('usePermissions: Effect triggered - roomId:', !!roomId, 'user:', !!user);
+    
     if (roomId && user) {
       fetchParticipants();
     } else {
+      console.log('usePermissions: Clearing participants - missing roomId or user');
       setParticipants([]);
       setUserRole(null);
     }
-  }, [roomId, user]);
+  }, [roomId, user?.id]); // Depend on user.id specifically to avoid unnecessary re-runs
 
   return {
     participants,

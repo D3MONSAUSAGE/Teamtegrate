@@ -5,7 +5,7 @@ import { useAuthInitialization } from './useAuthInitialization';
 
 export const useAuthState = () => {
   const [loading, setLoading] = useState(true);
-  const [profileLoading, setProfileLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(false);
 
   const {
     user,
@@ -16,46 +16,37 @@ export const useAuthState = () => {
     refreshUserSession
   } = useAuthSession();
 
-  // Create a wrapper that handles loading state properly
-  const updateSessionWithLoading = async (newSession: any) => {
-    console.log('AuthState: Processing session update, loading:', loading);
-    
-    // Always update session first
-    await updateSession(newSession);
-    
-    // Set loading to false once we have processed the session
-    // Don't wait for profile enhancement to complete
-    if (loading) {
-      console.log('AuthState: Setting loading to false');
-      setLoading(false);
-    }
-  };
-
-  // Enhanced session update that tracks profile enhancement
+  // Enhanced session update with better debugging
   const updateSessionWithProfileTracking = async (newSession: any) => {
-    console.log('AuthState: Processing session with profile tracking, loading:', loading);
+    console.log('AuthState: Processing session update:', {
+      hasSession: !!newSession,
+      hasUser: !!newSession?.user,
+      userEmail: newSession?.user?.email,
+      loading
+    });
     
     if (newSession?.user) {
       setProfileLoading(true);
-      console.log('AuthState: Profile enhancement started');
+      console.log('AuthState: Starting profile enhancement for:', newSession.user.email);
       
-      // Update session synchronously first
+      // Update session which will enhance profile
       await updateSession(newSession);
       
-      // Wait a bit for profile enhancement to complete
+      // Allow time for profile enhancement
       setTimeout(() => {
-        console.log('AuthState: Profile enhancement should be complete');
+        console.log('AuthState: Profile enhancement completed');
         setProfileLoading(false);
-      }, 500);
+      }, 300);
     } else {
       // No session, clear everything
+      console.log('AuthState: Clearing session and user data');
       await updateSession(newSession);
       setProfileLoading(false);
     }
     
-    // Set loading to false once we have processed the session
+    // Always set loading to false after processing
     if (loading) {
-      console.log('AuthState: Setting loading to false');
+      console.log('AuthState: Setting main loading to false');
       setLoading(false);
     }
   };
@@ -65,12 +56,23 @@ export const useAuthState = () => {
     setLoading 
   });
 
+  // Enhanced debugging for auth state
+  console.log('AuthState: Current state:', {
+    loading,
+    profileLoading,
+    hasUser: !!user,
+    hasSession: !!session,
+    userEmail: user?.email,
+    userOrgId: user?.organizationId,
+    isReady: !loading && !!user && !!session
+  });
+
   return {
     user,
     session,
     loading,
     profileLoading,
-    isReady: !loading && !profileLoading && !!user?.organizationId,
+    isReady: !loading && !!user && !!session,
     setUser,
     setSession,
     setLoading,

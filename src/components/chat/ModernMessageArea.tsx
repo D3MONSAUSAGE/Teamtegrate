@@ -46,18 +46,26 @@ const ModernMessageArea: React.FC<ModernMessageAreaProps> = ({
   const [isDeleting, setIsDeleting] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
+
+  // Debug auth state
+  console.log('ModernMessageArea: Auth state:', {
+    hasUser: !!user,
+    userId: user?.id,
+    userEmail: user?.email,
+    userOrgId: user?.organizationId
+  });
   
-  const { messages, loading, loadingMore, hasMore, sendMessage, loadMoreMessages, retryMessage } = useMessages(room.id);
+  const { messages, loading: messagesLoading, loadingMore, hasMore, sendMessage, loadMoreMessages, retryMessage } = useMessages(room.id);
   const { draft, updateDraft, clearDraft, isLoading: isDraftLoading } = useDraftPersistence(room.id);
   
   // Use draft as the message state
   const newMessage = draft;
-  const { isParticipant, canManageRoom } = usePermissions(room.id);
+  const { participants, userRole, loading: permissionsLoading, isParticipant, canManageRoom } = usePermissions(room.id);
   const { canDeleteRoom } = useChatPermissions();
   const { deleteRoom } = useRooms();
 
   // Performance monitoring
-  useMessagePerformance(room.id, messages.length, loading);
+  useMessagePerformance(room.id, messages.length, messagesLoading);
 
   // Typing indicators
   const { typingUsers, startTyping, stopTyping } = useTypingIndicator({
@@ -156,6 +164,30 @@ const ModernMessageArea: React.FC<ModernMessageAreaProps> = ({
     }
   };
 
+  // Enhanced debugging for permission check
+  console.log('ModernMessageArea: Permission check:', {
+    roomId: room.id,
+    userId: user?.id,
+    isParticipant,
+    userRole,
+    permissionsLoading,
+    messagesLoading
+  });
+
+  // Show loading state while checking permissions
+  if (permissionsLoading) {
+    return (
+      <Card className="h-full border-0 rounded-3xl bg-gradient-to-br from-card/50 via-card/80 to-card/50 backdrop-blur-sm shadow-lg">
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center p-8">
+            <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+            <p className="text-muted-foreground">Checking permissions...</p>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
   if (!isParticipant) {
     return (
       <Card className="h-full border-0 rounded-3xl bg-gradient-to-br from-card/50 via-card/80 to-card/50 backdrop-blur-sm shadow-lg">
@@ -168,6 +200,11 @@ const ModernMessageArea: React.FC<ModernMessageAreaProps> = ({
             <p className="text-muted-foreground mb-4">
               You don't have permission to access this chat room.
             </p>
+            <div className="text-xs text-muted-foreground mb-4 p-3 bg-muted/50 rounded-lg">
+              Debug: User ID: {user?.id || 'Not available'}<br/>
+              Room: {room.is_public ? 'Public' : 'Private'}<br/>
+              Participants loaded: {participants.length}
+            </div>
             {onBack && (
               <Button onClick={onBack} className="bg-gradient-to-r from-primary to-purple-500 text-white">
                 <ArrowLeft className="h-4 w-4 mr-2" />
@@ -256,7 +293,7 @@ const ModernMessageArea: React.FC<ModernMessageAreaProps> = ({
 
       <CardContent className="flex-1 p-0 flex flex-col">
         <ScrollArea className="flex-1">
-          {loading ? (
+          {messagesLoading ? (
             <div className="flex justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
             </div>
