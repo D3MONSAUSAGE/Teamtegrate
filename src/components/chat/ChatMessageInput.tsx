@@ -38,6 +38,8 @@ interface ChatMessageInputProps {
   setReplyTo?: (msg: any | null) => void;
   isSending?: boolean;
   roomId: string;
+  disabled?: boolean;
+  placeholder?: string;
 }
 
 const ChatMessageInput: React.FC<ChatMessageInputProps> = ({
@@ -47,7 +49,9 @@ const ChatMessageInput: React.FC<ChatMessageInputProps> = ({
   replyTo,
   setReplyTo,
   isSending = false,
-  roomId
+  roomId,
+  disabled = false,
+  placeholder = "Type a message..."
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isMobile = useIsMobile();
@@ -202,7 +206,7 @@ const ChatMessageInput: React.FC<ChatMessageInputProps> = ({
             size="icon"
             className={`${isMobile ? 'h-10 w-10' : 'h-8 w-8'} rounded-full flex-shrink-0`}
             onClick={() => fileInputRef.current?.click()}
-            disabled={isSending || isUploading}
+            disabled={isSending || isUploading || disabled}
           >
             <Paperclip className={`${isMobile ? 'h-6 w-6' : 'h-5 w-5'} text-muted-foreground`} />
           </Button>
@@ -211,8 +215,8 @@ const ChatMessageInput: React.FC<ChatMessageInputProps> = ({
             value={newMessage}
             onChange={setNewMessage}
             onKeyDown={handleKeyDown}
-            placeholder="Type a message..."
-            disabled={isSending || isUploading}
+            placeholder={placeholder}
+            disabled={disabled || isSending || isUploading}
             className={`border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-2 flex-1 resize-none ${isMobile ? 'text-base' : 'text-sm'} min-h-[40px] max-h-[120px]`}
             roomId={roomId}
           />
@@ -223,7 +227,7 @@ const ChatMessageInput: React.FC<ChatMessageInputProps> = ({
             size="icon"
             className={`${isMobile ? 'h-10 w-10' : 'h-8 w-8'} rounded-full flex-shrink-0`}
             onClick={() => setShowVoiceRecorder(!showVoiceRecorder)}
-            disabled={isSending || isUploading}
+            disabled={isSending || isUploading || disabled}
           >
             <Mic className={`${isMobile ? 'h-6 w-6' : 'h-5 w-5'} ${showVoiceRecorder ? 'text-primary' : 'text-muted-foreground'}`} />
           </Button>
@@ -233,7 +237,7 @@ const ChatMessageInput: React.FC<ChatMessageInputProps> = ({
           type="submit" 
           size="icon" 
           className={`rounded-full ${isMobile ? 'h-12 w-12' : 'h-10 w-10'} flex-shrink-0 bg-primary hover:bg-primary/90`}
-          disabled={(!newMessage.trim() && !hasValidFiles) || isSending || isUploading}
+          disabled={(!newMessage.trim() && !hasValidFiles) || isSending || isUploading || disabled}
         >
           <Send className={`${isMobile ? 'h-6 w-6' : 'h-5 w-5'} ${isSending || isUploading ? 'opacity-50' : ''}`} />
         </Button>

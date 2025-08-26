@@ -164,31 +164,13 @@ const ModernMessageArea: React.FC<ModernMessageAreaProps> = ({
     }
   };
 
-  // Enhanced debugging for permission check
-  console.log('ModernMessageArea: Permission check:', {
-    roomId: room.id,
-    userId: user?.id,
-    isParticipant,
-    userRole,
-    permissionsLoading,
-    messagesLoading
-  });
+  // Determine if we should show access denied (only after permissions are fully loaded)
+  const shouldShowAccessDenied = !permissionsLoading && !isParticipant && !room.is_public;
+  
+  // For public rooms, show optimistically while permissions load
+  const showOptimistically = room.is_public || isParticipant;
 
-  // Show loading state while checking permissions
-  if (permissionsLoading) {
-    return (
-      <Card className="h-full border-0 rounded-3xl bg-gradient-to-br from-card/50 via-card/80 to-card/50 backdrop-blur-sm shadow-lg">
-        <div className="flex items-center justify-center h-full">
-          <div className="text-center p-8">
-            <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
-            <p className="text-muted-foreground">Checking permissions...</p>
-          </div>
-        </div>
-      </Card>
-    );
-  }
-
-  if (!isParticipant) {
+  if (shouldShowAccessDenied) {
     return (
       <Card className="h-full border-0 rounded-3xl bg-gradient-to-br from-card/50 via-card/80 to-card/50 backdrop-blur-sm shadow-lg">
         <div className="flex items-center justify-center h-full">
@@ -198,13 +180,8 @@ const ModernMessageArea: React.FC<ModernMessageAreaProps> = ({
             </div>
             <h3 className="text-lg font-semibold mb-2">Access Denied</h3>
             <p className="text-muted-foreground mb-4">
-              You don't have permission to access this chat room.
+              You don't have permission to access this private chat room.
             </p>
-            <div className="text-xs text-muted-foreground mb-4 p-3 bg-muted/50 rounded-lg">
-              Debug: User ID: {user?.id || 'Not available'}<br/>
-              Room: {room.is_public ? 'Public' : 'Private'}<br/>
-              Participants loaded: {participants.length}
-            </div>
             {onBack && (
               <Button onClick={onBack} className="bg-gradient-to-r from-primary to-purple-500 text-white">
                 <ArrowLeft className="h-4 w-4 mr-2" />
@@ -351,8 +328,10 @@ const ModernMessageArea: React.FC<ModernMessageAreaProps> = ({
           newMessage={newMessage}
           setNewMessage={handleMessageInputChange}
           onSubmit={handleSendMessage}
-          isSending={sending}
+          isSending={sending || (permissionsLoading && !room.is_public)}
           roomId={room.id}
+          disabled={permissionsLoading && !showOptimistically}
+          placeholder={permissionsLoading ? "Checking permissions..." : undefined}
         />
       </CardContent>
 

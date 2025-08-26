@@ -8,7 +8,11 @@ export function usePermissions(roomId: string | null) {
   const [participants, setParticipants] = useState<ChatParticipant[]>([]);
   const [userRole, setUserRole] = useState<'admin' | 'moderator' | 'member' | null>(null);
   const [loading, setLoading] = useState(false);
+  const [roomInfo, setRoomInfo] = useState<{is_public: boolean, created_by: string} | null>(null);
   const { user } = useAuth();
+
+  // Early optimistic access for public rooms
+  const hasOptimisticAccess = roomInfo?.is_public || roomInfo?.created_by === user?.id;
 
   const fetchParticipants = async () => {
     if (!roomId) {
@@ -25,20 +29,37 @@ export function usePermissions(roomId: string | null) {
       setLoading(true);
       console.log('usePermissions: Fetching participants for room:', roomId, 'user:', user.id);
       
-      const { data, error } = await supabase
-        .from('chat_participants')
-        .select('*')
-        .eq('room_id', roomId);
+      // Fetch room info and participants in parallel for faster loading
+      const [participantsResult, roomResult] = await Promise.all([
+        supabase
+          .from('chat_participants')
+          .select('*')
+          .eq('room_id', roomId),
+        supabase
+          .from('chat_rooms')
+          .select('created_by, is_public')
+          .eq('id', roomId)
+          .single()
+      ]);
 
-      if (error) {
-        console.error('usePermissions: Error fetching participants:', error);
-        throw error;
+      if (participantsResult.error) {
+        console.error('usePermissions: Error fetching participants:', participantsResult.error);
+        throw participantsResult.error;
       }
       
-      console.log('usePermissions: Successfully fetched participants:', data);
+      if (roomResult.error) {
+        console.error('usePermissions: Error fetching room info:', roomResult.error);
+        throw roomResult.error;
+      }
+      
+      console.log('usePermissions: Successfully fetched participants:', participantsResult.data);
+      console.log('usePermissions: Successfully fetched room info:', roomResult.data);
+      
+      // Set room info for optimistic access
+      setRoomInfo(roomResult.data);
       
       // Cast the data to match our ChatParticipant type
-      const typedParticipants: ChatParticipant[] = (data || []).map(participant => ({
+      const typedParticipants: ChatParticipant[] = (participantsResult.data || []).map(participant => ({
         ...participant,
         role: participant.role as 'admin' | 'moderator' | 'member'
       }));
@@ -52,34 +73,25 @@ export function usePermissions(roomId: string | null) {
       if (currentUserParticipant) {
         console.log('usePermissions: User found as participant with role:', currentUserParticipant.role);
         setUserRole(currentUserParticipant.role);
-      } else {
-        console.log('usePermissions: User not found as participant, checking if room creator');
-        // Check if user is the room creator
-        const { data: roomData } = await supabase
-          .from('chat_rooms')
-          .select('created_by, is_public')
-          .eq('id', roomId)
-          .single();
-        
-        console.log('usePermissions: Room data:', roomData);
-        
-        if (roomData?.created_by === user.id) {
-          console.log('usePermissions: User is room creator, setting as admin');
-          setUserRole('admin');
-        } else if (roomData?.is_public) {
-          console.log('usePermissions: Public room, auto-adding user as member');
-          // For public rooms, automatically add the user as a member
-          try {
-            await addParticipant(user.id, 'member');
+      } else if (roomResult.data?.created_by === user.id) {
+        console.log('usePermissions: User is room creator, setting as admin');
+        setUserRole('admin');
+      } else if (roomResult.data?.is_public) {
+        console.log('usePermissions: Public room, auto-adding user as member');
+        // For public rooms, automatically add the user as a member in background
+        try {
+          const newParticipant = await addParticipant(user.id, 'member');
+          if (newParticipant) {
             setUserRole('member');
-          } catch (addError) {
-            console.error('usePermissions: Failed to auto-add user to public room:', addError);
-            setUserRole(null);
           }
-        } else {
-          console.log('usePermissions: User has no access to this room');
-          setUserRole(null);
+        } catch (addError) {
+          console.error('usePermissions: Failed to auto-add user to public room:', addError);
+          // Still set as member for optimistic access to public rooms
+          setUserRole('member');
         }
+      } else {
+        console.log('usePermissions: User has no access to this private room');
+        setUserRole(null);
       }
     } catch (err) {
       console.error('usePermissions: Failed to fetch participants:', err);
@@ -158,7 +170,8 @@ export function usePermissions(roomId: string | null) {
 
   const canManageRoom = userRole === 'admin';
   const canModerate = userRole === 'admin' || userRole === 'moderator';
-  const isParticipant = userRole !== null;
+  // Optimistic participant access for public rooms while loading
+  const isParticipant = userRole !== null || (loading && hasOptimisticAccess);
 
   useEffect(() => {
     console.log('usePermissions: Effect triggered - roomId:', !!roomId, 'user:', !!user);
