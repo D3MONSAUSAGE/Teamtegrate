@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Task } from '@/types';
+import { MeetingRequestWithParticipants } from '@/types/meeting';
 import { 
   format, 
   isSameDay, 
@@ -12,12 +13,14 @@ import {
 } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import CalendarTaskItem from './CalendarTaskItem';
+import { CompactMeetingIndicator } from '@/components/meetings/CompactMeetingIndicator';
 import { cn } from '@/lib/utils';
 import { Plus, Calendar } from 'lucide-react';
 
 interface CalendarWeekViewProps {
   selectedDate: Date;
   tasks: Task[];
+  meetings: MeetingRequestWithParticipants[];
   onTaskClick: (task: Task) => void;
   onDateCreate: (date: Date) => void;
 }
@@ -25,6 +28,7 @@ interface CalendarWeekViewProps {
 const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({ 
   selectedDate,
   tasks,
+  meetings,
   onTaskClick,
   onDateCreate
 }) => {
@@ -90,6 +94,16 @@ const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
                   return false;
                 }
               });
+
+              const dayMeetings = meetings.filter(meeting => {
+                try {
+                  const meetingStart = new Date(meeting.start_time);
+                  return isSameDay(meetingStart, day);
+                } catch (error) {
+                  console.error("Invalid date for meeting in week view:", meeting.id);
+                  return false;
+                }
+              });
               
               const isWeekendDay = isWeekend(day);
               
@@ -110,6 +124,15 @@ const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
                   )}
                   
                   <div className="space-y-2">
+                    {/* Show meeting indicator first if there are meetings */}
+                    {dayMeetings.length > 0 && (
+                      <CompactMeetingIndicator 
+                        meetings={dayMeetings}
+                        onClick={() => {/* Handle meeting click if needed */}}
+                      />
+                    )}
+                    
+                    {/* Task list */}
                     {dayTasks.length > 0 ? (
                       dayTasks.map(task => (
                         <CalendarTaskItem 
@@ -119,7 +142,7 @@ const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
                           onClick={() => onTaskClick(task)}
                         />
                       ))
-                    ) : (
+                    ) : dayMeetings.length === 0 ? (
                       <div 
                         className="group/empty py-3 md:py-4 text-xs text-center text-muted-foreground cursor-pointer hover:bg-gradient-to-br hover:from-primary/10 hover:to-secondary/10 rounded-lg flex items-center justify-center gap-1 border-2 border-dashed border-muted-foreground/20 hover:border-primary/40 transition-all duration-200 min-h-[50px] hover:scale-105"
                         onClick={() => onDateCreate(day)}
@@ -127,7 +150,7 @@ const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
                         <Plus className="h-4 w-4 group-hover/empty:scale-110 transition-transform" />
                         <span className="hidden sm:inline font-medium">Add task</span>
                       </div>
-                    )}
+                    ) : null}
                   </div>
                 </div>
               );

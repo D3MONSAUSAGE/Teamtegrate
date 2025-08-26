@@ -1,9 +1,11 @@
 
 import React from 'react';
 import { Task } from '@/types';
+import { MeetingRequestWithParticipants } from '@/types/meeting';
 import { format, isSameDay, addHours, startOfDay } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import CalendarTaskItem from './CalendarTaskItem';
+import { CompactMeetingIndicator } from '@/components/meetings/CompactMeetingIndicator';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Plus, Calendar, Clock, Sunrise, Sun, Sunset, Moon } from 'lucide-react';
@@ -12,6 +14,7 @@ import { cn } from '@/lib/utils';
 interface CalendarDayViewProps {
   selectedDate: Date;
   tasks: Task[];
+  meetings: MeetingRequestWithParticipants[];
   onTaskClick: (task: Task) => void;
   onDateCreate: (date: Date) => void;
 }
@@ -19,6 +22,7 @@ interface CalendarDayViewProps {
 const CalendarDayView: React.FC<CalendarDayViewProps> = ({ 
   selectedDate,
   tasks,
+  meetings,
   onTaskClick,
   onDateCreate
 }) => {
@@ -29,6 +33,16 @@ const CalendarDayView: React.FC<CalendarDayViewProps> = ({
       return isSameDay(taskDeadline, selectedDate);
     } catch (error) {
       console.error("Invalid date for task in day view:", task.id);
+      return false;
+    }
+  });
+
+  const meetingsForDay = meetings.filter(meeting => {
+    try {
+      const meetingStart = new Date(meeting.start_time);
+      return isSameDay(meetingStart, selectedDate);
+    } catch (error) {
+      console.error("Invalid date for meeting in day view:", meeting.id);
       return false;
     }
   });
@@ -136,6 +150,17 @@ const CalendarDayView: React.FC<CalendarDayViewProps> = ({
                   )} />
                   
                   <div className="relative z-10">
+                    {/* Show meetings for this hour first */}
+                    {meetingsForDay.length > 0 && (
+                      <div className="mb-3">
+                        <CompactMeetingIndicator 
+                          meetings={meetingsForDay}
+                          onClick={() => {/* Handle meeting click if needed */}}
+                        />
+                      </div>
+                    )}
+                    
+                    {/* Show tasks */}
                     {block.tasks.length > 0 ? (
                       <div className="space-y-3">
                         {block.tasks.map(task => (
@@ -146,7 +171,7 @@ const CalendarDayView: React.FC<CalendarDayViewProps> = ({
                           />
                         ))}
                       </div>
-                    ) : (
+                    ) : meetingsForDay.length === 0 ? (
                       <div 
                         className="group/add py-6 px-4 text-sm text-muted-foreground cursor-pointer hover:bg-gradient-to-br hover:from-primary/10 hover:to-secondary/10 rounded-xl transition-all duration-200 text-center border-2 border-dashed border-muted-foreground/20 hover:border-primary/40 hover:scale-[1.02]"
                         onClick={() => onDateCreate(selectedDate)}
@@ -155,7 +180,7 @@ const CalendarDayView: React.FC<CalendarDayViewProps> = ({
                         <p className="font-medium">No tasks scheduled</p>
                         <p className="text-xs text-muted-foreground mt-1">Click to add a task for this time</p>
                       </div>
-                    )}
+                    ) : null}
                   </div>
                 </div>
                 {index < timeBlocks.length - 1 && <Separator className="opacity-50" />}

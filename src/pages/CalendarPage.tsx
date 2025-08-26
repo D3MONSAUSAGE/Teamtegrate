@@ -11,11 +11,14 @@ import CalendarContent from '@/components/calendar/CalendarContent';
 import ModernSectionCard from '@/components/dashboard/ModernSectionCard';
 import SectionContainer from '@/components/shared/SectionContainer';
 import { MeetingRequestDialog } from '@/components/meetings/MeetingRequestDialog';
-import { MeetingNotifications } from '@/components/meetings/MeetingNotifications';
+import { MeetingManagementModal } from '@/components/meetings/MeetingManagementModal';
+import { useMeetingRequests } from '@/hooks/useMeetingRequests';
 import { Calendar as CalendarIcon, Navigation, BarChart } from 'lucide-react';
+import { useAuth } from '@/contexts/auth/AuthProvider';
 
 const CalendarPage = () => {
   const { tasks, projects } = useTask();
+  const { user } = useAuth();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [viewType, setViewType] = useState<'day' | 'week' | 'month'>('month');
@@ -24,6 +27,9 @@ const CalendarPage = () => {
   const [quickCreateDate, setQuickCreateDate] = useState<Date>(new Date());
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [isMeetingDialogOpen, setIsMeetingDialogOpen] = useState<boolean>(false);
+  const [isMeetingManagementOpen, setIsMeetingManagementOpen] = useState<boolean>(false);
+  
+  const { meetingRequests } = useMeetingRequests();
 
   // Handle task click to open dialog with details
   const handleTaskClick = (task: Task) => {
@@ -58,6 +64,10 @@ const CalendarPage = () => {
     setIsMeetingDialogOpen(true);
   };
 
+  const handleViewAllMeetings = () => {
+    setIsMeetingManagementOpen(true);
+  };
+
   const todayTasksCount = tasks.filter(task => {
     try {
       return isSameDay(new Date(task.deadline), new Date());
@@ -78,6 +88,19 @@ const CalendarPage = () => {
       const today = new Date();
       return taskDate < today && task.status !== 'Completed';
     } catch { return false; }
+  }).length;
+
+  // Calculate meeting stats
+  const upcomingMeetingsCount = meetingRequests.filter(meeting => {
+    const now = new Date();
+    return new Date(meeting.start_time) > now && meeting.status !== 'cancelled';
+  }).length;
+
+  const pendingInvitationsCount = meetingRequests.filter(meeting => {
+    const userParticipant = meeting.participants.find(p => p.user_id === user?.id);
+    return userParticipant?.response_status === 'invited' && 
+           new Date(meeting.start_time) > new Date() &&
+           meeting.organizer_id !== user?.id;
   }).length;
 
   return (
@@ -109,6 +132,7 @@ const CalendarPage = () => {
                 onToday={goToToday}
                 onAddTask={() => handleDateCreate(selectedDate)}
                 onScheduleMeeting={handleScheduleMeeting}
+                onViewAllMeetings={handleViewAllMeetings}
               />
             </div>
           </ModernSectionCard>
@@ -128,20 +152,16 @@ const CalendarPage = () => {
                 todayTasksCount={todayTasksCount}
                 upcomingTasksCount={upcomingTasksCount}
                 overdueTasksCount={overdueTasksCount}
-                upcomingMeetingsCount={0} // TODO: Add meeting data when available
-                pendingInvitationsCount={0} // TODO: Add invitation data when available
+                upcomingMeetingsCount={upcomingMeetingsCount}
+                pendingInvitationsCount={pendingInvitationsCount}
               />
             </div>
           </ModernSectionCard>
         </div>
 
-        {/* Meeting Notifications */}
-        <div className="animate-fade-in delay-150">
-          <MeetingNotifications />
-        </div>
 
         {/* Calendar Content Card */}
-        <div className="animate-fade-in delay-200">
+        <div className="animate-fade-in delay-150">
           <ModernSectionCard
             title="Calendar"
             subtitle="Organize and manage your tasks by date"
@@ -160,6 +180,7 @@ const CalendarPage = () => {
               onViewChange={setViewType}
               selectedDate={selectedDate}
               tasks={tasks}
+              meetings={meetingRequests}
               onTaskClick={handleTaskClick}
               onDateCreate={handleDateCreate}
             />
@@ -185,6 +206,11 @@ const CalendarPage = () => {
         defaultDate={selectedDate}
         open={isMeetingDialogOpen}
         onOpenChange={setIsMeetingDialogOpen}
+      />
+
+      <MeetingManagementModal 
+        open={isMeetingManagementOpen}
+        onOpenChange={setIsMeetingManagementOpen}
       />
     </div>
   );

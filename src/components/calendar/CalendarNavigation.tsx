@@ -11,6 +11,7 @@ interface CalendarNavigationProps {
   onToday: () => void;
   onAddTask: () => void;
   onScheduleMeeting: () => void;
+  onViewAllMeetings: () => void;
 }
 
 const CalendarNavigation: React.FC<CalendarNavigationProps> = ({
@@ -19,7 +20,8 @@ const CalendarNavigation: React.FC<CalendarNavigationProps> = ({
   onNextMonth,
   onToday,
   onAddTask,
-  onScheduleMeeting
+  onScheduleMeeting,
+  onViewAllMeetings
 }) => {
   return (
     <div className="flex items-center justify-between gap-4 p-6 border shadow-xl bg-card rounded-2xl">
@@ -58,6 +60,16 @@ const CalendarNavigation: React.FC<CalendarNavigationProps> = ({
           className="px-4 py-2 rounded-xl hover:scale-105 transition-all duration-200 shadow-md hover:shadow-lg hover:bg-primary/10 hover:border-primary/40 bg-background font-medium"
         >
           Today
+        </Button>
+
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onViewAllMeetings}
+          className="px-4 py-2 rounded-xl hover:scale-105 transition-all duration-200 shadow-md hover:shadow-lg hover:bg-blue-500/10 hover:border-blue-500/40 bg-background font-medium"
+        >
+          <Users className="h-4 w-4 mr-2" />
+          View All Meetings
         </Button>
 
         <Button

@@ -1,0 +1,65 @@
+import React from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Users, Clock, MapPin } from 'lucide-react';
+import { format } from 'date-fns';
+import { MeetingRequestWithParticipants } from '@/types/meeting';
+
+interface CompactMeetingIndicatorProps {
+  meetings: MeetingRequestWithParticipants[];
+  onClick?: () => void;
+}
+
+export const CompactMeetingIndicator: React.FC<CompactMeetingIndicatorProps> = ({
+  meetings,
+  onClick
+}) => {
+  if (meetings.length === 0) return null;
+
+  const firstMeeting = meetings[0];
+  const hasMultiple = meetings.length > 1;
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Badge 
+            variant="secondary" 
+            className="cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900 text-xs px-2 py-1 bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800"
+            onClick={onClick}
+          >
+            <Users className="h-3 w-3 mr-1" />
+            {hasMultiple ? `${meetings.length} meetings` : firstMeeting.title}
+          </Badge>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="max-w-sm">
+          <div className="space-y-2">
+            {meetings.slice(0, 3).map((meeting) => (
+              <div key={meeting.id} className="text-sm">
+                <div className="font-medium">{meeting.title}</div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Clock className="h-3 w-3" />
+                  {format(new Date(meeting.start_time), 'h:mm a')} - {format(new Date(meeting.end_time), 'h:mm a')}
+                  {meeting.location && (
+                    <>
+                      <MapPin className="h-3 w-3 ml-1" />
+                      {meeting.location}
+                    </>
+                  )}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {meeting.participants.length} participant{meeting.participants.length !== 1 ? 's' : ''}
+                </div>
+              </div>
+            ))}
+            {meetings.length > 3 && (
+              <div className="text-xs text-muted-foreground">
+                +{meetings.length - 3} more meeting{meetings.length - 3 !== 1 ? 's' : ''}
+              </div>
+            )}
+          </div>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+};

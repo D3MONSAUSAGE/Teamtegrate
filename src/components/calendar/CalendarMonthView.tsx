@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Task } from '@/types';
+import { MeetingRequestWithParticipants } from '@/types/meeting';
 import { 
   format, 
   isSameDay, 
@@ -16,6 +17,7 @@ import {
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import CalendarTaskItem from './CalendarTaskItem';
+import { CompactMeetingIndicator } from '@/components/meetings/CompactMeetingIndicator';
 import { Plus, Calendar } from 'lucide-react';
 import { useTask } from '@/contexts/task';
 import { toast } from '@/components/ui/sonner';
@@ -23,6 +25,7 @@ import { toast } from '@/components/ui/sonner';
 interface CalendarMonthViewProps {
   selectedDate: Date;
   tasks: Task[];
+  meetings: MeetingRequestWithParticipants[];
   onTaskClick: (task: Task) => void;
   onDateCreate: (date: Date) => void;
 }
@@ -30,6 +33,7 @@ interface CalendarMonthViewProps {
 const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({ 
   selectedDate,
   tasks,
+  meetings,
   onTaskClick,
   onDateCreate
 }) => {
@@ -101,6 +105,16 @@ const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
                   return false;
                 }
               });
+
+              const dayMeetings = meetings.filter(meeting => {
+                try {
+                  const meetingStart = new Date(meeting.start_time);
+                  return isSameDay(meetingStart, day);
+                } catch (error) {
+                  console.error("Invalid date for meeting in month view:", meeting.id);
+                  return false;
+                }
+              });
               
               const withinCurrentMonth = isSameMonth(day, selectedDate);
               const isWeekendDay = isWeekend(day);
@@ -163,8 +177,19 @@ const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
                     </div>
                   </div>
                   
-                  {/* Enhanced Tasks */}
+                  {/* Enhanced Tasks and Meetings */}
                   <div className="relative space-y-1 overflow-hidden z-10">
+                    {/* Show meeting indicator first if there are meetings */}
+                    {dayMeetings.length > 0 && (
+                      <div className="mb-1">
+                        <CompactMeetingIndicator 
+                          meetings={dayMeetings}
+                          onClick={() => {/* Handle meeting click if needed */}}
+                        />
+                      </div>
+                    )}
+                    
+                    {/* Task list */}
                     {dayTasks.slice(0, maxVisibleTasks).map(task => (
                       <CalendarTaskItem 
                         key={task.id} 
@@ -184,7 +209,7 @@ const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
                         +{dayTasks.length - maxVisibleTasks} more
                       </div>
                     )}
-                    {dayTasks.length === 0 && (
+                    {dayTasks.length === 0 && dayMeetings.length === 0 && (
                       <div 
                         className="group/add py-2 md:py-3 text-xs text-center text-muted-foreground cursor-pointer hover:bg-gradient-to-br hover:from-primary/10 hover:to-secondary/10 rounded-lg flex items-center justify-center gap-1 border-2 border-dashed border-muted-foreground/20 hover:border-primary/40 transition-all duration-200 min-h-[32px] md:min-h-[40px] hover:scale-105"
                         onClick={() => onDateCreate(day)}

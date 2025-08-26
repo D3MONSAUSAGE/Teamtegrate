@@ -5,12 +5,14 @@ import CalendarWeekView from './CalendarWeekView';
 import CalendarMonthView from './CalendarMonthView';
 import CalendarViewSelector from './CalendarViewSelector';
 import { Task } from '@/types';
+import { MeetingRequestWithParticipants } from '@/types/meeting';
 
 interface CalendarContentProps {
   viewType: 'day' | 'week' | 'month';
   onViewChange: (view: 'day' | 'week' | 'month') => void;
   selectedDate: Date;
   tasks: Task[];
+  meetings: MeetingRequestWithParticipants[];
   onTaskClick: (task: Task) => void;
   onDateCreate: (date: Date) => void;
 }
@@ -20,6 +22,7 @@ const CalendarContent: React.FC<CalendarContentProps> = ({
   onViewChange,
   selectedDate,
   tasks,
+  meetings,
   onTaskClick,
   onDateCreate
 }) => {
@@ -49,6 +52,7 @@ const CalendarContent: React.FC<CalendarContentProps> = ({
               <CalendarDayView 
                 selectedDate={selectedDate} 
                 tasks={tasks}
+                meetings={meetings}
                 onTaskClick={onTaskClick}
                 onDateCreate={onDateCreate}
               />
@@ -58,6 +62,7 @@ const CalendarContent: React.FC<CalendarContentProps> = ({
               <CalendarWeekView 
                 selectedDate={selectedDate} 
                 tasks={tasks}
+                meetings={meetings}
                 onTaskClick={onTaskClick}
                 onDateCreate={onDateCreate}
               />
@@ -67,6 +72,7 @@ const CalendarContent: React.FC<CalendarContentProps> = ({
               <CalendarMonthView 
                 selectedDate={selectedDate} 
                 tasks={tasks}
+                meetings={meetings}
                 onTaskClick={onTaskClick}
                 onDateCreate={onDateCreate}
               />
