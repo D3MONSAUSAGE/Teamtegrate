@@ -109,7 +109,7 @@ export const MeetingInvitationCard: React.FC<MeetingInvitationCardProps> = ({
           )}
         </div>
 
-        {showActions && userParticipant && !isOrganizer && !isPastMeeting && (
+        {showActions && userParticipant && !isPastMeeting && (
           <div className="flex gap-2 pt-2">
             <Button
               variant="outline"

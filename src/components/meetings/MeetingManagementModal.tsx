@@ -102,10 +102,10 @@ export const MeetingManagementModal: React.FC<MeetingManagementModalProps> = ({
           <div className="space-y-3 p-4">
             {meetings.map(meeting => (
               <div key={meeting.id} className="transform hover:scale-[1.02] transition-transform">
-                <MeetingInvitationCard 
-                  meeting={meeting} 
-                  showActions={meeting.organizer_id !== user?.id}
-                />
+              <MeetingInvitationCard 
+                meeting={meeting} 
+                showActions={true}
+              />
               </div>
             ))}
           </div>
