@@ -5,7 +5,9 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import EmojiPickerButton from './EmojiPickerButton';
 import MentionInput from './MentionInput';
+import { FileDropZone } from './FileDropZone';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useFileUpload } from '@/hooks/useFileUpload';
 
 function ReplyPreview({ message, onCancel }: { message: any, onCancel: () => void }) {
   if (!message) return null;
@@ -26,17 +28,10 @@ function ReplyPreview({ message, onCancel }: { message: any, onCancel: () => voi
   );
 }
 
-interface FileUpload {
-  file: File;
-  progress: number;
-}
-
 interface ChatMessageInputProps {
   newMessage: string;
   setNewMessage: (message: string) => void;
-  fileUploads: FileUpload[];
-  setFileUploads: React.Dispatch<React.SetStateAction<FileUpload[]>>;
-  onSubmit: (e: React.FormEvent) => Promise<void>;
+  onSubmit: (e: React.FormEvent, attachmentUrls?: string[]) => Promise<void>;
   replyTo?: any;
   setReplyTo?: (msg: any | null) => void;
   isSending?: boolean;
@@ -46,8 +41,6 @@ interface ChatMessageInputProps {
 const ChatMessageInput: React.FC<ChatMessageInputProps> = ({
   newMessage,
   setNewMessage,
-  fileUploads,
-  setFileUploads,
   onSubmit,
   replyTo,
   setReplyTo,
@@ -56,14 +49,24 @@ const ChatMessageInput: React.FC<ChatMessageInputProps> = ({
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isMobile = useIsMobile();
+  
+  const {
+    uploads,
+    isUploading,
+    addFiles,
+    removeFile,
+    uploadAll,
+    clearUploads,
+    hasValidFiles
+  } = useFileUpload();
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
-    setFileUploads(files.map(file => ({ file, progress: 0 })));
-  };
-
-  const removeFile = (index: number) => {
-    setFileUploads(current => current.filter((_, i) => i !== index));
+    addFiles(files);
+    // Clear the input so the same file can be selected again
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const insertAtCursor = (text: string) => {
@@ -74,11 +77,27 @@ const ChatMessageInput: React.FC<ChatMessageInputProps> = ({
     e.preventDefault();
     e.stopPropagation();
     
-    if (isSending) {
+    if (isSending || isUploading) {
       return;
     }
     
-    await onSubmit(e);
+    try {
+      let attachmentUrls: string[] = [];
+      
+      // Upload files if any
+      if (hasValidFiles) {
+        const uploadedFiles = await uploadAll(roomId);
+        attachmentUrls = uploadedFiles
+          .filter(f => f.url)
+          .map(f => f.url!);
+      }
+      
+      await onSubmit(e, attachmentUrls);
+      clearUploads();
+    } catch (error) {
+      console.error('Submit failed:', error);
+      toast.error('Failed to send message');
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -94,22 +113,16 @@ const ChatMessageInput: React.FC<ChatMessageInputProps> = ({
         <ReplyPreview message={replyTo} onCancel={() => setReplyTo(null)} />
       )}
 
-      <div className="flex flex-wrap gap-2 mb-3">
-        {fileUploads.map((upload, index) => (
-          <div key={index} className="flex items-center gap-2 bg-accent/20 dark:bg-accent/10 px-3 py-2 rounded-full">
-            <span className="text-sm truncate max-w-[150px]">{upload.file.name}</span>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6 hover:bg-background/50 dark:hover:bg-background/20 rounded-full p-1"
-              onClick={() => removeFile(index)}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        ))}
-      </div>
+      {uploads.length > 0 && (
+        <div className="mb-3">
+          <FileDropZone
+            uploads={uploads}
+            onFilesAdded={addFiles}
+            onFileRemoved={removeFile}
+            disabled={isSending || isUploading}
+          />
+        </div>
+      )}
       
       <form onSubmit={handleSubmit} className="flex items-end gap-2">
         <input
@@ -129,7 +142,7 @@ const ChatMessageInput: React.FC<ChatMessageInputProps> = ({
             size="icon"
             className={`${isMobile ? 'h-10 w-10' : 'h-8 w-8'} rounded-full flex-shrink-0`}
             onClick={() => fileInputRef.current?.click()}
-            disabled={isSending}
+            disabled={isSending || isUploading}
           >
             <Paperclip className={`${isMobile ? 'h-6 w-6' : 'h-5 w-5'} text-muted-foreground`} />
           </Button>
@@ -139,7 +152,7 @@ const ChatMessageInput: React.FC<ChatMessageInputProps> = ({
             onChange={setNewMessage}
             onKeyDown={handleKeyDown}
             placeholder="Type a message..."
-            disabled={isSending}
+            disabled={isSending || isUploading}
             className={`border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-2 flex-1 resize-none ${isMobile ? 'text-base' : 'text-sm'} min-h-[40px] max-h-[120px]`}
             roomId={roomId}
           />
@@ -150,7 +163,7 @@ const ChatMessageInput: React.FC<ChatMessageInputProps> = ({
             size="icon"
             className={`${isMobile ? 'h-10 w-10' : 'h-8 w-8'} rounded-full flex-shrink-0`}
             onClick={() => toast.info("Voice messages coming soon!")}
-            disabled={isSending}
+            disabled={isSending || isUploading}
           >
             <Mic className={`${isMobile ? 'h-6 w-6' : 'h-5 w-5'} text-muted-foreground`} />
           </Button>
@@ -160,9 +173,9 @@ const ChatMessageInput: React.FC<ChatMessageInputProps> = ({
           type="submit" 
           size="icon" 
           className={`rounded-full ${isMobile ? 'h-12 w-12' : 'h-10 w-10'} flex-shrink-0 bg-primary hover:bg-primary/90`}
-          disabled={(!newMessage.trim() && fileUploads.length === 0) || isSending}
+          disabled={(!newMessage.trim() && !hasValidFiles) || isSending || isUploading}
         >
-          <Send className={`${isMobile ? 'h-6 w-6' : 'h-5 w-5'} ${isSending ? 'opacity-50' : ''}`} />
+          <Send className={`${isMobile ? 'h-6 w-6' : 'h-5 w-5'} ${isSending || isUploading ? 'opacity-50' : ''}`} />
         </Button>
       </form>
     </div>

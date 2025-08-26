@@ -22,6 +22,8 @@ export interface ChatMessage {
   // Client-side status tracking
   status?: 'sending' | 'sent' | 'delivered' | 'failed';
   error?: string;
+  // Attachments
+  attachments?: ChatAttachment[];
 }
 
 export interface MessageDraft {

@@ -22,6 +22,7 @@ import DeleteChatRoomDialog from './DeleteChatRoomDialog';
 import { MessagePagination } from './MessagePagination';
 import { TypingIndicator } from './TypingIndicator';
 import { ChatConnectionIndicator } from './ChatConnectionIndicator';
+import ChatMessageInput from './ChatMessageInput';
 
 interface ModernMessageAreaProps {
   room: ChatRoom;
@@ -92,9 +93,10 @@ const ModernMessageArea: React.FC<ModernMessageAreaProps> = ({
 
   // Sound notifications are handled by useRealtimeNotifications hook
 
-  const handleSendMessage = async (e: React.FormEvent) => {
+  const handleSendMessage = async (e: React.FormEvent, attachmentUrls?: string[]) => {
     e.preventDefault();
-    if (!newMessage.trim() || sending) return;
+    if (!newMessage.trim() && (!attachmentUrls || attachmentUrls.length === 0)) return;
+    if (sending) return;
 
     try {
       setSending(true);
@@ -102,7 +104,14 @@ const ModernMessageArea: React.FC<ModernMessageAreaProps> = ({
       stopTyping();
       // Record message attempt for connection tracking
       chatConnection.recordMessageSent();
-      await sendMessage(newMessage);
+      
+      // Determine message type based on attachments
+      const messageType = attachmentUrls && attachmentUrls.length > 0
+        ? (attachmentUrls.some(url => url.toLowerCase().includes('image') || 
+            /\.(jpg|jpeg|png|gif|webp)$/i.test(url)) ? 'image' : 'file')
+        : 'text';
+        
+      await sendMessage(newMessage, messageType);
       // Clear draft after successful send
       clearDraft();
     } catch (error) {
@@ -112,8 +121,7 @@ const ModernMessageArea: React.FC<ModernMessageAreaProps> = ({
     }
   };
 
-  const handleMessageInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const value = e.target.value;
+  const handleMessageInputChange = (value: string) => {
     updateDraft(value);
     
     // Handle typing detection
@@ -302,42 +310,13 @@ const ModernMessageArea: React.FC<ModernMessageAreaProps> = ({
         {/* Typing indicator */}
         <TypingIndicator typingUsers={typingUsers} />
 
-        <div className="p-4 border-t border-border/50 bg-muted/30">
-          <form onSubmit={handleSendMessage} className="flex gap-2">
-            <div className="relative flex-1">
-              <Textarea
-                value={newMessage}
-                onChange={handleMessageInputChange}
-                onKeyDown={handleMessageKeyDown}
-                onFocus={handleInputFocus}
-                onBlur={handleInputBlur}
-                placeholder={isDraftLoading ? "Loading draft..." : "Type your message..."}
-                className="min-h-[40px] max-h-[120px] resize-none pr-10"
-                disabled={sending || isDraftLoading}
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="absolute right-1 top-1 h-7 w-7"
-              >
-                <Smile className="h-4 w-4" />
-              </Button>
-            </div>
-            <Button 
-              type="submit" 
-              size="icon"
-              disabled={!newMessage.trim() || sending || !chatConnection.canSendMessages}
-              className="h-10 w-10"
-            >
-              {sending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Send className="h-4 w-4" />
-              )}
-            </Button>
-          </form>
-        </div>
+        <ChatMessageInput
+          newMessage={newMessage}
+          setNewMessage={handleMessageInputChange}
+          onSubmit={handleSendMessage}
+          isSending={sending}
+          roomId={room.id}
+        />
       </CardContent>
 
       <DeleteChatRoomDialog

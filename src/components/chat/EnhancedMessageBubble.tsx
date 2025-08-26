@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import MessageReactions from './MessageReactions';
 import { MessageStatus } from './MessageStatus';
+import ChatMessageAttachment from './ChatMessageAttachment';
 
 interface EnhancedMessageBubbleProps {
   message: ChatMessage;
@@ -94,9 +95,37 @@ const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
               ? "bg-primary text-primary-foreground"
               : "bg-muted"
           )}>
-            <p className="leading-relaxed whitespace-pre-wrap break-words">
-              {message.content}
-            </p>
+            {/* Text content */}
+            {message.content && (
+              <p className="leading-relaxed whitespace-pre-wrap break-words">
+                {message.content}
+              </p>
+            )}
+            
+            {/* File attachments */}
+            {message.attachments && message.attachments.length > 0 && (
+              <div className={cn("space-y-2", message.content ? "mt-2" : "")}>
+                {message.attachments.map((attachment) => (
+                  <ChatMessageAttachment
+                    key={attachment.id}
+                    attachment={{
+                      id: attachment.id,
+                      file_name: attachment.file_name,
+                      file_type: attachment.file_type,
+                      file_path: attachment.file_url
+                    }}
+                    allImages={message.attachments?.filter(att => 
+                      att.file_type.startsWith('image/')
+                    ).map(att => ({
+                      id: att.id,
+                      file_name: att.file_name,
+                      file_type: att.file_type,
+                      file_path: att.file_url
+                    }))}
+                  />
+                ))}
+              </div>
+            )}
 
             {/* Message timestamp */}
             {showTimestamp && (
