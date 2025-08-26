@@ -128,11 +128,17 @@ export const usePersonalTasks = () => {
             const isCreatedByUser = task.user_id === user.id;
             const isUnassigned = (!task.assigned_to_id || task.assigned_to_id === '') && 
                                 (!task.assigned_to_ids || task.assigned_to_ids.length === 0);
-            const isAssignedToUser = task.assigned_to_id === user.id || 
-                                    (task.assigned_to_ids && task.assigned_to_ids.includes(user.id));
             
-            // Show task if: (created by user AND unassigned) OR (assigned to user)
-            return (isCreatedByUser && isUnassigned) || isAssignedToUser;
+            // Only show tasks assigned EXCLUSIVELY to this user (not team/collaborative tasks)
+            const isAssignedExclusivelyToUser = 
+              // Single assignment to this user
+              (task.assigned_to_id === user.id && (!task.assigned_to_ids || task.assigned_to_ids.length <= 1)) ||
+              // Multiple assignment array with only this user
+              (task.assigned_to_ids && task.assigned_to_ids.length === 1 && task.assigned_to_ids[0] === user.id);
+            
+            // Show task if: (created by user AND unassigned) OR (assigned ONLY to user)
+            // This filters out team/collaborative tasks from personal dashboard
+            return (isCreatedByUser && isUnassigned) || isAssignedExclusivelyToUser;
           });
 
           // Fetch users data for name lookup with timeout
