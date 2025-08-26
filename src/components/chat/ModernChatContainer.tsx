@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import ModernRoomList from './ModernRoomList';
 import ModernMessageArea from './ModernMessageArea';
@@ -9,12 +9,15 @@ import RoomSettingsDialog from './RoomSettingsDialog';
 import { ChatErrorBoundary } from './ChatErrorBoundary';
 import { useRooms } from '@/hooks/useRooms';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useUserPresence } from '@/hooks/useUserPresence';
+import { useAuth } from '@/contexts/AuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { ChatRoom } from '@/types/chat';
 
 const ModernChatContainer: React.FC = () => {
+  const { user } = useAuth();
   const isMobile = useIsMobile();
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [showMembers, setShowMembers] = useState(!isMobile);
@@ -23,6 +26,22 @@ const ModernChatContainer: React.FC = () => {
   
   const { rooms } = useRooms();
   const { canManageRoom } = usePermissions(selectedRoomId);
+  
+  // Initialize presence tracking
+  const { startTracking, stopTracking, isTracking } = useUserPresence(selectedRoomId || undefined);
+
+  // Start presence tracking when user is available
+  useEffect(() => {
+    if (user && !isTracking) {
+      startTracking();
+    }
+
+    return () => {
+      if (isTracking) {
+        stopTracking();
+      }
+    };
+  }, [user, startTracking, stopTracking, isTracking]);
 
   // Get selected room details
   const { data: selectedRoom } = useQuery({

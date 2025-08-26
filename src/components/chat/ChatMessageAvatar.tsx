@@ -3,13 +3,17 @@ import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { UserPresenceIndicator } from './UserPresenceIndicator';
+import { useUserPresence } from '@/hooks/useUserPresence';
 
 interface ChatMessageAvatarProps {
   userId: string;
   className?: string;
+  showPresence?: boolean;
 }
 
-const ChatMessageAvatar: React.FC<ChatMessageAvatarProps> = ({ userId, className }) => {
+const ChatMessageAvatar: React.FC<ChatMessageAvatarProps> = ({ userId, className, showPresence = true }) => {
+  const { presences } = useUserPresence();
   const { data: user, error, isLoading } = useQuery({
     queryKey: ['user', userId],
     queryFn: async () => {
@@ -45,10 +49,19 @@ const ChatMessageAvatar: React.FC<ChatMessageAvatarProps> = ({ userId, className
   }
 
   return (
-    <Avatar className={className}>
-      <AvatarImage src={user?.avatar_url || undefined} />
-      <AvatarFallback>{initials}</AvatarFallback>
-    </Avatar>
+    <div className="relative">
+      <Avatar className={className}>
+        <AvatarImage src={user?.avatar_url || undefined} />
+        <AvatarFallback>{initials}</AvatarFallback>
+      </Avatar>
+      {showPresence && (
+        <UserPresenceIndicator
+          presence={presences[userId]}
+          userId={userId}
+          size="sm"
+        />
+      )}
+    </div>
   );
 };
 

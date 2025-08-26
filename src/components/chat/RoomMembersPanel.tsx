@@ -6,7 +6,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Search, UserPlus, MoreVertical, Crown, Shield, User, UserMinus } from 'lucide-react';
+import { UserPlus, Search, Users, Crown, Shield, User, MoreHorizontal, UserMinus } from 'lucide-react';
+import { UserPresenceIndicator } from './UserPresenceIndicator';
+import { useUserPresence } from '@/hooks/useUserPresence';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import ChatMessageAvatar from './ChatMessageAvatar';
@@ -32,6 +34,7 @@ interface Member {
 const RoomMembersPanel: React.FC<RoomMembersPanelProps> = ({ roomId, canManage, onAddMember }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const { user: currentUser } = useAuth();
+  const { presences } = useUserPresence(roomId);
   const queryClient = useQueryClient();
 
   const { data: members = [], isLoading } = useQuery({
@@ -71,6 +74,22 @@ const RoomMembersPanel: React.FC<RoomMembersPanelProps> = ({ roomId, canManage, 
     member.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     member.user.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Sort members: online first, then by role priority
+  const sortedMembers = [...filteredMembers].sort((a, b) => {
+    const aPresence = presences[a.user_id];
+    const bPresence = presences[b.user_id];
+    const aOnline = aPresence?.isOnline || false;
+    const bOnline = bPresence?.isOnline || false;
+    
+    if (aOnline !== bOnline) {
+      return bOnline ? 1 : -1; // Online users first
+    }
+    
+    // Then sort by role priority
+    const rolePriority = { admin: 3, moderator: 2, member: 1 };
+    return rolePriority[b.role] - rolePriority[a.role];
+  });
 
   const handleRemoveMember = async (memberId: string) => {
     try {
@@ -162,7 +181,7 @@ const RoomMembersPanel: React.FC<RoomMembersPanelProps> = ({ roomId, canManage, 
           </div>
         ) : (
           <div className="space-y-2">
-            {filteredMembers.map((member) => (
+            {sortedMembers.map((member) => (
               <div
                 key={member.id}
                 className="flex items-center justify-between p-2 rounded-lg hover:bg-accent/50 transition-colors"
@@ -190,7 +209,7 @@ const RoomMembersPanel: React.FC<RoomMembersPanelProps> = ({ roomId, canManage, 
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MoreVertical className="h-4 w-4" />
+                        <MoreHorizontal className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">

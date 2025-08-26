@@ -6,6 +6,8 @@ import { format } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRooms } from '@/hooks/useRooms';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useUserPresence } from '@/hooks/useUserPresence';
+import { UserPresenceList } from './UserPresenceIndicator';
 
 interface ChatPageHeaderProps {
   onShowSettings?: () => void;
@@ -21,6 +23,7 @@ const ChatPageHeader: React.FC<ChatPageHeaderProps> = ({
   const { user } = useAuth();
   const { rooms } = useRooms();
   const isMobile = useIsMobile();
+  const { onlineUsers } = useUserPresence();
 
   return (
     <div className="rounded-xl bg-card border border-border/50 mb-6">
@@ -52,8 +55,14 @@ const ChatPageHeader: React.FC<ChatPageHeaderProps> = ({
               </div>
               <div className="w-px h-8 bg-border" />
               <div>
-                <div className="text-lg font-semibold text-foreground">{activeUsers}</div>
+                <div className="text-lg font-semibold text-foreground">{onlineUsers.length}</div>
                 <div className="text-xs text-muted-foreground">Online Users</div>
+                <UserPresenceList 
+                  presences={onlineUsers} 
+                  maxVisible={3} 
+                  compact 
+                  className="mt-1"
+                />
               </div>
               <div className="w-px h-8 bg-border" />
               <div>
