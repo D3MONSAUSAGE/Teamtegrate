@@ -112,6 +112,22 @@ export function useMessages(roomId: string | null) {
   const sendMessage = async (content: string, messageType: 'text' | 'file' | 'image' = 'text') => {
     if (!roomId || !user || !content.trim()) return;
 
+    // Generate temporary ID for optimistic update
+    const tempId = `temp_${Date.now()}_${Math.random()}`;
+    const tempMessage: ChatMessage = {
+      id: tempId,
+      room_id: roomId,
+      user_id: user.id,
+      content: content.trim(),
+      message_type: messageType,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      status: 'sending'
+    };
+
+    // Optimistically add message to UI
+    setMessages(prev => [...prev, tempMessage]);
+
     try {
       const { data, error } = await supabase
         .from('chat_messages')
@@ -125,6 +141,17 @@ export function useMessages(roomId: string | null) {
         .single();
 
       if (error) throw error;
+
+      // Replace temporary message with real one
+      setMessages(prev => prev.map(msg => 
+        msg.id === tempId 
+          ? { 
+              ...data, 
+              message_type: data.message_type as 'text' | 'file' | 'image' | 'system',
+              status: 'sent' 
+            }
+          : msg
+      ));
 
       // Create notifications with fallback for missing organizationId
       const orgId = user.organizationId || user.id;
@@ -142,6 +169,12 @@ export function useMessages(roomId: string | null) {
 
       return data;
     } catch (err: any) {
+      // Update temp message to failed state
+      setMessages(prev => prev.map(msg => 
+        msg.id === tempId 
+          ? { ...msg, status: 'failed', error: err.message }
+          : msg
+      ));
       toast.error('Failed to send message');
       throw err;
     }
@@ -248,6 +281,28 @@ export function useMessages(roomId: string | null) {
     };
   }, [roomId, user]);
 
+  const retryMessage = async (tempMessageId: string) => {
+    const tempMessage = messages.find(m => m.id === tempMessageId);
+    if (!tempMessage || tempMessage.status !== 'failed') return;
+
+    // Reset status to sending
+    setMessages(prev => prev.map(msg => 
+      msg.id === tempMessageId 
+        ? { ...msg, status: 'sending', error: undefined }
+        : msg
+    ));
+
+    try {
+      // Only retry if it's a valid message type for sending
+      const validType = tempMessage.message_type === 'system' ? 'text' : tempMessage.message_type;
+      await sendMessage(tempMessage.content, validType);
+      // Remove the failed temp message since sendMessage will add the real one
+      setMessages(prev => prev.filter(msg => msg.id !== tempMessageId));
+    } catch (error) {
+      // sendMessage already handles updating the status to failed
+    }
+  };
+
   return {
     messages,
     loading,
@@ -258,6 +313,7 @@ export function useMessages(roomId: string | null) {
     deleteMessage,
     editMessage,
     fetchMessages,
-    loadMoreMessages
+    loadMoreMessages,
+    retryMessage
   };
 }

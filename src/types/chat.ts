@@ -19,6 +19,15 @@ export interface ChatMessage {
   created_at: string;
   updated_at: string;
   deleted_at?: string;
+  // Client-side status tracking
+  status?: 'sending' | 'sent' | 'delivered' | 'failed';
+  error?: string;
+}
+
+export interface MessageDraft {
+  roomId: string;
+  content: string;
+  timestamp: number;
 }
 
 export interface ChatParticipant {

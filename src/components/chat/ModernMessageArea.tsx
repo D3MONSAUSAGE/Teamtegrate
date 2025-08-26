@@ -15,6 +15,7 @@ import { useMessagePerformance } from '@/hooks/useMessagePerformance';
 import { useTypingIndicator } from '@/hooks/useTypingIndicator';
 import { useInputTyping } from '@/hooks/useInputTyping';
 import { useChatConnectionStatus } from '@/hooks/useChatConnectionStatus';
+import { useDraftPersistence } from '@/hooks/useDraftPersistence';
 import { ChatRoom } from '@/types/chat';
 import EnhancedMessageBubble from './EnhancedMessageBubble';
 import DeleteChatRoomDialog from './DeleteChatRoomDialog';
@@ -39,14 +40,17 @@ const ModernMessageArea: React.FC<ModernMessageAreaProps> = ({
   onAddMember,
   onRoomDeleted
 }) => {
-  const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   
-  const { messages, loading, loadingMore, hasMore, sendMessage, loadMoreMessages } = useMessages(room.id);
+  const { messages, loading, loadingMore, hasMore, sendMessage, loadMoreMessages, retryMessage } = useMessages(room.id);
+  const { draft, updateDraft, clearDraft, isLoading: isDraftLoading } = useDraftPersistence(room.id);
+  
+  // Use draft as the message state
+  const newMessage = draft;
   const { isParticipant, canManageRoom } = usePermissions(room.id);
   const { canDeleteRoom } = useChatPermissions();
   const { deleteRoom } = useRooms();
@@ -99,7 +103,8 @@ const ModernMessageArea: React.FC<ModernMessageAreaProps> = ({
       // Record message attempt for connection tracking
       chatConnection.recordMessageSent();
       await sendMessage(newMessage);
-      setNewMessage('');
+      // Clear draft after successful send
+      clearDraft();
     } catch (error) {
       console.error('Failed to send message:', error);
     } finally {
@@ -109,7 +114,7 @@ const ModernMessageArea: React.FC<ModernMessageAreaProps> = ({
 
   const handleMessageInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
-    setNewMessage(value);
+    updateDraft(value);
     
     // Handle typing detection
     if (value.trim()) {
@@ -274,13 +279,14 @@ const ModernMessageArea: React.FC<ModernMessageAreaProps> = ({
                     const showAvatar = !prevMessage || prevMessage.user_id !== message.user_id;
                     
                     return (
-                      <EnhancedMessageBubble
-                        key={message.id}
-                        message={message}
-                        isCurrentUser={message.user_id === user?.id}
-                        showAvatar={showAvatar}
-                        userName={message.user_id === user?.id ? 'You' : 'User'}
-                      />
+                       <EnhancedMessageBubble
+                         key={message.id}
+                         message={message}
+                         isCurrentUser={message.user_id === user?.id}
+                         showAvatar={showAvatar}
+                         userName={message.user_id === user?.id ? 'You' : 'User'}
+                         onRetryMessage={retryMessage}
+                       />
                     );
                   } catch (error) {
                     console.error('[MESSAGE_RENDER_ERROR]', error);
@@ -305,9 +311,9 @@ const ModernMessageArea: React.FC<ModernMessageAreaProps> = ({
                 onKeyDown={handleMessageKeyDown}
                 onFocus={handleInputFocus}
                 onBlur={handleInputBlur}
-                placeholder="Type your message..."
+                placeholder={isDraftLoading ? "Loading draft..." : "Type your message..."}
                 className="min-h-[40px] max-h-[120px] resize-none pr-10"
-                disabled={sending}
+                disabled={sending || isDraftLoading}
               />
               <Button
                 type="button"

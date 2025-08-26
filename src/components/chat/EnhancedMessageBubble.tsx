@@ -4,8 +4,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { ChatMessage } from '@/types/chat';
 import { cn } from '@/lib/utils';
-import { formatDistanceToNow } from 'date-fns';
+import { format } from 'date-fns';
 import MessageReactions from './MessageReactions';
+import { MessageStatus } from './MessageStatus';
 
 interface EnhancedMessageBubbleProps {
   message: ChatMessage;
@@ -14,6 +15,7 @@ interface EnhancedMessageBubbleProps {
   showTimestamp?: boolean;
   userName?: string;
   userAvatar?: string;
+  onRetryMessage?: (messageId: string) => void;
 }
 
 const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
@@ -22,10 +24,11 @@ const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
   showAvatar = true,
   showTimestamp = true,
   userName = 'Unknown User',
-  userAvatar
+  userAvatar,
+  onRetryMessage
 }) => {
   const formatTime = (timestamp: string) => {
-    return formatDistanceToNow(new Date(timestamp), { addSuffix: true });
+    return format(new Date(timestamp), 'HH:mm');
   };
 
   const getInitials = (name: string) => {
@@ -98,12 +101,20 @@ const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
             {/* Message timestamp */}
             {showTimestamp && (
               <div className={cn(
-                "text-xs mt-1 opacity-70",
+                "text-xs mt-1 opacity-70 flex items-center gap-2",
                 isCurrentUser ? "text-primary-foreground/70" : "text-muted-foreground"
               )}>
-                {formatTime(message.created_at)}
+                <span>
+                  {formatTime(message.created_at)}
+                </span>
                 {message.updated_at !== message.created_at && (
-                  <span className="ml-1">(edited)</span>
+                  <span className="italic">(edited)</span>
+                )}
+                {isCurrentUser && (
+                  <MessageStatus 
+                    status={message.status} 
+                    onRetry={message.status === 'failed' ? () => onRetryMessage?.(message.id) : undefined}
+                  />
                 )}
               </div>
             )}
