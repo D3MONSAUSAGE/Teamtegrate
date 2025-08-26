@@ -6,6 +6,7 @@ import ModernMessageArea from './ModernMessageArea';
 import RoomMembersPanel from './RoomMembersPanel';
 import UserSearchDialog from './UserSearchDialog';
 import RoomSettingsDialog from './RoomSettingsDialog';
+import { ChatErrorBoundary } from './ChatErrorBoundary';
 import { useRooms } from '@/hooks/useRooms';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useQuery } from '@tanstack/react-query';
@@ -51,126 +52,130 @@ const ModernChatContainer: React.FC = () => {
 
   if (isMobile) {
     return (
-      <div className="h-full flex flex-col bg-background">
-        {!selectedRoomId ? (
-          <ModernRoomList
-            selectedRoom={selectedRoom}
-            onRoomSelect={handleRoomSelect}
-          />
-        ) : selectedRoom ? (
-          <ModernMessageArea
-            room={selectedRoom}
-            onBack={() => setSelectedRoomId(null)}
-            onToggleMembers={() => setShowMembers(!showMembers)}
-            onShowSettings={() => setShowRoomSettings(true)}
-            onAddMember={() => setShowAddMember(true)}
-            onRoomDeleted={handleRoomDeleted}
-          />
-        ) : null}
-        
-        {selectedRoom && (
-          <>
-            <UserSearchDialog
-              open={showAddMember}
-              onOpenChange={setShowAddMember}
-              roomId={selectedRoomId!}
-              onUsersAdded={() => {}}
-            />
-            
-            <RoomSettingsDialog
-              open={showRoomSettings}
-              onOpenChange={setShowRoomSettings}
-              room={selectedRoom}
-            />
-          </>
-        )}
-      </div>
-    );
-  }
-
-  return (
-    <div className="h-full bg-background">
-      <ResizablePanelGroup direction="horizontal" className="h-full">
-        {/* Room List */}
-        <ResizablePanel defaultSize={25} minSize={20} maxSize={35}>
-          <div className="h-full p-4">
+      <ChatErrorBoundary>
+        <div className="h-full flex flex-col bg-background">
+          {!selectedRoomId ? (
             <ModernRoomList
               selectedRoom={selectedRoom}
               onRoomSelect={handleRoomSelect}
             />
-          </div>
-        </ResizablePanel>
-        
-        <ResizableHandle />
-        
-        {/* Message Area */}
-        <ResizablePanel defaultSize={showMembers ? 50 : 75}>
-          <div className="h-full p-4 pr-2">
-            {selectedRoomId && selectedRoom ? (
-              <ModernMessageArea
-                room={selectedRoom}
-                onToggleMembers={() => setShowMembers(!showMembers)}
-                onShowSettings={() => setShowRoomSettings(true)}
-                onAddMember={() => setShowAddMember(true)}
-                onRoomDeleted={handleRoomDeleted}
-              />
-            ) : (
-              <div className="h-full flex items-center justify-center">
-                <div className="text-center p-8 rounded-xl bg-card border border-border/50">
-                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center">
-                    <svg className="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">
-                    Select a chat room
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Choose a room from the sidebar to start chatting
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-        </ResizablePanel>
-        
-        {/* Members Panel */}
-        {showMembers && selectedRoomId && (
-          <>
-            <ResizableHandle />
-            <ResizablePanel defaultSize={25} minSize={20} maxSize={35}>
-              <div className="h-full p-4 pl-2">
-                <div className="h-full rounded-xl bg-card border border-border/50">
-                  <RoomMembersPanel
-                    roomId={selectedRoomId}
-                    canManage={canManageRoom}
-                    onAddMember={() => setShowAddMember(true)}
-                  />
-                </div>
-              </div>
-            </ResizablePanel>
-          </>
-        )}
-        
-        {/* Dialogs */}
-        {selectedRoom && (
-          <>
-            <UserSearchDialog
-              open={showAddMember}
-              onOpenChange={setShowAddMember}
-              roomId={selectedRoomId!}
-              onUsersAdded={() => {}}
-            />
-            
-            <RoomSettingsDialog
-              open={showRoomSettings}
-              onOpenChange={setShowRoomSettings}
+          ) : selectedRoom ? (
+            <ModernMessageArea
               room={selectedRoom}
+              onBack={() => setSelectedRoomId(null)}
+              onToggleMembers={() => setShowMembers(!showMembers)}
+              onShowSettings={() => setShowRoomSettings(true)}
+              onAddMember={() => setShowAddMember(true)}
+              onRoomDeleted={handleRoomDeleted}
             />
-          </>
-        )}
-      </ResizablePanelGroup>
-    </div>
+          ) : null}
+          
+          {selectedRoom && (
+            <>
+              <UserSearchDialog
+                open={showAddMember}
+                onOpenChange={setShowAddMember}
+                roomId={selectedRoomId!}
+                onUsersAdded={() => {}}
+              />
+              
+              <RoomSettingsDialog
+                open={showRoomSettings}
+                onOpenChange={setShowRoomSettings}
+                room={selectedRoom}
+              />
+            </>
+          )}
+        </div>
+      </ChatErrorBoundary>
+    );
+  }
+
+  return (
+    <ChatErrorBoundary>
+      <div className="h-full bg-background">
+        <ResizablePanelGroup direction="horizontal" className="h-full">
+          {/* Room List */}
+          <ResizablePanel defaultSize={25} minSize={20} maxSize={35}>
+            <div className="h-full p-4">
+              <ModernRoomList
+                selectedRoom={selectedRoom}
+                onRoomSelect={handleRoomSelect}
+              />
+            </div>
+          </ResizablePanel>
+          
+          <ResizableHandle />
+          
+          {/* Message Area */}
+          <ResizablePanel defaultSize={showMembers ? 50 : 75}>
+            <div className="h-full p-4 pr-2">
+              {selectedRoomId && selectedRoom ? (
+                <ModernMessageArea
+                  room={selectedRoom}
+                  onToggleMembers={() => setShowMembers(!showMembers)}
+                  onShowSettings={() => setShowRoomSettings(true)}
+                  onAddMember={() => setShowAddMember(true)}
+                  onRoomDeleted={handleRoomDeleted}
+                />
+              ) : (
+                <div className="h-full flex items-center justify-center">
+                  <div className="text-center p-8 rounded-xl bg-card border border-border/50">
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center">
+                      <svg className="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-lg font-semibold text-foreground mb-2">
+                      Select a chat room
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      Choose a room from the sidebar to start chatting
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </ResizablePanel>
+          
+          {/* Members Panel */}
+          {showMembers && selectedRoomId && (
+            <>
+              <ResizableHandle />
+              <ResizablePanel defaultSize={25} minSize={20} maxSize={35}>
+                <div className="h-full p-4 pl-2">
+                  <div className="h-full rounded-xl bg-card border border-border/50">
+                    <RoomMembersPanel
+                      roomId={selectedRoomId}
+                      canManage={canManageRoom}
+                      onAddMember={() => setShowAddMember(true)}
+                    />
+                  </div>
+                </div>
+              </ResizablePanel>
+            </>
+          )}
+          
+          {/* Dialogs */}
+          {selectedRoom && (
+            <>
+              <UserSearchDialog
+                open={showAddMember}
+                onOpenChange={setShowAddMember}
+                roomId={selectedRoomId!}
+                onUsersAdded={() => {}}
+              />
+              
+              <RoomSettingsDialog
+                open={showRoomSettings}
+                onOpenChange={setShowRoomSettings}
+                room={selectedRoom}
+              />
+            </>
+          )}
+        </ResizablePanelGroup>
+      </div>
+    </ChatErrorBoundary>
   );
 };
 

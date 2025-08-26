@@ -45,17 +45,7 @@ const ModernMessageArea: React.FC<ModernMessageAreaProps> = ({
   const { canDeleteRoom } = useChatPermissions();
   const { deleteRoom } = useRooms();
 
-  // Debug logging for delete button visibility
   const showDeleteButton = user && room && canDeleteRoom(room.created_by);
-  
-  console.log('Delete Button Debug:', {
-    user: user ? { id: user.id, role: user.role } : 'No user',
-    room: room ? { id: room.id, created_by: room.created_by, name: room.name } : 'No room',
-    canDeleteResult: user && room ? canDeleteRoom(room.created_by) : 'Cannot check - missing data',
-    showDeleteButton,
-    userIdType: user?.id ? typeof user.id : 'undefined',
-    roomCreatedByType: room?.created_by ? typeof room.created_by : 'undefined'
-  });
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -225,19 +215,26 @@ const ModernMessageArea: React.FC<ModernMessageAreaProps> = ({
               </div>
             ) : (
               messages.map((message, index) => {
-                const prevMessage = messages[index - 1];
-                const showAvatar = !prevMessage || prevMessage.user_id !== message.user_id;
-                
-                return (
-                  <EnhancedMessageBubble
-                    key={message.id}
-                    message={message}
-                    isCurrentUser={message.user_id === user?.id}
-                    showAvatar={showAvatar}
-                    userName={message.user_id === user?.id ? 'You' : 'User'}
-                  />
-                );
-              })
+                try {
+                  if (!message?.id || !message?.content) return null;
+                  
+                  const prevMessage = messages[index - 1];
+                  const showAvatar = !prevMessage || prevMessage.user_id !== message.user_id;
+                  
+                  return (
+                    <EnhancedMessageBubble
+                      key={message.id}
+                      message={message}
+                      isCurrentUser={message.user_id === user?.id}
+                      showAvatar={showAvatar}
+                      userName={message.user_id === user?.id ? 'You' : 'User'}
+                    />
+                  );
+                } catch (error) {
+                  console.error('[MESSAGE_RENDER_ERROR]', error);
+                  return null;
+                }
+              }).filter(Boolean)
             )}
             <div ref={messagesEndRef} />
           </div>
