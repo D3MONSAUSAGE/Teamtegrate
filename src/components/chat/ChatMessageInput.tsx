@@ -1,11 +1,13 @@
 
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { Paperclip, Send, Mic, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import EmojiPickerButton from './EmojiPickerButton';
 import MentionInput from './MentionInput';
 import { FileDropZone } from './FileDropZone';
+import { VoiceRecorder } from './VoiceRecorder';
+import { VoiceRecording } from '@/hooks/useVoiceRecorder';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useFileUpload } from '@/hooks/useFileUpload';
 
@@ -49,6 +51,7 @@ const ChatMessageInput: React.FC<ChatMessageInputProps> = ({
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isMobile = useIsMobile();
+  const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
   
   const {
     uploads,
@@ -100,6 +103,47 @@ const ChatMessageInput: React.FC<ChatMessageInputProps> = ({
     }
   };
 
+  const handleVoiceRecordingComplete = async (recording: VoiceRecording) => {
+    try {
+      // Create a voice file from the recording
+      const voiceFile = new File([recording.audioBlob], `voice_${Date.now()}.webm`, {
+        type: 'audio/webm'
+      });
+      
+      // Add to uploads and upload immediately
+      await addFiles([voiceFile]);
+      const uploadedFiles = await uploadAll(roomId);
+      
+      if (uploadedFiles.length > 0) {
+        const attachmentUrls = uploadedFiles
+          .filter(f => f.url)
+          .map(f => f.url!);
+        
+        // Create a synthetic event for onSubmit
+        const syntheticEvent = {
+          preventDefault: () => {},
+          stopPropagation: () => {}
+        } as React.FormEvent;
+        
+        // Send with transcript as message content if available
+        const messageContent = recording.transcript || 'Voice message';
+        const originalMessage = newMessage;
+        setNewMessage(messageContent);
+        
+        await onSubmit(syntheticEvent, attachmentUrls);
+        
+        // Restore original message if it existed
+        setNewMessage(originalMessage);
+      }
+      
+      setShowVoiceRecorder(false);
+      clearUploads();
+    } catch (error) {
+      console.error('Failed to send voice message:', error);
+      toast.error('Failed to send voice message');
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -111,6 +155,17 @@ const ChatMessageInput: React.FC<ChatMessageInputProps> = ({
     <div className={`p-3 md:p-4 bg-card dark:bg-[#1f2133] border-t border-border dark:border-gray-800 ${isMobile ? 'pb-safe' : ''}`}>
       {replyTo && setReplyTo && (
         <ReplyPreview message={replyTo} onCancel={() => setReplyTo(null)} />
+      )}
+
+      {/* Voice Recorder */}
+      {showVoiceRecorder && (
+        <div className="mb-3">
+          <VoiceRecorder
+            isActive={showVoiceRecorder}
+            onRecordingComplete={handleVoiceRecordingComplete}
+            onCancel={() => setShowVoiceRecorder(false)}
+          />
+        </div>
       )}
 
       {uploads.length > 0 && (
@@ -162,10 +217,10 @@ const ChatMessageInput: React.FC<ChatMessageInputProps> = ({
             variant="ghost"
             size="icon"
             className={`${isMobile ? 'h-10 w-10' : 'h-8 w-8'} rounded-full flex-shrink-0`}
-            onClick={() => toast.info("Voice messages coming soon!")}
+            onClick={() => setShowVoiceRecorder(!showVoiceRecorder)}
             disabled={isSending || isUploading}
           >
-            <Mic className={`${isMobile ? 'h-6 w-6' : 'h-5 w-5'} text-muted-foreground`} />
+            <Mic className={`${isMobile ? 'h-6 w-6' : 'h-5 w-5'} ${showVoiceRecorder ? 'text-primary' : 'text-muted-foreground'}`} />
           </Button>
         </div>
         

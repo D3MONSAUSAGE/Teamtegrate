@@ -21,6 +21,8 @@ interface UseFileUploadProps {
 const DEFAULT_MAX_SIZE = 50; // 50MB
 const DEFAULT_ALLOWED_TYPES = [
   'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+  'audio/webm', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/m4a',
+  'video/mp4', 'video/webm', 'video/quicktime',
   'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'application/zip', 'text/plain'
 ];

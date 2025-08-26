@@ -1,8 +1,9 @@
 
 import React, { useState } from 'react';
-import { FileIcon, ImageIcon, DownloadIcon, Eye } from 'lucide-react';
+import { FileIcon, ImageIcon, DownloadIcon, Eye, Volume2, PlayIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ImageLightbox } from './ImageLightbox';
+import { AudioPlayer } from './AudioPlayer';
 
 interface Attachment {
   id: string;
@@ -22,6 +23,8 @@ const ChatMessageAttachment: React.FC<ChatMessageAttachmentProps> = ({
 }) => {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const isImage = attachment.file_type.startsWith('image/');
+  const isAudio = attachment.file_type.startsWith('audio/');
+  const isVideo = attachment.file_type.startsWith('video/');
   
   const imageAttachments = allImages.filter(att => att.file_type.startsWith('image/'));
   const currentImageIndex = imageAttachments.findIndex(att => att.id === attachment.id);
@@ -52,6 +55,35 @@ const ChatMessageAttachment: React.FC<ChatMessageAttachmentProps> = ({
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
+
+  if (isAudio) {
+    return (
+      <div className="max-w-sm">
+        <AudioPlayer
+          audioUrl={attachment.file_path}
+          fileName={attachment.file_name}
+        />
+      </div>
+    );
+  }
+
+  if (isVideo) {
+    return (
+      <div className="max-w-sm">
+        <video
+          src={attachment.file_path}
+          controls
+          className="rounded-lg border max-w-full h-auto"
+          preload="metadata"
+        >
+          Your browser does not support the video element.
+        </video>
+        <div className="mt-1">
+          <p className="text-xs text-muted-foreground truncate">{attachment.file_name}</p>
+        </div>
+      </div>
+    );
+  }
 
   if (isImage) {
     return (
@@ -110,7 +142,13 @@ const ChatMessageAttachment: React.FC<ChatMessageAttachmentProps> = ({
 
   return (
     <div className="flex items-center gap-3 p-3 border rounded-lg bg-muted/30 max-w-sm">
-      <FileIcon className="h-8 w-8 text-muted-foreground flex-shrink-0" />
+      {isAudio ? (
+        <Volume2 className="h-8 w-8 text-primary flex-shrink-0" />
+      ) : isVideo ? (
+        <PlayIcon className="h-8 w-8 text-primary flex-shrink-0" />
+      ) : (
+        <FileIcon className="h-8 w-8 text-muted-foreground flex-shrink-0" />
+      )}
       
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium truncate">{attachment.file_name}</p>
