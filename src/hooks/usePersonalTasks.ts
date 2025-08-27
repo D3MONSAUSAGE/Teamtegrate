@@ -1,7 +1,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/auth/AuthProvider';
 import { Task } from '@/types';
 import { useMemo } from 'react';
 import { requestManager } from '@/utils/requestManager';
@@ -16,6 +16,9 @@ export const usePersonalTasks = () => {
   const { data: tasks = [], isLoading, error, refetch } = useQuery({
     queryKey: ['personal-tasks', user?.organizationId, user?.id],
     queryFn: async (): Promise<Task[]> => {
+      console.log('=== PERSONAL TASKS QUERY EXECUTING ===');
+      console.log('Current time:', new Date().toLocaleString());
+      console.log('User context:', { id: user?.id, orgId: user?.organizationId });
       if (!user?.organizationId || !user?.id) {
         if (process.env.NODE_ENV === 'development') {
           console.log('usePersonalTasks: Missing user data, cannot fetch tasks');
@@ -256,8 +259,8 @@ export const usePersonalTasks = () => {
       });
     },
     enabled: !!user?.organizationId && !!user?.id,
-    staleTime: 30000, // 30 seconds
-    gcTime: 300000, // 5 minutes
+    staleTime: 0, // Always fetch fresh data
+    gcTime: 0, // Don't cache data
     retry: (failureCount, error: any) => {
       if (failureCount >= 3) return false;
       

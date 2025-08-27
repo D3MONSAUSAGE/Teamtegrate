@@ -15,9 +15,19 @@ import { MeetingManagementModal } from '@/components/meetings/MeetingManagementM
 import { useMeetingRequests } from '@/hooks/useMeetingRequests';
 import { Calendar as CalendarIcon, Navigation, BarChart } from 'lucide-react';
 import { useAuth } from '@/contexts/auth/AuthProvider';
+import { CacheDebugPanel } from '@/components/debug/CacheDebugPanel';
+import { CacheManager } from '@/utils/cacheManager';
+import { useQueryClient } from '@tanstack/react-query';
 
 const CalendarPage = () => {
   const { tasks, isLoading } = usePersonalTasks();
+  const queryClient = useQueryClient();
+  
+  // Initialize cache manager
+  React.useEffect(() => {
+    CacheManager.setQueryClient(queryClient);
+  }, [queryClient]);
+  
   const { user } = useAuth();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -212,6 +222,8 @@ const CalendarPage = () => {
         open={isMeetingManagementOpen}
         onOpenChange={setIsMeetingManagementOpen}
       />
+      
+      <CacheDebugPanel />
     </div>
   );
 };

@@ -3,7 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { usePersonalTasks } from '@/hooks/usePersonalTasks';
 import { useProjects } from '@/hooks/useProjects';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/auth/AuthProvider';
+import { CacheDebugPanel } from '@/components/debug/CacheDebugPanel';
+import { CacheManager } from '@/utils/cacheManager';
+import { useQueryClient } from '@tanstack/react-query';
 import { Task, Project } from '@/types';
 import { Plus, Sparkles, TrendingUp, Calendar } from 'lucide-react';
 import EnhancedCreateTaskDialog from '@/components/task/EnhancedCreateTaskDialog';
@@ -33,6 +36,12 @@ import { toast } from 'sonner';
 const DashboardPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  
+  // Initialize cache manager
+  React.useEffect(() => {
+    CacheManager.setQueryClient(queryClient);
+  }, [queryClient]);
   
   // Add real-time subscription for immediate updates
   useTaskRealtime();
@@ -422,6 +431,8 @@ const DashboardPage = () => {
           />
         )}
       </div>
+      
+      <CacheDebugPanel />
     </PullToRefresh>
   );
 };
