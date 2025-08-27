@@ -49,6 +49,8 @@ LoadingScreen.displayName = 'LoadingScreen';
 const AppLayout = memo(() => {
   const { user, loading, isAuthenticated } = useAuth();
 
+  console.log('AppLayout: Auth state:', { user: !!user, loading, isAuthenticated });
+
   if (loading) {
     return <LoadingScreen />;
   }

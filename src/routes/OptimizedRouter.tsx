@@ -22,7 +22,7 @@ const TasksPage = lazy(() => import('@/pages/TasksPage'));
 const ProjectsPage = lazy(() => import('@/pages/ProjectsPage'));
 const ProjectTasksPage = lazy(() => import('@/pages/ProjectTasksPage'));
 const CalendarPage = lazy(() => import('@/pages/CalendarPage'));
-const MeetingsPage = lazy(() => import('@/pages/SimpleMeetingsPage'));
+const TestMeetingsPage = lazy(() => import('@/pages/TestMeetingsPage'));
 const ChatPage = lazy(() => import('@/pages/ChatPage'));
 const TeamPage = lazy(() => import('@/pages/TeamPage'));
 const TeamDetailPage = lazy(() => import('@/pages/TeamDetailPage'));
@@ -43,17 +43,23 @@ const EmployeeDashboard = lazy(() => import('@/pages/EmployeeDashboard'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 
 // Lightweight page wrapper for individual suspense
-const PageWrapper = ({ children, fallback }: { children: React.ReactNode, fallback?: React.ReactNode }) => (
-  <Suspense fallback={fallback || <LoadingFallback />}>
-    {children}
-  </Suspense>
-);
+const PageWrapper = ({ children, fallback }: { children: React.ReactNode, fallback?: React.ReactNode }) => {
+  console.log('PageWrapper: Rendering children');
+  return (
+    <Suspense fallback={fallback || <LoadingFallback />}>
+      {children}
+    </Suspense>
+  );
+};
 
 const OptimizedRouter = () => {
   const { isAuthenticated, loading } = useAuth();
   
   // Enable route preloading for better performance
   useRoutePreloader();
+
+  // Debug logging
+  console.log('OptimizedRouter: Auth state:', { isAuthenticated, loading });
 
 
   // Memoize auth redirects to prevent re-creation
@@ -133,7 +139,7 @@ const OptimizedRouter = () => {
         } />
         <Route path="meetings" element={
           <PageWrapper>
-            <MeetingsPage />
+            <TestMeetingsPage />
           </PageWrapper>
         } />
         <Route path="chat" element={
