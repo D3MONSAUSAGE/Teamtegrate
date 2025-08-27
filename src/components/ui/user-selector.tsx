@@ -29,7 +29,7 @@ export const UserSelector: React.FC<UserSelectorProps> = ({
   users = [],
   selectedUserIds,
   onSelectionChange,
-  maxSelection = 4,
+  maxSelection,
   placeholder = "Select team members...",
   className,
   multiple = false
@@ -43,8 +43,8 @@ export const UserSelector: React.FC<UserSelectorProps> = ({
     if (selectedUserIds.includes(userId)) {
       // Remove user
       onSelectionChange(selectedUserIds.filter(id => id !== userId));
-    } else if (selectedUserIds.length < maxSelection) {
-      // Add user
+    } else if (!maxSelection || selectedUserIds.length < maxSelection) {
+      // Add user (unlimited if maxSelection is undefined)
       onSelectionChange([...selectedUserIds, userId]);
     }
   };
@@ -117,12 +117,14 @@ export const UserSelector: React.FC<UserSelectorProps> = ({
             <Button 
               variant="outline" 
               className="w-full justify-start text-left font-normal"
-              disabled={selectedUserIds.length >= maxSelection}
+              disabled={maxSelection ? selectedUserIds.length >= maxSelection : false}
             >
               <Users className="mr-2 h-4 w-4" />
               {selectedUsers.length === 0 
                 ? placeholder
-                : `${selectedUsers.length} of ${maxSelection} selected`
+                : maxSelection 
+                  ? `${selectedUsers.length} of ${maxSelection} selected`
+                  : `${selectedUsers.length} selected`
               }
             </Button>
           </PopoverTrigger>
@@ -174,7 +176,7 @@ export const UserSelector: React.FC<UserSelectorProps> = ({
           </PopoverContent>
         </Popover>
 
-        {selectedUserIds.length > 0 && (
+        {selectedUserIds.length > 0 && maxSelection && (
           <div className="text-sm text-muted-foreground whitespace-nowrap">
             {selectedUserIds.length}/{maxSelection}
           </div>
