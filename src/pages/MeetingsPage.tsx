@@ -12,7 +12,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
 
 const MeetingsPage = () => {
-  console.log('🔥 MeetingsPage: Component rendered at', new Date().toISOString());
   const { user } = useAuth();
   const { meetingRequests, loading } = useMeetingRequests();
   const [searchQuery, setSearchQuery] = useState('');

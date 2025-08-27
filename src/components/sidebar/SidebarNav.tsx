@@ -70,8 +70,7 @@ const SidebarNav: React.FC<SidebarNavProps> = memo(({ onNavigation, isCollapsed 
   }, []);
 
   // Memoize the navigation click handler
-  const handleNavClick = useCallback((href: string) => {
-    console.log('SidebarNav: Navigating to', href);
+  const handleNavClick = useCallback(() => {
     if (onNavigation) {
       onNavigation();
     }
@@ -91,7 +90,7 @@ const SidebarNav: React.FC<SidebarNavProps> = memo(({ onNavigation, isCollapsed 
           <Link
             key={item.name}
             to={item.href}
-            onClick={() => handleNavClick(item.href)}
+            onClick={handleNavClick}
             className={cn(
               "group relative flex items-center rounded-lg p-3 text-sm font-medium transition-all duration-300 overflow-hidden",
               "hover:scale-[1.02] hover:shadow-md",
