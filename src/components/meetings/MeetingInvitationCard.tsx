@@ -1,12 +1,23 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, MapPin, User, Check, X, Clock3 } from 'lucide-react';
+import { Calendar, Clock, MapPin, User, Check, X, Clock3, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { MeetingRequestWithParticipants, MeetingParticipant } from '@/types/meeting';
 import { useAuth } from '@/contexts/auth/AuthProvider';
 import { useMeetingRequests } from '@/hooks/useMeetingRequests';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface MeetingInvitationCardProps {
   meeting: MeetingRequestWithParticipants;
@@ -18,7 +29,8 @@ export const MeetingInvitationCard: React.FC<MeetingInvitationCardProps> = ({
   showActions = true 
 }) => {
   const { user } = useAuth();
-  const { respondToMeeting } = useMeetingRequests();
+  const { respondToMeeting, cancelMeeting } = useMeetingRequests();
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
 
   const userParticipant = meeting.participants.find(p => p.user_id === user?.id);
   const isOrganizer = meeting.organizer_id === user?.id;
@@ -59,6 +71,11 @@ export const MeetingInvitationCard: React.FC<MeetingInvitationCardProps> = ({
     if (userParticipant) {
       respondToMeeting(userParticipant.id, response);
     }
+  };
+
+  const handleCancelMeeting = () => {
+    cancelMeeting(meeting.id);
+    setShowCancelDialog(false);
   };
 
   const startTime = new Date(meeting.start_time);
@@ -109,39 +126,70 @@ export const MeetingInvitationCard: React.FC<MeetingInvitationCardProps> = ({
           )}
         </div>
 
-        {showActions && userParticipant && !isPastMeeting && (
-          <div className="flex gap-2 pt-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleResponse('accepted')}
-              disabled={userParticipant.response_status === 'accepted'}
-              className="gap-1 flex-1"
-            >
-              <Check className="h-4 w-4" />
-              Accept
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleResponse('tentative')}
-              disabled={userParticipant.response_status === 'tentative'}
-              className="gap-1 flex-1"
-            >
-              <Clock3 className="h-4 w-4" />
-              Tentative
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleResponse('declined')}
-              disabled={userParticipant.response_status === 'declined'}
-              className="gap-1 flex-1"
-            >
-              <X className="h-4 w-4" />
-              Decline
-            </Button>
-          </div>
+        {showActions && (
+          <>
+            {/* Organizer cancel button */}
+            {isOrganizer && !isPastMeeting && meeting.status !== 'cancelled' && (
+              <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" size="sm" className="gap-1 mb-2 w-full">
+                    <Trash2 className="h-4 w-4" />
+                    Cancel Meeting
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Cancel Meeting</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to cancel "{meeting.title}"? All invited participants will be notified of the cancellation. This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Keep Meeting</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleCancelMeeting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                      Cancel Meeting
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+
+            {/* Participant response buttons */}
+            {userParticipant && !isPastMeeting && meeting.status !== 'cancelled' && (
+              <div className="flex gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleResponse('accepted')}
+                  disabled={userParticipant.response_status === 'accepted'}
+                  className="gap-1 flex-1"
+                >
+                  <Check className="h-4 w-4" />
+                  Accept
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleResponse('tentative')}
+                  disabled={userParticipant.response_status === 'tentative'}
+                  className="gap-1 flex-1"
+                >
+                  <Clock3 className="h-4 w-4" />
+                  Tentative
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleResponse('declined')}
+                  disabled={userParticipant.response_status === 'declined'}
+                  className="gap-1 flex-1"
+                >
+                  <X className="h-4 w-4" />
+                  Decline
+                </Button>
+              </div>
+            )}
+          </>
         )}
 
         {meeting.participants.length > 0 && (

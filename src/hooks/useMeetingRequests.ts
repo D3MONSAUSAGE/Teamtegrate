@@ -114,6 +114,59 @@ export const useMeetingRequests = () => {
     }
   };
 
+  const cancelMeeting = async (meetingId: string) => {
+    if (!user) return null;
+
+    try {
+      console.log('🔄 Cancelling meeting:', { meetingId });
+
+      // Get meeting details first to send notifications
+      const meetingToCancel = meetingRequests.find(m => m.id === meetingId);
+      if (!meetingToCancel) {
+        throw new Error('Meeting not found');
+      }
+
+      // Update meeting status to cancelled
+      const { error: meetingError } = await supabase
+        .from('meeting_requests')
+        .update({ status: 'cancelled' })
+        .eq('id', meetingId);
+
+      if (meetingError) throw meetingError;
+
+      // Create notifications for all participants (excluding organizer)
+      const participantNotifications = meetingToCancel.participants
+        .filter(p => p.user_id !== user.id)
+        .map(participant => ({
+          user_id: participant.user_id,
+          title: 'Meeting Cancelled',
+          content: `The meeting "${meetingToCancel.title}" scheduled for ${new Date(meetingToCancel.start_time).toLocaleDateString()} has been cancelled`,
+          type: 'meeting_cancellation',
+          organization_id: user.organizationId,
+        }));
+
+      if (participantNotifications.length > 0) {
+        await supabase.from('notifications').insert(participantNotifications);
+      }
+
+      toast({
+        title: "Success",
+        description: "Meeting cancelled successfully",
+      });
+
+      fetchMeetingRequests();
+      return true;
+    } catch (error) {
+      console.error('Error cancelling meeting:', error);
+      toast({
+        title: "Error",
+        description: "Failed to cancel meeting",
+        variant: "destructive",
+      });
+      return null;
+    }
+  };
+
   const respondToMeeting = async (participantId: string, response: 'accepted' | 'declined' | 'tentative') => {
     try {
       console.log('🔄 Responding to meeting:', { participantId, response });
@@ -204,6 +257,7 @@ export const useMeetingRequests = () => {
     meetingRequests,
     loading,
     createMeetingRequest,
+    cancelMeeting,
     respondToMeeting,
     fetchMeetingRequests,
   };
