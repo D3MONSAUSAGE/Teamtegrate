@@ -22,7 +22,7 @@ const TasksPage = lazy(() => import('@/pages/TasksPage'));
 const ProjectsPage = lazy(() => import('@/pages/ProjectsPage'));
 const ProjectTasksPage = lazy(() => import('@/pages/ProjectTasksPage'));
 const CalendarPage = lazy(() => import('@/pages/CalendarPage'));
-const MeetingsPage = lazy(() => import('@/pages/MeetingsPage'));
+const MeetingsPage = lazy(() => import('@/pages/TestMeetingsPage'));
 const ChatPage = lazy(() => import('@/pages/ChatPage'));
 const TeamPage = lazy(() => import('@/pages/TeamPage'));
 const TeamDetailPage = lazy(() => import('@/pages/TeamDetailPage'));
@@ -54,6 +54,9 @@ const OptimizedRouter = () => {
   
   // Enable route preloading for better performance
   useRoutePreloader();
+
+  // Debug logging
+  console.log('OptimizedRouter rendered', { isAuthenticated, loading });
 
   // Memoize auth redirects to prevent re-creation
   const authRedirects = useMemo(() => {
@@ -131,7 +134,7 @@ const OptimizedRouter = () => {
           </PageWrapper>
         } />
         <Route path="meetings" element={
-          <PageWrapper>
+          <PageWrapper fallback={<div>Loading Meetings Page...</div>}>
             <MeetingsPage />
           </PageWrapper>
         } />
