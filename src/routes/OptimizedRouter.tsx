@@ -22,6 +22,7 @@ const TasksPage = lazy(() => import('@/pages/TasksPage'));
 const ProjectsPage = lazy(() => import('@/pages/ProjectsPage'));
 const ProjectTasksPage = lazy(() => import('@/pages/ProjectTasksPage'));
 const CalendarPage = lazy(() => import('@/pages/CalendarPage'));
+const MeetingsPage = lazy(() => import('@/pages/MeetingsPage'));
 const ChatPage = lazy(() => import('@/pages/ChatPage'));
 const TeamPage = lazy(() => import('@/pages/TeamPage'));
 const TeamDetailPage = lazy(() => import('@/pages/TeamDetailPage'));
@@ -127,6 +128,11 @@ const OptimizedRouter = () => {
         <Route path="calendar" element={
           <PageWrapper>
             <CalendarPage />
+          </PageWrapper>
+        } />
+        <Route path="meetings" element={
+          <PageWrapper>
+            <MeetingsPage />
           </PageWrapper>
         } />
         <Route path="chat" element={

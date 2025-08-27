@@ -167,6 +167,105 @@ export const useMeetingRequests = () => {
     }
   };
 
+  const updateMeeting = async (
+    meetingId: string,
+    title: string,
+    description: string,
+    startTime: Date,
+    endTime: Date,
+    participantIds: string[],
+    location?: string
+  ): Promise<boolean> => {
+    try {
+      // Get current meeting to compare changes
+      const currentMeeting = meetingRequests?.find(m => m.id === meetingId);
+      if (!currentMeeting) throw new Error('Meeting not found');
+
+      // Update meeting
+      const { error: updateError } = await supabase
+        .from('meeting_requests')
+        .update({
+          title,
+          description,
+          start_time: startTime.toISOString(),
+          end_time: endTime.toISOString(),
+          location,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', meetingId);
+
+      if (updateError) throw updateError;
+
+      // Get current participants
+      const currentParticipantIds = currentMeeting.participants?.map(p => p.user_id) || [];
+      
+      // Find participants to remove
+      const participantsToRemove = currentParticipantIds.filter(id => !participantIds.includes(id));
+      
+      // Find participants to add
+      const participantsToAdd = participantIds.filter(id => !currentParticipantIds.includes(id));
+
+      // Remove participants no longer invited
+      if (participantsToRemove.length > 0) {
+        const { error: removeError } = await supabase
+          .from('meeting_participants')
+          .delete()
+          .eq('meeting_request_id', meetingId)
+          .in('user_id', participantsToRemove);
+
+        if (removeError) throw removeError;
+      }
+
+      // Add new participants
+      if (participantsToAdd.length > 0) {
+        const newParticipants = participantsToAdd.map(userId => ({
+          meeting_request_id: meetingId,
+          user_id: userId,
+          response_status: 'invited' as const,
+        }));
+
+        const { error: addError } = await supabase
+          .from('meeting_participants')
+          .insert(newParticipants);
+
+        if (addError) throw addError;
+      }
+
+      // Create notifications for all current participants about the update
+      if (participantIds.length > 0) {
+        const updateNotifications = participantIds.map(userId => ({
+          user_id: userId,
+          title: 'Meeting Updated',
+          content: `The meeting "${title}" has been updated. Please review the new details.`,
+          type: 'meeting_update',
+          organization_id: user.organizationId,
+        }));
+
+        await supabase.from('notifications').insert(updateNotifications);
+      }
+
+      // Create notifications for newly added participants
+      if (participantsToAdd.length > 0) {
+        const inviteNotifications = participantsToAdd.map(userId => ({
+          user_id: userId,
+          title: 'Meeting Invitation',
+          content: `You have been invited to the meeting "${title}" on ${startTime.toLocaleDateString()}.`,
+          type: 'meeting_invitation',
+          organization_id: user.organizationId,
+        }));
+
+        await supabase.from('notifications').insert(inviteNotifications);
+      }
+
+      // Refresh the meeting list
+      await fetchMeetingRequests();
+      return true;
+    } catch (error) {
+      console.error('Error updating meeting:', error);
+      throw error;
+    }
+  };
+
   const respondToMeeting = async (participantId: string, response: 'accepted' | 'declined' | 'tentative') => {
     try {
       console.log('🔄 Responding to meeting:', { participantId, response });
@@ -258,6 +357,7 @@ export const useMeetingRequests = () => {
     loading,
     createMeetingRequest,
     cancelMeeting,
+    updateMeeting,
     respondToMeeting,
     fetchMeetingRequests,
   };
