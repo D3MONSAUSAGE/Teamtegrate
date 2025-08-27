@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { MeetingRequestDialog } from '@/components/meetings/MeetingRequestDialog';
 import { MeetingInvitationCard } from '@/components/meetings/MeetingInvitationCard';
 import { useMeetingRequests } from '@/hooks/useMeetingRequests';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/auth/AuthProvider';
 import { format } from 'date-fns';
 
 const MeetingsPage = () => {

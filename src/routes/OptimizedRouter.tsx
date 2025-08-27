@@ -22,7 +22,7 @@ const TasksPage = lazy(() => import('@/pages/TasksPage'));
 const ProjectsPage = lazy(() => import('@/pages/ProjectsPage'));
 const ProjectTasksPage = lazy(() => import('@/pages/ProjectTasksPage'));
 const CalendarPage = lazy(() => import('@/pages/CalendarPage'));
-const MeetingsPage = lazy(() => import('@/pages/MeetingsPage'));
+const MeetingsPage = lazy(() => import('@/pages/SimpleMeetingsPage'));
 const ChatPage = lazy(() => import('@/pages/ChatPage'));
 const TeamPage = lazy(() => import('@/pages/TeamPage'));
 const TeamDetailPage = lazy(() => import('@/pages/TeamDetailPage'));
