@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useTask } from '@/contexts/task';
+import { usePersonalTasks } from '@/hooks/usePersonalTasks';
 import { Task } from '@/types';
 import { isSameDay, addMonths, subMonths } from 'date-fns';
 import TaskDetailDialog from '@/components/calendar/TaskDetailDialog';
@@ -17,7 +17,7 @@ import { Calendar as CalendarIcon, Navigation, BarChart } from 'lucide-react';
 import { useAuth } from '@/contexts/auth/AuthProvider';
 
 const CalendarPage = () => {
-  const { tasks, projects } = useTask();
+  const { tasks, isLoading } = usePersonalTasks();
   const { user } = useAuth();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
