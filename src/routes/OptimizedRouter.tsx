@@ -5,6 +5,7 @@ import LoadingFallback from '@/components/LoadingFallback';
 import AppLayout from '@/components/AppLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRoutePreloader } from '@/hooks/useRoutePreloader';
+import { MeetingsErrorBoundary } from '@/components/ErrorBoundary/MeetingsErrorBoundary';
 
 // Import Index component for the root route
 const Index = lazy(() => import('@/pages/Index'));
@@ -22,7 +23,16 @@ const TasksPage = lazy(() => import('@/pages/TasksPage'));
 const ProjectsPage = lazy(() => import('@/pages/ProjectsPage'));
 const ProjectTasksPage = lazy(() => import('@/pages/ProjectTasksPage'));
 const CalendarPage = lazy(() => import('@/pages/CalendarPage'));
-const TestMeetingsPage = lazy(() => import('@/pages/TestMeetingsPage'));
+const FreshMeetingsPage = lazy(() => {
+  console.log('🟡 OptimizedRouter: Loading FreshMeetingsPage...');
+  return import('@/pages/FreshMeetingsPage').then(module => {
+    console.log('🟢 OptimizedRouter: FreshMeetingsPage loaded successfully', module);
+    return module;
+  }).catch(error => {
+    console.error('🔴 OptimizedRouter: Failed to load FreshMeetingsPage:', error);
+    throw error;
+  });
+});
 const ChatPage = lazy(() => import('@/pages/ChatPage'));
 const TeamPage = lazy(() => import('@/pages/TeamPage'));
 const TeamDetailPage = lazy(() => import('@/pages/TeamDetailPage'));
@@ -139,7 +149,9 @@ const OptimizedRouter = () => {
         } />
         <Route path="meetings" element={
           <PageWrapper>
-            <TestMeetingsPage />
+            <MeetingsErrorBoundary>
+              <FreshMeetingsPage />
+            </MeetingsErrorBoundary>
           </PageWrapper>
         } />
         <Route path="chat" element={
