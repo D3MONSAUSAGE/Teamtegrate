@@ -105,26 +105,29 @@ const TrainingPage = () => {
           </ModernSectionCard>
         </div>
         
-        {/* My Assignments Section */}
-        {assignments.length > 0 && (
-          <div className="animate-fade-in" style={{ animationDelay: '300ms' }}>
-            <ModernSectionCard
-              title="My Training Assignments"
-              subtitle={`${assignments.filter(a => a.status === 'pending').length} pending, ${assignments.filter(a => a.status === 'in_progress').length} in progress`}
-              icon={GraduationCap}
-              gradient="from-violet-500/10 via-purple-500/10 to-indigo-500/10"
-              headerAction={
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsMyAssignmentsOpen(true)}
-                  className="gap-2"
-                >
-                  <GraduationCap className="h-4 w-4" />
-                  View All
-                </Button>
-              }
-            >
+        {/* My Assignments Section - Always Visible */}
+        <div className="animate-fade-in" style={{ animationDelay: '300ms' }}>
+          <ModernSectionCard
+            title="My Training Assignments"
+            subtitle={assignments.length > 0 ? 
+              `${assignments.filter(a => a.status === 'pending').length} pending, ${assignments.filter(a => a.status === 'in_progress').length} in progress` :
+              "No assignments yet"
+            }
+            icon={GraduationCap}
+            gradient="from-violet-500/10 via-purple-500/10 to-indigo-500/10"
+            headerAction={
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsMyAssignmentsOpen(true)}
+                className="gap-2"
+              >
+                <GraduationCap className="h-4 w-4" />
+                View All
+              </Button>
+            }
+          >
+            {assignments.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {assignments.slice(0, 3).map((assignment: any) => (
                   <div key={assignment.id} className="p-4 rounded-lg border bg-card hover:shadow-md transition-shadow">
@@ -151,9 +154,15 @@ const TrainingPage = () => {
                   </div>
                 ))}
               </div>
-            </ModernSectionCard>
-          </div>
-        )}
+            ) : (
+              <div className="text-center py-12 text-muted-foreground">
+                <GraduationCap className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No training assignments yet.</p>
+                <p className="text-sm mt-2">When assignments are created, they'll appear here.</p>
+              </div>
+            )}
+          </ModernSectionCard>
+        </div>
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 gap-8">
