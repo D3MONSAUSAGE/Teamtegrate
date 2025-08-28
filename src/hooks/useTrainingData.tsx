@@ -3,6 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { enhancedNotifications } from '@/utils/enhancedNotifications';
 
+// Training data hooks with assignment functionality
+
 // Training Courses Hook
 export const useTrainingCourses = () => {
   const { user } = useAuth();
