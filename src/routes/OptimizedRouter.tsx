@@ -115,6 +115,22 @@ const OptimizedRouter = () => {
         </PageWrapper>
       } />
       
+      {/* TOP-LEVEL training route for testing */}
+      <Route path="/training" element={
+        <PageWrapper>
+          <div style={{ padding: '30px', background: 'lightgreen', border: '3px solid green' }}>
+            <h1>🟢 TOP-LEVEL TRAINING TEST</h1>
+            <p>This is a top-level /training route</p>
+            <p>If this works, the issue is with nested routing or TrainingPage component</p>
+            <p>Time: {new Date().toLocaleString()}</p>
+            {(() => {
+              console.log('🟢 TOP-LEVEL TRAINING: Route matched and rendered!');
+              return null;
+            })()}
+          </div>
+        </PageWrapper>
+      } />
+      
       {/* Public routes with individual suspense */}
       <Route path="/login" element={
         <PageWrapper>
@@ -250,7 +266,20 @@ const OptimizedRouter = () => {
         } />
         <Route path="training" element={
           <PageWrapper>
-            <TrainingPage />
+            <div style={{ padding: '30px', background: 'lightcoral', border: '3px solid red' }}>
+              <h1>🔴 NESTED TRAINING ROUTE TEST</h1>
+              <p>Path: /dashboard/training</p>
+              <p>Time: {new Date().toLocaleString()}</p>
+              <p>Route Status: Successfully rendered in AppLayout!</p>
+              {(() => {
+                console.log('🎯 NESTED TRAINING ROUTE: Component is rendering inside AppLayout!');
+                return null;
+              })()}
+              <div style={{ marginTop: '20px', padding: '10px', background: 'white' }}>
+                <h3>Actual TrainingPage Component:</h3>
+                <TrainingPage />
+              </div>
+            </div>
           </PageWrapper>
         } />
         <Route path="organization" element={
