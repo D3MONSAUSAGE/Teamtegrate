@@ -4,7 +4,7 @@ import { AuthContextType } from './types';
 import { useAuthOperations } from './hooks/useAuthOperations';
 import { useAuthState } from './hooks/useAuthState';
 import { useRoleAccess } from './hooks/useRoleAccess';
-import AuthErrorBoundary from '@/components/auth/AuthErrorBoundary';
+
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -16,11 +16,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   console.log('AuthProvider: Initializing');
 
   return (
-    <AuthErrorBoundary>
-      <AuthProviderInner>
-        {children}
-      </AuthProviderInner>
-    </AuthErrorBoundary>
+    <AuthProviderInner>
+      {children}
+    </AuthProviderInner>
   );
 };
 

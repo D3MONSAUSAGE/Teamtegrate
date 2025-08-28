@@ -6,6 +6,7 @@ import AppLayout from '@/components/AppLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRoutePreloader } from '@/hooks/useRoutePreloader';
 import { MeetingsErrorBoundary } from '@/components/ErrorBoundary/MeetingsErrorBoundary';
+import AuthErrorBoundary from '@/components/auth/AuthErrorBoundary';
 
 // Import Index component for the root route
 const Index = lazy(() => import('@/pages/Index'));
@@ -154,7 +155,7 @@ const OptimizedRouter = () => {
       } />
       
       {/* Protected routes with AppLayout and individual suspense boundaries */}
-      <Route path="/dashboard" element={<AppLayout />}>
+      <Route path="/dashboard" element={<AuthErrorBoundary><AppLayout /></AuthErrorBoundary>}>
         <Route index element={
           <PageWrapper>
             <DashboardPage />

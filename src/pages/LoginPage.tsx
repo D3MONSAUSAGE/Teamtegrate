@@ -119,6 +119,9 @@ const LoginPage = () => {
 
       console.log('LoginPage: Login successful');
       toast.success('Welcome back!');
+    } catch (e) {
+      console.error('LoginPage: Unexpected login error:', e);
+      toast.error('Login failed. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
