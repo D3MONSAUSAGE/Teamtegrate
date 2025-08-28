@@ -1,295 +1,191 @@
-import React, { useEffect, memo } from 'react';
-import { Plus, BookOpen, Award, Clock, Users, Play, CheckCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle, Loader2, BookOpen, GraduationCap, PenTool, Users } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useLocation } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import TrainingHeader from '@/components/training/TrainingHeader';
+import TrainingStatsCards from '@/components/training/TrainingStatsCards';
+import QuizCreator from '@/components/training/QuizCreator';
+import ModernSectionCard from '@/components/dashboard/ModernSectionCard';
+import { useTrainingCourses, useQuizzes } from '@/hooks/useTrainingData';
 
-const TrainingPage = memo(() => {
-  const location = useLocation();
+const TrainingPage = () => {
+  const { user, loading } = useAuth();
+  const [isQuizCreatorOpen, setIsQuizCreatorOpen] = useState(false);
+  const [isCourseCreatorOpen, setIsCourseCreatorOpen] = useState(false);
   
-  // Enhanced debugging for training page
-  useEffect(() => {
-    console.log('🎓 TRAINING PAGE: Component mounted/updated', {
-      pathname: location.pathname,
-      timestamp: new Date().toISOString(),
-      componentState: 'MOUNTED'
-    });
-    
-    return () => {
-      console.log('🎓 TRAINING PAGE: Component unmounting', {
-        pathname: location.pathname,
-        timestamp: new Date().toISOString(),
-        componentState: 'UNMOUNTING'
-      });
-    };
-  }, [location.pathname]);
-  
-  // Log every render
-  console.log('🎓 TRAINING PAGE: Rendering', {
-    pathname: location.pathname,
-    timestamp: new Date().toISOString()
-  });
-  const { user, hasRoleAccess } = useAuth();
-  const isAdmin = hasRoleAccess('manager');
+  const { data: courses = [], isLoading: coursesLoading } = useTrainingCourses();
+  const { data: allQuizzes = [], isLoading: quizzesLoading } = useQuizzes();
 
-  const mockCourses = [
-    {
-      id: '1',
-      title: 'Workplace Safety Fundamentals',
-      description: 'Essential safety protocols and procedures for all employees',
-      difficulty: 'beginner',
-      duration: 45,
-      modules: 4,
-      progress: 75,
-      enrolled: true,
-      thumbnail: null,
-    },
-    {
-      id: '2',
-      title: 'Leadership Development',
-      description: 'Advanced leadership skills and management techniques',
-      difficulty: 'advanced',
-      duration: 120,
-      modules: 8,
-      progress: 0,
-      enrolled: false,
-      thumbnail: null,
-    },
-    {
-      id: '3',
-      title: 'Data Privacy & Security',
-      description: 'Understanding GDPR, data protection, and cybersecurity basics',
-      difficulty: 'intermediate',
-      duration: 90,
-      modules: 6,
-      progress: 100,
-      enrolled: true,
-      thumbnail: null,
-    },
-  ];
+  // Show loading state while auth is loading
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
+        <div className="p-6 flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="relative">
+              <Loader2 className="h-16 w-16 animate-spin mx-auto mb-4 text-emerald-600" />
+              <div className="absolute inset-0 h-16 w-16 mx-auto rounded-full bg-emerald-600/20 animate-pulse" />
+            </div>
+            <h3 className="text-xl font-semibold text-foreground mb-2">Loading Training Center</h3>
+            <p className="text-muted-foreground">Please wait while we load your training dashboard...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-  const stats = {
-    totalCourses: 3,
-    completedCourses: 1,
-    inProgressCourses: 1,
-    totalHours: 4.2,
+  // Check if user exists
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
+        <div className="p-6 flex items-center justify-center min-h-screen">
+          <Alert className="max-w-md">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Please log in to access the training center.
+            </AlertDescription>
+          </Alert>
+        </div>
+      </div>
+    );
+  }
+
+  const handleCreateCourse = () => {
+    setIsCourseCreatorOpen(true);
   };
 
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case 'beginner': return 'bg-success text-success-foreground';
-      case 'intermediate': return 'bg-warning text-warning-foreground';
-      case 'advanced': return 'bg-destructive text-destructive-foreground';
-      default: return 'bg-secondary text-secondary-foreground';
-    }
+  const handleCreateQuiz = () => {
+    setIsQuizCreatorOpen(true);
   };
 
   return (
-    <div className="space-y-6 p-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Training Center</h1>
-          <p className="text-muted-foreground">
-            Develop your skills with our comprehensive training courses
-          </p>
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
+      <div className="p-3 sm:p-6 space-y-8 max-w-7xl mx-auto">
+        {/* Professional Header */}
+        <div className="animate-fade-in">
+          <TrainingHeader 
+            onCreateCourse={handleCreateCourse}
+            onCreateQuiz={handleCreateQuiz}
+          />
         </div>
-        {isAdmin && (
-          <Button className="gap-2">
-            <Plus className="h-4 w-4" />
-            Create Course
-          </Button>
-        )}
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Courses</CardTitle>
-            <BookOpen className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalCourses}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completed</CardTitle>
-            <Award className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.completedCourses}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">In Progress</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.inProgressCourses}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Learning Hours</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalHours}h</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Main Content */}
-      <Tabs defaultValue="my-courses" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="my-courses">My Courses</TabsTrigger>
-          <TabsTrigger value="all-courses">All Courses</TabsTrigger>
-          {isAdmin && <TabsTrigger value="manage">Manage</TabsTrigger>}
-        </TabsList>
-
-        <TabsContent value="my-courses" className="space-y-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Input placeholder="Search courses..." className="sm:max-w-sm" />
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {mockCourses
-              .filter(course => course.enrolled)
-              .map((course) => (
-                <Card key={course.id} className="hover:shadow-md transition-shadow">
-                  <CardHeader>
-                    <div className="flex justify-between items-start">
-                      <Badge className={getDifficultyColor(course.difficulty)}>
-                        {course.difficulty}
-                      </Badge>
-                      {course.progress === 100 && (
-                        <CheckCircle className="h-5 w-5 text-success" />
-                      )}
-                    </div>
-                    <CardTitle className="text-lg">{course.title}</CardTitle>
-                    <CardDescription>{course.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex justify-between text-sm text-muted-foreground">
-                      <span>{course.modules} modules</span>
-                      <span>{course.duration} min</span>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span>Progress</span>
-                        <span>{course.progress}%</span>
-                      </div>
-                      <Progress value={course.progress} className="h-2" />
-                    </div>
-                    <Button className="w-full gap-2">
-                      <Play className="h-4 w-4" />
-                      {course.progress === 0 ? 'Start Course' : 'Continue'}
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="all-courses" className="space-y-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Input placeholder="Search all courses..." className="sm:max-w-sm" />
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {mockCourses.map((course) => (
-              <Card key={course.id} className="hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <div className="flex justify-between items-start">
-                    <Badge className={getDifficultyColor(course.difficulty)}>
-                      {course.difficulty}
-                    </Badge>
-                    {course.enrolled && course.progress === 100 && (
-                      <CheckCircle className="h-5 w-5 text-success" />
-                    )}
+        
+        {/* Enhanced Stats Cards */}
+        <div className="animate-fade-in" style={{ animationDelay: '200ms' }}>
+          <ModernSectionCard
+            title="Training Statistics"
+            subtitle="Real-time learning metrics and performance indicators"
+            icon={GraduationCap}
+            gradient="from-emerald-500/10 via-teal-500/10 to-cyan-500/10"
+            noPadding
+          >
+            <div className="p-6">
+              <TrainingStatsCards />
+            </div>
+          </ModernSectionCard>
+        </div>
+        
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 gap-8">
+          {/* Training Content */}
+          <div className="lg:grid lg:grid-cols-3 lg:gap-8 space-y-8 lg:space-y-0">
+            <div className="lg:col-span-2 animate-fade-in" style={{ animationDelay: '300ms' }}>
+              <ModernSectionCard
+                title="Training Courses"
+                subtitle="Available learning paths and modules"
+                icon={BookOpen}
+                gradient="from-blue-500/10 via-indigo-500/10 to-purple-500/10"
+              >
+                {coursesLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
                   </div>
-                  <CardTitle className="text-lg">{course.title}</CardTitle>
-                  <CardDescription>{course.description}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex justify-between text-sm text-muted-foreground">
-                    <span>{course.modules} modules</span>
-                    <span>{course.duration} min</span>
-                  </div>
-                  {course.enrolled && (
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span>Progress</span>
-                        <span>{course.progress}%</span>
+                ) : courses.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {courses.map((course: any) => (
+                      <div key={course.id} className="p-4 rounded-lg border bg-card hover:shadow-md transition-shadow">
+                        <div className="space-y-2">
+                          <h3 className="font-semibold text-foreground">{course.title}</h3>
+                          <p className="text-sm text-muted-foreground">{course.description}</p>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">
+                              {course.difficulty || 'Beginner'}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {course.training_modules?.length || 0} modules
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                      <Progress value={course.progress} className="h-2" />
-                    </div>
-                  )}
-                  <Button className="w-full gap-2" variant={course.enrolled ? "default" : "outline"}>
-                    {course.enrolled ? (
-                      <>
-                        <Play className="h-4 w-4" />
-                        {course.progress === 0 ? 'Start Course' : 'Continue'}
-                      </>
-                    ) : (
-                      'Enroll Now'
-                    )}
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-
-        {isAdmin && (
-          <TabsContent value="manage" className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold">Course Management</h3>
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" />
-                New Course
-              </Button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <BookOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No training courses available yet.</p>
+                  </div>
+                )}
+              </ModernSectionCard>
             </div>
             
-            <Card>
-              <CardHeader>
-                <CardTitle>Admin Features</CardTitle>
-                <CardDescription>
-                  Manage courses, track employee progress, and create learning paths
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Button variant="outline" className="h-20 flex-col gap-2">
-                    <BookOpen className="h-5 w-5" />
-                    <span>Course Builder</span>
-                  </Button>
-                  <Button variant="outline" className="h-20 flex-col gap-2">
-                    <Users className="h-5 w-5" />
-                    <span>User Progress</span>
-                  </Button>
-                  <Button variant="outline" className="h-20 flex-col gap-2">
-                    <Award className="h-5 w-5" />
-                    <span>Certificates</span>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        )}
-      </Tabs>
+            <div className="space-y-8">
+              <div className="animate-fade-in" style={{ animationDelay: '400ms' }}>
+                <ModernSectionCard
+                  title="Active Quizzes"
+                  subtitle="Assessment and evaluation tools"
+                  icon={PenTool}
+                  gradient="from-green-500/10 via-emerald-500/10 to-teal-500/10"
+                >
+                  {quizzesLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin text-green-500" />
+                    </div>
+                  ) : allQuizzes.length > 0 ? (
+                    <div className="space-y-3">
+                      {allQuizzes.slice(0, 5).map((quiz: any) => (
+                        <div key={quiz.id} className="p-3 rounded-lg border bg-card/50 hover:bg-card transition-colors">
+                          <div className="space-y-1">
+                            <h4 className="text-sm font-medium text-foreground">{quiz.title}</h4>
+                            <p className="text-xs text-muted-foreground">
+                              {quiz.quiz_questions?.length || 0} questions • {quiz.passing_score}% to pass
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <PenTool className="h-8 w-8 mx-auto mb-3 opacity-50" />
+                      <p className="text-sm">No quizzes available yet.</p>
+                    </div>
+                  )}
+                </ModernSectionCard>
+              </div>
+              
+              <div className="animate-fade-in" style={{ animationDelay: '500ms' }}>
+                <ModernSectionCard
+                  title="Learning Progress"
+                  subtitle="Track your development journey"
+                  icon={Users}
+                  gradient="from-orange-500/10 via-red-500/10 to-pink-500/10"
+                >
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Users className="h-8 w-8 mx-auto mb-3 opacity-50" />
+                    <p className="text-sm">Progress tracking coming soon.</p>
+                  </div>
+                </ModernSectionCard>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Dialogs */}
+      <QuizCreator 
+        open={isQuizCreatorOpen}
+        onOpenChange={setIsQuizCreatorOpen}
+      />
     </div>
   );
-});
-
-TrainingPage.displayName = 'TrainingPage';
+};
 
 export default TrainingPage;
