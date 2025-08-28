@@ -8,6 +8,8 @@ import { useAuth } from '@/contexts/auth/AuthProvider';
 import { useMeetingRequests } from '@/hooks/useMeetingRequests';
 import { MeetingEditDialog } from './MeetingEditDialog';
 import { MeetingParticipantsList } from './MeetingParticipantsList';
+import { MeetingStatusSummary } from './MeetingStatusSummary';
+import { QuickMeetingEditModal } from './QuickMeetingEditModal';
 import type { MeetingRequestWithParticipants } from '@/types/meeting';
 import { format } from 'date-fns';
 
@@ -21,6 +23,7 @@ export const MeetingInvitationCard: React.FC<MeetingInvitationCardProps> = ({ me
   const { respondToMeeting, cancelMeeting } = useMeetingRequests();
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showQuickEdit, setShowQuickEdit] = useState(false);
   const [showParticipants, setShowParticipants] = useState(false);
 
   const handleResponse = async (response: 'accepted' | 'declined' | 'tentative') => {
@@ -118,8 +121,14 @@ export const MeetingInvitationCard: React.FC<MeetingInvitationCardProps> = ({ me
             )}
           </div>
 
-          {/* Participants List */}
-          <div className="space-y-2">
+          {/* Enhanced Participants Status */}
+          <div className="space-y-3">
+            <MeetingStatusSummary 
+              participants={meeting.participants || []} 
+              compact={false}
+              showTrend={true}
+            />
+            
             <div className="flex items-center justify-between">
               <Button
                 variant="ghost"
@@ -127,18 +136,9 @@ export const MeetingInvitationCard: React.FC<MeetingInvitationCardProps> = ({ me
                 onClick={() => setShowParticipants(!showParticipants)}
                 className="text-xs text-muted-foreground h-auto p-0 hover:no-underline"
               >
-                <Users className="h-3 w-3 mr-1" />
-                {meeting.participants?.length || 0} participants
+                {showParticipants ? 'Hide details' : 'Show participant details'}
               </Button>
             </div>
-            
-            {!showParticipants && (
-              <MeetingParticipantsList 
-                participants={meeting.participants || []} 
-                organizerName={meeting.organizer_name}
-                compact={true}
-              />
-            )}
             
             {showParticipants && (
               <MeetingParticipantsList 
@@ -187,15 +187,25 @@ export const MeetingInvitationCard: React.FC<MeetingInvitationCardProps> = ({ me
 
               {/* Edit button for organizers */}
               {canEdit && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setShowEditDialog(true)}
-                  className="flex items-center gap-1"
-                >
-                  <Edit className="h-3 w-3" />
-                  Edit
-                </Button>
+                <div className="flex gap-1">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setShowQuickEdit(true)}
+                    className="flex items-center gap-1"
+                  >
+                    <Edit className="h-3 w-3" />
+                    Quick Edit
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setShowEditDialog(true)}
+                    className="flex items-center gap-1 text-xs px-2"
+                  >
+                    Advanced
+                  </Button>
+                </div>
               )}
 
               {/* Cancel button for organizers */}
@@ -235,7 +245,13 @@ export const MeetingInvitationCard: React.FC<MeetingInvitationCardProps> = ({ me
         </CardContent>
       </Card>
 
-      {/* Edit Meeting Dialog */}
+      {/* Edit Meeting Dialogs */}
+      <QuickMeetingEditModal
+        meeting={meeting}
+        open={showQuickEdit}
+        onOpenChange={setShowQuickEdit}
+      />
+      
       <MeetingEditDialog
         meeting={meeting}
         open={showEditDialog}

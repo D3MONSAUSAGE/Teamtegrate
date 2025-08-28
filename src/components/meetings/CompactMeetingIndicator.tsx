@@ -1,9 +1,10 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Users, Clock, MapPin } from 'lucide-react';
+import { Users, Clock, MapPin, Check, X, UserCheck } from 'lucide-react';
 import { format } from 'date-fns';
 import { MeetingRequestWithParticipants } from '@/types/meeting';
+import { MeetingStatusSummary } from './MeetingStatusSummary';
 
 interface CompactMeetingIndicatorProps {
   meetings: MeetingRequestWithParticipants[];
@@ -32,12 +33,12 @@ export const CompactMeetingIndicator: React.FC<CompactMeetingIndicatorProps> = (
             {hasMultiple ? `${meetings.length} meetings` : firstMeeting.title}
           </Badge>
         </TooltipTrigger>
-        <TooltipContent side="top" className="max-w-sm">
-          <div className="space-y-2">
+        <TooltipContent side="top" className="max-w-md">
+          <div className="space-y-3">
             {meetings.slice(0, 3).map((meeting) => (
-              <div key={meeting.id} className="text-sm">
-                <div className="font-medium">{meeting.title}</div>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div key={meeting.id} className="text-sm border-b border-border/50 last:border-0 pb-2 last:pb-0">
+                <div className="font-medium mb-1">{meeting.title}</div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
                   <Clock className="h-3 w-3" />
                   {format(new Date(meeting.start_time), 'h:mm a')} - {format(new Date(meeting.end_time), 'h:mm a')}
                   {meeting.location && (
@@ -47,13 +48,15 @@ export const CompactMeetingIndicator: React.FC<CompactMeetingIndicatorProps> = (
                     </>
                   )}
                 </div>
-                <div className="text-xs text-muted-foreground">
-                  {meeting.participants.length} participant{meeting.participants.length !== 1 ? 's' : ''}
-                </div>
+                <MeetingStatusSummary 
+                  participants={meeting.participants || []} 
+                  compact={true}
+                  showTrend={true}
+                />
               </div>
             ))}
             {meetings.length > 3 && (
-              <div className="text-xs text-muted-foreground">
+              <div className="text-xs text-muted-foreground pt-2 border-t border-border/50">
                 +{meetings.length - 3} more meeting{meetings.length - 3 !== 1 ? 's' : ''}
               </div>
             )}

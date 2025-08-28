@@ -28,6 +28,7 @@ interface CalendarMonthViewProps {
   meetings: MeetingRequestWithParticipants[];
   onTaskClick: (task: Task) => void;
   onDateCreate: (date: Date) => void;
+  onMeetingClick?: () => void;
 }
 
 const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({ 
@@ -35,7 +36,8 @@ const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
   tasks,
   meetings,
   onTaskClick,
-  onDateCreate
+  onDateCreate,
+  onMeetingClick
 }) => {
   const { updateTask } = useTask();
   const monthStart = startOfMonth(selectedDate);
@@ -184,7 +186,7 @@ const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
                       <div className="mb-1">
                         <CompactMeetingIndicator 
                           meetings={dayMeetings}
-                          onClick={() => {/* Handle meeting click if needed */}}
+                          onClick={onMeetingClick}
                         />
                       </div>
                     )}

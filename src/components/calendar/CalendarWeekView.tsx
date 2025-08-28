@@ -23,6 +23,7 @@ interface CalendarWeekViewProps {
   meetings: MeetingRequestWithParticipants[];
   onTaskClick: (task: Task) => void;
   onDateCreate: (date: Date) => void;
+  onMeetingClick?: () => void;
 }
 
 const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({ 
@@ -30,7 +31,8 @@ const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
   tasks,
   meetings,
   onTaskClick,
-  onDateCreate
+  onDateCreate,
+  onMeetingClick
 }) => {
   const startOfWeekDate = startOfWeek(selectedDate, { weekStartsOn: 0 });
   const endOfWeekDate = endOfWeek(selectedDate, { weekStartsOn: 0 });
@@ -126,10 +128,10 @@ const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
                   <div className="space-y-2">
                     {/* Show meeting indicator first if there are meetings */}
                     {dayMeetings.length > 0 && (
-                      <CompactMeetingIndicator 
-                        meetings={dayMeetings}
-                        onClick={() => {/* Handle meeting click if needed */}}
-                      />
+                         <CompactMeetingIndicator 
+                           meetings={dayMeetings}
+                           onClick={onMeetingClick}
+                         />
                     )}
                     
                     {/* Task list */}

@@ -68,6 +68,10 @@ const CalendarPage = () => {
     setIsMeetingManagementOpen(true);
   };
 
+  const handleMeetingManagement = () => {
+    setIsMeetingManagementOpen(true);
+  };
+
   const todayTasksCount = tasks.filter(task => {
     try {
       return isSameDay(new Date(task.deadline), new Date());
@@ -183,6 +187,7 @@ const CalendarPage = () => {
               meetings={meetingRequests}
               onTaskClick={handleTaskClick}
               onDateCreate={handleDateCreate}
+              onMeetingManage={handleMeetingManagement}
             />
           </ModernSectionCard>
         </div>

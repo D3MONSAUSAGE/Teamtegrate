@@ -6,6 +6,7 @@ import CalendarMonthView from './CalendarMonthView';
 import CalendarViewSelector from './CalendarViewSelector';
 import { Task } from '@/types';
 import { MeetingRequestWithParticipants } from '@/types/meeting';
+import { MeetingManagementModal } from '@/components/meetings/MeetingManagementModal';
 
 interface CalendarContentProps {
   viewType: 'day' | 'week' | 'month';
@@ -15,6 +16,7 @@ interface CalendarContentProps {
   meetings: MeetingRequestWithParticipants[];
   onTaskClick: (task: Task) => void;
   onDateCreate: (date: Date) => void;
+  onMeetingManage?: () => void;
 }
 
 const CalendarContent: React.FC<CalendarContentProps> = ({
@@ -24,8 +26,15 @@ const CalendarContent: React.FC<CalendarContentProps> = ({
   tasks,
   meetings,
   onTaskClick,
-  onDateCreate
+  onDateCreate,
+  onMeetingManage
 }) => {
+  const [showMeetingModal, setShowMeetingModal] = React.useState(false);
+
+  const handleMeetingClick = () => {
+    setShowMeetingModal(true);
+    onMeetingManage?.();
+  };
   return (
     <div className="h-full w-full p-6">
       <div className="h-full w-full glass-card bg-gradient-to-br from-white/50 via-white/30 to-white/10 dark:from-card/50 dark:via-card/30 dark:to-card/10 backdrop-blur-sm rounded-2xl border border-white/20 shadow-xl">
@@ -55,6 +64,7 @@ const CalendarContent: React.FC<CalendarContentProps> = ({
                 meetings={meetings}
                 onTaskClick={onTaskClick}
                 onDateCreate={onDateCreate}
+                onMeetingClick={handleMeetingClick}
               />
             )}
             
@@ -65,6 +75,7 @@ const CalendarContent: React.FC<CalendarContentProps> = ({
                 meetings={meetings}
                 onTaskClick={onTaskClick}
                 onDateCreate={onDateCreate}
+                onMeetingClick={handleMeetingClick}
               />
             )}
             
@@ -75,11 +86,18 @@ const CalendarContent: React.FC<CalendarContentProps> = ({
                 meetings={meetings}
                 onTaskClick={onTaskClick}
                 onDateCreate={onDateCreate}
+                onMeetingClick={handleMeetingClick}
               />
             )}
           </div>
         </div>
       </div>
+
+      {/* Meeting Management Modal */}
+      <MeetingManagementModal
+        open={showMeetingModal}
+        onOpenChange={setShowMeetingModal}
+      />
     </div>
   );
 };

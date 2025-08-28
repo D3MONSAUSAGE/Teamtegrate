@@ -17,6 +17,7 @@ interface CalendarDayViewProps {
   meetings: MeetingRequestWithParticipants[];
   onTaskClick: (task: Task) => void;
   onDateCreate: (date: Date) => void;
+  onMeetingClick?: () => void;
 }
 
 const CalendarDayView: React.FC<CalendarDayViewProps> = ({ 
@@ -24,7 +25,8 @@ const CalendarDayView: React.FC<CalendarDayViewProps> = ({
   tasks,
   meetings,
   onTaskClick,
-  onDateCreate
+  onDateCreate,
+  onMeetingClick
 }) => {
   const dayStart = startOfDay(selectedDate);
   const tasksForDay = tasks.filter(task => {
@@ -141,48 +143,57 @@ const CalendarDayView: React.FC<CalendarDayViewProps> = ({
                     </div>
                   </div>
                 </div>
-                <div className="px-4 py-3 min-h-[80px] md:min-h-[100px] relative">
-                  {/* Time period background */}
-                  <div className={cn(
-                    "absolute inset-0 bg-gradient-to-r opacity-20 transition-opacity duration-300",
-                    gradient,
-                    "group-hover:opacity-30"
-                  )} />
-                  
-                  <div className="relative z-10">
-                    {/* Show meetings for this hour first */}
-                    {meetingsForDay.length > 0 && (
-                      <div className="mb-3">
-                        <CompactMeetingIndicator 
-                          meetings={meetingsForDay}
-                          onClick={() => {/* Handle meeting click if needed */}}
-                        />
-                      </div>
-                    )}
-                    
-                    {/* Show tasks */}
-                    {block.tasks.length > 0 ? (
-                      <div className="space-y-3">
-                        {block.tasks.map(task => (
-                          <CalendarTaskItem 
-                            key={task.id} 
-                            task={task}
-                            onClick={() => onTaskClick(task)}
-                          />
-                        ))}
-                      </div>
-                    ) : meetingsForDay.length === 0 ? (
-                      <div 
-                        className="group/add py-6 px-4 text-sm text-muted-foreground cursor-pointer hover:bg-gradient-to-br hover:from-primary/10 hover:to-secondary/10 rounded-xl transition-all duration-200 text-center border-2 border-dashed border-muted-foreground/20 hover:border-primary/40 hover:scale-[1.02]"
-                        onClick={() => onDateCreate(selectedDate)}
-                      >
-                        <Plus className="h-5 w-5 mx-auto mb-2 group-hover/add:scale-110 transition-transform text-primary" />
-                        <p className="font-medium">No tasks scheduled</p>
-                        <p className="text-xs text-muted-foreground mt-1">Click to add a task for this time</p>
-                      </div>
-                    ) : null}
-                  </div>
-                </div>
+                 <div className="px-4 py-3 min-h-[80px] md:min-h-[100px] relative">
+                   {/* Time period background */}
+                   <div className={cn(
+                     "absolute inset-0 bg-gradient-to-r opacity-20 transition-opacity duration-300",
+                     gradient,
+                     "group-hover:opacity-30"
+                   )} />
+                   
+                   <div className="relative z-10">
+                     {/* Show meetings for this hour first */}
+                     {meetingsForDay.filter(meeting => {
+                       const meetingStart = new Date(meeting.start_time);
+                       return meetingStart.getHours() === block.hour.getHours();
+                     }).length > 0 && (
+                       <div className="mb-3">
+                         <CompactMeetingIndicator 
+                           meetings={meetingsForDay.filter(meeting => {
+                             const meetingStart = new Date(meeting.start_time);
+                             return meetingStart.getHours() === block.hour.getHours();
+                           })}
+                           onClick={onMeetingClick}
+                         />
+                       </div>
+                     )}
+                     
+                     {/* Show tasks */}
+                     {block.tasks.length > 0 ? (
+                       <div className="space-y-3">
+                         {block.tasks.map(task => (
+                           <CalendarTaskItem 
+                             key={task.id} 
+                             task={task}
+                             onClick={() => onTaskClick(task)}
+                           />
+                         ))}
+                       </div>
+                     ) : meetingsForDay.filter(meeting => {
+                       const meetingStart = new Date(meeting.start_time);
+                       return meetingStart.getHours() === block.hour.getHours();
+                     }).length === 0 ? (
+                       <div 
+                         className="group/add py-6 px-4 text-sm text-muted-foreground cursor-pointer hover:bg-gradient-to-br hover:from-primary/10 hover:to-secondary/10 rounded-xl transition-all duration-200 text-center border-2 border-dashed border-muted-foreground/20 hover:border-primary/40 hover:scale-[1.02]"
+                         onClick={() => onDateCreate(selectedDate)}
+                       >
+                         <Plus className="h-5 w-5 mx-auto mb-2 group-hover/add:scale-110 transition-transform text-primary" />
+                         <p className="font-medium">No tasks scheduled</p>
+                         <p className="text-xs text-muted-foreground mt-1">Click to add a task for this time</p>
+                       </div>
+                     ) : null}
+                   </div>
+                 </div>
                 {index < timeBlocks.length - 1 && <Separator className="opacity-50" />}
               </div>
             );
