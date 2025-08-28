@@ -51,7 +51,12 @@ const MyAssignments: React.FC<MyAssignmentsProps> = ({ open, onOpenChange }) => 
         // Transform quiz data to match QuizTaker interface
         const transformedQuiz = {
           ...quiz,
-          questions: quiz.quiz_questions || [],
+          questions: (quiz.quiz_questions || []).map((q: any) => ({
+            ...q,
+            questionText: q.question_text,
+            questionType: q.question_type,
+            correctAnswer: q.correct_answer
+          })),
           passingScore: quiz.passing_score,
           maxAttempts: quiz.max_attempts,
           timeLimitMinutes: quiz.time_limit_minutes
