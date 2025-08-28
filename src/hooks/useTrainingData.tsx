@@ -178,34 +178,47 @@ export const useCreateCourse = () => {
   return useMutation({
     mutationFn: async ({ course, modules }: { course: any, modules: any[] }) => {
       if (!user?.organizationId) throw new Error('No organization found');
-      
+
+      // Map course fields to match DB schema
+      const coursePayload = {
+        title: course.title,
+        description: course.description ?? null,
+        difficulty_level: course.difficulty ?? null,
+        estimated_duration_minutes: typeof course.duration_hours === 'number'
+          ? Math.round(course.duration_hours * 60)
+          : null,
+        is_active: course.is_active ?? true,
+        organization_id: user.organizationId,
+        created_by: user.id
+      };
+
       // Create course first
       const { data: courseData, error: courseError } = await supabase
         .from('training_courses')
-        .insert({
-          ...course,
-          organization_id: user.organizationId,
-          created_by: user.id
-        })
+        .insert(coursePayload)
         .select()
         .single();
-      
+
       if (courseError) throw courseError;
-      
-      // Create modules if provided
+
+      // Create modules if provided (map to DB schema)
       if (modules.length > 0) {
-        const modulesWithCourseId = modules.map(module => ({
-          ...module,
-          course_id: courseData.id
+        const modulesToInsert = modules.map((module: any, idx: number) => ({
+          title: module.title,
+          description: module.description ?? null,
+          module_order: module.module_order ?? (idx + 1),
+          course_id: courseData.id,
+          content_type: 'text', // We only support text content from CourseCreator for now
+          text_content: module.content ?? null
         }));
-        
+
         const { error: modulesError } = await supabase
           .from('training_modules')
-          .insert(modulesWithCourseId);
-        
+          .insert(modulesToInsert);
+
         if (modulesError) throw modulesError;
       }
-      
+
       return courseData;
     },
     onSuccess: () => {
