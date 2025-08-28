@@ -90,7 +90,19 @@ const SidebarNav: React.FC<SidebarNavProps> = memo(({ onNavigation, isCollapsed 
           <Link
             key={item.name}
             to={item.href}
-            onClick={handleNavClick}
+            onClick={(e) => {
+              console.log('🖱️ SIDEBAR CLICK:', {
+                itemName: item.name,
+                href: item.href,
+                currentPath: location.pathname,
+                isActive,
+                timestamp: new Date().toISOString()
+              });
+              if (onNavigation) {
+                console.log('🔄 Calling onNavigation callback');
+                onNavigation();
+              }
+            }}
             className={cn(
               "group relative flex items-center rounded-lg p-3 text-sm font-medium transition-all duration-300 overflow-hidden",
               "hover:scale-[1.02] hover:shadow-md",

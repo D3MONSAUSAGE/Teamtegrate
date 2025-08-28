@@ -24,12 +24,12 @@ const ProjectsPage = lazy(() => import('@/pages/ProjectsPage'));
 const ProjectTasksPage = lazy(() => import('@/pages/ProjectTasksPage'));
 const CalendarPage = lazy(() => import('@/pages/CalendarPage'));
 const FreshMeetingsPage = lazy(() => {
-  console.log('🟡 OptimizedRouter: Loading FreshMeetingsPage...');
+  console.log('🔄 Router: Starting to load FreshMeetingsPage...');
   return import('@/pages/FreshMeetingsPage').then(module => {
-    console.log('🟢 OptimizedRouter: FreshMeetingsPage loaded successfully', module);
+    console.log('✅ Router: FreshMeetingsPage module loaded successfully', module);
     return module;
   }).catch(error => {
-    console.error('🔴 OptimizedRouter: Failed to load FreshMeetingsPage:', error);
+    console.error('❌ Router: Failed to load FreshMeetingsPage:', error);
     throw error;
   });
 });
@@ -149,9 +149,10 @@ const OptimizedRouter = () => {
         } />
         <Route path="meetings" element={
           <PageWrapper>
-            <MeetingsErrorBoundary>
-              <FreshMeetingsPage />
-            </MeetingsErrorBoundary>
+            <div>
+              <h1>SIMPLE TEST COMPONENT</h1>
+              <p>This bypasses all error boundaries and lazy loading</p>
+            </div>
           </PageWrapper>
         } />
         <Route path="chat" element={
