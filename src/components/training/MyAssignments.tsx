@@ -48,7 +48,15 @@ const MyAssignments: React.FC<MyAssignmentsProps> = ({ open, onOpenChange }) => 
       // Find the quiz data
       const quiz = allQuizzes.find(q => q.id === assignment.content_id);
       if (quiz) {
-        setSelectedQuiz(quiz);
+        // Transform quiz data to match QuizTaker interface
+        const transformedQuiz = {
+          ...quiz,
+          questions: quiz.quiz_questions || [],
+          passingScore: quiz.passing_score,
+          maxAttempts: quiz.max_attempts,
+          timeLimitMinutes: quiz.time_limit_minutes
+        };
+        setSelectedQuiz(transformedQuiz);
         setIsQuizTakerOpen(true);
         
         // Update assignment status to in_progress
