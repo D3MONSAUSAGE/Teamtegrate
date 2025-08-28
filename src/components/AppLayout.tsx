@@ -75,9 +75,7 @@ const AppLayout = memo(() => {
     return <LoadingScreen />;
   }
 
-  if (!isAuthenticated || !user) {
-    return <Navigate to="/login" replace />;
-  }
+  // Auth check removed - ProtectedRoute wrapper handles authentication
 
   // Start collapsed on all devices for consistent hover-to-expand UX on desktop
   const defaultSidebarOpen = false;
