@@ -339,7 +339,7 @@ export const useSubmitQuizAttempt = () => {
         .update({
           status: 'completed',
           completed_at: new Date().toISOString(),
-          completion_score: score
+          completion_score: Math.round((score / maxScore) * 100)
         })
         .eq('assigned_to', user.id)
         .eq('content_id', quizId)

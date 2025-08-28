@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { useSubmitQuizAttempt } from '@/hooks/useTrainingData';
 
 interface QuizQuestion {
   id: string;
@@ -49,6 +50,7 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onComplete, onExit }) => {
   const [startTime] = useState(Date.now());
   const [showResults, setShowResults] = useState(false);
   const [results, setResults] = useState<QuizResults | null>(null);
+  const submitAttempt = useSubmitQuizAttempt();
 
   const currentQ = quiz.questions[currentQuestion];
   const progress = ((currentQuestion + 1) / quiz.questions.length) * 100;
@@ -117,11 +119,31 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onComplete, onExit }) => {
     };
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const quizResults = calculateResults();
     setResults(quizResults);
     setShowResults(true);
-    onComplete(quizResults);
+    
+    try {
+      // Transform answers to array format for database
+      const transformedAnswers = quiz.questions.map(question => ({
+        question_id: question.id,
+        answer: answers[question.id] || ''
+      }));
+      
+      await submitAttempt.mutateAsync({
+        quizId: quiz.id,
+        answers: transformedAnswers,
+        score: quizResults.score,
+        maxScore: quizResults.maxScore,
+        passed: quizResults.passed,
+        timeSpent: quizResults.timeSpent
+      });
+      
+      onComplete(quizResults);
+    } catch (error) {
+      console.error('Failed to submit quiz:', error);
+    }
   };
 
   const renderQuestion = () => {
@@ -133,7 +155,7 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onComplete, onExit }) => {
             onValueChange={handleAnswerChange}
             className="space-y-3"
           >
-            {currentQ.options?.map((option, index) => (
+            {(currentQ.options ?? []).length > 0 ? (currentQ.options ?? []).map((option, index) => (
               <div key={index} className="flex items-center space-x-2">
                 <RadioGroupItem value={option} id={`option-${index}`} />
                 <Label 
@@ -143,7 +165,9 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onComplete, onExit }) => {
                   {option}
                 </Label>
               </div>
-            ))}
+            )) : (
+              <div className="text-muted-foreground text-sm">No options provided</div>
+            )}
           </RadioGroup>
         );
 
@@ -300,8 +324,12 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onComplete, onExit }) => {
           </Button>
           
           {currentQuestion === quiz.questions.length - 1 ? (
-            <Button onClick={handleSubmit} className="gap-2">
-              Submit Quiz
+            <Button 
+              onClick={handleSubmit} 
+              disabled={submitAttempt.isPending}
+              className="gap-2"
+            >
+              {submitAttempt.isPending ? 'Submitting...' : 'Submit Quiz'}
               <CheckCircle className="h-4 w-4" />
             </Button>
           ) : (

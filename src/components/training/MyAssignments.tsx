@@ -307,6 +307,9 @@ const MyAssignments: React.FC<MyAssignmentsProps> = ({ open, onOpenChange }) => 
       {selectedQuiz && (
         <Dialog open={isQuizTakerOpen} onOpenChange={setIsQuizTakerOpen}>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+            <DialogHeader className="sr-only">
+              <DialogTitle>Take Quiz</DialogTitle>
+            </DialogHeader>
             <QuizTaker
               quiz={selectedQuiz}
               onComplete={handleQuizComplete}
