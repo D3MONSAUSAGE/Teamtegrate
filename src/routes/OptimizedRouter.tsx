@@ -9,8 +9,6 @@ import { useRoutePreloader } from '@/hooks/useRoutePreloader';
 import { isSafari, isAppleDevice } from '@/lib/browser';
 import { MeetingsErrorBoundary } from '@/components/ErrorBoundary/MeetingsErrorBoundary';
 import { TrainingErrorBoundary } from '@/components/ErrorBoundary/TrainingErrorBoundary';
-import { NavigationProvider } from '@/contexts/NavigationContext';
-import TrainingNavigationFix from '@/components/navigation/TrainingNavigationFix';
 import AuthErrorBoundary from '@/components/auth/AuthErrorBoundary';
 import SafariNavigationWrapper from '@/components/navigation/SafariNavigationWrapper';
 
@@ -54,16 +52,6 @@ const JournalPage = lazy(() => import('@/pages/JournalPage'));
 const NotebookPage = lazy(() => import('@/pages/NotebookPage'));
 const TimelinePage = lazy(() => import('@/pages/TimelinePage'));
 const FocusZonePage = lazy(() => import('@/pages/FocusZonePage'));
-const FreshTrainingPage = lazy(() => {
-  console.log('🔄 Router: Starting to load FreshTrainingPage...');
-  return import('@/pages/FreshTrainingPage').then(module => {
-    console.log('✅ Router: FreshTrainingPage module loaded successfully', module);
-    return module;
-  }).catch(error => {
-    console.error('❌ Router: Failed to load FreshTrainingPage:', error);
-    throw error;
-  });
-});
 const TrainingPage = lazy(() => import('@/pages/TrainingPage'));
 const OrganizationDashboard = lazy(() => import('@/pages/OrganizationDashboard'));
 const AdminPage = lazy(() => import('@/pages/AdminPage'));
@@ -119,9 +107,7 @@ const OptimizedRouter = () => {
   }
 
   return (
-    <NavigationProvider>
-      <TrainingNavigationFix>
-        <Routes>
+    <Routes>
           {/* Root route now uses Index component which handles auth routing */}
           <Route path="/" element={
             <PageWrapper>
@@ -257,21 +243,9 @@ const OptimizedRouter = () => {
               </PageWrapper>
             } />
             
-            {/* Training with Enhanced Error Boundary and Navigation Protection */}
             <Route path="training" element={
               <PageWrapper>
-                <TrainingErrorBoundary>
-                  <FreshTrainingPage />
-                </TrainingErrorBoundary>
-              </PageWrapper>
-            } />
-            
-            {/* Emergency Bypass Route for Training */}
-            <Route path="training-alt" element={
-              <PageWrapper>
-                <TrainingErrorBoundary>
-                  <FreshTrainingPage />
-                </TrainingErrorBoundary>
+                <TrainingPage />
               </PageWrapper>
             } />
             
@@ -301,9 +275,7 @@ const OptimizedRouter = () => {
               <NotFound />
             </PageWrapper>
           } />
-        </Routes>
-      </TrainingNavigationFix>
-    </NavigationProvider>
+    </Routes>
   );
 };
 

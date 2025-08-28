@@ -34,7 +34,7 @@ interface SidebarNavProps {
 
 const SidebarNav: React.FC<SidebarNavProps> = memo(({ onNavigation, isCollapsed = false }) => {
   const location = useLocation();
-  const navigate = useNavigate();
+  
   const { user } = useAuth();
 
   // Memoize navigation items to prevent re-creation on every render
@@ -72,24 +72,6 @@ const SidebarNav: React.FC<SidebarNavProps> = memo(({ onNavigation, isCollapsed 
     return false;
   }, []);
 
-  // Enhanced training navigation handler  
-  const handleTrainingNavigation = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    console.log('🚀 SidebarNav: Training navigation intercepted');
-    
-    try {
-      navigate('/dashboard/training', { replace: false });
-      console.log('🚀 SidebarNav: Training navigation initiated');
-      
-      if (onNavigation) {
-        onNavigation();
-      }
-    } catch (error) {
-      console.error('🔴 SidebarNav: Training navigation failed:', error);
-      // Fallback navigation
-      window.location.href = '/dashboard/training';
-    }
-  }, [navigate, onNavigation]);
 
   // Memoize the current path for comparison
   const currentPath = useMemo(() => location.pathname, [location.pathname]);
@@ -105,26 +87,7 @@ const SidebarNav: React.FC<SidebarNavProps> = memo(({ onNavigation, isCollapsed 
           <Link
             key={item.name}
             to={item.href}
-            onClick={(e) => {
-              console.log('🖱️ SIDEBAR CLICK:', {
-                itemName: item.name,
-                href: item.href,
-                currentPath: location.pathname,
-                isActive,
-                timestamp: new Date().toISOString()
-              });
-              
-              // Special handling for training page
-              if (item.href === '/dashboard/training') {
-                handleTrainingNavigation(e);
-                return;
-              }
-              
-              if (onNavigation) {
-                console.log('🔄 Calling onNavigation callback');
-                onNavigation();
-              }
-            }}
+            onClick={onNavigation}
             className={cn(
               "group relative flex items-center rounded-lg p-3 text-sm font-medium transition-all duration-300 overflow-hidden",
               "hover:scale-[1.02] hover:shadow-md",
