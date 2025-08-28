@@ -373,11 +373,7 @@ export const useTrainingAssignments = (userId?: string) => {
       
       const { data, error } = await supabase
         .from('training_assignments')
-        .select(`
-          *,
-          assigned_by_user:users!training_assignments_assigned_by_fkey(name, email),
-          assigned_to_user:users!training_assignments_assigned_to_fkey(name, email)
-        `)
+        .select('*')
         .eq('assigned_to', targetUserId)
         .order('assigned_at', { ascending: false });
       
