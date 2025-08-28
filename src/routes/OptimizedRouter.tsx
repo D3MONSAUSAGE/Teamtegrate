@@ -73,6 +73,19 @@ const OptimizedRouter = () => {
   // Enable route preloading for better performance
   useRoutePreloader();
 
+  // Track URL changes for debugging
+  React.useEffect(() => {
+    console.log('🌐 URL CHANGE DETECTED:', {
+      pathname: window.location.pathname,
+      search: window.location.search,
+      hash: window.location.hash,
+      isAuthenticated,
+      loading,
+      hasUser: !!user,
+      timestamp: new Date().toISOString()
+    });
+  }, [window.location.pathname, isAuthenticated, loading, user]);
+
   // Safari-specific debugging and stabilization
   React.useEffect(() => {
     if (isSafari() || isAppleDevice()) {
@@ -241,7 +254,12 @@ const OptimizedRouter = () => {
         } />
         <Route path="training" element={
           <PageWrapper>
-            <TrainingPage />
+            {(() => {
+              console.log('🎯 TRAINING ROUTE: Route element is rendering');
+              console.log('🎯 TRAINING ROUTE: Current path:', window.location.pathname);
+              console.log('🎯 TRAINING ROUTE: Auth state:', { isAuthenticated, loading });
+              return <TrainingPage />;
+            })()}
           </PageWrapper>
         } />
         <Route path="organization" element={
