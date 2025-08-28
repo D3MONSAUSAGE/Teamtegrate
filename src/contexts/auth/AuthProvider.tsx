@@ -52,8 +52,7 @@ const AuthProviderInner: React.FC<AuthProviderProps> = ({ children }) => {
     profileLoading, 
     hasUser: !!user, 
     isAuthenticated, 
-    isReady,
-    currentPath: window.location.pathname
+    isReady
   });
 
   // Add null check for safety

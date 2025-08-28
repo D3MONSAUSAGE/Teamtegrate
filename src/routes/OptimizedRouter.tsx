@@ -243,12 +243,7 @@ const OptimizedRouter = () => {
         } />
         <Route path="training" element={
           <PageWrapper>
-            {(() => {
-              console.log('🎯 TRAINING ROUTE: Route element is rendering');
-              console.log('🎯 TRAINING ROUTE: Current path:', window.location.pathname);
-              console.log('🎯 TRAINING ROUTE: Auth state:', { isAuthenticated, loading });
-              return <TrainingPage />;
-            })()}
+            <TrainingPage />
           </PageWrapper>
         } />
         <Route path="organization" element={

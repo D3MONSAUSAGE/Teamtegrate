@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { usePersonalTasks } from '@/hooks/usePersonalTasks';
 import { Task, TaskStatus } from '@/types';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
@@ -17,12 +17,13 @@ const TasksPage = () => {
   const navigate = useNavigate();
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   
+  const location = useLocation();
+  
   useEffect(() => {
-    const path = window.location.pathname;
-    if (path.endsWith('/create')) {
+    if (location.pathname.endsWith('/create')) {
       setIsCreateTaskOpen(true);
     }
-  }, []);
+  }, [location.pathname]);
 
   // Use new personal tasks hook for refined filtering
   const { tasks, isLoading, error, refetch } = usePersonalTasks();
