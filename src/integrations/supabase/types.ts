@@ -1114,6 +1114,136 @@ export type Database = {
           },
         ]
       }
+      quiz_attempts: {
+        Row: {
+          answers: Json
+          attempt_number: number
+          completed_at: string | null
+          id: string
+          max_score: number
+          organization_id: string
+          passed: boolean
+          quiz_id: string
+          score: number
+          started_at: string
+          user_id: string
+        }
+        Insert: {
+          answers: Json
+          attempt_number: number
+          completed_at?: string | null
+          id?: string
+          max_score: number
+          organization_id: string
+          passed: boolean
+          quiz_id: string
+          score: number
+          started_at?: string
+          user_id: string
+        }
+        Update: {
+          answers?: Json
+          attempt_number?: number
+          completed_at?: string | null
+          id?: string
+          max_score?: number
+          organization_id?: string
+          passed?: boolean
+          quiz_id?: string
+          score?: number
+          started_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      quiz_questions: {
+        Row: {
+          correct_answer: string
+          explanation: string | null
+          id: string
+          options: Json | null
+          points: number | null
+          question_order: number
+          question_text: string
+          question_type: string
+          quiz_id: string
+        }
+        Insert: {
+          correct_answer: string
+          explanation?: string | null
+          id?: string
+          options?: Json | null
+          points?: number | null
+          question_order: number
+          question_text: string
+          question_type: string
+          quiz_id: string
+        }
+        Update: {
+          correct_answer?: string
+          explanation?: string | null
+          id?: string
+          options?: Json | null
+          points?: number | null
+          question_order?: number
+          question_text?: string
+          question_type?: string
+          quiz_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_quiz_questions_quiz"
+            columns: ["quiz_id"]
+            isOneToOne: false
+            referencedRelation: "quizzes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quizzes: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          max_attempts: number | null
+          module_id: string
+          passing_score: number | null
+          time_limit_minutes: number | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          max_attempts?: number | null
+          module_id: string
+          passing_score?: number | null
+          time_limit_minutes?: number | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          max_attempts?: number | null
+          module_id?: string
+          passing_score?: number | null
+          time_limit_minutes?: number | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_quizzes_module"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "training_modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       recurring_transactions: {
         Row: {
           amount: number
@@ -1787,6 +1917,98 @@ export type Database = {
           },
         ]
       }
+      training_courses: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          difficulty_level: string | null
+          estimated_duration_minutes: number | null
+          id: string
+          is_active: boolean | null
+          organization_id: string
+          tags: string[] | null
+          thumbnail_url: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          difficulty_level?: string | null
+          estimated_duration_minutes?: number | null
+          id?: string
+          is_active?: boolean | null
+          organization_id: string
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          difficulty_level?: string | null
+          estimated_duration_minutes?: number | null
+          id?: string
+          is_active?: boolean | null
+          organization_id?: string
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      training_modules: {
+        Row: {
+          content_type: string
+          course_id: string
+          created_at: string
+          description: string | null
+          id: string
+          module_order: number
+          text_content: string | null
+          title: string
+          updated_at: string
+          youtube_video_id: string | null
+        }
+        Insert: {
+          content_type: string
+          course_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          module_order: number
+          text_content?: string | null
+          title: string
+          updated_at?: string
+          youtube_video_id?: string | null
+        }
+        Update: {
+          content_type?: string
+          course_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          module_order?: number
+          text_content?: string | null
+          title?: string
+          updated_at?: string
+          youtube_video_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_training_modules_course"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "training_courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transaction_categories: {
         Row: {
           color: string | null
@@ -1981,6 +2203,45 @@ export type Database = {
           target_user_id?: string
           target_user_name?: string
           user_agent?: string | null
+        }
+        Relationships: []
+      }
+      user_training_progress: {
+        Row: {
+          completed_at: string | null
+          course_id: string
+          id: string
+          last_accessed_at: string | null
+          module_id: string | null
+          organization_id: string
+          progress_percentage: number | null
+          started_at: string | null
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          course_id: string
+          id?: string
+          last_accessed_at?: string | null
+          module_id?: string | null
+          organization_id: string
+          progress_percentage?: number | null
+          started_at?: string | null
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          course_id?: string
+          id?: string
+          last_accessed_at?: string | null
+          module_id?: string | null
+          organization_id?: string
+          progress_percentage?: number | null
+          started_at?: string | null
+          status?: string | null
+          user_id?: string
         }
         Relationships: []
       }
