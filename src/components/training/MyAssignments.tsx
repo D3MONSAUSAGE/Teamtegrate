@@ -151,7 +151,7 @@ const MyAssignments: React.FC<MyAssignmentsProps> = ({ open, onOpenChange }) => 
                   Due: {format(parseISO(assignment.due_date), 'MMM d, yyyy')}
                 </div>
               )}
-              {assignment.completion_score && (
+              {assignment.completion_score != null && (
                 <div className="flex items-center gap-1">
                   <Target className="h-4 w-4" />
                   Score: {assignment.completion_score}%
