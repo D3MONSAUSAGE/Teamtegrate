@@ -26,6 +26,7 @@ import { ArrowLeft, Loader2, Mail } from 'lucide-react';
 import BrandLogo from '@/components/shared/BrandLogo';
 import MultiTenantSignupForm from '@/components/auth/MultiTenantSignupForm';
 import { supabase } from '@/integrations/supabase/client';
+import { isSafari, isAppleDevice, getSafeFormSubmissionHandler } from '@/lib/browser';
 
 const LoginPage = () => {
   const [searchParams] = useSearchParams();
@@ -79,8 +80,11 @@ const LoginPage = () => {
     };
   }, [isLogin]);
   
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmitForm = async (e: React.FormEvent) => {
+    console.log('LoginPage: Form submission started, browser:', { 
+      isSafari: isSafari(), 
+      isAppleDevice: isAppleDevice() 
+    });
     
     if (!isLogin) {
       return;
@@ -95,6 +99,12 @@ const LoginPage = () => {
     
     try {
       console.log('LoginPage: Attempting login for:', email);
+      
+      // For Safari/Apple devices, add a small delay to ensure form state is properly handled
+      if (isSafari() || isAppleDevice()) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      
       const { error } = await login(email, password);
 
       if (error) {
@@ -113,7 +123,14 @@ const LoginPage = () => {
           }
         }
 
-        toast.error(errorMessage);
+        // For Safari, ensure the error is displayed with a slight delay
+        if (isSafari() || isAppleDevice()) {
+          setTimeout(() => {
+            toast.error(errorMessage);
+          }, 50);
+        } else {
+          toast.error(errorMessage);
+        }
         return;
       }
 
@@ -121,11 +138,23 @@ const LoginPage = () => {
       toast.success('Welcome back!');
     } catch (e) {
       console.error('LoginPage: Unexpected login error:', e);
-      toast.error('Login failed. Please try again.');
+      const errorMessage = 'Login failed. Please try again.';
+      
+      // For Safari, ensure the error is displayed with a slight delay
+      if (isSafari() || isAppleDevice()) {
+        setTimeout(() => {
+          toast.error(errorMessage);
+        }, 50);
+      } else {
+        toast.error(errorMessage);
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  // Create Safari-safe form submission handler
+  const handleSubmit = getSafeFormSubmissionHandler(handleSubmitForm);
 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -214,7 +243,13 @@ const LoginPage = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="px-6 pb-6">
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form 
+              onSubmit={handleSubmit} 
+              className="space-y-6"
+              action=""
+              method="post"
+              noValidate
+            >
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-sm font-medium">Email Address</Label>
                 <Input
