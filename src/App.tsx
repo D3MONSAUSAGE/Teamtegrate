@@ -28,6 +28,7 @@ import OrganizationDashboard from "@/pages/OrganizationDashboard";
 import FocusZonePage from "@/pages/FocusZonePage";
 import ReportsPage from "@/pages/ReportsPage";
 import FinancePage from "@/pages/FinancePage";
+import MeetingsPage from "@/pages/MeetingsPage";
 import NotificationBootstrap from "@/components/NotificationBootstrap";
 
 const queryClient = new QueryClient();
@@ -66,6 +67,7 @@ function App() {
                   <Route path="focus" element={<FocusZonePage />} />
                   <Route path="reports" element={<ReportsPage />} />
                   <Route path="finance" element={<FinancePage />} />
+                  <Route path="meetings" element={<MeetingsPage />} />
                 </Route>
                 
                 {/* Fallback for unmatched routes */}
