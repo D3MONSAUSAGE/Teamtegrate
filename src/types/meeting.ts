@@ -19,6 +19,10 @@ export interface MeetingParticipant {
   response_status: 'invited' | 'accepted' | 'declined' | 'tentative';
   responded_at?: string;
   created_at: string;
+  // Enriched user fields (optional)
+  user_name?: string;
+  user_email?: string;
+  user_avatar_url?: string;
 }
 
 export interface MeetingRequestWithParticipants extends MeetingRequest {

@@ -155,23 +155,27 @@ export const MeetingParticipantsList: React.FC<MeetingParticipantsListProps> = (
                   key={participant.id}
                   className="flex items-center gap-2 p-2 bg-muted/50 rounded-md"
                 >
-                  {showAvatars && (
-                    <Avatar className="h-6 w-6">
-                      <AvatarImage src="" />
-                      <AvatarFallback className="text-xs">
-                        {participant.user_id.slice(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                  )}
-                  <span className="text-sm truncate">
-                    {/* We'd need to join with users table to get actual names */}
-                    User {participant.user_id.slice(0, 8)}...
-                  </span>
-                  {participant.responded_at && (
-                    <span className="text-xs text-muted-foreground ml-auto">
-                      {new Date(participant.responded_at).toLocaleDateString()}
-                    </span>
-                  )}
+{showAvatars && (
+  <Avatar className="h-6 w-6">
+    <AvatarImage src={participant.user_avatar_url || ''} alt={`Avatar of ${participant.user_name || participant.user_email || participant.user_id}`} />
+    <AvatarFallback className="text-xs">
+      {(() => {
+        const base = participant.user_name || participant.user_email || participant.user_id;
+        const parts = (base || '').split(' ');
+        if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+        return (base || '').slice(0, 2).toUpperCase();
+      })()}
+    </AvatarFallback>
+  </Avatar>
+)}
+<span className="text-sm truncate">
+  {participant.user_name || participant.user_email || `User ${participant.user_id.slice(0, 8)}...`}
+</span>
+{participant.responded_at && (
+  <span className="text-xs text-muted-foreground ml-auto">
+    {new Date(participant.responded_at).toLocaleDateString()}
+  </span>
+)}
                 </div>
               ))}
             </div>

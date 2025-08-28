@@ -10,41 +10,69 @@ export const useMeetingRequests = () => {
   const [meetingRequests, setMeetingRequests] = useState<MeetingRequestWithParticipants[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchMeetingRequests = async () => {
-    if (!user) return;
-    
-    try {
-      const { data: requests, error } = await supabase
-        .from('meeting_requests')
-        .select(`
-          *,
-          meeting_participants (*)
-        `)
-        .order('start_time', { ascending: true });
+const fetchMeetingRequests = async () => {
+  if (!user) return;
+  
+  try {
+    const { data: requests, error } = await supabase
+      .from('meeting_requests')
+      .select(`
+        *,
+        meeting_participants (*)
+      `)
+      .order('start_time', { ascending: true });
 
-      if (error) throw error;
+    if (error) throw error;
 
-      const formattedRequests: MeetingRequestWithParticipants[] = requests.map((request: any) => ({
-        ...request,
-        participants: (request.meeting_participants || []).map((p: any) => ({
-          ...p,
-          response_status: p.response_status as 'invited' | 'accepted' | 'declined' | 'tentative'
-        })),
-        organizer_name: 'Unknown'
-      }));
+    // Collect all unique user IDs from participants and organizers
+    const participantUserIds: string[] = (requests || []).flatMap((r: any) => (r.meeting_participants || []).map((p: any) => p.user_id));
+    const organizerIds: string[] = (requests || []).map((r: any) => r.organizer_id).filter(Boolean);
+    const allUserIds = Array.from(new Set([...(participantUserIds || []), ...(organizerIds || [])]));
 
-      setMeetingRequests(formattedRequests);
-    } catch (error) {
-      console.error('Error fetching meeting requests:', error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch meeting requests",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+    // Fetch user info in bulk
+    let userMap = new Map<string, { name: string | null; email: string | null; avatar_url: string | null }>();
+    if (allUserIds.length > 0) {
+      const { data: usersData, error: usersError } = await supabase
+        .from('users')
+        .select('id, name, email, avatar_url')
+        .in('id', allUserIds as any);
+      if (usersError) throw usersError;
+      usersData?.forEach(u => userMap.set(u.id, { name: u.name, email: u.email, avatar_url: u.avatar_url }));
     }
-  };
+
+    const formattedRequests: MeetingRequestWithParticipants[] = (requests || []).map((request: any) => {
+      const participants = (request.meeting_participants || []).map((p: any) => {
+        const u = userMap.get(p.user_id) || { name: null, email: null, avatar_url: null };
+        return {
+          ...p,
+          response_status: p.response_status as 'invited' | 'accepted' | 'declined' | 'tentative',
+          user_name: u.name || undefined,
+          user_email: u.email || undefined,
+          user_avatar_url: u.avatar_url || undefined,
+        } as MeetingParticipant;
+      });
+
+      const orgUser = userMap.get(request.organizer_id);
+
+      return {
+        ...request,
+        participants,
+        organizer_name: orgUser?.name || orgUser?.email || 'Unknown',
+      } as MeetingRequestWithParticipants;
+    });
+
+    setMeetingRequests(formattedRequests);
+  } catch (error) {
+    console.error('Error fetching meeting requests:', error);
+    toast({
+      title: "Error",
+      description: "Failed to fetch meeting requests",
+      variant: "destructive",
+    });
+  } finally {
+    setLoading(false);
+  }
+};
 
   const createMeetingRequest = async (
     title: string,
