@@ -29,6 +29,7 @@ import FocusZonePage from "@/pages/FocusZonePage";
 import ReportsPage from "@/pages/ReportsPage";
 import FinancePage from "@/pages/FinancePage";
 import MeetingsPage from "@/pages/MeetingsPage";
+import TrainingPage from "@/pages/TrainingPage";
 import NotificationBootstrap from "@/components/NotificationBootstrap";
 
 const queryClient = new QueryClient();
@@ -68,6 +69,7 @@ function App() {
                   <Route path="reports" element={<ReportsPage />} />
                   <Route path="finance" element={<FinancePage />} />
                   <Route path="meetings" element={<MeetingsPage />} />
+                  <Route path="training" element={<ProtectedRoute><TrainingPage /></ProtectedRoute>} />
                 </Route>
                 
                 {/* Fallback for unmatched routes */}
