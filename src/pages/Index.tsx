@@ -22,8 +22,9 @@ const Index = () => {
     );
   }
 
-  // If user is authenticated, redirect to dashboard
+  // If user is authenticated, redirect to dashboard (but not for nested routes)
   if (isAuthenticated && user) {
+    console.log('🏠 INDEX: Redirecting authenticated user to dashboard');
     return <Navigate to="/dashboard" replace />;
   }
 

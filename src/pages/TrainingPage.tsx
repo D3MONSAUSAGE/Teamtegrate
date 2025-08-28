@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect, memo } from 'react';
 import { Plus, BookOpen, Award, Clock, Users, Play, CheckCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,7 +9,31 @@ import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-const TrainingPage = () => {
+const TrainingPage = memo(() => {
+  const location = useLocation();
+  
+  // Enhanced debugging for training page
+  useEffect(() => {
+    console.log('🎓 TRAINING PAGE: Component mounted/updated', {
+      pathname: location.pathname,
+      timestamp: new Date().toISOString(),
+      componentState: 'MOUNTED'
+    });
+    
+    return () => {
+      console.log('🎓 TRAINING PAGE: Component unmounting', {
+        pathname: location.pathname,
+        timestamp: new Date().toISOString(),
+        componentState: 'UNMOUNTING'
+      });
+    };
+  }, [location.pathname]);
+  
+  // Log every render
+  console.log('🎓 TRAINING PAGE: Rendering', {
+    pathname: location.pathname,
+    timestamp: new Date().toISOString()
+  });
   const { user, hasRoleAccess } = useAuth();
   const isAdmin = hasRoleAccess('manager');
 
@@ -263,6 +288,8 @@ const TrainingPage = () => {
       </Tabs>
     </div>
   );
-};
+});
+
+TrainingPage.displayName = 'TrainingPage';
 
 export default TrainingPage;

@@ -52,7 +52,16 @@ const JournalPage = lazy(() => import('@/pages/JournalPage'));
 const NotebookPage = lazy(() => import('@/pages/NotebookPage'));
 const TimelinePage = lazy(() => import('@/pages/TimelinePage'));
 const FocusZonePage = lazy(() => import('@/pages/FocusZonePage'));
-const TrainingPage = lazy(() => import('@/pages/TrainingPage'));
+const TrainingPage = lazy(() => {
+  console.log('🎓 ROUTER: Starting to load TrainingPage...');
+  return import('@/pages/TrainingPage').then(module => {
+    console.log('✅ ROUTER: TrainingPage module loaded successfully', module);
+    return module;
+  }).catch(error => {
+    console.error('❌ ROUTER: Failed to load TrainingPage:', error);
+    throw error;
+  });
+});
 const OrganizationDashboard = lazy(() => import('@/pages/OrganizationDashboard'));
 const AdminPage = lazy(() => import('@/pages/AdminPage'));
 const EmployeeDashboard = lazy(() => import('@/pages/EmployeeDashboard'));
@@ -75,15 +84,27 @@ const OptimizedRouter = () => {
   // Enable route preloading for better performance
   useRoutePreloader();
 
-  // Track URL changes for debugging - use React Router location instead of window.location
+  // Enhanced route tracking for debugging
   React.useEffect(() => {
     console.log('🌐 ROUTE CHANGE:', {
       pathname: location.pathname,
       isAuthenticated,
       loading,
-      hasUser: !!user
+      hasUser: !!user,
+      timestamp: new Date().toISOString()
     });
-  }, [location.pathname, isAuthenticated, loading]);
+    
+    // Special logging for training route
+    if (location.pathname === '/dashboard/training') {
+      console.log('🎓 TRAINING ROUTE: Detected training route access', {
+        pathname: location.pathname,
+        isAuthenticated,
+        loading,
+        hasUser: !!user,
+        timestamp: new Date().toISOString()
+      });
+    }
+  }, [location.pathname, isAuthenticated, loading, user]);
 
   // Minimal debug logging
   console.log('OptimizedRouter: Auth state:', { isAuthenticated, loading, pathname: location.pathname });
@@ -245,7 +266,9 @@ const OptimizedRouter = () => {
             
             <Route path="training" element={
               <PageWrapper>
-                <TrainingPage />
+                <TrainingErrorBoundary>
+                  <TrainingPage />
+                </TrainingErrorBoundary>
               </PageWrapper>
             } />
             
