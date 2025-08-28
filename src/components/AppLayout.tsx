@@ -81,24 +81,22 @@ const AppLayout = memo(() => {
   const defaultSidebarOpen = false;
 
   return (
-    <ProtectedRoute>
-      <TooltipProvider>
-        <TaskProvider>
-          <SidebarProvider defaultOpen={defaultSidebarOpen}>
-            <div className="min-h-screen-mobile bg-background w-full flex overflow-hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-              <Sidebar />
-              <MainContent>
-                {(() => {
-                  console.log('🎯 AppLayout: Rendering Outlet for:', location.pathname);
-                  return null;
-                })()}
-                <Outlet />
-              </MainContent>
-            </div>
-          </SidebarProvider>
-        </TaskProvider>
-      </TooltipProvider>
-    </ProtectedRoute>
+    <TooltipProvider>
+      <TaskProvider>
+        <SidebarProvider defaultOpen={defaultSidebarOpen}>
+          <div className="min-h-screen-mobile bg-background w-full flex overflow-hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+            <Sidebar />
+            <MainContent>
+              {(() => {
+                console.log('🎯 AppLayout: Rendering Outlet for:', location.pathname);
+                return null;
+              })()}
+              <Outlet />
+            </MainContent>
+          </div>
+        </SidebarProvider>
+      </TaskProvider>
+    </TooltipProvider>
   );
 });
 
