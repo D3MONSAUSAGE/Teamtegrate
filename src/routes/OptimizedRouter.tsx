@@ -9,6 +9,8 @@ import { useRoutePreloader } from '@/hooks/useRoutePreloader';
 import { isSafari, isAppleDevice } from '@/lib/browser';
 import { MeetingsErrorBoundary } from '@/components/ErrorBoundary/MeetingsErrorBoundary';
 import { TrainingErrorBoundary } from '@/components/ErrorBoundary/TrainingErrorBoundary';
+import { NavigationProvider } from '@/contexts/NavigationContext';
+import TrainingNavigationFix from '@/components/navigation/TrainingNavigationFix';
 import AuthErrorBoundary from '@/components/auth/AuthErrorBoundary';
 import SafariNavigationWrapper from '@/components/navigation/SafariNavigationWrapper';
 
@@ -117,175 +119,191 @@ const OptimizedRouter = () => {
   }
 
   return (
-    <Routes>
-      {/* Root route now uses Index component which handles auth routing */}
-      <Route path="/" element={
-        <PageWrapper>
-          <Index />
-        </PageWrapper>
-      } />
-      
-      
-      {/* Public routes with individual suspense */}
-      <Route path="/login" element={
-        <PageWrapper>
-          <LoginPage />
-        </PageWrapper>
-      } />
-      <Route path="/signup" element={
-        <PageWrapper>
-          <SignupPage />
-        </PageWrapper>
-      } />
-      <Route path="/reset-password" element={
-        <PageWrapper>
-          <ResetPasswordPage />
-        </PageWrapper>
-      } />
-      <Route path="/privacy" element={
-        <PageWrapper>
-          <PrivacyPolicyPage />
-        </PageWrapper>
-      } />
-      
-      {/* Protected routes with AppLayout and individual suspense boundaries */}
-      <Route path="/dashboard" element={<AuthErrorBoundary><AppLayout /></AuthErrorBoundary>}>
-        <Route index element={
-          <PageWrapper>
-            <DashboardPage />
-          </PageWrapper>
-        } />
-        <Route path="tasks" element={
-          <PageWrapper>
-            <TasksPage />
-          </PageWrapper>
-        } />
-        <Route path="projects" element={
-          <PageWrapper>
-            <ProjectsPage />
-          </PageWrapper>
-        } />
-        <Route path="projects/:projectId/tasks" element={
-          <PageWrapper>
-            <ProjectTasksPage />
-          </PageWrapper>
-        } />
-        <Route path="calendar" element={
-          <PageWrapper>
-            <CalendarPage />
-          </PageWrapper>
-        } />
-        <Route path="meetings" element={
-          <PageWrapper>
-            <MeetingsErrorBoundary>
-              <FreshMeetingsPage />
-            </MeetingsErrorBoundary>
-          </PageWrapper>
-        } />
-        <Route path="chat" element={
-          <PageWrapper>
-            <ChatPage />
-          </PageWrapper>
-        } />
-        <Route path="team" element={
-          <PageWrapper>
-            <TeamPage />
-          </PageWrapper>
-        } />
-        <Route path="team/:teamId" element={
-          <PageWrapper>
-            <TeamDetailPage />
-          </PageWrapper>
-        } />
-        <Route path="profile" element={
-          <PageWrapper>
-            <ProfilePage />
-          </PageWrapper>
-        } />
-        <Route path="settings" element={
-          <PageWrapper>
-            <SettingsPage />
-          </PageWrapper>
-        } />
-        <Route path="reports" element={
-          <PageWrapper>
-            <ReportsPage />
-          </PageWrapper>
-        } />
-        <Route path="time-tracking" element={
-          <PageWrapper>
-            <TimeTrackingPage />
-          </PageWrapper>
-        } />
-        <Route path="notifications" element={
-          <PageWrapper>
-            <NotificationsPage />
-          </PageWrapper>
-        } />
-        <Route path="documents" element={
-          <PageWrapper>
-            <DocumentsPage />
-          </PageWrapper>
-        } />
-        <Route path="finance" element={
-          <PageWrapper>
-            <FinancePage />
-          </PageWrapper>
-        } />
-        <Route path="journal" element={
-          <PageWrapper>
-            <JournalPage />
-          </PageWrapper>
-        } />
-        <Route path="notebook" element={
-          <PageWrapper>
-            <NotebookPage />
-          </PageWrapper>
-        } />
-        <Route path="timeline" element={
-          <PageWrapper>
-            <TimelinePage />
-          </PageWrapper>
-        } />
-        <Route path="focus" element={
-          <PageWrapper>
-            <FocusZonePage />
-          </PageWrapper>
-        } />
-        <Route path="training" element={
-          <PageWrapper>
-            <TrainingErrorBoundary>
-              <FreshTrainingPage />
-            </TrainingErrorBoundary>
-          </PageWrapper>
-        } />
-        <Route path="organization" element={
-          <PageWrapper>
-            <OrganizationDashboard />
-          </PageWrapper>
-        } />
-        <Route path="organization/employee/:userId" element={
-          <PageWrapper>
-            <EmployeeDashboard />
-          </PageWrapper>
-        } />
-        <Route path="admin" element={
-          <PageWrapper>
-            <AdminPage />
-          </PageWrapper>
-        } />
-      </Route>
-      
-      {/* Auth redirects */}
-      {authRedirects}
-      
-      {/* 404 route */}
-      <Route path="*" element={
-        <PageWrapper>
-          <NotFound />
-        </PageWrapper>
-      } />
-    </Routes>
+    <NavigationProvider>
+      <TrainingNavigationFix>
+        <Routes>
+          {/* Root route now uses Index component which handles auth routing */}
+          <Route path="/" element={
+            <PageWrapper>
+              <Index />
+            </PageWrapper>
+          } />
+          
+          
+          {/* Public routes with individual suspense */}
+          <Route path="/login" element={
+            <PageWrapper>
+              <LoginPage />
+            </PageWrapper>
+          } />
+          <Route path="/signup" element={
+            <PageWrapper>
+              <SignupPage />
+            </PageWrapper>
+          } />
+          <Route path="/reset-password" element={
+            <PageWrapper>
+              <ResetPasswordPage />
+            </PageWrapper>
+          } />
+          <Route path="/privacy" element={
+            <PageWrapper>
+              <PrivacyPolicyPage />
+            </PageWrapper>
+          } />
+          
+          {/* Protected routes with AppLayout and individual suspense boundaries */}
+          <Route path="/dashboard" element={<AuthErrorBoundary><AppLayout /></AuthErrorBoundary>}>
+            <Route index element={
+              <PageWrapper>
+                <DashboardPage />
+              </PageWrapper>
+            } />
+            <Route path="tasks" element={
+              <PageWrapper>
+                <TasksPage />
+              </PageWrapper>
+            } />
+            <Route path="projects" element={
+              <PageWrapper>
+                <ProjectsPage />
+              </PageWrapper>
+            } />
+            <Route path="projects/:projectId/tasks" element={
+              <PageWrapper>
+                <ProjectTasksPage />
+              </PageWrapper>
+            } />
+            <Route path="calendar" element={
+              <PageWrapper>
+                <CalendarPage />
+              </PageWrapper>
+            } />
+            <Route path="meetings" element={
+              <PageWrapper>
+                <MeetingsErrorBoundary>
+                  <FreshMeetingsPage />
+                </MeetingsErrorBoundary>
+              </PageWrapper>
+            } />
+            <Route path="chat" element={
+              <PageWrapper>
+                <ChatPage />
+              </PageWrapper>
+            } />
+            <Route path="team" element={
+              <PageWrapper>
+                <TeamPage />
+              </PageWrapper>
+            } />
+            <Route path="team/:teamId" element={
+              <PageWrapper>
+                <TeamDetailPage />
+              </PageWrapper>
+            } />
+            <Route path="profile" element={
+              <PageWrapper>
+                <ProfilePage />
+              </PageWrapper>
+            } />
+            <Route path="settings" element={
+              <PageWrapper>
+                <SettingsPage />
+              </PageWrapper>
+            } />
+            <Route path="reports" element={
+              <PageWrapper>
+                <ReportsPage />
+              </PageWrapper>
+            } />
+            <Route path="time-tracking" element={
+              <PageWrapper>
+                <TimeTrackingPage />
+              </PageWrapper>
+            } />
+            <Route path="notifications" element={
+              <PageWrapper>
+                <NotificationsPage />
+              </PageWrapper>
+            } />
+            <Route path="documents" element={
+              <PageWrapper>
+                <DocumentsPage />
+              </PageWrapper>
+            } />
+            <Route path="finance" element={
+              <PageWrapper>
+                <FinancePage />
+              </PageWrapper>
+            } />
+            <Route path="journal" element={
+              <PageWrapper>
+                <JournalPage />
+              </PageWrapper>
+            } />
+            <Route path="notebook" element={
+              <PageWrapper>
+                <NotebookPage />
+              </PageWrapper>
+            } />
+            <Route path="timeline" element={
+              <PageWrapper>
+                <TimelinePage />
+              </PageWrapper>
+            } />
+            <Route path="focus" element={
+              <PageWrapper>
+                <FocusZonePage />
+              </PageWrapper>
+            } />
+            
+            {/* Training with Enhanced Error Boundary and Navigation Protection */}
+            <Route path="training" element={
+              <PageWrapper>
+                <TrainingErrorBoundary>
+                  <FreshTrainingPage />
+                </TrainingErrorBoundary>
+              </PageWrapper>
+            } />
+            
+            {/* Emergency Bypass Route for Training */}
+            <Route path="training-alt" element={
+              <PageWrapper>
+                <TrainingErrorBoundary>
+                  <FreshTrainingPage />
+                </TrainingErrorBoundary>
+              </PageWrapper>
+            } />
+            
+            <Route path="organization" element={
+              <PageWrapper>
+                <OrganizationDashboard />
+              </PageWrapper>
+            } />
+            <Route path="organization/employee/:userId" element={
+              <PageWrapper>
+                <EmployeeDashboard />
+              </PageWrapper>
+            } />
+            <Route path="admin" element={
+              <PageWrapper>
+                <AdminPage />
+              </PageWrapper>
+            } />
+          </Route>
+          
+          {/* Auth redirects */}
+          {authRedirects}
+          
+          {/* 404 route */}
+          <Route path="*" element={
+            <PageWrapper>
+              <NotFound />
+            </PageWrapper>
+          } />
+        </Routes>
+      </TrainingNavigationFix>
+    </NavigationProvider>
   );
 };
 

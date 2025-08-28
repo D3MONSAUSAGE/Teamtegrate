@@ -1,6 +1,6 @@
 
 import React, { memo, useMemo, useCallback } from 'react';
-import { useLocation, Link } from 'react-router-dom';
+import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import {
@@ -34,6 +34,7 @@ interface SidebarNavProps {
 
 const SidebarNav: React.FC<SidebarNavProps> = memo(({ onNavigation, isCollapsed = false }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user } = useAuth();
 
   // Memoize navigation items to prevent re-creation on every render
@@ -71,12 +72,24 @@ const SidebarNav: React.FC<SidebarNavProps> = memo(({ onNavigation, isCollapsed 
     return false;
   }, []);
 
-  // Memoize the navigation click handler
-  const handleNavClick = useCallback(() => {
-    if (onNavigation) {
-      onNavigation();
+  // Enhanced training navigation handler  
+  const handleTrainingNavigation = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    console.log('🚀 SidebarNav: Training navigation intercepted');
+    
+    try {
+      navigate('/dashboard/training', { replace: false });
+      console.log('🚀 SidebarNav: Training navigation initiated');
+      
+      if (onNavigation) {
+        onNavigation();
+      }
+    } catch (error) {
+      console.error('🔴 SidebarNav: Training navigation failed:', error);
+      // Fallback navigation
+      window.location.href = '/dashboard/training';
     }
-  }, [onNavigation]);
+  }, [navigate, onNavigation]);
 
   // Memoize the current path for comparison
   const currentPath = useMemo(() => location.pathname, [location.pathname]);
@@ -100,6 +113,13 @@ const SidebarNav: React.FC<SidebarNavProps> = memo(({ onNavigation, isCollapsed 
                 isActive,
                 timestamp: new Date().toISOString()
               });
+              
+              // Special handling for training page
+              if (item.href === '/dashboard/training') {
+                handleTrainingNavigation(e);
+                return;
+              }
+              
               if (onNavigation) {
                 console.log('🔄 Calling onNavigation callback');
                 onNavigation();
