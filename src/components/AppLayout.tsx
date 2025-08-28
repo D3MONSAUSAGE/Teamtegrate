@@ -1,6 +1,6 @@
 
 import React, { memo } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import ProtectedRoute from '@/routes/ProtectedRoute';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -14,6 +14,15 @@ import { Navigate } from 'react-router-dom';
 
 // Professional main content component with enhanced navigation handling
 const MainContent = memo(({ children }: { children: React.ReactNode }) => {
+  const location = useLocation();
+  
+  console.log('🏠 AppLayout MainContent: Rendering with location:', {
+    pathname: location.pathname,
+    search: location.search,
+    hash: location.hash,
+    timestamp: new Date().toLocaleString()
+  });
+
   return (
     <SidebarInset 
       className="flex flex-col flex-1 overflow-hidden"
@@ -22,6 +31,10 @@ const MainContent = memo(({ children }: { children: React.ReactNode }) => {
       <Navbar />
       <main className="flex-1 overflow-y-auto overflow-x-hidden px-4 md:px-6 lg:px-12 safe-area-bottom" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
         <div className="space-y-6 py-4 pb-20 md:pb-6">
+          {(() => {
+            console.log('🎯 AppLayout: About to render children for path:', location.pathname);
+            return null;
+          })()}
           {children}
         </div>
       </main>
@@ -48,8 +61,15 @@ LoadingScreen.displayName = 'LoadingScreen';
 
 const AppLayout = memo(() => {
   const { user, loading, isAuthenticated } = useAuth();
+  const location = useLocation();
 
-  console.log('AppLayout: Auth state:', { user: !!user, loading, isAuthenticated });
+  console.log('🏠 AppLayout: Rendering with state:', { 
+    user: !!user, 
+    loading, 
+    isAuthenticated,
+    pathname: location.pathname,
+    timestamp: new Date().toLocaleString()
+  });
 
   if (loading) {
     return <LoadingScreen />;
@@ -70,6 +90,10 @@ const AppLayout = memo(() => {
             <div className="min-h-screen-mobile bg-background w-full flex overflow-hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
               <Sidebar />
               <MainContent>
+                {(() => {
+                  console.log('🎯 AppLayout: Rendering Outlet for:', location.pathname);
+                  return null;
+                })()}
                 <Outlet />
               </MainContent>
             </div>

@@ -98,6 +98,22 @@ const OptimizedRouter = () => {
         </PageWrapper>
       } />
       
+      {/* TOP-LEVEL meetings route for testing */}
+      <Route path="/meetings" element={
+        <PageWrapper>
+          <div style={{ padding: '30px', background: 'lightblue', border: '3px solid blue' }}>
+            <h1>🔵 TOP-LEVEL MEETINGS TEST</h1>
+            <p>This is a top-level /meetings route</p>
+            <p>If this works, the issue is with nested routing</p>
+            <p>Time: {new Date().toLocaleString()}</p>
+            {(() => {
+              console.log('🔵 TOP-LEVEL MEETINGS: Route matched and rendered!');
+              return null;
+            })()}
+          </div>
+        </PageWrapper>
+      } />
+      
       {/* Public routes with individual suspense */}
       <Route path="/login" element={
         <PageWrapper>
@@ -149,9 +165,15 @@ const OptimizedRouter = () => {
         } />
         <Route path="meetings" element={
           <PageWrapper>
-            <div>
-              <h1>SIMPLE TEST COMPONENT</h1>
-              <p>This bypasses all error boundaries and lazy loading</p>
+            <div style={{ padding: '30px', background: 'yellow', border: '3px solid orange' }}>
+              <h1>🟡 MEETINGS ROUTE MATCHED!</h1>
+              <p>Path: /dashboard/meetings</p>
+              <p>Time: {new Date().toLocaleString()}</p>
+              <p>Route Status: Successfully rendered!</p>
+              {(() => {
+                console.log('🎯 MEETINGS ROUTE: Component is rendering!');
+                return null;
+              })()}
             </div>
           </PageWrapper>
         } />

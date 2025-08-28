@@ -42,7 +42,7 @@ const SidebarNav: React.FC<SidebarNavProps> = memo(({ onNavigation, isCollapsed 
     { name: 'Projects', href: '/dashboard/projects', icon: Briefcase },
     { name: 'Organization', href: '/dashboard/organization', icon: Users },
     { name: 'Calendar', href: '/dashboard/calendar', icon: Calendar },
-    { name: 'Meetings', href: '/dashboard/meetings', icon: CalendarCheck },
+    { name: 'Meetings', href: '/meetings', icon: CalendarCheck }, // Testing top-level route
     { name: 'Focus', href: '/dashboard/focus', icon: Target },
     { name: 'Reports', href: '/dashboard/reports', icon: BarChart3 },
     { name: 'Chat', href: '/dashboard/chat', icon: MessageCircle },
