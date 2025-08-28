@@ -241,9 +241,7 @@ const OptimizedRouter = () => {
         } />
         <Route path="training" element={
           <PageWrapper>
-            <SafariNavigationWrapper>
-              <TrainingPage />
-            </SafariNavigationWrapper>
+            <TrainingPage />
           </PageWrapper>
         } />
         <Route path="organization" element={
