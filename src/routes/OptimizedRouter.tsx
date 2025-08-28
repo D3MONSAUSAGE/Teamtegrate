@@ -47,6 +47,7 @@ const JournalPage = lazy(() => import('@/pages/JournalPage'));
 const NotebookPage = lazy(() => import('@/pages/NotebookPage'));
 const TimelinePage = lazy(() => import('@/pages/TimelinePage'));
 const FocusZonePage = lazy(() => import('@/pages/FocusZonePage'));
+const TrainingPage = lazy(() => import('@/pages/TrainingPage'));
 const OrganizationDashboard = lazy(() => import('@/pages/OrganizationDashboard'));
 const AdminPage = lazy(() => import('@/pages/AdminPage'));
 const EmployeeDashboard = lazy(() => import('@/pages/EmployeeDashboard'));
@@ -245,6 +246,11 @@ const OptimizedRouter = () => {
         <Route path="focus" element={
           <PageWrapper>
             <FocusZonePage />
+          </PageWrapper>
+        } />
+        <Route path="training" element={
+          <PageWrapper>
+            <TrainingPage />
           </PageWrapper>
         } />
         <Route path="organization" element={

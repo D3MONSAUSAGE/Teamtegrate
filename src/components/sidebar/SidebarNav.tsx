@@ -18,6 +18,7 @@ import {
   NotebookPen,
   User,
   Clock,
+  GraduationCap,
 } from 'lucide-react';
 
 interface NavItemProps {
@@ -43,6 +44,7 @@ const SidebarNav: React.FC<SidebarNavProps> = memo(({ onNavigation, isCollapsed 
     { name: 'Organization', href: '/dashboard/organization', icon: Users },
     { name: 'Calendar', href: '/dashboard/calendar', icon: Calendar },
     { name: 'Meetings', href: '/dashboard/meetings', icon: CalendarCheck },
+    { name: 'Training', href: '/dashboard/training', icon: GraduationCap },
     { name: 'Focus', href: '/dashboard/focus', icon: Target },
     { name: 'Reports', href: '/dashboard/reports', icon: BarChart3 },
     { name: 'Chat', href: '/dashboard/chat', icon: MessageCircle },
