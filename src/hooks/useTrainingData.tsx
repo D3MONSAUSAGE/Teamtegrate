@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { toast } from '@/components/ui/sonner';
 
 // Training Courses Hook
 export const useTrainingCourses = () => {
@@ -177,29 +176,44 @@ export const useCreateCourse = () => {
   const { user } = useAuth();
   
   return useMutation({
-    mutationFn: async (courseData: any) => {
+    mutationFn: async ({ course, modules }: { course: any, modules: any[] }) => {
       if (!user?.organizationId) throw new Error('No organization found');
       
-      const { data, error } = await supabase
+      // Create course first
+      const { data: courseData, error: courseError } = await supabase
         .from('training_courses')
         .insert({
-          ...courseData,
+          ...course,
           organization_id: user.organizationId,
           created_by: user.id
         })
         .select()
         .single();
       
-      if (error) throw error;
-      return data;
+      if (courseError) throw courseError;
+      
+      // Create modules if provided
+      if (modules.length > 0) {
+        const modulesWithCourseId = modules.map(module => ({
+          ...module,
+          course_id: courseData.id
+        }));
+        
+        const { error: modulesError } = await supabase
+          .from('training_modules')
+          .insert(modulesWithCourseId);
+        
+        if (modulesError) throw modulesError;
+      }
+      
+      return courseData;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['training-courses'] });
       queryClient.invalidateQueries({ queryKey: ['training-stats'] });
-      toast.success('Course created successfully');
     },
     onError: (error: Error) => {
-      toast.error(`Failed to create course: ${error.message}`);
+      console.error('Failed to create course:', error);
     }
   });
 };
@@ -239,10 +253,9 @@ export const useCreateQuiz = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quizzes'] });
       queryClient.invalidateQueries({ queryKey: ['training-stats'] });
-      toast.success('Quiz created successfully');
     },
     onError: (error: Error) => {
-      toast.error(`Failed to create quiz: ${error.message}`);
+      console.error('Failed to create quiz:', error);
     }
   });
 };
@@ -273,10 +286,9 @@ export const useSubmitQuizAttempt = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quiz-attempts'] });
       queryClient.invalidateQueries({ queryKey: ['training-stats'] });
-      toast.success('Quiz submitted successfully');
     },
     onError: (error: Error) => {
-      toast.error(`Failed to submit quiz: ${error.message}`);
+      console.error('Failed to submit quiz:', error);
     }
   });
 };

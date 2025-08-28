@@ -1,20 +1,29 @@
 import React, { useState } from 'react';
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, Loader2, BookOpen, GraduationCap, PenTool, Users } from 'lucide-react';
+import { AlertCircle, Loader2, BookOpen, GraduationCap, PenTool, Users, BarChart, UserPlus } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import TrainingHeader from '@/components/training/TrainingHeader';
 import TrainingStatsCards from '@/components/training/TrainingStatsCards';
 import QuizCreator from '@/components/training/QuizCreator';
+import CourseCreator from '@/components/training/CourseCreator';
+import QuizResults from '@/components/training/QuizResults';
+import UserAssignment from '@/components/training/UserAssignment';
 import ModernSectionCard from '@/components/dashboard/ModernSectionCard';
+import { Button } from '@/components/ui/button';
 import { useTrainingCourses, useQuizzes } from '@/hooks/useTrainingData';
 
 const TrainingPage = () => {
   const { user, loading } = useAuth();
   const [isQuizCreatorOpen, setIsQuizCreatorOpen] = useState(false);
   const [isCourseCreatorOpen, setIsCourseCreatorOpen] = useState(false);
+  const [isQuizResultsOpen, setIsQuizResultsOpen] = useState(false);
+  const [isUserAssignmentOpen, setIsUserAssignmentOpen] = useState(false);
+  const [selectedQuiz, setSelectedQuiz] = useState<any>(null);
   
   const { data: courses = [], isLoading: coursesLoading } = useTrainingCourses();
   const { data: allQuizzes = [], isLoading: quizzesLoading } = useQuizzes();
+
+  const canManageContent = user && ['superadmin', 'admin', 'manager'].includes(user.role);
 
   // Show loading state while auth is loading
   if (loading) {
@@ -56,6 +65,15 @@ const TrainingPage = () => {
 
   const handleCreateQuiz = () => {
     setIsQuizCreatorOpen(true);
+  };
+
+  const handleViewResults = (quiz: any) => {
+    setSelectedQuiz(quiz);
+    setIsQuizResultsOpen(true);
+  };
+
+  const handleAssignContent = () => {
+    setIsUserAssignmentOpen(true);
   };
 
   return (
@@ -134,6 +152,19 @@ const TrainingPage = () => {
                   subtitle="Assessment and evaluation tools"
                   icon={PenTool}
                   gradient="from-green-500/10 via-emerald-500/10 to-teal-500/10"
+                  headerAction={
+                    canManageContent && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIsUserAssignmentOpen(true)}
+                        className="gap-2"
+                      >
+                        <UserPlus className="h-4 w-4" />
+                        Assign
+                      </Button>
+                    )
+                  }
                 >
                   {quizzesLoading ? (
                     <div className="flex items-center justify-center py-8">
@@ -142,12 +173,25 @@ const TrainingPage = () => {
                   ) : allQuizzes.length > 0 ? (
                     <div className="space-y-3">
                       {allQuizzes.slice(0, 5).map((quiz: any) => (
-                        <div key={quiz.id} className="p-3 rounded-lg border bg-card/50 hover:bg-card transition-colors">
-                          <div className="space-y-1">
-                            <h4 className="text-sm font-medium text-foreground">{quiz.title}</h4>
-                            <p className="text-xs text-muted-foreground">
-                              {quiz.quiz_questions?.length || 0} questions • {quiz.passing_score}% to pass
-                            </p>
+                        <div key={quiz.id} className="p-3 rounded-lg border bg-card/50 hover:bg-card transition-colors group">
+                          <div className="flex items-center justify-between">
+                            <div className="space-y-1">
+                              <h4 className="text-sm font-medium text-foreground">{quiz.title}</h4>
+                              <p className="text-xs text-muted-foreground">
+                                {quiz.quiz_questions?.length || 0} questions • {quiz.passing_score}% to pass
+                              </p>
+                            </div>
+                            {canManageContent && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleViewResults(quiz)}
+                                className="opacity-0 group-hover:opacity-100 transition-opacity gap-1"
+                              >
+                                <BarChart className="h-3 w-3" />
+                                Results
+                              </Button>
+                            )}
                           </div>
                         </div>
                       ))}
@@ -183,6 +227,23 @@ const TrainingPage = () => {
       <QuizCreator 
         open={isQuizCreatorOpen}
         onOpenChange={setIsQuizCreatorOpen}
+      />
+      
+      <CourseCreator 
+        open={isCourseCreatorOpen}
+        onOpenChange={setIsCourseCreatorOpen}
+      />
+      
+      <QuizResults 
+        open={isQuizResultsOpen}
+        onOpenChange={setIsQuizResultsOpen}
+        quizId={selectedQuiz?.id}
+        quizTitle={selectedQuiz?.title}
+      />
+      
+      <UserAssignment 
+        open={isUserAssignmentOpen}
+        onOpenChange={setIsUserAssignmentOpen}
       />
     </div>
   );
