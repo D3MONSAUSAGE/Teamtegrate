@@ -60,23 +60,11 @@ const LoadingScreen = memo(() => (
 LoadingScreen.displayName = 'LoadingScreen';
 
 const AppLayout = memo(() => {
-  const { user, loading, isAuthenticated } = useAuth();
   const location = useLocation();
 
-  console.log('🏠 AppLayout: Rendering with state:', { 
-    user: !!user, 
-    loading, 
-    isAuthenticated,
-    pathname: location.pathname,
-    timestamp: new Date().toLocaleString()
-  });
-
-  if (loading) {
-    return <LoadingScreen />;
-  }
+  console.log('🏠 AppLayout: Rendering for path:', location.pathname);
 
   // Auth check removed - ProtectedRoute wrapper handles authentication
-
   // Start collapsed on all devices for consistent hover-to-expand UX on desktop
   const defaultSidebarOpen = false;
 

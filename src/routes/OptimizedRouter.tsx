@@ -1,5 +1,5 @@
 
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { lazy, Suspense, useMemo } from 'react';
 import React from 'react';
 import LoadingFallback from '@/components/LoadingFallback';
@@ -69,34 +69,23 @@ const PageWrapper = ({ children, fallback }: { children: React.ReactNode, fallba
 
 const OptimizedRouter = () => {
   const { isAuthenticated, loading, user } = useAuth();
+  const location = useLocation();
   
   // Enable route preloading for better performance
   useRoutePreloader();
 
-  // Track URL changes for debugging
+  // Track URL changes for debugging - use React Router location instead of window.location
   React.useEffect(() => {
-    console.log('🌐 URL CHANGE DETECTED:', {
-      pathname: window.location.pathname,
-      search: window.location.search,
-      hash: window.location.hash,
+    console.log('🌐 ROUTE CHANGE:', {
+      pathname: location.pathname,
       isAuthenticated,
       loading,
-      hasUser: !!user,
-      timestamp: new Date().toISOString()
+      hasUser: !!user
     });
-  }, [window.location.pathname, isAuthenticated, loading, user]);
+  }, [location.pathname, isAuthenticated, loading]);
 
-  // Safari-specific debugging and stabilization
-  React.useEffect(() => {
-    if (isSafari() || isAppleDevice()) {
-      console.log('🍎 Safari/Apple Device detected - Enhanced navigation mode enabled');
-      console.log('🍎 Auth state:', { isAuthenticated, loading, hasUser: !!user });
-      console.log('🍎 Current path:', window.location.pathname);
-    }
-  }, [isAuthenticated, loading, user]);
-
-  // Debug logging
-  console.log('OptimizedRouter: Auth state:', { isAuthenticated, loading });
+  // Minimal debug logging
+  console.log('OptimizedRouter: Auth state:', { isAuthenticated, loading, pathname: location.pathname });
 
 
   // Memoize auth redirects to prevent re-creation
