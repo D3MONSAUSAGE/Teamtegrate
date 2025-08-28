@@ -20,7 +20,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { useOrganizationUsers } from '@/hooks/useOrganizationUsers';
-import { useTrainingCourses, useQuizzes } from '@/hooks/useTrainingData';
+import { useTrainingCourses, useQuizzes, useCreateTrainingAssignment } from '@/hooks/useTrainingData';
 import { format } from 'date-fns';
 
 interface UserAssignmentProps {
@@ -40,6 +40,7 @@ const UserAssignment: React.FC<UserAssignmentProps> = ({ open, onOpenChange }) =
   const { users = [], loading: usersLoading } = useOrganizationUsers();
   const { data: courses = [] } = useTrainingCourses();
   const { data: quizzes = [] } = useQuizzes();
+  const createAssignment = useCreateTrainingAssignment();
 
   // Filter users based on search term
   const filteredUsers = users.filter(user => 
@@ -66,24 +67,35 @@ const UserAssignment: React.FC<UserAssignmentProps> = ({ open, onOpenChange }) =
   const handleAssign = async () => {
     if (!selectedItem || selectedUsers.length === 0) return;
 
-    // Here you would implement the assignment logic
-    // This could involve creating assignment records in the database
-    // and sending notifications to users
-    
-    console.log('Assigning:', {
-      type: selectedType,
-      itemId: selectedItem,
-      users: selectedUsers,
-      dueDate,
-      priority
-    });
+    try {
+      // Get content title
+      const content = selectedType === 'course' 
+        ? courses.find(c => c.id === selectedItem)
+        : quizzes.find(q => q.id === selectedItem);
+      
+      if (!content) {
+        console.error('Content not found');
+        return;
+      }
 
-    // Reset form
-    setSelectedItem('');
-    setSelectedUsers([]);
-    setDueDate('');
-    setPriority('medium');
-    onOpenChange(false);
+      await createAssignment.mutateAsync({
+        assignmentType: selectedType,
+        contentId: selectedItem,
+        contentTitle: content.title,
+        assignedUsers: selectedUsers,
+        dueDate: dueDate || undefined,
+        priority
+      });
+
+      // Reset form
+      setSelectedItem('');
+      setSelectedUsers([]);
+      setDueDate('');
+      setPriority('medium');
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Assignment failed:', error);
+    }
   };
 
   const getPriorityColor = (priority: string) => {
@@ -267,11 +279,11 @@ const UserAssignment: React.FC<UserAssignmentProps> = ({ open, onOpenChange }) =
               </Button>
               <Button 
                 onClick={handleAssign}
-                disabled={!selectedItem || selectedUsers.length === 0}
+                disabled={!selectedItem || selectedUsers.length === 0 || createAssignment.isPending}
                 className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600"
               >
                 <Send className="h-4 w-4 mr-2" />
-                Assign to {selectedUsers.length} User{selectedUsers.length !== 1 ? 's' : ''}
+                {createAssignment.isPending ? 'Assigning...' : `Assign to ${selectedUsers.length} User${selectedUsers.length !== 1 ? 's' : ''}`}
               </Button>
             </div>
           </TabsContent>

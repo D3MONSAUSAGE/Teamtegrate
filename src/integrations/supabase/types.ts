@@ -1917,6 +1917,66 @@ export type Database = {
           },
         ]
       }
+      training_assignments: {
+        Row: {
+          assigned_at: string
+          assigned_by: string
+          assigned_to: string
+          assignment_type: string
+          completed_at: string | null
+          completion_score: number | null
+          content_id: string
+          content_title: string
+          created_at: string
+          due_date: string | null
+          id: string
+          notes: string | null
+          organization_id: string
+          priority: string | null
+          started_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by: string
+          assigned_to: string
+          assignment_type: string
+          completed_at?: string | null
+          completion_score?: number | null
+          content_id: string
+          content_title: string
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          organization_id: string
+          priority?: string | null
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string
+          assigned_to?: string
+          assignment_type?: string
+          completed_at?: string | null
+          completion_score?: number | null
+          content_id?: string
+          content_title?: string
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          priority?: string | null
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       training_courses: {
         Row: {
           created_at: string

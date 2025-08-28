@@ -8,9 +8,10 @@ import QuizCreator from '@/components/training/QuizCreator';
 import CourseCreator from '@/components/training/CourseCreator';
 import QuizResults from '@/components/training/QuizResults';
 import UserAssignment from '@/components/training/UserAssignment';
+import MyAssignments from '@/components/training/MyAssignments';
 import ModernSectionCard from '@/components/dashboard/ModernSectionCard';
 import { Button } from '@/components/ui/button';
-import { useTrainingCourses, useQuizzes } from '@/hooks/useTrainingData';
+import { useTrainingCourses, useQuizzes, useTrainingAssignments } from '@/hooks/useTrainingData';
 
 const TrainingPage = () => {
   const { user, loading } = useAuth();
@@ -18,10 +19,12 @@ const TrainingPage = () => {
   const [isCourseCreatorOpen, setIsCourseCreatorOpen] = useState(false);
   const [isQuizResultsOpen, setIsQuizResultsOpen] = useState(false);
   const [isUserAssignmentOpen, setIsUserAssignmentOpen] = useState(false);
+  const [isMyAssignmentsOpen, setIsMyAssignmentsOpen] = useState(false);
   const [selectedQuiz, setSelectedQuiz] = useState<any>(null);
   
   const { data: courses = [], isLoading: coursesLoading } = useTrainingCourses();
   const { data: allQuizzes = [], isLoading: quizzesLoading } = useQuizzes();
+  const { data: assignments = [] } = useTrainingAssignments();
 
   const canManageContent = user && ['superadmin', 'admin', 'manager'].includes(user.role);
 
@@ -102,6 +105,56 @@ const TrainingPage = () => {
           </ModernSectionCard>
         </div>
         
+        {/* My Assignments Section */}
+        {assignments.length > 0 && (
+          <div className="animate-fade-in" style={{ animationDelay: '300ms' }}>
+            <ModernSectionCard
+              title="My Training Assignments"
+              subtitle={`${assignments.filter(a => a.status === 'pending').length} pending, ${assignments.filter(a => a.status === 'in_progress').length} in progress`}
+              icon={GraduationCap}
+              gradient="from-violet-500/10 via-purple-500/10 to-indigo-500/10"
+              headerAction={
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsMyAssignmentsOpen(true)}
+                  className="gap-2"
+                >
+                  <GraduationCap className="h-4 w-4" />
+                  View All
+                </Button>
+              }
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {assignments.slice(0, 3).map((assignment: any) => (
+                  <div key={assignment.id} className="p-4 rounded-lg border bg-card hover:shadow-md transition-shadow">
+                    <div className="space-y-2">
+                      <h3 className="font-semibold text-foreground">{assignment.content_title}</h3>
+                      <p className="text-sm text-muted-foreground capitalize">
+                        {assignment.assignment_type} • {assignment.status.replace('_', ' ')}
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs px-2 py-1 rounded ${
+                          assignment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                          assignment.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
+                          'bg-green-100 text-green-800'
+                        }`}>
+                          {assignment.priority} priority
+                        </span>
+                        {assignment.due_date && (
+                          <span className="text-xs text-muted-foreground">
+                            Due: {new Date(assignment.due_date).toLocaleDateString()}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ModernSectionCard>
+          </div>
+        )}
+
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 gap-8">
           {/* Training Content */}
@@ -244,6 +297,11 @@ const TrainingPage = () => {
       <UserAssignment 
         open={isUserAssignmentOpen}
         onOpenChange={setIsUserAssignmentOpen}
+      />
+      
+      <MyAssignments 
+        open={isMyAssignmentsOpen}
+        onOpenChange={setIsMyAssignmentsOpen}
       />
     </div>
   );
