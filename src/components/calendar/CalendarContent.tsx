@@ -1,9 +1,7 @@
-
 import React from 'react';
 import CalendarDayView from './CalendarDayView';
 import CalendarWeekView from './CalendarWeekView';
 import CalendarMonthView from './CalendarMonthView';
-import CalendarViewSelector from './CalendarViewSelector';
 import { Task } from '@/types';
 import { MeetingRequestWithParticipants } from '@/types/meeting';
 import { MeetingManagementModal } from '@/components/meetings/MeetingManagementModal';
@@ -35,62 +33,43 @@ const CalendarContent: React.FC<CalendarContentProps> = ({
     setShowMeetingModal(true);
     onMeetingManage?.();
   };
-  return (
-    <div className="h-full w-full p-6">
-      <div className="h-full w-full glass-card bg-gradient-to-br from-white/50 via-white/30 to-white/10 dark:from-card/50 dark:via-card/30 dark:to-card/10 backdrop-blur-sm rounded-2xl border border-white/20 shadow-xl">
-        <div className="h-full w-full p-4">
-          {/* Header with View Selector */}
-          <div className="flex justify-between items-center mb-6">
-            <div>
-              <h3 className="text-2xl font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
-                {viewType.charAt(0).toUpperCase() + viewType.slice(1)} View
-              </h3>
-              <p className="text-muted-foreground mt-1">
-                Organize and manage your tasks by date
-              </p>
-            </div>
-            <CalendarViewSelector 
-              viewType={viewType} 
-              onViewChange={onViewChange} 
-            />
-          </div>
 
-          {/* Calendar Views */}
-          <div className="h-[calc(100%-120px)]">
-            {viewType === 'day' && (
-              <CalendarDayView 
-                selectedDate={selectedDate} 
-                tasks={tasks}
-                meetings={meetings}
-                onTaskClick={onTaskClick}
-                onDateCreate={onDateCreate}
-                onMeetingClick={handleMeetingClick}
-              />
-            )}
-            
-            {viewType === 'week' && (
-              <CalendarWeekView 
-                selectedDate={selectedDate} 
-                tasks={tasks}
-                meetings={meetings}
-                onTaskClick={onTaskClick}
-                onDateCreate={onDateCreate}
-                onMeetingClick={handleMeetingClick}
-              />
-            )}
-            
-            {viewType === 'month' && (
-              <CalendarMonthView 
-                selectedDate={selectedDate} 
-                tasks={tasks}
-                meetings={meetings}
-                onTaskClick={onTaskClick}
-                onDateCreate={onDateCreate}
-                onMeetingClick={handleMeetingClick}
-              />
-            )}
-          </div>
-        </div>
+  return (
+    <div className="h-full bg-white dark:bg-gray-900">
+      {/* Calendar Views */}
+      <div className="h-full">
+        {viewType === 'day' && (
+          <CalendarDayView 
+            selectedDate={selectedDate} 
+            tasks={tasks}
+            meetings={meetings}
+            onTaskClick={onTaskClick}
+            onDateCreate={onDateCreate}
+            onMeetingClick={handleMeetingClick}
+          />
+        )}
+        
+        {viewType === 'week' && (
+          <CalendarWeekView 
+            selectedDate={selectedDate} 
+            tasks={tasks}
+            meetings={meetings}
+            onTaskClick={onTaskClick}
+            onDateCreate={onDateCreate}
+            onMeetingClick={handleMeetingClick}
+          />
+        )}
+        
+        {viewType === 'month' && (
+          <CalendarMonthView 
+            selectedDate={selectedDate} 
+            tasks={tasks}
+            meetings={meetings}
+            onTaskClick={onTaskClick}
+            onDateCreate={onDateCreate}
+            onMeetingClick={handleMeetingClick}
+          />
+        )}
       </div>
 
       {/* Meeting Management Modal */}
