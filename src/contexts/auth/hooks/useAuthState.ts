@@ -32,11 +32,12 @@ export const useAuthState = () => {
       // Update session which will enhance profile
       await updateSession(newSession);
       
-      // Allow time for profile enhancement
+      // Allow time for profile enhancement - Safari needs extra time
+      const delay = (typeof window !== 'undefined' && /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent)) ? 400 : 300;
       setTimeout(() => {
         console.log('AuthState: Profile enhancement completed');
         setProfileLoading(false);
-      }, 300);
+      }, delay);
     } else {
       // No session, clear everything
       console.log('AuthState: Clearing session and user data');

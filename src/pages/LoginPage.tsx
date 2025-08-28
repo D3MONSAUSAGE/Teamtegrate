@@ -136,6 +136,19 @@ const LoginPage = () => {
 
       console.log('LoginPage: Login successful');
       toast.success('Welcome back!');
+      
+      // Explicit navigation for Safari compatibility
+      if (isSafari() || isAppleDevice()) {
+        // Add a small delay for Safari to process auth state changes
+        setTimeout(() => {
+          console.log('LoginPage: Safari - navigating to dashboard');
+          navigate('/dashboard', { replace: true });
+        }, 150);
+      } else {
+        // Immediate navigation for other browsers
+        console.log('LoginPage: Navigating to dashboard');
+        navigate('/dashboard', { replace: true });
+      }
     } catch (e) {
       console.error('LoginPage: Unexpected login error:', e);
       const errorMessage = 'Login failed. Please try again.';
