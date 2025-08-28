@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRoutePreloader } from '@/hooks/useRoutePreloader';
 import { isSafari, isAppleDevice } from '@/lib/browser';
 import { MeetingsErrorBoundary } from '@/components/ErrorBoundary/MeetingsErrorBoundary';
+import { TrainingErrorBoundary } from '@/components/ErrorBoundary/TrainingErrorBoundary';
 import AuthErrorBoundary from '@/components/auth/AuthErrorBoundary';
 import SafariNavigationWrapper from '@/components/navigation/SafariNavigationWrapper';
 
@@ -51,6 +52,16 @@ const JournalPage = lazy(() => import('@/pages/JournalPage'));
 const NotebookPage = lazy(() => import('@/pages/NotebookPage'));
 const TimelinePage = lazy(() => import('@/pages/TimelinePage'));
 const FocusZonePage = lazy(() => import('@/pages/FocusZonePage'));
+const FreshTrainingPage = lazy(() => {
+  console.log('🔄 Router: Starting to load FreshTrainingPage...');
+  return import('@/pages/FreshTrainingPage').then(module => {
+    console.log('✅ Router: FreshTrainingPage module loaded successfully', module);
+    return module;
+  }).catch(error => {
+    console.error('❌ Router: Failed to load FreshTrainingPage:', error);
+    throw error;
+  });
+});
 const TrainingPage = lazy(() => import('@/pages/TrainingPage'));
 const OrganizationDashboard = lazy(() => import('@/pages/OrganizationDashboard'));
 const AdminPage = lazy(() => import('@/pages/AdminPage'));
@@ -243,7 +254,9 @@ const OptimizedRouter = () => {
         } />
         <Route path="training" element={
           <PageWrapper>
-            <TrainingPage />
+            <TrainingErrorBoundary>
+              <FreshTrainingPage />
+            </TrainingErrorBoundary>
           </PageWrapper>
         } />
         <Route path="organization" element={
