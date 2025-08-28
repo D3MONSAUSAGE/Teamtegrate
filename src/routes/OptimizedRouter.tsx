@@ -1,12 +1,15 @@
 
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { lazy, Suspense, useMemo } from 'react';
+import React from 'react';
 import LoadingFallback from '@/components/LoadingFallback';
 import AppLayout from '@/components/AppLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRoutePreloader } from '@/hooks/useRoutePreloader';
+import { isSafari, isAppleDevice } from '@/lib/browser';
 import { MeetingsErrorBoundary } from '@/components/ErrorBoundary/MeetingsErrorBoundary';
 import AuthErrorBoundary from '@/components/auth/AuthErrorBoundary';
+import SafariNavigationWrapper from '@/components/navigation/SafariNavigationWrapper';
 
 // Import Index component for the root route
 const Index = lazy(() => import('@/pages/Index'));
@@ -65,10 +68,19 @@ const PageWrapper = ({ children, fallback }: { children: React.ReactNode, fallba
 };
 
 const OptimizedRouter = () => {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, user } = useAuth();
   
   // Enable route preloading for better performance
   useRoutePreloader();
+
+  // Safari-specific debugging and stabilization
+  React.useEffect(() => {
+    if (isSafari() || isAppleDevice()) {
+      console.log('🍎 Safari/Apple Device detected - Enhanced navigation mode enabled');
+      console.log('🍎 Auth state:', { isAuthenticated, loading, hasUser: !!user });
+      console.log('🍎 Current path:', window.location.pathname);
+    }
+  }, [isAuthenticated, loading, user]);
 
   // Debug logging
   console.log('OptimizedRouter: Auth state:', { isAuthenticated, loading });
@@ -229,7 +241,9 @@ const OptimizedRouter = () => {
         } />
         <Route path="training" element={
           <PageWrapper>
-            <TrainingPage />
+            <SafariNavigationWrapper>
+              <TrainingPage />
+            </SafariNavigationWrapper>
           </PageWrapper>
         } />
         <Route path="organization" element={
