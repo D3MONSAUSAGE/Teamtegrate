@@ -462,6 +462,257 @@ export const useCreateTrainingAssignment = () => {
   });
 };
 
+// Update Course Mutation
+export const useUpdateCourse = () => {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  
+  return useMutation({
+    mutationFn: async ({ courseId, course, modules }: { courseId: string, course: any, modules: any[] }) => {
+      if (!user?.organizationId) throw new Error('No organization found');
+
+      // Map course fields to match DB schema
+      const coursePayload = {
+        title: course.title,
+        description: course.description ?? null,
+        difficulty_level: course.difficulty ?? null,
+        estimated_duration_minutes: typeof course.duration_hours === 'number'
+          ? Math.round(course.duration_hours * 60)
+          : null,
+        is_active: course.is_active ?? true,
+        updated_at: new Date().toISOString()
+      };
+
+      // Update course
+      const { data: courseData, error: courseError } = await supabase
+        .from('training_courses')
+        .update(coursePayload)
+        .eq('id', courseId)
+        .eq('organization_id', user.organizationId)
+        .select()
+        .single();
+
+      if (courseError) throw courseError;
+
+      // Handle modules updates
+      if (modules.length > 0) {
+        // First, get existing modules
+        const { data: existingModules } = await supabase
+          .from('training_modules')
+          .select('id')
+          .eq('course_id', courseId);
+
+        const existingModuleIds = existingModules?.map(m => m.id) || [];
+        const moduleUpdates = [];
+        const moduleInserts = [];
+        const moduleIdsToKeep = [];
+
+        for (const module of modules) {
+          const modulePayload = {
+            title: module.title,
+            description: module.description ?? null,
+            module_order: module.module_order,
+            course_id: courseId,
+            content_type: 'text',
+            text_content: module.content ?? null,
+            updated_at: new Date().toISOString()
+          };
+
+          if (module.id && existingModuleIds.includes(module.id)) {
+            // Update existing module
+            moduleUpdates.push({ ...modulePayload, id: module.id });
+            moduleIdsToKeep.push(module.id);
+          } else {
+            // Insert new module
+            moduleInserts.push(modulePayload);
+          }
+        }
+
+        // Update existing modules
+        for (const moduleUpdate of moduleUpdates) {
+          const { id, ...updateData } = moduleUpdate;
+          await supabase
+            .from('training_modules')
+            .update(updateData)
+            .eq('id', id);
+        }
+
+        // Insert new modules
+        if (moduleInserts.length > 0) {
+          await supabase
+            .from('training_modules')
+            .insert(moduleInserts);
+        }
+
+        // Delete modules that are no longer needed
+        const modulesToDelete = existingModuleIds.filter(id => !moduleIdsToKeep.includes(id));
+        if (modulesToDelete.length > 0) {
+          await supabase
+            .from('training_modules')
+            .delete()
+            .in('id', modulesToDelete);
+        }
+      }
+
+      return courseData;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['training-courses'] });
+      queryClient.invalidateQueries({ queryKey: ['training-stats'] });
+    },
+    onError: (error: Error) => {
+      console.error('Failed to update course:', error);
+    }
+  });
+};
+
+// Delete Course Mutation
+export const useDeleteCourse = () => {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  
+  return useMutation({
+    mutationFn: async (courseId: string) => {
+      if (!user?.organizationId) throw new Error('No organization found');
+
+      const { error } = await supabase
+        .from('training_courses')
+        .delete()
+        .eq('id', courseId)
+        .eq('organization_id', user.organizationId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['training-courses'] });
+      queryClient.invalidateQueries({ queryKey: ['training-stats'] });
+    },
+    onError: (error: Error) => {
+      console.error('Failed to delete course:', error);
+    }
+  });
+};
+
+// Update Quiz Mutation
+export const useUpdateQuiz = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ quizId, quiz, questions }: { quizId: string, quiz: any, questions: any[] }) => {
+      // Update quiz
+      const { data: quizData, error: quizError } = await supabase
+        .from('quizzes')
+        .update({
+          title: quiz.title,
+          description: quiz.description,
+          module_id: quiz.module_id,
+          passing_score: quiz.passing_score,
+          max_attempts: quiz.max_attempts,
+          time_limit_minutes: quiz.time_limit_minutes,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', quizId)
+        .select()
+        .single();
+      
+      if (quizError) throw quizError;
+      
+      // Handle questions updates
+      if (questions.length > 0) {
+        // Get existing questions
+        const { data: existingQuestions } = await supabase
+          .from('quiz_questions')
+          .select('id')
+          .eq('quiz_id', quizId);
+
+        const existingQuestionIds = existingQuestions?.map(q => q.id) || [];
+        const questionUpdates = [];
+        const questionInserts = [];
+        const questionIdsToKeep = [];
+
+        for (const question of questions) {
+          const questionPayload = {
+            quiz_id: quizId,
+            question_text: question.question_text,
+            question_type: question.question_type,
+            options: question.options,
+            correct_answer: question.correct_answer,
+            points: question.points,
+            explanation: question.explanation,
+            question_order: question.question_order
+          };
+
+          if (question.id && existingQuestionIds.includes(question.id)) {
+            // Update existing question
+            questionUpdates.push({ ...questionPayload, id: question.id });
+            questionIdsToKeep.push(question.id);
+          } else {
+            // Insert new question
+            questionInserts.push(questionPayload);
+          }
+        }
+
+        // Update existing questions
+        for (const questionUpdate of questionUpdates) {
+          const { id, ...updateData } = questionUpdate;
+          await supabase
+            .from('quiz_questions')
+            .update(updateData)
+            .eq('id', id);
+        }
+
+        // Insert new questions
+        if (questionInserts.length > 0) {
+          await supabase
+            .from('quiz_questions')
+            .insert(questionInserts);
+        }
+
+        // Delete questions that are no longer needed
+        const questionsToDelete = existingQuestionIds.filter(id => !questionIdsToKeep.includes(id));
+        if (questionsToDelete.length > 0) {
+          await supabase
+            .from('quiz_questions')
+            .delete()
+            .in('id', questionsToDelete);
+        }
+      }
+      
+      return quizData;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['quizzes'] });
+      queryClient.invalidateQueries({ queryKey: ['training-stats'] });
+    },
+    onError: (error: Error) => {
+      console.error('Failed to update quiz:', error);
+    }
+  });
+};
+
+// Delete Quiz Mutation
+export const useDeleteQuiz = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (quizId: string) => {
+      const { error } = await supabase
+        .from('quizzes')
+        .delete()
+        .eq('id', quizId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['quizzes'] });
+      queryClient.invalidateQueries({ queryKey: ['training-stats'] });
+    },
+    onError: (error: Error) => {
+      console.error('Failed to delete quiz:', error);
+    }
+  });
+};
+
 export const useUpdateAssignmentStatus = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();

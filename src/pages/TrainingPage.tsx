@@ -1,26 +1,32 @@
 import React, { useState } from 'react';
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, Loader2, BookOpen, GraduationCap, PenTool, Users, BarChart, UserPlus } from 'lucide-react';
+import { AlertCircle, Loader2, BookOpen, GraduationCap, PenTool, Users, BarChart, UserPlus, Edit, Trash2, MoreHorizontal } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import TrainingHeader from '@/components/training/TrainingHeader';
 import TrainingStatsCards from '@/components/training/TrainingStatsCards';
 import QuizCreator from '@/components/training/QuizCreator';
 import CourseCreator from '@/components/training/CourseCreator';
+import CourseEditor from '@/components/training/CourseEditor';
+import QuizEditor from '@/components/training/QuizEditor';
 import QuizResults from '@/components/training/QuizResults';
 import UserAssignment from '@/components/training/UserAssignment';
 import MyAssignments from '@/components/training/MyAssignments';
 import ModernSectionCard from '@/components/dashboard/ModernSectionCard';
 import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useTrainingCourses, useQuizzes, useTrainingAssignments } from '@/hooks/useTrainingData';
 
 const TrainingPage = () => {
   const { user, loading } = useAuth();
   const [isQuizCreatorOpen, setIsQuizCreatorOpen] = useState(false);
   const [isCourseCreatorOpen, setIsCourseCreatorOpen] = useState(false);
+  const [isCourseEditorOpen, setIsCourseEditorOpen] = useState(false);
+  const [isQuizEditorOpen, setIsQuizEditorOpen] = useState(false);
   const [isQuizResultsOpen, setIsQuizResultsOpen] = useState(false);
   const [isUserAssignmentOpen, setIsUserAssignmentOpen] = useState(false);
   const [isMyAssignmentsOpen, setIsMyAssignmentsOpen] = useState(false);
   const [selectedQuiz, setSelectedQuiz] = useState<any>(null);
+  const [selectedCourse, setSelectedCourse] = useState<any>(null);
   
   const { data: courses = [], isLoading: coursesLoading } = useTrainingCourses();
   const { data: allQuizzes = [], isLoading: quizzesLoading } = useQuizzes();
@@ -77,6 +83,16 @@ const TrainingPage = () => {
 
   const handleAssignContent = () => {
     setIsUserAssignmentOpen(true);
+  };
+
+  const handleEditCourse = (course: any) => {
+    setSelectedCourse(course);
+    setIsCourseEditorOpen(true);
+  };
+
+  const handleEditQuiz = (quiz: any) => {
+    setSelectedQuiz(quiz);
+    setIsQuizEditorOpen(true);
   };
 
   return (
@@ -182,17 +198,45 @@ const TrainingPage = () => {
                 ) : courses.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {courses.map((course: any) => (
-                      <div key={course.id} className="p-4 rounded-lg border bg-card hover:shadow-md transition-shadow">
+                      <div key={course.id} className="p-4 rounded-lg border bg-card hover:shadow-md transition-shadow group">
                         <div className="space-y-2">
-                          <h3 className="font-semibold text-foreground">{course.title}</h3>
-                          <p className="text-sm text-muted-foreground">{course.description}</p>
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <h3 className="font-semibold text-foreground">{course.title}</h3>
+                              <p className="text-sm text-muted-foreground">{course.description}</p>
+                            </div>
+                            {canManageContent && (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                  >
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => handleEditCourse(course)}>
+                                    <Edit className="h-4 w-4 mr-2" />
+                                    Edit Course
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
+                          </div>
                           <div className="flex items-center gap-2">
                             <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">
-                              {course.difficulty || 'Beginner'}
+                              {course.difficulty_level || 'Beginner'}
                             </span>
                             <span className="text-xs text-muted-foreground">
                               {course.training_modules?.length || 0} modules
                             </span>
+                            {!course.is_active && (
+                              <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded">
+                                Inactive
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -233,31 +277,41 @@ const TrainingPage = () => {
                       <Loader2 className="h-6 w-6 animate-spin text-green-500" />
                     </div>
                   ) : allQuizzes.length > 0 ? (
-                    <div className="space-y-3">
-                      {allQuizzes.slice(0, 5).map((quiz: any) => (
-                        <div key={quiz.id} className="p-3 rounded-lg border bg-card/50 hover:bg-card transition-colors group">
-                          <div className="flex items-center justify-between">
-                            <div className="space-y-1">
-                              <h4 className="text-sm font-medium text-foreground">{quiz.title}</h4>
-                              <p className="text-xs text-muted-foreground">
-                                {quiz.quiz_questions?.length || 0} questions • {quiz.passing_score}% to pass
-                              </p>
-                            </div>
-                            {canManageContent && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleViewResults(quiz)}
-                                className="opacity-0 group-hover:opacity-100 transition-opacity gap-1"
-                              >
-                                <BarChart className="h-3 w-3" />
-                                Results
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                     <div className="space-y-3">
+                       {allQuizzes.slice(0, 5).map((quiz: any) => (
+                         <div key={quiz.id} className="p-3 rounded-lg border bg-card/50 hover:bg-card transition-colors group">
+                           <div className="flex items-center justify-between">
+                             <div className="space-y-1 flex-1">
+                               <h4 className="text-sm font-medium text-foreground">{quiz.title}</h4>
+                               <p className="text-xs text-muted-foreground">
+                                 {quiz.quiz_questions?.length || 0} questions • {quiz.passing_score}% to pass
+                               </p>
+                             </div>
+                             {canManageContent && (
+                               <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                 <DropdownMenu>
+                                   <DropdownMenuTrigger asChild>
+                                     <Button variant="ghost" size="sm">
+                                       <MoreHorizontal className="h-3 w-3" />
+                                     </Button>
+                                   </DropdownMenuTrigger>
+                                   <DropdownMenuContent align="end">
+                                     <DropdownMenuItem onClick={() => handleEditQuiz(quiz)}>
+                                       <Edit className="h-4 w-4 mr-2" />
+                                       Edit Quiz
+                                     </DropdownMenuItem>
+                                     <DropdownMenuItem onClick={() => handleViewResults(quiz)}>
+                                       <BarChart className="h-4 w-4 mr-2" />
+                                       View Results
+                                     </DropdownMenuItem>
+                                   </DropdownMenuContent>
+                                 </DropdownMenu>
+                               </div>
+                             )}
+                           </div>
+                         </div>
+                       ))}
+                     </div>
                   ) : (
                     <div className="text-center py-8 text-muted-foreground">
                       <PenTool className="h-8 w-8 mx-auto mb-3 opacity-50" />
@@ -294,6 +348,18 @@ const TrainingPage = () => {
       <CourseCreator 
         open={isCourseCreatorOpen}
         onOpenChange={setIsCourseCreatorOpen}
+      />
+      
+      <CourseEditor 
+        open={isCourseEditorOpen}
+        onOpenChange={setIsCourseEditorOpen}
+        course={selectedCourse}
+      />
+      
+      <QuizEditor 
+        open={isQuizEditorOpen}
+        onOpenChange={setIsQuizEditorOpen}
+        quiz={selectedQuiz}
       />
       
       <QuizResults 
