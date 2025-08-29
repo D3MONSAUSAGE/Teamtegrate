@@ -18,7 +18,7 @@ import {
   User,
   Calendar
 } from 'lucide-react';
-import { useQuizAttempts } from '@/hooks/useTrainingData';
+import { useQuizResultsWithNames } from '@/hooks/useTrainingData';
 import { format } from 'date-fns';
 
 interface QuizResultsProps {
@@ -35,7 +35,7 @@ const QuizResults: React.FC<QuizResultsProps> = ({
   quizTitle 
 }) => {
   const [selectedTab, setSelectedTab] = useState('overview');
-  const { data: attempts = [], isLoading } = useQuizAttempts(quizId);
+  const { data: attempts = [], isLoading } = useQuizResultsWithNames(quizId);
 
   if (!quizId) return null;
 
@@ -71,7 +71,9 @@ const QuizResults: React.FC<QuizResultsProps> = ({
 
   const exportResults = () => {
     const csvData = attempts.map(attempt => ({
-      'User ID': attempt.user_id,
+      'Employee Name': attempt.users?.name || 'Unknown',
+      'Email': attempt.users?.email || 'N/A',
+      'Role': attempt.users?.role || 'N/A',
       'Score': `${attempt.score}/${attempt.max_score}`,
       'Percentage': `${Math.round((attempt.score / attempt.max_score) * 100)}%`,
       'Passed': attempt.passed ? 'Yes' : 'No',
@@ -233,9 +235,9 @@ const QuizResults: React.FC<QuizResultsProps> = ({
                               <User className="h-4 w-4 text-gray-600" />
                             </div>
                             <div>
-                              <p className="font-medium">User {attempt.user_id.slice(0, 8)}...</p>
+                              <p className="font-medium">{attempt.users?.name || 'Unknown User'}</p>
                               <p className="text-sm text-muted-foreground">
-                                {format(new Date(attempt.started_at), 'MMM d, HH:mm')}
+                                {attempt.users?.role} • {format(new Date(attempt.started_at), 'MMM d, HH:mm')}
                               </p>
                             </div>
                           </div>
@@ -268,9 +270,9 @@ const QuizResults: React.FC<QuizResultsProps> = ({
                               <User className="h-5 w-5 text-gray-600" />
                             </div>
                             <div>
-                              <p className="font-semibold">User {user.userId.slice(0, 8)}...</p>
+                              <p className="font-semibold">{attempts.find(a => a.user_id === user.userId)?.users?.name || 'Unknown User'}</p>
                               <p className="text-sm text-muted-foreground">
-                                Last attempt: {format(new Date(user.lastAttempt), 'MMM d, yyyy')}
+                                {attempts.find(a => a.user_id === user.userId)?.users?.role} • Last attempt: {format(new Date(user.lastAttempt), 'MMM d, yyyy')}
                               </p>
                             </div>
                           </div>
@@ -328,7 +330,7 @@ const QuizResults: React.FC<QuizResultsProps> = ({
                           <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground">
                             <div className="flex items-center gap-2">
                               <User className="h-4 w-4" />
-                              <span>User: {attempt.user_id.slice(0, 8)}...</span>
+                              <span>{attempt.users?.name || 'Unknown User'} ({attempt.users?.role})</span>
                             </div>
                             <div className="flex items-center gap-2">
                               <Calendar className="h-4 w-4" />

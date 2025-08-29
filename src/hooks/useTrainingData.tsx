@@ -117,6 +117,120 @@ export const useQuizAttempts = (quizId?: string, userId?: string) => {
   });
 };
 
+// Employee Progress Hook
+export const useEmployeeProgress = () => {
+  const { user } = useAuth();
+  
+  return useQuery({
+    queryKey: ['employee-progress', user?.organizationId],
+    queryFn: async () => {
+      if (!user?.organizationId) return [];
+      
+      // Get all users in the organization
+      const { data: users, error: usersError } = await supabase
+        .from('users')
+        .select('id, name, email, role')
+        .eq('organization_id', user.organizationId);
+      
+      if (usersError) throw usersError;
+      
+      const employeeProgress = await Promise.all(
+        (users || []).map(async (employee) => {
+          // Get training assignments for this employee
+          const { data: assignments } = await supabase
+            .from('training_assignments')
+            .select('*')
+            .eq('assigned_to', employee.id);
+          
+          // Get quiz attempts for this employee
+          const { data: quizAttempts } = await supabase
+            .from('quiz_attempts')
+            .select('*')
+            .eq('user_id', employee.id)
+            .eq('organization_id', user.organizationId);
+          
+          const totalAssignments = assignments?.length || 0;
+          const completedAssignments = assignments?.filter(a => a.status === 'completed').length || 0;
+          const completionRate = totalAssignments > 0 ? Math.round((completedAssignments / totalAssignments) * 100) : 0;
+          
+          // Calculate average quiz score
+          const passedAttempts = quizAttempts?.filter(attempt => attempt.passed) || [];
+          const averageQuizScore = passedAttempts.length > 0 
+            ? Math.round(passedAttempts.reduce((sum, attempt) => sum + (attempt.score / attempt.max_score * 100), 0) / passedAttempts.length)
+            : null;
+          
+          // Get last activity date
+          const lastActivity = assignments?.length > 0 
+            ? new Date(Math.max(...assignments.map(a => new Date(a.assigned_at || 0).getTime())))
+            : null;
+          
+          return {
+            id: employee.id,
+            name: employee.name,
+            email: employee.email,
+            role: employee.role,
+            totalAssignments,
+            completedAssignments,
+            completionRate,
+            averageQuizScore,
+            coursesCompleted: assignments?.filter(a => a.assignment_type === 'course' && a.status === 'completed').length || 0,
+            quizzesCompleted: assignments?.filter(a => a.assignment_type === 'quiz' && a.status === 'completed').length || 0,
+            lastActivity
+          };
+        })
+      );
+      
+      return employeeProgress;
+    },
+    enabled: !!user?.organizationId
+  });
+};
+
+// Quiz Results with User Names Hook
+export const useQuizResultsWithNames = (quizId?: string) => {
+  const { user } = useAuth();
+  
+  return useQuery({
+    queryKey: ['quiz-results-with-names', quizId, user?.organizationId],
+    queryFn: async () => {
+      if (!quizId || !user?.organizationId) return [];
+      
+      // Get quiz attempts first
+      const { data: attempts, error: attemptsError } = await supabase
+        .from('quiz_attempts')
+        .select('*')
+        .eq('quiz_id', quizId)
+        .eq('organization_id', user.organizationId)
+        .order('started_at', { ascending: false });
+      
+      if (attemptsError) throw attemptsError;
+      
+      if (!attempts || attempts.length === 0) return [];
+      
+      // Get unique user IDs from attempts
+      const userIds = Array.from(new Set(attempts.map(attempt => attempt.user_id)));
+      
+      // Get user information for these IDs
+      const { data: users, error: usersError } = await supabase
+        .from('users')
+        .select('id, name, email, role')
+        .in('id', userIds)
+        .eq('organization_id', user.organizationId);
+      
+      if (usersError) throw usersError;
+      
+      // Combine attempts with user data
+      const attemptsWithUsers = attempts.map(attempt => ({
+        ...attempt,
+        users: users?.find(u => u.id === attempt.user_id) || null
+      }));
+      
+      return attemptsWithUsers;
+    },
+    enabled: !!quizId && !!user?.organizationId
+  });
+};
+
 // Training Statistics Hook
 export const useTrainingStats = () => {
   const { user } = useAuth();

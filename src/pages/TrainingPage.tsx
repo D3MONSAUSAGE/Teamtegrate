@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, Loader2, BookOpen, GraduationCap, PenTool, Users, BarChart, UserPlus, Edit, Trash2, MoreHorizontal } from 'lucide-react';
+import { AlertCircle, Loader2, BookOpen, GraduationCap, PenTool, Users, BarChart, UserPlus, Edit, Trash2, MoreHorizontal, TrendingUp } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import TrainingHeader from '@/components/training/TrainingHeader';
 import TrainingStatsCards from '@/components/training/TrainingStatsCards';
@@ -11,6 +11,7 @@ import QuizEditor from '@/components/training/QuizEditor';
 import QuizResults from '@/components/training/QuizResults';
 import UserAssignment from '@/components/training/UserAssignment';
 import MyAssignments from '@/components/training/MyAssignments';
+import EmployeeProgressDashboard from '@/components/training/EmployeeProgressDashboard';
 import ModernSectionCard from '@/components/dashboard/ModernSectionCard';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -25,6 +26,7 @@ const TrainingPage = () => {
   const [isQuizResultsOpen, setIsQuizResultsOpen] = useState(false);
   const [isUserAssignmentOpen, setIsUserAssignmentOpen] = useState(false);
   const [isMyAssignmentsOpen, setIsMyAssignmentsOpen] = useState(false);
+  const [isEmployeeProgressOpen, setIsEmployeeProgressOpen] = useState(false);
   const [selectedQuiz, setSelectedQuiz] = useState<any>(null);
   const [selectedCourse, setSelectedCourse] = useState<any>(null);
   
@@ -337,6 +339,39 @@ const TrainingPage = () => {
             </div>
           </div>
         </div>
+
+        {/* Employee Progress Section - Only for Managers+ */}
+        {canManageContent && (
+          <div className="animate-fade-in" style={{ animationDelay: '600ms' }}>
+            <ModernSectionCard
+              title="Employee Training Analytics"
+              subtitle="Monitor team learning progress and performance metrics"
+              icon={TrendingUp}
+              gradient="from-indigo-500/10 via-blue-500/10 to-cyan-500/10"
+              headerAction={
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsEmployeeProgressOpen(true)}
+                  className="gap-2"
+                >
+                  <Users className="h-4 w-4" />
+                  View Analytics
+                </Button>
+              }
+            >
+              <div className="text-center py-8 text-muted-foreground">
+                <TrendingUp className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p className="text-lg font-medium mb-2">Employee Progress Dashboard</p>
+                <p className="text-sm mb-4">Get comprehensive insights into your team's training performance</p>
+                <Button onClick={() => setIsEmployeeProgressOpen(true)}>
+                  <BarChart className="h-4 w-4 mr-2" />
+                  Open Dashboard
+                </Button>
+              </div>
+            </ModernSectionCard>
+          </div>
+        )}
       </div>
 
       {/* Dialogs */}
@@ -377,6 +412,11 @@ const TrainingPage = () => {
       <MyAssignments 
         open={isMyAssignmentsOpen}
         onOpenChange={setIsMyAssignmentsOpen}
+      />
+
+      <EmployeeProgressDashboard
+        open={isEmployeeProgressOpen}
+        onOpenChange={setIsEmployeeProgressOpen}
       />
     </div>
   );
