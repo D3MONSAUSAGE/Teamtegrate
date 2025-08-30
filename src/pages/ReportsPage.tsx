@@ -1,19 +1,19 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, Suspense } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import ProjectReports from '@/components/reports/ProjectReports';
-import TeamReports from '@/components/reports/TeamReports';
-import TaskReports from '@/components/reports/TaskReports';
-import TeamTimeReports from '@/components/reports/TeamTimeReports';
-import DailyPerformanceReport from '@/components/reports/DailyPerformanceReport';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { TrendingUp, TrendingDown, Users, CheckCircle, Clock, AlertCircle, BarChart3, PieChart, Activity, FileText, Calendar } from "lucide-react";
 import AnalyticsOverview from '@/components/reports/AnalyticsOverview';
 import EnhancedTeamAnalytics from '@/components/reports/EnhancedTeamAnalytics';
 import SmartInsightsPanel from '@/components/reports/SmartInsightsPanel';
 import ReportsFilters from '@/components/reports/ReportsFilters';
-import { ReportsLoadingSkeleton } from '@/components/reports/LoadingSkeleton';
-import { ReportsErrorBoundary } from '@/components/reports/ErrorBoundary';
+import ProjectReports from '@/components/reports/ProjectReports';
+import TaskReports from '@/components/reports/TaskReports';
+import TeamTimeReports from '@/components/reports/TeamTimeReports';
+import DailyPerformanceReport from '@/components/reports/DailyPerformanceReport';
 import ManagerDashboard from '@/components/reports/manager/ManagerDashboard';
 import EmployeeReports from '@/components/reports/EmployeeReports';
-import TimelinePage from './TimelinePage';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useTask } from '@/contexts/task';
 import { useAuth } from '@/contexts/AuthContext';
@@ -25,9 +25,148 @@ import { toast } from 'sonner';
 import type { ExportType } from '@/hooks/useEnhancedExport';
 import { calculateDateRange, formatDateRangeForExport } from '@/utils/dateRangeUtils';
 
+// Dashboard Executive Summary Component
+const ExecutiveSummary: React.FC<{ metrics: any; isLoading: boolean }> = ({ metrics, isLoading }) => {
+  const summaryCards = [
+    {
+      title: "Total Tasks",
+      value: metrics.totalTasks,
+      icon: FileText,
+      change: metrics.trendsData.tasksChange,
+      color: "bg-blue-500/10 text-blue-600",
+    },
+    {
+      title: "Completed",
+      value: metrics.completedTasks,
+      icon: CheckCircle,
+      change: metrics.trendsData.completionRateChange,
+      color: "bg-green-500/10 text-green-600",
+    },
+    {
+      title: "Team Members",
+      value: metrics.teamMembers,
+      icon: Users,
+      color: "bg-purple-500/10 text-purple-600",
+    },
+    {
+      title: "Active Projects",
+      value: metrics.activeProjects,
+      icon: BarChart3,
+      color: "bg-orange-500/10 text-orange-600",
+    },
+    {
+      title: "Completion Rate",
+      value: `${metrics.averageCompletionRate}%`,
+      icon: TrendingUp,
+      change: metrics.trendsData.completionRateChange,
+      color: "bg-cyan-500/10 text-cyan-600",
+    },
+    {
+      title: "Overdue Tasks",
+      value: metrics.overdueTasks,
+      icon: AlertCircle,
+      color: "bg-red-500/10 text-red-600",
+    },
+  ];
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Card key={i}>
+            <CardContent className="p-4">
+              <Skeleton className="h-4 w-20 mb-2" />
+              <Skeleton className="h-8 w-16 mb-1" />
+              <Skeleton className="h-3 w-12" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      {summaryCards.map((card, index) => {
+        const Icon = card.icon;
+        return (
+          <Card key={index} className="relative overflow-hidden">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <div className={`p-2 rounded-lg ${card.color}`}>
+                  <Icon className="h-4 w-4" />
+                </div>
+                {card.change && (
+                  <Badge variant={card.change > 0 ? "default" : "destructive"} className="text-xs">
+                    {card.change > 0 ? "+" : ""}{card.change}%
+                  </Badge>
+                )}
+              </div>
+              <div className="space-y-1">
+                <p className="text-2xl font-bold">{card.value}</p>
+                <p className="text-xs text-muted-foreground">{card.title}</p>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })}
+    </div>
+  );
+};
+
+// Quick Actions Panel Component
+const QuickActionsPanel: React.FC<{ onExport: (type: ExportType) => void }> = ({ onExport }) => {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg">Quick Actions</CardTitle>
+        <CardDescription>Common reports and actions</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <button
+          onClick={() => onExport('overview')}
+          className="w-full p-3 text-left rounded-lg border hover:bg-muted/50 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <FileText className="h-4 w-4 text-muted-foreground" />
+            <div>
+              <p className="font-medium text-sm">Export Overview</p>
+              <p className="text-xs text-muted-foreground">General metrics summary</p>
+            </div>
+          </div>
+        </button>
+        <button
+          onClick={() => onExport('detailed-tasks')}
+          className="w-full p-3 text-left rounded-lg border hover:bg-muted/50 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <BarChart3 className="h-4 w-4 text-muted-foreground" />
+            <div>
+              <p className="font-medium text-sm">Export Task Details</p>
+              <p className="text-xs text-muted-foreground">Complete task breakdown</p>
+            </div>
+          </div>
+        </button>
+        <button
+          onClick={() => onExport('user-performance')}
+          className="w-full p-3 text-left rounded-lg border hover:bg-muted/50 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <Users className="h-4 w-4 text-muted-foreground" />
+            <div>
+              <p className="font-medium text-sm">Export Team Performance</p>
+              <p className="text-xs text-muted-foreground">Individual metrics</p>
+            </div>
+          </div>
+        </button>
+      </CardContent>
+    </Card>
+  );
+};
+
 const ReportsPage: React.FC = () => {
   const isMobile = useIsMobile();
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState("dashboard");
   
   // Data hooks
   const { user } = useAuth();
@@ -408,163 +547,315 @@ const ReportsPage: React.FC = () => {
         </div>
       </div>
       
-      <ReportsFilters
-        dateRange={dateRange}
-        onDateRangeChange={setDateRange}
-        timeRange={timeRange}
-        onTimeRangeChange={setTimeRange}
-        selectedProjects={selectedProjects}
-        onProjectsChange={setSelectedProjects}
-        selectedMembers={selectedMembers}
-        onMembersChange={setSelectedMembers}
-        availableProjects={availableProjects}
-        availableMembers={availableMembers}
-        onReset={handleResetFilters}
-        onExport={handleExport}
-      />
+      {/* Simplified Sticky Filter Bar */}
+      <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-sm border-b pb-4">
+        <ReportsFilters
+          dateRange={dateRange}
+          onDateRangeChange={setDateRange}
+          timeRange={timeRange}
+          onTimeRangeChange={setTimeRange}
+          selectedProjects={selectedProjects}
+          onProjectsChange={setSelectedProjects}
+          selectedMembers={selectedMembers}
+          onMembersChange={setSelectedMembers}
+          availableProjects={availableProjects}
+          availableMembers={availableMembers}
+          onReset={handleResetFilters}
+          onExport={handleExport}
+        />
+      </div>
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        {/* Simplified Tab Navigation - 5 tabs instead of 9 */}
         <div className="relative w-full overflow-hidden">
-          <TabsList className="relative w-full flex gap-1 overflow-x-auto scrollbar-none before:absolute before:right-0 before:top-0 before:bottom-0 before:w-4 before:bg-gradient-to-l before:from-background before:z-10 after:absolute after:left-0 after:top-0 after:bottom-0 after:w-4 after:bg-gradient-to-r after:from-background after:z-10">
-            <div className="flex gap-1 px-4 py-1 min-w-full justify-between md:justify-start">
+          <TabsList className="relative w-full h-12 bg-muted/30 p-1">
+            <div className="flex w-full justify-between">
               <TabsTrigger 
-                value="overview" 
-                className="flex-1 md:flex-none px-3 min-w-[100px] data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
+                value="dashboard" 
+                className="flex-1 h-10 data-[state=active]:bg-background data-[state=active]:shadow-sm"
               >
-                Overview
+                <Activity className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">Dashboard</span>
+                <span className="sm:hidden">Dash</span>
               </TabsTrigger>
-              {hasManagerAccess && (
-                <TabsTrigger 
-                  value="manager" 
-                  className="flex-1 md:flex-none px-3 min-w-[120px] data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
-                >
-                  Manager Dashboard
-                </TabsTrigger>
-              )}
               <TabsTrigger 
                 value="team" 
-                className="flex-1 md:flex-none px-3 min-w-[80px] data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
+                className="flex-1 h-10 data-[state=active]:bg-background data-[state=active]:shadow-sm"
               >
-                Team Analytics
-              </TabsTrigger>
-              <TabsTrigger 
-                value="performance" 
-                className="flex-1 md:flex-none px-3 min-w-[100px] data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
-              >
-                Performance
-              </TabsTrigger>
-              <TabsTrigger 
-                value="tasks" 
-                className="flex-1 md:flex-none px-3 min-w-[80px] data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
-              >
-                Tasks
+                <Users className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">Team Analytics</span>
+                <span className="sm:hidden">Team</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="projects" 
-                className="flex-1 md:flex-none px-3 min-w-[80px] data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
+                className="flex-1 h-10 data-[state=active]:bg-background data-[state=active]:shadow-sm"
               >
-                Projects
+                <BarChart3 className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">Projects & Tasks</span>
+                <span className="sm:hidden">Tasks</span>
               </TabsTrigger>
               <TabsTrigger 
-                value="time" 
-                className="flex-1 md:flex-none px-3 min-w-[80px] data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
+                value="performance" 
+                className="flex-1 h-10 data-[state=active]:bg-background data-[state=active]:shadow-sm"
               >
-                Time
+                <TrendingUp className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">Time & Performance</span>
+                <span className="sm:hidden">Time</span>
               </TabsTrigger>
-              <TabsTrigger 
-                value="timeline" 
-                className="flex-1 md:flex-none px-3 min-w-[80px] data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
-              >
-                Timeline
-              </TabsTrigger>
-              <TabsTrigger 
-                value="employee" 
-                className="flex-1 md:flex-none px-3 min-w-[110px] data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
-              >
-                Employee
-              </TabsTrigger>
+              {hasManagerAccess && (
+                <TabsTrigger 
+                  value="advanced" 
+                  className="flex-1 h-10 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                >
+                  <PieChart className="h-4 w-4 mr-2" />
+                  <span className="hidden sm:inline">Advanced Reports</span>
+                  <span className="sm:hidden">Advanced</span>
+                </TabsTrigger>
+              )}
+            </div>
+          </TabsList>
         </div>
-      </TabsList>
 
-      <TabsContent value="overview" className="space-y-6">
-          <ReportsErrorBoundary>
-            <AnalyticsOverview {...overviewMetrics} />
-          </ReportsErrorBoundary>
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-            <div className="xl:col-span-2">
-              <ReportsErrorBoundary>
-                <EnhancedTeamAnalytics teamMembers={enhancedTeamData} />
-              </ReportsErrorBoundary>
-            </div>
-            <div>
-              <ReportsErrorBoundary>
-                <SmartInsightsPanel 
-                  teamData={overviewMetrics}
-                  performanceData={teamMembersPerformance}
-                />
-              </ReportsErrorBoundary>
-            </div>
-          </div>
-        </TabsContent>
-        
-        {hasManagerAccess && (
-          <TabsContent value="manager" className="space-y-4">
-            <ReportsErrorBoundary>
-              <ManagerDashboard 
-                timeRange={timeRange}
-                teamMembers={teamMembersPerformance}
+        <div className="mt-6 space-y-6">
+          {/* Dashboard Tab - New Executive Summary Layout */}
+          <TabsContent value="dashboard" className="space-y-6">
+            <div className="space-y-6">
+              {/* Executive Summary Bar */}
+              <ExecutiveSummary 
+                metrics={overviewMetrics} 
+                isLoading={teamMembersPerformance.length === 0} 
               />
-            </ReportsErrorBoundary>
-          </TabsContent>
-        )}
-        
-        <TabsContent value="team" className="space-y-4">
-          <ReportsErrorBoundary>
-            <EnhancedTeamAnalytics teamMembers={enhancedTeamData} />
-          </ReportsErrorBoundary>
-        </TabsContent>
-        
-        <TabsContent value="performance" className="space-y-4">
-          <ReportsErrorBoundary>
-            <DailyPerformanceReport />
-          </ReportsErrorBoundary>
-        </TabsContent>
-        
-        <TabsContent value="tasks" className="space-y-4">
-          <ReportsErrorBoundary>
-            <TaskReports />
-          </ReportsErrorBoundary>
-        </TabsContent>
-        
-        <TabsContent value="projects" className="space-y-4">
-          <ReportsErrorBoundary>
-            <ProjectReports />
-          </ReportsErrorBoundary>
-        </TabsContent>
-        
-        <TabsContent value="time" className="space-y-4">
-          <ReportsErrorBoundary>
-            <TeamTimeReports />
-          </ReportsErrorBoundary>
-        </TabsContent>
-        
-        <TabsContent value="timeline" className="space-y-4">
-          <ReportsErrorBoundary>
-            <TimelinePage />
-          </ReportsErrorBoundary>
-        </TabsContent>
+              
+              {/* Main Dashboard Layout - 60/40 split */}
+              <div className="grid gap-6 lg:grid-cols-5">
+                {/* Left Column - Primary insights (60%) */}
+                <div className="lg:col-span-3 space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <BarChart3 className="h-5 w-5" />
+                        Performance Overview
+                      </CardTitle>
+                      <CardDescription>
+                        Key performance indicators and trends
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <AnalyticsOverview
+                        totalTasks={overviewMetrics.totalTasks}
+                        completedTasks={overviewMetrics.completedTasks}
+                        teamMembers={overviewMetrics.teamMembers}
+                        activeProjects={overviewMetrics.activeProjects}
+                        averageCompletionRate={overviewMetrics.averageCompletionRate}
+                        trendsData={overviewMetrics.trendsData}
+                      />
+                    </CardContent>
+                  </Card>
 
-        <TabsContent value="employee" className="space-y-4">
-          <ReportsErrorBoundary>
-            <EmployeeReports 
-              timeRange={timeRange}
-              dateRange={dateRange}
-              selectedMembers={selectedMembers}
-            />
-          </ReportsErrorBoundary>
-        </TabsContent>
-      </div>
-    </Tabs>
+                  {/* Team Performance Hub */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Users className="h-5 w-5" />
+                        Team Performance Hub
+                      </CardTitle>
+                      <CardDescription>
+                        Interactive team analytics and insights
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <Suspense fallback={<Skeleton className="h-64 w-full" />}>
+                        <EnhancedTeamAnalytics teamMembers={enhancedTeamData.slice(0, 5)} />
+                      </Suspense>
+                    </CardContent>
+                  </Card>
+                </div>
+                
+                {/* Right Column - Secondary metrics and actions (40%) */}
+                <div className="lg:col-span-2 space-y-6">
+                  {/* Smart Insights - Prominent placement */}
+                  <SmartInsightsPanel
+                    teamData={{
+                      totalTasks: overviewMetrics.totalTasks,
+                      completedTasks: overviewMetrics.completedTasks,
+                      teamMembers: overviewMetrics.teamMembers,
+                      averageCompletionRate: overviewMetrics.averageCompletionRate,
+                      overdueTasks: overviewMetrics.overdueTasks,
+                      highPriorityTasks: overviewMetrics.highPriorityTasks
+                    }}
+                    performanceData={teamMembersPerformance}
+                  />
+
+                  {/* Quick Actions Panel */}
+                  <QuickActionsPanel onExport={handleExport} />
+
+                  {/* Recent Activity Feed */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <Clock className="h-4 w-4" />
+                        Recent Activity
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                          <div className="text-sm">
+                            <p className="font-medium">5 tasks completed today</p>
+                            <p className="text-xs text-muted-foreground">Team average: 3.2 tasks</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
+                          <AlertCircle className="h-4 w-4 text-orange-600" />
+                          <div className="text-sm">
+                            <p className="font-medium">2 tasks approaching deadline</p>
+                            <p className="text-xs text-muted-foreground">Due within 24 hours</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
+                          <TrendingUp className="h-4 w-4 text-blue-600" />
+                          <div className="text-sm">
+                            <p className="font-medium">Productivity increased 8%</p>
+                            <p className="text-xs text-muted-foreground">vs last week</p>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* Team Analytics Tab */}
+          <TabsContent value="team" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Detailed Team Analytics
+                </CardTitle>
+                <CardDescription>
+                  Comprehensive team performance analysis and member insights
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Suspense fallback={<Skeleton className="h-96 w-full" />}>
+                  <EnhancedTeamAnalytics teamMembers={enhancedTeamData} />
+                </Suspense>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Projects & Tasks Tab - Combined */}
+          <TabsContent value="projects" className="space-y-6">
+            <div className="grid gap-6 lg:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Task Reports
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Suspense fallback={<Skeleton className="h-64 w-full" />}>
+                    <TaskReports />
+                  </Suspense>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5" />
+                    Project Reports
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Suspense fallback={<Skeleton className="h-64 w-full" />}>
+                    <ProjectReports />
+                  </Suspense>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Time & Performance Tab - Combined */}
+          <TabsContent value="performance" className="space-y-6">
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Clock className="h-5 w-5" />
+                    Time Tracking & Performance
+                  </CardTitle>
+                  <CardDescription>
+                    Time management and performance analytics
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-6 lg:grid-cols-2">
+                    <Suspense fallback={<Skeleton className="h-64 w-full" />}>
+                      <TeamTimeReports />
+                    </Suspense>
+                    <Suspense fallback={<Skeleton className="h-64 w-full" />}>
+                      <DailyPerformanceReport />
+                    </Suspense>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Advanced Reports Tab - Manager Dashboard and Employee Reports */}
+          {hasManagerAccess && (
+            <TabsContent value="advanced" className="space-y-6">
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <PieChart className="h-5 w-5" />
+                      Manager Dashboard
+                    </CardTitle>
+                    <CardDescription>
+                      Advanced management insights and detailed reporting
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Suspense fallback={<Skeleton className="h-96 w-full" />}>
+                      <ManagerDashboard 
+                        timeRange={timeRange}
+                        teamMembers={teamMembers}
+                      />
+                    </Suspense>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Users className="h-5 w-5" />
+                      Employee-Specific Reports
+                    </CardTitle>
+                    <CardDescription>
+                      Individual employee performance and detailed analysis
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Suspense fallback={<Skeleton className="h-64 w-full" />}>
+                      <EmployeeReports 
+                        timeRange={timeRange}
+                        selectedMembers={selectedMembers}
+                      />
+                    </Suspense>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+          )}
+        </div>
+      </Tabs>
     </div>
   );
 };
