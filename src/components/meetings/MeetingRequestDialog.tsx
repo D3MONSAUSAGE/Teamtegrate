@@ -37,31 +37,34 @@ export const MeetingRequestDialog: React.FC<MeetingRequestDialogProps> = ({
   const [selectedParticipants, setSelectedParticipants] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Initialize form when dialog opens
+  // Stop console spam and prevent infinite loops
   React.useEffect(() => {
     if (open) {
-      console.log("🔧 MeetingRequestDialog: Dialog opened, initializing form");
-      setStartDateObj(defaultDate);
-      setEndDateObj(defaultDate);
-      setStartTime('09:00');
-      setEndTime('10:00');
-      // Reset other fields
-      setTitle('');
-      setDescription('');
-      setLocation('');
-      setSelectedParticipants([]);
+      // Only initialize once when dialog truly opens
+      const shouldInitialize = !title && !description && !location && selectedParticipants.length === 0;
       
-      // Focus first input after a short delay to ensure DOM is ready
-      setTimeout(() => {
-        const titleInput = document.getElementById('title');
-        if (titleInput) {
-          titleInput.focus();
-        }
-      }, 100);
-    } else {
-      console.log("🔧 MeetingRequestDialog: Dialog closed");
+      if (shouldInitialize) {
+        setStartDateObj(defaultDate);
+        setEndDateObj(defaultDate);
+        setStartTime('09:00');
+        setEndTime('10:00');
+        setTitle('');
+        setDescription('');
+        setLocation('');
+        setSelectedParticipants([]);
+        
+        // Focus first input after DOM is ready
+        const timeoutId = setTimeout(() => {
+          const titleInput = document.getElementById('title');
+          if (titleInput) {
+            titleInput.focus();
+          }
+        }, 100);
+        
+        return () => clearTimeout(timeoutId);
+      }
     }
-  }, [open, defaultDate]);
+  }, [open]); // Only depend on open state
 
   const { createMeetingRequest } = useMeetingRequests();
   const { users } = useOrganizationUsers();

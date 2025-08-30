@@ -118,19 +118,24 @@ export const useAuthSession = () => {
     }
   }, [createUserFromSession]);
 
-  // Combined update function that works in two phases
+  // Combined update function that works in two phases with stability checks
   const updateSession = useCallback(async (newSession: Session | null) => {
+    // Prevent unnecessary updates if session hasn't actually changed
+    if (session === newSession) {
+      return;
+    }
+    
     // Phase 1: Set session and basic user data synchronously
     updateSessionSync(newSession);
     
     // Phase 2: Enhance user profile asynchronously (only if session exists)
     if (newSession?.user) {
-      // Use setTimeout to defer this to next tick
-      setTimeout(() => {
+      // Use requestAnimationFrame to defer this properly
+      requestAnimationFrame(() => {
         enhanceUserProfile(newSession);
-      }, 0);
+      });
     }
-  }, [updateSessionSync, enhanceUserProfile]);
+  }, [session, updateSessionSync, enhanceUserProfile]);
 
   const refreshUserSession = useCallback(async (): Promise<void> => {
     try {

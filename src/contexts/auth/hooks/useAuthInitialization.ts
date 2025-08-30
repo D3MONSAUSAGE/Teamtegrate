@@ -9,11 +9,15 @@ interface UseAuthInitializationProps {
 
 export const useAuthInitialization = ({ updateSession, setLoading }: UseAuthInitializationProps) => {
   useEffect(() => {
-    console.log('AuthInitialization: Starting auth setup');
+    let isMounted = true;
 
     const initializeAuth = async () => {
+      if (!isMounted) return;
+      
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (!isMounted) return;
         
         if (error) {
           console.error('AuthInitialization: Session error:', error);
@@ -23,35 +27,40 @@ export const useAuthInitialization = ({ updateSession, setLoading }: UseAuthInit
           await updateSession(session);
         }
       } catch (error) {
+        if (!isMounted) return;
         console.error('AuthInitialization: Init error:', error);
         await updateSession(null);
         setLoading(false);
       }
     };
 
-    // Set up auth state listener - MUST be synchronous to prevent deadlocks
+    // Set up auth state listener with proper cleanup
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        if (!isMounted) return;
+        
         console.log('AuthInitialization: Auth state change:', event);
         
         // Only handle non-initial session changes
         if (event !== 'INITIAL_SESSION') {
-          // Use setTimeout to defer async operations and prevent deadlock
-          setTimeout(() => {
-            updateSession(session).catch(error => {
-              console.error('AuthInitialization: Update session error:', error);
-              setLoading(false);
-            });
-          }, 0);
+          // Use requestAnimationFrame to defer async operations
+          requestAnimationFrame(() => {
+            if (isMounted) {
+              updateSession(session).catch(error => {
+                console.error('AuthInitialization: Update session error:', error);
+                if (isMounted) setLoading(false);
+              });
+            }
+          });
         }
       }
     );
 
-    // Initialize auth after setting up listener
+    // Initialize auth
     initializeAuth();
 
     return () => {
-      console.log('AuthInitialization: Cleaning up');
+      isMounted = false;
       subscription.unsubscribe();
     };
   }, []); // Remove dependencies to prevent re-initialization
