@@ -52,8 +52,38 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onComplete, onExit }) => {
   const [results, setResults] = useState<QuizResults | null>(null);
   const submitAttempt = useSubmitQuizAttempt();
 
+  // Safety checks for quiz data
+  if (!quiz.questions || quiz.questions.length === 0) {
+    return (
+      <Card className="max-w-2xl mx-auto">
+        <CardHeader>
+          <CardTitle>Quiz Error</CardTitle>
+          <CardDescription>This quiz has no questions available.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button onClick={onExit}>Return to Course</Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const currentQ = quiz.questions[currentQuestion];
   const progress = ((currentQuestion + 1) / quiz.questions.length) * 100;
+
+  // Additional safety check for current question
+  if (!currentQ) {
+    return (
+      <Card className="max-w-2xl mx-auto">
+        <CardHeader>
+          <CardTitle>Quiz Error</CardTitle>
+          <CardDescription>Unable to load the current question.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button onClick={onExit}>Return to Course</Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   // Timer effect
   useEffect(() => {
@@ -98,16 +128,17 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onComplete, onExit }) => {
 
   const calculateResults = (): QuizResults => {
     let score = 0;
-    const maxScore = quiz.questions.reduce((sum, q) => sum + q.points, 0);
+    const maxScore = quiz.questions.reduce((sum, q) => sum + (q?.points || 0), 0);
 
     quiz.questions.forEach(question => {
+      if (!question) return;
       const userAnswer = answers[question.id];
       if (userAnswer === question.correctAnswer) {
-        score += question.points;
+        score += question.points || 0;
       }
     });
 
-    const passed = (score / maxScore) * 100 >= quiz.passingScore;
+    const passed = maxScore > 0 ? (score / maxScore) * 100 >= quiz.passingScore : false;
     const timeSpent = Math.floor((Date.now() - startTime) / 1000);
 
     return {
