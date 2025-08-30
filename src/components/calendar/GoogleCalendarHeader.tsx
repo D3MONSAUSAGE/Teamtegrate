@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Menu, ChevronLeft, ChevronRight, Plus, Search, Settings, Grid3X3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { format } from 'date-fns';
+import { format, startOfWeek, endOfWeek } from 'date-fns';
 import CalendarViewSelector from './CalendarViewSelector';
+import SearchDialog from './SearchDialog';
+import SettingsDialog from './SettingsDialog';
 
 interface GoogleCalendarHeaderProps {
   selectedDate: Date;
@@ -13,6 +15,7 @@ interface GoogleCalendarHeaderProps {
   onToday: () => void;
   onAddTask: () => void;
   onScheduleMeeting: () => void;
+  onMenuToggle?: () => void;
 }
 
 const GoogleCalendarHeader: React.FC<GoogleCalendarHeaderProps> = ({
@@ -23,13 +26,30 @@ const GoogleCalendarHeader: React.FC<GoogleCalendarHeaderProps> = ({
   onNextMonth,
   onToday,
   onAddTask,
-  onScheduleMeeting
+  onScheduleMeeting,
+  onMenuToggle
 }) => {
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+  const getDateLabel = () => {
+    switch (viewType) {
+      case 'day':
+        return format(selectedDate, 'EEEE, MMMM d, yyyy');
+      case 'week':
+        const weekStart = startOfWeek(selectedDate);
+        const weekEnd = endOfWeek(selectedDate);
+        return `${format(weekStart, 'MMM d')} - ${format(weekEnd, 'MMM d, yyyy')}`;
+      case 'month':
+      default:
+        return format(selectedDate, 'MMMM yyyy');
+    }
+  };
   return (
     <header className="flex items-center justify-between h-16 px-6 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
       {/* Left section */}
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="sm" className="p-2">
+        <Button variant="ghost" size="sm" className="p-2" onClick={onMenuToggle}>
           <Menu className="h-5 w-5" />
         </Button>
         
@@ -72,13 +92,13 @@ const GoogleCalendarHeader: React.FC<GoogleCalendarHeaderProps> = ({
         </div>
 
         <h1 className="text-xl font-normal text-gray-900 dark:text-gray-100 min-w-[200px]">
-          {format(selectedDate, 'MMMM yyyy')}
+          {getDateLabel()}
         </h1>
       </div>
 
       {/* Right section */}
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="sm" className="p-2">
+        <Button variant="ghost" size="sm" className="p-2" onClick={() => setIsSearchOpen(true)}>
           <Search className="h-5 w-5" />
         </Button>
         
@@ -87,11 +107,11 @@ const GoogleCalendarHeader: React.FC<GoogleCalendarHeaderProps> = ({
           onViewChange={onViewChange}
         />
         
-        <Button variant="ghost" size="sm" className="p-2">
+        <Button variant="ghost" size="sm" className="p-2" onClick={() => setIsSettingsOpen(true)}>
           <Settings className="h-5 w-5" />
         </Button>
         
-        <Button variant="ghost" size="sm" className="p-2">
+        <Button variant="ghost" size="sm" className="p-2" title="Grid View (Coming Soon)">
           <Grid3X3 className="h-5 w-5" />
         </Button>
         
@@ -103,6 +123,9 @@ const GoogleCalendarHeader: React.FC<GoogleCalendarHeaderProps> = ({
           Create
         </Button>
       </div>
+
+      <SearchDialog open={isSearchOpen} onOpenChange={setIsSearchOpen} />
+      <SettingsDialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
     </header>
   );
 };
