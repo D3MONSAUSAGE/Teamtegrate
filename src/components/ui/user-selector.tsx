@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
 interface User {
@@ -36,6 +36,7 @@ export const UserSelector: React.FC<UserSelectorProps> = ({
   multiple = false
 }) => {
   const [open, setOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Debug logging
   console.log('👥 UserSelector: Received users:', users);
@@ -43,6 +44,15 @@ export const UserSelector: React.FC<UserSelectorProps> = ({
 
   const selectedUsers = users.filter(user => selectedUserIds.includes(user.id));
   const availableUsers = users.filter(user => !selectedUserIds.includes(user.id));
+  
+  // Filter users based on search term
+  const filteredUsers = availableUsers.filter(user => {
+    if (!searchTerm) return true;
+    const searchLower = searchTerm.toLowerCase();
+    return user.name.toLowerCase().includes(searchLower) ||
+           user.email?.toLowerCase().includes(searchLower) ||
+           user.role?.toLowerCase().includes(searchLower);
+  });
 
   const handleUserSelect = (userId: string) => {
     console.log('👥 UserSelector: User selected:', userId);
@@ -155,68 +165,76 @@ export const UserSelector: React.FC<UserSelectorProps> = ({
               e.preventDefault();
             }}
           >
-            <Command className="pointer-events-auto">
-              <CommandInput 
-                placeholder="Search team members..." 
-                className="h-9 pointer-events-auto"
-                onFocus={() => console.log('👥 CommandInput focused')}
-              />
-              <CommandList className="pointer-events-auto max-h-60 overflow-y-auto">
-                <CommandEmpty>No team members found.</CommandEmpty>
-                <CommandGroup className="pointer-events-auto">
-                  {availableUsers.length > 0 ? (
-                    availableUsers.map(user => {
-                      console.log('👥 Rendering user item:', user.name);
-                      return (
-                        <div
-                          key={user.id}
-                          className="flex items-center gap-3 p-3 cursor-pointer hover:bg-accent rounded-sm transition-colors relative"
-                          onClick={(e) => {
-                            console.log('👥 DIV onClick triggered for:', user.name, user.id);
+            <div className="flex flex-col">
+              <div className="p-3 border-b border-border">
+                <Input 
+                  placeholder="Search team members..." 
+                  value={searchTerm}
+                  onChange={(e) => {
+                    console.log('👥 Search term changed:', e.target.value);
+                    setSearchTerm(e.target.value);
+                  }}
+                  className="h-9"
+                />
+              </div>
+              <div className="max-h-60 overflow-y-auto">
+                {filteredUsers.length > 0 ? (
+                  filteredUsers.map(user => {
+                    console.log('👥 Rendering user item:', user.name, user.id);
+                    return (
+                      <div
+                        key={user.id}
+                        className="flex items-center gap-3 p-3 cursor-pointer hover:bg-accent transition-colors"
+                        onClick={(e) => {
+                          console.log('👥 User clicked:', user.name, user.id);
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleUserSelect(user.id);
+                        }}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            console.log('👥 User selected via keyboard:', user.name);
                             e.preventDefault();
-                            e.stopPropagation();
                             handleUserSelect(user.id);
-                          }}
-                          onMouseDown={(e) => {
-                            console.log('👥 DIV onMouseDown triggered for:', user.name);
-                            e.preventDefault();
-                          }}
-                        >
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage src={user.avatar_url || user.avatar} />
-                            <AvatarFallback>
-                              {getInitials(user.name)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium truncate">{user.name}</span>
-                              {user.role && (
-                                <Badge 
-                                  variant={getRoleBadgeVariant(user.role)} 
-                                  className="text-xs px-1.5 py-0"
-                                >
-                                  {user.role}
-                                </Badge>
-                              )}
-                            </div>
-                            {user.email && (
-                              <p className="text-sm text-muted-foreground truncate">
-                                {user.email}
-                              </p>
+                          }
+                        }}
+                      >
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={user.avatar_url || user.avatar} />
+                          <AvatarFallback>
+                            {getInitials(user.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium truncate">{user.name}</span>
+                            {user.role && (
+                              <Badge 
+                                variant={getRoleBadgeVariant(user.role)} 
+                                className="text-xs px-1.5 py-0"
+                              >
+                                {user.role}
+                              </Badge>
                             )}
                           </div>
+                          {user.email && (
+                            <p className="text-sm text-muted-foreground truncate">
+                              {user.email}
+                            </p>
+                          )}
                         </div>
-                      );
-                    })
-                  ) : (
-                    <div className="p-3 text-sm text-muted-foreground">
-                      No users available for selection
-                    </div>
-                  )}
-                </CommandGroup>
-              </CommandList>
-            </Command>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="p-3 text-sm text-muted-foreground text-center">
+                    {searchTerm ? 'No team members found matching your search.' : 'No users available for selection'}
+                  </div>
+                )}
+              </div>
+            </div>
           </PopoverContent>
         </Popover>
 
