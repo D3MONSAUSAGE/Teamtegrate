@@ -6,7 +6,7 @@ import TaskDetailDialog from '@/components/calendar/TaskDetailDialog';
 import EnhancedCreateTaskDialog from '@/components/task/EnhancedCreateTaskDialog';
 import GoogleCalendarHeader from '@/components/calendar/GoogleCalendarHeader';
 import CalendarContent from '@/components/calendar/CalendarContent';
-import { MeetingRequestDialog } from '@/components/meetings/MeetingRequestDialog';
+import { SimpleMeetingDialog } from '@/components/meetings/SimpleMeetingDialog';
 import { MeetingManagementModal } from '@/components/meetings/MeetingManagementModal';
 import { useMeetingRequests } from '@/hooks/useMeetingRequests';
 
@@ -183,8 +183,7 @@ const CalendarPage = () => {
         onTaskComplete={handleTaskDialogComplete}
       />
 
-      <MeetingRequestDialog 
-        trigger={null}
+      <SimpleMeetingDialog 
         defaultDate={selectedDate}
         open={isMeetingDialogOpen}
         onOpenChange={setIsMeetingDialogOpen}

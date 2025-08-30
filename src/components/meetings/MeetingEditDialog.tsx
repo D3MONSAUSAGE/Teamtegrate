@@ -13,7 +13,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import MeetingDateTimeSection from './MeetingDateTimeSection';
-import { UserSelector } from '@/components/ui/user-selector';
 import { useMeetingRequests } from '@/hooks/useMeetingRequests';
 import { useOrganizationUsers } from '@/hooks/useOrganizationUsers';
 import { useToast } from '@/hooks/use-toast';
@@ -238,14 +237,56 @@ export const MeetingEditDialog: React.FC<MeetingEditDialogProps> = ({
           <div className="space-y-2">
             <Label className="flex items-center gap-2">
               <Users className="h-4 w-4" />
-              Participants *
+              Participants * ({selectedParticipants.length} selected)
             </Label>
-            <UserSelector
-              users={users || []}
-              selectedUserIds={selectedParticipants}
-              onSelectionChange={setSelectedParticipants}
-              placeholder="Select meeting participants..."
-            />
+            <div className="border rounded-lg p-3 max-h-48 overflow-y-auto space-y-2">
+              {users.map((user) => (
+                <label
+                  key={user.id}
+                  className="flex items-center gap-3 p-2 hover:bg-muted/50 rounded cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedParticipants.includes(user.id)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedParticipants(prev => [...prev, user.id]);
+                      } else {
+                        setSelectedParticipants(prev => prev.filter(id => id !== user.id));
+                      }
+                    }}
+                    className="rounded border-border"
+                  />
+                  <div className="flex items-center gap-2 flex-1">
+                    {user.avatar_url ? (
+                      <img
+                        src={user.avatar_url}
+                        alt=""
+                        className="h-6 w-6 rounded-full"
+                      />
+                    ) : (
+                      <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
+                        <span className="text-xs font-medium">
+                          {user.name.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <div className="text-sm font-medium">{user.name}</div>
+                      <div className="text-xs text-muted-foreground">{user.email}</div>
+                    </div>
+                    <span className="text-xs bg-secondary text-secondary-foreground px-2 py-1 rounded">
+                      {user.role}
+                    </span>
+                  </div>
+                </label>
+              ))}
+              {(!users || users.length === 0) && (
+                <div className="text-center text-muted-foreground py-4">
+                  No users available
+                </div>
+              )}
+            </div>
           </div>
 
           <DialogFooter className="flex gap-2">

@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import ModernSectionCard from '@/components/dashboard/ModernSectionCard';
-import { MeetingRequestDialog } from '@/components/meetings/MeetingRequestDialog';
+import { SimpleMeetingDialog } from '@/components/meetings/SimpleMeetingDialog';
 import { MeetingInvitationCard } from '@/components/meetings/MeetingInvitationCard';
 import { useMeetingRequests } from '@/hooks/useMeetingRequests';
 import { useAuth } from '@/contexts/auth/AuthProvider';
@@ -410,7 +410,7 @@ const MeetingsPage = () => {
       </div>
 
       {/* Create Meeting Dialog */}
-      <MeetingRequestDialog
+      <SimpleMeetingDialog
         open={isCreateDialogOpen}
         onOpenChange={setIsCreateDialogOpen}
       />
