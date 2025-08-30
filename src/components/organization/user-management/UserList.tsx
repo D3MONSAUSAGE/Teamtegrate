@@ -75,20 +75,18 @@ const UserList: React.FC<UserListProps> = ({
     if (!currentUser) return [];
     
     const userRole = currentUser.role;
+    let roles: UserRole[] = [];
     
     if (userRole === 'superadmin') {
-      return currentRole === 'superadmin' ? [] : ['admin', 'manager', 'user'];
+      roles = ['superadmin', 'admin', 'manager', 'user'];
+    } else if (userRole === 'admin') {
+      roles = ['manager', 'user'];
+    } else if (userRole === 'manager') {
+      roles = currentRole === 'user' ? ['user'] : [];
     }
     
-    if (userRole === 'admin') {
-      return ['manager', 'user'];
-    }
-    
-    if (userRole === 'manager') {
-      return currentRole === 'user' ? ['user'] : [];
-    }
-    
-    return [];
+    // Exclude the target's current role to avoid redundant action
+    return roles.filter(r => r !== (currentRole as UserRole));
   };
 
   const handleViewDashboard = (userId: string) => {

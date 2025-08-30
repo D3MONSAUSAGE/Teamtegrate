@@ -81,14 +81,22 @@ export const useRoleManagement = (users: any[], refetchUsers: () => void) => {
 
       // Proceed with normal role change
       const oldUser = users?.find(u => u.id === userId);
-      
-      const { error } = await supabase
-        .from('users')
-        .update({ role: newRole })
-        .eq('id', userId)
-        .eq('organization_id', currentUser?.organizationId);
 
-      if (error) throw error;
+      // Use Edge Function to perform the role update with proper backend validation
+      const { data, error } = await supabase.functions.invoke('update-user-role', {
+        body: {
+          targetUserId: userId,
+          newRole: newRole
+        }
+      });
+
+      if (error) {
+        throw new Error(error.message || 'Failed to update role');
+      }
+
+      if (!data?.success) {
+        throw new Error(data?.error || 'Role update failed');
+      }
 
       // Log audit trail
       await logUserAction('role_change', userId, oldUser?.email || '', oldUser?.name || '', 
