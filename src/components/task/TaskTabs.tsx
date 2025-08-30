@@ -3,6 +3,7 @@ import React from "react";
 import { Task, TaskStatus } from "@/types";
 import { MobileTabs, MobileTabsContent, MobileTabsList, MobileTabsTrigger } from "@/components/ui/mobile-tabs";
 import TaskList from "./TaskList";
+import GroupedCompletedTasksList from "./completed/GroupedCompletedTasksList";
 import { CheckCircle2, Clock, AlertCircle } from "lucide-react";
 
 interface TaskTabsProps {
@@ -70,12 +71,11 @@ const TaskTabs: React.FC<TaskTabsProps> = ({
         </MobileTabsContent>
         
         <MobileTabsContent value="completed">
-          <TaskList 
+          <GroupedCompletedTasksList 
             tasks={completedTasks} 
             onEdit={onEdit} 
             onNewTask={onNewTask}
             onStatusChange={onStatusChange} 
-            emptyMessage="No completed tasks" 
           />
         </MobileTabsContent>
       </MobileTabs>
