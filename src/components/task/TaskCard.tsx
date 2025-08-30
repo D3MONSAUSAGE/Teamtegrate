@@ -21,6 +21,7 @@ interface TaskCardProps {
 const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, className }) => {
   const isMobile = useIsMobile();
   const isOverdue = new Date(task.deadline) < new Date() && task.status !== 'Completed';
+  const isCompleted = task.status === 'Completed';
   const commentCount = task.comments?.length || 0;
   
   const getPriorityStyles = (priority: string) => {
@@ -55,12 +56,20 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, className }) => {
           "hover:scale-[1.02] hover:-translate-y-1"
         ],
         "group",
-        !isOverdue && getPriorityStyles(task.priority),
-        isOverdue && [
+        // Completed state (green glow) - takes precedence over all other states
+        isCompleted && [
+          "ring-2 ring-green-500/40 shadow-green-100/40 dark:shadow-green-900/30",
+          "bg-gradient-to-br from-green-50/40 to-green-100/20 dark:from-green-950/20 dark:to-green-900/10",
+          "border-green-300/60 dark:border-green-600/40"
+        ],
+        // Overdue state only if not completed
+        !isCompleted && isOverdue && [
           "ring-2 ring-red-400/60 shadow-red-100/40 dark:shadow-red-900/30",
           "bg-gradient-to-br from-red-50/40 to-red-100/20 dark:from-red-950/20 dark:to-red-900/10",
           "border-red-300/60 dark:border-red-600/40"
         ],
+        // Priority styles only if not completed and not overdue
+        !isCompleted && !isOverdue && getPriorityStyles(task.priority),
         className
       )}
       onClick={onClick}
