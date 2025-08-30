@@ -28,13 +28,13 @@ const TasksPage = lazy(() => import('@/pages/TasksPage'));
 const ProjectsPage = lazy(() => import('@/pages/ProjectsPage'));
 const ProjectTasksPage = lazy(() => import('@/pages/ProjectTasksPage'));
 const CalendarPage = lazy(() => import('@/pages/CalendarPage'));
-const FreshMeetingsPage = lazy(() => {
-  console.log('🔄 Router: Starting to load FreshMeetingsPage...');
-  return import('@/pages/FreshMeetingsPage').then(module => {
-    console.log('✅ Router: FreshMeetingsPage module loaded successfully', module);
+const MeetingsPage = lazy(() => {
+  console.log('📅 Router: Starting to load MeetingsPage...');
+  return import('@/pages/MeetingsPage').then(module => {
+    console.log('✅ Router: MeetingsPage module loaded successfully', module);
     return module;
   }).catch(error => {
-    console.error('❌ Router: Failed to load FreshMeetingsPage:', error);
+    console.error('❌ Router: Failed to load MeetingsPage:', error);
     throw error;
   });
 });
@@ -189,7 +189,7 @@ const OptimizedRouter = () => {
             <Route path="meetings" element={
               <PageWrapper>
                 <MeetingsErrorBoundary>
-                  <FreshMeetingsPage />
+                  <MeetingsPage />
                 </MeetingsErrorBoundary>
               </PageWrapper>
             } />
