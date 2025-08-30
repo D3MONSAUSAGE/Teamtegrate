@@ -22,6 +22,7 @@ import { enhancedNotifications } from '@/utils/enhancedNotifications';
 import ModuleViewer from './ModuleViewer';
 import VideoToQuizFlow from './VideoToQuizFlow';
 import QuizTaker from './QuizTaker';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface CourseAssignmentViewerProps {
   open: boolean;
@@ -73,6 +74,7 @@ const CourseAssignmentViewer: React.FC<CourseAssignmentViewerProps> = ({
   onComplete
 }) => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [course, setCourse] = useState<any>(null);
   const [modules, setModules] = useState<CourseModule[]>([]);
   const [currentModuleIndex, setCurrentModuleIndex] = useState(0);
@@ -213,6 +215,10 @@ const CourseAssignmentViewer: React.FC<CourseAssignmentViewerProps> = ({
             })
             .eq('id', assignment.id)
             .eq('assigned_to', user.id);
+
+          // Refresh lists so completed items disappear from In Progress
+          queryClient.invalidateQueries({ queryKey: ['training-assignments'] });
+          queryClient.invalidateQueries({ queryKey: ['user-training-progress'] });
         } catch (e) {
           console.error('Error auto-updating assignment completion:', e);
         }
@@ -266,6 +272,10 @@ const CourseAssignmentViewer: React.FC<CourseAssignmentViewerProps> = ({
           })
           .eq('id', assignment.id)
           .eq('assigned_to', user?.id);
+
+        // Refresh lists so completed items disappear from In Progress
+        queryClient.invalidateQueries({ queryKey: ['training-assignments'] });
+        queryClient.invalidateQueries({ queryKey: ['user-training-progress'] });
 
         enhancedNotifications.success('Course completed successfully!');
         onComplete?.();

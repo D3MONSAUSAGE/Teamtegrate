@@ -21,6 +21,7 @@ import { format, isAfter, parseISO } from 'date-fns';
 import QuizTaker from './QuizTaker';
 import CourseAssignmentViewer from './CourseAssignmentViewer';
 import { useQuizzes } from '@/hooks/useTrainingData';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface MyAssignmentsProps {
   open: boolean;
@@ -37,6 +38,7 @@ const MyAssignments: React.FC<MyAssignmentsProps> = ({ open, onOpenChange }) => 
   const { data: assignments = [], isLoading } = useTrainingAssignments();
   const { data: allQuizzes = [] } = useQuizzes();
   const updateStatus = useUpdateAssignmentStatus();
+  const queryClient = useQueryClient();
 
   // Filter assignments by status
   const pendingAssignments = assignments.filter(a => a.status === 'pending');
@@ -104,6 +106,10 @@ const MyAssignments: React.FC<MyAssignmentsProps> = ({ open, onOpenChange }) => 
   };
 
   const handleCourseComplete = () => {
+    // Refresh assignment lists immediately so completed items disappear from In Progress
+    queryClient.invalidateQueries({ queryKey: ['training-assignments'] });
+    queryClient.invalidateQueries({ queryKey: ['user-training-progress'] });
+
     setIsCourseViewerOpen(false);
     setSelectedCourseAssignment(null);
     // Assignment status will be updated by CourseAssignmentViewer
