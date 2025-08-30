@@ -769,26 +769,41 @@ export const useUpdateQuiz = () => {
         // Update existing questions
         for (const questionUpdate of questionUpdates) {
           const { id, ...updateData } = questionUpdate;
-          await supabase
+          const { error: updateError } = await supabase
             .from('quiz_questions')
             .update(updateData)
             .eq('id', id);
+          
+          if (updateError) {
+            console.error('Error updating question:', updateError);
+            throw updateError;
+          }
         }
 
         // Insert new questions
         if (questionInserts.length > 0) {
-          await supabase
+          const { error: insertError } = await supabase
             .from('quiz_questions')
             .insert(questionInserts);
+          
+          if (insertError) {
+            console.error('Error inserting questions:', insertError);
+            throw insertError;
+          }
         }
 
         // Delete questions that are no longer needed
         const questionsToDelete = existingQuestionIds.filter(id => !questionIdsToKeep.includes(id));
         if (questionsToDelete.length > 0) {
-          await supabase
+          const { error: deleteError } = await supabase
             .from('quiz_questions')
             .delete()
             .in('id', questionsToDelete);
+          
+          if (deleteError) {
+            console.error('Error deleting questions:', deleteError);
+            throw deleteError;
+          }
         }
       }
       

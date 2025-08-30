@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { useEmployeeProgress, useTrainingStats } from '@/hooks/useTrainingData';
 import { format } from 'date-fns';
+import EmployeeAssignmentDetails from './EmployeeAssignmentDetails';
 
 interface EmployeeProgressDashboardProps {
   open: boolean;
@@ -38,6 +39,7 @@ const EmployeeProgressDashboard: React.FC<EmployeeProgressDashboardProps> = ({
   const [selectedTab, setSelectedTab] = useState('overview');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
+  const [assignmentDetailsOpen, setAssignmentDetailsOpen] = useState(false);
   
   const { data: employeeData = [], isLoading } = useEmployeeProgress();
   const { data: stats } = useTrainingStats();
@@ -91,7 +93,8 @@ const EmployeeProgressDashboard: React.FC<EmployeeProgressDashboardProps> = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center justify-between">
@@ -292,7 +295,10 @@ const EmployeeProgressDashboard: React.FC<EmployeeProgressDashboardProps> = ({
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => setSelectedEmployee(employee)}
+                              onClick={() => {
+                                setSelectedEmployee(employee);
+                                setAssignmentDetailsOpen(true);
+                              }}
                             >
                               <Eye className="h-4 w-4 mr-2" />
                               View Details
@@ -454,7 +460,14 @@ const EmployeeProgressDashboard: React.FC<EmployeeProgressDashboardProps> = ({
           </Dialog>
         )}
       </DialogContent>
-    </Dialog>
+      </Dialog>
+
+      <EmployeeAssignmentDetails
+        open={assignmentDetailsOpen}
+        onOpenChange={setAssignmentDetailsOpen}
+        employee={selectedEmployee}
+      />
+    </>
   );
 };
 
