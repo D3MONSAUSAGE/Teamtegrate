@@ -2,7 +2,8 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Shield, AlertCircle, Loader2, BarChart3 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Shield, AlertCircle, Loader2, BarChart3, Users, Settings, Activity } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
 import ProfessionalOrganizationHeader from '@/components/organization/professional/ProfessionalOrganizationHeader';
@@ -159,31 +160,52 @@ const OrganizationDashboard = () => {
           />
         </div>
         
-        {/* Enhanced Stats Cards */}
+        {/* Tabbed Interface */}
         <div className="animate-fade-in" style={{ animationDelay: '200ms' }}>
-          <ModernSectionCard
-            title="Organization Statistics"
-            subtitle="Real-time metrics and performance indicators"
-            icon={BarChart3}
-            gradient="from-blue-500/10 via-purple-500/10 to-indigo-500/10"
-            noPadding
-          >
-            <div className="p-6">
-              <OrganizationStatsCards />
-            </div>
-          </ModernSectionCard>
-        </div>
-        
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 gap-8">
-          {/* Professional User Management */}
-          <div className="lg:grid lg:grid-cols-3 lg:gap-8 space-y-8 lg:space-y-0">
-            <div className="lg:col-span-2 animate-fade-in" style={{ animationDelay: '300ms' }}>
-              <SuperadminUserManagement />
-            </div>
-            
-            <div className="space-y-8">
-              <div className="animate-fade-in" style={{ animationDelay: '400ms' }}>
+          <Tabs defaultValue="overview" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-4 lg:w-fit lg:grid-cols-4 bg-muted/60 backdrop-blur-sm border">
+              <TabsTrigger value="overview" className="flex items-center gap-2">
+                <Activity className="h-4 w-4" />
+                <span className="hidden sm:inline">Overview</span>
+              </TabsTrigger>
+              <TabsTrigger value="users" className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                <span className="hidden sm:inline">Users</span>
+              </TabsTrigger>
+              <TabsTrigger value="teams" className="flex items-center gap-2">
+                <Shield className="h-4 w-4" />
+                <span className="hidden sm:inline">Teams</span>
+              </TabsTrigger>
+              <TabsTrigger value="analytics" className="flex items-center gap-2">
+                <BarChart3 className="h-4 w-4" />
+                <span className="hidden sm:inline">Analytics</span>
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Overview Tab */}
+            <TabsContent value="overview" className="space-y-6">
+              <ModernSectionCard
+                title="Organization Statistics"
+                subtitle="Real-time metrics and performance indicators"
+                icon={BarChart3}
+                gradient="from-blue-500/10 via-purple-500/10 to-indigo-500/10"
+                noPadding
+              >
+                <div className="p-6">
+                  <OrganizationStatsCards />
+                </div>
+              </ModernSectionCard>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <ModernSectionCard
+                  title="Quick Actions"
+                  subtitle="Shortcuts to common tasks"
+                  icon={Shield}
+                  gradient="from-orange-500/10 via-red-500/10 to-pink-500/10"
+                >
+                  <OrganizationQuickActions />
+                </ModernSectionCard>
+
                 <ModernSectionCard
                   title="Role Distribution"
                   subtitle="Visual breakdown of user roles"
@@ -193,31 +215,51 @@ const OrganizationDashboard = () => {
                   <RoleDistributionChart />
                 </ModernSectionCard>
               </div>
-              
-              <div className="animate-fade-in" style={{ animationDelay: '500ms' }}>
+            </TabsContent>
+
+            {/* User Management Tab */}
+            <TabsContent value="users" className="space-y-6">
+              <SuperadminUserManagement />
+            </TabsContent>
+
+            {/* Team Management Tab */}
+            <TabsContent value="teams" className="space-y-6">
+              <ModernSectionCard
+                title="Team Management"
+                subtitle="Organize and manage your teams"
+                icon={Shield}
+                gradient="from-cyan-500/10 via-sky-500/10 to-blue-500/10"
+              >
+                <TeamManagementSection />
+              </ModernSectionCard>
+            </TabsContent>
+
+            {/* Analytics Tab */}
+            <TabsContent value="analytics" className="space-y-6">
+              <div className="grid grid-cols-1 gap-6">
                 <ModernSectionCard
-                  title="Quick Actions"
-                  subtitle="Shortcuts to common tasks"
-                  icon={Shield}
-                  gradient="from-orange-500/10 via-red-500/10 to-pink-500/10"
+                  title="Role Distribution Chart"
+                  subtitle="Detailed role analysis"
+                  icon={BarChart3}
+                  gradient="from-purple-500/10 via-indigo-500/10 to-blue-500/10"
                 >
-                  <OrganizationQuickActions />
+                  <RoleDistributionChart />
+                </ModernSectionCard>
+
+                <ModernSectionCard
+                  title="Detailed Statistics"
+                  subtitle="In-depth organizational metrics"
+                  icon={Activity}
+                  gradient="from-emerald-500/10 via-teal-500/10 to-cyan-500/10"
+                  noPadding
+                >
+                  <div className="p-6">
+                    <OrganizationStatsCards />
+                  </div>
                 </ModernSectionCard>
               </div>
-            </div>
-          </div>
-
-          {/* Team Management Section */}
-          <div className="animate-fade-in" style={{ animationDelay: '600ms' }}>
-            <ModernSectionCard
-              title="Team Management"
-              subtitle="Organize and manage your teams"
-              icon={Shield}
-              gradient="from-cyan-500/10 via-sky-500/10 to-blue-500/10"
-            >
-              <TeamManagementSection />
-            </ModernSectionCard>
-          </div>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
 
