@@ -80,7 +80,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
           gradient: '[background:var(--task-gradient-medium)]',
           glow: 'shadow-lg hover:shadow-xl shadow-amber-500/10 hover:shadow-amber-500/20',
           border: 'border-amber-200/30 dark:border-amber-800/30 hover:border-amber-300/50 dark:hover:border-amber-700/50',
-          accent: 'from-amber-500/10 to-amber-600/10'
+          accent: 'from-blue-500/10 to-blue-600/10'
         };
       case 'Low': 
         return {
