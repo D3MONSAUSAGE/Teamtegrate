@@ -40,15 +40,20 @@ export function useNotifications() {
     }
     
     if (data) {
-      console.log("Fetched notifications:", data);
       setNotifications(data as Notification[]);
       setUnreadCount(data.filter((n: any) => !n.read).length);
     }
   }, [user, isMobile]);
 
+  // Initial fetch when user changes
   useEffect(() => {
-    fetchNotifications();
+    if (user) {
+      fetchNotifications();
+    }
+  }, [user?.id]); // Only depend on user.id to prevent loops
 
+  // Separate effect for real-time subscription
+  useEffect(() => {
     if (!user) return;
     
     // Real-time subscription for new notifications
@@ -80,7 +85,7 @@ export function useNotifications() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, fetchNotifications]);
+  }, [user?.id]); // Only depend on user.id
 
   // Mark notification(s) as read
   const markAsRead = async (id?: string) => {

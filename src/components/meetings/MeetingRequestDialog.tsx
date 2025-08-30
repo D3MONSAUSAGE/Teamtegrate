@@ -40,6 +40,7 @@ export const MeetingRequestDialog: React.FC<MeetingRequestDialogProps> = ({
   // Initialize form when dialog opens
   React.useEffect(() => {
     if (open) {
+      console.log("🔧 MeetingRequestDialog: Dialog opened, initializing form");
       setStartDateObj(defaultDate);
       setEndDateObj(defaultDate);
       setStartTime('09:00');
@@ -49,6 +50,16 @@ export const MeetingRequestDialog: React.FC<MeetingRequestDialogProps> = ({
       setDescription('');
       setLocation('');
       setSelectedParticipants([]);
+      
+      // Focus first input after a short delay to ensure DOM is ready
+      setTimeout(() => {
+        const titleInput = document.getElementById('title');
+        if (titleInput) {
+          titleInput.focus();
+        }
+      }, 100);
+    } else {
+      console.log("🔧 MeetingRequestDialog: Dialog closed");
     }
   }, [open, defaultDate]);
 
@@ -129,7 +140,11 @@ export const MeetingRequestDialog: React.FC<MeetingRequestDialogProps> = ({
           </Button>
         </DialogTrigger>
       )}
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent 
+        className="max-w-2xl max-h-[90vh] overflow-y-auto"
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => setOpen(false)}
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />

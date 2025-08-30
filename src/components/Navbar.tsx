@@ -15,11 +15,7 @@ const Navbar = memo(() => {
   const { markAsRead, fetchNotifications } = useNotifications();
   const { isMobile } = useSidebar();
 
-  // Refresh notifications when component mounts
-  useEffect(() => {
-    fetchNotifications();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // Remove duplicate notification fetch - handled in useNotifications hook
 
   // Memoize handlers to prevent unnecessary re-renders
   const handleLogout = useCallback(async () => {
@@ -38,9 +34,8 @@ const Navbar = memo(() => {
   }, [navigate]);
 
   const handleNotificationsOpen = useCallback(() => {
-    fetchNotifications();
-    console.log("Opening notifications");
-  }, [fetchNotifications]);
+    console.log("Opening notifications panel");
+  }, []);
 
   const handleNotificationClick = useCallback((notificationType: string) => {
     if (notificationType.includes('task')) {
