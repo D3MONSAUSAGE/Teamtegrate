@@ -19,6 +19,7 @@ import {
 import { useTrainingAssignments, useUpdateAssignmentStatus } from '@/hooks/useTrainingData';
 import { format, isAfter, parseISO } from 'date-fns';
 import QuizTaker from './QuizTaker';
+import CourseAssignmentViewer from './CourseAssignmentViewer';
 import { useQuizzes } from '@/hooks/useTrainingData';
 
 interface MyAssignmentsProps {
@@ -29,7 +30,9 @@ interface MyAssignmentsProps {
 const MyAssignments: React.FC<MyAssignmentsProps> = ({ open, onOpenChange }) => {
   const [selectedTab, setSelectedTab] = useState('pending');
   const [selectedQuiz, setSelectedQuiz] = useState<any>(null);
+  const [selectedCourseAssignment, setSelectedCourseAssignment] = useState<any>(null);
   const [isQuizTakerOpen, setIsQuizTakerOpen] = useState(false);
+  const [isCourseViewerOpen, setIsCourseViewerOpen] = useState(false);
   
   const { data: assignments = [], isLoading } = useTrainingAssignments();
   const { data: allQuizzes = [] } = useQuizzes();
@@ -73,6 +76,19 @@ const MyAssignments: React.FC<MyAssignmentsProps> = ({ open, onOpenChange }) => 
           });
         }
       }
+    } else if (assignment.assignment_type === 'course') {
+      // Handle course assignments
+      setSelectedCourseAssignment(assignment);
+      setIsCourseViewerOpen(true);
+      
+      // Update assignment status to in_progress
+      if (assignment.status === 'pending') {
+        await updateStatus.mutateAsync({
+          assignmentId: assignment.id,
+          status: 'in_progress',
+          startedAt: new Date().toISOString()
+        });
+      }
     }
   };
 
@@ -85,6 +101,17 @@ const MyAssignments: React.FC<MyAssignmentsProps> = ({ open, onOpenChange }) => 
   const handleQuizExit = () => {
     setIsQuizTakerOpen(false);
     setSelectedQuiz(null);
+  };
+
+  const handleCourseComplete = () => {
+    setIsCourseViewerOpen(false);
+    setSelectedCourseAssignment(null);
+    // Assignment status will be updated by CourseAssignmentViewer
+  };
+
+  const handleCourseExit = () => {
+    setIsCourseViewerOpen(false);
+    setSelectedCourseAssignment(null);
   };
 
   const getStatusColor = (status: string) => {
@@ -182,6 +209,20 @@ const MyAssignments: React.FC<MyAssignmentsProps> = ({ open, onOpenChange }) => 
                 >
                   <Play className="h-4 w-4" />
                   Continue Quiz
+                </Button>
+              </div>
+            )}
+
+            {assignment.status === 'in_progress' && assignment.assignment_type === 'course' && (
+              <div className="flex justify-end">
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => handleStartAssignment(assignment)}
+                  className="gap-2"
+                >
+                  <BookOpen className="h-4 w-4" />
+                  Continue Course
                 </Button>
               </div>
             )}
@@ -317,6 +358,16 @@ const MyAssignments: React.FC<MyAssignmentsProps> = ({ open, onOpenChange }) => 
             />
           </DialogContent>
         </Dialog>
+      )}
+
+      {/* Course Assignment Viewer */}
+      {selectedCourseAssignment && (
+        <CourseAssignmentViewer
+          open={isCourseViewerOpen}
+          onOpenChange={setIsCourseViewerOpen}
+          assignment={selectedCourseAssignment}
+          onComplete={handleCourseComplete}
+        />
       )}
     </>
   );
