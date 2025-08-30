@@ -1,6 +1,7 @@
 
 import React from 'react';
-import { useTimeTrackingPage } from '@/hooks/useTimeTrackingPage';
+import { useEmployeeTimeTracking } from '@/hooks/useEmployeeTimeTracking';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import MobileTimeTrackingWidget from '@/components/mobile/MobileTimeTrackingWidget';
 import EmployeeTimeTracking from '@/components/dashboard/EmployeeTimeTracking';
 import { Button } from '@/components/ui/button';
@@ -13,24 +14,43 @@ import { useAuth } from '@/contexts/AuthContext';
 const TimeTrackingPage = () => {
   const { user } = useAuth();
   const {
-    currentEntry,
-    elapsedTime,
-    breakElapsedTime,
-    breakState,
+    currentSession,
+    dailySummary,
+    weeklyEntries,
+    isLoading,
+    lastError,
     clockIn,
     clockOut,
-    handleBreak,
-    resumeFromBreak,
-    isLoading,
-    isOnline
-  } = useTimeTrackingPage();
+    startBreak,
+    endBreak
+  } = useEmployeeTimeTracking();
 
   const [manageOpen, setManageOpen] = React.useState(false);
-  // Check if mobile view should be used
-  const isMobile = window.innerWidth < 768;
+  // Responsive mobile detection
+  const isMobile = useMediaQuery('(max-width: 767px)');
   
   // Check if user is a manager/admin for schedule management access
   const isManager = user?.role && ['manager', 'admin', 'superadmin'].includes(user.role);
+
+  // Format elapsed time for mobile widget
+  const formatElapsedTime = (minutes: number): string => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:00`;
+  };
+
+  // Convert session data to mobile widget format
+  const elapsedTime = currentSession?.elapsedMinutes ? formatElapsedTime(currentSession.elapsedMinutes) : '00:00:00';
+  const breakElapsedTime = currentSession?.breakElapsedMinutes ? formatElapsedTime(currentSession.breakElapsedMinutes) : '00:00:00';
+  
+  const currentEntry = {
+    isClocked: currentSession?.isActive || false,
+  };
+
+  const breakState = {
+    isOnBreak: currentSession?.isOnBreak || false,
+    breakType: currentSession?.breakType,
+  };
 
   return (
     <div className="space-y-6 p-6">
@@ -64,12 +84,12 @@ const TimeTrackingPage = () => {
                 isOnBreak={breakState.isOnBreak}
                 breakElapsedTime={breakElapsedTime}
                 lastBreakType={breakState.breakType}
-                onClockIn={clockIn}
-                onClockOut={clockOut}
-                onStartBreak={handleBreak}
-                onResumeFromBreak={resumeFromBreak}
+                onClockIn={() => clockIn()}
+                onClockOut={() => clockOut()}
+                onStartBreak={(breakType) => startBreak(breakType as 'Coffee' | 'Lunch' | 'Rest')}
+                onResumeFromBreak={endBreak}
                 isLoading={isLoading}
-                isOnline={isOnline}
+                isOnline={!lastError}
               />
             </div>
           ) : (
