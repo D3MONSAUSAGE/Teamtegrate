@@ -6,7 +6,7 @@ import { Shield, AlertCircle, Loader2, BarChart3 } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
 import ProfessionalOrganizationHeader from '@/components/organization/professional/ProfessionalOrganizationHeader';
-import ProfessionalUserManagement from '@/components/organization/professional/ProfessionalUserManagement';
+import SuperadminUserManagement from '@/components/organization/SuperadminUserManagement';
 import OrganizationStatsCards from '@/components/organization/OrganizationStatsCards';
 import RoleDistributionChart from '@/components/organization/RoleDistributionChart';
 import OrganizationQuickActions from '@/components/organization/OrganizationQuickActions';
@@ -179,12 +179,7 @@ const OrganizationDashboard = () => {
           {/* Professional User Management */}
           <div className="lg:grid lg:grid-cols-3 lg:gap-8 space-y-8 lg:space-y-0">
             <div className="lg:col-span-2 animate-fade-in" style={{ animationDelay: '300ms' }}>
-              <ProfessionalUserManagement
-                onViewProfile={handleViewProfile}
-                onEditUser={handleEditUser}
-                onDeleteUser={handleDeleteUser}
-                onCreateUser={() => setIsCreateUserOpen(true)}
-              />
+              <SuperadminUserManagement />
             </div>
             
             <div className="space-y-8">
