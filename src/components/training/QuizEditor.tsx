@@ -77,6 +77,18 @@ const QuizEditor: React.FC<QuizEditorProps> = ({ open, onOpenChange, quiz }) => 
         explanation: q.explanation || '',
         question_order: q.question_order || index + 1
       })) || []);
+    } else if (!open) {
+      // Reset form when modal closes
+      setFormData({
+        title: '',
+        description: '',
+        module_id: '',
+        passing_score: 70,
+        max_attempts: 3,
+        time_limit_minutes: null
+      });
+      setQuestions([]);
+      setPreviewMode(false);
     }
   }, [quiz, open]);
 

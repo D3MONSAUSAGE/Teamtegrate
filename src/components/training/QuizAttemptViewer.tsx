@@ -83,7 +83,7 @@ const QuizAttemptViewer: React.FC<QuizAttemptViewerProps> = ({
 
     if (quiz?.quiz_questions && attempt.answers) {
       quiz.quiz_questions.forEach((question: any, index: number) => {
-        const userAnswer = attempt.answers.find((a: any) => a.questionId === question.id);
+                      const userAnswer = attempt.answers.find((a: any) => a.question_id === question.id);
         const isCorrect = getAnswerStatus(userAnswer?.answer || '', question.correct_answer);
 
         pdf.setFontSize(10);
@@ -135,7 +135,7 @@ const QuizAttemptViewer: React.FC<QuizAttemptViewerProps> = ({
     if (!quiz?.quiz_questions || !attempt.answers) return;
 
     const csvData = quiz.quiz_questions.map((question: any, index: number) => {
-      const userAnswer = attempt.answers.find((a: any) => a.questionId === question.id);
+      const userAnswer = attempt.answers.find((a: any) => a.question_id === question.id);
       const isCorrect = getAnswerStatus(userAnswer?.answer || '', question.correct_answer);
       
       return {
@@ -375,7 +375,7 @@ const QuizAttemptViewer: React.FC<QuizAttemptViewerProps> = ({
                   {/* Question-by-Question Breakdown */}
                   <div className="space-y-4">
                     {quiz.quiz_questions.map((question: any, index: number) => {
-                      const userAnswer = selectedAttempt.answers?.find((a: any) => a.questionId === question.id);
+                      const userAnswer = selectedAttempt.answers?.find((a: any) => a.question_id === question.id);
                       const isCorrect = getAnswerStatus(userAnswer?.answer || '', question.correct_answer);
                       
                       return (
