@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, Loader2, BookOpen, GraduationCap, PenTool, Users, BarChart, UserPlus, Edit, Trash2, MoreHorizontal, TrendingUp } from 'lucide-react';
+import { AlertCircle, Loader2, GraduationCap } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import TrainingHeader from '@/components/training/TrainingHeader';
+import LearningDashboard from '@/components/training/LearningDashboard';
+import ContentGrid from '@/components/training/ContentGrid';
+import ManagementPanel from '@/components/training/ManagementPanel';
 import TrainingStatsCards from '@/components/training/TrainingStatsCards';
 import QuizCreator from '@/components/training/QuizCreator';
 import CourseCreator from '@/components/training/CourseCreator';
@@ -12,9 +14,6 @@ import QuizResults from '@/components/training/QuizResults';
 import UserAssignment from '@/components/training/UserAssignment';
 import MyAssignments from '@/components/training/MyAssignments';
 import EmployeeProgressDashboard from '@/components/training/EmployeeProgressDashboard';
-import ModernSectionCard from '@/components/dashboard/ModernSectionCard';
-import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useTrainingCourses, useQuizzes, useTrainingAssignments } from '@/hooks/useTrainingData';
 
 const TrainingPage = () => {
@@ -97,292 +96,76 @@ const TrainingPage = () => {
     setIsQuizEditorOpen(true);
   };
 
+  const handleViewAssignment = (assignment: any) => {
+    // Navigate to assignment or open in modal
+    console.log('Viewing assignment:', assignment);
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
-      <div className="p-3 sm:p-6 space-y-8 max-w-7xl mx-auto">
-        {/* Professional Header */}
-        <div className="animate-fade-in">
-          <TrainingHeader 
-            onCreateCourse={handleCreateCourse}
-            onCreateQuiz={handleCreateQuiz}
-          />
-        </div>
+    <div className="min-h-screen bg-background">
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
         
-        {/* Enhanced Stats Cards */}
-        <div className="animate-fade-in" style={{ animationDelay: '200ms' }}>
-          <ModernSectionCard
-            title="Training Statistics"
-            subtitle="Real-time learning metrics and performance indicators"
-            icon={GraduationCap}
-            gradient="from-emerald-500/10 via-teal-500/10 to-cyan-500/10"
-            noPadding
-          >
-            <div className="p-6">
-              <TrainingStatsCards />
+        {/* Main Dashboard - Role-Based Layout */}
+        <div className="space-y-8">
+          
+          {/* Learning Dashboard - Always First for Regular Users */}
+          {!canManageContent && (
+            <div className="animate-fade-in">
+              <LearningDashboard
+                assignments={assignments}
+                onViewAssignment={handleViewAssignment}
+                onViewAllAssignments={() => setIsMyAssignmentsOpen(true)}
+              />
             </div>
-          </ModernSectionCard>
-        </div>
-        
-        {/* My Assignments Section - Always Visible */}
-        <div className="animate-fade-in" style={{ animationDelay: '300ms' }}>
-          <ModernSectionCard
-            title="My Training Assignments"
-            subtitle={assignments.length > 0 ? 
-              `${assignments.filter(a => a.status === 'pending').length} pending, ${assignments.filter(a => a.status === 'in_progress').length} in progress` :
-              "No assignments yet"
-            }
-            icon={GraduationCap}
-            gradient="from-violet-500/10 via-purple-500/10 to-indigo-500/10"
-            headerAction={
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsMyAssignmentsOpen(true)}
-                className="gap-2"
-              >
-                <GraduationCap className="h-4 w-4" />
-                View All
-              </Button>
-            }
-          >
-            {assignments.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {assignments.slice(0, 3).map((assignment: any) => (
-                  <div key={assignment.id} className="p-4 rounded-lg border bg-card hover:shadow-md transition-shadow">
-                    <div className="space-y-2">
-                      <h3 className="font-semibold text-foreground">{assignment.content_title}</h3>
-                      <p className="text-sm text-muted-foreground capitalize">
-                        {assignment.assignment_type} • {assignment.status.replace('_', ' ')}
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <span className={`text-xs px-2 py-1 rounded ${
-                          assignment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                          assignment.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
-                          'bg-green-100 text-green-800'
-                        }`}>
-                          {assignment.priority} priority
-                        </span>
-                        {assignment.due_date && (
-                          <span className="text-xs text-muted-foreground">
-                            Due: {new Date(assignment.due_date).toLocaleDateString()}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12 text-muted-foreground">
-                <GraduationCap className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No training assignments yet.</p>
-                <p className="text-sm mt-2">When assignments are created, they'll appear here.</p>
-              </div>
-            )}
-          </ModernSectionCard>
-        </div>
+          )}
 
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 gap-8">
-          {/* Training Content */}
-          <div className="lg:grid lg:grid-cols-3 lg:gap-8 space-y-8 lg:space-y-0">
-            <div className="lg:col-span-2 animate-fade-in" style={{ animationDelay: '300ms' }}>
-              <ModernSectionCard
-                title="Training Courses"
-                subtitle="Available learning paths and modules"
-                icon={BookOpen}
-                gradient="from-blue-500/10 via-indigo-500/10 to-purple-500/10"
-              >
-                {coursesLoading ? (
-                  <div className="flex items-center justify-center py-12">
-                    <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-                  </div>
-                ) : courses.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {courses.map((course: any) => (
-                      <div key={course.id} className="p-4 rounded-lg border bg-card hover:shadow-md transition-shadow group">
-                        <div className="space-y-2">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <h3 className="font-semibold text-foreground">{course.title}</h3>
-                              <p className="text-sm text-muted-foreground">{course.description}</p>
-                            </div>
-                            {canManageContent && (
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    className="opacity-0 group-hover:opacity-100 transition-opacity"
-                                  >
-                                    <MoreHorizontal className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem onClick={() => handleEditCourse(course)}>
-                                    <Edit className="h-4 w-4 mr-2" />
-                                    Edit Course
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">
-                              {course.difficulty_level || 'Beginner'}
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              {course.training_modules?.length || 0} modules
-                            </span>
-                            {!course.is_active && (
-                              <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded">
-                                Inactive
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <BookOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>No training courses available yet.</p>
-                  </div>
-                )}
-              </ModernSectionCard>
+          {/* Management Panel - First for Managers/Admins */}
+          {canManageContent && (
+            <div className="animate-fade-in">
+              <ManagementPanel
+                onCreateCourse={handleCreateCourse}
+                onCreateQuiz={handleCreateQuiz}
+                onAssignContent={handleAssignContent}
+                onViewAnalytics={() => setIsEmployeeProgressOpen(true)}
+                userRole={user.role}
+              />
             </div>
-            
-            <div className="space-y-8">
-              <div className="animate-fade-in" style={{ animationDelay: '400ms' }}>
-                <ModernSectionCard
-                  title="Active Quizzes"
-                  subtitle="Assessment and evaluation tools"
-                  icon={PenTool}
-                  gradient="from-green-500/10 via-emerald-500/10 to-teal-500/10"
-                  headerAction={
-                    canManageContent && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setIsUserAssignmentOpen(true)}
-                        className="gap-2"
-                      >
-                        <UserPlus className="h-4 w-4" />
-                        Assign
-                      </Button>
-                    )
-                  }
-                >
-                  {quizzesLoading ? (
-                    <div className="flex items-center justify-center py-8">
-                      <Loader2 className="h-6 w-6 animate-spin text-green-500" />
-                    </div>
-                  ) : allQuizzes.length > 0 ? (
-                     <div className="space-y-3">
-                       {allQuizzes.slice(0, 5).map((quiz: any) => (
-                         <div key={quiz.id} className="p-3 rounded-lg border bg-card/50 hover:bg-card transition-colors group">
-                           <div className="flex items-center justify-between">
-                             <div className="space-y-1 flex-1">
-                               <h4 className="text-sm font-medium text-foreground">{quiz.title}</h4>
-                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                  <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                                    (quiz.quiz_questions?.length || 0) === 0 
-                                      ? 'bg-amber-100 text-amber-700' 
-                                      : 'bg-green-100 text-green-700'
-                                  }`}>
-                                    {quiz.quiz_questions?.length || 0} questions
-                                  </span>
-                                  <span>•</span>
-                                  <span>{quiz.passing_score}% to pass</span>
-                                  {(quiz.quiz_questions?.length || 0) === 0 && (
-                                    <span className="text-amber-600 font-medium">⚠️ Needs questions</span>
-                                  )}
-                                </div>
-                             </div>
-                             {canManageContent && (
-                               <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                 <DropdownMenu>
-                                   <DropdownMenuTrigger asChild>
-                                     <Button variant="ghost" size="sm">
-                                       <MoreHorizontal className="h-3 w-3" />
-                                     </Button>
-                                   </DropdownMenuTrigger>
-                                   <DropdownMenuContent align="end">
-                                     <DropdownMenuItem onClick={() => handleEditQuiz(quiz)}>
-                                       <Edit className="h-4 w-4 mr-2" />
-                                       Edit Quiz
-                                     </DropdownMenuItem>
-                                     <DropdownMenuItem onClick={() => handleViewResults(quiz)}>
-                                       <BarChart className="h-4 w-4 mr-2" />
-                                       View Results
-                                     </DropdownMenuItem>
-                                   </DropdownMenuContent>
-                                 </DropdownMenu>
-                               </div>
-                             )}
-                           </div>
-                         </div>
-                       ))}
-                     </div>
-                  ) : (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <PenTool className="h-8 w-8 mx-auto mb-3 opacity-50" />
-                      <p className="text-sm">No quizzes available yet.</p>
-                    </div>
-                  )}
-                </ModernSectionCard>
-              </div>
-              
-              <div className="animate-fade-in" style={{ animationDelay: '500ms' }}>
-                <ModernSectionCard
-                  title="Learning Progress"
-                  subtitle="Track your development journey"
-                  icon={Users}
-                  gradient="from-orange-500/10 via-red-500/10 to-pink-500/10"
-                >
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Users className="h-8 w-8 mx-auto mb-3 opacity-50" />
-                    <p className="text-sm">Progress tracking coming soon.</p>
-                  </div>
-                </ModernSectionCard>
-              </div>
-            </div>
-          </div>
-        </div>
+          )}
 
-        {/* Employee Progress Section - Only for Managers+ */}
-        {canManageContent && (
-          <div className="animate-fade-in" style={{ animationDelay: '600ms' }}>
-            <ModernSectionCard
-              title="Employee Training Analytics"
-              subtitle="Monitor team learning progress and performance metrics"
-              icon={TrendingUp}
-              gradient="from-indigo-500/10 via-blue-500/10 to-cyan-500/10"
-              headerAction={
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsEmployeeProgressOpen(true)}
-                  className="gap-2"
-                >
-                  <Users className="h-4 w-4" />
-                  View Analytics
-                </Button>
-              }
-            >
-              <div className="text-center py-8 text-muted-foreground">
-                <TrendingUp className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p className="text-lg font-medium mb-2">Employee Progress Dashboard</p>
-                <p className="text-sm mb-4">Get comprehensive insights into your team's training performance</p>
-                <Button onClick={() => setIsEmployeeProgressOpen(true)}>
-                  <BarChart className="h-4 w-4 mr-2" />
-                  Open Dashboard
-                </Button>
-              </div>
-            </ModernSectionCard>
+          {/* Quick Stats - Compact for All Users */}
+          <div className="animate-fade-in" style={{ animationDelay: '200ms' }}>
+            <TrainingStatsCards />
           </div>
-        )}
+
+          {/* Content Grid - Improved Layout */}
+          <div className="animate-fade-in" style={{ animationDelay: '300ms' }}>
+            <ContentGrid
+              courses={courses}
+              quizzes={allQuizzes}
+              coursesLoading={coursesLoading}
+              quizzesLoading={quizzesLoading}
+              canManageContent={canManageContent}
+              onEditCourse={handleEditCourse}
+              onEditQuiz={handleEditQuiz}
+              onViewResults={handleViewResults}
+            />
+          </div>
+
+          {/* My Assignments - For Regular Users Lower Priority */}
+          {!canManageContent && assignments.length > 0 && (
+            <div className="animate-fade-in" style={{ animationDelay: '400ms' }}>
+              <div className="text-center">
+                <button 
+                  onClick={() => setIsMyAssignmentsOpen(true)}
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  View all {assignments.length} assignments →
+                </button>
+              </div>
+            </div>
+          )}
+
+        </div>
       </div>
 
       {/* Dialogs */}
