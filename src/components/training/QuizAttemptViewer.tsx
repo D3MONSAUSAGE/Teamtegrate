@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { 
   Brain, 
   CheckCircle, 
@@ -16,7 +17,8 @@ import {
   Calendar,
   User,
   Target,
-  AlertCircle
+  AlertCircle,
+  MousePointer
 } from 'lucide-react';
 import { useQuizAttempts, useQuizzes } from '@/hooks/useTrainingData';
 import { format } from 'date-fns';
@@ -46,6 +48,15 @@ const QuizAttemptViewer: React.FC<QuizAttemptViewerProps> = ({
   
   const { data: quizzes = [] } = useQuizzes();
   const quiz = quizzes.find(q => q.id === quizData?.quizId);
+
+  // Auto-select the most recent attempt when attempts load
+  useEffect(() => {
+    if (attempts.length > 0 && !selectedAttempt) {
+      // Sort by attempt number and select the most recent (highest number)
+      const mostRecentAttempt = attempts.sort((a, b) => b.attempt_number - a.attempt_number)[0];
+      setSelectedAttempt(mostRecentAttempt);
+    }
+  }, [attempts, selectedAttempt]);
 
   const getAnswerStatus = (userAnswer: string, correctAnswer: string) => {
     return userAnswer === correctAnswer;
@@ -211,9 +222,20 @@ const QuizAttemptViewer: React.FC<QuizAttemptViewerProps> = ({
         <Tabs defaultValue="attempts" className="space-y-6">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="attempts">All Attempts ({attempts.length})</TabsTrigger>
-            <TabsTrigger value="details" disabled={!selectedAttempt}>
-              Attempt Details {selectedAttempt && `(#${selectedAttempt.attempt_number})`}
-            </TabsTrigger>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <TabsTrigger value="details" disabled={!selectedAttempt}>
+                    Attempt Details {selectedAttempt && `(#${selectedAttempt.attempt_number})`}
+                  </TabsTrigger>
+                </TooltipTrigger>
+                {!selectedAttempt && (
+                  <TooltipContent>
+                    <p>Select an attempt below to view detailed results</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
           </TabsList>
 
           <TabsContent value="attempts" className="space-y-4">
@@ -250,13 +272,24 @@ const QuizAttemptViewer: React.FC<QuizAttemptViewerProps> = ({
             )}
 
             {/* Attempts List */}
+            {attempts.length > 0 && (
+              <div className="flex items-center gap-2 p-4 bg-blue-50 border border-blue-200 rounded-lg mb-4">
+                <MousePointer className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                <p className="text-sm text-blue-800">
+                  <span className="font-medium">Click on any attempt below</span> to view detailed question-by-question results in the "Attempt Details" tab.
+                </p>
+              </div>
+            )}
+            
             <ScrollArea className="h-[500px]">
               <div className="space-y-4">
                 {attempts.map((attempt) => (
                   <Card 
                     key={attempt.id} 
-                    className={`cursor-pointer transition-colors ${
-                      selectedAttempt?.id === attempt.id ? 'ring-2 ring-blue-500' : 'hover:shadow-md'
+                    className={`cursor-pointer transition-all duration-200 ${
+                      selectedAttempt?.id === attempt.id 
+                        ? 'ring-2 ring-blue-500 bg-blue-50 border-blue-200 shadow-md' 
+                        : 'hover:shadow-md hover:border-blue-200 hover:bg-blue-50/30'
                     }`}
                     onClick={() => setSelectedAttempt(attempt)}
                   >
