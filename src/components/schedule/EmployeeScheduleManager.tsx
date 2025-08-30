@@ -70,7 +70,6 @@ export const EmployeeScheduleManager: React.FC = () => {
         .from('users')
         .select('id, name, email')
         .eq('organization_id', user?.organizationId)
-        .neq('role', 'superadmin')
         .order('name');
 
       if (error) throw error;
