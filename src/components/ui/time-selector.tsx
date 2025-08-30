@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Clock } from 'lucide-react';
 import { cn } from "@/lib/utils";
 
@@ -10,6 +9,10 @@ interface TimeSelectorProps {
   className?: string;
   placeholder?: string;
 }
+
+const isValidTime = (value: string): boolean => {
+  return /^\d{2}:\d{2}$/.test(value);
+};
 
 const TimeSelector: React.FC<TimeSelectorProps> = ({
   value,
@@ -22,7 +25,7 @@ const TimeSelector: React.FC<TimeSelectorProps> = ({
   const currentHour = parts[0] || '';
   const currentMinute = parts[1] || '';
 
-  // Generate hour options (0-23) with 12-hour display
+  // Generate hour options (0-23)
   const hourOptions = Array.from({ length: 24 }, (_, i) => {
     const hour = i.toString().padStart(2, '0');
     const display12Hour = i === 0 ? '12 AM' : i < 12 ? `${i} AM` : i === 12 ? '12 PM' : `${i - 12} PM`;
@@ -35,12 +38,14 @@ const TimeSelector: React.FC<TimeSelectorProps> = ({
     return { value: minute, label: minute };
   });
 
-  const handleHourChange = (hour: string) => {
+  const handleHourChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const hour = e.target.value;
     const minute = currentMinute || '00';
     onChange(`${hour}:${minute}`);
   };
 
-  const handleMinuteChange = (minute: string) => {
+  const handleMinuteChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const minute = e.target.value;
     const hour = currentHour || '09';
     onChange(`${hour}:${minute}`);
   };
@@ -64,31 +69,31 @@ const TimeSelector: React.FC<TimeSelectorProps> = ({
       </div>
       
       <div className="grid grid-cols-2 gap-2">
-        <Select value={currentHour} onValueChange={handleHourChange}>
-          <SelectTrigger className="h-9">
-            <SelectValue placeholder="Hour" />
-          </SelectTrigger>
-          <SelectContent className="max-h-48">
-            {hourOptions.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <select 
+          value={currentHour} 
+          onChange={handleHourChange}
+          className="h-9 px-3 py-2 border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+        >
+          <option value="">Hour</option>
+          {hourOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
 
-        <Select value={currentMinute} onValueChange={handleMinuteChange}>
-          <SelectTrigger className="h-9">
-            <SelectValue placeholder="Min" />
-          </SelectTrigger>
-          <SelectContent>
-            {minuteOptions.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <select 
+          value={currentMinute} 
+          onChange={handleMinuteChange}
+          className="h-9 px-3 py-2 border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+        >
+          <option value="">Min</option>
+          {minuteOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
       </div>
     </div>
   );

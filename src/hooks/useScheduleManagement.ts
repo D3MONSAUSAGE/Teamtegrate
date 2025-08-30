@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 export interface ScheduleTemplate {
   id: string;
@@ -88,10 +89,7 @@ export const useScheduleManagement = () => {
 
       let query = supabase
         .from('employee_schedules')
-        .select(`
-          *,
-          employee:employee_id(id, name, email, avatar_url)
-        `)
+        .select('*')
         .gte('scheduled_date', startDate)
         .lte('scheduled_date', endDate)
         .order('scheduled_start_time', { ascending: true });
@@ -105,16 +103,18 @@ export const useScheduleManagement = () => {
 
       if (error) {
         console.error('Database error:', error);
+        console.error('Error details:', JSON.stringify(error, null, 2));
+        toast.error(`Database error: ${error.message}`);
         throw error;
       }
       
-      // Ensure employee data is properly structured from JOIN query
-      const schedulesWithEmployees = (data || []) as unknown as EmployeeSchedule[];
-      
-      setEmployeeSchedules(schedulesWithEmployees);
+      setEmployeeSchedules(data || []);
     } catch (err) {
       console.error('Fetch employee schedules error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch employee schedules');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch employee schedules';
+      console.error('Detailed fetch error:', errorMessage);
+      setError(errorMessage);
+      toast.error(`Failed to fetch schedules: ${errorMessage}`);
     } finally {
       setIsLoading(false);
     }

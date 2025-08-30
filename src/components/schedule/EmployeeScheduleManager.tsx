@@ -44,8 +44,8 @@ export const EmployeeScheduleManager: React.FC = () => {
     employee_id: selectedEmployee || '',
     scheduled_date: format(selectedWeek, 'yyyy-MM-dd'),
     notes: '',
-    start_time: '',
-    end_time: ''
+    start_time: '09:00',
+    end_time: '17:00'
   });
 
   useEffect(() => {
@@ -100,6 +100,14 @@ export const EmployeeScheduleManager: React.FC = () => {
     } catch (error) {
       console.error('Failed to fetch weekly schedules:', error);
     }
+  };
+
+  const isFormValid = () => {
+    return formData.employee_id && 
+           formData.scheduled_date && 
+           formData.start_time && 
+           formData.end_time &&
+           user?.organizationId;
   };
 
   const handleAssignShift = async (e: React.FormEvent) => {
@@ -179,17 +187,20 @@ export const EmployeeScheduleManager: React.FC = () => {
 
       toast.success('Shift assigned successfully');
       setIsAssignDialogOpen(false);
+      setEditingSchedule(null);
       setFormData({
-        employee_id: '',
-        scheduled_date: '',
+        employee_id: selectedEmployee,
+        scheduled_date: format(selectedWeek, 'yyyy-MM-dd'),
         notes: '',
-        start_time: '',
-        end_time: ''
+        start_time: '09:00',
+        end_time: '17:00'
       });
       // Refresh the schedule view
       await fetchWeeklySchedules();
     } catch (error) {
       console.error('Shift assignment error:', error);
+      toast.error('Failed to assign shift');
+      console.error('Detailed error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       toast.error(`Failed to assign shift: ${errorMessage}`);
     }
@@ -261,12 +272,13 @@ export const EmployeeScheduleManager: React.FC = () => {
                     size="sm" 
                     className="w-full"
                     onClick={() => {
+                      setEditingSchedule(null);
                       setFormData({
                         employee_id: selectedEmployee,
                         scheduled_date: dateStr,
                         notes: '',
-                        start_time: '',
-                        end_time: ''
+                        start_time: '09:00',
+                        end_time: '17:00'
                       });
                       setIsAssignDialogOpen(true);
                     }}
@@ -434,6 +446,12 @@ export const EmployeeScheduleManager: React.FC = () => {
                     })()}
                   </div>
                 )}
+                
+                {(!formData.start_time || !formData.end_time) && (
+                  <div className="text-sm text-amber-600">
+                    Please select both start and end times
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -454,7 +472,7 @@ export const EmployeeScheduleManager: React.FC = () => {
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={isLoading}>
+                <Button type="submit" disabled={isLoading || !isFormValid()}>
                   {editingSchedule ? 'Update Shift' : 'Assign Shift'}
                 </Button>
               </div>
