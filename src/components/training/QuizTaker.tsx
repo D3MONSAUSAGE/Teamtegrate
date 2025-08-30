@@ -196,10 +196,14 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onComplete, onExit }) => {
         passed: quizResults.passed,
         timeSpent: quizResults.timeSpent
       });
-      
-      onComplete(quizResults);
     } catch (error) {
       console.error('Failed to submit quiz:', error);
+    }
+  };
+
+  const handleResultsComplete = () => {
+    if (results) {
+      onComplete(results);
     }
   };
 
@@ -306,10 +310,26 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onComplete, onExit }) => {
             </Badge>
           </div>
 
-          <div className="flex justify-center">
-            <Button onClick={onExit}>
-              {results.passed ? 'Continue to Next Module' : 'Return to Course'}
-            </Button>
+          <div className="flex justify-center gap-3">
+            {results.passed ? (
+              <>
+                <Button variant="outline" onClick={onExit}>
+                  View Course Progress
+                </Button>
+                <Button onClick={handleResultsComplete}>
+                  Continue to Next Module
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" onClick={onExit}>
+                  Return to Course
+                </Button>
+                <Button onClick={handleResultsComplete}>
+                  Try Again
+                </Button>
+              </>
+            )}
           </div>
         </CardContent>
       </Card>

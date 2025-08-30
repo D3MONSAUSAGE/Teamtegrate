@@ -459,6 +459,41 @@ export const useSubmitQuizAttempt = () => {
         .eq('content_id', quizId)
         .eq('assignment_type', 'quiz')
         .in('status', ['pending', 'in_progress']);
+
+      // If quiz is passed, mark the associated module as completed
+      if (passed) {
+        // Get the module_id and course_id for this quiz
+        const { data: quizData } = await supabase
+          .from('quizzes')
+          .select(`
+            module_id,
+            training_modules!inner(course_id)
+          `)
+          .eq('id', quizId)
+          .single();
+
+        if (quizData?.module_id && quizData.training_modules?.course_id) {
+          // Insert or update user training progress for the module
+          const { error: progressError } = await supabase
+            .from('user_training_progress')
+            .upsert({
+              user_id: user.id,
+              module_id: quizData.module_id,
+              course_id: quizData.training_modules.course_id,
+              organization_id: user.organizationId,
+              status: 'completed',
+              progress_percentage: 100,
+              completed_at: new Date().toISOString()
+            }, {
+              onConflict: 'user_id,module_id',
+              ignoreDuplicates: false
+            });
+
+          if (progressError) {
+            console.error('Failed to update module progress:', progressError);
+          }
+        }
+      }
       
       return data;
     },
@@ -466,6 +501,8 @@ export const useSubmitQuizAttempt = () => {
       queryClient.invalidateQueries({ queryKey: ['quiz-attempts'] });
       queryClient.invalidateQueries({ queryKey: ['training-stats'] });
       queryClient.invalidateQueries({ queryKey: ['training-assignments'] });
+      queryClient.invalidateQueries({ queryKey: ['user-training-progress'] });
+      queryClient.invalidateQueries({ queryKey: ['video-progress'] });
       enhancedNotifications.success('Quiz completed successfully!');
     },
     onError: (error: any) => {

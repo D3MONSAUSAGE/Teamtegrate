@@ -158,7 +158,7 @@ const CourseAssignmentViewer: React.FC<CourseAssignmentViewerProps> = ({
     setViewMode('module');
   };
 
-  const handleModuleComplete = async (moduleId: string) => {
+  const handleModuleComplete = async (moduleId?: string) => {
     // Reload course progress
     await loadCourseData();
     
@@ -187,8 +187,8 @@ const CourseAssignmentViewer: React.FC<CourseAssignmentViewerProps> = ({
       } catch (error) {
         console.error('Error updating assignment:', error);
       }
-    } else {
-      // Move to next module
+    } else if (moduleId) {
+      // Move to next module only if a specific module was completed
       const nextIncompleteIndex = modules.findIndex((module, index) => {
         if (index <= currentModuleIndex) return false;
         const progress = getModuleProgress(module.id);
@@ -227,10 +227,36 @@ const CourseAssignmentViewer: React.FC<CourseAssignmentViewerProps> = ({
     setViewMode('quiz');
   };
 
-  const handleQuizComplete = async (results: any) => {
-    setViewMode('overview');
+  const handleQuizComplete = (results: any) => {
+    enhancedNotifications.success(`Quiz completed! Score: ${results.score}/${results.maxScore}`);
+    
+    if (results.passed) {
+      // Reload course data first to get updated progress
+      loadCourseData().then(() => {
+        // Find the next module after reloading
+        const nextIncompleteIndex = modules.findIndex((module, index) => {
+          if (index <= currentModuleIndex) return false;
+          const progress = getModuleProgress(module.id);
+          return !progress || progress.status !== 'completed';
+        });
+        
+        if (nextIncompleteIndex >= 0) {
+          setCurrentModuleIndex(nextIncompleteIndex);
+          setViewMode('overview');
+          enhancedNotifications.info(`Proceeding to: ${modules[nextIncompleteIndex]?.title}`);
+        } else {
+          // Course completed
+          handleModuleComplete();
+          enhancedNotifications.success('🎉 Congratulations! You have completed the entire course!');
+        }
+      });
+    } else {
+      setViewMode('overview');
+      enhancedNotifications.info('You can review the material and try the quiz again when ready.');
+    }
+    
     setSelectedQuiz(null);
-    await loadCourseData();
+    setSelectedModule(null);
   };
 
   const handleQuizExit = () => {
