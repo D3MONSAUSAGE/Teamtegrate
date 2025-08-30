@@ -119,18 +119,104 @@ const CourseAssignmentViewer: React.FC<CourseAssignmentViewerProps> = ({
         .eq('user_id', user.id)
         .eq('course_id', assignment.content_id);
 
-      if (progressError && progressError.code !== 'PGRST116') {
+      let mergedProgress: UserProgress[] = progressData || [];
+
+      if (progressError && (progressError as any).code !== 'PGRST116') {
         console.error('Error loading progress:', progressError);
-      } else {
-        setCourseProgress(progressData || []);
       }
+
+      // Heal/augment progress using passed quiz attempts to avoid stuck "in progress"
+      const quizIdToModuleId = new Map<string, string>();
+      (sortedModules as any[]).forEach((m: any) => {
+        (m.quizzes || []).forEach((q: any) => {
+          quizIdToModuleId.set(q.id, m.id);
+        });
+      });
+
+      const quizIds = Array.from(quizIdToModuleId.keys());
+      if (quizIds.length > 0) {
+        const { data: attempts, error: attemptsError } = await supabase
+          .from('quiz_attempts')
+          .select('quiz_id, passed')
+          .eq('user_id', user.id)
+          .in('quiz_id', quizIds);
+
+        if (attemptsError && (attemptsError as any).code !== 'PGRST116') {
+          console.error('Error loading quiz attempts:', attemptsError);
+        } else {
+          const passedModuleIds = new Set(
+            (attempts || [])
+              .filter((a: any) => a.passed)
+              .map((a: any) => quizIdToModuleId.get(a.quiz_id))
+              .filter(Boolean) as string[]
+          );
+
+          const existingCompleted = new Set(
+            (mergedProgress || []).filter(p => p.status === 'completed').map(p => p.module_id)
+          );
+
+          const healRecords: any[] = [];
+          passedModuleIds.forEach((moduleId) => {
+            if (!existingCompleted.has(moduleId!)) {
+              const record: UserProgress = {
+                user_id: user.id,
+                course_id: assignment.content_id,
+                module_id: moduleId!,
+                status: 'completed',
+                progress_percentage: 100,
+                video_progress_percentage: 100,
+                completed_at: new Date().toISOString(),
+                started_at: (mergedProgress.find(p => p.module_id === moduleId)?.started_at) || new Date().toISOString(),
+                last_accessed_at: new Date().toISOString(),
+                organization_id: (user as any).organizationId
+              } as UserProgress;
+
+              mergedProgress = [...mergedProgress, record];
+              healRecords.push(record);
+            }
+          });
+
+          if (healRecords.length > 0) {
+            try {
+              await supabase
+                .from('user_training_progress')
+                .upsert(healRecords as any[], { onConflict: 'user_id,course_id,module_id' });
+            } catch (e) {
+              console.error('Failed to persist healed progress from quiz attempts:', e);
+            }
+          }
+        }
+      }
+
+      setCourseProgress(mergedProgress);
 
       // Find current module (first incomplete one)
       const firstIncompleteIndex = sortedModules.findIndex((module: any) => {
-        const moduleProgress = (progressData || []).find(p => p.module_id === module.id);
+        const moduleProgress = (mergedProgress || []).find(p => p.module_id === module.id);
         return !moduleProgress || moduleProgress.status !== 'completed';
       });
       setCurrentModuleIndex(firstIncompleteIndex >= 0 ? firstIncompleteIndex : 0);
+
+      // If everything is complete, mark assignment as completed
+      const allCompleted = (sortedModules as any[]).every((module: any) => {
+        const p = (mergedProgress || []).find(mp => mp.module_id === module.id);
+        return p && p.status === 'completed';
+      });
+      if (allCompleted) {
+        try {
+          await supabase
+            .from('training_assignments')
+            .update({
+              status: 'completed',
+              completed_at: new Date().toISOString(),
+              completion_score: 100
+            })
+            .eq('id', assignment.id)
+            .eq('assigned_to', user.id);
+        } catch (e) {
+          console.error('Error auto-updating assignment completion:', e);
+        }
+      }
 
     } catch (error) {
       console.error('Error loading course data:', error);

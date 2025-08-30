@@ -485,7 +485,7 @@ export const useSubmitQuizAttempt = () => {
               progress_percentage: 100,
               completed_at: new Date().toISOString()
             }, {
-              onConflict: 'user_id,module_id',
+              onConflict: 'user_id,course_id,module_id',
               ignoreDuplicates: false
             });
 
