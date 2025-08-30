@@ -17,19 +17,21 @@ const TimeSelector: React.FC<TimeSelectorProps> = ({
   className,
   placeholder = "Select time"
 }) => {
-  // Parse the current value to get hour and minute - handle empty values properly
-  const [currentHour, currentMinute] = value && value.includes(':') ? value.split(':') : ['', ''];
+  // Parse the current value to get hour and minute - handle empty/undefined values
+  const parts = value && value.includes(':') ? value.split(':') : ['', ''];
+  const currentHour = parts[0] || '';
+  const currentMinute = parts[1] || '';
 
-  // Generate hour options (0-23)
+  // Generate hour options (0-23) with 12-hour display
   const hourOptions = Array.from({ length: 24 }, (_, i) => {
     const hour = i.toString().padStart(2, '0');
     const display12Hour = i === 0 ? '12 AM' : i < 12 ? `${i} AM` : i === 12 ? '12 PM' : `${i - 12} PM`;
     return { value: hour, label: display12Hour };
   });
 
-  // Generate minute options (every 5 minutes for better flexibility)
-  const minuteOptions = Array.from({ length: 12 }, (_, i) => {
-    const minute = (i * 5).toString().padStart(2, '0');
+  // Generate minute options (every 15 minutes for simplicity)
+  const minuteOptions = Array.from({ length: 4 }, (_, i) => {
+    const minute = (i * 15).toString().padStart(2, '0');
     return { value: minute, label: minute };
   });
 
@@ -43,15 +45,21 @@ const TimeSelector: React.FC<TimeSelectorProps> = ({
     onChange(`${hour}:${minute}`);
   };
 
-  const selectedHourOption = hourOptions.find(option => option.value === currentHour);
-  const selectedMinuteOption = minuteOptions.find(option => option.value === currentMinute);
+  const getDisplayTime = () => {
+    if (!currentHour || !currentMinute) {
+      return placeholder;
+    }
+    const hourNum = parseInt(currentHour);
+    const display12Hour = hourNum === 0 ? '12 AM' : hourNum < 12 ? `${hourNum} AM` : hourNum === 12 ? '12 PM' : `${hourNum - 12} PM`;
+    return `${display12Hour.split(' ')[0]}:${currentMinute} ${display12Hour.split(' ')[1]}`;
+  };
 
   return (
     <div className={cn("space-y-2", className)}>
       <div className="flex items-center gap-2 p-2 border rounded-md bg-background">
         <Clock className="h-4 w-4 text-muted-foreground" />
         <span className="text-sm font-medium">
-          {value && selectedHourOption ? `${selectedHourOption.label.replace(' ', ':' + currentMinute + ' ')}` : placeholder}
+          {getDisplayTime()}
         </span>
       </div>
       

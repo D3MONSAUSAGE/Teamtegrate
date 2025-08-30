@@ -90,7 +90,7 @@ export const useScheduleManagement = () => {
         .from('employee_schedules')
         .select(`
           *,
-          employee:users!employee_id(id, name, email)
+          employee:employee_id(id, name, email, avatar_url)
         `)
         .gte('scheduled_date', startDate)
         .lte('scheduled_date', endDate)
@@ -103,13 +103,17 @@ export const useScheduleManagement = () => {
 
       const { data, error } = await query;
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error:', error);
+        throw error;
+      }
       
       // Ensure employee data is properly structured from JOIN query
       const schedulesWithEmployees = (data || []) as unknown as EmployeeSchedule[];
       
       setEmployeeSchedules(schedulesWithEmployees);
     } catch (err) {
+      console.error('Fetch employee schedules error:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch employee schedules');
     } finally {
       setIsLoading(false);

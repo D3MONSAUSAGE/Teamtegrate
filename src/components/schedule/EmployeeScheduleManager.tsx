@@ -41,8 +41,8 @@ export const EmployeeScheduleManager: React.FC = () => {
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState<EmployeeSchedule | null>(null);
   const [formData, setFormData] = useState({
-    employee_id: '',
-    scheduled_date: '',
+    employee_id: selectedEmployee || '',
+    scheduled_date: format(selectedWeek, 'yyyy-MM-dd'),
     notes: '',
     start_time: '',
     end_time: ''
@@ -52,8 +52,14 @@ export const EmployeeScheduleManager: React.FC = () => {
     fetchEmployees();
   }, []);
 
+  // Update form data when selected employee or week changes
   useEffect(() => {
     if (selectedEmployee) {
+      setFormData(prev => ({
+        ...prev,
+        employee_id: selectedEmployee,
+        scheduled_date: format(selectedWeek, 'yyyy-MM-dd')
+      }));
       fetchWeeklySchedules();
     }
   }, [selectedEmployee, selectedWeek]);

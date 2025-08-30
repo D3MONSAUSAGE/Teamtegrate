@@ -521,6 +521,20 @@ export type Database = {
             referencedRelation: "shift_templates"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_employee_schedules_employee_id"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_employee_schedules_employee_id"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
         ]
       }
       events: {
