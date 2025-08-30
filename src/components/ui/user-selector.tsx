@@ -123,12 +123,18 @@ export const UserSelector: React.FC<UserSelectorProps> = ({
 
       {/* User selector */}
       <div className="flex items-center gap-2">
-        <Popover open={open} onOpenChange={setOpen}>
+        <Popover open={open} onOpenChange={(newOpen) => {
+          console.log('👥 Popover state changing to:', newOpen);
+          setOpen(newOpen);
+        }}>
           <PopoverTrigger asChild>
             <Button 
               variant="outline" 
               className="w-full justify-start text-left font-normal"
               disabled={maxSelection ? selectedUserIds.length >= maxSelection : false}
+              onClick={() => {
+                console.log('👥 PopoverTrigger clicked, current open:', open);
+              }}
             >
               <Users className="mr-2 h-4 w-4" />
               {selectedUsers.length === 0 
@@ -139,21 +145,40 @@ export const UserSelector: React.FC<UserSelectorProps> = ({
               }
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-80 p-0 z-[100] pointer-events-auto" align="start">
+          <PopoverContent 
+            className="w-80 p-0 z-[100] pointer-events-auto bg-popover border shadow-md" 
+            align="start"
+            side="bottom"
+            sideOffset={4}
+            onOpenAutoFocus={(e) => {
+              console.log('👥 PopoverContent auto focus');
+              e.preventDefault();
+            }}
+          >
             <Command className="pointer-events-auto">
               <CommandInput 
                 placeholder="Search team members..." 
                 className="h-9 pointer-events-auto"
+                onFocus={() => console.log('👥 CommandInput focused')}
               />
-              <CommandList className="pointer-events-auto">
+              <CommandList className="pointer-events-auto max-h-60 overflow-y-auto">
                 <CommandEmpty>No team members found.</CommandEmpty>
                 <CommandGroup className="pointer-events-auto">
                   {availableUsers.map(user => (
                     <CommandItem
                       key={user.id}
                       value={user.name}
-                      onSelect={() => handleUserSelect(user.id)}
-                      className="flex items-center gap-3 p-3"
+                      onSelect={() => {
+                        console.log('👥 CommandItem onSelect triggered for:', user.name);
+                        handleUserSelect(user.id);
+                      }}
+                      onClick={(e) => {
+                        console.log('👥 CommandItem onClick triggered for:', user.name);
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleUserSelect(user.id);
+                      }}
+                      className="flex items-center gap-3 p-3 cursor-pointer hover:bg-accent"
                     >
                       <Avatar className="h-8 w-8">
                         <AvatarImage src={user.avatar_url || user.avatar} />
