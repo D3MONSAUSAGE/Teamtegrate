@@ -100,7 +100,7 @@ const CourseAssignmentViewer: React.FC<CourseAssignmentViewerProps> = ({
           *,
           training_modules(
             *,
-            quizzes(*)
+            quizzes(*, quiz_questions(*))
           )
         `)
         .eq('id', assignment.content_id)
@@ -205,14 +205,21 @@ const CourseAssignmentViewer: React.FC<CourseAssignmentViewerProps> = ({
   };
 
   const handleQuizStart = (quiz: any) => {
+    const questions = (quiz.quiz_questions || []).map((q: any) => ({
+      ...q,
+      questionText: q.question_text,
+      questionType: q.question_type,
+      correctAnswer: q.correct_answer
+    }));
+
+    if (!questions.length) {
+      enhancedNotifications.error('Quiz not ready: no questions found');
+      return;
+    }
+
     setSelectedQuiz({
       ...quiz,
-      questions: (quiz.quiz_questions || []).map((q: any) => ({
-        ...q,
-        questionText: q.question_text,
-        questionType: q.question_type,
-        correctAnswer: q.correct_answer
-      })),
+      questions,
       passingScore: quiz.passing_score,
       maxAttempts: quiz.max_attempts,
       timeLimitMinutes: quiz.time_limit_minutes
