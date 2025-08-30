@@ -1,33 +1,49 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useScheduleManagement } from '@/hooks/useScheduleManagement';
 import { format, startOfWeek, endOfWeek, addDays, isSameDay } from 'date-fns';
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import ErrorBoundary from '@/components/ui/error-boundary';
 
 export const ScheduleCalendarView: React.FC = () => {
-  const { employeeSchedules, fetchEmployeeSchedules, isLoading } = useScheduleManagement();
+  const { employeeSchedules, fetchEmployeeSchedules, isLoading, error } = useScheduleManagement();
   const [selectedWeek, setSelectedWeek] = useState(new Date());
+
+  // Debounced fetch to prevent excessive API calls
+  const debouncedFetch = useCallback((weekStart: string, weekEnd: string) => {
+    const timeoutId = setTimeout(() => {
+      fetchEmployeeSchedules(weekStart, weekEnd, true);
+    }, 300);
+    return () => clearTimeout(timeoutId);
+  }, [fetchEmployeeSchedules]);
 
   useEffect(() => {
     const weekStart = format(startOfWeek(selectedWeek), 'yyyy-MM-dd');
     const weekEnd = format(endOfWeek(selectedWeek), 'yyyy-MM-dd');
-    fetchEmployeeSchedules(weekStart, weekEnd, true);
-  }, [selectedWeek, fetchEmployeeSchedules]);
+    const cleanup = debouncedFetch(weekStart, weekEnd);
+    return cleanup;
+  }, [selectedWeek, debouncedFetch]);
 
-  const navigateWeek = (direction: 'prev' | 'next') => {
+  const navigateWeek = useCallback((direction: 'prev' | 'next') => {
     setSelectedWeek(current => 
       direction === 'prev' 
         ? addDays(current, -7)
         : addDays(current, 7)
     );
-  };
+  }, []);
 
-  const renderCalendarGrid = () => {
+  // Memoize calendar data to prevent unnecessary recalculations
+  const calendarData = useMemo(() => {
     const weekStart = startOfWeek(selectedWeek);
     const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
     const timeSlots = Array.from({ length: 24 }, (_, i) => i);
+    return { weekStart, days, timeSlots };
+  }, [selectedWeek]);
+
+  const renderCalendarGrid = () => {
+    const { days, timeSlots } = calendarData;
 
     return (
       <div className="overflow-x-auto">
@@ -49,7 +65,7 @@ export const ScheduleCalendarView: React.FC = () => {
           {/* Time slots */}
           <div className="grid grid-cols-8 gap-px bg-border max-h-[600px] overflow-y-auto">
             {timeSlots.map((hour) => (
-              <React.Fragment key={hour}>
+              <div key={hour} className="contents">
                 <div className="bg-background p-2 text-xs text-muted-foreground border-r">
                   {format(new Date().setHours(hour, 0, 0, 0), 'HH:mm')}
                 </div>
@@ -82,7 +98,7 @@ export const ScheduleCalendarView: React.FC = () => {
                     </div>
                   );
                 })}
-              </React.Fragment>
+              </div>
             ))}
           </div>
         </div>
@@ -91,44 +107,52 @@ export const ScheduleCalendarView: React.FC = () => {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>Schedule Calendar</CardTitle>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigateWeek('prev')}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span className="text-sm font-medium min-w-[200px] text-center">
-              {format(startOfWeek(selectedWeek), 'MMM d')} - {format(endOfWeek(selectedWeek), 'MMM d, yyyy')}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigateWeek('next')}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-            <Button size="sm">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Shift
-            </Button>
+    <ErrorBoundary>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>Schedule Calendar</CardTitle>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigateWeek('prev')}
+                disabled={isLoading}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="text-sm font-medium min-w-[200px] text-center">
+                {format(calendarData.weekStart, 'MMM d')} - {format(endOfWeek(selectedWeek), 'MMM d, yyyy')}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigateWeek('next')}
+                disabled={isLoading}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <Button size="sm" disabled={isLoading}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Shift
+              </Button>
+            </div>
           </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <div className="flex items-center justify-center h-[400px]">
-            <div className="text-muted-foreground">Loading schedule...</div>
-          </div>
-        ) : (
-          renderCalendarGrid()
-        )}
-      </CardContent>
-    </Card>
+        </CardHeader>
+        <CardContent>
+          {error ? (
+            <div className="flex items-center justify-center h-[400px]">
+              <div className="text-destructive">Error loading schedule: {error}</div>
+            </div>
+          ) : isLoading ? (
+            <div className="flex items-center justify-center h-[400px]">
+              <div className="text-muted-foreground">Loading schedule...</div>
+            </div>
+          ) : (
+            renderCalendarGrid()
+          )}
+        </CardContent>
+      </Card>
+    </ErrorBoundary>
   );
 };

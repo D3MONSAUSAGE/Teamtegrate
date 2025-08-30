@@ -17,8 +17,8 @@ const TimeSelector: React.FC<TimeSelectorProps> = ({
   className,
   placeholder = "Select time"
 }) => {
-  // Parse the current value to get hour and minute
-  const [currentHour, currentMinute] = value ? value.split(':') : ['09', '00'];
+  // Parse the current value to get hour and minute - handle empty values properly
+  const [currentHour, currentMinute] = value && value.includes(':') ? value.split(':') : ['', ''];
 
   // Generate hour options (0-23)
   const hourOptions = Array.from({ length: 24 }, (_, i) => {
@@ -27,18 +27,20 @@ const TimeSelector: React.FC<TimeSelectorProps> = ({
     return { value: hour, label: display12Hour };
   });
 
-  // Generate minute options (every 15 minutes)
-  const minuteOptions = Array.from({ length: 4 }, (_, i) => {
-    const minute = (i * 15).toString().padStart(2, '0');
+  // Generate minute options (every 5 minutes for better flexibility)
+  const minuteOptions = Array.from({ length: 12 }, (_, i) => {
+    const minute = (i * 5).toString().padStart(2, '0');
     return { value: minute, label: minute };
   });
 
   const handleHourChange = (hour: string) => {
-    onChange(`${hour}:${currentMinute}`);
+    const minute = currentMinute || '00';
+    onChange(`${hour}:${minute}`);
   };
 
   const handleMinuteChange = (minute: string) => {
-    onChange(`${currentHour}:${minute}`);
+    const hour = currentHour || '09';
+    onChange(`${hour}:${minute}`);
   };
 
   const selectedHourOption = hourOptions.find(option => option.value === currentHour);
@@ -49,7 +51,7 @@ const TimeSelector: React.FC<TimeSelectorProps> = ({
       <div className="flex items-center gap-2 p-2 border rounded-md bg-background">
         <Clock className="h-4 w-4 text-muted-foreground" />
         <span className="text-sm font-medium">
-          {value ? (selectedHourOption?.label + ':' + currentMinute) : placeholder}
+          {value && selectedHourOption ? `${selectedHourOption.label.replace(' ', ':' + currentMinute + ' ')}` : placeholder}
         </span>
       </div>
       

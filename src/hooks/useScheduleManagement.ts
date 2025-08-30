@@ -88,7 +88,10 @@ export const useScheduleManagement = () => {
 
       let query = supabase
         .from('employee_schedules')
-        .select('*')
+        .select(`
+          *,
+          employee:users!employee_id(id, name, email)
+        `)
         .gte('scheduled_date', startDate)
         .lte('scheduled_date', endDate)
         .order('scheduled_start_time', { ascending: true });
@@ -102,21 +105,8 @@ export const useScheduleManagement = () => {
 
       if (error) throw error;
       
-      // Fetch employee data separately for each schedule
-      const schedulesWithEmployees = await Promise.all(
-        (data || []).map(async (schedule) => {
-          const { data: employeeData } = await supabase
-            .from('users')
-            .select('id, name, email')
-            .eq('id', schedule.employee_id)
-            .single();
-          
-          return {
-            ...schedule,
-            employee: employeeData
-          };
-        })
-      );
+      // Ensure employee data is properly structured from JOIN query
+      const schedulesWithEmployees = (data || []) as unknown as EmployeeSchedule[];
       
       setEmployeeSchedules(schedulesWithEmployees);
     } catch (err) {
