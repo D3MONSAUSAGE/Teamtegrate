@@ -54,7 +54,7 @@ const CourseEditor: React.FC<CourseEditorProps> = ({ open, onOpenChange, course 
       setFormData({
         title: course.title || '',
         description: course.description || '',
-        difficulty: course.difficulty_level || 'Beginner',
+        difficulty: course.difficulty_level ? (course.difficulty_level.charAt(0).toUpperCase() + course.difficulty_level.slice(1)) : 'Beginner',
         duration_hours: course.estimated_duration_minutes ? Math.round(course.estimated_duration_minutes / 60) : 1,
         is_active: course.is_active ?? true
       });

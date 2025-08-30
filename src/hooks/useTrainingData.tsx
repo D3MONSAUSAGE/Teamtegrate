@@ -313,7 +313,7 @@ export const useCreateCourse = () => {
       const coursePayload = {
         title: course.title,
         description: course.description ?? null,
-        difficulty_level: course.difficulty ?? null,
+        difficulty_level: course.difficulty ? String(course.difficulty).toLowerCase() : null,
         estimated_duration_minutes: typeof course.duration_hours === 'number'
           ? Math.round(course.duration_hours * 60)
           : null,
@@ -589,7 +589,7 @@ export const useUpdateCourse = () => {
       const coursePayload = {
         title: course.title,
         description: course.description ?? null,
-        difficulty_level: course.difficulty ?? null,
+        difficulty_level: course.difficulty ? String(course.difficulty).toLowerCase() : null,
         estimated_duration_minutes: typeof course.duration_hours === 'number'
           ? Math.round(course.duration_hours * 60)
           : null,
@@ -604,7 +604,7 @@ export const useUpdateCourse = () => {
         .eq('id', courseId)
         .eq('organization_id', user.organizationId)
         .select()
-        .single();
+        .maybeSingle()
 
       if (courseError) throw courseError;
 
@@ -622,13 +622,15 @@ export const useUpdateCourse = () => {
         const moduleIdsToKeep = [];
 
         for (const module of modules) {
+          const contentType = module.content_type || 'text';
           const modulePayload = {
             title: module.title,
             description: module.description ?? null,
             module_order: module.module_order,
             course_id: courseId,
-            content_type: 'text',
-            text_content: module.content ?? null,
+            content_type: contentType,
+            text_content: (contentType === 'text' || contentType === 'mixed') ? (module.content ?? null) : null,
+            youtube_video_id: (contentType === 'video' || contentType === 'mixed') ? (module.youtube_video_id ?? null) : null,
             updated_at: new Date().toISOString()
           };
 
