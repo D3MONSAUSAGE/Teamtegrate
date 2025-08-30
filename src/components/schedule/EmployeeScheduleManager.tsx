@@ -147,21 +147,13 @@ export const EmployeeScheduleManager: React.FC = () => {
       const startTime = formData.start_time;
       const endTime = formData.end_time;
       
-      // Parse date components to avoid timezone shifting
-      const dateComponents = formData.scheduled_date.split('-').map(Number);
-      const [year, month, day] = dateComponents;
-      
-      // Parse time components
-      const [startHour, startMinute] = startTime.split(':').map(Number);
-      const [endHour, endMinute] = endTime.split(':').map(Number);
-      
-      // Create UTC datetime objects to preserve the intended date
-      const scheduledStartTime = new Date(Date.UTC(year, month - 1, day, startHour, startMinute));
-      const scheduledEndTime = new Date(Date.UTC(year, month - 1, day, endHour, endMinute));
+      // Create full datetime objects
+      const scheduledStartTime = new Date(`${formData.scheduled_date}T${startTime}`);
+      const scheduledEndTime = new Date(`${formData.scheduled_date}T${endTime}`);
       
       // Handle overnight shifts (end time is before start time)
       if (scheduledEndTime <= scheduledStartTime) {
-        scheduledEndTime.setUTCDate(scheduledEndTime.getUTCDate() + 1);
+        scheduledEndTime.setDate(scheduledEndTime.getDate() + 1);
       }
 
       const scheduleData = {
@@ -226,7 +218,7 @@ export const EmployeeScheduleManager: React.FC = () => {
         {weekDays.map((date) => {
           const dateStr = format(date, 'yyyy-MM-dd');
           const daySchedule = weeklySchedules.find(schedule => 
-            isSameDay(new Date(schedule.scheduled_date), date)
+            schedule.scheduled_date === dateStr
           );
           
           return (
