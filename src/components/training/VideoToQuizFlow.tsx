@@ -46,6 +46,8 @@ interface VideoToQuizFlowProps {
   onQuizStart: () => void;
   onModuleComplete?: () => void;
   className?: string;
+  autoStartQuiz?: boolean;
+  autoStartDelaySeconds?: number;
 }
 
 interface UserProgress {
@@ -67,12 +69,15 @@ const VideoToQuizFlow: React.FC<VideoToQuizFlowProps> = ({
   quiz,
   onQuizStart,
   onModuleComplete,
-  className = ""
+  className = "",
+  autoStartQuiz = false,
+  autoStartDelaySeconds = 5
 }) => {
   const { user } = useAuth();
   const [progress, setProgress] = useState<UserProgress | null>(null);
   const [isVideoCompleted, setIsVideoCompleted] = useState(false);
   const [currentStep, setCurrentStep] = useState<'intro' | 'video' | 'quiz-ready' | 'quiz' | 'complete'>('intro');
+  const [autoStartCountdown, setAutoStartCountdown] = useState<number | null>(null);
 
   useEffect(() => {
     if (module.id && user?.id) {
@@ -198,6 +203,11 @@ const VideoToQuizFlow: React.FC<VideoToQuizFlowProps> = ({
 
   const handleVideoComplete = () => {
     updateVideoProgress(100);
+    
+    // Start auto-quiz countdown if enabled
+    if (autoStartQuiz && quiz && autoStartDelaySeconds > 0) {
+      setAutoStartCountdown(autoStartDelaySeconds);
+    }
   };
 
   const handleQuizStart = () => {
@@ -211,7 +221,28 @@ const VideoToQuizFlow: React.FC<VideoToQuizFlowProps> = ({
 
   const restartVideo = () => {
     setCurrentStep('video');
+    setAutoStartCountdown(null);
   };
+
+  const cancelAutoStart = () => {
+    setAutoStartCountdown(null);
+  };
+
+  // Auto-start countdown effect
+  React.useEffect(() => {
+    if (autoStartCountdown === null) return;
+
+    if (autoStartCountdown === 0) {
+      handleQuizStart();
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setAutoStartCountdown(autoStartCountdown - 1);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [autoStartCountdown]);
 
   const getStepStatus = (step: string) => {
     switch (step) {
@@ -333,16 +364,38 @@ const VideoToQuizFlow: React.FC<VideoToQuizFlowProps> = ({
 
         {isVideoCompleted && quiz && (
           <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-            <div className="flex items-center gap-3">
-              <CheckCircle className="h-5 w-5 text-green-500" />
-              <div className="flex-1">
-                <p className="font-medium text-green-800">Video Complete!</p>
-                <p className="text-sm text-green-600">You can now proceed to the quiz.</p>
+            {autoStartCountdown !== null ? (
+              <div className="flex items-center gap-3">
+                <div className="animate-pulse">
+                  <CheckCircle className="h-5 w-5 text-green-500" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium text-green-800">Video Complete!</p>
+                  <p className="text-sm text-green-600">
+                    Quiz starting automatically in {autoStartCountdown} seconds...
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={cancelAutoStart}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleQuizStart} className="ml-auto">
+                    Start Now
+                  </Button>
+                </div>
               </div>
-              <Button onClick={handleQuizStart} className="ml-auto">
-                Take Quiz
-              </Button>
-            </div>
+            ) : (
+              <div className="flex items-center gap-3">
+                <CheckCircle className="h-5 w-5 text-green-500" />
+                <div className="flex-1">
+                  <p className="font-medium text-green-800">Video Complete!</p>
+                  <p className="text-sm text-green-600">You can now proceed to the quiz.</p>
+                </div>
+                <Button onClick={handleQuizStart} className="ml-auto">
+                  Take Quiz
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </CardContent>
