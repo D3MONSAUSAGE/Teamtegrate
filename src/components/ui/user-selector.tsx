@@ -13,6 +13,7 @@ interface User {
   email?: string;
   role?: string;
   avatar?: string;
+  avatar_url?: string; // Add support for avatar_url from useOrganizationUsers
 }
 
 interface UserSelectorProps {
@@ -36,16 +37,26 @@ export const UserSelector: React.FC<UserSelectorProps> = ({
 }) => {
   const [open, setOpen] = useState(false);
 
+  // Debug logging
+  console.log('👥 UserSelector: Received users:', users);
+  console.log('👥 UserSelector: Selected IDs:', selectedUserIds);
+
   const selectedUsers = users.filter(user => selectedUserIds.includes(user.id));
   const availableUsers = users.filter(user => !selectedUserIds.includes(user.id));
 
   const handleUserSelect = (userId: string) => {
+    console.log('👥 UserSelector: User selected:', userId);
     if (selectedUserIds.includes(userId)) {
       // Remove user
       onSelectionChange(selectedUserIds.filter(id => id !== userId));
     } else if (!maxSelection || selectedUserIds.length < maxSelection) {
       // Add user (unlimited if maxSelection is undefined)
       onSelectionChange([...selectedUserIds, userId]);
+    }
+    
+    // Close the popover after selection if not multiple
+    if (!multiple) {
+      setOpen(false);
     }
   };
 
@@ -85,7 +96,7 @@ export const UserSelector: React.FC<UserSelectorProps> = ({
               className="flex items-center gap-2 px-3 py-1.5 text-sm"
             >
               <Avatar className="h-5 w-5">
-                <AvatarImage src={user.avatar} />
+                <AvatarImage src={user.avatar_url || user.avatar} />
                 <AvatarFallback className="text-xs">
                   {getInitials(user.name)}
                 </AvatarFallback>
@@ -128,7 +139,7 @@ export const UserSelector: React.FC<UserSelectorProps> = ({
               }
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-80 p-0 z-[70] pointer-events-auto" align="start">
+          <PopoverContent className="w-80 p-0 z-[100] pointer-events-auto" align="start">
             <Command className="pointer-events-auto">
               <CommandInput 
                 placeholder="Search team members..." 
@@ -145,7 +156,7 @@ export const UserSelector: React.FC<UserSelectorProps> = ({
                       className="flex items-center gap-3 p-3"
                     >
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src={user.avatar} />
+                        <AvatarImage src={user.avatar_url || user.avatar} />
                         <AvatarFallback>
                           {getInitials(user.name)}
                         </AvatarFallback>

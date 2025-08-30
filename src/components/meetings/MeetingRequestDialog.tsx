@@ -67,7 +67,11 @@ export const MeetingRequestDialog: React.FC<MeetingRequestDialogProps> = ({
   }, [open]); // Only depend on open state
 
   const { createMeetingRequest } = useMeetingRequests();
-  const { users } = useOrganizationUsers();
+  const { users, loading: usersLoading } = useOrganizationUsers();
+
+  // Debug logging for users
+  console.log('🔧 MeetingRequestDialog: Users loaded:', users);
+  console.log('🔧 MeetingRequestDialog: Users loading:', usersLoading);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -145,7 +149,6 @@ export const MeetingRequestDialog: React.FC<MeetingRequestDialogProps> = ({
       )}
       <DialogContent 
         className="max-w-2xl max-h-[90vh] overflow-y-auto"
-        onPointerDownOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => setOpen(false)}
       >
         <DialogHeader>
