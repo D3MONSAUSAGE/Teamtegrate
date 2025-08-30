@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Plus, Trash2, GripVertical } from "lucide-react";
+import { Loader2, Plus, Trash2, GripVertical, Video, FileText, PlayCircle } from "lucide-react";
 import { useUpdateCourse, useDeleteCourse } from "@/hooks/useTrainingData";
 import { enhancedNotifications } from "@/utils/enhancedNotifications";
 
@@ -25,6 +25,8 @@ interface Module {
   description: string;
   module_order: number;
   content?: string;
+  content_type?: 'text' | 'video' | 'mixed';
+  youtube_video_id?: string;
 }
 
 interface CourseEditorProps {
@@ -63,7 +65,9 @@ const CourseEditor: React.FC<CourseEditorProps> = ({ open, onOpenChange, course 
         title: mod.title || '',
         description: mod.description || '',
         module_order: mod.module_order || index + 1,
-        content: mod.text_content || ''
+        content: mod.text_content || '',
+        content_type: mod.content_type || 'text',
+        youtube_video_id: mod.youtube_video_id || ''
       })) || []);
     }
   }, [course, open]);
@@ -107,7 +111,9 @@ const CourseEditor: React.FC<CourseEditorProps> = ({ open, onOpenChange, course 
       title: '',
       description: '',
       module_order: modules.length + 1,
-      content: ''
+      content: '',
+      content_type: 'text',
+      youtube_video_id: ''
     };
     setModules([...modules, newModule]);
   };
@@ -229,12 +235,17 @@ const CourseEditor: React.FC<CourseEditorProps> = ({ open, onOpenChange, course 
 
               {modules.map((module, index) => (
                 <Card key={index}>
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-sm flex items-center gap-2">
-                        <GripVertical className="h-4 w-4 text-muted-foreground cursor-move" />
-                        Module {module.module_order}
-                      </CardTitle>
+                   <CardHeader className="pb-3">
+                     <div className="flex items-center justify-between">
+                       <div className="flex items-center gap-2">
+                         <CardTitle className="text-sm flex items-center gap-2">
+                           <GripVertical className="h-4 w-4 text-muted-foreground cursor-move" />
+                           Module {module.module_order}
+                         </CardTitle>
+                         {module.content_type === 'video' && <Video className="h-4 w-4 text-blue-500" />}
+                         {module.content_type === 'mixed' && <PlayCircle className="h-4 w-4 text-purple-500" />}
+                         {(!module.content_type || module.content_type === 'text') && <FileText className="h-4 w-4 text-gray-500" />}
+                       </div>
                       <Button
                         type="button"
                         variant="ghost"
@@ -244,36 +255,71 @@ const CourseEditor: React.FC<CourseEditorProps> = ({ open, onOpenChange, course 
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <Label>Module Title</Label>
-                        <Input
-                          value={module.title}
-                          onChange={(e) => updateModule(index, 'title', e.target.value)}
-                          placeholder="Module title"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label>Module Description</Label>
-                        <Input
-                          value={module.description}
-                          onChange={(e) => updateModule(index, 'description', e.target.value)}
-                          placeholder="Brief description"
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-1">
-                      <Label>Content</Label>
-                      <Textarea
-                        value={module.content || ''}
-                        onChange={(e) => updateModule(index, 'content', e.target.value)}
-                        placeholder="Module content"
-                        rows={3}
-                      />
-                    </div>
+                     </div>
+                   </CardHeader>
+                   <CardContent className="space-y-3">
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                       <div className="space-y-1">
+                         <Label>Module Title</Label>
+                         <Input
+                           value={module.title}
+                           onChange={(e) => updateModule(index, 'title', e.target.value)}
+                           placeholder="Module title"
+                         />
+                       </div>
+                       <div className="space-y-1">
+                         <Label>Module Description</Label>
+                         <Input
+                           value={module.description}
+                           onChange={(e) => updateModule(index, 'description', e.target.value)}
+                           placeholder="Brief description"
+                         />
+                       </div>
+                     </div>
+                     
+                     <div className="space-y-1">
+                       <Label>Content Type</Label>
+                       <Select
+                         value={module.content_type || 'text'}
+                         onValueChange={(value: 'text' | 'video' | 'mixed') => updateModule(index, 'content_type', value)}
+                       >
+                         <SelectTrigger>
+                           <SelectValue placeholder="Select content type" />
+                         </SelectTrigger>
+                         <SelectContent>
+                           <SelectItem value="text">Text Only</SelectItem>
+                           <SelectItem value="video">Video Only</SelectItem>
+                           <SelectItem value="mixed">Text + Video</SelectItem>
+                         </SelectContent>
+                       </Select>
+                     </div>
+                     
+                     {(module.content_type === 'video' || module.content_type === 'mixed') && (
+                       <div className="space-y-1">
+                         <Label>YouTube Video ID</Label>
+                         <Input
+                           value={module.youtube_video_id || ''}
+                           onChange={(e) => updateModule(index, 'youtube_video_id', e.target.value)}
+                           placeholder="Enter YouTube video ID (e.g., dQw4w9WgXcQ)"
+                         />
+                         <p className="text-xs text-muted-foreground">
+                           Extract the video ID from the YouTube URL. For example, from 
+                           https://www.youtube.com/watch?v=dQw4w9WgXcQ, use "dQw4w9WgXcQ"
+                         </p>
+                       </div>
+                     )}
+                     
+                     {(module.content_type === 'text' || module.content_type === 'mixed') && (
+                       <div className="space-y-1">
+                         <Label>Content</Label>
+                         <Textarea
+                           value={module.content || ''}
+                           onChange={(e) => updateModule(index, 'content', e.target.value)}
+                           placeholder="Module content"
+                           rows={3}
+                         />
+                       </div>
+                     )}
                   </CardContent>
                 </Card>
               ))}

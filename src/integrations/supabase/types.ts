@@ -2278,6 +2278,9 @@ export type Database = {
           started_at: string | null
           status: string | null
           user_id: string
+          video_completed_at: string | null
+          video_progress_percentage: number | null
+          video_watch_time_seconds: number | null
         }
         Insert: {
           completed_at?: string | null
@@ -2290,6 +2293,9 @@ export type Database = {
           started_at?: string | null
           status?: string | null
           user_id: string
+          video_completed_at?: string | null
+          video_progress_percentage?: number | null
+          video_watch_time_seconds?: number | null
         }
         Update: {
           completed_at?: string | null
@@ -2302,6 +2308,9 @@ export type Database = {
           started_at?: string | null
           status?: string | null
           user_id?: string
+          video_completed_at?: string | null
+          video_progress_percentage?: number | null
+          video_watch_time_seconds?: number | null
         }
         Relationships: []
       }
