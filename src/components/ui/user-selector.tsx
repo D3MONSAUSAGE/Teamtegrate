@@ -128,15 +128,15 @@ export const UserSelector: React.FC<UserSelectorProps> = ({
               }
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-80 p-0" align="start">
-            <Command>
+          <PopoverContent className="w-80 p-0 z-[70] pointer-events-auto" align="start">
+            <Command className="pointer-events-auto">
               <CommandInput 
                 placeholder="Search team members..." 
-                className="h-9"
+                className="h-9 pointer-events-auto"
               />
-              <CommandList>
+              <CommandList className="pointer-events-auto">
                 <CommandEmpty>No team members found.</CommandEmpty>
-                <CommandGroup>
+                <CommandGroup className="pointer-events-auto">
                   {availableUsers.map(user => (
                     <CommandItem
                       key={user.id}
