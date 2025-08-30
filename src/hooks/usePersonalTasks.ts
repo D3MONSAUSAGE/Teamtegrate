@@ -209,6 +209,7 @@ export const usePersonalTasks = () => {
               status: (task.status as 'To Do' | 'In Progress' | 'Completed') || 'To Do',
               createdAt: task.created_at ? new Date(task.created_at) : new Date(),
               updatedAt: task.updated_at ? new Date(task.updated_at) : new Date(),
+              completedAt: task.completed_at ? new Date(task.completed_at) : undefined,
               assignedToId,
               assignedToName,
               assignedToIds,
