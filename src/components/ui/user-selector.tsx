@@ -164,48 +164,56 @@ export const UserSelector: React.FC<UserSelectorProps> = ({
               <CommandList className="pointer-events-auto max-h-60 overflow-y-auto">
                 <CommandEmpty>No team members found.</CommandEmpty>
                 <CommandGroup className="pointer-events-auto">
-                  {availableUsers.map(user => (
-                    <CommandItem
-                      key={user.id}
-                      value={user.name}
-                      onSelect={() => {
-                        console.log('👥 CommandItem onSelect triggered for:', user.name);
-                        handleUserSelect(user.id);
-                      }}
-                      onClick={(e) => {
-                        console.log('👥 CommandItem onClick triggered for:', user.name);
-                        e.preventDefault();
-                        e.stopPropagation();
-                        handleUserSelect(user.id);
-                      }}
-                      className="flex items-center gap-3 p-3 cursor-pointer hover:bg-accent"
-                    >
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={user.avatar_url || user.avatar} />
-                        <AvatarFallback>
-                          {getInitials(user.name)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium truncate">{user.name}</span>
-                          {user.role && (
-                            <Badge 
-                              variant={getRoleBadgeVariant(user.role)} 
-                              className="text-xs px-1.5 py-0"
-                            >
-                              {user.role}
-                            </Badge>
-                          )}
+                  {availableUsers.length > 0 ? (
+                    availableUsers.map(user => {
+                      console.log('👥 Rendering user item:', user.name);
+                      return (
+                        <div
+                          key={user.id}
+                          className="flex items-center gap-3 p-3 cursor-pointer hover:bg-accent rounded-sm transition-colors relative"
+                          onClick={(e) => {
+                            console.log('👥 DIV onClick triggered for:', user.name, user.id);
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleUserSelect(user.id);
+                          }}
+                          onMouseDown={(e) => {
+                            console.log('👥 DIV onMouseDown triggered for:', user.name);
+                            e.preventDefault();
+                          }}
+                        >
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={user.avatar_url || user.avatar} />
+                            <AvatarFallback>
+                              {getInitials(user.name)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium truncate">{user.name}</span>
+                              {user.role && (
+                                <Badge 
+                                  variant={getRoleBadgeVariant(user.role)} 
+                                  className="text-xs px-1.5 py-0"
+                                >
+                                  {user.role}
+                                </Badge>
+                              )}
+                            </div>
+                            {user.email && (
+                              <p className="text-sm text-muted-foreground truncate">
+                                {user.email}
+                              </p>
+                            )}
+                          </div>
                         </div>
-                        {user.email && (
-                          <p className="text-sm text-muted-foreground truncate">
-                            {user.email}
-                          </p>
-                        )}
-                      </div>
-                    </CommandItem>
-                  ))}
+                      );
+                    })
+                  ) : (
+                    <div className="p-3 text-sm text-muted-foreground">
+                      No users available for selection
+                    </div>
+                  )}
                 </CommandGroup>
               </CommandList>
             </Command>
