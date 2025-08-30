@@ -6,8 +6,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Save, X, PenTool, MessageSquare } from 'lucide-react';
+import { Plus, Trash2, Save, X, PenTool, MessageSquare, Eye, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
 import { useTrainingCourses, useTrainingModules, useCreateQuiz } from '@/hooks/useTrainingData';
 
 interface Question {
@@ -80,8 +82,51 @@ const QuizCreator: React.FC<QuizCreatorProps> = ({ open, onOpenChange }) => {
     setQuestions(questions.filter((_, i) => i !== index));
   };
 
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [showPreview, setShowPreview] = useState(false);
+
+  const validateQuiz = () => {
+    const errors: string[] = [];
+    
+    if (!quizData.title.trim()) {
+      errors.push('Quiz title is required');
+    }
+    
+    if (!quizData.module_id) {
+      errors.push('Please select a module');
+    }
+    
+    if (questions.length === 0) {
+      errors.push('At least one question is required');
+    }
+    
+    questions.forEach((question, index) => {
+      if (!question.question_text.trim()) {
+        errors.push(`Question ${index + 1} text is required`);
+      }
+      
+      if (!question.correct_answer.trim()) {
+        errors.push(`Question ${index + 1} must have a correct answer`);
+      }
+      
+      if (question.question_type === 'multiple_choice') {
+        const validOptions = question.options?.filter(opt => opt.trim()) || [];
+        if (validOptions.length < 2) {
+          errors.push(`Question ${index + 1} needs at least 2 valid options`);
+        }
+        
+        if (!question.options?.includes(question.correct_answer)) {
+          errors.push(`Question ${index + 1} correct answer must match one of the options`);
+        }
+      }
+    });
+    
+    setValidationErrors(errors);
+    return errors.length === 0;
+  };
+
   const handleSubmit = async () => {
-    if (!quizData.title || !quizData.module_id || questions.length === 0) {
+    if (!validateQuiz()) {
       return;
     }
 
@@ -102,6 +147,8 @@ const QuizCreator: React.FC<QuizCreatorProps> = ({ open, onOpenChange }) => {
       });
       setQuestions([]);
       setSelectedCourse('');
+      setValidationErrors([]);
+      setShowPreview(false);
       onOpenChange(false);
     } catch (error) {
       console.error('Failed to create quiz:', error);
@@ -118,6 +165,31 @@ const QuizCreator: React.FC<QuizCreatorProps> = ({ open, onOpenChange }) => {
             </div>
             Create New Quiz
           </DialogTitle>
+          <div className="flex items-center gap-4 mt-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowPreview(!showPreview)}
+              disabled={questions.length === 0}
+              className="gap-2"
+            >
+              <Eye className="h-4 w-4" />
+              {showPreview ? 'Edit' : 'Preview'}
+            </Button>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <div className="flex items-center gap-1">
+                <CheckCircle className="h-4 w-4 text-green-500" />
+                <span>{questions.length} questions</span>
+              </div>
+              {quizData.time_limit_minutes && (
+                <div className="flex items-center gap-1">
+                  <Clock className="h-4 w-4 text-blue-500" />
+                  <span>{quizData.time_limit_minutes}min</span>
+                </div>
+              )}
+            </div>
+          </div>
         </DialogHeader>
 
         <div className="space-y-6">
@@ -360,18 +432,29 @@ const QuizCreator: React.FC<QuizCreatorProps> = ({ open, onOpenChange }) => {
           </Card>
         </div>
 
-        <div className="flex justify-end gap-3 pt-4 border-t">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button 
-            onClick={handleSubmit}
-            disabled={!quizData.title || !quizData.module_id || questions.length === 0 || createQuizMutation.isPending}
-            className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600"
-          >
-            <Save className="h-4 w-4 mr-2" />
-            {createQuizMutation.isPending ? 'Creating...' : 'Create Quiz'}
-          </Button>
+        <div className="flex justify-between items-center pt-4 border-t">
+          <div className="text-sm text-muted-foreground">
+            {questions.length === 0 ? (
+              <span className="text-amber-600">⚠️ Add at least one question to create the quiz</span>
+            ) : validationErrors.length > 0 ? (
+              <span className="text-destructive">⚠️ Please fix validation errors above</span>
+            ) : (
+              <span className="text-green-600">✅ Quiz is ready to be created</span>
+            )}
+          </div>
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSubmit}
+              disabled={!quizData.title || !quizData.module_id || questions.length === 0 || validationErrors.length > 0 || createQuizMutation.isPending}
+              className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600"
+            >
+              <Save className="h-4 w-4 mr-2" />
+              {createQuizMutation.isPending ? 'Creating...' : 'Create Quiz'}
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

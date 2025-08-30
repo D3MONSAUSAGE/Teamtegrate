@@ -285,9 +285,20 @@ const TrainingPage = () => {
                            <div className="flex items-center justify-between">
                              <div className="space-y-1 flex-1">
                                <h4 className="text-sm font-medium text-foreground">{quiz.title}</h4>
-                               <p className="text-xs text-muted-foreground">
-                                 {quiz.quiz_questions?.length || 0} questions • {quiz.passing_score}% to pass
-                               </p>
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                  <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                                    (quiz.quiz_questions?.length || 0) === 0 
+                                      ? 'bg-amber-100 text-amber-700' 
+                                      : 'bg-green-100 text-green-700'
+                                  }`}>
+                                    {quiz.quiz_questions?.length || 0} questions
+                                  </span>
+                                  <span>•</span>
+                                  <span>{quiz.passing_score}% to pass</span>
+                                  {(quiz.quiz_questions?.length || 0) === 0 && (
+                                    <span className="text-amber-600 font-medium">⚠️ Needs questions</span>
+                                  )}
+                                </div>
                              </div>
                              {canManageContent && (
                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

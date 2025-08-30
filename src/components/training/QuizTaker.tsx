@@ -57,11 +57,37 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onComplete, onExit }) => {
     return (
       <Card className="max-w-2xl mx-auto">
         <CardHeader>
-          <CardTitle>Quiz Error</CardTitle>
-          <CardDescription>This quiz has no questions available.</CardDescription>
+          <CardTitle className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-amber-500" />
+            Quiz Not Ready
+          </CardTitle>
+          <CardDescription>
+            This quiz has no questions available. It may have been created but not properly configured.
+          </CardDescription>
         </CardHeader>
-        <CardContent>
-          <Button onClick={onExit}>Return to Course</Button>
+        <CardContent className="space-y-4">
+          <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
+            <p className="text-sm text-amber-800">
+              <strong>What happened?</strong> This quiz was created but doesn't contain any questions yet. 
+              An administrator needs to add questions before students can take this quiz.
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <Button onClick={onExit} variant="outline">
+              Return to Course
+            </Button>
+            <Button 
+              onClick={() => {
+                // In a real app, this would open the quiz editor
+                console.log('Would open quiz editor for quiz:', quiz.id);
+                onExit();
+              }}
+              className="bg-blue-500 hover:bg-blue-600"
+            >
+              <Edit className="h-4 w-4 mr-2" />
+              Edit Quiz (Admin)
+            </Button>
+          </div>
         </CardContent>
       </Card>
     );
