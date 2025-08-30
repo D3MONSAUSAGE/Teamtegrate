@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Plus, Trash2, GripVertical, Video, FileText, PlayCircle } from "lucide-react";
 import { useUpdateCourse, useDeleteCourse } from "@/hooks/useTrainingData";
 import { enhancedNotifications } from "@/utils/enhancedNotifications";
+import { extractYouTubeVideoId, isValidYouTubeInput } from "@/lib/youtube";
 
 interface Module {
   id?: string;
@@ -120,7 +121,15 @@ const CourseEditor: React.FC<CourseEditorProps> = ({ open, onOpenChange, course 
 
   const updateModule = (index: number, field: keyof Module, value: string | number) => {
     const updatedModules = [...modules];
-    updatedModules[index] = { ...updatedModules[index], [field]: value };
+    
+    // Normalize YouTube video inputs to store just the video ID
+    if (field === 'youtube_video_id' && typeof value === 'string') {
+      const videoId = extractYouTubeVideoId(value);
+      updatedModules[index] = { ...updatedModules[index], [field]: videoId || value };
+    } else {
+      updatedModules[index] = { ...updatedModules[index], [field]: value };
+    }
+    
     setModules(updatedModules);
   };
 
@@ -297,15 +306,14 @@ const CourseEditor: React.FC<CourseEditorProps> = ({ open, onOpenChange, course 
                      {(module.content_type === 'video' || module.content_type === 'mixed') && (
                        <div className="space-y-1">
                          <Label>YouTube Video ID</Label>
-                         <Input
-                           value={module.youtube_video_id || ''}
-                           onChange={(e) => updateModule(index, 'youtube_video_id', e.target.value)}
-                           placeholder="Enter YouTube video ID (e.g., dQw4w9WgXcQ)"
-                         />
-                         <p className="text-xs text-muted-foreground">
-                           Extract the video ID from the YouTube URL. For example, from 
-                           https://www.youtube.com/watch?v=dQw4w9WgXcQ, use "dQw4w9WgXcQ"
-                         </p>
+                          <Input
+                            value={module.youtube_video_id || ''}
+                            onChange={(e) => updateModule(index, 'youtube_video_id', e.target.value)}
+                            placeholder="Enter YouTube URL or video ID (e.g., https://www.youtube.com/watch?v=dQw4w9WgXcQ)"
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Paste the full YouTube URL or just the video ID. Both formats are supported.
+                          </p>
                        </div>
                      )}
                      

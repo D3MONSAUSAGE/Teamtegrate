@@ -3,6 +3,7 @@ import { Play, Pause, Volume2, VolumeX, Maximize, RotateCcw } from 'lucide-react
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Card } from '@/components/ui/card';
+import { extractYouTubeVideoId } from '@/lib/youtube';
 
 interface VideoPlayerProps {
   youtubeVideoId?: string;
@@ -91,12 +92,15 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     }
   }, [isPlaying, duration, onProgress, onComplete]);
 
-  if (!youtubeVideoId) {
+  // Extract video ID from URL if needed
+  const videoId = extractYouTubeVideoId(youtubeVideoId);
+  
+  if (!videoId) {
     return (
       <Card className="w-full aspect-video flex items-center justify-center bg-muted">
         <div className="text-center">
           <Play className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
-          <p className="text-muted-foreground">No video available</p>
+          <p className="text-muted-foreground">Invalid YouTube video</p>
         </div>
       </Card>
     );
@@ -112,7 +116,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         <iframe
           ref={iframeRef}
           className="w-full aspect-video rounded-lg"
-          src={`https://www.youtube.com/embed/${youtubeVideoId}?enablejsapi=1&rel=0&modestbranding=1`}
+          src={`https://www.youtube.com/embed/${videoId}?enablejsapi=1&rel=0&modestbranding=1`}
           title={title || "Training Video"}
           frameBorder="0"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
