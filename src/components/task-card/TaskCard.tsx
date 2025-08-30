@@ -32,6 +32,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
     setShowDrawer,
     getPriorityBackground,
     isTaskOverdue,
+    isTaskWarning,
     handleStatusChange: internalHandleStatusChange,
     handleDeleteTask,
     commentCount,
@@ -61,7 +62,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
     }
   };
 
-  const isOverdue = isTaskOverdue();
+  const isOverdue = isTaskOverdue;
+  const inWarningPeriod = isTaskWarning;
 
   const getPriorityStyles = (priority: string) => {
     switch(priority) {
@@ -103,19 +105,26 @@ const TaskCard: React.FC<TaskCardProps> = ({
       <Card
         className={cn(
           "group relative cursor-pointer overflow-hidden h-full flex flex-col",
-          // Gradient background based on priority
-          !isOverdue && priorityStyles.gradient,
+          // Gradient background based on priority or warning/overdue state
+          !isOverdue && !inWarningPeriod && priorityStyles.gradient,
           // Border styling
           "border",
-          !isOverdue && priorityStyles.border,
+          !isOverdue && !inWarningPeriod && priorityStyles.border,
           // Shadow and glow effects
-          !isOverdue && priorityStyles.glow,
+          !isOverdue && !inWarningPeriod && priorityStyles.glow,
           // Smooth transitions with enhanced effects
           "transition-all duration-300 ease-out",
           "hover:scale-[1.02] hover:-translate-y-1",
           // Backdrop blur for glass effect
           "backdrop-blur-sm",
-          // Overdue state with intense styling
+          // Warning state (yellow glow) - takes precedence over priority
+          inWarningPeriod && !isOverdue && [
+            "ring-2 ring-yellow-500/40 shadow-2xl shadow-yellow-500/25",
+            "[background:linear-gradient(135deg,hsl(45_93%_47%/0.1),hsl(48_89%_50%/0.15),hsl(45_93%_47%/0.08))]",
+            "border-yellow-400/60 dark:border-yellow-500/50",
+            "animate-pulse"
+          ],
+          // Overdue state (red glow) - takes precedence over everything
           isOverdue && [
             "ring-2 ring-red-500/40 shadow-2xl shadow-red-500/25",
             "[background:linear-gradient(135deg,hsl(0_84%_60%/0.1),hsl(15_78%_65%/0.15),hsl(0_84%_60%/0.08))]",

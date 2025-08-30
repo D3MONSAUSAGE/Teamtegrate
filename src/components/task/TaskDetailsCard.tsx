@@ -19,6 +19,8 @@ interface TaskDetailsCardProps {
   onTimeChange: (time: string) => void;
   projects: Project[];
   currentProjectId?: string;
+  warningPeriodHours?: number;
+  onWarningPeriodChange?: (hours: number) => void;
 }
 
 const TaskDetailsCard: React.FC<TaskDetailsCardProps> = ({
@@ -28,7 +30,9 @@ const TaskDetailsCard: React.FC<TaskDetailsCardProps> = ({
   timeInput,
   onTimeChange,
   projects,
-  currentProjectId
+  currentProjectId,
+  warningPeriodHours,
+  onWarningPeriodChange
 }) => {
   return (
     <Card className="border-2 border-primary/10 shadow-lg">
@@ -57,6 +61,8 @@ const TaskDetailsCard: React.FC<TaskDetailsCardProps> = ({
           onDateChange={onDateChange}
           timeInput={timeInput}
           onTimeChange={onTimeChange}
+          warningPeriodHours={warningPeriodHours}
+          onWarningPeriodChange={onWarningPeriodChange}
         />
 
         <TaskCostField form={form} />

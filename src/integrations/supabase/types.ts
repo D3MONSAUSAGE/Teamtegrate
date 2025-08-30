@@ -1670,6 +1670,7 @@ export type Database = {
           title: string | null
           updated_at: string | null
           user_id: string | null
+          warning_period_hours: number | null
         }
         Insert: {
           archived_at?: string | null
@@ -1692,6 +1693,7 @@ export type Database = {
           title?: string | null
           updated_at?: string | null
           user_id?: string | null
+          warning_period_hours?: number | null
         }
         Update: {
           archived_at?: string | null
@@ -1714,6 +1716,7 @@ export type Database = {
           title?: string | null
           updated_at?: string | null
           user_id?: string | null
+          warning_period_hours?: number | null
         }
         Relationships: [
           {

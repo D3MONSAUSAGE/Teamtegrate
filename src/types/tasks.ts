@@ -16,4 +16,5 @@ export interface TaskFormValues {
   assignedToNames?: string[];
   scheduledStart?: Date | string;
   scheduledEnd?: Date | string;
+  warning_period_hours?: number;
 }

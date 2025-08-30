@@ -55,6 +55,9 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
   
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Warning period state
+  const [warningPeriodHours, setWarningPeriodHours] = useState(24);
+
   const form = useForm({
     defaultValues: {
       title: '',
@@ -81,6 +84,9 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
       form.setValue('priority', editingTask.priority);
       form.setValue('projectId', editingTask.projectId || 'none');
       form.setValue('cost', editingTask.cost?.toString() || '');
+      
+      // Set warning period
+      setWarningPeriodHours((editingTask as any).warning_period_hours || 24);
       
       setDeadlineDate(new Date(editingTask.deadline));
       setTimeInput(format(new Date(editingTask.deadline), 'HH:mm'));
@@ -209,6 +215,7 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
         scheduledEnd,
         cost: formData.cost ? parseFloat(formData.cost) : 0,
         projectId: formData.projectId === 'none' ? undefined : formData.projectId,
+        warning_period_hours: warningPeriodHours,
       };
 
       const success = await submitTask(
@@ -263,6 +270,8 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
               timeInput={timeInput}
               onDateChange={handleDateChange}
               onTimeChange={handleTimeChange}
+              warningPeriodHours={warningPeriodHours}
+              onWarningPeriodChange={setWarningPeriodHours}
             />
             
             <TaskScheduleSection

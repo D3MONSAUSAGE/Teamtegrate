@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Task, TaskStatus } from "@/types";
 import { useTask } from "@/contexts/task";
 import { toast } from "@/components/ui/sonner";
+import { isTaskOverdue, isTaskInWarningPeriod } from '@/utils/taskUtils';
 
 export const useTaskCard = (task: Task) => {
   const { updateTaskStatus, deleteTask } = useTask();
@@ -21,9 +22,12 @@ export const useTaskCard = (task: Task) => {
     }
   };
 
-  const isTaskOverdue = () => {
-    const now = new Date();
-    return task.status !== "Completed" && task.deadline < now;
+  const isTaskOverdueUtil = () => {
+    return isTaskOverdue(task);
+  };
+
+  const isTaskWarning = () => {
+    return isTaskInWarningPeriod(task);
   };
 
   const handleStatusChange = async (newStatus: TaskStatus): Promise<void> => {
@@ -68,7 +72,8 @@ export const useTaskCard = (task: Task) => {
     showDrawer,
     setShowDrawer,
     getPriorityBackground,
-    isTaskOverdue,
+    isTaskOverdue: isTaskOverdueUtil,
+    isTaskWarning,
     handleStatusChange,
     handleDeleteTask,
     getAssignedToName,
