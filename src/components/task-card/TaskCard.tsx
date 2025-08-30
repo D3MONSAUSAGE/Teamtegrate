@@ -62,8 +62,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
     }
   };
 
-  const isOverdue = isTaskOverdue;
-  const inWarningPeriod = isTaskWarning;
+  const isOverdue = isTaskOverdue();
+  const inWarningPeriod = isTaskWarning();
 
   const getPriorityStyles = (priority: string) => {
     switch(priority) {
