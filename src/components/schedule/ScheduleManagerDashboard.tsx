@@ -2,13 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, Users, Clock, Settings, Plus } from 'lucide-react';
+import { Calendar, Users, Clock, Settings, Plus, TrendingUp, Target, Activity } from 'lucide-react';
 import ScheduleCoverageDashboard from './ScheduleCoverageDashboard';
 import { EmployeeScheduleManager } from './EmployeeScheduleManager';
 import { ScheduleTemplateManager } from './ScheduleTemplateManager';
 import { TeamScheduleSelector } from './TeamScheduleSelector';
 import { useScheduleManagement } from '@/hooks/useScheduleManagement';
 import { useAuth } from '@/contexts/AuthContext';
+import ModernScheduleHeader from './modern/ModernScheduleHeader';
+import ModernMetricCard from './modern/ModernMetricCard';
+import WeeklyScheduleTrend from './modern/WeeklyScheduleTrend';
+import ModernScheduleGrid from './modern/ModernScheduleGrid';
 
 const ScheduleManagerDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('calendar');
@@ -69,108 +73,148 @@ const ScheduleManagerDashboard: React.FC = () => {
 
   const showTeamSelector = user && (user.role === 'admin' || user.role === 'superadmin' || user.role === 'manager') && teams.length > 0;
 
+  // Generate sample trend data (replace with real data)
+  const trendData = [
+    { day: 'Mon', scheduled: 32, completed: 28, planned: 35 },
+    { day: 'Tue', scheduled: 28, completed: 26, planned: 30 },
+    { day: 'Wed', scheduled: 35, completed: 32, planned: 38 },
+    { day: 'Thu', scheduled: 40, completed: 35, planned: 42 },
+    { day: 'Fri', scheduled: 38, completed: 36, planned: 40 },
+    { day: 'Sat', scheduled: 25, completed: 22, planned: 28 },
+    { day: 'Sun', scheduled: 20, completed: 18, planned: 22 }
+  ];
+
+  const selectedTeamName = selectedTeamId && teams.find(t => t.id === selectedTeamId)?.name;
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Schedule Management</h1>
-          <p className="text-muted-foreground">
-            Manage employee schedules, shifts, and availability
-            {selectedTeamId && teams.find(t => t.id === selectedTeamId) && (
-              <span className="ml-2 text-primary">
-                • {teams.find(t => t.id === selectedTeamId)?.name}
-              </span>
-            )}
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          {showTeamSelector && (
-            <TeamScheduleSelector
-              teams={teams}
-              selectedTeamId={selectedTeamId}
-              onTeamChange={setSelectedTeamId}
-              disabled={isLoading}
-            />
-          )}
-          <Button size="sm">
-            <Plus className="h-4 w-4 mr-2" />
-            Quick Schedule
-          </Button>
-        </div>
+    <div className="space-y-8">
+      {/* Modern Header */}
+      <ModernScheduleHeader
+        title="Schedule Management"
+        subtitle="Manage employee schedules, shifts, and availability with advanced analytics"
+        selectedTeamName={selectedTeamName}
+        onNotificationClick={() => console.log('Notifications clicked')}
+      >
+        {showTeamSelector && (
+          <TeamScheduleSelector
+            teams={teams}
+            selectedTeamId={selectedTeamId}
+            onTeamChange={setSelectedTeamId}
+            disabled={isLoading}
+          />
+        )}
+        <Button className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-white shadow-lg hover:shadow-xl transition-all duration-300">
+          <Plus className="h-4 w-4 mr-2" />
+          Quick Schedule
+        </Button>
+      </ModernScheduleHeader>
+
+      {/* Modern Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <ModernMetricCard
+          title="This Week Shifts"
+          value={stats.thisWeekShifts}
+          change={{ value: '+12%', trend: 'up' }}
+          icon={Calendar}
+          progress={75}
+          description="Scheduled shifts"
+          gradient="from-primary/10 to-primary/5"
+        />
+        
+        <ModernMetricCard
+          title="Active Team"
+          value={stats.activeEmployees}
+          change={{ value: '+3', trend: 'up' }}
+          icon={Users}
+          progress={88}
+          description="Team members"
+          gradient="from-accent/10 to-accent/5"
+        />
+        
+        <ModernMetricCard
+          title="Total Hours"
+          value={`${stats.totalHours}h`}
+          change={{ value: '+18h', trend: 'up' }}
+          icon={Clock}
+          progress={92}
+          description="This week"
+          gradient="from-success/10 to-success/5"
+        />
+        
+        <ModernMetricCard
+          title="Coverage Rate"
+          value={`${stats.coverage}%`}
+          change={{ value: '+5%', trend: 'up' }}
+          icon={Target}
+          progress={stats.coverage}
+          description="Schedule coverage"
+          gradient="from-warning/10 to-warning/5"
+        />
       </div>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">This Week</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.thisWeekShifts}</div>
-            <p className="text-xs text-muted-foreground">
-              Scheduled shifts
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Employees</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.activeEmployees}</div>
-            <p className="text-xs text-muted-foreground">
-              Active employees
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Hours</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalHours}</div>
-            <p className="text-xs text-muted-foreground">
-              Scheduled this week
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Coverage</CardTitle>
-            <Settings className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.coverage}%</div>
-            <p className="text-xs text-muted-foreground">
-              Schedule coverage
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Weekly Trend Chart */}
+      <WeeklyScheduleTrend data={trendData} />
 
       {/* Main Schedule Interface */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="calendar">Schedule Calendar</TabsTrigger>
-          <TabsTrigger value="employees">Assign Employees</TabsTrigger>
-          <TabsTrigger value="schedules">Schedule Templates</TabsTrigger>
-        </TabsList>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <div className="flex items-center justify-between">
+          <TabsList className="bg-background/50 backdrop-blur-sm border border-border/50 shadow-lg">
+            <TabsTrigger 
+              value="calendar" 
+              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary/10 data-[state=active]:to-accent/10 data-[state=active]:text-primary transition-all duration-300"
+            >
+              <Calendar className="h-4 w-4 mr-2" />
+              Schedule Overview
+            </TabsTrigger>
+            <TabsTrigger 
+              value="employees" 
+              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary/10 data-[state=active]:to-accent/10 data-[state=active]:text-primary transition-all duration-300"
+            >
+              <Users className="h-4 w-4 mr-2" />
+              Team Management
+            </TabsTrigger>
+            <TabsTrigger 
+              value="schedules" 
+              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary/10 data-[state=active]:to-accent/10 data-[state=active]:text-primary transition-all duration-300"
+            >
+              <Settings className="h-4 w-4 mr-2" />
+              Templates
+            </TabsTrigger>
+          </TabsList>
+          
+          <Button 
+            variant="outline" 
+            size="sm"
+            className="bg-background/50 backdrop-blur-sm border-border/50 hover:bg-primary/10 hover:text-primary transition-all duration-300"
+          >
+            <Activity className="h-4 w-4 mr-2" />
+            View Analytics
+          </Button>
+        </div>
 
-        <TabsContent value="calendar" className="space-y-4">
+        <TabsContent value="calendar" className="space-y-6 animate-fade-in">
           <ScheduleCoverageDashboard selectedTeamId={selectedTeamId} />
+          
+          {/* Modern Schedule Grid */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-foreground">Recent Schedules</h3>
+              <Button variant="ghost" size="sm" className="text-primary hover:bg-primary/10">
+                View All
+              </Button>
+            </div>
+            <ModernScheduleGrid 
+              schedules={employeeSchedules.slice(0, 8)} 
+              onScheduleClick={(schedule) => console.log('Schedule clicked:', schedule)} 
+            />
+          </div>
         </TabsContent>
 
-        <TabsContent value="employees" className="space-y-4">
+        <TabsContent value="employees" className="space-y-6 animate-fade-in">
           <EmployeeScheduleManager />
         </TabsContent>
 
-        <TabsContent value="schedules" className="space-y-4">
+        <TabsContent value="schedules" className="space-y-6 animate-fade-in">
           <ScheduleTemplateManager />
         </TabsContent>
       </Tabs>

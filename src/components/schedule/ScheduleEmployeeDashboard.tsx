@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, Clock, AlertCircle, CheckCircle, Users, MapPin, Timer } from 'lucide-react';
+import { Calendar, Clock, AlertCircle, CheckCircle, Users, MapPin, Timer, Bell, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useScheduleManagement, EmployeeSchedule } from '@/hooks/useScheduleManagement';
 import { useAuth } from '@/contexts/AuthContext';
 import { format, startOfWeek, endOfWeek, addDays, isToday, differenceInHours } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
+import ModernScheduleHeader from './modern/ModernScheduleHeader';
+import ModernMetricCard from './modern/ModernMetricCard';
 
 const ScheduleEmployeeDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -159,148 +161,189 @@ const ScheduleEmployeeDashboard: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">My Schedule</h1>
-          <p className="text-muted-foreground">
-            View your shifts, availability, and requests
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm">
-            Request Time Off
-          </Button>
-          <Button variant="outline" size="sm">
-            Swap Shift
-          </Button>
-        </div>
-      </div>
+    <div className="space-y-8">
+      {/* Modern Header */}
+      <ModernScheduleHeader
+        title="My Schedule"
+        subtitle="View your shifts, availability, and manage your time"
+        onNotificationClick={() => console.log('Notifications clicked')}
+      >
+        <Button 
+          variant="outline" 
+          size="sm"
+          className="bg-background/50 backdrop-blur-sm border-border/50 hover:bg-primary/10 hover:text-primary transition-all duration-300"
+        >
+          <Bell className="h-4 w-4 mr-2" />
+          Request Time Off
+        </Button>
+        <Button 
+          className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+        >
+          Swap Shift
+        </Button>
+      </ModernScheduleHeader>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Upcoming Shifts</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{upcomingShifts.length}</div>
-            <p className="text-xs text-muted-foreground">
-              This week
-            </p>
-          </CardContent>
-        </Card>
+      {/* Modern Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <ModernMetricCard
+          title="Upcoming Shifts"
+          value={upcomingShifts.length}
+          change={{ value: '+2', trend: 'up' }}
+          icon={Calendar}
+          progress={75}
+          description="This week"
+          gradient="from-primary/10 to-primary/5"
+        />
         
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Hours Scheduled</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{Math.round(totalScheduledHours)}</div>
-            <p className="text-xs text-muted-foreground">
-              This week
-            </p>
-          </CardContent>
-        </Card>
+        <ModernMetricCard
+          title="Hours Scheduled"
+          value={`${Math.round(totalScheduledHours)}h`}
+          change={{ value: '+4h', trend: 'up' }}
+          icon={Clock}
+          progress={85}
+          description="This week"
+          gradient="from-accent/10 to-accent/5"
+        />
         
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completed</CardTitle>
-            <CheckCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{completedShifts.length}</div>
-            <p className="text-xs text-muted-foreground">
-              Shifts this week
-            </p>
-          </CardContent>
-        </Card>
+        <ModernMetricCard
+          title="Completed"
+          value={completedShifts.length}
+          change={{ value: '+1', trend: 'up' }}
+          icon={CheckCircle}
+          progress={90}
+          description="Shifts this week"
+          gradient="from-success/10 to-success/5"
+        />
         
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Requests</CardTitle>
-            <AlertCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">0</div>
-            <p className="text-xs text-muted-foreground">
-              Pending requests
-            </p>
-          </CardContent>
-        </Card>
+        <ModernMetricCard
+          title="Requests"
+          value={0}
+          change={{ value: '0', trend: 'neutral' }}
+          icon={AlertCircle}
+          progress={0}
+          description="Pending requests"
+          gradient="from-warning/10 to-warning/5"
+        />
       </div>
 
       {/* Schedule Views */}
-      <Tabs defaultValue="week" className="space-y-4">
+      <Tabs defaultValue="week" className="space-y-6">
         <div className="flex items-center justify-between">
-          <TabsList>
-            <TabsTrigger value="week">Week View</TabsTrigger>
-            <TabsTrigger value="upcoming">Upcoming Shifts</TabsTrigger>
-            <TabsTrigger value="availability">My Availability</TabsTrigger>
+          <TabsList className="bg-background/50 backdrop-blur-sm border border-border/50 shadow-lg">
+            <TabsTrigger 
+              value="week"
+              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary/10 data-[state=active]:to-accent/10 data-[state=active]:text-primary transition-all duration-300"
+            >
+              <Calendar className="h-4 w-4 mr-2" />
+              Week View
+            </TabsTrigger>
+            <TabsTrigger 
+              value="upcoming"
+              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary/10 data-[state=active]:to-accent/10 data-[state=active]:text-primary transition-all duration-300"
+            >
+              <Clock className="h-4 w-4 mr-2" />
+              Upcoming Shifts
+            </TabsTrigger>
+            <TabsTrigger 
+              value="availability"
+              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary/10 data-[state=active]:to-accent/10 data-[state=active]:text-primary transition-all duration-300"
+            >
+              <Users className="h-4 w-4 mr-2" />
+              My Availability
+            </TabsTrigger>
           </TabsList>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <Button
               variant="outline"
               size="sm"
+              className="bg-background/50 backdrop-blur-sm border-border/50 hover:bg-primary/10 hover:text-primary transition-all duration-300"
               onClick={() => setSelectedWeek(addDays(selectedWeek, -7))}
             >
-              Previous Week
+              <ChevronLeft className="h-4 w-4 mr-2" />
+              Previous
             </Button>
-            <span className="text-sm font-medium">
+            <div className="text-sm font-medium px-4 py-2 bg-primary/10 text-primary rounded-lg border border-primary/20">
               {format(startOfWeek(selectedWeek), 'MMM d')} - {format(endOfWeek(selectedWeek), 'MMM d, yyyy')}
-            </span>
+            </div>
             <Button
               variant="outline"
               size="sm"
+              className="bg-background/50 backdrop-blur-sm border-border/50 hover:bg-primary/10 hover:text-primary transition-all duration-300"
               onClick={() => setSelectedWeek(addDays(selectedWeek, 7))}
             >
-              Next Week
+              Next
+              <ChevronRight className="h-4 w-4 ml-2" />
             </Button>
           </div>
         </div>
 
-        <TabsContent value="week" className="space-y-4">
+        <TabsContent value="week" className="space-y-6 animate-fade-in">
           {renderWeeklySchedule()}
         </TabsContent>
 
-        <TabsContent value="upcoming" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Upcoming Shifts</CardTitle>
-              <CardDescription>
-                Your scheduled shifts for the next 7 days
-              </CardDescription>
+        <TabsContent value="upcoming" className="space-y-6 animate-fade-in">
+          <Card className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-card to-card/80">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5" />
+            <CardHeader className="relative">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-full bg-gradient-to-r from-primary/20 to-accent/20">
+                  <Clock className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl font-semibold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
+                    Upcoming Shifts
+                  </CardTitle>
+                  <CardDescription>
+                    Your scheduled shifts for the next 7 days
+                  </CardDescription>
+                </div>
+              </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="relative">
               {upcomingShifts.length === 0 ? (
-                <p className="text-muted-foreground text-center py-4">
-                  No upcoming shifts scheduled
-                </p>
+                <div className="flex flex-col items-center justify-center py-12">
+                  <div className="p-4 rounded-full bg-gradient-to-r from-muted/20 to-muted/10 mb-4">
+                    <Calendar className="h-12 w-12 text-muted-foreground/50" />
+                  </div>
+                  <p className="text-lg font-medium text-muted-foreground mb-2">No upcoming shifts</p>
+                  <p className="text-sm text-muted-foreground/70 text-center max-w-sm">
+                    You don't have any shifts scheduled for the next 7 days. Check back later or contact your manager.
+                  </p>
+                </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {upcomingShifts.map((schedule) => (
                     <div
                       key={schedule.id}
-                      className="flex items-center justify-between p-3 border rounded-lg"
+                      className="group relative p-4 border border-border/50 rounded-xl bg-gradient-to-r from-background/50 to-background/80 backdrop-blur-sm hover:shadow-lg hover:scale-[1.01] transition-all duration-300"
                     >
-                      <div>
-                        <h4 className="font-medium">
-                          Scheduled Shift
-                        </h4>
-                        <p className="text-sm text-muted-foreground">
-                          {format(new Date(schedule.scheduled_date), 'EEEE, MMM d')} •{' '}
-                          {format(new Date(schedule.scheduled_start_time), 'HH:mm')} -{' '}
-                          {format(new Date(schedule.scheduled_end_time), 'HH:mm')}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {getStatusBadge(schedule.status)}
-                        <Button variant="outline" size="sm">
-                          Details
-                        </Button>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className="p-2 rounded-lg bg-gradient-to-r from-primary/20 to-accent/20 group-hover:scale-110 transition-transform">
+                            <Calendar className="h-5 w-5 text-primary" />
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-foreground">
+                              Scheduled Shift
+                            </h4>
+                            <p className="text-sm text-muted-foreground">
+                              {format(new Date(schedule.scheduled_date), 'EEEE, MMM d')} •{' '}
+                              {format(new Date(schedule.scheduled_start_time), 'HH:mm')} -{' '}
+                              {format(new Date(schedule.scheduled_end_time), 'HH:mm')}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          {getStatusBadge(schedule.status)}
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="bg-background/50 backdrop-blur-sm border-border/50 hover:bg-primary/10 hover:text-primary transition-all duration-300"
+                          >
+                            Details
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -310,18 +353,34 @@ const ScheduleEmployeeDashboard: React.FC = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="availability" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>My Availability</CardTitle>
-              <CardDescription>
-                Set your availability for scheduling
-              </CardDescription>
+        <TabsContent value="availability" className="space-y-6 animate-fade-in">
+          <Card className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-card to-card/80">
+            <div className="absolute inset-0 bg-gradient-to-br from-accent/5 via-transparent to-primary/5" />
+            <CardHeader className="relative">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-full bg-gradient-to-r from-accent/20 to-primary/20">
+                  <Users className="h-5 w-5 text-accent" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl font-semibold bg-gradient-to-r from-foreground to-accent bg-clip-text text-transparent">
+                    My Availability
+                  </CardTitle>
+                  <CardDescription>
+                    Set your availability for scheduling
+                  </CardDescription>
+                </div>
+              </div>
             </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground text-center py-4">
-                Availability management coming soon
-              </p>
+            <CardContent className="relative">
+              <div className="flex flex-col items-center justify-center py-12">
+                <div className="p-4 rounded-full bg-gradient-to-r from-accent/20 to-primary/20 mb-4">
+                  <Users className="h-12 w-12 text-accent" />
+                </div>
+                <p className="text-lg font-medium text-muted-foreground mb-2">Coming Soon</p>
+                <p className="text-sm text-muted-foreground/70 text-center max-w-sm">
+                  Availability management features will be available soon. Stay tuned for updates!
+                </p>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
