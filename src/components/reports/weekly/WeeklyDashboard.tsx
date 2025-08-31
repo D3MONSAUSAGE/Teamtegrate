@@ -2,15 +2,18 @@ import React, { useState, useMemo } from 'react';
 import { DateRange } from 'react-day-picker';
 import { subDays, format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
-import { CalendarDays } from 'lucide-react';
+import { CalendarDays, BarChart3, List } from 'lucide-react';
 
 import { TeamMemberSelector } from './TeamMemberSelector';
 import { WeeklyTaskPerformance } from './WeeklyTaskPerformance';
 import { WeeklyHoursReport } from './WeeklyHoursReport';
 import { WeeklyProjectContributions } from './WeeklyProjectContributions';
+import { WeeklyDetailedTasks } from './WeeklyDetailedTasks';
 
 import { useEmployeeReports } from '@/hooks/useEmployeeReports';
+import { useEmployeeDetailedTasks } from '@/hooks/useEmployeeDetailedTasks';
 import { useAuth } from '@/contexts/AuthContext';
 import useTeamMembers from '@/hooks/useTeamMembers';
 
@@ -28,12 +31,20 @@ export const WeeklyDashboard: React.FC<WeeklyDashboardProps> = ({
   
   // Set default selected member to current user
   const [selectedMemberId, setSelectedMemberId] = useState<string>(user?.id || '');
+  const [activeTab, setActiveTab] = useState<'summary' | 'detailed'>('summary');
   
   // Use 7 days for weekly view regardless of the parent timeRange
   const weeklyTimeRange = '7 days';
   
   // Get employee reports data
   const { taskStats, hoursStats, contributions, isLoading, error } = useEmployeeReports({
+    userId: selectedMemberId,
+    timeRange: weeklyTimeRange,
+    dateRange
+  });
+
+  // Get detailed tasks data
+  const detailedTasksData = useEmployeeDetailedTasks({
     userId: selectedMemberId,
     timeRange: weeklyTimeRange,
     dateRange
@@ -68,7 +79,7 @@ export const WeeklyDashboard: React.FC<WeeklyDashboardProps> = ({
 
   const selectedMember = teamMembers.find(member => member.id === selectedMemberId);
 
-  if (error) {
+  if (error || detailedTasksData.error) {
     return (
       <Card>
         <CardContent className="p-8 text-center">
@@ -120,27 +131,67 @@ export const WeeklyDashboard: React.FC<WeeklyDashboardProps> = ({
 
       <Separator />
 
-      {/* Weekly Task Performance */}
-      <WeeklyTaskPerformance 
-        taskStats={taskStats} 
-        isLoading={isLoading}
-      />
+      {/* Main Content Tabs */}
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'summary' | 'detailed')}>
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="summary" className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Performance Summary
+          </TabsTrigger>
+          <TabsTrigger value="detailed" className="flex items-center gap-2">
+            <List className="h-4 w-4" />
+            Detailed Tasks
+          </TabsTrigger>
+        </TabsList>
 
-      <Separator />
+        <TabsContent value="summary" className="mt-6 space-y-6">
+          {/* Weekly Task Performance */}
+          <WeeklyTaskPerformance 
+            taskStats={taskStats} 
+            isLoading={isLoading}
+          />
 
-      {/* Weekly Hours Report */}
-      <WeeklyHoursReport 
-        hoursStats={hoursStats} 
-        isLoading={isLoading}
-      />
+          <Separator />
 
-      <Separator />
+          {/* Weekly Hours Report */}
+          <WeeklyHoursReport 
+            hoursStats={hoursStats} 
+            isLoading={isLoading}
+          />
 
-      {/* Weekly Project Contributions */}
-      <WeeklyProjectContributions 
-        contributions={contributions} 
-        isLoading={isLoading}
-      />
+          <Separator />
+
+          {/* Weekly Project Contributions */}
+          <WeeklyProjectContributions 
+            contributions={contributions} 
+            isLoading={isLoading}
+          />
+        </TabsContent>
+
+        <TabsContent value="detailed" className="mt-6">
+          {/* Detailed Tasks View */}
+          <WeeklyDetailedTasks 
+            allTasks={detailedTasksData.allTasks || []}
+            todoTasks={detailedTasksData.todoTasks || []}
+            inProgressTasks={detailedTasksData.inProgressTasks || []}
+            completedTasks={detailedTasksData.completedTasks || []}
+            overdueTasks={detailedTasksData.overdueTasks || []}
+            tasksByProject={detailedTasksData.tasksByProject || {}}
+            totalTimeSpent={detailedTasksData.totalTimeSpent || 0}
+            summary={detailedTasksData.summary || {
+              total: 0,
+              todo: 0,
+              inProgress: 0,
+              completed: 0,
+              overdue: 0,
+              highPriority: 0,
+              mediumPriority: 0,
+              lowPriority: 0,
+            }}
+            isLoading={detailedTasksData.isLoading}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
