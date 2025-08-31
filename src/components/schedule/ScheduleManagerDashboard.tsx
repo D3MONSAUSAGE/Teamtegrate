@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar, Users, Clock, Settings, Plus } from 'lucide-react';
-import { ScheduleCalendarView } from './ScheduleCalendarView';
+import ScheduleCoverageDashboard from './ScheduleCoverageDashboard';
 import { EmployeeScheduleManager } from './EmployeeScheduleManager';
 import { ScheduleTemplateManager } from './ScheduleTemplateManager';
 import { TeamScheduleSelector } from './TeamScheduleSelector';
@@ -163,7 +163,7 @@ const ScheduleManagerDashboard: React.FC = () => {
         </TabsList>
 
         <TabsContent value="calendar" className="space-y-4">
-          <ScheduleCalendarView />
+          <ScheduleCoverageDashboard selectedTeamId={selectedTeamId} />
         </TabsContent>
 
         <TabsContent value="employees" className="space-y-4">
