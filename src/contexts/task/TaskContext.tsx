@@ -394,12 +394,13 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
+  // Removed automatic task fetching - components should use specific hooks like usePersonalTasks()
   useEffect(() => {
     if (user) {
-      fetchTasks();
+      // Only fetch projects automatically - tasks should be fetched by specific components
       fetchProjects();
     }
-  }, [user, fetchTasks, fetchProjects]);
+  }, [user, fetchProjects]);
 
   const value: TaskContextType = {
     tasks,

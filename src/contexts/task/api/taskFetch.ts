@@ -33,14 +33,14 @@ export const fetchTasks = async (
       return;
     }
     
-    // REFINED PERSONAL TASK QUERY: Only fetch tasks that are truly personal:
-    // 1. Tasks created by the user AND left unassigned (no assigned_to_id and empty assigned_to_ids)
+    // SIMPLIFIED PERSONAL TASK QUERY: Only fetch tasks that are truly personal:
+    // 1. Tasks created by the user
     // 2. Tasks assigned to the user (assigned_to_id = user.id OR user.id in assigned_to_ids)
     const { data: tasksData, error: tasksError } = await supabase
       .from('tasks')
       .select('*')
       .eq('organization_id', user.organization_id)
-      .or(`and(user_id.eq.${user.id},assigned_to_id.is.null,assigned_to_ids.eq.{}),assigned_to_id.eq.${user.id},assigned_to_ids.cs.{${user.id}}`)
+      .or(`user_id.eq.${user.id},assigned_to_id.eq.${user.id},assigned_to_ids.cs.{${user.id}}`)
       .order('created_at', { ascending: false });
 
     if (tasksError) {
@@ -58,7 +58,7 @@ export const fetchTasks = async (
     }
 
     if (process.env.NODE_ENV === 'development') {
-      console.log(`fetchTasks: Retrieved ${tasksData?.length || 0} personal tasks (created unassigned OR assigned to user)`);
+      console.log(`fetchTasks: Retrieved ${tasksData?.length || 0} personal tasks (created by user OR assigned to user)`);
     }
     
     // Enhanced client-side validation for personal tasks
@@ -71,16 +71,14 @@ export const fetchTasks = async (
         return false;
       }
 
-      // REFINED PERSONAL FILTERING: Only include truly personal tasks
+      // SIMPLIFIED PERSONAL FILTERING: Only include tasks that belong to this user
       const isCreatedByUser = dbTask.user_id === user.id;
-      const isUnassigned = (!dbTask.assigned_to_id || dbTask.assigned_to_id === '') && 
-                          (!dbTask.assigned_to_ids || dbTask.assigned_to_ids.length === 0);
-      const isDirectlyAssigned = 
+      const isAssignedToUser = 
         dbTask.assigned_to_id === user.id || // Single assignee
         (dbTask.assigned_to_ids && dbTask.assigned_to_ids.includes(user.id)); // Multi assignee
 
-      // Show task if: (created by user AND unassigned) OR (assigned to user)
-      return (isCreatedByUser && isUnassigned) || isDirectlyAssigned;
+      // Show task if: created by user OR assigned to user
+      return isCreatedByUser || isAssignedToUser;
     }) || [];
     
     // Fetch comments and users data in parallel for better performance
@@ -183,7 +181,7 @@ export const fetchTasks = async (
     });
 
     if (process.env.NODE_ENV === 'development') {
-      console.log(`fetchTasks: Successfully processed ${transformedTasks.length} PERSONAL tasks (created unassigned OR assigned to user ONLY)`);
+      console.log(`fetchTasks: Successfully processed ${transformedTasks.length} PERSONAL tasks (created by user OR assigned to user)`);
     }
     
     setTasks(transformedTasks);
