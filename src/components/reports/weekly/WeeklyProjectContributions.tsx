@@ -1,9 +1,12 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { FolderOpen, Target, CheckCircle } from 'lucide-react';
+import { WeeklyTrendChart } from './WeeklyTrendChart';
+import { DailyCompletionChart } from './DailyCompletionChart';
+import { format, subDays } from 'date-fns';
 
 interface ProjectContribution {
   project_title: string;
@@ -78,6 +81,26 @@ export const WeeklyProjectContributions: React.FC<WeeklyProjectContributionsProp
 
   // Sort projects by completion rate for better visualization
   const sortedData = [...processedData].sort((a, b) => b.completionRate - a.completionRate);
+
+  // Generate mock daily completion data for charts (in real app, this would come from the API)
+  const dailyCompletionData = useMemo(() => {
+    const data = [];
+    for (let i = 6; i >= 0; i--) {
+      const date = subDays(new Date(), i);
+      const dateStr = format(date, 'yyyy-MM-dd');
+      
+      // Mock data based on project contributions
+      const dailyCompleted = Math.floor(Math.random() * 5) + 1;
+      const dailyTotal = dailyCompleted + Math.floor(Math.random() * 3);
+      
+      data.push({
+        date: dateStr,
+        completed: dailyCompleted,
+        total: dailyTotal
+      });
+    }
+    return data;
+  }, [contributions]);
 
   return (
     <div className="space-y-6">
@@ -163,6 +186,12 @@ export const WeeklyProjectContributions: React.FC<WeeklyProjectContributionsProp
           </div>
         </CardContent>
       </Card>
+
+      {/* Weekly Overview Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <WeeklyTrendChart data={dailyCompletionData} isLoading={isLoading} />
+        <DailyCompletionChart data={dailyCompletionData} isLoading={isLoading} />
+      </div>
 
       {/* Project Details List */}
       <Card>

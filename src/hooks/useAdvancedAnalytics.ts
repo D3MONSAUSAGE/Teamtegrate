@@ -2,6 +2,7 @@
 import { useMemo } from 'react';
 import { Task } from '@/types';
 import { subDays, format, isAfter, isBefore, startOfDay, endOfDay } from 'date-fns';
+import { isTaskOverdue } from '@/utils/taskUtils';
 
 export interface AnalyticsData {
   completionTrend: Array<{
@@ -75,9 +76,13 @@ export const useAdvancedAnalytics = (tasks: Task[], timeRange: string = '30 days
       });
     }
 
-    // Status distribution
+    // Status distribution - including overdue tasks
     const statusCounts = filteredTasks.reduce((acc, task) => {
-      acc[task.status] = (acc[task.status] || 0) + 1;
+      if (isTaskOverdue(task)) {
+        acc['Overdue'] = (acc['Overdue'] || 0) + 1;
+      } else {
+        acc[task.status] = (acc[task.status] || 0) + 1;
+      }
       return acc;
     }, {} as Record<string, number>);
 
@@ -85,7 +90,8 @@ export const useAdvancedAnalytics = (tasks: Task[], timeRange: string = '30 days
       'To Do': '#94a3b8',
       'In Progress': '#3b82f6',
       'Pending': '#f59e0b',
-      'Completed': '#10b981'
+      'Completed': '#10b981',
+      'Overdue': '#dc2626'
     };
 
     const statusDistribution = Object.entries(statusCounts).map(([status, count]) => ({
