@@ -17,6 +17,7 @@ import TaskDetailsCard from './TaskDetailsCard';
 import EnhancedTaskAssignment from './form/assignment/EnhancedTaskAssignment';
 import TaskScheduleSection from './form/TaskScheduleSection';
 import TaskDialogActions from './TaskDialogActions';
+import RecurrenceSection from './form/RecurrenceSection';
 
 interface EnhancedCreateTaskDialogProps {
   open: boolean;
@@ -57,6 +58,12 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
 
   // Warning period state
   const [warningPeriodHours, setWarningPeriodHours] = useState(24);
+
+  // Recurrence state (MVP: weekly support)
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [recurrenceFrequency, setRecurrenceFrequency] = useState<'weekly' | 'daily' | 'monthly'>('weekly');
+  const [recurrenceInterval, setRecurrenceInterval] = useState<number>(1);
+  const [recurrenceDays, setRecurrenceDays] = useState<number[]>([1]); // Monday
 
   const form = useForm({
     defaultValues: {
@@ -122,6 +129,11 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
       setScheduledEndDate(undefined);
       setScheduledStartTime('');
       setScheduledEndTime('');
+      // Reset recurrence defaults
+      setIsRecurring(false);
+      setRecurrenceFrequency('weekly');
+      setRecurrenceInterval(1);
+      setRecurrenceDays([1]);
     }
   }, [editingTask, open, users, form, currentProjectId]);
 
@@ -208,7 +220,7 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
         if (user) assignedUsers = [user];
       }
 
-      const taskData = {
+      const taskData: any = {
         ...formData,
         deadline,
         scheduledStart,
@@ -218,6 +230,15 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
         warning_period_hours: warningPeriodHours,
       };
 
+      if (isRecurring) {
+        taskData.is_recurring = true;
+        taskData.recurrence_pattern = {
+          frequency: recurrenceFrequency,
+          interval: recurrenceInterval,
+          ...(recurrenceFrequency === 'weekly' ? { daysOfWeek: recurrenceDays } : {})
+        };
+        taskData.next_due_date = deadline;
+      }
       const success = await submitTask(
         taskData,
         assignedUsers,
@@ -283,6 +304,17 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
               onScheduledEndDateChange={handleScheduledEndDateChange}
               onScheduledStartTimeChange={handleScheduledStartTimeChange}
               onScheduledEndTimeChange={handleScheduledEndTimeChange}
+            />
+
+            <RecurrenceSection
+              isRecurring={isRecurring}
+              onToggle={setIsRecurring}
+              frequency={recurrenceFrequency}
+              onFrequencyChange={setRecurrenceFrequency}
+              interval={recurrenceInterval}
+              onIntervalChange={setRecurrenceInterval}
+              daysOfWeek={recurrenceDays}
+              onDaysChange={setRecurrenceDays}
             />
           </div>
           

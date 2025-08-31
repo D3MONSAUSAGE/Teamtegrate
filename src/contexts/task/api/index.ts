@@ -29,7 +29,7 @@ export const fetchTasks = async (organizationId: string): Promise<Task[]> => {
   }));
 };
 
-export const createTask = async (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>): Promise<Task> => {
+export const createTask = async (task: any): Promise<Task> => {
   const now = new Date();
   const taskId = crypto.randomUUID();
   
@@ -49,6 +49,11 @@ export const createTask = async (task: Omit<Task, 'id' | 'createdAt' | 'updatedA
       assigned_to_names: task.assignedToNames || [],
       cost: task.cost || 0,
       organization_id: task.organizationId,
+      is_recurring: task.is_recurring || false,
+      recurrence_pattern: task.recurrence_pattern || null,
+      next_due_date: task.next_due_date ? task.next_due_date.toISOString() : (task.deadline ? task.deadline.toISOString() : null),
+      recurrence_end_date: task.recurrence_end_date ? (task.recurrence_end_date instanceof Date ? task.recurrence_end_date.toISOString() : task.recurrence_end_date) : null,
+      recurrence_parent_id: task.recurrence_parent_id || null,
       created_at: now.toISOString(),
       updated_at: now.toISOString()
     })
@@ -76,7 +81,7 @@ export const createTask = async (task: Omit<Task, 'id' | 'createdAt' | 'updatedA
   };
 };
 
-export const updateTask = async (taskId: string, updates: Partial<Task>): Promise<void> => {
+export const updateTask = async (taskId: string, updates: any): Promise<void> => {
   const updateData: any = {
     updated_at: new Date().toISOString()
   };
@@ -92,7 +97,11 @@ export const updateTask = async (taskId: string, updates: Partial<Task>): Promis
   if (updates.assignedToIds !== undefined) updateData.assigned_to_ids = updates.assignedToIds;
   if (updates.assignedToNames !== undefined) updateData.assigned_to_names = updates.assignedToNames;
   if (updates.cost !== undefined) updateData.cost = updates.cost;
-
+  if (updates.is_recurring !== undefined) updateData.is_recurring = updates.is_recurring;
+  if (updates.recurrence_pattern !== undefined) updateData.recurrence_pattern = updates.recurrence_pattern;
+  if (updates.next_due_date !== undefined) updateData.next_due_date = updates.next_due_date ? new Date(updates.next_due_date).toISOString() : null;
+  if (updates.recurrence_end_date !== undefined) updateData.recurrence_end_date = updates.recurrence_end_date ? new Date(updates.recurrence_end_date).toISOString() : null;
+  if (updates.recurrence_parent_id !== undefined) updateData.recurrence_parent_id = updates.recurrence_parent_id;
   const { error } = await supabase
     .from('tasks')
     .update(updateData)

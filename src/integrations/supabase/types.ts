@@ -1888,9 +1888,15 @@ export type Database = {
           description: string | null
           id: string
           is_archived: boolean | null
+          is_recurring: boolean | null
+          next_due_date: string | null
           organization_id: string
           priority: string | null
           project_id: string | null
+          recurrence_count: number | null
+          recurrence_end_date: string | null
+          recurrence_parent_id: string | null
+          recurrence_pattern: Json | null
           scheduled_end: string | null
           scheduled_start: string | null
           status: string | null
@@ -1912,9 +1918,15 @@ export type Database = {
           description?: string | null
           id: string
           is_archived?: boolean | null
+          is_recurring?: boolean | null
+          next_due_date?: string | null
           organization_id: string
           priority?: string | null
           project_id?: string | null
+          recurrence_count?: number | null
+          recurrence_end_date?: string | null
+          recurrence_parent_id?: string | null
+          recurrence_pattern?: Json | null
           scheduled_end?: string | null
           scheduled_start?: string | null
           status?: string | null
@@ -1936,9 +1948,15 @@ export type Database = {
           description?: string | null
           id?: string
           is_archived?: boolean | null
+          is_recurring?: boolean | null
+          next_due_date?: string | null
           organization_id?: string
           priority?: string | null
           project_id?: string | null
+          recurrence_count?: number | null
+          recurrence_end_date?: string | null
+          recurrence_parent_id?: string | null
+          recurrence_pattern?: Json | null
           scheduled_end?: string | null
           scheduled_start?: string | null
           status?: string | null
@@ -2918,6 +2936,10 @@ export type Database = {
       }
       generate_invoice_file_path: {
         Args: { filename: string; org_id: string; user_id: string }
+        Returns: string
+      }
+      generate_recurring_task_occurrence: {
+        Args: { organization_id_param: string; parent_task_id: string }
         Returns: string
       }
       get_all_projects: {

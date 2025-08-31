@@ -79,6 +79,28 @@ export const updateTaskStatus = async (
 
     console.log('✅ updateTaskStatus: Database update successful');
 
+    // If this task is a recurring parent, generate the next occurrence
+    if (status === 'Completed') {
+      const { data: recTask, error: recErr } = await supabase
+        .from('tasks')
+        .select('is_recurring')
+        .eq('id', taskId)
+        .single();
+      if (!recErr && recTask?.is_recurring) {
+        console.log('🔁 Generating next recurring task occurrence...');
+        const { data: genData, error: genErr } = await supabase.rpc('generate_recurring_task_occurrence', {
+          parent_task_id: taskId,
+          organization_id_param: user.organizationId
+        });
+        if (genErr) {
+          console.warn('⚠️ Failed to generate next recurring occurrence', genErr);
+        } else {
+          console.log('✅ Next recurring occurrence generated', genData);
+        }
+      }
+    }
+
+
     // Get the task to check if it belongs to a project
     const { data: taskData, error: taskFetchError } = await supabase
       .from('tasks')
