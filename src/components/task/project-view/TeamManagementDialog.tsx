@@ -23,7 +23,8 @@ import {
   UserMinus,
   X,
   Edit,
-  Trash2
+  Trash2,
+  Settings
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -42,9 +43,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { User as UserType, Project } from '@/types';
+import { User as UserType, Project, UserRole, getRoleDisplayName } from '@/types';
 import { useUsers } from '@/hooks/useUsers';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
+import OrganizationRoleChangeDialog from '@/components/team/OrganizationRoleChangeDialog';
+import OrganizationRoleSelector from '@/components/team/OrganizationRoleSelector';
 
 interface TeamManagementDialogProps {
   open: boolean;
@@ -65,12 +70,22 @@ const TeamManagementDialog: React.FC<TeamManagementDialogProps> = ({
   onAddTeamMember,
   onRemoveTeamMember
 }) => {
+  const { user: currentUser } = useAuth();
   const [teamMemberSearchQuery, setTeamMemberSearchQuery] = useState('');
   const [availableUserSearchQuery, setAvailableUserSearchQuery] = useState('');
   const [showAddMember, setShowAddMember] = useState(false);
   const [removingMemberId, setRemovingMemberId] = useState<string | null>(null);
   const [showRemoveDialog, setShowRemoveDialog] = useState(false);
+  const [isChangingOrgRole, setIsChangingOrgRole] = useState(false);
+  const [orgRoleChangeData, setOrgRoleChangeData] = useState<{
+    userId: string;
+    userName: string;
+    currentRole: UserRole;
+    newRole: UserRole;
+  } | null>(null);
   const { users: allUsers, isLoading: isLoadingUsers } = useUsers();
+
+  const isSuperadmin = currentUser?.role === 'superadmin';
 
   // Filter current team members based on team member search
   const filteredTeamMembers = teamMembers.filter(member =>
@@ -129,6 +144,54 @@ const TeamManagementDialog: React.FC<TeamManagementDialogProps> = ({
   const handleSendMessage = (memberId: string) => {
     // TODO: Implement team member messaging
     toast.info('Team messaging functionality coming soon');
+  };
+
+  const handleChangeOrganizationRole = (member: UserType, newRole: UserRole) => {
+    setOrgRoleChangeData({
+      userId: member.id,
+      userName: member.name,
+      currentRole: member.role as UserRole,
+      newRole: newRole
+    });
+  };
+
+  const confirmOrganizationRoleChange = async () => {
+    if (!orgRoleChangeData) return;
+
+    setIsChangingOrgRole(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('update-user-role', {
+        body: {
+          targetUserId: orgRoleChangeData.userId,
+          newRole: orgRoleChangeData.newRole
+        }
+      });
+
+      if (error) {
+        throw new Error(error.message || 'Failed to update role');
+      }
+
+      if (!data?.success) {
+        throw new Error(data?.error || 'Role update failed');
+      }
+
+      toast.success(`Organization role updated to ${getRoleDisplayName(orgRoleChangeData.newRole)}`);
+      setOrgRoleChangeData(null);
+      
+      // Refresh the team members list
+      window.location.reload(); // Simple refresh to update roles
+    } catch (error) {
+      console.error('Error changing organization role:', error);
+      toast.error('Failed to change organization role');
+    } finally {
+      setIsChangingOrgRole(false);
+    }
+  };
+
+  const closeOrganizationRoleDialog = () => {
+    if (!isChangingOrgRole) {
+      setOrgRoleChangeData(null);
+    }
   };
 
   const removingMember = removingMemberId ? teamMembers.find(m => m.id === removingMemberId) : null;
@@ -272,9 +335,16 @@ const TeamManagementDialog: React.FC<TeamManagementDialogProps> = ({
                             <Mail className="h-3 w-3" />
                             {member.email}
                           </div>
-                          <Badge variant="secondary" className="mt-1 text-xs">
-                            {getRoleLabel(member.id)}
-                          </Badge>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge variant="secondary" className="text-xs">
+                              {getRoleLabel(member.id)}
+                            </Badge>
+                            {isSuperadmin && (
+                              <Badge variant="outline" className="text-xs">
+                                {getRoleDisplayName(member.role as UserRole)}
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                       </div>
 
@@ -287,21 +357,47 @@ const TeamManagementDialog: React.FC<TeamManagementDialogProps> = ({
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => handleEditMember(member.id)}>
                             <Edit className="h-4 w-4 mr-2" />
-                            Edit Role
+                            Edit Project Role
                           </DropdownMenuItem>
+                          
+                          {isSuperadmin && member.id !== currentUser?.id && (
+                            <>
+                              <DropdownMenuSeparator />
+                              <div className="px-2 py-1.5 text-sm font-medium text-muted-foreground">
+                                Change Organization Role
+                              </div>
+                              <DropdownMenuItem onClick={() => handleChangeOrganizationRole(member, 'user')}>
+                                <User className="h-4 w-4 mr-2" />
+                                Set as User
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleChangeOrganizationRole(member, 'manager')}>
+                                <Crown className="h-4 w-4 mr-2" />
+                                Set as Manager
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleChangeOrganizationRole(member, 'admin')}>
+                                <Settings className="h-4 w-4 mr-2" />
+                                Set as Admin
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                          
+                          <DropdownMenuSeparator />
                           <DropdownMenuItem onClick={() => handleSendMessage(member.id)}>
                             <Mail className="h-4 w-4 mr-2" />
                             Send Message
                           </DropdownMenuItem>
-                          <DropdownMenuSeparator />
+                          
                           {project.managerId !== member.id && (
-                            <DropdownMenuItem 
-                              className="text-destructive"
-                              onClick={() => handleRemoveMember(member.id)}
-                            >
-                              <UserMinus className="h-4 w-4 mr-2" />
-                              Remove from Project
-                            </DropdownMenuItem>
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem 
+                                className="text-destructive"
+                                onClick={() => handleRemoveMember(member.id)}
+                              >
+                                <UserMinus className="h-4 w-4 mr-2" />
+                                Remove from Project
+                              </DropdownMenuItem>
+                            </>
                           )}
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -334,12 +430,25 @@ const TeamManagementDialog: React.FC<TeamManagementDialogProps> = ({
             >
               <Trash2 className="h-4 w-4 mr-2" />
               Remove Member
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
-  );
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+
+    {/* Organization Role Change Dialog */}
+    {orgRoleChangeData && (
+      <OrganizationRoleChangeDialog
+        isOpen={!!orgRoleChangeData}
+        onClose={closeOrganizationRoleDialog}
+        onConfirm={confirmOrganizationRoleChange}
+        isChanging={isChangingOrgRole}
+        targetUserName={orgRoleChangeData.userName}
+        currentRole={orgRoleChangeData.currentRole}
+        newRole={orgRoleChangeData.newRole}
+      />
+    )}
+  </>
+);
 };
 
 export default TeamManagementDialog;
