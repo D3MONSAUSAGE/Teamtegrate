@@ -7,13 +7,12 @@ import { useTeamTimeStats } from '@/hooks/useTeamTimeStats';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProgressiveLoading } from '@/hooks/useProgressiveLoading';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
-// Compact navigation imports
-import { CompactTimeHeader } from '@/components/time-management/CompactTimeHeader';
-import { InlineTeamSelector } from '@/components/time-management/InlineTeamSelector';
+// Modern components
+import ModernTimeTrackingHeader from '@/components/schedule/modern/ModernTimeTrackingHeader';
 import { TeamTotalsView } from '@/components/time-management/TeamTotalsView';
 
 // Existing components
@@ -133,40 +132,26 @@ const TimeTrackingPage = () => {
 
   return (
     <div className="space-y-4 p-6 max-w-7xl mx-auto">
-      {/* Compact Header */}
-      <CompactTimeHeader />
+      {/* Modern Header with Integrated Tabs */}
+      <ModernTimeTrackingHeader
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        availableTabs={availableTabs}
+        canManageTeams={canManageTeams}
+        teams={teams}
+        users={users}
+        selectedTeamId={selectedTeamId}
+        selectedUserId={selectedUserId}
+        onTeamChange={setSelectedTeamId}
+        onUserChange={setSelectedUserId}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        isLoading={usersLoading || statsLoading}
+        onNotificationClick={() => console.log('Notifications clicked')}
+      />
 
-      {/* Inline Team Selection (Admin/Manager Only) */}
-      {canManageTeams && (
-        <InlineTeamSelector
-          teams={teams}
-          users={users}
-          selectedTeamId={selectedTeamId}
-          selectedUserId={selectedUserId}
-          onTeamChange={setSelectedTeamId}
-          onUserChange={setSelectedUserId}
-          viewMode={viewMode}
-          onViewModeChange={setViewMode}
-          isLoading={usersLoading || statsLoading}
-        />
-      )}
-
-      {/* Main Content Tabs */}
+      {/* Main Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${availableTabs.length}, 1fr)` }}>
-          {availableTabs.map(tab => (
-            <TabsTrigger 
-              key={tab.value} 
-              value={tab.value} 
-              className="flex items-center gap-2"
-              disabled={!tab.ready}
-            >
-              <span>{tab.icon}</span>
-              {tab.label}
-              {!tab.ready && <span className="animate-pulse">⌛</span>}
-            </TabsTrigger>
-          ))}
-        </TabsList>
 
         {/* Schedule Tab */}
         <TabsContent value="schedule" className="space-y-4">
