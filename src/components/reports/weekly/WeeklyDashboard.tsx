@@ -19,32 +19,72 @@ import { useEmployeeReports } from '@/hooks/useEmployeeReports';
 import { useEmployeeDetailedTasks } from '@/hooks/useEmployeeDetailedTasks';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRealTeamMembers } from '@/hooks/team/useRealTeamMembers';
+import { useOrganizationTeamMembers } from '@/hooks/useOrganizationTeamMembers';
+
+// Helper function to compute date range based on time range string
+const computeRange = (timeRange: string): DateRange => {
+  const endDate = new Date();
+  let startDate: Date;
+  
+  switch (timeRange) {
+    case '7 days':
+    case 'This Week':
+      startDate = subDays(endDate, 6);
+      break;
+    case '30 days':
+    case 'This Month':
+      startDate = subDays(endDate, 29);
+      break;
+    default:
+      startDate = subDays(endDate, 6);
+  }
+  
+  return { from: startDate, to: endDate };
+};
 
 interface WeeklyDashboardProps {
-  timeRange: string;
+  timeRange?: string;
   dateRange?: DateRange;
+  selectedMemberId?: string;
+  selectedTeamId?: string;
+  readOnly?: boolean;
 }
 
-export const WeeklyDashboard: React.FC<WeeklyDashboardProps> = ({
-  timeRange,
-  dateRange
+export const WeeklyDashboard: React.FC<WeeklyDashboardProps> = ({ 
+  timeRange = "This Week",
+  dateRange,
+  selectedMemberId,
+  selectedTeamId,
+  readOnly = false
 }) => {
   const { user } = useAuth();
-  const { teamMembers } = useRealTeamMembers();
-  
-  // Set default selected member to current user
-  const [selectedMemberId, setSelectedMemberId] = useState<string>(user?.id || '');
+  const [selectedMember, setSelectedMember] = useState<string>(selectedMemberId || '');
+  const [selectedTimeRange, setSelectedTimeRange] = useState(timeRange);
   const [customDateRange, setCustomDateRange] = useState<DateRange | undefined>(dateRange);
-  const [selectedTimeRange, setSelectedTimeRange] = useState<string>('7 days');
-  
-  // Use 7 days for weekly view regardless of the parent timeRange
-  const weeklyTimeRange = selectedTimeRange;
+
+  const { users: teamMembers, isLoading: teamMembersLoading } = useOrganizationTeamMembers();
+  const { teamMembers: teamMembersWithPerformance } = useRealTeamMembers(selectedTeamId || undefined);
+
+  // Update selected member when prop changes
+  React.useEffect(() => {
+    if (selectedMemberId && selectedMemberId !== selectedMember) {
+      setSelectedMember(selectedMemberId);
+    }
+  }, [selectedMemberId, selectedMember]);
+
+  // Calculate the date range based on time range selection
+  const reportDateRange = useMemo(() => {
+    if (selectedTimeRange === 'custom' && customDateRange) {
+      return customDateRange;
+    }
+    return computeRange(selectedTimeRange);
+  }, [selectedTimeRange, customDateRange]);
   
   // Get employee reports data
   const { taskStats, hoursStats, contributions, isLoading, error } = useEmployeeReports({
-    userId: selectedMemberId,
-    timeRange: weeklyTimeRange,
-    dateRange: customDateRange || dateRange
+    userId: selectedMember,
+    timeRange: selectedTimeRange,
+    dateRange: reportDateRange
   });
 
   // Get detailed tasks data
@@ -59,9 +99,9 @@ export const WeeklyDashboard: React.FC<WeeklyDashboardProps> = ({
     isLoading: isLoadingDetailedTasks,
     error: detailedTasksError
   } = useEmployeeDetailedTasks({
-    userId: selectedMemberId,
-    timeRange: weeklyTimeRange,
-    dateRange: customDateRange || dateRange
+    userId: selectedMember,
+    timeRange: selectedTimeRange,
+    dateRange: reportDateRange
   });
 
   // Prepare team members data for selector - include current user
@@ -72,8 +112,8 @@ export const WeeklyDashboard: React.FC<WeeklyDashboardProps> = ({
       email: member.email
     }));
     
-    // Always ensure current user is available
-    if (user && !members.find(m => m.id === user.id)) {
+    // Always ensure current user is available if not in readOnly mode
+    if (user && !readOnly && !members.find(m => m.id === user.id)) {
       members.unshift({
         id: user.id,
         name: user.name,
@@ -82,17 +122,17 @@ export const WeeklyDashboard: React.FC<WeeklyDashboardProps> = ({
     }
     
     return members;
-  }, [teamMembers, user]);
+  }, [teamMembers, user, readOnly]);
 
   // Set initial selected member when data loads
   React.useEffect(() => {
-    if (!selectedMemberId && user?.id) {
-      setSelectedMemberId(user.id);
+    if (!selectedMember && user?.id && !readOnly) {
+      setSelectedMember(user.id);
     }
-  }, [user?.id, selectedMemberId]);
+  }, [user?.id, selectedMember, readOnly]);
 
   // Ensure a team member is selected
-  const isValidSelection = selectedMemberId && availableTeamMembers.some(m => m.id === selectedMemberId);
+  const isValidSelection = selectedMember && (readOnly || availableTeamMembers.some(m => m.id === selectedMember));
 
   // Calculate date range for display
   const displayDateRange = useMemo(() => {
@@ -107,7 +147,7 @@ export const WeeklyDashboard: React.FC<WeeklyDashboardProps> = ({
     return `${format(startDate, 'MMM dd')} - ${format(endDate, 'MMM dd, yyyy')}`;
   }, [customDateRange, dateRange, selectedTimeRange]);
 
-  const selectedMember = availableTeamMembers.find(member => member.id === selectedMemberId);
+  const selectedMemberData = availableTeamMembers.find(member => member.id === selectedMember);
   
   // Time range options
   const timeRangeOptions = [
@@ -198,18 +238,18 @@ export const WeeklyDashboard: React.FC<WeeklyDashboardProps> = ({
           <div className="max-w-md">
             <TeamMemberSelector
               teamMembers={availableTeamMembers}
-              selectedMember={selectedMemberId}
-              onMemberChange={setSelectedMemberId}
-              isLoading={isLoading}
+              selectedMember={selectedMember}
+              onMemberChange={setSelectedMember}
+              isLoading={teamMembersLoading}
             />
           </div>
 
-          {selectedMember && (
+          {selectedMemberData && (
             <div className="flex items-center gap-2 pt-2 border-t">
               <span className="text-sm text-muted-foreground">Analyzing performance for:</span>
-              <span className="font-medium">{selectedMember.name}</span>
-              {selectedMember.email && (
-                <span className="text-sm text-muted-foreground">({selectedMember.email})</span>
+              <span className="font-medium">{selectedMemberData.name}</span>
+              {selectedMemberData.email && (
+                <span className="text-sm text-muted-foreground">({selectedMemberData.email})</span>
               )}
             </div>
           )}
