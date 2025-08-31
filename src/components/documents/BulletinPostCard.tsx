@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Pin, Download, FileText } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Trash2, Pin, Download, FileText, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -55,6 +56,9 @@ const CATEGORY_COLORS: Record<string, string> = {
 };
 
 const BulletinPostCard = ({ post, canDelete, onDelete }: BulletinPostCardProps) => {
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
   const formatFileSize = (bytes: number) => {
     const units = ['B', 'KB', 'MB', 'GB'];
     let size = bytes;
@@ -87,6 +91,24 @@ const BulletinPostCard = ({ post, canDelete, onDelete }: BulletinPostCardProps) 
     } catch (error) {
       console.error('Download error:', error);
       toast.error('Failed to download document');
+    }
+  };
+
+  const handleDocumentPreview = async () => {
+    if (!post.documents) return;
+    
+    try {
+      const { data, error } = await supabase.storage
+        .from('documents')
+        .createSignedUrl(post.documents.file_path, 3600);
+
+      if (error) throw error;
+
+      setPreviewUrl(data.signedUrl);
+      setIsPreviewOpen(true);
+    } catch (error) {
+      console.error('Preview error:', error);
+      toast.error('Failed to preview document');
     }
   };
 
@@ -152,18 +174,70 @@ const BulletinPostCard = ({ post, canDelete, onDelete }: BulletinPostCardProps) 
                   </p>
                 </div>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleDocumentDownload}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Download
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDocumentPreview}
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  View
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDocumentDownload}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download
+                </Button>
+              </div>
             </div>
           </div>
         )}
       </CardContent>
+
+      {/* Document Preview Modal */}
+      <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle>{post.documents?.title}</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-hidden">
+            {previewUrl && post.documents && (
+              <>
+                {post.documents.file_type.startsWith('image/') ? (
+                  <img 
+                    src={previewUrl} 
+                    alt={post.documents.title}
+                    className="max-w-full max-h-[70vh] object-contain mx-auto"
+                  />
+                ) : post.documents.file_type === 'application/pdf' ? (
+                  <iframe
+                    src={previewUrl}
+                    className="w-full h-[70vh] border-0"
+                    title={post.documents.title}
+                  />
+                ) : (
+                  <div className="text-center py-8">
+                    <FileText className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                    <p className="text-muted-foreground">
+                      Preview not available for {post.documents.file_type}
+                    </p>
+                    <Button 
+                      onClick={handleDocumentDownload}
+                      className="mt-4"
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Download to view
+                    </Button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };

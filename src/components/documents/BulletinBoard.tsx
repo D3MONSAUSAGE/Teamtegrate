@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import BulletinPostCard from './BulletinPostCard';
 import BulletinPostForm from './BulletinPostForm';
+import BulletinSearch from './BulletinSearch';
 import { useRoleAccess } from '@/contexts/auth/hooks/useRoleAccess';
 
 interface BulletinPost {
@@ -17,9 +18,17 @@ interface BulletinPost {
   is_pinned: boolean;
   created_at: string;
   updated_at: string;
+  document_id?: string;
   users: {
     name: string;
     email: string;
+  };
+  documents?: {
+    id: string;
+    title: string;
+    file_path: string;
+    file_type: string;
+    size_bytes: number;
   };
 }
 
@@ -27,6 +36,7 @@ const BulletinBoard = () => {
   const [posts, setPosts] = useState<BulletinPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showPostForm, setShowPostForm] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const { user } = useAuth();
   const { hasRoleAccess } = useRoleAccess(user);
   
@@ -131,6 +141,19 @@ const BulletinBoard = () => {
     };
   }, [user]);
 
+  const filteredPosts = useMemo(() => {
+    if (!searchQuery.trim()) return posts;
+
+    const query = searchQuery.toLowerCase();
+    return posts.filter(post => 
+      post.title.toLowerCase().includes(query) ||
+      post.content.toLowerCase().includes(query) ||
+      post.category.toLowerCase().includes(query) ||
+      post.users?.name.toLowerCase().includes(query) ||
+      post.documents?.title.toLowerCase().includes(query)
+    );
+  }, [posts, searchQuery]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -162,13 +185,22 @@ const BulletinBoard = () => {
         />
       )}
 
-      {posts.length === 0 ? (
+      <BulletinSearch 
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+      />
+
+      {filteredPosts.length === 0 ? (
         <div className="text-center py-8 text-muted-foreground">
-          No bulletin posts yet. {canCreatePosts ? 'Create the first post!' : 'Check back later for updates.'}
+          {searchQuery.trim() ? 'No posts found matching your search' : (
+            posts.length === 0 ? (
+              canCreatePosts ? 'No bulletin posts yet. Create the first post!' : 'Check back later for updates.'
+            ) : 'No posts match your search criteria'
+          )}
         </div>
       ) : (
         <div className="space-y-4">
-          {posts.map((post) => (
+          {filteredPosts.map((post) => (
             <BulletinPostCard
               key={post.id}
               post={post}
