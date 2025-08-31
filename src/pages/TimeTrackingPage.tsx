@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useEmployeeTimeTracking } from '@/hooks/useEmployeeTimeTracking';
 import { useScheduleManagement } from '@/hooks/useScheduleManagement';
@@ -12,9 +11,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
-// Role-based imports
-import { RoleBasedTimeHeader } from '@/components/time-management/RoleBasedTimeHeader';
-import { TeamFirstSelector } from '@/components/time-management/TeamFirstSelector';
+// Compact navigation imports
+import { CompactTimeHeader } from '@/components/time-management/CompactTimeHeader';
+import { InlineTeamSelector } from '@/components/time-management/InlineTeamSelector';
 import { TeamTotalsView } from '@/components/time-management/TeamTotalsView';
 
 // Existing components
@@ -31,7 +30,7 @@ const TimeTrackingPage = () => {
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'individual' | 'team-totals'>('individual');
-  const [activeTab, setActiveTab] = useState('my-schedule'); // Default to schedule first
+  const [activeTab, setActiveTab] = useState('schedule'); // Default to schedule first
   const [weekDate, setWeekDate] = useState(new Date());
 
   // Progressive loading management
@@ -113,46 +112,19 @@ const TimeTrackingPage = () => {
   const selectedTeamName = selectedTeamId ? teams.find(t => t.id === selectedTeamId)?.name : null;
   const selectedUserName = selectedUserId ? users.find(u => u.id === selectedUserId)?.name : null;
 
-  // Quick action handler
-  const handleQuickAction = (action: 'export' | 'settings' | 'reports') => {
-    // TODO: Implement quick actions
-    console.log(`Quick action: ${action}`);
-  };
-
-  // Determine available tabs based on role - Schedule first priority
+  // Determine available tabs - Schedule and Time Entries main categories
   const getAvailableTabs = () => {
     const baseTabs = [
-      { value: 'my-schedule', label: 'My Schedule', icon: '📅', ready: loadingState.scheduleReady }
+      { value: 'schedule', label: 'Schedule', icon: '📅', ready: loadingState.scheduleReady }
     ];
 
-    if (user?.role === 'user') {
-      baseTabs.push({ 
-        value: 'time-tracking', 
-        label: 'Time Tracking', 
-        icon: '⏰', 
-        ready: loadingState.timeTrackingReady 
-      });
-      return baseTabs;
-    }
-
+    // Time Entries is available for everyone
     baseTabs.push({ 
-      value: 'time-tracking', 
-      label: 'Time Tracking', 
+      value: 'time-entries', 
+      label: 'Time Entries', 
       icon: '⏰', 
       ready: loadingState.timeTrackingReady 
     });
-
-    baseTabs.push(
-      { value: 'correction-requests', label: 'Correction Requests', icon: '📝', ready: loadingState.timeTrackingReady }
-    );
-
-    if (canManageTeams) {
-      baseTabs.push(
-        { value: 'team-overview', label: 'Team Overview', icon: '👥', ready: loadingState.teamDataReady },
-        { value: 'schedule-management', label: 'Schedule Management', icon: '📋', ready: loadingState.scheduleReady },
-        { value: 'time-entries', label: 'Time Entries', icon: '📝', ready: loadingState.teamDataReady }
-      );
-    }
 
     return baseTabs;
   };
@@ -160,21 +132,13 @@ const TimeTrackingPage = () => {
   const availableTabs = getAvailableTabs();
 
   return (
-    <div className="space-y-6 p-6 max-w-7xl mx-auto">
-      {/* Role-Based Header */}
-      <RoleBasedTimeHeader
-        userRole={user?.role || 'user'}
-        userName={user?.name || 'User'}
-        selectedTeamName={selectedTeamName || undefined}
-        selectedUserName={selectedUserName || undefined}
-        viewMode={activeTab as any}
-        hasComplianceIssues={!!lastError}
-        onQuickAction={canManageTeams ? handleQuickAction : undefined}
-      />
+    <div className="space-y-4 p-6 max-w-7xl mx-auto">
+      {/* Compact Header */}
+      <CompactTimeHeader />
 
-      {/* Team-First Navigation (Admin/Manager Only) */}
+      {/* Inline Team Selection (Admin/Manager Only) */}
       {canManageTeams && (
-        <TeamFirstSelector
+        <InlineTeamSelector
           teams={teams}
           users={users}
           selectedTeamId={selectedTeamId}
@@ -204,152 +168,121 @@ const TimeTrackingPage = () => {
           ))}
         </TabsList>
 
-        {/* My Schedule - Priority Tab */}
-        <TabsContent value="my-schedule" className="space-y-4">
-          {loadingState.scheduleReady ? (
-            <ScheduleEmployeeDashboard />
-          ) : (
+        {/* Schedule Tab */}
+        <TabsContent value="schedule" className="space-y-4">
+          {!loadingState.scheduleReady ? (
             <Card className="p-6">
               <div className="text-center py-8">
                 <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-                <p className="text-muted-foreground">Loading your schedule...</p>
+                <p className="text-muted-foreground">Loading schedule...</p>
               </div>
             </Card>
+          ) : (
+            <>
+              {/* Personal Schedule for all users */}
+              <ScheduleEmployeeDashboard />
+              
+              {/* Manager Schedule Management */}
+              {canManageTeams && (
+                <div className="mt-6">
+                  <h3 className="text-lg font-semibold mb-4">Schedule Management</h3>
+                  <ScheduleManagerDashboard />
+                </div>
+              )}
+            </>
           )}
         </TabsContent>
 
-        {/* Personal Time Tracking */}
-        <TabsContent value="time-tracking" className="space-y-4">
+        {/* Time Entries Tab */}
+        <TabsContent value="time-entries" className="space-y-4">
           {!loadingState.timeTrackingReady ? (
             <Card className="p-6">
               <div className="text-center py-8">
                 <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-                <p className="text-muted-foreground">Loading time tracking...</p>
+                <p className="text-muted-foreground">Loading time entries...</p>
               </div>
             </Card>
-          ) : user?.role === 'user' || !selectedTeamId ? (
-            // Personal time tracking interface
-            <div className="space-y-4">
-              {isMobile ? (
-                <MobileTimeTrackingWidget
-                  currentEntry={currentEntry}
-                  elapsedTime={elapsedTime}
-                  isOnBreak={breakState.isOnBreak}
-                  breakElapsedTime={breakElapsedTime}
-                  lastBreakType={breakState.breakType}
-                  onClockIn={() => clockIn()}
-                  onClockOut={() => clockOut()}
-                  onStartBreak={(breakType) => startBreak(breakType as 'Coffee' | 'Lunch' | 'Rest')}
-                  onResumeFromBreak={endBreak}
-                  isLoading={timeTrackingLoading}
-                  isOnline={!lastError}
-                />
+          ) : (
+            <div className="space-y-6">
+              {/* Personal Time Tracking for all users */}
+              {user?.role === 'user' || !selectedTeamId ? (
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Time Tracking</h3>
+                  {isMobile ? (
+                    <MobileTimeTrackingWidget
+                      currentEntry={currentEntry}
+                      elapsedTime={elapsedTime}
+                      isOnBreak={breakState.isOnBreak}
+                      breakElapsedTime={breakElapsedTime}
+                      lastBreakType={breakState.breakType}
+                      onClockIn={() => clockIn()}
+                      onClockOut={() => clockOut()}
+                      onStartBreak={(breakType) => startBreak(breakType as 'Coffee' | 'Lunch' | 'Rest')}
+                      onResumeFromBreak={endBreak}
+                      isLoading={timeTrackingLoading}
+                      isOnline={!lastError}
+                    />
+                  ) : (
+                    <EmployeeTimeTracking />
+                  )}
+                </div>
+              ) : selectedUserId ? (
+                <Card className="p-6">
+                  <div className="text-center py-8">
+                    <h3 className="text-lg font-semibold mb-2">Individual Employee Tracking</h3>
+                    <p className="text-muted-foreground mb-4">
+                      Viewing time tracking data for {selectedUserName}
+                    </p>
+                    <Button variant="outline" onClick={() => setSelectedUserId(null)}>
+                      Back to Team View
+                    </Button>
+                  </div>
+                </Card>
               ) : (
-                <EmployeeTimeTracking />
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Team Time Tracking</h3>
+                  <TeamMembersGridView
+                    teamMembers={users}
+                    teamStats={teamStats}
+                    isLoading={usersLoading || statsLoading}
+                    onSelectMember={setSelectedUserId}
+                    weekDate={weekDate}
+                  />
+                </div>
+              )}
+
+              {/* Team Overview for managers */}
+              {canManageTeams && viewMode === 'team-totals' && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Team Overview</h3>
+                  <TeamTotalsView
+                    teamStats={teamStats}
+                    selectedTeamId={selectedTeamId}
+                    weekDate={weekDate}
+                    isLoading={statsLoading}
+                  />
+                </div>
+              )}
+
+              {/* Correction Requests */}
+              <div>
+                <h3 className="text-lg font-semibold mb-4">Correction Requests</h3>
+                <TimeCorrectionManager />
+              </div>
+
+              {/* Past Time Entries Management for managers */}
+              {canManageTeams && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Time Entries Management</h3>
+                  <PastTimeEntriesManager />
+                </div>
               )}
             </div>
-          ) : selectedUserId ? (
-            // Individual employee view
-            <Card className="p-6">
-              <div className="text-center py-8">
-                <h3 className="text-lg font-semibold mb-2">Individual Employee Tracking</h3>
-                <p className="text-muted-foreground mb-4">
-                  Viewing time tracking data for {selectedUserName}
-                </p>
-                <Button variant="outline" onClick={() => setSelectedUserId(null)}>
-                  Back to Team View
-                </Button>
-              </div>
-            </Card>
-          ) : (
-            // Team members grid view (no specific employee selected)
-            <TeamMembersGridView
-              teamMembers={users}
-              teamStats={teamStats}
-              isLoading={usersLoading || statsLoading}
-              onSelectMember={setSelectedUserId}
-              weekDate={weekDate}
-            />
           )}
         </TabsContent>
-
-        {/* Time Correction Requests */}
-        <TabsContent value="correction-requests" className="space-y-4">
-          {!loadingState.timeTrackingReady ? (
-            <Card className="p-6">
-              <div className="text-center py-8">
-                <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-                <p className="text-muted-foreground">Loading correction requests...</p>
-              </div>
-            </Card>
-          ) : (
-            <TimeCorrectionManager />
-          )}
-        </TabsContent>
-
-        {/* Team Overview (Managers+ only) */}
-        {canManageTeams && (
-          <TabsContent value="team-overview" className="space-y-4">
-            {!loadingState.teamDataReady ? (
-              <Card className="p-6">
-                <div className="text-center py-8">
-                  <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-                  <p className="text-muted-foreground">Loading team data...</p>
-                </div>
-              </Card>
-            ) : viewMode === 'team-totals' ? (
-              <TeamTotalsView
-                teamStats={teamStats}
-                selectedTeamId={selectedTeamId}
-                weekDate={weekDate}
-                isLoading={statsLoading}
-              />
-            ) : (
-              <Card className="p-6">
-                <div className="text-center py-8">
-                  <h3 className="text-lg font-semibold mb-2">Individual Team Member View</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Switch to "Team Totals" view mode above to see aggregate team statistics
-                  </p>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setViewMode('team-totals')}
-                  >
-                    Switch to Team Totals
-                  </Button>
-                </div>
-              </Card>
-            )}
-          </TabsContent>
-        )}
-
-
-        {/* Schedule Management (Managers+ only) */}
-        {canManageTeams && (
-          <TabsContent value="schedule-management" className="space-y-4">
-            <ScheduleManagerDashboard />
-          </TabsContent>
-        )}
-
-        {/* Time Entries Management (Managers+ only) */}
-        {canManageTeams && (
-          <TabsContent value="time-entries" className="space-y-4">
-            {!loadingState.teamDataReady ? (
-              <Card className="p-6">
-                <div className="text-center py-8">
-                  <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-                  <p className="text-muted-foreground">Loading time entries...</p>
-                </div>
-              </Card>
-            ) : (
-              <PastTimeEntriesManager />
-            )}
-          </TabsContent>
-        )}
       </Tabs>
     </div>
   );
 };
 
 export default TimeTrackingPage;
-
