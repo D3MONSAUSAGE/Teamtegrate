@@ -48,7 +48,7 @@ const TeamMemberMiniCard: React.FC<TeamMemberMiniCardProps> = ({ member, classNa
       <Tooltip>
         <TooltipTrigger asChild>
           <div className={cn(
-            "flex items-center gap-2 p-2 bg-card border rounded-lg hover:bg-accent/50 transition-colors min-w-0 flex-shrink-0",
+            "flex items-center gap-2 p-2 bg-card border rounded-lg hover:bg-accent/50 transition-colors min-w-0",
             className
           )}>
             <Avatar className="h-7 w-7">

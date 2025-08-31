@@ -44,7 +44,7 @@ const TeamMembersHorizontalList: React.FC<TeamMembersHorizontalListProps> = ({
         <Users className="h-3 w-3" />
         <span>Team Members ({teamMembers.length})</span>
       </div>
-      <div className="flex items-center gap-2 overflow-x-auto pb-1">
+      <div className="flex flex-col gap-2">
         {displayedMembers.map((member) => (
           <TeamMemberMiniCard
             key={member.id}
@@ -55,11 +55,11 @@ const TeamMembersHorizontalList: React.FC<TeamMembersHorizontalListProps> = ({
               role: member.role,
               avatar_url: member.avatar_url
             }}
-            className="w-36"
+            className="w-full"
           />
         ))}
         {remainingCount > 0 && (
-          <div className="flex items-center justify-center p-2 bg-muted/50 border rounded-lg min-w-[80px] h-[47px]">
+          <div className="flex items-center justify-center p-2 bg-muted/50 border rounded-lg">
             <span className="text-xs text-muted-foreground font-medium">
               +{remainingCount} more
             </span>
