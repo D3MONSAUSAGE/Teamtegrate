@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { DateRange } from 'react-day-picker';
+import { validateUUID } from '@/utils/uuidValidation';
 
 export type EmployeeReportsParams = {
   userId: string;
@@ -31,47 +32,66 @@ function computeRange(timeRange: string, dateRange?: DateRange) {
 
 export const useEmployeeReports = ({ userId, timeRange, dateRange }: EmployeeReportsParams) => {
   const { startDate, endDate } = useMemo(() => computeRange(timeRange, dateRange), [timeRange, dateRange]);
+  
+  // Validate that userId is a proper UUID format
+  const validUserId = validateUUID(userId);
+  const isValidRequest = Boolean(validUserId && startDate && endDate);
 
   const taskStatsQuery = useQuery({
-    queryKey: ['employee-task-stats', userId, startDate, endDate],
+    queryKey: ['employee-task-stats', validUserId, startDate, endDate],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_employee_task_stats', {
-        target_user_id: userId,
-        start_date: startDate,
-        end_date: endDate,
-      });
-      if (error) throw error;
-      return data as any | null;
+      try {
+        const { data, error } = await supabase.rpc('get_employee_task_stats', {
+          target_user_id: validUserId!,
+          start_date: startDate,
+          end_date: endDate,
+        });
+        if (error) throw error;
+        return data as any | null;
+      } catch (error) {
+        console.error('Failed to fetch task stats:', error);
+        throw error;
+      }
     },
-    enabled: !!userId && !!startDate && !!endDate,
+    enabled: isValidRequest,
   });
 
   const hoursStatsQuery = useQuery({
-    queryKey: ['employee-hours-stats', userId, startDate, endDate],
+    queryKey: ['employee-hours-stats', validUserId, startDate, endDate],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_employee_hours_stats', {
-        target_user_id: userId,
-        start_date: startDate,
-        end_date: endDate,
-      });
-      if (error) throw error;
-      return data as any | null;
+      try {
+        const { data, error } = await supabase.rpc('get_employee_hours_stats', {
+          target_user_id: validUserId!,
+          start_date: startDate,
+          end_date: endDate,
+        });
+        if (error) throw error;
+        return data as any | null;
+      } catch (error) {
+        console.error('Failed to fetch hours stats:', error);
+        throw error;
+      }
     },
-    enabled: !!userId && !!startDate && !!endDate,
+    enabled: isValidRequest,
   });
 
   const contributionsQuery = useQuery({
-    queryKey: ['employee-project-contrib', userId, startDate, endDate],
+    queryKey: ['employee-project-contrib', validUserId, startDate, endDate],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_employee_project_contributions', {
-        target_user_id: userId,
-        start_date: startDate,
-        end_date: endDate,
-      });
-      if (error) throw error;
-      return (data as any[]) || [];
+      try {
+        const { data, error } = await supabase.rpc('get_employee_project_contributions', {
+          target_user_id: validUserId!,
+          start_date: startDate,
+          end_date: endDate,
+        });
+        if (error) throw error;
+        return (data as any[]) || [];
+      } catch (error) {
+        console.error('Failed to fetch project contributions:', error);
+        throw error;
+      }
     },
-    enabled: !!userId && !!startDate && !!endDate,
+    enabled: isValidRequest,
   });
 
   const isLoading = taskStatsQuery.isLoading || hoursStatsQuery.isLoading || contributionsQuery.isLoading;
