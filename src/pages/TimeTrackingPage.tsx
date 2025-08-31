@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useEmployeeTimeTracking } from '@/hooks/useEmployeeTimeTracking';
 import { useScheduleManagement } from '@/hooks/useScheduleManagement';
 import { useTeamManagement } from '@/hooks/organization/useTeamManagement';
@@ -7,6 +7,7 @@ import { useTeamUsers } from '@/hooks/useTeamUsers';
 import { useTeamTimeStats } from '@/hooks/useTeamTimeStats';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useAuth } from '@/contexts/AuthContext';
+import { useProgressiveLoading } from '@/hooks/useProgressiveLoading';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -29,10 +30,34 @@ const TimeTrackingPage = () => {
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'individual' | 'team-totals'>('individual');
-  const [activeTab, setActiveTab] = useState('time-tracking');
+  const [activeTab, setActiveTab] = useState('my-schedule'); // Default to schedule first
   const [weekDate, setWeekDate] = useState(new Date());
 
-  // Existing hooks
+  // Progressive loading management
+  const { 
+    loadingPhase, 
+    state: loadingState, 
+    actions: { markScheduleReady, markTimeTrackingReady, markTeamDataReady },
+    shouldLoadTimeTracking, 
+    shouldLoadTeamData 
+  } = useProgressiveLoading();
+
+  // Priority loading: Schedule first (always loads)
+  const { employeeSchedules, isLoading: scheduleLoading } = useScheduleManagement();
+  
+  // Secondary loading: Time tracking (loads after schedule)
+  const timeTrackingData = shouldLoadTimeTracking ? useEmployeeTimeTracking() : {
+    currentSession: null,
+    dailySummary: null,
+    weeklyEntries: [],
+    isLoading: false,
+    lastError: null,
+    clockIn: () => {},
+    clockOut: () => {},
+    startBreak: () => {},
+    endBreak: () => {}
+  };
+
   const {
     currentSession,
     dailySummary,
@@ -43,12 +68,31 @@ const TimeTrackingPage = () => {
     clockOut,
     startBreak,
     endBreak
-  } = useEmployeeTimeTracking();
+  } = timeTrackingData;
 
-  // New hooks for enhanced functionality
-  const { teams } = useTeamManagement();
-  const { users, isLoading: usersLoading } = useTeamUsers(selectedTeamId);
-  const { teamStats, isLoading: statsLoading } = useTeamTimeStats(weekDate, selectedTeamId);
+  // Secondary loading: Team data (loads after schedule)
+  const { teams } = shouldLoadTeamData ? useTeamManagement() : { teams: [] };
+  const { users, isLoading: usersLoading } = shouldLoadTeamData ? useTeamUsers(selectedTeamId) : { users: [], isLoading: false };
+  const { teamStats, isLoading: statsLoading } = shouldLoadTeamData ? useTeamTimeStats(weekDate, selectedTeamId) : { teamStats: null, isLoading: false };
+
+  // Mark loading phases as complete
+  useEffect(() => {
+    if (!scheduleLoading && !loadingState.scheduleReady) {
+      markScheduleReady();
+    }
+  }, [scheduleLoading, loadingState.scheduleReady, markScheduleReady]);
+
+  useEffect(() => {
+    if (shouldLoadTimeTracking && !timeTrackingLoading && !loadingState.timeTrackingReady) {
+      markTimeTrackingReady();
+    }
+  }, [shouldLoadTimeTracking, timeTrackingLoading, loadingState.timeTrackingReady, markTimeTrackingReady]);
+
+  useEffect(() => {
+    if (shouldLoadTeamData && !usersLoading && !statsLoading && !loadingState.teamDataReady) {
+      markTeamDataReady();
+    }
+  }, [shouldLoadTeamData, usersLoading, statsLoading, loadingState.teamDataReady, markTeamDataReady]);
 
   // Responsive detection
   const isMobile = useMediaQuery('(max-width: 767px)');
@@ -88,22 +132,34 @@ const TimeTrackingPage = () => {
     console.log(`Quick action: ${action}`);
   };
 
-  // Determine available tabs based on role
+  // Determine available tabs based on role - Schedule first priority
   const getAvailableTabs = () => {
     const baseTabs = [
-      { value: 'time-tracking', label: 'Time Tracking', icon: '⏰' }
+      { value: 'my-schedule', label: 'My Schedule', icon: '📅', ready: loadingState.scheduleReady }
     ];
 
     if (user?.role === 'user') {
-      baseTabs.push({ value: 'my-schedule', label: 'My Schedule', icon: '📅' });
+      baseTabs.push({ 
+        value: 'time-tracking', 
+        label: 'Time Tracking', 
+        icon: '⏰', 
+        ready: loadingState.timeTrackingReady 
+      });
       return baseTabs;
     }
 
+    baseTabs.push({ 
+      value: 'time-tracking', 
+      label: 'Time Tracking', 
+      icon: '⏰', 
+      ready: loadingState.timeTrackingReady 
+    });
+
     if (canManageTeams) {
       baseTabs.push(
-        { value: 'team-overview', label: 'Team Overview', icon: '👥' },
-        { value: 'schedule-management', label: 'Schedule Management', icon: '📋' },
-        { value: 'time-entries', label: 'Time Entries', icon: '📝' }
+        { value: 'team-overview', label: 'Team Overview', icon: '👥', ready: loadingState.teamDataReady },
+        { value: 'schedule-management', label: 'Schedule Management', icon: '📋', ready: loadingState.scheduleReady },
+        { value: 'time-entries', label: 'Time Entries', icon: '📝', ready: loadingState.teamDataReady }
       );
     }
 
@@ -144,12 +200,32 @@ const TimeTrackingPage = () => {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${availableTabs.length}, 1fr)` }}>
           {availableTabs.map(tab => (
-            <TabsTrigger key={tab.value} value={tab.value} className="flex items-center gap-2">
+            <TabsTrigger 
+              key={tab.value} 
+              value={tab.value} 
+              className="flex items-center gap-2"
+              disabled={!tab.ready}
+            >
               <span>{tab.icon}</span>
               {tab.label}
+              {!tab.ready && <span className="animate-pulse">⌛</span>}
             </TabsTrigger>
           ))}
         </TabsList>
+
+        {/* My Schedule - Priority Tab */}
+        <TabsContent value="my-schedule" className="space-y-4">
+          {loadingState.scheduleReady ? (
+            <ScheduleEmployeeDashboard />
+          ) : (
+            <Card className="p-6">
+              <div className="text-center py-8">
+                <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Loading your schedule...</p>
+              </div>
+            </Card>
+          )}
+        </TabsContent>
 
         {/* Personal Time Tracking */}
         <TabsContent value="time-tracking" className="space-y-4">
@@ -228,10 +304,6 @@ const TimeTrackingPage = () => {
           </TabsContent>
         )}
 
-        {/* My Schedule (All users) */}
-        <TabsContent value="my-schedule" className="space-y-4">
-          <ScheduleEmployeeDashboard />
-        </TabsContent>
 
         {/* Schedule Management (Managers+ only) */}
         {canManageTeams && (
