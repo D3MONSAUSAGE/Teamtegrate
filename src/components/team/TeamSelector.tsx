@@ -16,8 +16,26 @@ export const TeamSelector: React.FC<TeamSelectorProps> = ({
   placeholder = "Select team...",
   className 
 }) => {
-  const { selectedTeam, setSelectedTeam, userTeams } = useTeamContext();
+  const teamContext = useTeamContext();
   const { user } = useAuth();
+
+  // Ensure context is available
+  if (!teamContext) {
+    return (
+      <div className={className}>
+        <Select disabled>
+          <SelectTrigger className="w-full">
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              <span>Loading teams...</span>
+            </div>
+          </SelectTrigger>
+        </Select>
+      </div>
+    );
+  }
+
+  const { selectedTeam, setSelectedTeam, userTeams } = teamContext;
 
   const handleTeamChange = (value: string) => {
     if (value === 'all') {

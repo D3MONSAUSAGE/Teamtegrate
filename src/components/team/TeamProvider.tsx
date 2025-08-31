@@ -10,7 +10,7 @@ interface TeamProviderProps {
 
 export const TeamProvider: React.FC<TeamProviderProps> = ({ children }) => {
   const { user } = useAuth();
-  const { teams } = useTeamsByOrganization(user?.organizationId);
+  const { teams, isLoading } = useTeamsByOrganization(user?.organizationId);
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
 
   const userTeams = teams as Team[];
@@ -34,6 +34,11 @@ export const TeamProvider: React.FC<TeamProviderProps> = ({ children }) => {
       setSelectedTeam(userTeams[0]);
     }
   }, [selectedTeam, userTeams]);
+
+  // Don't render children until we have the necessary data
+  if (!user || isLoading) {
+    return <div>Loading team data...</div>;
+  }
 
   return (
     <TeamContext.Provider value={{

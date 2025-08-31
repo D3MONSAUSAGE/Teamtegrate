@@ -41,8 +41,24 @@ const mockTeamMembers: TeamMember[] = [
 ];
 
 export const TeamMembershipManager: React.FC = () => {
-  const { selectedTeam, canManageTeam } = useTeamContext();
+  const teamContext = useTeamContext();
   const { user } = useAuth();
+
+  // Ensure context is available
+  if (!teamContext) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Team Members</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">Loading team membership data...</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const { selectedTeam, canManageTeam } = teamContext;
 
   if (!selectedTeam) {
     return (

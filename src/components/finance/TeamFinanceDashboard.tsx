@@ -5,7 +5,23 @@ import { DollarSign, TrendingUp, FileText, CreditCard } from 'lucide-react';
 import { useTeamContext } from '@/hooks/useTeamContext';
 
 export const TeamFinanceDashboard: React.FC = () => {
-  const { selectedTeam } = useTeamContext();
+  const teamContext = useTeamContext();
+
+  // Ensure context is available
+  if (!teamContext) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Team Finance Overview</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">Loading team finance data...</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const { selectedTeam } = teamContext;
 
   if (!selectedTeam) {
     return (

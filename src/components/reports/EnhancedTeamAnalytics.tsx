@@ -32,8 +32,30 @@ interface TeamMember {
 }
 
 export const EnhancedTeamAnalytics: React.FC = () => {
-  const { selectedTeam } = useTeamContext();
+  const teamContext = useTeamContext();
   const [sortBy, setSortBy] = useState<'completionRate' | 'totalTasks' | 'projects'>('completionRate');
+
+  // Ensure context is available
+  if (!teamContext) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Team Analytics</CardTitle>
+          <CardDescription>Loading team context...</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <p className="text-lg font-medium text-muted-foreground">Initializing...</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const { selectedTeam } = teamContext;
 
   // Mock data - replace with actual team members data
   const teamMembers: TeamMember[] = [
