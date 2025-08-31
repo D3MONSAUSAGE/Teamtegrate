@@ -23,7 +23,9 @@ import { TaskContextType } from './index';
 export const TaskContext = React.createContext<TaskContextType | undefined>(undefined);
 
 export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  console.log('🏗️ TaskProvider: Initializing TaskProvider');
   const { user } = useAuth();
+  console.log('🏗️ TaskProvider: User context:', user ? { id: user.id, organizationId: user.organizationId } : 'No user');
   const queryClient = useQueryClient();
   
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -429,13 +431,24 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setProjects
   };
 
+  console.log('🏗️ TaskProvider: Providing context value:', { 
+    hasValue: !!value, 
+    tasksCount: tasks.length, 
+    projectsCount: projects.length,
+    user: user ? user.id : 'No user'
+  });
+  
   return <TaskContext.Provider value={value}>{children}</TaskContext.Provider>;
 };
 
 export const useTask = () => {
+  console.log('🔍 useTask: Attempting to access TaskContext');
   const context = React.useContext(TaskContext);
+  console.log('🔍 useTask: Context value:', context);
   if (!context) {
+    console.error('❌ useTask: No context found - TaskProvider missing or not properly initialized');
     throw new Error('useTask must be used within a TaskProvider');
   }
+  console.log('✅ useTask: Context accessed successfully');
   return context;
 };
