@@ -2985,8 +2985,7 @@ export type Database = {
       get_employee_project_contributions: {
         Args: { end_date: string; start_date: string; target_user_id: string }
         Returns: {
-          percent: number
-          project_id: string
+          completion_rate: number
           project_title: string
           task_count: number
         }[]
@@ -2994,9 +2993,9 @@ export type Database = {
       get_employee_task_stats: {
         Args: { end_date: string; start_date: string; target_user_id: string }
         Returns: {
-          assigned_count: number
-          completed_count: number
-          day: string
+          completed_tasks: number
+          completion_rate: number
+          total_tasks: number
         }[]
       }
       get_organization_stats: {
