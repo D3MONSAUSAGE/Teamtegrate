@@ -22,6 +22,7 @@ import { useAdvancedAnalytics } from '@/hooks/useAdvancedAnalytics';
 import { TeamProvider } from '@/components/team/TeamProvider';
 import { TeamSelector } from '@/components/team/TeamSelector';
 import { TeamFinanceDashboard } from '@/components/finance/TeamFinanceDashboard';
+import { WeeklyDashboard } from '@/components/reports/weekly/WeeklyDashboard';
 import { DateRange } from "react-day-picker";
 import { format, subDays, isBefore } from 'date-fns';
 import { toast } from 'sonner';
@@ -626,111 +627,36 @@ export const ReportsPage: React.FC = () => {
         <div className="mt-6 space-y-6">
           {/* Dashboard Tab - New Executive Summary Layout */}
           <TabsContent value="dashboard" className="space-y-6">
-            <div className="space-y-6">
-              {/* Executive Summary Bar */}
-              <ExecutiveSummary 
-                metrics={overviewMetrics} 
-                isLoading={teamMembersPerformance.length === 0} 
-              />
+            <div className="flex flex-col lg:flex-row gap-6">
+              <div className="flex-1 space-y-6">
+                {/* Weekly Performance Dashboard */}
+                <div>
+                  <h2 className="text-2xl font-bold mb-4">Weekly Performance Dashboard</h2>
+                  <Suspense fallback={<div className="text-center p-8">Loading weekly performance...</div>}>
+                    <WeeklyDashboard 
+                      timeRange={timeRange}
+                      dateRange={dateRange}
+                    />
+                  </Suspense>
+                </div>
+              </div>
               
-              {/* Main Dashboard Layout - 60/40 split */}
-              <div className="grid gap-6 lg:grid-cols-5">
-                {/* Left Column - Primary insights (60%) */}
-                <div className="lg:col-span-3 space-y-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <BarChart3 className="h-5 w-5" />
-                        Performance Overview
-                      </CardTitle>
-                      <CardDescription>
-                        Key performance indicators and trends
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <AnalyticsOverview
-                        totalTasks={overviewMetrics.totalTasks}
-                        completedTasks={overviewMetrics.completedTasks}
-                        teamMembers={overviewMetrics.teamMembers}
-                        activeProjects={overviewMetrics.activeProjects}
-                        averageCompletionRate={overviewMetrics.averageCompletionRate}
-                        trendsData={overviewMetrics.trendsData}
-                      />
-                    </CardContent>
-                  </Card>
-
-                  {/* Team Performance Hub */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Users className="h-5 w-5" />
-                        Team Performance Hub
-                      </CardTitle>
-                      <CardDescription>
-                        Interactive team analytics and insights
-                      </CardDescription>
-                    </CardHeader>
-                     <CardContent>
-                       <Suspense fallback={<Skeleton className="h-64 w-full" />}>
-                         <EnhancedTeamAnalytics />
-                       </Suspense>
-                     </CardContent>
-                  </Card>
-                </div>
+              <div className="lg:w-80 space-y-6">
+                {/* Quick Actions */}
+                <QuickActionsPanel onExport={handleExport} />
                 
-                {/* Right Column - Secondary metrics and actions (40%) */}
-                <div className="lg:col-span-2 space-y-6">
-                  {/* Smart Insights - Prominent placement */}
-                  <SmartInsightsPanel
-                    teamData={{
-                      totalTasks: overviewMetrics.totalTasks,
-                      completedTasks: overviewMetrics.completedTasks,
-                      teamMembers: overviewMetrics.teamMembers,
-                      averageCompletionRate: overviewMetrics.averageCompletionRate,
-                      overdueTasks: overviewMetrics.overdueTasks,
-                      highPriorityTasks: overviewMetrics.highPriorityTasks
-                    }}
-                    performanceData={teamMembersPerformance}
-                  />
-
-                  {/* Quick Actions Panel */}
-                  <QuickActionsPanel onExport={handleExport} />
-
-                  {/* Recent Activity Feed */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        <Clock className="h-4 w-4" />
-                        Recent Activity
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
-                          <CheckCircle className="h-4 w-4 text-green-600" />
-                          <div className="text-sm">
-                            <p className="font-medium">5 tasks completed today</p>
-                            <p className="text-xs text-muted-foreground">Team average: 3.2 tasks</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
-                          <AlertCircle className="h-4 w-4 text-orange-600" />
-                          <div className="text-sm">
-                            <p className="font-medium">2 tasks approaching deadline</p>
-                            <p className="text-xs text-muted-foreground">Due within 24 hours</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
-                          <TrendingUp className="h-4 w-4 text-blue-600" />
-                          <div className="text-sm">
-                            <p className="font-medium">Productivity increased 8%</p>
-                            <p className="text-xs text-muted-foreground">vs last week</p>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
+                {/* Smart Insights */}
+                <SmartInsightsPanel
+                  teamData={{
+                    totalTasks: overviewMetrics.totalTasks,
+                    completedTasks: overviewMetrics.completedTasks,
+                    teamMembers: overviewMetrics.teamMembers,
+                    averageCompletionRate: overviewMetrics.averageCompletionRate,
+                    overdueTasks: overviewMetrics.overdueTasks,
+                    highPriorityTasks: overviewMetrics.highPriorityTasks
+                  }}
+                  performanceData={teamMembersPerformance}
+                />
               </div>
             </div>
           </TabsContent>
