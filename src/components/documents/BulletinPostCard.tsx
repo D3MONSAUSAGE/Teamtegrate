@@ -43,7 +43,12 @@ const CATEGORY_LABELS: Record<string, string> = {
   newsletter: 'Newsletter',
   announcements: 'Announcements',
   training: 'Training',
-  safety: 'Safety'
+  safety: 'Safety',
+  announcement: 'Announcement',
+  policy: 'Policy',
+  procedure: 'Procedure',
+  news: 'News',
+  event: 'Event'
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -52,12 +57,19 @@ const CATEGORY_COLORS: Record<string, string> = {
   newsletter: 'bg-blue-100 text-blue-800',
   announcements: 'bg-yellow-100 text-yellow-800',
   training: 'bg-green-100 text-green-800',
-  safety: 'bg-orange-100 text-orange-800'
+  safety: 'bg-orange-100 text-orange-800',
+  announcement: 'bg-yellow-100 text-yellow-800',
+  policy: 'bg-red-100 text-red-800',
+  procedure: 'bg-purple-100 text-purple-800',
+  news: 'bg-blue-100 text-blue-800',
+  event: 'bg-teal-100 text-teal-800'
 };
 
 const BulletinPostCard = ({ post, canDelete, onDelete }: BulletinPostCardProps) => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [isLoadingPreview, setIsLoadingPreview] = useState(false);
+  const [previewError, setPreviewError] = useState<string | null>(null);
 
   const formatFileSize = (bytes: number) => {
     const units = ['B', 'KB', 'MB', 'GB'];
@@ -97,18 +109,40 @@ const BulletinPostCard = ({ post, canDelete, onDelete }: BulletinPostCardProps) 
   const handleDocumentPreview = async () => {
     if (!post.documents) return;
     
+    setIsLoadingPreview(true);
+    setPreviewError(null);
+    setIsPreviewOpen(true);
+    
     try {
-      const { data, error } = await supabase.storage
+      // First try createSignedUrl
+      const { data: signedData, error: signedError } = await supabase.storage
         .from('documents')
         .createSignedUrl(post.documents.file_path, 3600);
 
-      if (error) throw error;
+      if (!signedError && signedData?.signedUrl) {
+        setPreviewUrl(signedData.signedUrl);
+        setIsLoadingPreview(false);
+        return;
+      }
 
-      setPreviewUrl(data.signedUrl);
-      setIsPreviewOpen(true);
+      // Fallback to download + object URL
+      console.log('Signed URL failed, trying download fallback:', signedError);
+      const { data: downloadData, error: downloadError } = await supabase.storage
+        .from('documents')
+        .download(post.documents.file_path);
+
+      if (downloadError) throw downloadError;
+
+      const objectUrl = window.URL.createObjectURL(downloadData);
+      setPreviewUrl(objectUrl);
+      setIsLoadingPreview(false);
     } catch (error) {
       console.error('Preview error:', error);
-      toast.error('Failed to preview document');
+      setPreviewError('Unable to load preview. Please try downloading the document instead.');
+      setIsLoadingPreview(false);
+      toast.error('Preview failed - try downloading instead', {
+        description: 'The document may be in a protected location or corrupted'
+      });
     }
   };
 
@@ -204,37 +238,83 @@ const BulletinPostCard = ({ post, canDelete, onDelete }: BulletinPostCardProps) 
             <DialogTitle>{post.documents?.title}</DialogTitle>
           </DialogHeader>
           <div className="flex-1 overflow-hidden">
-            {previewUrl && post.documents && (
+            {isLoadingPreview ? (
+              <div className="flex items-center justify-center py-16">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <span className="ml-3 text-muted-foreground">Loading preview...</span>
+              </div>
+            ) : previewError ? (
+              <div className="text-center py-8">
+                <FileText className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                <p className="text-muted-foreground mb-2">{previewError}</p>
+                <div className="flex gap-2 justify-center">
+                  <Button 
+                    onClick={handleDocumentDownload}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Download
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    onClick={() => previewUrl && window.open(previewUrl, '_blank')}
+                  >
+                    Open in new tab
+                  </Button>
+                </div>
+              </div>
+            ) : previewUrl && post.documents ? (
               <>
                 {post.documents.file_type.startsWith('image/') ? (
                   <img 
                     src={previewUrl} 
                     alt={post.documents.title}
                     className="max-w-full max-h-[70vh] object-contain mx-auto"
+                    onError={() => setPreviewError('Failed to load image preview')}
                   />
-                ) : post.documents.file_type === 'application/pdf' ? (
-                  <iframe
-                    src={previewUrl}
-                    className="w-full h-[70vh] border-0"
-                    title={post.documents.title}
-                  />
+                ) : (post.documents.file_type === 'application/pdf' || 
+                       post.documents.file_type === 'application/x-pdf' || 
+                       post.documents.file_type.includes('pdf')) ? (
+                  <div>
+                    <iframe
+                      src={previewUrl}
+                      className="w-full h-[70vh] border-0"
+                      title={post.documents.title}
+                      onError={() => setPreviewError('PDF preview failed - browser may have blocked it')}
+                    />
+                    <div className="mt-2 text-center">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => window.open(previewUrl, '_blank')}
+                      >
+                        Open PDF in new tab
+                      </Button>
+                    </div>
+                  </div>
                 ) : (
                   <div className="text-center py-8">
                     <FileText className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                    <p className="text-muted-foreground">
+                    <p className="text-muted-foreground mb-2">
                       Preview not available for {post.documents.file_type}
                     </p>
-                    <Button 
-                      onClick={handleDocumentDownload}
-                      className="mt-4"
-                    >
-                      <Download className="h-4 w-4 mr-2" />
-                      Download to view
-                    </Button>
+                    <div className="flex gap-2 justify-center">
+                      <Button 
+                        onClick={handleDocumentDownload}
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        Download to view
+                      </Button>
+                      <Button 
+                        variant="outline"
+                        onClick={() => window.open(previewUrl, '_blank')}
+                      >
+                        Try opening in new tab
+                      </Button>
+                    </div>
                   </div>
                 )}
               </>
-            )}
+            ) : null}
           </div>
         </DialogContent>
       </Dialog>
