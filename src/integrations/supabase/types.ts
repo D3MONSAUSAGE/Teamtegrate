@@ -513,6 +513,7 @@ export type Database = {
           scheduled_start_time: string
           shift_template_id: string | null
           status: string
+          team_id: string | null
           updated_at: string
         }
         Insert: {
@@ -529,6 +530,7 @@ export type Database = {
           scheduled_start_time: string
           shift_template_id?: string | null
           status?: string
+          team_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -545,6 +547,7 @@ export type Database = {
           scheduled_start_time?: string
           shift_template_id?: string | null
           status?: string
+          team_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -553,6 +556,20 @@ export type Database = {
             columns: ["shift_template_id"]
             isOneToOne: false
             referencedRelation: "shift_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_schedules_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "team_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_schedules_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
             referencedColumns: ["id"]
           },
           {
@@ -2835,6 +2852,10 @@ export type Database = {
         Args: { target_user_id: string }
         Returns: Json
       }
+      get_user_managed_team_ids: {
+        Args: { user_id_param: string }
+        Returns: string[]
+      }
       get_user_management_impact: {
         Args: { target_user_id: string }
         Returns: Json
@@ -2865,6 +2886,10 @@ export type Database = {
       }
       is_user_room_admin: {
         Args: { room_id_param: string; user_id_param: string }
+        Returns: boolean
+      }
+      is_user_team_member: {
+        Args: { team_id_param: string; user_id_param: string }
         Returns: boolean
       }
       log_data_access: {

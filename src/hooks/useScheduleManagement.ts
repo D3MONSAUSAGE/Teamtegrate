@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTeamQueries } from '@/hooks/organization/team/useTeamQueries';
 import { toast } from 'sonner';
 
 export interface ScheduleTemplate {
@@ -19,6 +20,7 @@ export interface EmployeeSchedule {
   id: string;
   organization_id: string;
   employee_id: string;
+  team_id?: string | null;
   shift_template_id?: string | null;
   scheduled_date: string;
   scheduled_start_time: string;
@@ -34,6 +36,10 @@ export interface EmployeeSchedule {
     id: string;
     name: string;
     email: string;
+  } | null;
+  team?: {
+    id: string;
+    name: string;
   } | null;
 }
 
@@ -53,13 +59,14 @@ export interface EmployeeAvailability {
 
 export const useScheduleManagement = () => {
   const { user, hasRoleAccess } = useAuth();
+  const { teams } = useTeamQueries();
   const [scheduleTemplates, setScheduleTemplates] = useState<ScheduleTemplate[]>([]);
-  
   const [employeeSchedules, setEmployeeSchedules] = useState<EmployeeSchedule[]>([]);
   const [employeeAvailability, setEmployeeAvailability] = useState<EmployeeAvailability[]>([]);
+  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const lastRangeRef = useRef<{ start: string; end: string; includeAll: boolean } | null>(null);
+  const lastRangeRef = useRef<{ start: string; end: string; includeAll: boolean; teamId?: string } | null>(null);
   // Fetch schedule templates
   const fetchScheduleTemplates = async () => {
     try {
@@ -81,23 +88,39 @@ export const useScheduleManagement = () => {
 
 
   // Fetch employee schedules for a date range
-  const fetchEmployeeSchedules = async (startDate: string, endDate: string, includeAll: boolean = false) => {
+  const fetchEmployeeSchedules = async (startDate: string, endDate: string, includeAll: boolean = false, teamId?: string) => {
+    if (!user) return;
+
     try {
       setIsLoading(true);
       // Remember last requested range for realtime refresh
-      lastRangeRef.current = { start: startDate, end: endDate, includeAll };
+      lastRangeRef.current = { start: startDate, end: endDate, includeAll, teamId };
 
       let query = supabase
         .from('employee_schedules')
-        .select('*')
+        .select(`
+          *,
+          users!employee_id (
+            id,
+            name,
+            email
+          ),
+          teams!team_id (
+            id,
+            name
+          )
+        `)
         .gte('scheduled_date', startDate)
         .lte('scheduled_date', endDate)
         .order('scheduled_start_time', { ascending: true });
 
-      // If not a manager/admin and not explicitly requesting all, scope to current user
-      if (!includeAll && !hasRoleAccess('manager') && user?.id) {
-        query = query.eq('employee_id', user.id);
+      // Apply team filtering if specified
+      if (teamId && teamId !== 'all') {
+        query = query.eq('team_id', teamId);
       }
+
+      // Role-based access control is now handled by RLS policies
+      // Users will only see schedules they have permission to see
 
       const { data, error } = await query;
 
@@ -168,14 +191,31 @@ export const useScheduleManagement = () => {
 
   // Create employee schedule
   const createEmployeeSchedule = async (schedule: Omit<EmployeeSchedule, 'id' | 'created_at' | 'updated_at'>) => {
+    if (!user) return;
+
     try {
       setIsLoading(true);
       console.log('Creating employee schedule with data:', schedule);
       
       const { data, error } = await supabase
         .from('employee_schedules')
-        .insert([schedule])
-        .select()
+        .insert([{
+          ...schedule,
+          organization_id: user.organizationId,
+          created_by: user.id
+        }])
+        .select(`
+          *,
+          users!employee_id (
+            id,
+            name,
+            email
+          ),
+          teams!team_id (
+            id,
+            name
+          )
+        `)
         .single();
 
       if (error) {
@@ -184,11 +224,20 @@ export const useScheduleManagement = () => {
       }
       
       console.log('Successfully created schedule:', data);
+      
+      // Refresh schedules list
+      const lastRange = lastRangeRef.current;
+      if (lastRange) {
+        await fetchEmployeeSchedules(lastRange.start, lastRange.end, lastRange.includeAll, lastRange.teamId);
+      }
+      
+      toast.success('Employee schedule created successfully');
       return data;
     } catch (err) {
       console.error('Error in createEmployeeSchedule:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to create employee schedule';
       setError(errorMessage);
+      toast.error('Failed to create employee schedule');
       throw new Error(errorMessage);
     } finally {
       setIsLoading(false);
@@ -286,7 +335,7 @@ export const useScheduleManagement = () => {
         () => {
           const last = lastRangeRef.current;
           if (last) {
-            fetchEmployeeSchedules(last.start, last.end, last.includeAll);
+            fetchEmployeeSchedules(last.start, last.end, last.includeAll, last.teamId);
           }
         }
       )
@@ -297,15 +346,47 @@ export const useScheduleManagement = () => {
     };
   }, [user]);
 
+  // Team-specific query functions
+  const fetchTeamSchedules = async (teamId: string, startDate: string, endDate: string) => {
+    return fetchEmployeeSchedules(startDate, endDate, false, teamId);
+  };
+
+  const fetchManagerTeamSchedules = async (startDate: string, endDate: string) => {
+    // RLS policies will automatically filter to show only teams the manager manages
+    return fetchEmployeeSchedules(startDate, endDate, false);
+  };
+
+  const getUserAccessibleTeams = () => {
+    if (!user || !teams) return [];
+    
+    // Admins and superadmins can see all teams
+    if (user.role === 'admin' || user.role === 'superadmin') {
+      return teams;
+    }
+    
+    // Managers can see teams they manage (will be filtered by backend)
+    if (user.role === 'manager') {
+      return teams;
+    }
+    
+    // Regular users don't get team selection
+    return [];
+  };
+
   return {
     scheduleTemplates,
     employeeSchedules,
     employeeAvailability,
+    selectedTeamId,
+    setSelectedTeamId,
+    teams: getUserAccessibleTeams(),
     isLoading,
     error,
     fetchScheduleTemplates,
     fetchEmployeeSchedules,
     fetchEmployeeAvailability,
+    fetchTeamSchedules,
+    fetchManagerTeamSchedules,
     createScheduleTemplate,
     createEmployeeSchedule,
     updateEmployeeSchedule,
