@@ -3,8 +3,12 @@ import React, { useEffect, useState, useMemo } from 'react';
 import DocumentUploader from '@/components/documents/DocumentUploader';
 import DocumentList from '@/components/documents/DocumentList';
 import FolderSelector from '@/components/documents/FolderSelector';
+import DocumentSearch from '@/components/documents/DocumentSearch';
+import BulletinBoard from '@/components/documents/BulletinBoard';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useRoleAccess } from '@/contexts/auth/hooks/useRoleAccess';
 import { toast } from 'sonner';
 
 interface DocumentItem {
@@ -23,7 +27,12 @@ const DocumentsPage = () => {
   const [selectedFolder, setSelectedFolder] = useState<string>("");
   const [folders, setFolders] = useState<string[]>([]);
   const [sharedFolders, setSharedFolders] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [activeTab, setActiveTab] = useState<string>("bulletin");
   const { user } = useAuth();
+  const { hasRoleAccess } = useRoleAccess(user);
+  
+  const canAccessDocuments = hasRoleAccess('manager');
 
   const fetchDocuments = async () => {
     if (!user) {
@@ -128,7 +137,7 @@ const DocumentsPage = () => {
     fetchDocuments();
   }, [user]);
 
-  // Memo: filter docs by selected folder, including shared documents
+  // Memo: filter docs by selected folder and search query, including shared documents
   const filteredDocs = useMemo(async () => {
     let baseDocuments = documents;
     
@@ -138,9 +147,23 @@ const DocumentsPage = () => {
       baseDocuments = [...documents, ...sharedDocs];
     }
 
-    if (!selectedFolder) return baseDocuments;
-    return baseDocuments.filter((doc) => doc.folder === selectedFolder);
-  }, [documents, selectedFolder, sharedFolders]);
+    // Filter by folder
+    if (selectedFolder) {
+      baseDocuments = baseDocuments.filter((doc) => doc.folder === selectedFolder);
+    }
+
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      baseDocuments = baseDocuments.filter((doc) => 
+        doc.title.toLowerCase().includes(query) ||
+        doc.file_type.toLowerCase().includes(query) ||
+        (doc.folder && doc.folder.toLowerCase().includes(query))
+      );
+    }
+
+    return baseDocuments;
+  }, [documents, selectedFolder, sharedFolders, searchQuery]);
 
   // Use state for the filtered documents since we need async operation
   const [displayDocuments, setDisplayDocuments] = useState<DocumentItem[]>([]);
@@ -153,29 +176,66 @@ const DocumentsPage = () => {
     updateDisplayDocuments();
   }, [filteredDocs]);
 
+  // Set initial tab based on user role
+  useEffect(() => {
+    if (!canAccessDocuments) {
+      setActiveTab("bulletin");
+    } else if (activeTab === "bulletin" && canAccessDocuments) {
+      // Keep bulletin as default for all users
+      setActiveTab("bulletin");
+    }
+  }, [canAccessDocuments]);
+
   return (
     <div className="container mx-auto p-6 max-w-5xl">
-      <h1 className="text-2xl font-bold mb-6">Documents</h1>
-      <FolderSelector
-        folders={folders}
-        selectedFolder={selectedFolder}
-        onSelectFolder={setSelectedFolder}
-        onCreateFolder={handleCreateFolder}
-        sharedFolders={sharedFolders}
-        onFolderShared={handleFolderShared}
-      />
-      <div className="space-y-6">
-        <DocumentUploader
-          onUploadComplete={fetchDocuments}
-          folder={selectedFolder}
-        />
-        <DocumentList
-          documents={displayDocuments}
-          onDocumentDeleted={fetchDocuments}
-          isLoading={isLoading}
-          currentFolder={selectedFolder}
-        />
-      </div>
+      <h1 className="text-2xl font-bold mb-6">
+        {canAccessDocuments ? "Documents & Bulletin Board" : "Bulletin Board"}
+      </h1>
+      
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="bulletin">Bulletin Board</TabsTrigger>
+          {canAccessDocuments && (
+            <TabsTrigger value="documents">Documents</TabsTrigger>
+          )}
+        </TabsList>
+
+        <TabsContent value="bulletin" className="mt-6">
+          <BulletinBoard />
+        </TabsContent>
+
+        {canAccessDocuments && (
+          <TabsContent value="documents" className="mt-6">
+            <div className="space-y-6">
+              <FolderSelector
+                folders={folders}
+                selectedFolder={selectedFolder}
+                onSelectFolder={setSelectedFolder}
+                onCreateFolder={handleCreateFolder}
+                sharedFolders={sharedFolders}
+                onFolderShared={handleFolderShared}
+              />
+              
+              <DocumentSearch
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+              />
+              
+              <DocumentUploader
+                onUploadComplete={fetchDocuments}
+                folder={selectedFolder}
+              />
+              
+              <DocumentList
+                documents={displayDocuments}
+                onDocumentDeleted={fetchDocuments}
+                isLoading={isLoading}
+                currentFolder={selectedFolder}
+              />
+            </div>
+          </TabsContent>
+        )}
+      </Tabs>
     </div>
   );
 };

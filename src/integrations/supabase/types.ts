@@ -99,6 +99,42 @@ export type Database = {
           },
         ]
       }
+      bulletin_posts: {
+        Row: {
+          author_id: string
+          category: string
+          content: string
+          created_at: string
+          id: string
+          is_pinned: boolean
+          organization_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          category?: string
+          content: string
+          created_at?: string
+          id?: string
+          is_pinned?: boolean
+          organization_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          category?: string
+          content?: string
+          created_at?: string
+          id?: string
+          is_pinned?: boolean
+          organization_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       chat_attachments: {
         Row: {
           created_at: string
