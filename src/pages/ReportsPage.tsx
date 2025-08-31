@@ -23,7 +23,7 @@ export default function ReportsPage() {
   const [selectedTimeRange, setSelectedTimeRange] = useState<string>('This Week');
 
   const { teams, isLoading: teamsLoading } = useTeamsByOrganization(user?.organizationId);
-  const { teamMembers, isLoading: membersLoading } = useRealTeamMembers(user?.organizationId);
+  const { teamMembers, isLoading: membersLoading } = useRealTeamMembers(selectedTeam);
 
   // Role-based access control
   const isManager = hasRoleAccess('manager');
