@@ -2985,7 +2985,9 @@ export type Database = {
       get_employee_project_contributions: {
         Args: { end_date: string; start_date: string; target_user_id: string }
         Returns: {
+          completed_tasks: number
           completion_rate: number
+          project_id: string
           project_title: string
           task_count: number
         }[]

@@ -87,8 +87,8 @@ export const useEmployeeReports = ({ userId, timeRange, dateRange }: EmployeeRep
         if (error) throw error;
         return (data as any[]) || [];
       } catch (error) {
-        console.error('Failed to fetch project contributions:', error);
-        throw error;
+        console.warn('Project contributions unavailable, returning empty list:', error);
+        return [] as any[];
       }
     },
     enabled: isValidRequest,
