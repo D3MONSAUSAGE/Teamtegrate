@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DollarSign, TrendingUp, FileText, CreditCard } from 'lucide-react';
 import { useTeamContext } from '@/hooks/useTeamContext';
+import { useRealTeamMembers } from '@/hooks/team/useRealTeamMembers';
 
 export const TeamFinanceDashboard: React.FC = () => {
   const teamContext = useTeamContext();
@@ -23,6 +24,19 @@ export const TeamFinanceDashboard: React.FC = () => {
 
   const { selectedTeam } = teamContext;
 
+  // Fetch team members for financial calculations
+  const { teamMembers, isLoading: membersLoading } = useRealTeamMembers(selectedTeam?.id);
+
+  // Calculate team financial metrics (mock implementation)
+  const teamFinancials = {
+    totalBudget: 50000,
+    budgetUsed: teamMembers.reduce((sum, member) => sum + (member.totalTasks * 100), 0), // Mock calculation
+    monthlyExpenses: teamMembers.length * 3000, // Mock monthly cost per member
+    pendingExpenses: teamMembers.filter(m => m.inProgressTasks > 0).length * 500,
+  };
+
+  const budgetUtilization = Math.min(100, (teamFinancials.budgetUsed / teamFinancials.totalBudget) * 100);
+
   if (!selectedTeam) {
     return (
       <Card>
@@ -33,8 +47,21 @@ export const TeamFinanceDashboard: React.FC = () => {
           <p className="text-muted-foreground">Select a team to view finance data</p>
         </CardContent>
       </Card>
-    );
-  }
+      );
+    }
+
+    if (membersLoading) {
+      return (
+        <Card>
+          <CardHeader>
+            <CardTitle>Team Finance Overview</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">Loading financial data...</p>
+          </CardContent>
+        </Card>
+      );
+    }
 
   return (
     <div className="space-y-6">
