@@ -16,7 +16,7 @@ import TeamManagement from '@/components/dashboard/TeamManagement';
 import { useIsMobile } from '@/hooks/use-mobile';
 import EnhancedTimeTracking from '@/components/dashboard/EnhancedTimeTracking';
 import { useTask } from '@/contexts/task';
-import EnhancedDashboardHeader from '@/components/dashboard/EnhancedDashboardHeader';
+import ModernPageHeader from '@/components/ui/ModernPageHeader';
 import InteractiveStatsGrid from '@/components/dashboard/InteractiveStatsGrid';
 import ModernSectionCard from '@/components/dashboard/ModernSectionCard';
 import QuickActionsPanel from '@/components/dashboard/QuickActionsPanel';
@@ -223,11 +223,24 @@ const DashboardPage = () => {
         <div className="relative pt-6 px-4 md:px-6 lg:px-8 space-y-8 scrollbar-hide">
           {/* Enhanced Welcome Header with proper spacing */}
           <div className="animate-fade-in">
-            <EnhancedDashboardHeader
-              userName={user?.name || 'User'}
-              onCreateTask={() => handleCreateTask()}
-              isLoading={isLoading}
-              stats={headerStats}
+            <ModernPageHeader
+              title={`Welcome back, ${user?.name || 'User'}!`}
+              subtitle="Stay productive today and manage your tasks"
+              icon={Sparkles}
+              actionButton={{
+                label: 'Create New Task',
+                onClick: () => handleCreateTask(),
+                disabled: isLoading,
+                icon: Plus
+              }}
+              stats={[
+                { label: "Today's Tasks", value: headerStats.todaysCount, color: 'text-primary' },
+                { label: 'Upcoming', value: headerStats.upcomingCount, color: 'text-emerald-600' },
+                { label: 'Projects', value: headerStats.projectsCount, color: 'text-amber-600' }
+              ]}
+              badges={[
+                { label: 'Live Updates', variant: 'default' }
+              ]}
             />
           </div>
           

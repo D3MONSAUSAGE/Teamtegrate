@@ -147,9 +147,6 @@ const TimeTrackingPage = () => {
         viewMode={viewMode}
         onViewModeChange={setViewMode}
         isLoading={usersLoading || statsLoading}
-        onNotificationClick={() => console.log('Notifications clicked')}
-        onRequestTimeOff={() => console.log('Request time off')}
-        onSwapShift={() => console.log('Swap shift')}
       />
 
       {/* Main Content */}
