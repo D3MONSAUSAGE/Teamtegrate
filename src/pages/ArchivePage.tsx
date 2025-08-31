@@ -116,14 +116,14 @@ const ArchivePage = () => {
             <div className="space-y-2">
               <label className="text-sm font-medium">User</label>
               <Select
-                value={filters.userId || ''}
-                onValueChange={(value) => handleFilterChange('userId', value || undefined)}
+                value={filters.userId || 'all-users'}
+                onValueChange={(value) => handleFilterChange('userId', value === 'all-users' ? undefined : value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="All users" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All users</SelectItem>
+                  <SelectItem value="all-users">All users</SelectItem>
                   {users.map(user => (
                     <SelectItem key={user.id} value={user.id}>
                       {user.name}

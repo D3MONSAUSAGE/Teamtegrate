@@ -45,7 +45,8 @@ export const TeamFirstSelector: React.FC<TeamFirstSelectorProps> = ({
   };
 
   const handleUserChange = (value: string) => {
-    onUserChange(value);
+    const userId = value === 'all-members' ? null : value;
+    onUserChange(userId);
   };
 
   return (
@@ -104,27 +105,27 @@ export const TeamFirstSelector: React.FC<TeamFirstSelectorProps> = ({
                 <User className="h-4 w-4" />
                 Select Employee (Optional)
               </label>
-              <Select 
-                value={selectedUserId || ''} 
-                onValueChange={handleUserChange}
-                disabled={isLoading}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={
-                    !selectedTeamId ? "Select team first..." : "All team members or choose specific employee..."
-                  } />
-                </SelectTrigger>
-                <SelectContent>
-                  {selectedTeamId && (
-                    <SelectItem value="">All Team Members</SelectItem>
-                  )}
-                  {filteredUsers.map((user) => (
-                    <SelectItem key={user.id} value={user.id}>
-                      {user.name} ({user.email})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <Select 
+                  value={selectedUserId || 'all-members'} 
+                  onValueChange={handleUserChange}
+                  disabled={isLoading}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={
+                      !selectedTeamId ? "Select team first..." : "All team members or choose specific employee..."
+                    } />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {selectedTeamId && (
+                      <SelectItem value="all-members">All Team Members</SelectItem>
+                    )}
+                    {filteredUsers.map((user) => (
+                      <SelectItem key={user.id} value={user.id}>
+                        {user.name} ({user.email})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
             </div>
           )}
         </div>
