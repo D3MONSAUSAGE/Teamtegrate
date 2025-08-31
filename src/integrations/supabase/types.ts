@@ -2148,6 +2148,104 @@ export type Database = {
           },
         ]
       }
+      time_entry_correction_requests: {
+        Row: {
+          admin_id: string | null
+          admin_notes: string | null
+          admin_reviewed_at: string | null
+          created_at: string
+          employee_id: string
+          employee_reason: string
+          id: string
+          manager_id: string | null
+          manager_notes: string | null
+          manager_reviewed_at: string | null
+          organization_id: string
+          requested_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_id?: string | null
+          admin_notes?: string | null
+          admin_reviewed_at?: string | null
+          created_at?: string
+          employee_id: string
+          employee_reason: string
+          id?: string
+          manager_id?: string | null
+          manager_notes?: string | null
+          manager_reviewed_at?: string | null
+          organization_id: string
+          requested_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_id?: string | null
+          admin_notes?: string | null
+          admin_reviewed_at?: string | null
+          created_at?: string
+          employee_id?: string
+          employee_reason?: string
+          id?: string
+          manager_id?: string | null
+          manager_notes?: string | null
+          manager_reviewed_at?: string | null
+          organization_id?: string
+          requested_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      time_entry_corrections: {
+        Row: {
+          corrected_clock_in: string | null
+          corrected_clock_out: string | null
+          corrected_notes: string | null
+          correction_request_id: string
+          created_at: string
+          id: string
+          original_clock_in: string | null
+          original_clock_out: string | null
+          original_notes: string | null
+          time_entry_id: string
+        }
+        Insert: {
+          corrected_clock_in?: string | null
+          corrected_clock_out?: string | null
+          corrected_notes?: string | null
+          correction_request_id: string
+          created_at?: string
+          id?: string
+          original_clock_in?: string | null
+          original_clock_out?: string | null
+          original_notes?: string | null
+          time_entry_id: string
+        }
+        Update: {
+          corrected_clock_in?: string | null
+          corrected_clock_out?: string | null
+          corrected_notes?: string | null
+          correction_request_id?: string
+          created_at?: string
+          id?: string
+          original_clock_in?: string | null
+          original_clock_out?: string | null
+          original_notes?: string | null
+          time_entry_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_entry_corrections_correction_request_id_fkey"
+            columns: ["correction_request_id"]
+            isOneToOne: false
+            referencedRelation: "time_entry_correction_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       training_assignments: {
         Row: {
           assigned_at: string

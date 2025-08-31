@@ -21,6 +21,7 @@ import { TeamTotalsView } from '@/components/time-management/TeamTotalsView';
 import MobileTimeTrackingWidget from '@/components/mobile/MobileTimeTrackingWidget';
 import EmployeeTimeTracking from '@/components/dashboard/EmployeeTimeTracking';
 import PastTimeEntriesManager from '@/components/time-entries/PastTimeEntriesManager';
+import { TimeCorrectionManager } from '@/components/time-entries/TimeCorrectionManager';
 import ScheduleManagerDashboard from '@/components/schedule/ScheduleManagerDashboard';
 import ScheduleEmployeeDashboard from '@/components/schedule/ScheduleEmployeeDashboard';
 import { TeamMembersGridView } from '@/components/time-management/TeamMembersGridView';
@@ -140,6 +141,10 @@ const TimeTrackingPage = () => {
       icon: '⏰', 
       ready: loadingState.timeTrackingReady 
     });
+
+    baseTabs.push(
+      { value: 'correction-requests', label: 'Correction Requests', icon: '📝', ready: loadingState.timeTrackingReady }
+    );
 
     if (canManageTeams) {
       baseTabs.push(
@@ -265,6 +270,20 @@ const TimeTrackingPage = () => {
               onSelectMember={setSelectedUserId}
               weekDate={weekDate}
             />
+          )}
+        </TabsContent>
+
+        {/* Time Correction Requests */}
+        <TabsContent value="correction-requests" className="space-y-4">
+          {!loadingState.timeTrackingReady ? (
+            <Card className="p-6">
+              <div className="text-center py-8">
+                <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Loading correction requests...</p>
+              </div>
+            </Card>
+          ) : (
+            <TimeCorrectionManager />
           )}
         </TabsContent>
 
