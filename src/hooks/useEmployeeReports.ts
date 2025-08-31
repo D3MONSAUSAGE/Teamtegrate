@@ -43,6 +43,7 @@ export const useEmployeeReports = ({ userId, timeRange, dateRange }: EmployeeRep
       if (error) throw error;
       return data as any | null;
     },
+    enabled: !!userId && !!startDate && !!endDate,
   });
 
   const hoursStatsQuery = useQuery({
@@ -56,6 +57,7 @@ export const useEmployeeReports = ({ userId, timeRange, dateRange }: EmployeeRep
       if (error) throw error;
       return data as any | null;
     },
+    enabled: !!userId && !!startDate && !!endDate,
   });
 
   const contributionsQuery = useQuery({
@@ -69,6 +71,7 @@ export const useEmployeeReports = ({ userId, timeRange, dateRange }: EmployeeRep
       if (error) throw error;
       return (data as any[]) || [];
     },
+    enabled: !!userId && !!startDate && !!endDate,
   });
 
   const isLoading = taskStatsQuery.isLoading || hoursStatsQuery.isLoading || contributionsQuery.isLoading;
