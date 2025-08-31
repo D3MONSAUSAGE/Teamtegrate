@@ -5,6 +5,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { DateRange } from 'react-day-picker';
 import { validateUUID } from '@/utils/uuidValidation';
 import { format } from 'date-fns';
+import { useTask } from '@/contexts/task';
+import { isTaskOverdue } from '@/utils/taskUtils';
 
 export type EmployeeReportsParams = {
   userId: string;
@@ -33,11 +35,33 @@ function computeRange(timeRange: string, dateRange?: DateRange) {
 }
 
 export const useEmployeeReports = ({ userId, timeRange, dateRange }: EmployeeReportsParams) => {
+  const { tasks } = useTask();
   const { startDate, endDate } = useMemo(() => computeRange(timeRange, dateRange), [timeRange, dateRange]);
   
   // Validate that userId is a proper UUID format
   const validUserId = validateUUID(userId);
   const isValidRequest = Boolean(validUserId && startDate && endDate);
+
+  // Filter tasks for the specific user and date range
+  const userTasks = useMemo(() => {
+    if (!validUserId || !tasks.length) return [];
+    
+    const startDateObj = new Date(startDate);
+    const endDateObj = new Date(endDate);
+    
+    return tasks.filter(task => {
+      // Check if task belongs to the user (creator, assigned, or in assigned list)
+      const belongsToUser = task.userId === validUserId || 
+                           task.assignedToId === validUserId || 
+                           (task.assignedToIds && task.assignedToIds.includes(validUserId));
+      
+      if (!belongsToUser) return false;
+      
+      // Filter by date range using task creation or deadline date
+      const taskDate = new Date(task.deadline || task.createdAt);
+      return taskDate >= startDateObj && taskDate <= endDateObj;
+    });
+  }, [validUserId, tasks, startDate, endDate]);
 
   const taskStatsQuery = useQuery({
     queryKey: ['employee-task-stats', validUserId, startDate, endDate],
@@ -143,11 +167,9 @@ export const useEmployeeReports = ({ userId, timeRange, dateRange }: EmployeeRep
     hoursStats: hoursStatsQuery.data || [],
     contributions: contributionsQuery.data || [],
     
-    // Aggregated summaries for stats displays
-    taskStatsSummary: taskStatsQuery.data ? (() => {
-      const dailyData = taskStatsQuery.data;
-      // Ensure dailyData is an array before calling reduce
-      if (!Array.isArray(dailyData) || dailyData.length === 0) {
+    // Aggregated summaries for stats displays - now using real task data
+    taskStatsSummary: useMemo(() => {
+      if (!userTasks.length) {
         return { 
           total: 0, 
           completed: 0, 
@@ -160,30 +182,23 @@ export const useEmployeeReports = ({ userId, timeRange, dateRange }: EmployeeRep
         };
       }
       
-      const totalCompleted = dailyData.reduce((sum, day) => sum + (day.completed_count || 0), 0);
-      const totalAssigned = dailyData.reduce((sum, day) => sum + (day.assigned_count || 0), 0);
-      const remaining = totalAssigned - totalCompleted;
+      const completed = userTasks.filter(task => task.status === 'Completed').length;
+      const inProgress = userTasks.filter(task => task.status === 'In Progress').length;
+      const todo = userTasks.filter(task => task.status === 'To Do').length;
+      const overdue = userTasks.filter(task => isTaskOverdue(task)).length;
+      const total = userTasks.length;
       
       return {
-        total: totalAssigned,
-        completed: totalCompleted,
-        in_progress: Math.floor(remaining * 0.6),
-        overdue: Math.floor(remaining * 0.2),
-        todo: Math.floor(remaining * 0.2),
-        total_tasks: totalAssigned,
-        completed_tasks: totalCompleted,
-        completion_rate: totalAssigned > 0 ? Math.round((totalCompleted / totalAssigned) * 100) : 0
+        total,
+        completed,
+        in_progress: inProgress,
+        overdue,
+        todo,
+        total_tasks: total,
+        completed_tasks: completed,
+        completion_rate: total > 0 ? Math.round((completed / total) * 100) : 0
       };
-    })() : {
-      total: 0, 
-      completed: 0, 
-      in_progress: 0, 
-      overdue: 0, 
-      todo: 0,
-      total_tasks: 0, 
-      completed_tasks: 0, 
-      completion_rate: 0 
-    },
+    }, [userTasks]),
     
     hoursStatsSummary: hoursStatsQuery.data ? (() => {
       const dailyData = hoursStatsQuery.data;

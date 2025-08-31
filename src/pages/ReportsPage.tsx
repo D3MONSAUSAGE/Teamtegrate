@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTask } from '@/contexts/task';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { hasRoleAccess } from '@/contexts/auth';
@@ -19,12 +20,20 @@ import TeamReports from '@/components/reports/TeamReports';
 
 export const ReportsPage: React.FC = () => {
   const { user } = useAuth();
+  const { tasks, fetchTasks, isLoading: tasksLoading } = useTask();
   
   // State management
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [timeRange, setTimeRange] = useState<string>('7 days');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [activeTab, setActiveTab] = useState<string>('individual');
+
+  // Fetch tasks when component mounts
+  React.useEffect(() => {
+    if (user && tasks.length === 0) {
+      fetchTasks();
+    }
+  }, [user, tasks.length, fetchTasks]);
   
   // Data fetching for the selected user (defaults to current user)
   const viewingUserId = selectedUser?.id || user?.id;
@@ -36,7 +45,7 @@ export const ReportsPage: React.FC = () => {
     contributions,
     taskStatsSummary,
     hoursStatsSummary,
-    isLoading,
+    isLoading: reportsLoading,
     error
   } = useEmployeeReports({
     userId: viewingUserId || '',
@@ -45,6 +54,8 @@ export const ReportsPage: React.FC = () => {
 
   // Team analytics data
   const { analytics: teamAnalytics, isLoading: teamLoading } = useTeamAnalytics();
+
+  const isLoading = tasksLoading || reportsLoading;
 
   // Handlers
   const handleUserSelect = (userId: string, userName: string) => {
