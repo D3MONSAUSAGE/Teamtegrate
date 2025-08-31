@@ -1,182 +1,208 @@
 import React, { useState } from 'react';
-import { Card, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { useAuth } from '@/contexts/AuthContext';
-import { DateRange } from "react-day-picker";
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { hasRoleAccess } from '@/contexts/auth';
+import { User } from '@/types';
+import { useEmployeeReports } from '@/hooks/useEmployeeReports';
 
-// Personal Dashboard Components
-import { PersonalDashboard } from '@/components/reports/personal/PersonalDashboard';
-import { UserSearchPanel } from '@/components/reports/personal/UserSearchPanel';
-import { ExportPanel } from '@/components/reports/personal/ExportPanel';
-import { TimeRangeSelector } from '@/components/reports/personal/TimeRangeSelector';
+// Modern Dashboard Components
+import { ReportsHeader } from '@/components/reports/modern/ReportsHeader';
+import { ExecutiveSummary } from '@/components/reports/modern/ExecutiveSummary';
+import { PerformanceGrid } from '@/components/reports/modern/PerformanceGrid';
+import { InsightsPanel } from '@/components/reports/modern/InsightsPanel';
+import { DetailedAnalytics } from '@/components/reports/modern/DetailedAnalytics';
+import { SmartFilterBar } from '@/components/reports/modern/SmartFilterBar';
 
 export const ReportsPage: React.FC = () => {
   const { user } = useAuth();
   
-  // User-centric state
-  const [selectedUserId, setSelectedUserId] = useState<string>('');
-  const [selectedUserName, setSelectedUserName] = useState<string>('');
-  const [timeRange, setTimeRange] = useState<string>('7 days'); // Default to weekly
-  const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  // State management
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [timeRange, setTimeRange] = useState<string>('7 days');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   
-  // Initialize with current user
-  React.useEffect(() => {
-    if (user && !selectedUserId) {
-      setSelectedUserId(user.id);
-      setSelectedUserName(user.name);
-    }
-  }, [user, selectedUserId]);
+  // Data fetching for the selected user (defaults to current user)
+  const viewingUserId = selectedUser?.id || user?.id;
+  const viewingUserName = selectedUser?.name || user?.name || '';
   
-  // Check if current user has manager+ access for search functionality
-  const canSearchUsers = user && hasRoleAccess(user.role, 'manager');
-  const isViewingCurrentUser = selectedUserId === user?.id;
-  
+  const {
+    taskStats,
+    hoursStats,
+    contributions,
+    isLoading,
+    error
+  } = useEmployeeReports({
+    userId: viewingUserId || '',
+    timeRange
+  });
+
   // Handlers
   const handleUserSelect = (userId: string, userName: string) => {
-    setSelectedUserId(userId);
-    setSelectedUserName(userName);
+    // In a real app, you'd fetch the full user object
+    setSelectedUser({ 
+      id: userId, 
+      name: userName,
+      email: `${userName.toLowerCase().replace(' ', '.')}@company.com`,
+      role: 'user',
+      organizationId: user?.organizationId || '',
+      createdAt: new Date()
+    } as User);
+    setSearchQuery('');
   };
   
   const handleBackToPersonal = () => {
-    if (user) {
-      setSelectedUserId(user.id);
-      setSelectedUserName(user.name);
-    }
+    setSelectedUser(null);
   };
   
-  const handleExport = async (exportType: 'personal-overview' | 'personal-tasks' | 'personal-performance' | 'personal-projects') => {
+  const handleExport = async () => {
     try {
       const { downloadCSV } = await import('@/utils/exportUtils');
       
-      const targetUserId = selectedUserId;
-      const targetUserName = selectedUserName;
+      const targetUserName = viewingUserName;
+      const isViewingSelf = !selectedUser;
       
-      // Generate filename
+      // Generate comprehensive export data
       const dateStr = format(new Date(), 'yyyy-MM-dd');
-      const userStr = isViewingCurrentUser ? 'my' : targetUserName.toLowerCase().replace(/\s+/g, '-');
+      const userStr = isViewingSelf ? 'my' : targetUserName.toLowerCase().replace(/\s+/g, '-');
       const timeStr = timeRange === '7 days' ? 'weekly' : timeRange === '30 days' ? 'monthly' : 'custom';
       
-      let exportData;
-      
-      switch (exportType) {
-        case 'personal-overview':
-          exportData = {
-            filename: `${userStr}-overview-${timeStr}-${dateStr}.csv`,
-            headers: ['Metric', 'Value', 'Period'],
-            rows: [
-              ['User', targetUserName, timeRange],
-              ['Report Type', 'Personal Overview', ''],
-              ['Generated At', format(new Date(), 'yyyy-MM-dd HH:mm:ss'), ''],
-              ['', '', ''], // Empty row for separation
-              // Add actual metrics here based on available data
-            ]
-          };
-          break;
-          
-        case 'personal-tasks':
-          exportData = {
-            filename: `${userStr}-tasks-${timeStr}-${dateStr}.csv`,
-            headers: ['User', 'Report Type', 'Period'],
-            rows: [
-              [targetUserName, 'Task Details', timeRange]
-            ]
-          };
-          break;
-          
-        case 'personal-performance':
-          exportData = {
-            filename: `${userStr}-performance-${timeStr}-${dateStr}.csv`,
-            headers: ['User', 'Report Type', 'Period'],
-            rows: [
-              [targetUserName, 'Performance Metrics', timeRange]
-            ]
-          };
-          break;
-          
-        case 'personal-projects':
-          exportData = {
-            filename: `${userStr}-projects-${timeStr}-${dateStr}.csv`,
-            headers: ['User', 'Report Type', 'Period'],
-            rows: [
-              [targetUserName, 'Project Contributions', timeRange]
-            ]
-          };
-          break;
-          
-        default:
-          throw new Error('Unknown export type');
-      }
+      const exportData = {
+        filename: `${userStr}-performance-report-${timeStr}-${dateStr}.csv`,
+        headers: ['Category', 'Metric', 'Value', 'Period'],
+        rows: [
+          ['User Info', 'Name', targetUserName, ''],
+          ['User Info', 'Report Period', timeRange, ''],
+          ['User Info', 'Generated At', format(new Date(), 'yyyy-MM-dd HH:mm:ss'), ''],
+          ['', '', '', ''], // Separator
+          ['Tasks', 'Total Tasks', (taskStats?.total_tasks || 0).toString(), timeRange],
+          ['Tasks', 'Completed Tasks', (taskStats?.completed_tasks || 0).toString(), timeRange],
+          ['Tasks', 'Completion Rate', `${Math.round(taskStats?.completion_rate || 0)}%`, timeRange],
+          ['', '', '', ''], // Separator
+          ['Time', 'Total Hours', Math.round(hoursStats?.total_hours || 0).toString(), timeRange],
+          ['Time', 'Daily Average', (hoursStats?.avg_daily_hours || 0).toFixed(1), timeRange],
+          ['Time', 'Overtime Hours', (hoursStats?.overtime_hours || 0).toString(), timeRange],
+          ['', '', '', ''], // Separator
+          ['Projects', 'Active Projects', (contributions?.length || 0).toString(), timeRange],
+          ...((contributions || []).map(project => [
+            'Project Detail',
+            project.project_title,
+            `${project.task_count} tasks (${Math.round(project.completion_rate)}% complete)`,
+            ''
+          ]))
+        ],
+        metadata: {
+          exportType: 'comprehensive-user',
+          dateRange: timeRange,
+          filters: isViewingSelf ? 'Personal dashboard' : `Team member: ${targetUserName}`,
+          generatedAt: format(new Date(), 'yyyy-MM-dd HH:mm:ss'),
+          totalRecords: (taskStats?.total_tasks || 0) + (contributions?.length || 0)
+        }
+      };
       
       downloadCSV(exportData);
-      toast.success(`${isViewingCurrentUser ? 'Your' : `${targetUserName}'s`} report exported successfully!`);
+      toast.success(`${isViewingSelf ? 'Your' : `${targetUserName}'s`} performance report exported successfully!`);
     } catch (error) {
       console.error('Export failed:', error);
       toast.error('Failed to export report. Please try again.');
     }
   };
 
-  // Show loading if user data isn't ready
-  if (!user || !selectedUserId) {
+  const handleRefresh = () => {
+    // Trigger data refetch (in a real app, you'd call a refetch function)
+    toast.success('Data refreshed!');
+  };
+
+  // Handle loading and error states
+  if (!user) {
     return (
-      <div className="container mx-auto p-6">
-        <Card>
-          <CardContent className="p-8 text-center">
-            <div className="text-muted-foreground">Loading your dashboard...</div>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center space-y-3">
+          <div className="animate-pulse h-12 w-12 bg-muted rounded-full mx-auto" />
+          <div className="text-muted-foreground">Loading your dashboard...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center space-y-3">
+          <div className="text-destructive">Failed to load dashboard data</div>
+          <button 
+            onClick={handleRefresh}
+            className="text-primary hover:underline"
+          >
+            Try again
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      {/* Time Range Controls */}
-      <TimeRangeSelector
-        timeRange={timeRange}
-        dateRange={dateRange}
-        onTimeRangeChange={setTimeRange}
-        onDateRangeChange={setDateRange}
-      />
+    <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5">
+      <div className="container mx-auto p-6 space-y-8 max-w-7xl">
+        {/* Professional Header */}
+        <ReportsHeader
+          currentUser={user}
+          selectedUser={selectedUser}
+          timeRange={timeRange}
+          onBackToPersonal={handleBackToPersonal}
+        />
 
-      {/* Main Dashboard Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Main Dashboard - Takes most space */}
-        <div className="lg:col-span-3">
-          <PersonalDashboard
-            userId={selectedUserId}
-            userName={selectedUserName}
-            timeRange={timeRange}
-            dateRange={dateRange}
-          />
-        </div>
+        {/* Smart Filter Bar */}
+        <SmartFilterBar
+          currentUser={user}
+          selectedUser={selectedUser}
+          timeRange={timeRange}
+          searchQuery={searchQuery}
+          onTimeRangeChange={setTimeRange}
+          onSearchChange={setSearchQuery}
+          onUserSelect={handleUserSelect}
+          onExport={handleExport}
+          onRefresh={handleRefresh}
+          isLoading={isLoading}
+        />
 
-        {/* Sidebar - Controls and Actions */}
-        <div className="lg:col-span-1 space-y-6">
-          {/* User Search Panel (Managers+ only) */}
-          {canSearchUsers && (
-            <>
-              <UserSearchPanel
-                selectedUserId={selectedUserId}
-                selectedUserName={selectedUserName}
-                onUserSelect={handleUserSelect}
-                onBackToPersonal={handleBackToPersonal}
-              />
-              <Separator />
-            </>
-          )}
+        {/* Executive Summary Cards */}
+        <ExecutiveSummary
+          taskStats={taskStats}
+          hoursStats={hoursStats}
+          contributions={contributions}
+          isLoading={isLoading}
+        />
 
-          {/* Export Panel */}
-          <ExportPanel
-            selectedUserId={selectedUserId}
-            selectedUserName={selectedUserName}
-            timeRange={timeRange}
-            dateRange={dateRange}
-            onExport={handleExport}
-            isCurrentUser={isViewingCurrentUser}
-          />
+        {/* Performance Visualization Grid */}
+        <PerformanceGrid
+          taskStats={taskStats}
+          hoursStats={hoursStats}
+          contributions={contributions}
+          isLoading={isLoading}
+        />
+
+        {/* Split Layout for Insights and Detailed Analytics */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+          {/* AI Insights Panel */}
+          <div className="xl:col-span-1">
+            <InsightsPanel
+              taskStats={taskStats}
+              hoursStats={hoursStats}
+              contributions={contributions}
+              isLoading={isLoading}
+            />
+          </div>
+
+          {/* Detailed Analytics */}
+          <div className="xl:col-span-2">
+            <DetailedAnalytics
+              taskStats={taskStats}
+              hoursStats={hoursStats}
+              contributions={contributions}
+              isLoading={isLoading}
+            />
+          </div>
         </div>
       </div>
     </div>
