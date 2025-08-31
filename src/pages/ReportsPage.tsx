@@ -5,6 +5,8 @@ import { format } from 'date-fns';
 import { hasRoleAccess } from '@/contexts/auth';
 import { User } from '@/types';
 import { useEmployeeReports } from '@/hooks/useEmployeeReports';
+import { useTeamAnalytics } from '@/hooks/team/useTeamAnalytics';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Modern Dashboard Components
 import { ReportsHeader } from '@/components/reports/modern/ReportsHeader';
@@ -13,6 +15,7 @@ import { PerformanceGrid } from '@/components/reports/modern/PerformanceGrid';
 import { InsightsPanel } from '@/components/reports/modern/InsightsPanel';
 import { DetailedAnalytics } from '@/components/reports/modern/DetailedAnalytics';
 import { SmartFilterBar } from '@/components/reports/modern/SmartFilterBar';
+import TeamReports from '@/components/reports/TeamReports';
 
 export const ReportsPage: React.FC = () => {
   const { user } = useAuth();
@@ -21,6 +24,7 @@ export const ReportsPage: React.FC = () => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [timeRange, setTimeRange] = useState<string>('7 days');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [activeTab, setActiveTab] = useState<string>('individual');
   
   // Data fetching for the selected user (defaults to current user)
   const viewingUserId = selectedUser?.id || user?.id;
@@ -38,6 +42,9 @@ export const ReportsPage: React.FC = () => {
     userId: viewingUserId || '',
     timeRange
   });
+
+  // Team analytics data
+  const { analytics: teamAnalytics, isLoading: teamLoading } = useTeamAnalytics();
 
   // Handlers
   const handleUserSelect = (userId: string, userName: string) => {
@@ -168,44 +175,58 @@ export const ReportsPage: React.FC = () => {
           isLoading={isLoading}
         />
 
-        {/* Executive Summary Cards */}
-        <ExecutiveSummary
-        taskStats={taskStatsSummary}
-        hoursStats={hoursStatsSummary}
-          contributions={contributions}
-          isLoading={isLoading}
-        />
-
-        {/* Performance Visualization Grid */}
-        <PerformanceGrid
-        taskStats={taskStatsSummary}
-        hoursStats={hoursStatsSummary}
-          contributions={contributions}
-          isLoading={isLoading}
-        />
-
-        {/* Split Layout for Insights and Detailed Analytics */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-          {/* AI Insights Panel */}
-          <div className="xl:col-span-1">
-            <InsightsPanel
-            taskStats={taskStatsSummary}
-            hoursStats={hoursStatsSummary}
+        {/* Tabbed Interface */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="individual">Individual Reports</TabsTrigger>
+            <TabsTrigger value="team">Team Analytics</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="individual" className="space-y-8 mt-6">
+            {/* Executive Summary Cards */}
+            <ExecutiveSummary
+              taskStats={taskStatsSummary}
+              hoursStats={hoursStatsSummary}
               contributions={contributions}
               isLoading={isLoading}
             />
-          </div>
 
-          {/* Detailed Analytics */}
-          <div className="xl:col-span-2">
-            <DetailedAnalytics
-            taskStats={taskStatsSummary}
-            hoursStats={hoursStatsSummary}
+            {/* Performance Visualization Grid */}
+            <PerformanceGrid
+              taskStats={taskStatsSummary}
+              hoursStats={hoursStatsSummary}
               contributions={contributions}
               isLoading={isLoading}
             />
-          </div>
-        </div>
+
+            {/* Split Layout for Insights and Detailed Analytics */}
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+              {/* AI Insights Panel */}
+              <div className="xl:col-span-1">
+                <InsightsPanel
+                  taskStats={taskStatsSummary}
+                  hoursStats={hoursStatsSummary}
+                  contributions={contributions}
+                  isLoading={isLoading}
+                />
+              </div>
+
+              {/* Detailed Analytics */}
+              <div className="xl:col-span-2">
+                <DetailedAnalytics
+                  taskStats={taskStatsSummary}
+                  hoursStats={hoursStatsSummary}
+                  contributions={contributions}
+                  isLoading={isLoading}
+                />
+              </div>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="team" className="space-y-8 mt-6">
+            <TeamReports />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

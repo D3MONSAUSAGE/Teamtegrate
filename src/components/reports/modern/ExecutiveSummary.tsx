@@ -122,6 +122,7 @@ interface ExecutiveSummaryProps {
     completed_tasks: number;
     total_tasks: number;
     completion_rate: number;
+    overdue?: number;
   };
   hoursStats?: {
     total_hours: number;
@@ -144,8 +145,8 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({
 }) => {
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {[...Array(4)].map((_, i) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+        {[...Array(5)].map((_, i) => (
           <Card key={i} className="animate-shimmer">
             <CardContent className="p-6">
               <div className="space-y-4">
@@ -174,7 +175,7 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({
   const projectsCount = contributions?.length || 0;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
       <KPICard
         title="Task Completion Rate"
         value={`${Math.round(taskStats?.completion_rate || 0)}%`}
@@ -197,6 +198,17 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({
         trendValue={hoursTrend === 'up' ? '+3h' : '0h'}
         progress={Math.min(((hoursStats?.total_hours || 0) / 40) * 100, 100)}
         animationDelay={100}
+      />
+      
+      <KPICard
+        title="Overdue Tasks"
+        value={taskStats?.overdue || 0}
+        subtitle={taskStats?.overdue ? 'need attention' : 'all on track'}
+        icon={<Activity />}
+        color={taskStats?.overdue ? 'warning' : 'success'}
+        trend={taskStats?.overdue ? 'up' : 'neutral'}
+        trendValue={taskStats?.overdue ? '+2 tasks' : 'on track'}
+        animationDelay={150}
       />
       
       <KPICard

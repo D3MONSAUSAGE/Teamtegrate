@@ -2,13 +2,16 @@
 import React from 'react';
 import { useTask } from '@/contexts/task';
 import useTeamMembers from '@/hooks/useTeamMembers';
+import { useTeamAnalytics } from '@/hooks/team/useTeamAnalytics';
 import TeamPerformanceBarChart from './team/TeamPerformanceBarChart';
 import TeamProductivityTrend from './team/TeamProductivityTrend';
 import TeamRankingsTable from './team/TeamRankingsTable';
+import TeamAnalyticsDashboard from './team/TeamAnalyticsDashboard';
 
 const TeamReports: React.FC = () => {
   const { tasks } = useTask();
   const { teamMembersPerformance } = useTeamMembers();
+  const { analytics: teamAnalytics, isLoading: teamLoading } = useTeamAnalytics();
   
   // Team member performance data
   const memberPerformanceData = React.useMemo(() => {
@@ -41,6 +44,13 @@ const TeamReports: React.FC = () => {
   
   return (
     <div className="space-y-6">
+      {/* Team Analytics Dashboard */}
+      <TeamAnalyticsDashboard 
+        teamAnalytics={teamAnalytics}
+        isLoading={teamLoading}
+      />
+      
+      {/* Team Performance Charts */}
       <TeamPerformanceBarChart memberPerformanceData={memberPerformanceData} />
       
       {/* Full width productivity trend */}
