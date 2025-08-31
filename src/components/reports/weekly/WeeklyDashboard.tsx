@@ -4,7 +4,10 @@ import { subDays, format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CalendarDays, BarChart3, List } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { CalendarDays, BarChart3, List, User, FolderOpen } from 'lucide-react';
+import { DatePickerWithRange } from '@/components/ui/date-range-picker';
 
 import { TeamMemberSelector } from './TeamMemberSelector';
 import { WeeklyTaskPerformance } from './WeeklyTaskPerformance';
@@ -15,7 +18,7 @@ import { WeeklyDetailedTasks } from './WeeklyDetailedTasks';
 import { useEmployeeReports } from '@/hooks/useEmployeeReports';
 import { useEmployeeDetailedTasks } from '@/hooks/useEmployeeDetailedTasks';
 import { useAuth } from '@/contexts/AuthContext';
-import useTeamMembers from '@/hooks/useTeamMembers';
+import { useRealTeamMembers } from '@/hooks/team/useRealTeamMembers';
 
 interface WeeklyDashboardProps {
   timeRange: string;
@@ -27,19 +30,21 @@ export const WeeklyDashboard: React.FC<WeeklyDashboardProps> = ({
   dateRange
 }) => {
   const { user } = useAuth();
-  const { teamMembersPerformance } = useTeamMembers();
+  const { teamMembers } = useRealTeamMembers();
   
   // Set default selected member to current user
   const [selectedMemberId, setSelectedMemberId] = useState<string>(user?.id || '');
+  const [customDateRange, setCustomDateRange] = useState<DateRange | undefined>(dateRange);
+  const [selectedTimeRange, setSelectedTimeRange] = useState<string>('7 days');
   
   // Use 7 days for weekly view regardless of the parent timeRange
-  const weeklyTimeRange = '7 days';
+  const weeklyTimeRange = selectedTimeRange;
   
   // Get employee reports data
   const { taskStats, hoursStats, contributions, isLoading, error } = useEmployeeReports({
     userId: selectedMemberId,
     timeRange: weeklyTimeRange,
-    dateRange
+    dateRange: customDateRange || dateRange
   });
 
   // Get detailed tasks data
@@ -56,17 +61,28 @@ export const WeeklyDashboard: React.FC<WeeklyDashboardProps> = ({
   } = useEmployeeDetailedTasks({
     userId: selectedMemberId,
     timeRange: weeklyTimeRange,
-    dateRange
+    dateRange: customDateRange || dateRange
   });
 
-  // Prepare team members data for selector
-  const teamMembers = useMemo(() => {
-    return teamMembersPerformance.map(member => ({
+  // Prepare team members data for selector - include current user
+  const availableTeamMembers = useMemo(() => {
+    const members = teamMembers.map(member => ({
       id: member.id,
       name: member.name,
       email: member.email
     }));
-  }, [teamMembersPerformance]);
+    
+    // Always ensure current user is available
+    if (user && !members.find(m => m.id === user.id)) {
+      members.unshift({
+        id: user.id,
+        name: user.name,
+        email: user.email
+      });
+    }
+    
+    return members;
+  }, [teamMembers, user]);
 
   // Set initial selected member when data loads
   React.useEffect(() => {
@@ -75,18 +91,30 @@ export const WeeklyDashboard: React.FC<WeeklyDashboardProps> = ({
     }
   }, [user?.id, selectedMemberId]);
 
+  // Ensure a team member is selected
+  const isValidSelection = selectedMemberId && availableTeamMembers.some(m => m.id === selectedMemberId);
+
   // Calculate date range for display
   const displayDateRange = useMemo(() => {
-    if (dateRange?.from && dateRange?.to) {
-      return `${format(dateRange.from, 'MMM dd')} - ${format(dateRange.to, 'MMM dd, yyyy')}`;
+    const activeRange = customDateRange || dateRange;
+    if (activeRange?.from && activeRange?.to) {
+      return `${format(activeRange.from, 'MMM dd')} - ${format(activeRange.to, 'MMM dd, yyyy')}`;
     }
     
     const endDate = new Date();
-    const startDate = subDays(endDate, 6);
+    const startDate = subDays(endDate, selectedTimeRange === '7 days' ? 6 : 
+                                      selectedTimeRange === '30 days' ? 29 : 6);
     return `${format(startDate, 'MMM dd')} - ${format(endDate, 'MMM dd, yyyy')}`;
-  }, [dateRange]);
+  }, [customDateRange, dateRange, selectedTimeRange]);
 
-  const selectedMember = teamMembers.find(member => member.id === selectedMemberId);
+  const selectedMember = availableTeamMembers.find(member => member.id === selectedMemberId);
+  
+  // Time range options
+  const timeRangeOptions = [
+    { value: '7 days', label: 'This Week' },
+    { value: '30 days', label: 'This Month' },
+    { value: 'custom', label: 'Custom Range' }
+  ];
 
   if (error || detailedTasksError) {
     return (
@@ -101,29 +129,79 @@ export const WeeklyDashboard: React.FC<WeeklyDashboardProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Header Section */}
+      {/* Top Filters Section */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Time Range Selector */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center gap-2">
+                <CalendarDays className="h-4 w-4" />
+                Time Period
+              </label>
+              <Select value={selectedTimeRange} onValueChange={setSelectedTimeRange}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {timeRangeOptions.map(option => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Custom Date Range (if selected) */}
+            {selectedTimeRange === 'custom' && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Custom Range</label>
+                <DatePickerWithRange
+                  date={customDateRange}
+                  onDateChange={setCustomDateRange}
+                  className="w-full"
+                />
+              </div>
+            )}
+
+            {/* Projects Display - Fixed */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center gap-2">
+                <FolderOpen className="h-4 w-4" />
+                Projects
+              </label>
+              <div className="flex items-center h-10 px-3 py-2 border border-input bg-muted rounded-md">
+                <Badge variant="secondary" className="text-sm">
+                  All Projects
+                </Badge>
+              </div>
+            </div>
+          </div>
+
+          {/* Reporting Period Display */}
+          <div className="mt-4 pt-4 border-t">
+            <p className="text-sm text-muted-foreground">Reporting Period: <span className="font-medium text-foreground">{displayDateRange}</span></p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Team Member Selection Section */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <CalendarDays className="h-5 w-5" />
-            Weekly Performance Dashboard
+            <User className="h-5 w-5" />
+            Team Member Performance
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div className="flex-1 max-w-md">
-              <TeamMemberSelector
-                teamMembers={teamMembers}
-                selectedMember={selectedMemberId}
-                onMemberChange={setSelectedMemberId}
-                isLoading={isLoading}
-              />
-            </div>
-            
-            <div className="text-right">
-              <p className="text-sm text-muted-foreground">Reporting Period</p>
-              <p className="font-medium">{displayDateRange}</p>
-            </div>
+          <div className="max-w-md">
+            <TeamMemberSelector
+              teamMembers={availableTeamMembers}
+              selectedMember={selectedMemberId}
+              onMemberChange={setSelectedMemberId}
+              isLoading={isLoading}
+            />
           </div>
 
           {selectedMember && (
@@ -135,62 +213,82 @@ export const WeeklyDashboard: React.FC<WeeklyDashboardProps> = ({
               )}
             </div>
           )}
+
+          {!isValidSelection && (
+            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 mt-4">
+              <p className="text-sm text-destructive font-medium">Team member selection required</p>
+              <p className="text-xs text-muted-foreground mt-1">Please select a team member to view their performance data.</p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
       <Separator />
 
-      {/* Tabbed Interface */}
-      <Tabs defaultValue="performance" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="performance" className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
-            Performance Summary
-          </TabsTrigger>
-          <TabsTrigger value="detailed" className="flex items-center gap-2">
-            <List className="h-4 w-4" />
-            Detailed Tasks
-          </TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="performance" className="space-y-6 mt-6">
-          {/* Weekly Task Performance */}
-          <WeeklyTaskPerformance 
-            taskStats={taskStats} 
-            isLoading={isLoading}
-          />
+      {/* Performance Data - Only show if valid selection */}
+      {isValidSelection ? (
+        <Tabs defaultValue="performance" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="performance" className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Performance Summary
+            </TabsTrigger>
+            <TabsTrigger value="detailed" className="flex items-center gap-2">
+              <List className="h-4 w-4" />
+              Detailed Tasks
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="performance" className="space-y-6 mt-6">
+            {/* Weekly Task Performance */}
+            <WeeklyTaskPerformance 
+              taskStats={taskStats} 
+              isLoading={isLoading}
+            />
 
-          <Separator />
+            <Separator />
 
-          {/* Weekly Hours Report */}
-          <WeeklyHoursReport 
-            hoursStats={hoursStats} 
-            isLoading={isLoading}
-          />
+            {/* Weekly Hours Report */}
+            <WeeklyHoursReport 
+              hoursStats={hoursStats} 
+              isLoading={isLoading}
+            />
 
-          <Separator />
+            <Separator />
 
-          {/* Weekly Project Contributions */}
-          <WeeklyProjectContributions 
-            contributions={contributions} 
-            isLoading={isLoading}
-          />
-        </TabsContent>
-        
-        <TabsContent value="detailed" className="mt-6">
-          {/* Detailed Tasks View */}
-          <WeeklyDetailedTasks
-            allTasks={allTasks}
-            todoTasks={todoTasks}
-            inProgressTasks={inProgressTasks}
-            completedTasks={completedTasks}
-            overdueTasks={overdueTasks}
-            projectGroups={projectGroups}
-            summary={summary}
-            isLoading={isLoadingDetailedTasks}
-          />
-        </TabsContent>
-      </Tabs>
+            {/* Weekly Project Contributions */}
+            <WeeklyProjectContributions 
+              contributions={contributions} 
+              isLoading={isLoading}
+            />
+          </TabsContent>
+          
+          <TabsContent value="detailed" className="mt-6">
+            {/* Detailed Tasks View */}
+            <WeeklyDetailedTasks
+              allTasks={allTasks}
+              todoTasks={todoTasks}
+              inProgressTasks={inProgressTasks}
+              completedTasks={completedTasks}
+              overdueTasks={overdueTasks}
+              projectGroups={projectGroups}
+              summary={summary}
+              isLoading={isLoadingDetailedTasks}
+            />
+          </TabsContent>
+        </Tabs>
+      ) : (
+        /* No valid selection state */
+        <Card>
+          <CardContent className="p-8 text-center">
+            <div className="space-y-3">
+              <User className="h-12 w-12 text-muted-foreground mx-auto" />
+              <h3 className="font-semibold">Select a Team Member</h3>
+              <p className="text-sm text-muted-foreground">Choose a team member from the dropdown above to view their weekly performance data.</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

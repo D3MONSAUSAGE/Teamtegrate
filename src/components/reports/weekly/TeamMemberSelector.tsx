@@ -26,23 +26,29 @@ export const TeamMemberSelector: React.FC<TeamMemberSelectorProps> = ({
     <div className="space-y-2">
       <Label className="flex items-center gap-2">
         <User className="h-4 w-4" />
-        Select Team Member
+        Select Team Member <span className="text-destructive">*</span>
       </Label>
       <Select value={selectedMember} onValueChange={onMemberChange} disabled={isLoading}>
         <SelectTrigger className="w-full">
-          <SelectValue placeholder={isLoading ? "Loading team members..." : "Choose a team member"} />
+          <SelectValue placeholder={isLoading ? "Loading team members..." : "Choose a team member (required)"} />
         </SelectTrigger>
         <SelectContent>
-          {teamMembers.map((member) => (
-            <SelectItem key={member.id} value={member.id}>
-              <div className="flex flex-col">
-                <span>{member.name}</span>
-                {member.email && (
-                  <span className="text-xs text-muted-foreground">{member.email}</span>
-                )}
-              </div>
-            </SelectItem>
-          ))}
+          {teamMembers.length === 0 && !isLoading ? (
+            <div className="px-3 py-2 text-sm text-muted-foreground">
+              No team members found
+            </div>
+          ) : (
+            teamMembers.map((member) => (
+              <SelectItem key={member.id} value={member.id}>
+                <div className="flex flex-col">
+                  <span>{member.name}</span>
+                  {member.email && (
+                    <span className="text-xs text-muted-foreground">{member.email}</span>
+                  )}
+                </div>
+              </SelectItem>
+            ))
+          )}
         </SelectContent>
       </Select>
     </div>
