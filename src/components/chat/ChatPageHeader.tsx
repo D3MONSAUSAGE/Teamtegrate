@@ -8,22 +8,20 @@ import { useRooms } from '@/hooks/useRooms';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useUserPresence } from '@/hooks/useUserPresence';
 import { UserPresenceList } from './UserPresenceIndicator';
+import { useTodayMessages } from '@/hooks/useTodayMessages';
 
 interface ChatPageHeaderProps {
   onShowSettings?: () => void;
-  activeUsers?: number;
-  totalMessages?: number;
 }
 
 const ChatPageHeader: React.FC<ChatPageHeaderProps> = ({
-  onShowSettings,
-  activeUsers = 0,
-  totalMessages = 0
+  onShowSettings
 }) => {
   const { user } = useAuth();
   const { rooms } = useRooms();
   const isMobile = useIsMobile();
   const { onlineUsers } = useUserPresence();
+  const { count: todayCount, loading: messagesLoading } = useTodayMessages();
 
   return (
     <div className="rounded-xl bg-card border border-border/50 mb-6">
@@ -66,7 +64,7 @@ const ChatPageHeader: React.FC<ChatPageHeaderProps> = ({
               </div>
               <div className="w-px h-8 bg-border" />
               <div>
-                <div className="text-lg font-semibold text-foreground">{totalMessages}</div>
+                <div className="text-lg font-semibold text-foreground">{messagesLoading ? '—' : todayCount}</div>
                 <div className="text-xs text-muted-foreground">Messages Today</div>
               </div>
             </div>
