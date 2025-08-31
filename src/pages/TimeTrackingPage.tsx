@@ -22,6 +22,7 @@ import EmployeeTimeTracking from '@/components/dashboard/EmployeeTimeTracking';
 import PastTimeEntriesManager from '@/components/time-entries/PastTimeEntriesManager';
 import ScheduleManagerDashboard from '@/components/schedule/ScheduleManagerDashboard';
 import ScheduleEmployeeDashboard from '@/components/schedule/ScheduleEmployeeDashboard';
+import { TeamMembersGridView } from '@/components/time-management/TeamMembersGridView';
 
 const TimeTrackingPage = () => {
   const { user, hasRoleAccess } = useAuth();
@@ -173,24 +174,28 @@ const TimeTrackingPage = () => {
                 <EmployeeTimeTracking />
               )}
             </div>
-          ) : (
-            // Team/Admin view with selectors
+          ) : selectedUserId ? (
+            // Individual employee view
             <Card className="p-6">
               <div className="text-center py-8">
-                <h3 className="text-lg font-semibold mb-2">Team Time Tracking</h3>
+                <h3 className="text-lg font-semibold mb-2">Individual Employee Tracking</h3>
                 <p className="text-muted-foreground mb-4">
-                  {viewMode === 'team-totals' 
-                    ? 'Select a team above to view aggregate time statistics'
-                    : 'Select a team and employee above to view individual time tracking data'
-                  }
+                  Viewing time tracking data for {selectedUserName}
                 </p>
-                {!selectedTeamId && (
-                  <p className="text-sm text-amber-600">
-                    Use the Team-First Navigation above to get started
-                  </p>
-                )}
+                <Button variant="outline" onClick={() => setSelectedUserId(null)}>
+                  Back to Team View
+                </Button>
               </div>
             </Card>
+          ) : (
+            // Team members grid view (no specific employee selected)
+            <TeamMembersGridView
+              teamMembers={users}
+              teamStats={teamStats}
+              isLoading={usersLoading || statsLoading}
+              onSelectMember={setSelectedUserId}
+              weekDate={weekDate}
+            />
           )}
         </TabsContent>
 

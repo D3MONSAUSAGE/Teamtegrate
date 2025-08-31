@@ -102,19 +102,22 @@ export const TeamFirstSelector: React.FC<TeamFirstSelectorProps> = ({
             <div className="space-y-2">
               <label className="text-sm font-medium flex items-center gap-2">
                 <User className="h-4 w-4" />
-                Select Employee
+                Select Employee (Optional)
               </label>
               <Select 
                 value={selectedUserId || ''} 
                 onValueChange={handleUserChange}
-                disabled={isLoading || !selectedTeamId}
+                disabled={isLoading}
               >
                 <SelectTrigger>
                   <SelectValue placeholder={
-                    !selectedTeamId ? "Select team first..." : "Choose employee..."
+                    !selectedTeamId ? "Select team first..." : "All team members or choose specific employee..."
                   } />
                 </SelectTrigger>
                 <SelectContent>
+                  {selectedTeamId && (
+                    <SelectItem value="">All Team Members</SelectItem>
+                  )}
                   {filteredUsers.map((user) => (
                     <SelectItem key={user.id} value={user.id}>
                       {user.name} ({user.email})
