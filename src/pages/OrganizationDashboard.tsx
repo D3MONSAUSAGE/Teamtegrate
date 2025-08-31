@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { TeamProvider } from '@/components/team/TeamProvider';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Shield, AlertCircle, Loader2, BarChart3, Users, Settings, Activity } from 'lucide-react';
@@ -151,136 +152,138 @@ const OrganizationDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
-      <div className="p-3 sm:p-6 space-y-8 max-w-7xl mx-auto">
-        {/* Professional Header */}
-        <div className="animate-fade-in">
-          <ProfessionalOrganizationHeader 
-            onInviteUsers={() => setIsInviteDialogOpen(true)}
-          />
-        </div>
-        
-        {/* Tabbed Interface */}
-        <div className="animate-fade-in" style={{ animationDelay: '200ms' }}>
-          <Tabs defaultValue="overview" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4 lg:w-fit lg:grid-cols-4 bg-muted/60 backdrop-blur-sm border">
-              <TabsTrigger value="overview" className="flex items-center gap-2">
-                <Activity className="h-4 w-4" />
-                <span className="hidden sm:inline">Overview</span>
-              </TabsTrigger>
-              <TabsTrigger value="users" className="flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                <span className="hidden sm:inline">Users</span>
-              </TabsTrigger>
-              <TabsTrigger value="teams" className="flex items-center gap-2">
-                <Shield className="h-4 w-4" />
-                <span className="hidden sm:inline">Teams</span>
-              </TabsTrigger>
-              <TabsTrigger value="analytics" className="flex items-center gap-2">
-                <BarChart3 className="h-4 w-4" />
-                <span className="hidden sm:inline">Analytics</span>
-              </TabsTrigger>
-            </TabsList>
+    <TeamProvider>
+      <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
+        <div className="p-3 sm:p-6 space-y-8 max-w-7xl mx-auto">
+          {/* Professional Header */}
+          <div className="animate-fade-in">
+            <ProfessionalOrganizationHeader 
+              onInviteUsers={() => setIsInviteDialogOpen(true)}
+            />
+          </div>
+          
+          {/* Tabbed Interface */}
+          <div className="animate-fade-in" style={{ animationDelay: '200ms' }}>
+            <Tabs defaultValue="overview" className="space-y-6">
+              <TabsList className="grid w-full grid-cols-4 lg:w-fit lg:grid-cols-4 bg-muted/60 backdrop-blur-sm border">
+                <TabsTrigger value="overview" className="flex items-center gap-2">
+                  <Activity className="h-4 w-4" />
+                  <span className="hidden sm:inline">Overview</span>
+                </TabsTrigger>
+                <TabsTrigger value="users" className="flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  <span className="hidden sm:inline">Users</span>
+                </TabsTrigger>
+                <TabsTrigger value="teams" className="flex items-center gap-2">
+                  <Shield className="h-4 w-4" />
+                  <span className="hidden sm:inline">Teams</span>
+                </TabsTrigger>
+                <TabsTrigger value="analytics" className="flex items-center gap-2">
+                  <BarChart3 className="h-4 w-4" />
+                  <span className="hidden sm:inline">Analytics</span>
+                </TabsTrigger>
+              </TabsList>
 
-            {/* Overview Tab */}
-            <TabsContent value="overview" className="space-y-6">
-              <ModernSectionCard
-                title="Organization Statistics"
-                subtitle="Real-time metrics and performance indicators"
-                icon={BarChart3}
-                gradient="from-blue-500/10 via-purple-500/10 to-indigo-500/10"
-                noPadding
-              >
-                <div className="p-6">
-                  <OrganizationStatsCards />
-                </div>
-              </ModernSectionCard>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Overview Tab */}
+              <TabsContent value="overview" className="space-y-6">
                 <ModernSectionCard
-                  title="Quick Actions"
-                  subtitle="Shortcuts to common tasks"
-                  icon={Shield}
-                  gradient="from-orange-500/10 via-red-500/10 to-pink-500/10"
-                >
-                  <OrganizationQuickActions />
-                </ModernSectionCard>
-
-                <ModernSectionCard
-                  title="Role Distribution"
-                  subtitle="Visual breakdown of user roles"
+                  title="Organization Statistics"
+                  subtitle="Real-time metrics and performance indicators"
                   icon={BarChart3}
-                  gradient="from-green-500/10 via-emerald-500/10 to-teal-500/10"
-                >
-                  <RoleDistributionChart />
-                </ModernSectionCard>
-              </div>
-            </TabsContent>
-
-            {/* User Management Tab */}
-            <TabsContent value="users" className="space-y-6">
-              <SuperadminUserManagement />
-            </TabsContent>
-
-            {/* Team Management Tab */}
-            <TabsContent value="teams" className="space-y-6">
-              <ModernSectionCard
-                title="Team Management"
-                subtitle="Organize and manage your teams"
-                icon={Shield}
-                gradient="from-cyan-500/10 via-sky-500/10 to-blue-500/10"
-              >
-                <TeamManagementSection />
-              </ModernSectionCard>
-            </TabsContent>
-
-            {/* Analytics Tab */}
-            <TabsContent value="analytics" className="space-y-6">
-              <div className="grid grid-cols-1 gap-6">
-                <ModernSectionCard
-                  title="Role Distribution Chart"
-                  subtitle="Detailed role analysis"
-                  icon={BarChart3}
-                  gradient="from-purple-500/10 via-indigo-500/10 to-blue-500/10"
-                >
-                  <RoleDistributionChart />
-                </ModernSectionCard>
-
-                <ModernSectionCard
-                  title="Detailed Statistics"
-                  subtitle="In-depth organizational metrics"
-                  icon={Activity}
-                  gradient="from-emerald-500/10 via-teal-500/10 to-cyan-500/10"
+                  gradient="from-blue-500/10 via-purple-500/10 to-indigo-500/10"
                   noPadding
                 >
                   <div className="p-6">
                     <OrganizationStatsCards />
                   </div>
                 </ModernSectionCard>
-              </div>
-            </TabsContent>
-          </Tabs>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <ModernSectionCard
+                    title="Quick Actions"
+                    subtitle="Shortcuts to common tasks"
+                    icon={Shield}
+                    gradient="from-orange-500/10 via-red-500/10 to-pink-500/10"
+                  >
+                    <OrganizationQuickActions />
+                  </ModernSectionCard>
+
+                  <ModernSectionCard
+                    title="Role Distribution"
+                    subtitle="Visual breakdown of user roles"
+                    icon={BarChart3}
+                    gradient="from-green-500/10 via-emerald-500/10 to-teal-500/10"
+                  >
+                    <RoleDistributionChart />
+                  </ModernSectionCard>
+                </div>
+              </TabsContent>
+
+              {/* User Management Tab */}
+              <TabsContent value="users" className="space-y-6">
+                <SuperadminUserManagement />
+              </TabsContent>
+
+              {/* Team Management Tab */}
+              <TabsContent value="teams" className="space-y-6">
+                <ModernSectionCard
+                  title="Team Management"
+                  subtitle="Organize and manage your teams"
+                  icon={Shield}
+                  gradient="from-cyan-500/10 via-sky-500/10 to-blue-500/10"
+                >
+                  <TeamManagementSection />
+                </ModernSectionCard>
+              </TabsContent>
+
+              {/* Analytics Tab */}
+              <TabsContent value="analytics" className="space-y-6">
+                <div className="grid grid-cols-1 gap-6">
+                  <ModernSectionCard
+                    title="Role Distribution Chart"
+                    subtitle="Detailed role analysis"
+                    icon={BarChart3}
+                    gradient="from-purple-500/10 via-indigo-500/10 to-blue-500/10"
+                  >
+                    <RoleDistributionChart />
+                  </ModernSectionCard>
+
+                  <ModernSectionCard
+                    title="Detailed Statistics"
+                    subtitle="In-depth organizational metrics"
+                    icon={Activity}
+                    gradient="from-emerald-500/10 via-teal-500/10 to-cyan-500/10"
+                    noPadding
+                  >
+                    <div className="p-6">
+                      <OrganizationStatsCards />
+                    </div>
+                  </ModernSectionCard>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </div>
         </div>
+
+        {/* Dialogs */}
+        <InviteCodeDialog 
+          open={isInviteDialogOpen}
+          onOpenChange={setIsInviteDialogOpen}
+        />
+
+        <CreateUserDialog 
+          open={isCreateUserOpen}
+          onOpenChange={setIsCreateUserOpen}
+          onUserCreated={handleUserCreated}
+        />
+
+        <UserProfileDialog
+          userId={selectedUserId}
+          open={isProfileDialogOpen}
+          onOpenChange={setIsProfileDialogOpen}
+        />
       </div>
-
-      {/* Dialogs */}
-      <InviteCodeDialog 
-        open={isInviteDialogOpen}
-        onOpenChange={setIsInviteDialogOpen}
-      />
-
-      <CreateUserDialog 
-        open={isCreateUserOpen}
-        onOpenChange={setIsCreateUserOpen}
-        onUserCreated={handleUserCreated}
-      />
-
-      <UserProfileDialog
-        userId={selectedUserId}
-        open={isProfileDialogOpen}
-        onOpenChange={setIsProfileDialogOpen}
-      />
-    </div>
+    </TeamProvider>
   );
 };
 

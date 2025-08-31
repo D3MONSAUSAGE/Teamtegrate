@@ -19,6 +19,8 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useTeamContext } from '@/hooks/useTeamContext';
 import { useTeamMemberOperations } from '@/hooks/organization/team/useTeamMemberOperations';
+import { useTeams } from '@/hooks/useTeams';
+import { toast } from '@/components/ui/sonner';
 import { TeamMemberPerformanceData } from '@/hooks/team/useRealTeamMembers';
 import { Users, ArrowRight } from 'lucide-react';
 
@@ -39,7 +41,23 @@ export const TeamTransferDialog: React.FC<TeamTransferDialogProps> = ({
   const [selectedRole, setSelectedRole] = useState<'manager' | 'member'>('member');
   const [isTransferring, setIsTransferring] = useState(false);
 
-  const { userTeams } = useTeamContext();
+  // Try to get teams from context first, fallback to direct hook
+  let userTeams: any[] = [];
+  let contextError = false;
+  
+  try {
+    const context = useTeamContext();
+    userTeams = context.userTeams;
+  } catch (error) {
+    contextError = true;
+  }
+  
+  // Fallback to direct teams hook if context is not available
+  const { teams: fallbackTeams } = useTeams();
+  if (contextError && fallbackTeams) {
+    userTeams = fallbackTeams;
+  }
+  
   const { transferTeamMember } = useTeamMemberOperations();
 
   // Filter out current team from available teams
@@ -51,11 +69,13 @@ export const TeamTransferDialog: React.FC<TeamTransferDialogProps> = ({
     setIsTransferring(true);
     try {
       await transferTeamMember(currentTeamId, selectedTeamId, member.id, selectedRole);
+      toast.success(`${member.name} has been transferred successfully`);
       onOpenChange(false);
       setSelectedTeamId('');
       setSelectedRole('member');
     } catch (error) {
       console.error('Transfer failed:', error);
+      toast.error('Failed to transfer team member. Please try again.');
     } finally {
       setIsTransferring(false);
     }
@@ -126,17 +146,23 @@ export const TeamTransferDialog: React.FC<TeamTransferDialogProps> = ({
                   <SelectValue placeholder="Select destination team" />
                 </SelectTrigger>
                 <SelectContent>
-                  {availableTeams.map((team) => (
-                    <SelectItem key={team.id} value={team.id}>
-                      <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4" />
-                        <span>{team.name}</span>
-                        <Badge variant="outline" className="ml-auto">
-                          {team.member_count} members
-                        </Badge>
-                      </div>
-                    </SelectItem>
-                  ))}
+                  {availableTeams.length === 0 ? (
+                    <div className="p-2 text-sm text-muted-foreground">
+                      No other teams available
+                    </div>
+                  ) : (
+                    availableTeams.map((team) => (
+                      <SelectItem key={team.id} value={team.id}>
+                        <div className="flex items-center gap-2">
+                          <Users className="h-4 w-4" />
+                          <span>{team.name}</span>
+                          <Badge variant="outline" className="ml-auto">
+                            {team.member_count} members
+                          </Badge>
+                        </div>
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>
