@@ -226,11 +226,15 @@ const DocumentsPage = () => {
                 folder={selectedFolder}
               />
               
-              <DocumentList
-                documents={displayDocuments}
+               <DocumentList 
+                documents={displayDocuments} 
                 onDocumentDeleted={fetchDocuments}
                 isLoading={isLoading}
                 currentFolder={selectedFolder}
+                onBulletinPostCreated={() => {
+                  // Refresh bulletin board when a document is pinned
+                  // This will be handled by the bulletin board's real-time subscription
+                }}
               />
             </div>
           </TabsContent>

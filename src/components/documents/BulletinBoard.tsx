@@ -39,7 +39,16 @@ const BulletinBoard = () => {
       setIsLoading(true);
       const { data: postsData, error } = await supabase
         .from('bulletin_posts')
-        .select('*')
+        .select(`
+          *,
+          documents (
+            id,
+            title,
+            file_path,
+            file_type,
+            size_bytes
+          )
+        `)
         .order('is_pinned', { ascending: false })
         .order('created_at', { ascending: false });
 

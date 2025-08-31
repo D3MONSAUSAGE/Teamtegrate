@@ -1,10 +1,13 @@
 
 import React from 'react';
-import { FileText, Download, Trash2, Eye, Folder } from 'lucide-react';
+import { FileText, Download, Trash2, Eye, Folder, Pin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useRoleAccess } from '@/contexts/auth/hooks/useRoleAccess';
+import { useAuth } from '@/contexts/AuthContext';
+import PinToBulletinDialog from './PinToBulletinDialog';
 import {
   Table,
   TableBody,
@@ -35,6 +38,7 @@ interface DocumentListProps {
   onDocumentDeleted: () => void;
   isLoading?: boolean;
   currentFolder?: string;
+  onBulletinPostCreated?: () => void;
 }
 
 const DocumentList: React.FC<DocumentListProps> = ({
@@ -42,11 +46,18 @@ const DocumentList: React.FC<DocumentListProps> = ({
   onDocumentDeleted,
   isLoading = false,
   currentFolder = "",
+  onBulletinPostCreated,
 }) => {
   const { toast } = useToast();
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
   const [selectedDocument, setSelectedDocument] = React.useState<DocumentItem | null>(null);
+  const [showPinDialog, setShowPinDialog] = React.useState(false);
+  const [documentToPin, setDocumentToPin] = React.useState<DocumentItem | null>(null);
   const isMobile = useIsMobile();
+  const { user } = useAuth();
+  const { hasRoleAccess } = useRoleAccess(user);
+  
+  const canPinToBulletin = hasRoleAccess('manager');
 
   const formatFileSize = (bytes: number) => {
     const units = ['B', 'KB', 'MB', 'GB'];
@@ -144,6 +155,20 @@ const DocumentList: React.FC<DocumentListProps> = ({
     }
   };
 
+  const handlePinToBulletin = (document: DocumentItem) => {
+    setDocumentToPin(document);
+    setShowPinDialog(true);
+  };
+
+  const handlePinDialogClose = () => {
+    setShowPinDialog(false);
+    setDocumentToPin(null);
+  };
+
+  const handlePostCreated = () => {
+    onBulletinPostCreated?.();
+  };
+
   return (
     <>
       <div className="mb-2">
@@ -188,6 +213,16 @@ const DocumentList: React.FC<DocumentListProps> = ({
                 <TableCell className={isMobile ? "hidden" : ""}>{formatFileSize(document.size_bytes)}</TableCell>
                 <TableCell className={isMobile ? "hidden" : ""}>{new Date(document.created_at).toLocaleDateString()}</TableCell>
                 <TableCell className="text-right space-x-1">
+                  {canPinToBulletin && (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => handlePinToBulletin(document)}
+                      title="Pin to Bulletin Board"
+                    >
+                      <Pin className="h-4 w-4" />
+                    </Button>
+                  )}
                   {document.file_type === 'application/pdf' && (
                     <Button
                       variant="outline"
@@ -240,6 +275,13 @@ const DocumentList: React.FC<DocumentListProps> = ({
           )}
         </DialogContent>
       </Dialog>
+
+      <PinToBulletinDialog
+        isOpen={showPinDialog}
+        onClose={handlePinDialogClose}
+        document={documentToPin}
+        onPostCreated={handlePostCreated}
+      />
     </>
   );
 };
