@@ -22,7 +22,7 @@ const EmployeeReports: React.FC<EmployeeReportsProps> = ({ timeRange, dateRange,
   const { user } = useAuth();
   const targetUserId = selectedMembers?.[0] ?? (user?.id || '');
 
-  const { taskStats, hoursStats, contributions, isLoading, error } = useEmployeeReports({
+  const { taskStats, hoursStats, contributions, taskStatsSummary, hoursStatsSummary, isLoading, error } = useEmployeeReports({
     userId: targetUserId,
     timeRange,
     dateRange,
@@ -49,16 +49,16 @@ const EmployeeReports: React.FC<EmployeeReportsProps> = ({ timeRange, dateRange,
   return (
     <div className="space-y-6">
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Stat label="Tasks" value={taskStats?.total ?? 0} />
-        <Stat label="Completed" value={taskStats?.completed ?? 0} />
-        <Stat label="In Progress" value={taskStats?.in_progress ?? 0} />
-        <Stat label="Overdue" value={taskStats?.overdue ?? 0} />
+        <Stat label="Tasks" value={taskStatsSummary?.total ?? 0} />
+        <Stat label="Completed" value={taskStatsSummary?.completed ?? 0} />
+        <Stat label="In Progress" value={taskStatsSummary?.in_progress ?? 0} />
+        <Stat label="Overdue" value={taskStatsSummary?.overdue ?? 0} />
       </section>
 
       <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Stat label="Total Minutes" value={hoursStats?.total_minutes ?? 0} />
-        <Stat label="Sessions" value={hoursStats?.session_count ?? 0} />
-        <Stat label="Overtime (min)" value={hoursStats?.overtime_minutes ?? 0} />
+        <Stat label="Total Minutes" value={hoursStatsSummary?.total_minutes ?? 0} />
+        <Stat label="Sessions" value={hoursStatsSummary?.session_count ?? 0} />
+        <Stat label="Overtime (min)" value={hoursStatsSummary?.overtime_minutes ?? 0} />
       </section>
 
       <Card>

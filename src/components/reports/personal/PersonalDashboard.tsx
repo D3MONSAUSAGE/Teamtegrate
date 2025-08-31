@@ -26,10 +26,10 @@ export const PersonalDashboard: React.FC<PersonalDashboardProps> = ({
   dateRange
 }) => {
   // Get employee reports data
-  const { taskStats, hoursStats, contributions, isLoading, error } = useEmployeeReports({
+  const { taskStats, hoursStats, contributions, taskStatsSummary, hoursStatsSummary, isLoading, error } = useEmployeeReports({
     userId,
     timeRange,
-    dateRange
+    dateRange,
   });
 
   // Get detailed tasks data
@@ -97,26 +97,26 @@ export const PersonalDashboard: React.FC<PersonalDashboardProps> = ({
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="text-center p-3 rounded-lg bg-card border">
               <div className="text-2xl font-bold text-primary">
-                {taskStats?.completed ?? 0}
+                {taskStatsSummary?.completed ?? 0}
               </div>
               <div className="text-xs text-muted-foreground">Completed Tasks</div>
             </div>
             <div className="text-center p-3 rounded-lg bg-card border">
               <div className="text-2xl font-bold text-blue-600">
-                {taskStats?.in_progress ?? 0}
+                {taskStatsSummary?.in_progress ?? 0}
               </div>
               <div className="text-xs text-muted-foreground">In Progress</div>
             </div>
             <div className="text-center p-3 rounded-lg bg-card border">
               <div className="text-2xl font-bold text-orange-600">
-                {Math.round((hoursStats?.total_minutes ?? 0) / 60)}h
+                {Math.round((hoursStatsSummary?.total_minutes ?? 0) / 60)}h
               </div>
               <div className="text-xs text-muted-foreground">Hours Worked</div>
             </div>
             <div className="text-center p-3 rounded-lg bg-card border">
               <div className="text-2xl font-bold text-green-600 flex items-center justify-center gap-1">
                 <TrendingUp className="h-4 w-4" />
-                {taskStats?.total > 0 ? Math.round(((taskStats?.completed ?? 0) / taskStats.total) * 100) : 0}%
+                {taskStatsSummary?.total > 0 ? Math.round(((taskStatsSummary?.completed ?? 0) / taskStatsSummary.total) * 100) : 0}%
               </div>
               <div className="text-xs text-muted-foreground">Completion Rate</div>
             </div>

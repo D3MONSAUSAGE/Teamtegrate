@@ -30,6 +30,8 @@ export const ReportsPage: React.FC = () => {
     taskStats,
     hoursStats,
     contributions,
+    taskStatsSummary,
+    hoursStatsSummary,
     isLoading,
     error
   } = useEmployeeReports({
@@ -75,13 +77,13 @@ export const ReportsPage: React.FC = () => {
           ['User Info', 'Report Period', timeRange, ''],
           ['User Info', 'Generated At', format(new Date(), 'yyyy-MM-dd HH:mm:ss'), ''],
           ['', '', '', ''], // Separator
-          ['Tasks', 'Total Tasks', (taskStats?.total_tasks || 0).toString(), timeRange],
-          ['Tasks', 'Completed Tasks', (taskStats?.completed_tasks || 0).toString(), timeRange],
-          ['Tasks', 'Completion Rate', `${Math.round(taskStats?.completion_rate || 0)}%`, timeRange],
+          ['Tasks', 'Total Tasks', (taskStatsSummary?.total_tasks || 0).toString(), timeRange],
+          ['Tasks', 'Completed Tasks', (taskStatsSummary?.completed_tasks || 0).toString(), timeRange],
+          ['Tasks', 'Completion Rate', `${Math.round(taskStatsSummary?.completion_rate || 0)}%`, timeRange],
           ['', '', '', ''], // Separator
-          ['Time', 'Total Hours', Math.round(hoursStats?.total_hours || 0).toString(), timeRange],
-          ['Time', 'Daily Average', (hoursStats?.avg_daily_hours || 0).toFixed(1), timeRange],
-          ['Time', 'Overtime Hours', (hoursStats?.overtime_hours || 0).toString(), timeRange],
+          ['Time', 'Total Hours', Math.round(hoursStatsSummary?.total_hours || 0).toString(), timeRange],
+          ['Time', 'Daily Average', (hoursStatsSummary?.avg_daily_hours || 0).toFixed(1), timeRange],
+          ['Time', 'Overtime Hours', (hoursStatsSummary?.overtime_hours || 0).toString(), timeRange],
           ['', '', '', ''], // Separator
           ['Projects', 'Active Projects', (contributions?.length || 0).toString(), timeRange],
           ...((contributions || []).map(project => [
@@ -96,7 +98,7 @@ export const ReportsPage: React.FC = () => {
           dateRange: timeRange,
           filters: isViewingSelf ? 'Personal dashboard' : `Team member: ${targetUserName}`,
           generatedAt: format(new Date(), 'yyyy-MM-dd HH:mm:ss'),
-          totalRecords: (taskStats?.total_tasks || 0) + (contributions?.length || 0)
+          totalRecords: (taskStatsSummary?.total_tasks || 0) + (contributions?.length || 0)
         }
       };
       
@@ -168,16 +170,16 @@ export const ReportsPage: React.FC = () => {
 
         {/* Executive Summary Cards */}
         <ExecutiveSummary
-          taskStats={taskStats}
-          hoursStats={hoursStats}
+        taskStats={taskStatsSummary}
+        hoursStats={hoursStatsSummary}
           contributions={contributions}
           isLoading={isLoading}
         />
 
         {/* Performance Visualization Grid */}
         <PerformanceGrid
-          taskStats={taskStats}
-          hoursStats={hoursStats}
+        taskStats={taskStatsSummary}
+        hoursStats={hoursStatsSummary}
           contributions={contributions}
           isLoading={isLoading}
         />
@@ -187,8 +189,8 @@ export const ReportsPage: React.FC = () => {
           {/* AI Insights Panel */}
           <div className="xl:col-span-1">
             <InsightsPanel
-              taskStats={taskStats}
-              hoursStats={hoursStats}
+            taskStats={taskStatsSummary}
+            hoursStats={hoursStatsSummary}
               contributions={contributions}
               isLoading={isLoading}
             />
@@ -197,8 +199,8 @@ export const ReportsPage: React.FC = () => {
           {/* Detailed Analytics */}
           <div className="xl:col-span-2">
             <DetailedAnalytics
-              taskStats={taskStats}
-              hoursStats={hoursStats}
+            taskStats={taskStatsSummary}
+            hoursStats={hoursStatsSummary}
               contributions={contributions}
               isLoading={isLoading}
             />
