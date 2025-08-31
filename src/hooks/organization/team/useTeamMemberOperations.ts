@@ -76,25 +76,26 @@ export const useTeamMemberOperations = () => {
   // Transfer team member to another team
   const transferTeamMember = async (fromTeamId: string, toTeamId: string, userId: string, newRole: 'manager' | 'member' = 'member') => {
     try {
-      // Remove from current team
+      // Upsert into destination team first to avoid duplicate key conflicts
+      const { error: upsertError } = await supabase
+        .from('team_memberships')
+        .upsert(
+          { team_id: toTeamId, user_id: userId, role: newRole },
+          { onConflict: 'team_id,user_id', ignoreDuplicates: false }
+        );
+
+      if (upsertError) throw upsertError;
+
+      // Remove from current team (if exists)
       const { error: removeError } = await supabase
         .from('team_memberships')
         .delete()
         .eq('team_id', fromTeamId)
         .eq('user_id', userId);
 
-      if (removeError) throw removeError;
-
-      // Add to new team
-      const { error: addError } = await supabase
-        .from('team_memberships')
-        .insert({
-          team_id: toTeamId,
-          user_id: userId,
-          role: newRole,
-        });
-
-      if (addError) throw addError;
+      if (removeError) {
+        console.warn('Error removing member from source team (continuing):', removeError);
+      }
 
       // Update task team assignments
       await supabase
@@ -115,27 +116,29 @@ export const useTeamMemberOperations = () => {
   // Bulk transfer multiple team members
   const bulkTransferMembers = async (fromTeamId: string, toTeamId: string, userIds: string[], newRole: 'manager' | 'member' = 'member') => {
     try {
-      // Remove from current team
-      const { error: removeError } = await supabase
-        .from('team_memberships')
-        .delete()
-        .eq('team_id', fromTeamId)
-        .in('user_id', userIds);
-
-      if (removeError) throw removeError;
-
-      // Add to new team
+      // Upsert memberships in destination team first
       const memberships = userIds.map(userId => ({
         team_id: toTeamId,
         user_id: userId,
         role: newRole,
       }));
 
-      const { error: addError } = await supabase
+      const { error: upsertError } = await supabase
         .from('team_memberships')
-        .insert(memberships);
+        .upsert(memberships, { onConflict: 'team_id,user_id', ignoreDuplicates: false });
 
-      if (addError) throw addError;
+      if (upsertError) throw upsertError;
+
+      // Remove from current team (if rows exist)
+      const { error: removeError } = await supabase
+        .from('team_memberships')
+        .delete()
+        .eq('team_id', fromTeamId)
+        .in('user_id', userIds);
+
+      if (removeError) {
+        console.warn('Error removing some members from source team (continuing):', removeError);
+      }
 
       // Update task team assignments
       await supabase

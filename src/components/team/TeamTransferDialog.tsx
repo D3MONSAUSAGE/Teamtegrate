@@ -21,9 +21,9 @@ import { useTeamContext } from '@/hooks/useTeamContext';
 import { useTeamMemberOperations } from '@/hooks/organization/team/useTeamMemberOperations';
 import { useTeams } from '@/hooks/useTeams';
 import { toast } from '@/components/ui/sonner';
+import { supabase } from '@/integrations/supabase/client';
 import { TeamMemberPerformanceData } from '@/hooks/team/useRealTeamMembers';
 import { Users, ArrowRight } from 'lucide-react';
-
 interface TeamTransferDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -40,7 +40,8 @@ export const TeamTransferDialog: React.FC<TeamTransferDialogProps> = ({
   const [selectedTeamId, setSelectedTeamId] = useState<string>('');
   const [selectedRole, setSelectedRole] = useState<'manager' | 'member'>('member');
   const [isTransferring, setIsTransferring] = useState(false);
-
+  const [memberTeamIds, setMemberTeamIds] = useState<string[]>([]);
+  const [loadingTeams, setLoadingTeams] = useState(false);
   // Try to get teams from context first, fallback to direct hook
   let userTeams: any[] = [];
   let contextError = false;
@@ -60,9 +61,28 @@ export const TeamTransferDialog: React.FC<TeamTransferDialogProps> = ({
   
   const { transferTeamMember } = useTeamMemberOperations();
 
-  // Filter out current team from available teams
-  const availableTeams = userTeams.filter(team => team.id !== currentTeamId);
+  React.useEffect(() => {
+    const loadMemberships = async () => {
+      if (!member?.id) { setMemberTeamIds([]); return; }
+      try {
+        setLoadingTeams(true);
+        const { data, error } = await supabase
+          .from('team_memberships')
+          .select('team_id')
+          .eq('user_id', member.id);
+        if (error) throw error;
+        setMemberTeamIds((data || []).map((d: any) => d.team_id));
+      } catch (err) {
+        console.error('Failed to fetch member team memberships', err);
+      } finally {
+        setLoadingTeams(false);
+      }
+    };
+    loadMemberships();
+  }, [member?.id, open]);
 
+  // Filter out current team and teams the member already belongs to
+  const availableTeams = userTeams.filter(team => team.id !== currentTeamId && !memberTeamIds.includes(team.id));
   const handleTransfer = async () => {
     if (!member || !selectedTeamId) return;
 
@@ -146,9 +166,11 @@ export const TeamTransferDialog: React.FC<TeamTransferDialogProps> = ({
                   <SelectValue placeholder="Select destination team" />
                 </SelectTrigger>
                 <SelectContent>
-                  {availableTeams.length === 0 ? (
+                  {loadingTeams ? (
+                    <div className="p-2 text-sm text-muted-foreground">Loading teams…</div>
+                  ) : availableTeams.length === 0 ? (
                     <div className="p-2 text-sm text-muted-foreground">
-                      No other teams available
+                      This member already belongs to all other teams.
                     </div>
                   ) : (
                     availableTeams.map((team) => (
@@ -200,7 +222,7 @@ export const TeamTransferDialog: React.FC<TeamTransferDialogProps> = ({
           </Button>
           <Button
             onClick={handleTransfer}
-            disabled={!selectedTeamId || isTransferring}
+            disabled={!selectedTeamId || isTransferring || availableTeams.length === 0}
           >
             {isTransferring ? 'Transferring...' : 'Transfer Member'}
           </Button>
