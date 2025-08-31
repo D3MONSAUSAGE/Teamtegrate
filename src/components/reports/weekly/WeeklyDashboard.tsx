@@ -18,7 +18,7 @@ import { WeeklyDetailedTasks } from './WeeklyDetailedTasks';
 import { useEmployeeReports } from '@/hooks/useEmployeeReports';
 import { useEmployeeDetailedTasks } from '@/hooks/useEmployeeDetailedTasks';
 import { useAuth } from '@/contexts/AuthContext';
-import { useRealTeamMembers } from '@/hooks/team/useRealTeamMembers';
+import { useRoleBasedUsers } from '@/hooks/useRoleBasedUsers';
 
 interface WeeklyDashboardProps {
   timeRange: string;
@@ -30,7 +30,7 @@ export const WeeklyDashboard: React.FC<WeeklyDashboardProps> = ({
   dateRange
 }) => {
   const { user } = useAuth();
-  const { teamMembers } = useRealTeamMembers();
+  const { users: availableUsers, canViewTeamMembers } = useRoleBasedUsers();
   
   // Set default selected member to current user
   const [selectedMemberId, setSelectedMemberId] = useState<string>(user?.id || '');
@@ -64,25 +64,14 @@ export const WeeklyDashboard: React.FC<WeeklyDashboardProps> = ({
     dateRange: customDateRange || dateRange
   });
 
-  // Prepare team members data for selector - include current user
+  // Prepare team members data for selector
   const availableTeamMembers = useMemo(() => {
-    const members = teamMembers.map(member => ({
-      id: member.id,
-      name: member.name,
-      email: member.email
+    return availableUsers.map(user => ({
+      id: user.id,
+      name: user.name,
+      email: user.email
     }));
-    
-    // Always ensure current user is available
-    if (user && !members.find(m => m.id === user.id)) {
-      members.unshift({
-        id: user.id,
-        name: user.name,
-        email: user.email
-      });
-    }
-    
-    return members;
-  }, [teamMembers, user]);
+  }, [availableUsers]);
 
   // Set initial selected member when data loads
   React.useEffect(() => {
@@ -216,8 +205,15 @@ export const WeeklyDashboard: React.FC<WeeklyDashboardProps> = ({
 
           {!isValidSelection && (
             <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 mt-4">
-              <p className="text-sm text-destructive font-medium">Team member selection required</p>
-              <p className="text-xs text-muted-foreground mt-1">Please select a team member to view their performance data.</p>
+              <p className="text-sm text-destructive font-medium">
+                {canViewTeamMembers ? "Team member selection required" : "Personal reports only"}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {canViewTeamMembers 
+                  ? "Please select a team member to view their performance data."
+                  : "You can only view your own performance data."
+                }
+              </p>
             </div>
           )}
         </CardContent>

@@ -22,6 +22,7 @@ import {
 import { cn } from '@/lib/utils';
 import { hasRoleAccess } from '@/contexts/auth';
 import { User as AppUser } from '@/types';
+import { useRoleBasedUsers } from '@/hooks/useRoleBasedUsers';
 
 interface SmartFilterBarProps {
   currentUser: AppUser;
@@ -48,7 +49,9 @@ export const SmartFilterBar: React.FC<SmartFilterBarProps> = ({
   onRefresh,
   isLoading
 }) => {
-  const canSearchUsers = hasRoleAccess(currentUser.role, 'manager');
+  // Fetch role-based users
+  const { users: availableUsers, isLoading: usersLoading, canViewTeamMembers } = useRoleBasedUsers();
+  
   const isViewingSelf = !selectedUser || selectedUser.id === currentUser.id;
 
   const timeRangeOptions = [
@@ -58,17 +61,13 @@ export const SmartFilterBar: React.FC<SmartFilterBarProps> = ({
     { value: 'custom', label: 'Custom Range', icon: <Calendar className="h-4 w-4" /> }
   ];
 
-  // Mock team members for search (in real app, this would come from props)
-  const mockTeamMembers = [
-    { id: '1', name: 'Sarah Johnson', email: 'sarah@company.com', role: 'manager' },
-    { id: '2', name: 'Mike Chen', email: 'mike@company.com', role: 'user' },
-    { id: '3', name: 'Emily Davis', email: 'emily@company.com', role: 'user' }
-  ].filter(member => member.id !== currentUser.id);
-
-  const filteredMembers = mockTeamMembers.filter(member =>
-    member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    member.email.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Filter users based on search query (exclude current user from search results)
+  const filteredMembers = availableUsers
+    .filter(user => user.id !== currentUser.id)
+    .filter(user =>
+      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
   return (
     <Card className="border-0 shadow-sm bg-card/50 backdrop-blur-sm animate-fade-in">
@@ -114,7 +113,7 @@ export const SmartFilterBar: React.FC<SmartFilterBarProps> = ({
           {/* Right side - Search and actions */}
           <div className="flex flex-wrap items-center gap-3">
             {/* User Search (Managers+ only) */}
-            {canSearchUsers && (
+            {canViewTeamMembers && (
               <div className="relative">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -131,7 +130,11 @@ export const SmartFilterBar: React.FC<SmartFilterBarProps> = ({
                         onChange={(e) => onSearchChange(e.target.value)}
                         className="mb-2"
                       />
-                      {searchQuery && (
+                      {usersLoading ? (
+                        <div className="p-4 text-center text-sm text-muted-foreground">
+                          Loading team members...
+                        </div>
+                      ) : searchQuery ? (
                         <div className="max-h-48 overflow-y-auto">
                           {filteredMembers.length > 0 ? (
                             filteredMembers.map(member => (
@@ -142,7 +145,7 @@ export const SmartFilterBar: React.FC<SmartFilterBarProps> = ({
                               >
                                 <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
                                   <span className="text-xs font-medium">
-                                    {member.name.charAt(0)}
+                                    {member.name.charAt(0).toUpperCase()}
                                   </span>
                                 </div>
                                 <div className="flex-1">
@@ -159,6 +162,10 @@ export const SmartFilterBar: React.FC<SmartFilterBarProps> = ({
                               No team members found
                             </div>
                           )}
+                        </div>
+                      ) : (
+                        <div className="p-4 text-center text-sm text-muted-foreground">
+                          Start typing to search team members...
                         </div>
                       )}
                     </div>
