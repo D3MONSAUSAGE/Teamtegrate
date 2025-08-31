@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TrendingUp, TrendingDown, Users, CheckCircle, Clock, AlertCircle, BarChart3, PieChart, Activity, FileText, Calendar } from "lucide-react";
 import AnalyticsOverview from '@/components/reports/AnalyticsOverview';
-import EnhancedTeamAnalytics from '@/components/reports/EnhancedTeamAnalytics';
+import { EnhancedTeamAnalytics } from '@/components/reports/EnhancedTeamAnalytics';
 import SmartInsightsPanel from '@/components/reports/SmartInsightsPanel';
 import ReportsFilters from '@/components/reports/ReportsFilters';
 import ProjectReports from '@/components/reports/ProjectReports';
@@ -19,6 +19,9 @@ import { useTask } from '@/contexts/task';
 import { useAuth } from '@/contexts/AuthContext';
 import useTeamMembers from '@/hooks/useTeamMembers';
 import { useAdvancedAnalytics } from '@/hooks/useAdvancedAnalytics';
+import { TeamProvider } from '@/components/team/TeamProvider';
+import { TeamSelector } from '@/components/team/TeamSelector';
+import { TeamFinanceDashboard } from '@/components/finance/TeamFinanceDashboard';
 import { DateRange } from "react-day-picker";
 import { format, subDays, isBefore } from 'date-fns';
 import { toast } from 'sonner';
@@ -164,7 +167,7 @@ const QuickActionsPanel: React.FC<{ onExport: (type: ExportType) => void }> = ({
   );
 };
 
-const ReportsPage: React.FC = () => {
+export const ReportsPage: React.FC = () => {
   const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState("dashboard");
   
@@ -535,17 +538,21 @@ const ReportsPage: React.FC = () => {
   };
   
   return (
-    <div className="space-y-6 px-2 sm:px-4 pb-10">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-            Reports & Analytics
-          </h1>
-          <p className="text-muted-foreground">
-            Comprehensive insights into team performance and project progress
-          </p>
+    <TeamProvider>
+      <div className="space-y-6 px-2 sm:px-4 pb-10">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+              Reports & Analytics
+            </h1>
+            <p className="text-muted-foreground">
+              Comprehensive insights into team performance and project progress
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <TeamSelector className="min-w-[200px]" />
+          </div>
         </div>
-      </div>
       
       {/* Simplified Sticky Filter Bar */}
       <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-sm border-b pb-4">
@@ -663,11 +670,11 @@ const ReportsPage: React.FC = () => {
                         Interactive team analytics and insights
                       </CardDescription>
                     </CardHeader>
-                    <CardContent>
-                      <Suspense fallback={<Skeleton className="h-64 w-full" />}>
-                        <EnhancedTeamAnalytics teamMembers={enhancedTeamData.slice(0, 5)} />
-                      </Suspense>
-                    </CardContent>
+                     <CardContent>
+                       <Suspense fallback={<Skeleton className="h-64 w-full" />}>
+                         <EnhancedTeamAnalytics />
+                       </Suspense>
+                     </CardContent>
                   </Card>
                 </div>
                 
@@ -728,25 +735,12 @@ const ReportsPage: React.FC = () => {
             </div>
           </TabsContent>
 
-          {/* Team Analytics Tab */}
-          <TabsContent value="team" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Detailed Team Analytics
-                </CardTitle>
-                <CardDescription>
-                  Comprehensive team performance analysis and member insights
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Suspense fallback={<Skeleton className="h-96 w-full" />}>
-                  <EnhancedTeamAnalytics teamMembers={enhancedTeamData} />
-                </Suspense>
-              </CardContent>
-            </Card>
-          </TabsContent>
+            <TabsContent value="team" className="space-y-6">
+              <Suspense fallback={<div>Loading...</div>}>
+                <EnhancedTeamAnalytics />
+                <TeamFinanceDashboard />
+              </Suspense>
+            </TabsContent>
 
           {/* Projects & Tasks Tab - Combined */}
           <TabsContent value="projects" className="space-y-6">
@@ -857,6 +851,7 @@ const ReportsPage: React.FC = () => {
         </div>
       </Tabs>
     </div>
+    </TeamProvider>
   );
 };
 

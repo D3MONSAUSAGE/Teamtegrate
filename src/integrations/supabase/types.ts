@@ -222,6 +222,7 @@ export type Database = {
           is_public: boolean
           name: string
           organization_id: string
+          team_id: string | null
           updated_at: string
         }
         Insert: {
@@ -232,6 +233,7 @@ export type Database = {
           is_public?: boolean
           name: string
           organization_id: string
+          team_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -242,6 +244,7 @@ export type Database = {
           is_public?: boolean
           name?: string
           organization_id?: string
+          team_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -250,6 +253,20 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_rooms_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "team_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_rooms_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
             referencedColumns: ["id"]
           },
         ]
@@ -383,6 +400,7 @@ export type Database = {
           organization_id: string
           size_bytes: number
           storage_id: string
+          team_id: string | null
           title: string
           user_id: string
         }
@@ -396,6 +414,7 @@ export type Database = {
           organization_id: string
           size_bytes: number
           storage_id: string
+          team_id?: string | null
           title: string
           user_id: string
         }
@@ -409,6 +428,7 @@ export type Database = {
           organization_id?: string
           size_bytes?: number
           storage_id?: string
+          team_id?: string | null
           title?: string
           user_id?: string
         }
@@ -418,6 +438,20 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "team_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
             referencedColumns: ["id"]
           },
         ]
@@ -545,6 +579,7 @@ export type Database = {
           id: string
           organization_id: string
           start_date: string
+          team_id: string | null
           title: string
           updated_at: string
           user_id: string
@@ -556,6 +591,7 @@ export type Database = {
           id?: string
           organization_id: string
           start_date: string
+          team_id?: string | null
           title: string
           updated_at?: string
           user_id: string
@@ -567,11 +603,26 @@ export type Database = {
           id?: string
           organization_id?: string
           start_date?: string
+          team_id?: string | null
           title?: string
           updated_at?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "events_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "team_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "fk_events_organization"
             columns: ["organization_id"]
@@ -593,6 +644,7 @@ export type Database = {
           invoice_date: string
           invoice_number: string
           organization_id: string
+          team_id: string | null
           updated_at: string
           uploader_name: string
           user_id: string
@@ -608,6 +660,7 @@ export type Database = {
           invoice_date: string
           invoice_number: string
           organization_id: string
+          team_id?: string | null
           updated_at?: string
           uploader_name: string
           user_id: string
@@ -623,6 +676,7 @@ export type Database = {
           invoice_date?: string
           invoice_number?: string
           organization_id?: string
+          team_id?: string | null
           updated_at?: string
           uploader_name?: string
           user_id?: string
@@ -633,6 +687,20 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "team_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
             referencedColumns: ["id"]
           },
         ]
@@ -978,6 +1046,7 @@ export type Database = {
           organization_id: string
           petty_cash_box_id: string
           receipt_url: string | null
+          team_id: string | null
           type: string
           updated_at: string
           user_id: string
@@ -992,6 +1061,7 @@ export type Database = {
           organization_id: string
           petty_cash_box_id: string
           receipt_url?: string | null
+          team_id?: string | null
           type: string
           updated_at?: string
           user_id: string
@@ -1006,6 +1076,7 @@ export type Database = {
           organization_id?: string
           petty_cash_box_id?: string
           receipt_url?: string | null
+          team_id?: string | null
           type?: string
           updated_at?: string
           user_id?: string
@@ -1016,6 +1087,20 @@ export type Database = {
             columns: ["petty_cash_box_id"]
             isOneToOne: false
             referencedRelation: "petty_cash_boxes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "petty_cash_transactions_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "team_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "petty_cash_transactions_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
             referencedColumns: ["id"]
           },
         ]
@@ -1059,6 +1144,66 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_teams: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          id: string
+          project_id: string
+          team_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          id?: string
+          project_id: string
+          team_id: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          id?: string
+          project_id?: string
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_teams_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_teams_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_teams_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_teams_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "team_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_teams_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
             referencedColumns: ["id"]
           },
         ]
@@ -1344,6 +1489,7 @@ export type Database = {
           refunds: number | null
           sales_per_labor_hour: number
           surcharges: number | null
+          team_id: string | null
           tips: number
           total_cash: number
           updated_at: string
@@ -1370,6 +1516,7 @@ export type Database = {
           refunds?: number | null
           sales_per_labor_hour?: number
           surcharges?: number | null
+          team_id?: string | null
           tips?: number
           total_cash?: number
           updated_at?: string
@@ -1396,13 +1543,29 @@ export type Database = {
           refunds?: number | null
           sales_per_labor_hour?: number
           surcharges?: number | null
+          team_id?: string | null
           tips?: number
           total_cash?: number
           updated_at?: string
           user_id?: string
           voids?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "sales_data_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "team_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_data_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       schedule_periods: {
         Row: {
@@ -1667,6 +1830,7 @@ export type Database = {
           scheduled_end: string | null
           scheduled_start: string | null
           status: string | null
+          team_id: string | null
           title: string | null
           updated_at: string | null
           user_id: string | null
@@ -1690,6 +1854,7 @@ export type Database = {
           scheduled_end?: string | null
           scheduled_start?: string | null
           status?: string | null
+          team_id?: string | null
           title?: string | null
           updated_at?: string | null
           user_id?: string | null
@@ -1713,6 +1878,7 @@ export type Database = {
           scheduled_end?: string | null
           scheduled_start?: string | null
           status?: string | null
+          team_id?: string | null
           title?: string | null
           updated_at?: string | null
           user_id?: string | null
@@ -1724,6 +1890,20 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "team_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
             referencedColumns: ["id"]
           },
         ]
@@ -1886,6 +2066,7 @@ export type Database = {
           organization_id: string
           paused_at: string | null
           task_id: string | null
+          team_id: string | null
           total_paused_duration: unknown | null
           user_id: string
         }
@@ -1900,6 +2081,7 @@ export type Database = {
           organization_id: string
           paused_at?: string | null
           task_id?: string | null
+          team_id?: string | null
           total_paused_duration?: unknown | null
           user_id: string
         }
@@ -1914,6 +2096,7 @@ export type Database = {
           organization_id?: string
           paused_at?: string | null
           task_id?: string | null
+          team_id?: string | null
           total_paused_duration?: unknown | null
           user_id?: string
         }
@@ -1930,6 +2113,20 @@ export type Database = {
             columns: ["task_id"]
             isOneToOne: false
             referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_entries_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "team_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_entries_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
             referencedColumns: ["id"]
           },
         ]
@@ -2134,6 +2331,7 @@ export type Database = {
           receipt_url: string | null
           recurring_template_id: string | null
           tags: string[] | null
+          team_id: string | null
           type: string
           updated_at: string
           user_id: string
@@ -2153,6 +2351,7 @@ export type Database = {
           receipt_url?: string | null
           recurring_template_id?: string | null
           tags?: string[] | null
+          team_id?: string | null
           type: string
           updated_at?: string
           user_id: string
@@ -2172,6 +2371,7 @@ export type Database = {
           receipt_url?: string | null
           recurring_template_id?: string | null
           tags?: string[] | null
+          team_id?: string | null
           type?: string
           updated_at?: string
           user_id?: string
@@ -2183,6 +2383,20 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "transaction_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "team_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
             referencedColumns: ["id"]
           },
         ]
@@ -2482,6 +2696,10 @@ export type Database = {
         Args: { task_id_param: string; user_id_param: string }
         Returns: boolean
       }
+      can_user_access_team_data: {
+        Args: { team_id_param: string; user_id_param: string }
+        Returns: boolean
+      }
       create_get_all_projects_function: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -2624,6 +2842,14 @@ export type Database = {
       get_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_user_teams: {
+        Args: { user_id_param: string }
+        Returns: {
+          role: string
+          team_id: string
+          team_name: string
+        }[]
       }
       is_admin_or_superadmin: {
         Args: Record<PropertyKey, never>

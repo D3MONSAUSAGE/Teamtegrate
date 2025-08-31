@@ -1,14 +1,18 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
-import { TrendingUp, TrendingDown, User, ChevronRight, Clock, Target, AlertTriangle, Star } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { 
+  Users, 
+  TrendingUp, 
+  Clock, 
+  Target,
+  Award,
+  Activity
+} from 'lucide-react';
+import { TeamMembershipManager } from '@/components/team/TeamMembershipManager';
+import { useTeamContext } from '@/hooks/useTeamContext';
 
 interface TeamMember {
   id: string;
@@ -27,304 +31,199 @@ interface TeamMember {
   collaborationScore: number;
 }
 
-interface EnhancedTeamAnalyticsProps {
-  teamMembers: TeamMember[];
-}
-
-const EnhancedTeamAnalytics: React.FC<EnhancedTeamAnalyticsProps> = ({ teamMembers }) => {
-  const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
+export const EnhancedTeamAnalytics: React.FC = () => {
+  const { selectedTeam } = useTeamContext();
   const [sortBy, setSortBy] = useState<'completionRate' | 'totalTasks' | 'projects'>('completionRate');
 
-  const getPerformanceLevel = (rate: number) => {
-    if (rate >= 90) return { label: "Excellent", color: "bg-emerald-500", textColor: "text-emerald-700" };
-    if (rate >= 75) return { label: "Good", color: "bg-blue-500", textColor: "text-blue-700" };
-    if (rate >= 60) return { label: "Average", color: "bg-yellow-500", textColor: "text-yellow-700" };
-    return { label: "Needs Attention", color: "bg-red-500", textColor: "text-red-700" };
-  };
+  // Mock data - replace with actual team members data
+  const teamMembers: TeamMember[] = [
+    {
+      id: '1',
+      name: 'John Doe',
+      email: 'john@example.com',
+      completedTasks: 15,
+      totalTasks: 18,
+      completionRate: 83,
+      projects: 3,
+      workloadScore: 75,
+      qualityScore: 88,
+      collaborationScore: 92,
+      recentActivity: [
+        { date: 'Dec 10', tasksCompleted: 3 },
+        { date: 'Dec 11', tasksCompleted: 2 },
+        { date: 'Dec 12', tasksCompleted: 4 },
+        { date: 'Dec 13', tasksCompleted: 1 },
+        { date: 'Dec 14', tasksCompleted: 3 },
+        { date: 'Dec 15', tasksCompleted: 2 },
+        { date: 'Dec 16', tasksCompleted: 5 },
+      ]
+    },
+    {
+      id: '2',
+      name: 'Jane Smith',
+      email: 'jane@example.com',
+      completedTasks: 22,
+      totalTasks: 25,
+      completionRate: 88,
+      projects: 4,
+      workloadScore: 80,
+      qualityScore: 92,
+      collaborationScore: 85,
+      recentActivity: [
+        { date: 'Dec 10', tasksCompleted: 4 },
+        { date: 'Dec 11', tasksCompleted: 3 },
+        { date: 'Dec 12', tasksCompleted: 3 },
+        { date: 'Dec 13', tasksCompleted: 2 },
+        { date: 'Dec 14', tasksCompleted: 4 },
+        { date: 'Dec 15', tasksCompleted: 3 },
+        { date: 'Dec 16', tasksCompleted: 3 },
+      ]
+    },
+  ];
 
-  const getWorkloadStatus = (score: number) => {
-    if (score >= 80) return { status: "Overloaded", color: "text-red-600", icon: AlertTriangle };
-    if (score >= 60) return { status: "Optimal", color: "text-emerald-600", icon: Target };
-    return { status: "Underutilized", color: "text-yellow-600", icon: Clock };
-  };
-
-  const sortedMembers = [...teamMembers].sort((a, b) => b[sortBy] - a[sortBy]);
-
-  const teamProductivityData = teamMembers.map((member, index) => ({
-    name: member.name.split(' ')[0],
-    productivity: member.completionRate,
-    workload: member.workloadScore,
-    quality: member.qualityScore,
-    collaboration: member.collaborationScore
-  }));
-
-  const distributionData = [
-    { name: "Excellent (90%+)", value: teamMembers.filter(m => m.completionRate >= 90).length, color: "#10b981" },
-    { name: "Good (75-89%)", value: teamMembers.filter(m => m.completionRate >= 75 && m.completionRate < 90).length, color: "#3b82f6" },
-    { name: "Average (60-74%)", value: teamMembers.filter(m => m.completionRate >= 60 && m.completionRate < 75).length, color: "#f59e0b" },
-    { name: "Below Average (<60%)", value: teamMembers.filter(m => m.completionRate < 60).length, color: "#ef4444" }
-  ].filter(item => item.value > 0);
-
-  return (
-    <div className="space-y-6">
-      {/* Team Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+  if (!selectedTeam) {
+    return (
+      <div className="space-y-6">
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-50 rounded-lg dark:bg-blue-950/20">
-                <User className="w-5 h-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Top Performer</p>
-                <p className="font-semibold">{sortedMembers[0]?.name.split(' ')[0] || 'N/A'}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-emerald-50 rounded-lg dark:bg-emerald-950/20">
-                <Target className="w-5 h-5 text-emerald-600" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Avg Completion</p>
-                <p className="font-semibold">{Math.round(teamMembers.reduce((sum, m) => sum + m.completionRate, 0) / teamMembers.length)}%</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-50 rounded-lg dark:bg-purple-950/20">
-                <Star className="w-5 h-5 text-purple-600" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">High Performers</p>
-                <p className="font-semibold">{teamMembers.filter(m => m.completionRate >= 85).length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-orange-50 rounded-lg dark:bg-orange-950/20">
-                <AlertTriangle className="w-5 h-5 text-orange-600" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Need Support</p>
-                <p className="font-semibold">{teamMembers.filter(m => m.completionRate < 60).length}</p>
+          <CardHeader>
+            <CardTitle>Team Analytics</CardTitle>
+            <CardDescription>Select a team to view detailed analytics</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <p className="text-lg font-medium text-muted-foreground">No team selected</p>
+                <p className="text-sm text-muted-foreground">Choose a team from the selector above</p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
+    );
+  }
 
-      {/* Team Performance Chart */}
+  const sortedMembers = [...teamMembers].sort((a, b) => b[sortBy] - a[sortBy]);
+
+  return (
+    <div className="space-y-6">
+      {/* Team Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">{selectedTeam.name} Analytics</h2>
+          <p className="text-muted-foreground">Performance insights and team metrics</p>
+        </div>
+        <Badge variant="outline">{teamMembers.length} members</Badge>
+      </div>
+
+      {/* Team Overview Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Team Members</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{teamMembers.length}</div>
+            <p className="text-xs text-muted-foreground">Active contributors</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Avg Completion Rate</CardTitle>
+            <Target className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {Math.round(teamMembers.reduce((sum, m) => sum + m.completionRate, 0) / teamMembers.length)}%
+            </div>
+            <p className="text-xs text-muted-foreground">Team average</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Tasks</CardTitle>
+            <Activity className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {teamMembers.reduce((sum, m) => sum + m.totalTasks, 0)}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {teamMembers.reduce((sum, m) => sum + m.completedTasks, 0)} completed
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Top Performer</CardTitle>
+            <Award className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{sortedMembers[0]?.name.split(' ')[0] || 'N/A'}</div>
+            <p className="text-xs text-muted-foreground">
+              {sortedMembers[0]?.completionRate}% completion
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Team Member Performance */}
       <Card>
         <CardHeader>
-          <CardTitle>Team Performance Matrix</CardTitle>
-          <p className="text-sm text-muted-foreground">Multi-dimensional performance view</p>
+          <CardTitle>Team Member Performance</CardTitle>
+          <CardDescription>Individual performance metrics and progress</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={teamProductivityData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="productivity" fill="#3b82f6" name="Completion Rate %" />
-                <Bar dataKey="quality" fill="#10b981" name="Quality Score" />
-                <Bar dataKey="collaboration" fill="#8b5cf6" name="Collaboration Score" />
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="space-y-4">
+            {sortedMembers.map((member, index) => (
+              <div key={member.id} className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage src={undefined} />
+                    <AvatarFallback>
+                      {member.name.split(' ').map(n => n[0]).join('')}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium">{member.name}</p>
+                      {index === 0 && (
+                        <Badge variant="secondary">Top Performer</Badge>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground">{member.email}</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-6">
+                  <div className="text-center">
+                    <p className="text-sm text-muted-foreground">Tasks</p>
+                    <p className="font-medium">{member.completedTasks}/{member.totalTasks}</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm text-muted-foreground">Projects</p>
+                    <p className="font-medium">{member.projects}</p>
+                  </div>
+                  <div className="text-center min-w-[100px]">
+                    <p className="text-sm text-muted-foreground">Completion</p>
+                    <div className="flex items-center gap-2">
+                      <Progress value={member.completionRate} className="w-16 h-2" />
+                      <span className="text-sm font-medium">{member.completionRate}%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Performance Distribution */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Performance Distribution</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={distributionData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    dataKey="value"
-                  >
-                    {distributionData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="space-y-2 mt-4">
-              {distributionData.map((item, index) => (
-                <div key={index} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
-                    <span className="text-sm">{item.name}</span>
-                  </div>
-                  <Badge variant="secondary">{item.value}</Badge>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Team Member List */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Team Members</CardTitle>
-              <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
-                <SelectTrigger className="w-40">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="completionRate">Completion Rate</SelectItem>
-                  <SelectItem value="totalTasks">Total Tasks</SelectItem>
-                  <SelectItem value="projects">Projects</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {sortedMembers.map((member, index) => {
-                const performance = getPerformanceLevel(member.completionRate);
-                const workload = getWorkloadStatus(member.workloadScore);
-                const WorkloadIcon = workload.icon;
-
-                return (
-                  <Dialog key={member.id}>
-                    <DialogTrigger asChild>
-                      <div className="flex items-center gap-4 p-3 rounded-lg border hover:bg-muted/50 cursor-pointer transition-colors">
-                        <div className="flex items-center gap-3 flex-1">
-                          <Avatar className="w-10 h-10">
-                            <AvatarFallback className="text-sm font-semibold">
-                              {member.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <p className="font-medium truncate">{member.name}</p>
-                              {index === 0 && <Star className="w-4 h-4 text-yellow-500 fill-current" />}
-                            </div>
-                            <div className="flex items-center gap-4 mt-1">
-                              <Badge className={cn("text-white", performance.color)}>
-                                {member.completionRate}%
-                              </Badge>
-                              <div className="flex items-center gap-1">
-                                <WorkloadIcon className={cn("w-3 h-3", workload.color)} />
-                                <span className={cn("text-xs", workload.color)}>
-                                  {workload.status}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm font-medium">{member.completedTasks}/{member.totalTasks}</p>
-                          <p className="text-xs text-muted-foreground">{member.projects} projects</p>
-                        </div>
-                        <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                      </div>
-                    </DialogTrigger>
-                    
-                    <DialogContent className="max-w-2xl">
-                      <DialogHeader>
-                        <DialogTitle className="flex items-center gap-3">
-                          <Avatar className="w-10 h-10">
-                            <AvatarFallback>
-                              {member.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          {member.name}
-                        </DialogTitle>
-                      </DialogHeader>
-                      
-                      <div className="space-y-6">
-                        {/* Performance Metrics */}
-                        <div className="grid grid-cols-3 gap-4">
-                          <div className="text-center space-y-2">
-                            <p className="text-sm text-muted-foreground">Completion Rate</p>
-                            <p className="text-2xl font-bold">{member.completionRate}%</p>
-                            <Progress value={member.completionRate} className="h-2" />
-                          </div>
-                          <div className="text-center space-y-2">
-                            <p className="text-sm text-muted-foreground">Quality Score</p>
-                            <p className="text-2xl font-bold">{member.qualityScore}</p>
-                            <Progress value={member.qualityScore} className="h-2" />
-                          </div>
-                          <div className="text-center space-y-2">
-                            <p className="text-sm text-muted-foreground">Collaboration</p>
-                            <p className="text-2xl font-bold">{member.collaborationScore}</p>
-                            <Progress value={member.collaborationScore} className="h-2" />
-                          </div>
-                        </div>
-
-                        {/* Recent Activity Chart */}
-                        <div>
-                          <h4 className="font-semibold mb-3">Recent Activity (Last 7 Days)</h4>
-                          <div className="h-48">
-                            <ResponsiveContainer width="100%" height="100%">
-                              <LineChart data={member.recentActivity}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="date" />
-                                <YAxis />
-                                <Tooltip />
-                                <Line 
-                                  type="monotone" 
-                                  dataKey="tasksCompleted" 
-                                  stroke="#3b82f6" 
-                                  strokeWidth={2}
-                                  dot={{ fill: '#3b82f6' }}
-                                />
-                              </LineChart>
-                            </ResponsiveContainer>
-                          </div>
-                        </div>
-
-                        {/* Task Summary */}
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="p-4 border rounded-lg">
-                            <p className="text-sm text-muted-foreground">Tasks Completed</p>
-                            <p className="text-xl font-bold text-emerald-600">{member.completedTasks}</p>
-                          </div>
-                          <div className="p-4 border rounded-lg">
-                            <p className="text-sm text-muted-foreground">Active Projects</p>
-                            <p className="text-xl font-bold text-blue-600">{member.projects}</p>
-                          </div>
-                        </div>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Team Membership Management */}
+      <TeamMembershipManager />
     </div>
   );
 };
-
-export default EnhancedTeamAnalytics;
