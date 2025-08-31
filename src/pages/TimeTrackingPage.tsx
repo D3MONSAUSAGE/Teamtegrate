@@ -17,7 +17,7 @@ import { TeamTotalsView } from '@/components/time-management/TeamTotalsView';
 
 // Existing components
 import MobileTimeTrackingWidget from '@/components/mobile/MobileTimeTrackingWidget';
-import EmployeeTimeTracking from '@/components/dashboard/EmployeeTimeTracking';
+import TimeTracking from '@/components/dashboard/TimeTracking';
 import PastTimeEntriesManager from '@/components/time-entries/PastTimeEntriesManager';
 import { TimeCorrectionManager } from '@/components/time-entries/TimeCorrectionManager';
 import ScheduleManagerDashboard from '@/components/schedule/ScheduleManagerDashboard';
@@ -207,7 +207,7 @@ const TimeTrackingPage = () => {
                       isOnline={!lastError}
                     />
                   ) : (
-                    <EmployeeTimeTracking />
+                    <TimeTracking />
                   )}
                 </div>
               ) : selectedUserId ? (
