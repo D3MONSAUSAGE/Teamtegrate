@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/routes/ProtectedRoute";
+import { RoleProtectedRoute } from "@/components/RoleProtectedRoute";
 import LoginPage from "@/pages/LoginPage";
 import AppLayout from "@/components/AppLayout";
 import DashboardPage from "@/pages/DashboardPage";
@@ -66,7 +67,7 @@ function App() {
                   <Route path="admin" element={<AdminPage />} />
                   <Route path="organization" element={<OrganizationDashboard />} />
                   <Route path="focus" element={<FocusZonePage />} />
-                  <Route path="reports" element={<ReportsPage />} />
+                  <Route path="reports" element={<RoleProtectedRoute requiredRole="manager"><ReportsPage /></RoleProtectedRoute>} />
                   <Route path="finance" element={<FinancePage />} />
                   <Route path="meetings" element={<MeetingsPage />} />
                   <Route path="training" element={<ProtectedRoute><TrainingPage /></ProtectedRoute>} />

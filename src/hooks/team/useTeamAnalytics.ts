@@ -61,8 +61,9 @@ export const useTeamAnalytics = (teamId?: string) => {
       const completedTasks = teamTasks.filter(t => t.status === 'Completed').length;
       const inProgressTasks = teamTasks.filter(t => t.status === 'In Progress').length;
       const overdueTasks = teamTasks.filter(t => {
+        if (!t.deadline || t.status === 'Completed') return false;
         const deadline = new Date(t.deadline);
-        return deadline < new Date() && t.status !== 'Completed';
+        return deadline < new Date();
       }).length;
 
       // Calculate average completion rate

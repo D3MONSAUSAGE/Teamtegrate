@@ -7,11 +7,13 @@ import TeamPerformanceBarChart from './team/TeamPerformanceBarChart';
 import TeamProductivityTrend from './team/TeamProductivityTrend';
 import TeamRankingsTable from './team/TeamRankingsTable';
 import TeamAnalyticsDashboard from './team/TeamAnalyticsDashboard';
+import { TeamSelector } from './TeamSelector';
 
 const TeamReports: React.FC = () => {
   const { tasks } = useTask();
   const { teamMembersPerformance } = useTeamMembers();
-  const { analytics: teamAnalytics, isLoading: teamLoading } = useTeamAnalytics();
+  const [selectedTeamId, setSelectedTeamId] = React.useState<string | null>(null);
+  const { analytics: teamAnalytics, isLoading: teamLoading } = useTeamAnalytics(selectedTeamId);
   
   // Team member performance data
   const memberPerformanceData = React.useMemo(() => {
@@ -44,11 +46,26 @@ const TeamReports: React.FC = () => {
   
   return (
     <div className="space-y-6">
-      {/* Team Analytics Dashboard */}
-      <TeamAnalyticsDashboard 
-        teamAnalytics={teamAnalytics}
-        isLoading={teamLoading}
+      {/* Team Selector */}
+      <TeamSelector 
+        selectedTeamId={selectedTeamId}
+        onTeamChange={setSelectedTeamId}
       />
+      
+      {/* Team Analytics Dashboard */}
+      {selectedTeamId && (
+        <TeamAnalyticsDashboard 
+          teamAnalytics={teamAnalytics}
+          isLoading={teamLoading}
+        />
+      )}
+      
+      {/* Show message when no team selected */}
+      {!selectedTeamId && (
+        <div className="text-center py-12 text-muted-foreground">
+          Select a team above to view analytics
+        </div>
+      )}
       
       {/* Team Performance Charts */}
       <TeamPerformanceBarChart memberPerformanceData={memberPerformanceData} />
