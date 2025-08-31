@@ -7,7 +7,7 @@ import { useScheduleManagement, EmployeeSchedule } from '@/hooks/useScheduleMana
 import { useAuth } from '@/contexts/AuthContext';
 import { format, startOfWeek, endOfWeek, addDays, isToday, differenceInHours } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
-import ModernScheduleHeader from './modern/ModernScheduleHeader';
+
 import ModernMetricCard from './modern/ModernMetricCard';
 
 const ScheduleEmployeeDashboard: React.FC = () => {
@@ -162,27 +162,6 @@ const ScheduleEmployeeDashboard: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      {/* Modern Header */}
-      <ModernScheduleHeader
-        title="My Schedule"
-        subtitle="View your shifts, availability, and manage your time"
-        onNotificationClick={() => console.log('Notifications clicked')}
-      >
-        <Button 
-          variant="outline" 
-          size="sm"
-          className="bg-background/50 backdrop-blur-sm border-border/50 hover:bg-primary/10 hover:text-primary transition-all duration-300"
-        >
-          <Bell className="h-4 w-4 mr-2" />
-          Request Time Off
-        </Button>
-        <Button 
-          className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-white shadow-lg hover:shadow-xl transition-all duration-300"
-        >
-          Swap Shift
-        </Button>
-      </ModernScheduleHeader>
-
       {/* Modern Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <ModernMetricCard

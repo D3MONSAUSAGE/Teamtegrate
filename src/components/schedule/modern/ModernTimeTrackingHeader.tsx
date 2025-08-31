@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, Users, Clock, TrendingUp, Bell, CalendarDays, Timer } from 'lucide-react';
+import { Calendar, Users, Clock, TrendingUp, Bell, CalendarDays, Timer, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
@@ -28,6 +28,8 @@ interface ModernTimeTrackingHeaderProps {
   onViewModeChange?: (mode: 'individual' | 'team-totals') => void;
   isLoading?: boolean;
   onNotificationClick?: () => void;
+  onRequestTimeOff?: () => void;
+  onSwapShift?: () => void;
 }
 
 const ModernTimeTrackingHeader: React.FC<ModernTimeTrackingHeaderProps> = ({
@@ -44,7 +46,9 @@ const ModernTimeTrackingHeader: React.FC<ModernTimeTrackingHeaderProps> = ({
   viewMode,
   onViewModeChange,
   isLoading,
-  onNotificationClick
+  onNotificationClick,
+  onRequestTimeOff,
+  onSwapShift
 }) => {
   const currentTime = new Date();
   const formattedDate = format(currentTime, 'EEEE, MMMM d, yyyy');
@@ -87,6 +91,25 @@ const ModernTimeTrackingHeader: React.FC<ModernTimeTrackingHeaderProps> = ({
               <div className="text-sm text-muted-foreground">{formattedDate}</div>
               <div className="text-2xl font-semibold text-primary">{formattedTime}</div>
             </div>
+            
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="bg-background/50 backdrop-blur-sm border-border/50 hover:bg-primary/10 transition-all duration-300"
+              onClick={onRequestTimeOff}
+            >
+              <Calendar className="h-4 w-4 mr-2" />
+              Request Time Off
+            </Button>
+            
+            <Button 
+              size="sm"
+              className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-300"
+              onClick={onSwapShift}
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Swap Shift
+            </Button>
             
             <Button
               variant="outline"
