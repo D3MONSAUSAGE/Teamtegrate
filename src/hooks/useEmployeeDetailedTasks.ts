@@ -3,11 +3,17 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { DateRange } from 'react-day-picker';
 
-export type DetailedTask = {
+export type EmployeeDetailedTasksParams = {
+  userId: string;
+  timeRange: string;
+  dateRange?: DateRange;
+};
+
+export interface DetailedTask {
   task_id: string;
   title: string;
-  description: string | null;
-  priority: string;
+  description: string;
+  priority: 'Low' | 'Medium' | 'High';
   status: string;
   deadline: string | null;
   created_at: string;
@@ -17,13 +23,7 @@ export type DetailedTask = {
   time_spent_minutes: number;
   is_overdue: boolean;
   days_until_due: number | null;
-};
-
-export type EmployeeDetailedTasksParams = {
-  userId: string;
-  timeRange: string;
-  dateRange?: DateRange;
-};
+}
 
 function computeRange(timeRange: string, dateRange?: DateRange) {
   const end = new Date();
@@ -39,7 +39,7 @@ function computeRange(timeRange: string, dateRange?: DateRange) {
     start.setDate(end.getDate() - 30);
   }
 
-  // format YYYY-MM-DD for SQL date params
+  // Format YYYY-MM-DD for SQL date params
   const fmt = (d: Date) => d.toISOString().slice(0, 10);
   return { startDate: fmt(start), endDate: fmt(end) };
 }
@@ -61,31 +61,34 @@ export const useEmployeeDetailedTasks = ({ userId, timeRange, dateRange }: Emplo
     enabled: !!userId,
   });
 
-  // Process and categorize tasks
   const processedData = useMemo(() => {
     const tasks = detailedTasksQuery.data || [];
     
+    // Group tasks by status
     const todoTasks = tasks.filter(task => task.status === 'To Do');
     const inProgressTasks = tasks.filter(task => task.status === 'In Progress');
     const completedTasks = tasks.filter(task => task.status === 'Completed');
     const overdueTasks = tasks.filter(task => task.is_overdue);
     
+    // Group by priority
     const highPriorityTasks = tasks.filter(task => task.priority === 'High');
     const mediumPriorityTasks = tasks.filter(task => task.priority === 'Medium');
     const lowPriorityTasks = tasks.filter(task => task.priority === 'Low');
     
+    // Calculate totals
+    const totalTasks = tasks.length;
     const totalTimeSpent = tasks.reduce((sum, task) => sum + task.time_spent_minutes, 0);
     
     // Group by project
-    const tasksByProject = tasks.reduce((acc, task) => {
-      const projectTitle = task.project_title || 'No Project';
-      if (!acc[projectTitle]) {
-        acc[projectTitle] = [];
+    const projectGroups = tasks.reduce((acc, task) => {
+      const projectKey = task.project_title;
+      if (!acc[projectKey]) {
+        acc[projectKey] = [];
       }
-      acc[projectTitle].push(task);
+      acc[projectKey].push(task);
       return acc;
     }, {} as Record<string, DetailedTask[]>);
-    
+
     return {
       allTasks: tasks,
       todoTasks,
@@ -95,17 +98,15 @@ export const useEmployeeDetailedTasks = ({ userId, timeRange, dateRange }: Emplo
       highPriorityTasks,
       mediumPriorityTasks,
       lowPriorityTasks,
-      tasksByProject,
-      totalTimeSpent,
+      projectGroups,
       summary: {
-        total: tasks.length,
-        todo: todoTasks.length,
-        inProgress: inProgressTasks.length,
-        completed: completedTasks.length,
-        overdue: overdueTasks.length,
-        highPriority: highPriorityTasks.length,
-        mediumPriority: mediumPriorityTasks.length,
-        lowPriority: lowPriorityTasks.length,
+        totalTasks,
+        completedCount: completedTasks.length,
+        overdueCount: overdueTasks.length,
+        highPriorityCount: highPriorityTasks.length,
+        totalTimeSpentHours: Math.round(totalTimeSpent / 60 * 10) / 10,
+        avgTimePerTask: totalTasks > 0 ? Math.round(totalTimeSpent / totalTasks) : 0,
+        completionRate: totalTasks > 0 ? Math.round((completedTasks.length / totalTasks) * 100) : 0,
       }
     };
   }, [detailedTasksQuery.data]);

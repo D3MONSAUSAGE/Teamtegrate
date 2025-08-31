@@ -2,8 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { DateRange } from 'react-day-picker';
 import { subDays, format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CalendarDays, BarChart3, List } from 'lucide-react';
 
 import { TeamMemberSelector } from './TeamMemberSelector';
@@ -31,7 +31,6 @@ export const WeeklyDashboard: React.FC<WeeklyDashboardProps> = ({
   
   // Set default selected member to current user
   const [selectedMemberId, setSelectedMemberId] = useState<string>(user?.id || '');
-  const [activeTab, setActiveTab] = useState<'summary' | 'detailed'>('summary');
   
   // Use 7 days for weekly view regardless of the parent timeRange
   const weeklyTimeRange = '7 days';
@@ -44,7 +43,17 @@ export const WeeklyDashboard: React.FC<WeeklyDashboardProps> = ({
   });
 
   // Get detailed tasks data
-  const detailedTasksData = useEmployeeDetailedTasks({
+  const {
+    allTasks,
+    todoTasks,
+    inProgressTasks,
+    completedTasks,
+    overdueTasks,
+    projectGroups,
+    summary,
+    isLoading: isLoadingDetailedTasks,
+    error: detailedTasksError
+  } = useEmployeeDetailedTasks({
     userId: selectedMemberId,
     timeRange: weeklyTimeRange,
     dateRange
@@ -79,7 +88,7 @@ export const WeeklyDashboard: React.FC<WeeklyDashboardProps> = ({
 
   const selectedMember = teamMembers.find(member => member.id === selectedMemberId);
 
-  if (error || detailedTasksData.error) {
+  if (error || detailedTasksError) {
     return (
       <Card>
         <CardContent className="p-8 text-center">
@@ -131,10 +140,10 @@ export const WeeklyDashboard: React.FC<WeeklyDashboardProps> = ({
 
       <Separator />
 
-      {/* Main Content Tabs */}
-      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'summary' | 'detailed')}>
+      {/* Tabbed Interface */}
+      <Tabs defaultValue="performance" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="summary" className="flex items-center gap-2">
+          <TabsTrigger value="performance" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
             Performance Summary
           </TabsTrigger>
@@ -143,8 +152,8 @@ export const WeeklyDashboard: React.FC<WeeklyDashboardProps> = ({
             Detailed Tasks
           </TabsTrigger>
         </TabsList>
-
-        <TabsContent value="summary" className="mt-6 space-y-6">
+        
+        <TabsContent value="performance" className="space-y-6 mt-6">
           {/* Weekly Task Performance */}
           <WeeklyTaskPerformance 
             taskStats={taskStats} 
@@ -167,28 +176,18 @@ export const WeeklyDashboard: React.FC<WeeklyDashboardProps> = ({
             isLoading={isLoading}
           />
         </TabsContent>
-
+        
         <TabsContent value="detailed" className="mt-6">
           {/* Detailed Tasks View */}
-          <WeeklyDetailedTasks 
-            allTasks={detailedTasksData.allTasks || []}
-            todoTasks={detailedTasksData.todoTasks || []}
-            inProgressTasks={detailedTasksData.inProgressTasks || []}
-            completedTasks={detailedTasksData.completedTasks || []}
-            overdueTasks={detailedTasksData.overdueTasks || []}
-            tasksByProject={detailedTasksData.tasksByProject || {}}
-            totalTimeSpent={detailedTasksData.totalTimeSpent || 0}
-            summary={detailedTasksData.summary || {
-              total: 0,
-              todo: 0,
-              inProgress: 0,
-              completed: 0,
-              overdue: 0,
-              highPriority: 0,
-              mediumPriority: 0,
-              lowPriority: 0,
-            }}
-            isLoading={detailedTasksData.isLoading}
+          <WeeklyDetailedTasks
+            allTasks={allTasks}
+            todoTasks={todoTasks}
+            inProgressTasks={inProgressTasks}
+            completedTasks={completedTasks}
+            overdueTasks={overdueTasks}
+            projectGroups={projectGroups}
+            summary={summary}
+            isLoading={isLoadingDetailedTasks}
           />
         </TabsContent>
       </Tabs>
