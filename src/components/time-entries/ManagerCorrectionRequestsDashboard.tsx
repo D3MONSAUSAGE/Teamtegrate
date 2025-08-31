@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import { Eye, Check, X } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -14,6 +15,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { CorrectionRequestStatusBadge } from './CorrectionRequestStatusBadge';
+import { CorrectionRequestFilters } from './CorrectionRequestFilters';
+import { BulkCorrectionActions } from './BulkCorrectionActions';
 import { useTimeEntryCorrectionRequests, CorrectionRequest } from '@/hooks/useTimeEntryCorrectionRequests';
 
 interface ReviewDialogProps {
@@ -150,9 +153,28 @@ const ReviewDialog: React.FC<ReviewDialogProps> = ({
 };
 
 export const ManagerCorrectionRequestsDashboard: React.FC = () => {
-  const { pendingManagerRequests, corrections, updateRequestStatus } = useTimeEntryCorrectionRequests();
+  const { pendingManagerRequests, corrections, updateRequestStatus, updateMultipleRequestsStatus } = useTimeEntryCorrectionRequests();
   const [selectedRequest, setSelectedRequest] = useState<CorrectionRequest | null>(null);
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
+  const [selectedRequestIds, setSelectedRequestIds] = useState<Set<string>>(new Set());
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredRequests = useMemo(() => {
+    let filtered = pendingManagerRequests;
+
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(request =>
+        request.employee_reason.toLowerCase().includes(query) ||
+        request.manager_notes?.toLowerCase().includes(query)
+      );
+    }
+
+    return filtered;
+  }, [pendingManagerRequests, searchQuery]);
+
+  const selectedRequests = filteredRequests.filter(r => selectedRequestIds.has(r.id));
 
   const handleReview = (request: CorrectionRequest) => {
     setSelectedRequest(request);
@@ -167,6 +189,41 @@ export const ManagerCorrectionRequestsDashboard: React.FC = () => {
     await updateRequestStatus(requestId, 'rejected', notes);
   };
 
+  const handleSelectRequest = (requestId: string, checked: boolean) => {
+    setSelectedRequestIds(prev => {
+      const newSet = new Set(prev);
+      if (checked) {
+        newSet.add(requestId);
+      } else {
+        newSet.delete(requestId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedRequestIds(new Set(filteredRequests.map(r => r.id)));
+    } else {
+      setSelectedRequestIds(new Set());
+    }
+  };
+
+  const handleBulkApprove = async (requestIds: string[], notes?: string) => {
+    await updateMultipleRequestsStatus(requestIds, 'manager_approved', notes);
+    setSelectedRequestIds(new Set());
+  };
+
+  const handleBulkReject = async (requestIds: string[], notes?: string) => {
+    await updateMultipleRequestsStatus(requestIds, 'rejected', notes);
+    setSelectedRequestIds(new Set());
+  };
+
+  const handleClearFilters = () => {
+    setStatusFilter('all');
+    setSearchQuery('');
+  };
+
   if (pendingManagerRequests.length === 0) {
     return (
       <Card className="p-6 text-center">
@@ -177,16 +234,63 @@ export const ManagerCorrectionRequestsDashboard: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold">Correction Requests Awaiting Your Review</h2>
-      
-      {pendingManagerRequests.map((request) => (
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold">Manager Review Queue</h2>
+        <div className="flex items-center gap-2">
+          {filteredRequests.length > 0 && (
+            <div className="flex items-center gap-2">
+              <Checkbox
+                checked={selectedRequestIds.size === filteredRequests.length && filteredRequests.length > 0}
+                onCheckedChange={handleSelectAll}
+              />
+              <span className="text-sm text-muted-foreground">Select All</span>
+            </div>
+          )}
+          <div className="text-sm text-muted-foreground">
+            {filteredRequests.length} of {pendingManagerRequests.length} requests
+          </div>
+        </div>
+      </div>
+
+      <CorrectionRequestFilters
+        statusFilter={statusFilter}
+        onStatusFilterChange={setStatusFilter}
+        searchQuery={searchQuery}
+        onSearchQueryChange={setSearchQuery}
+        onClearFilters={handleClearFilters}
+      />
+
+      <BulkCorrectionActions
+        selectedRequests={selectedRequests}
+        onApprove={handleBulkApprove}
+        onReject={handleBulkReject}
+        onClearSelection={() => setSelectedRequestIds(new Set())}
+      />
+
+      {filteredRequests.length === 0 ? (
+        <Card className="p-6 text-center">
+          <p className="text-muted-foreground">
+            {pendingManagerRequests.length === 0 
+              ? "No correction requests requiring your review."
+              : "No requests match your current filters."
+            }
+          </p>
+        </Card>
+      ) : (
+        filteredRequests.map((request) => (
         <Card key={request.id} className="p-4">
           <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <span className="font-medium">
-                Request #{request.id.slice(0, 8)}
-              </span>
-              <CorrectionRequestStatusBadge status={request.status} />
+            <div className="flex items-center gap-3">
+              <Checkbox
+                checked={selectedRequestIds.has(request.id)}
+                onCheckedChange={(checked) => handleSelectRequest(request.id, !!checked)}
+              />
+              <div className="flex items-center gap-2">
+                <span className="font-medium">
+                  Request #{request.id.slice(0, 8)}
+                </span>
+                <CorrectionRequestStatusBadge status={request.status} />
+              </div>
             </div>
             <span className="text-sm text-muted-foreground">
               {format(new Date(request.created_at), 'PPP')}
@@ -219,7 +323,8 @@ export const ManagerCorrectionRequestsDashboard: React.FC = () => {
             </Button>
           </div>
         </Card>
-      ))}
+        ))
+      )}
 
       <ReviewDialog
         open={reviewDialogOpen}

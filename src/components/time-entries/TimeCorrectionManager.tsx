@@ -5,6 +5,7 @@ import { Shield, Users, FileText } from 'lucide-react';
 import { ManagerCorrectionRequestsDashboard } from './ManagerCorrectionRequestsDashboard';
 import { AdminCorrectionRequestsDashboard } from './AdminCorrectionRequestsDashboard';
 import { MyCorrectionRequestsView } from './MyCorrectionRequestsView';
+import { CorrectionRequestsOverview } from './CorrectionRequestsOverview';
 import { useTimeEntryCorrectionRequests } from '@/hooks/useTimeEntryCorrectionRequests';
 
 export const TimeCorrectionManager: React.FC = () => {
@@ -32,6 +33,8 @@ export const TimeCorrectionManager: React.FC = () => {
         <FileText className="h-5 w-5" />
         <h2 className="text-lg font-semibold">Time Entry Correction Requests</h2>
       </div>
+
+      <CorrectionRequestsOverview />
 
       <Tabs defaultValue="my-requests" className="w-full">
         <TabsList className="grid w-full grid-cols-3">

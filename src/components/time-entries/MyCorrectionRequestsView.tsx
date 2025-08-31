@@ -1,12 +1,41 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { CorrectionRequestStatusBadge } from './CorrectionRequestStatusBadge';
+import { CorrectionRequestFilters } from './CorrectionRequestFilters';
 import { useTimeEntryCorrectionRequests } from '@/hooks/useTimeEntryCorrectionRequests';
 
 export const MyCorrectionRequestsView: React.FC = () => {
   const { myRequests, corrections, isLoading } = useTimeEntryCorrectionRequests();
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredRequests = useMemo(() => {
+    let filtered = myRequests;
+
+    // Filter by status
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(request => request.status === statusFilter);
+    }
+
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(request =>
+        request.employee_reason.toLowerCase().includes(query) ||
+        request.manager_notes?.toLowerCase().includes(query) ||
+        request.admin_notes?.toLowerCase().includes(query)
+      );
+    }
+
+    return filtered;
+  }, [myRequests, statusFilter, searchQuery]);
+
+  const handleClearFilters = () => {
+    setStatusFilter('all');
+    setSearchQuery('');
+  };
 
   if (isLoading) {
     return <div className="text-center p-4">Loading your correction requests...</div>;
@@ -22,9 +51,32 @@ export const MyCorrectionRequestsView: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold">My Correction Requests</h2>
-      
-      {myRequests.map((request) => (
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold">My Correction Requests</h2>
+        <div className="text-sm text-muted-foreground">
+          {filteredRequests.length} of {myRequests.length} requests
+        </div>
+      </div>
+
+      <CorrectionRequestFilters
+        statusFilter={statusFilter}
+        onStatusFilterChange={setStatusFilter}
+        searchQuery={searchQuery}
+        onSearchQueryChange={setSearchQuery}
+        onClearFilters={handleClearFilters}
+      />
+
+      {filteredRequests.length === 0 ? (
+        <Card className="p-6 text-center">
+          <p className="text-muted-foreground">
+            {myRequests.length === 0 
+              ? "You haven't submitted any correction requests."
+              : "No requests match your current filters."
+            }
+          </p>
+        </Card>
+      ) : (
+        filteredRequests.map((request) => (
         <Card key={request.id} className="p-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
@@ -86,7 +138,8 @@ export const MyCorrectionRequestsView: React.FC = () => {
             )}
           </div>
         </Card>
-      ))}
+        ))
+      )}
     </div>
   );
 };

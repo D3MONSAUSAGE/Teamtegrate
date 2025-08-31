@@ -166,6 +166,76 @@ export const useTimeEntryCorrectionRequests = () => {
     }
   }, [currentUser, fetchRequests]);
 
+  const applyCorrections = useCallback(async (requestId: string) => {
+    const requestCorrections = corrections[requestId];
+    if (!requestCorrections) return;
+
+    try {
+      for (const correction of requestCorrections) {
+        const updates: any = {};
+        if (correction.corrected_clock_in) updates.clock_in = correction.corrected_clock_in;
+        if (correction.corrected_clock_out !== undefined) updates.clock_out = correction.corrected_clock_out;
+        if (correction.corrected_notes !== undefined) updates.notes = correction.corrected_notes;
+
+        if (Object.keys(updates).length > 0) {
+          const { error } = await supabase
+            .from('time_entries')
+            .update(updates)
+            .eq('id', correction.time_entry_id);
+
+          if (error) throw error;
+        }
+      }
+    } catch (error: any) {
+      console.error('Failed to apply corrections:', error);
+      throw error;
+    }
+  }, [corrections]);
+
+  const updateMultipleRequestsStatus = useCallback(async (
+    requestIds: string[],
+    status: 'manager_approved' | 'approved' | 'rejected',
+    notes?: string
+  ) => {
+    if (!currentUser) throw new Error('User not authenticated');
+
+    try {
+      const updates: any = {
+        status,
+        ...(status === 'manager_approved' ? { 
+          manager_reviewed_at: new Date().toISOString(),
+          manager_notes: notes 
+        } : {}),
+        ...(status === 'approved' || status === 'rejected' ? { 
+          admin_reviewed_at: new Date().toISOString(),
+          admin_notes: notes,
+          admin_id: currentUser.id
+        } : {}),
+      };
+
+      // Update all requests
+      const { error } = await supabase
+        .from('time_entry_correction_requests')
+        .update(updates)
+        .in('id', requestIds);
+
+      if (error) throw error;
+
+      // If approved, apply corrections for all requests
+      if (status === 'approved') {
+        for (const requestId of requestIds) {
+          await applyCorrections(requestId);
+        }
+      }
+
+      toast.success(`${requestIds.length} requests ${status === 'approved' ? 'approved' : status === 'rejected' ? 'rejected' : 'approved by manager'}`);
+      await fetchRequests();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update request statuses');
+      throw error;
+    }
+  }, [currentUser, fetchRequests, applyCorrections]);
+
   const updateRequestStatus = useCallback(async (
     requestId: string, 
     status: 'manager_approved' | 'approved' | 'rejected',
@@ -205,33 +275,8 @@ export const useTimeEntryCorrectionRequests = () => {
       toast.error(error.message || 'Failed to update request status');
       throw error;
     }
-  }, [currentUser, fetchRequests]);
+  }, [currentUser, fetchRequests, applyCorrections]);
 
-  const applyCorrections = useCallback(async (requestId: string) => {
-    const requestCorrections = corrections[requestId];
-    if (!requestCorrections) return;
-
-    try {
-      for (const correction of requestCorrections) {
-        const updates: any = {};
-        if (correction.corrected_clock_in) updates.clock_in = correction.corrected_clock_in;
-        if (correction.corrected_clock_out !== undefined) updates.clock_out = correction.corrected_clock_out;
-        if (correction.corrected_notes !== undefined) updates.notes = correction.corrected_notes;
-
-        if (Object.keys(updates).length > 0) {
-          const { error } = await supabase
-            .from('time_entries')
-            .update(updates)
-            .eq('id', correction.time_entry_id);
-
-          if (error) throw error;
-        }
-      }
-    } catch (error: any) {
-      console.error('Failed to apply corrections:', error);
-      throw error;
-    }
-  }, [corrections]);
 
   // Real-time subscriptions
   useEffect(() => {
@@ -279,6 +324,7 @@ export const useTimeEntryCorrectionRequests = () => {
     pendingAdminRequests,
     createCorrectionRequest,
     updateRequestStatus,
+    updateMultipleRequestsStatus,
     fetchRequests,
   };
 };
