@@ -10,12 +10,11 @@ import { useTeamAnalytics } from '@/hooks/team/useTeamAnalytics';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Modern Dashboard Components
-import { ReportsHeader } from '@/components/reports/modern/ReportsHeader';
+import { ModernReportsHeader } from '@/components/reports/modern/ModernReportsHeader';
 import { ExecutiveSummary } from '@/components/reports/modern/ExecutiveSummary';
 import { PerformanceGrid } from '@/components/reports/modern/PerformanceGrid';
 import { InsightsPanel } from '@/components/reports/modern/InsightsPanel';
 import { DetailedAnalytics } from '@/components/reports/modern/DetailedAnalytics';
-import { SmartFilterBar } from '@/components/reports/modern/SmartFilterBar';
 import TeamReports from '@/components/reports/TeamReports';
 
 export const ReportsPage: React.FC = () => {
@@ -164,34 +163,23 @@ export const ReportsPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5">
       <div className="container mx-auto p-6 space-y-8 max-w-7xl">
-        {/* Professional Header */}
-        <ReportsHeader
-          currentUser={user}
-          selectedUser={selectedUser}
-          timeRange={timeRange}
-          onBackToPersonal={handleBackToPersonal}
-        />
-
-        {/* Smart Filter Bar */}
-        <SmartFilterBar
+        <ModernReportsHeader
           currentUser={user}
           selectedUser={selectedUser}
           timeRange={timeRange}
           searchQuery={searchQuery}
+          activeTab={activeTab}
           onTimeRangeChange={setTimeRange}
           onSearchChange={setSearchQuery}
           onUserSelect={handleUserSelect}
+          onBackToPersonal={handleBackToPersonal}
+          onTabChange={setActiveTab}
           onExport={handleExport}
           onRefresh={handleRefresh}
           isLoading={isLoading}
         />
 
-        {/* Tabbed Interface */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="individual">Individual Reports</TabsTrigger>
-            <TabsTrigger value="team">Team Analytics</TabsTrigger>
-          </TabsList>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">{/* Tab content managed by header */}
           
           <TabsContent value="individual" className="space-y-8 mt-6">
             {/* Executive Summary Cards */}
