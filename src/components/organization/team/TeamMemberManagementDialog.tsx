@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -87,6 +87,7 @@ const TeamMemberManagementDialog: React.FC<TeamMemberManagementDialogProps> = ({
   };
 
   const handleTransferMember = (member: any) => {
+    console.log('Transfer member clicked:', member);
     setSelectedMember(member);
     setTransferDialogOpen(true);
   };
@@ -111,6 +112,9 @@ const TeamMemberManagementDialog: React.FC<TeamMemberManagementDialogProps> = ({
               <Users className="h-5 w-5" />
               Manage Team Members - {team.name}
             </DialogTitle>
+            <DialogDescription>
+              Search, add, remove, and manage roles for team members. You can also transfer members to other teams.
+            </DialogDescription>
           </DialogHeader>
 
           <div className="flex flex-col gap-4 flex-1 overflow-hidden">
@@ -172,26 +176,43 @@ const TeamMemberManagementDialog: React.FC<TeamMemberManagementDialogProps> = ({
 
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => console.log('Dropdown trigger clicked for member:', member.name)}
+                          >
                             <UserCog className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
+                        <DropdownMenuContent align="end" className="bg-background border shadow-lg z-[10000]">
                           <DropdownMenuItem 
-                            onClick={() => handleRoleChange(
-                              member.id, 
-                              member.role === 'manager' ? 'member' : 'manager'
-                            )}
+                            onClick={() => {
+                              console.log('Role change clicked');
+                              handleRoleChange(
+                                member.id, 
+                                member.role === 'manager' ? 'member' : 'manager'
+                              );
+                            }}
                           >
                             <UserCog className="h-4 w-4 mr-2" />
                             {member.role === 'manager' ? 'Make Member' : 'Make Manager'}
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleTransferMember(member)}>
+                          <DropdownMenuItem 
+                            onClick={(e) => {
+                              console.log('Transfer clicked, event:', e);
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleTransferMember(member);
+                            }}
+                          >
                             <ArrowRightLeft className="h-4 w-4 mr-2" />
                             Transfer to Team
                           </DropdownMenuItem>
                           <DropdownMenuItem 
-                            onClick={() => handleRemoveMember(member.id)}
+                            onClick={() => {
+                              console.log('Remove member clicked');
+                              handleRemoveMember(member.id);
+                            }}
                             className="text-destructive"
                           >
                             <Trash2 className="h-4 w-4 mr-2" />
