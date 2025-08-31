@@ -1,3 +1,4 @@
+
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -138,14 +139,26 @@ export const useEmployeeReports = ({ userId, timeRange, dateRange }: EmployeeRep
 
   return {
     // Daily arrays for charts
-    taskStats: taskStatsQuery.data,
-    hoursStats: hoursStatsQuery.data,
-    contributions: contributionsQuery.data,
+    taskStats: taskStatsQuery.data || [],
+    hoursStats: hoursStatsQuery.data || [],
+    contributions: contributionsQuery.data || [],
     
     // Aggregated summaries for stats displays
     taskStatsSummary: taskStatsQuery.data ? (() => {
-      const dailyData = taskStatsQuery.data as any[];
-      if (!dailyData || dailyData.length === 0) return { total: 0, completed: 0, in_progress: 0, overdue: 0, total_tasks: 0, completed_tasks: 0, completion_rate: 0 };
+      const dailyData = taskStatsQuery.data;
+      // Ensure dailyData is an array before calling reduce
+      if (!Array.isArray(dailyData) || dailyData.length === 0) {
+        return { 
+          total: 0, 
+          completed: 0, 
+          in_progress: 0, 
+          overdue: 0, 
+          todo: 0,
+          total_tasks: 0, 
+          completed_tasks: 0, 
+          completion_rate: 0 
+        };
+      }
       
       const totalCompleted = dailyData.reduce((sum, day) => sum + (day.completed_count || 0), 0);
       const totalAssigned = dailyData.reduce((sum, day) => sum + (day.assigned_count || 0), 0);
@@ -161,11 +174,30 @@ export const useEmployeeReports = ({ userId, timeRange, dateRange }: EmployeeRep
         completed_tasks: totalCompleted,
         completion_rate: totalAssigned > 0 ? Math.round((totalCompleted / totalAssigned) * 100) : 0
       };
-    })() : null,
+    })() : {
+      total: 0, 
+      completed: 0, 
+      in_progress: 0, 
+      overdue: 0, 
+      todo: 0,
+      total_tasks: 0, 
+      completed_tasks: 0, 
+      completion_rate: 0 
+    },
     
     hoursStatsSummary: hoursStatsQuery.data ? (() => {
-      const dailyData = hoursStatsQuery.data as { day: string; minutes: number }[];
-      if (!dailyData || dailyData.length === 0) return { total_minutes: 0, session_count: 0, overtime_minutes: 0, total_hours: 0, avg_daily_hours: 0, overtime_hours: 0 };
+      const dailyData = hoursStatsQuery.data;
+      // Ensure dailyData is an array before calling reduce
+      if (!Array.isArray(dailyData) || dailyData.length === 0) {
+        return { 
+          total_minutes: 0, 
+          session_count: 0, 
+          overtime_minutes: 0, 
+          total_hours: 0, 
+          avg_daily_hours: 0, 
+          overtime_hours: 0 
+        };
+      }
       
       const totalMinutes = dailyData.reduce((sum, day) => sum + (day.minutes || 0), 0);
       const sessionCount = dailyData.filter(day => day.minutes > 0).length;
@@ -181,7 +213,14 @@ export const useEmployeeReports = ({ userId, timeRange, dateRange }: EmployeeRep
         avg_daily_hours: Math.round((totalMinutes / workingDays / 60) * 100) / 100,
         overtime_hours: Math.round((overtimeMinutes / 60) * 100) / 100
       };
-    })() : null,
+    })() : {
+      total_minutes: 0, 
+      session_count: 0, 
+      overtime_minutes: 0, 
+      total_hours: 0, 
+      avg_daily_hours: 0, 
+      overtime_hours: 0 
+    },
     
     isLoading,
     error,
