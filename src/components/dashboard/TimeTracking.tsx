@@ -1,23 +1,26 @@
 
 import React from 'react';
-import CompactEnhancedTimeWidget from './CompactEnhancedTimeWidget';
-import DailyTimeLog from './DailyTimeLog';
+import CompactTimeControls from './CompactTimeControls';
+import WeeklyTimeReport from './WeeklyTimeReport';
 import TimeTrackingErrorBoundary from './time/TimeTrackingErrorBoundary';
+import { useEmployeeTimeTracking } from '@/hooks/useEmployeeTimeTracking';
 
 const TimeTracking: React.FC = () => {
+  const { weeklyEntries } = useEmployeeTimeTracking();
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-      {/* Compact Enhanced Time Widget - 1/3 width on large screens */}
-      <div className="lg:col-span-1">
+    <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+      {/* Compact Time Controls - Smaller left column */}
+      <div className="lg:col-span-2">
         <TimeTrackingErrorBoundary>
-          <CompactEnhancedTimeWidget />
+          <CompactTimeControls />
         </TimeTrackingErrorBoundary>
       </div>
       
-      {/* Daily Time Log - 2/3 width on large screens */}
-      <div className="lg:col-span-2">
+      {/* Weekly Time Report - Larger right column for main focus */}
+      <div className="lg:col-span-3">
         <TimeTrackingErrorBoundary>
-          <DailyTimeLog />
+          <WeeklyTimeReport entries={weeklyEntries} />
         </TimeTrackingErrorBoundary>
       </div>
     </div>
