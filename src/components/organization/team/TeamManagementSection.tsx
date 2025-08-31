@@ -39,6 +39,7 @@ import { toast } from '@/components/ui/sonner';
 import { devLog } from '@/utils/devLogger';
 import { logger } from '@/utils/logger';
 import TeamMemberManagementDialog from './TeamMemberManagementDialog';
+import TeamMembersHorizontalList from './TeamMembersHorizontalList';
 
 interface Team {
   id: string;
@@ -366,7 +367,7 @@ const TeamManagementSection = () => {
                       )}
                     </div>
                     
-                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                    <div className="flex items-center justify-between text-sm text-muted-foreground mb-3">
                       <div className="flex items-center gap-2">
                         <UserPlus className="h-4 w-4" />
                         <span>{team.member_count} members</span>
@@ -375,6 +376,9 @@ const TeamManagementSection = () => {
                         <span>Manager: {team.manager_name}</span>
                       )}
                     </div>
+                    
+                    {/* Team Members Horizontal List */}
+                    <TeamMembersHorizontalList teamId={team.id} />
                   </CardContent>
                 </Card>
               ))}
