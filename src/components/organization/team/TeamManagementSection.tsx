@@ -15,7 +15,8 @@ import {
   UserPlus,
   Save,
   X,
-  Loader2
+  Loader2,
+  UserCog
 } from 'lucide-react';
 import {
   Dialog,
@@ -37,6 +38,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { devLog } from '@/utils/devLogger';
 import { logger } from '@/utils/logger';
+import TeamMemberManagementDialog from './TeamMemberManagementDialog';
 
 interface Team {
   id: string;
@@ -54,6 +56,8 @@ const TeamManagementSection = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingTeam, setEditingTeam] = useState<Team | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [memberDialogOpen, setMemberDialogOpen] = useState(false);
+  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Form state
@@ -178,6 +182,11 @@ const TeamManagementSection = () => {
     setEditingTeam(null);
     setTeamName('');
     setTeamDescription('');
+  };
+
+  const handleManageMembers = (team: Team) => {
+    setSelectedTeam(team);
+    setMemberDialogOpen(true);
   };
 
   if (isLoading) {
@@ -337,6 +346,10 @@ const TeamManagementSection = () => {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleManageMembers(team)}>
+                              <UserCog className="h-4 w-4 mr-2" />
+                              Manage Members
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => openEditDialog(team)}>
                               <Edit3 className="h-4 w-4 mr-2" />
                               Edit Team
@@ -420,6 +433,15 @@ const TeamManagementSection = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Team Member Management Dialog */}
+      {selectedTeam && (
+        <TeamMemberManagementDialog
+          team={selectedTeam}
+          open={memberDialogOpen}
+          onOpenChange={setMemberDialogOpen}
+        />
+      )}
     </>
   );
 };
