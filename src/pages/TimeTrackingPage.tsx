@@ -42,22 +42,9 @@ const TimeTrackingPage = () => {
     shouldLoadTeamData 
   } = useProgressiveLoading();
 
-  // Priority loading: Schedule first (always loads)
+  // Always call all hooks (React Rules of Hooks requirement)
   const { employeeSchedules, isLoading: scheduleLoading } = useScheduleManagement();
   
-  // Secondary loading: Time tracking (loads after schedule)
-  const timeTrackingData = shouldLoadTimeTracking ? useEmployeeTimeTracking() : {
-    currentSession: null,
-    dailySummary: null,
-    weeklyEntries: [],
-    isLoading: false,
-    lastError: null,
-    clockIn: () => {},
-    clockOut: () => {},
-    startBreak: () => {},
-    endBreak: () => {}
-  };
-
   const {
     currentSession,
     dailySummary,
@@ -68,12 +55,11 @@ const TimeTrackingPage = () => {
     clockOut,
     startBreak,
     endBreak
-  } = timeTrackingData;
+  } = useEmployeeTimeTracking();
 
-  // Secondary loading: Team data (loads after schedule)
-  const { teams } = shouldLoadTeamData ? useTeamManagement() : { teams: [] };
-  const { users, isLoading: usersLoading } = shouldLoadTeamData ? useTeamUsers(selectedTeamId) : { users: [], isLoading: false };
-  const { teamStats, isLoading: statsLoading } = shouldLoadTeamData ? useTeamTimeStats(weekDate, selectedTeamId) : { teamStats: null, isLoading: false };
+  const { teams } = useTeamManagement();
+  const { users, isLoading: usersLoading } = useTeamUsers(selectedTeamId);
+  const { teamStats, isLoading: statsLoading } = useTeamTimeStats(weekDate, selectedTeamId);
 
   // Mark loading phases as complete
   useEffect(() => {
@@ -83,16 +69,16 @@ const TimeTrackingPage = () => {
   }, [scheduleLoading, loadingState.scheduleReady, markScheduleReady]);
 
   useEffect(() => {
-    if (shouldLoadTimeTracking && !timeTrackingLoading && !loadingState.timeTrackingReady) {
+    if (!timeTrackingLoading && !loadingState.timeTrackingReady && loadingState.scheduleReady) {
       markTimeTrackingReady();
     }
-  }, [shouldLoadTimeTracking, timeTrackingLoading, loadingState.timeTrackingReady, markTimeTrackingReady]);
+  }, [timeTrackingLoading, loadingState.timeTrackingReady, loadingState.scheduleReady, markTimeTrackingReady]);
 
   useEffect(() => {
-    if (shouldLoadTeamData && !usersLoading && !statsLoading && !loadingState.teamDataReady) {
+    if (!usersLoading && !statsLoading && !loadingState.teamDataReady && loadingState.scheduleReady) {
       markTeamDataReady();
     }
-  }, [shouldLoadTeamData, usersLoading, statsLoading, loadingState.teamDataReady, markTeamDataReady]);
+  }, [usersLoading, statsLoading, loadingState.teamDataReady, loadingState.scheduleReady, markTeamDataReady]);
 
   // Responsive detection
   const isMobile = useMediaQuery('(max-width: 767px)');
@@ -229,7 +215,14 @@ const TimeTrackingPage = () => {
 
         {/* Personal Time Tracking */}
         <TabsContent value="time-tracking" className="space-y-4">
-          {user?.role === 'user' || !selectedTeamId ? (
+          {!loadingState.timeTrackingReady ? (
+            <Card className="p-6">
+              <div className="text-center py-8">
+                <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Loading time tracking...</p>
+              </div>
+            </Card>
+          ) : user?.role === 'user' || !selectedTeamId ? (
             // Personal time tracking interface
             <div className="space-y-4">
               {isMobile ? (
@@ -278,7 +271,14 @@ const TimeTrackingPage = () => {
         {/* Team Overview (Managers+ only) */}
         {canManageTeams && (
           <TabsContent value="team-overview" className="space-y-4">
-            {viewMode === 'team-totals' ? (
+            {!loadingState.teamDataReady ? (
+              <Card className="p-6">
+                <div className="text-center py-8">
+                  <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+                  <p className="text-muted-foreground">Loading team data...</p>
+                </div>
+              </Card>
+            ) : viewMode === 'team-totals' ? (
               <TeamTotalsView
                 teamStats={teamStats}
                 selectedTeamId={selectedTeamId}
@@ -315,7 +315,16 @@ const TimeTrackingPage = () => {
         {/* Time Entries Management (Managers+ only) */}
         {canManageTeams && (
           <TabsContent value="time-entries" className="space-y-4">
-            <PastTimeEntriesManager />
+            {!loadingState.teamDataReady ? (
+              <Card className="p-6">
+                <div className="text-center py-8">
+                  <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+                  <p className="text-muted-foreground">Loading time entries...</p>
+                </div>
+              </Card>
+            ) : (
+              <PastTimeEntriesManager />
+            )}
           </TabsContent>
         )}
       </Tabs>
