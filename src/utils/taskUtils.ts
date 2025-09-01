@@ -7,16 +7,13 @@ import { Task } from '@/types';
 export const isTaskOverdue = (task: Task): boolean => {
   if (!task.deadline) return false;
   
-  const today = new Date();
-  today.setHours(0, 0, 0, 0); // Normalize to start of day
-  
+  const now = new Date();
   const deadline = new Date(task.deadline);
-  deadline.setHours(0, 0, 0, 0); // Normalize to start of day
   
   // A task is overdue if:
-  // 1. The deadline is in the past
+  // 1. The deadline is in the past (using full timestamp precision)
   // 2. The task is not completed
-  return deadline < today && task.status !== 'Completed';
+  return deadline < now && task.status !== 'Completed';
 };
 
 /**
@@ -27,7 +24,7 @@ export const isTaskInWarningPeriod = (task: Task): boolean => {
   
   const now = new Date();
   const deadline = new Date(task.deadline);
-  const warningPeriodHours = (task as any).warning_period_hours || 24; // Default to 24 hours
+  const warningPeriodHours = task.warning_period_hours || 24; // Default to 24 hours
   
   // Calculate warning period start time
   const warningStart = new Date(deadline.getTime() - (warningPeriodHours * 60 * 60 * 1000));

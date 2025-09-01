@@ -1,6 +1,7 @@
 
 import { format } from 'date-fns';
 import { Task } from '@/types';
+import { isTaskOverdue } from '@/utils/taskUtils';
 
 export const useTaskDetailUtils = (task: Task) => {
   const getStatusColor = (status: string) => {
@@ -19,17 +20,6 @@ export const useTaskDetailUtils = (task: Task) => {
       case 'Medium': return 'bg-amber-100 hover:bg-amber-200 text-amber-700';
       case 'High': return 'bg-rose-100 hover:bg-rose-200 text-rose-700';
       default: return '';
-    }
-  };
-
-  const isOverdue = () => {
-    try {
-      const now = new Date();
-      const deadline = new Date(task.deadline);
-      return task.status !== 'Completed' && deadline < now;
-    } catch (error) {
-      console.error("Invalid deadline date for task:", task.id);
-      return false;
     }
   };
 
@@ -56,7 +46,7 @@ export const useTaskDetailUtils = (task: Task) => {
   return {
     getStatusColor,
     getPriorityColor,
-    isOverdue: isOverdue(),
+    isOverdue: isTaskOverdue(task),
     formatDate,
     formatTime
   };

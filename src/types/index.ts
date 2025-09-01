@@ -60,6 +60,7 @@ export interface Task {
   cost?: number;
   organizationId: string;
   projectTitle?: string;
+  warning_period_hours?: number;
 }
 
 export type ProjectStatus = 'To Do' | 'In Progress' | 'Completed';

@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Task } from '@/types';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { isTaskOverdue } from '@/utils/taskUtils';
 import TaskTimer from './TaskTimer';
 import TaskCardHeader from './TaskCardHeader';
 import TaskCardDescription from './TaskCardDescription';
@@ -20,7 +21,7 @@ interface TaskCardProps {
 
 const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, className }) => {
   const isMobile = useIsMobile();
-  const isOverdue = new Date(task.deadline) < new Date() && task.status !== 'Completed';
+  const isOverdue = isTaskOverdue(task);
   const isCompleted = task.status === 'Completed';
   const commentCount = task.comments?.length || 0;
   

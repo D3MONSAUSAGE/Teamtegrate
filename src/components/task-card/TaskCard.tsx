@@ -124,18 +124,18 @@ const TaskCard: React.FC<TaskCardProps> = ({
             "[background:linear-gradient(135deg,hsl(142_76%_36%/0.1),hsl(142_69%_58%/0.15),hsl(142_76%_36%/0.08))]",
             "border-green-400/60 dark:border-green-500/50"
           ],
-          // Warning state (yellow glow) - takes precedence over priority
-          !isCompleted && inWarningPeriod && !isOverdue && [
-            "ring-2 ring-yellow-500/40 shadow-2xl shadow-yellow-500/25",
-            "[background:linear-gradient(135deg,hsl(45_93%_47%/0.1),hsl(48_89%_50%/0.15),hsl(45_93%_47%/0.08))]",
-            "border-yellow-400/60 dark:border-yellow-500/50",
-            "animate-pulse"
-          ],
           // Overdue state (red glow) - takes precedence over everything except completed
           !isCompleted && isOverdue && [
             "ring-2 ring-red-500/40 shadow-2xl shadow-red-500/25",
             "[background:linear-gradient(135deg,hsl(0_84%_60%/0.1),hsl(15_78%_65%/0.15),hsl(0_84%_60%/0.08))]",
             "border-red-400/60 dark:border-red-500/50",
+            "animate-pulse"
+          ],
+          // Warning state (yellow glow) - only if not overdue and not completed
+          !isCompleted && !isOverdue && inWarningPeriod && [
+            "ring-2 ring-yellow-500/40 shadow-2xl shadow-yellow-500/25",
+            "[background:linear-gradient(135deg,hsl(45_93%_47%/0.1),hsl(48_89%_50%/0.15),hsl(45_93%_47%/0.08))]",
+            "border-yellow-400/60 dark:border-yellow-500/50",
             "animate-pulse"
           ]
         )}

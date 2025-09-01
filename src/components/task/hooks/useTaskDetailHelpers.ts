@@ -1,6 +1,7 @@
 
 import { Task } from "@/types";
 import { format } from "date-fns";
+import { isTaskOverdue } from "@/utils/taskUtils";
 
 export const useTaskDetailHelpers = (task: Task) => {
   const getStatusColor = (status: string): string => {
@@ -29,10 +30,6 @@ export const useTaskDetailHelpers = (task: Task) => {
       default:
         return 'text-gray-600';
     }
-  };
-
-  const isOverdue = (): boolean => {
-    return new Date(task.deadline) < new Date() && task.status !== 'Completed';
   };
 
   const formatDate = (date: Date): string => {
@@ -64,7 +61,7 @@ export const useTaskDetailHelpers = (task: Task) => {
   return {
     getStatusColor,
     getPriorityColor,
-    isOverdue,
+    isOverdue: isTaskOverdue(task),
     formatDate,
     formatTime,
     getAssignedToName,
