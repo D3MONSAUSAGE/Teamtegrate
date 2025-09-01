@@ -43,16 +43,9 @@ const EnhancedDashboardHeader: React.FC<EnhancedDashboardHeaderProps> = ({
               </div>
             </div>
             
-            <div className="flex items-center gap-4 text-base md:text-lg">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Calendar className="h-5 w-5 text-primary" />
-                <span className="font-medium">{format(new Date(), "EEEE, MMMM d")}</span>
-              </div>
-              <div className="hidden sm:block w-px h-5 bg-border" />
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <TrendingUp className="h-5 w-5 text-emerald-500" />
-                <span>Stay productive today</span>
-              </div>
+            <div className="flex items-center gap-2 text-base md:text-lg text-muted-foreground">
+              <TrendingUp className="h-5 w-5 text-emerald-500" />
+              <span>Stay productive today</span>
             </div>
 
             {/* Quick Stats */}
@@ -78,12 +71,19 @@ const EnhancedDashboardHeader: React.FC<EnhancedDashboardHeaderProps> = ({
             </div>
           </div>
           
-          {/* Action Button */}
-          <div className="flex-shrink-0">
+          {/* Date & Action Section */}
+          <div className="flex-shrink-0 space-y-3">
+            {/* Date & Time */}
+            <div className="flex items-center gap-2 text-base md:text-lg justify-center lg:justify-end">
+              <Calendar className="h-5 w-5 text-primary" />
+              <span className="font-medium text-muted-foreground">{format(new Date(), "EEEE, MMMM d")}</span>
+            </div>
+            
+            {/* Action Button */}
             <Button 
               onClick={onCreateTask} 
               size={isMobile ? "default" : "lg"} 
-              className="relative overflow-hidden bg-gradient-to-r from-primary to-emerald-500 hover:from-primary/90 hover:to-emerald-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border-0"
+              className="relative overflow-hidden bg-gradient-to-r from-primary to-emerald-500 hover:from-primary/90 hover:to-emerald-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border-0 w-full lg:w-auto"
               disabled={isLoading}
             >
               <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 hover:opacity-100 transition-opacity" />
