@@ -132,6 +132,23 @@ const TrainingPage = () => {
             </div>
           )}
 
+          {/* Your Assigned Training - For Management Users */}
+          {canManageContent && assignments.length > 0 && (
+            <div className="animate-fade-in" style={{ animationDelay: '150ms' }}>
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                  <GraduationCap className="h-5 w-5 text-primary" />
+                  Your Assigned Training
+                </h3>
+                <LearningDashboard
+                  assignments={assignments}
+                  onViewAssignment={handleViewAssignment}
+                  onViewAllAssignments={() => setIsMyAssignmentsOpen(true)}
+                />
+              </div>
+            </div>
+          )}
+
           {/* Quick Stats - Compact for All Users */}
           <div className="animate-fade-in" style={{ animationDelay: '200ms' }}>
             <TrainingStatsCards />
