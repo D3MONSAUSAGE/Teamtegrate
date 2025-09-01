@@ -7,8 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Save, X, BookOpen, GraduationCap } from 'lucide-react';
+import { Plus, Trash2, Save, X, BookOpen, GraduationCap, Video, FileText, PlayCircle } from 'lucide-react';
 import { useCreateCourse } from '@/hooks/useTrainingData';
+import { extractYouTubeVideoId, isValidYouTubeInput } from '@/lib/youtube';
 
 interface Module {
   title: string;
@@ -16,6 +17,8 @@ interface Module {
   content: string;
   duration_minutes: number;
   module_order: number;
+  content_type: 'text' | 'video' | 'mixed';
+  youtube_video_id?: string;
 }
 
 interface CourseCreatorProps {
@@ -44,13 +47,23 @@ const CourseCreator: React.FC<CourseCreatorProps> = ({ open, onOpenChange }) => 
       description: '',
       content: '',
       duration_minutes: 30,
-      module_order: modules.length + 1
+      module_order: modules.length + 1,
+      content_type: 'text',
+      youtube_video_id: ''
     }]);
   };
 
   const updateModule = (index: number, field: keyof Module, value: any) => {
     const updated = [...modules];
-    updated[index] = { ...updated[index], [field]: value };
+    
+    // Normalize YouTube video inputs to store just the video ID
+    if (field === 'youtube_video_id' && typeof value === 'string') {
+      const videoId = extractYouTubeVideoId(value);
+      updated[index] = { ...updated[index], [field]: videoId || value };
+    } else {
+      updated[index] = { ...updated[index], [field]: value };
+    }
+    
     setModules(updated);
   };
 
@@ -237,6 +250,9 @@ const CourseCreator: React.FC<CourseCreatorProps> = ({ open, onOpenChange }) => 
                         <span className="text-sm text-muted-foreground">
                           {module.duration_minutes} minutes
                         </span>
+                        {module.content_type === 'video' && <Video className="h-4 w-4 text-blue-500" />}
+                        {module.content_type === 'mixed' && <PlayCircle className="h-4 w-4 text-purple-500" />}
+                        {(!module.content_type || module.content_type === 'text') && <FileText className="h-4 w-4 text-gray-500" />}
                       </div>
                       <Button
                         variant="ghost"
@@ -281,14 +297,47 @@ const CourseCreator: React.FC<CourseCreatorProps> = ({ open, onOpenChange }) => 
                     </div>
 
                     <div className="space-y-2">
-                      <Label>Module Content</Label>
-                      <Textarea
-                        value={module.content}
-                        onChange={(e) => updateModule(moduleIndex, 'content', e.target.value)}
-                        placeholder="Detailed content, instructions, or materials for this module"
-                        rows={4}
-                      />
+                      <Label>Content Type</Label>
+                      <Select
+                        value={module.content_type || 'text'}
+                        onValueChange={(value: 'text' | 'video' | 'mixed') => updateModule(moduleIndex, 'content_type', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select content type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="text">Text Only</SelectItem>
+                          <SelectItem value="video">Video Only</SelectItem>
+                          <SelectItem value="mixed">Text + Video</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
+
+                    {(module.content_type === 'video' || module.content_type === 'mixed') && (
+                      <div className="space-y-2">
+                        <Label>YouTube Video</Label>
+                        <Input
+                          value={module.youtube_video_id || ''}
+                          onChange={(e) => updateModule(moduleIndex, 'youtube_video_id', e.target.value)}
+                          placeholder="Enter YouTube URL or video ID (e.g., https://www.youtube.com/watch?v=dQw4w9WgXcQ)"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Paste the full YouTube URL or just the video ID. Both formats are supported.
+                        </p>
+                      </div>
+                    )}
+
+                    {(module.content_type === 'text' || module.content_type === 'mixed') && (
+                      <div className="space-y-2">
+                        <Label>Module Content</Label>
+                        <Textarea
+                          value={module.content}
+                          onChange={(e) => updateModule(moduleIndex, 'content', e.target.value)}
+                          placeholder="Detailed content, instructions, or materials for this module"
+                          rows={4}
+                        />
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ))}
