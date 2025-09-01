@@ -1,6 +1,7 @@
 
 import React from 'react';
-import CompactTimeControls from './CompactTimeControls';
+import StreamlinedTimeControls from './StreamlinedTimeControls';
+import EnhancedDailyDashboard from './EnhancedDailyDashboard';
 import WeeklyTimeReport from './WeeklyTimeReport';
 import TimeTrackingErrorBoundary from './time/TimeTrackingErrorBoundary';
 import { useEmployeeTimeTracking } from '@/hooks/useEmployeeTimeTracking';
@@ -9,20 +10,21 @@ const TimeTracking: React.FC = () => {
   const { weeklyEntries } = useEmployeeTimeTracking();
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-      {/* Compact Time Controls - Smaller left column */}
-      <div className="lg:col-span-2">
-        <TimeTrackingErrorBoundary>
-          <CompactTimeControls />
-        </TimeTrackingErrorBoundary>
-      </div>
+    <div className="space-y-6">
+      {/* Top Section: Streamlined Time Controls */}
+      <TimeTrackingErrorBoundary>
+        <StreamlinedTimeControls />
+      </TimeTrackingErrorBoundary>
       
-      {/* Weekly Time Report - Larger right column for main focus */}
-      <div className="lg:col-span-3">
-        <TimeTrackingErrorBoundary>
-          <WeeklyTimeReport entries={weeklyEntries} />
-        </TimeTrackingErrorBoundary>
-      </div>
+      {/* Middle Section: Enhanced Daily Dashboard */}
+      <TimeTrackingErrorBoundary>
+        <EnhancedDailyDashboard />
+      </TimeTrackingErrorBoundary>
+      
+      {/* Bottom Section: Weekly Time Report */}
+      <TimeTrackingErrorBoundary>
+        <WeeklyTimeReport entries={weeklyEntries} />
+      </TimeTrackingErrorBoundary>
     </div>
   );
 };
