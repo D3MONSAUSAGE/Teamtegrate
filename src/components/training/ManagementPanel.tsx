@@ -82,70 +82,82 @@ const ManagementPanel: React.FC<ManagementPanelProps> = ({
   ];
 
   return (
-    <Card className="bg-gradient-to-br from-muted/30 to-muted/10">
-      <div className="p-6 space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <h3 className="text-xl font-semibold">Management Center</h3>
+    <>
+      <Card className="bg-gradient-to-br from-muted/30 to-muted/10">
+        <div className="p-6 space-y-6">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <h3 className="text-xl font-semibold">Management Center</h3>
+              <div className="flex items-center gap-2">
+                <p className="text-sm text-muted-foreground">Training administration</p>
+                <Badge variant="secondary" className="text-xs">
+                  {userRole}
+                </Badge>
+              </div>
+            </div>
             <div className="flex items-center gap-2">
-              <p className="text-sm text-muted-foreground">Training administration</p>
-              <Badge variant="secondary" className="text-xs">
-                {userRole}
-              </Badge>
+              {onSettings && (
+                <Button variant="ghost" size="sm" onClick={onSettings}>
+                  <Settings className="h-4 w-4" />
+                </Button>
+              )}
+              {onExportData && (
+                <Button variant="ghost" size="sm" onClick={onExportData}>
+                  <Download className="h-4 w-4" />
+                </Button>
+              )}
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            {onSettings && (
-              <Button variant="ghost" size="sm" onClick={onSettings}>
-                <Settings className="h-4 w-4" />
-              </Button>
-            )}
-            {onExportData && (
-              <Button variant="ghost" size="sm" onClick={onExportData}>
-                <Download className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
-        </div>
 
-        {/* Quick Actions Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {quickActions.map((action, index) => (
-            <ActionCard
-              key={action.title}
-              action={action}
-              delay={index * 100}
-            />
-          ))}
-        </div>
+          {/* Quick Actions Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {quickActions.map((action, index) => (
+              <ActionCard
+                key={action.title}
+                action={action}
+                delay={index * 100}
+              />
+            ))}
+          </div>
 
-        {/* Management Stats */}
-        <div className="grid grid-cols-3 gap-4 pt-4 border-t">
-          <div className="text-center space-y-1">
-            <div className="flex items-center justify-center gap-1">
-              <BookOpen className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium">Courses</span>
+          {/* Management Stats */}
+          <div className="grid grid-cols-3 gap-4 pt-4 border-t">
+            <div className="text-center space-y-1">
+              <div className="flex items-center justify-center gap-1">
+                <BookOpen className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium">Courses</span>
+              </div>
+              <p className="text-xs text-muted-foreground">Content creation</p>
             </div>
-            <p className="text-xs text-muted-foreground">Content creation</p>
-          </div>
-          <div className="text-center space-y-1">
-            <div className="flex items-center justify-center gap-1">
-              <Users className="h-4 w-4 text-accent" />
-              <span className="text-sm font-medium">Teams</span>
+            <div className="text-center space-y-1">
+              <div className="flex items-center justify-center gap-1">
+                <Users className="h-4 w-4 text-accent" />
+                <span className="text-sm font-medium">Teams</span>
+              </div>
+              <p className="text-xs text-muted-foreground">Assignment tracking</p>
             </div>
-            <p className="text-xs text-muted-foreground">Assignment tracking</p>
-          </div>
-          <div className="text-center space-y-1">
-            <div className="flex items-center justify-center gap-1">
-              <TrendingUp className="h-4 w-4 text-blue-500" />
-              <span className="text-sm font-medium">Analytics</span>
+            <div className="text-center space-y-1">
+              <div className="flex items-center justify-center gap-1">
+                <TrendingUp className="h-4 w-4 text-blue-500" />
+                <span className="text-sm font-medium">Analytics</span>
+              </div>
+              <p className="text-xs text-muted-foreground">Performance insights</p>
             </div>
-            <p className="text-xs text-muted-foreground">Performance insights</p>
           </div>
         </div>
-      </div>
-    </Card>
+      </Card>
+
+      {/* Compliance Training Template Manager Dialog */}
+      <Dialog open={showComplianceManager} onOpenChange={setShowComplianceManager}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Compliance Training Setup</DialogTitle>
+          </DialogHeader>
+          <ComplianceTrainingTemplateManager />
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 
