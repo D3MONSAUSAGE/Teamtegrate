@@ -118,7 +118,6 @@ const OptimizedRouter = () => {
       <>
         <Route path="/login" element={<Navigate to="/dashboard" replace />} />
         <Route path="/signup" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/reset-password" element={<Navigate to="/dashboard" replace />} />
       </>
     );
   }, [isAuthenticated]);

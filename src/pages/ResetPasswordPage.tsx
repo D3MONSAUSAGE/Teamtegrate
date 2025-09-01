@@ -22,26 +22,41 @@ const ResetPasswordPage = () => {
 
   // Check if we have a valid reset session
   useEffect(() => {
-    const checkSession = async () => {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      
-      if (error || !session) {
-        setIsValidSession(false);
-        return;
-      }
+    let mounted = true;
 
-      // Check if this is a recovery session
-      const tokenHash = searchParams.get('token_hash');
-      const type = searchParams.get('type');
-      
-      if (type === 'recovery' && tokenHash) {
+    // Listen for Supabase recovery event and general auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!mounted) return;
+      if (event === 'PASSWORD_RECOVERY' || !!session) {
         setIsValidSession(true);
-      } else {
-        setIsValidSession(false);
       }
-    };
+    });
 
-    checkSession();
+    // Initial session check
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        if (!mounted) return;
+        if (session) {
+          setIsValidSession(true);
+        } else {
+          // If URL indicates a recovery link, allow the page while session initializes
+          const type = searchParams.get('type');
+          const tokenHash = searchParams.get('token_hash');
+          if (type === 'recovery' && tokenHash) {
+            setIsValidSession(true);
+          } else {
+            setIsValidSession(false);
+          }
+        }
+      })
+      .catch(() => {
+        if (mounted) setIsValidSession(false);
+      });
+
+    return () => {
+      mounted = false;
+      subscription?.unsubscribe();
+    };
   }, [searchParams]);
 
   const handlePasswordReset = async (e: React.FormEvent) => {
