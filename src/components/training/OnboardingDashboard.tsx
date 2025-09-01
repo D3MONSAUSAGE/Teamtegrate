@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UserPlus, CheckCircle, Clock, Users, FileText, Calendar } from 'lucide-react';
 import { OnboardingTasks } from './OnboardingTasks';
 import { OnboardingTimeline } from './OnboardingTimeline';
-import { OnboardingChecklist } from './OnboardingChecklist';
+import OnboardingChecklist from './OnboardingChecklist';
 
 export function OnboardingDashboard() {
   const { user } = useAuth();

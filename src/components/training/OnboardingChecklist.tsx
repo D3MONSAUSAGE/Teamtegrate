@@ -1,10 +1,13 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { CheckCircle2, Clock, Calendar, FileText, Users, Settings, GraduationCap, ExternalLink } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { CheckCircle, Clock, AlertTriangle, ExternalLink, Calendar, User, Building, FileText, Shield, GraduationCap, Users, Briefcase, Settings } from 'lucide-react';
+import { useComplianceTraining } from '@/hooks/useComplianceTraining';
+import ExternalTrainingFlow from './ExternalTrainingFlow';
 
 interface ChecklistItem {
   id: string;
@@ -19,7 +22,10 @@ interface ChecklistItem {
   linkUrl?: string;
 }
 
-export function OnboardingChecklist() {
+const OnboardingChecklist: React.FC = () => {
+  const { getRequiredTrainings, getCompletedTrainings, getComplianceStats } = useComplianceTraining();
+  const [showComplianceTraining, setShowComplianceTraining] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [checklistItems, setChecklistItems] = useState<ChecklistItem[]>([
     {
       id: '1',
@@ -123,10 +129,43 @@ export function OnboardingChecklist() {
       priority: 'low',
       estimatedTime: '15 min',
       completed: false
+    },
+    {
+      id: "compliance-training",
+      title: "Complete Compliance Training",
+      description: "Mandatory compliance training based on your location and role",
+      category: "training",
+      priority: "high",
+      estimatedTime: "1-3 hours",
+      dueDate: "2024-01-08",
+      completed: false,
+      hasLink: true,
+      linkUrl: "#compliance"
     }
   ]);
 
+  useEffect(() => {
+    // Update compliance training status based on actual completion
+    const complianceStats = getComplianceStats();
+    setChecklistItems(items =>
+      items.map(item =>
+        item.id === "compliance-training"
+          ? { ...item, completed: complianceStats.completed > 0 }
+          : item
+      )
+    );
+  }, [getComplianceStats]);
+
   const toggleItem = (id: string) => {
+    if (id === "compliance-training") {
+      const requiredTrainings = getRequiredTrainings();
+      if (requiredTrainings.length > 0) {
+        setSelectedTemplateId(requiredTrainings[0].id);
+        setShowComplianceTraining(true);
+        return;
+      }
+    }
+
     setChecklistItems(items =>
       items.map(item =>
         item.id === id ? { ...item, completed: !item.completed } : item
@@ -147,7 +186,7 @@ export function OnboardingChecklist() {
       case 'systems':
         return <Settings className="w-4 h-4" />;
       default:
-        return <CheckCircle2 className="w-4 h-4" />;
+        return <CheckCircle className="w-4 h-4" />;
     }
   };
 
@@ -199,7 +238,7 @@ export function OnboardingChecklist() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <CheckCircle2 className="w-5 h-5 text-primary" />
+            <CheckCircle className="w-5 h-5 text-primary" />
             Onboarding Progress
           </CardTitle>
           <CardDescription>
@@ -261,11 +300,26 @@ export function OnboardingChecklist() {
                             <Badge variant="outline" className={getPriorityColor(item.priority)}>
                               {item.priority}
                             </Badge>
-                            {item.hasLink && (
-                              <Button size="sm" variant="ghost" className="p-1 h-6 w-6">
-                                <ExternalLink className="w-3 h-3" />
-                              </Button>
-                            )}
+                             {item.hasLink && (
+                               <Button 
+                                 size="sm" 
+                                 variant="ghost" 
+                                 className="p-1 h-6 w-6"
+                                 onClick={() => {
+                                   if (item.id === "compliance-training") {
+                                     const requiredTrainings = getRequiredTrainings();
+                                     if (requiredTrainings.length > 0) {
+                                       setSelectedTemplateId(requiredTrainings[0].id);
+                                       setShowComplianceTraining(true);
+                                     }
+                                   } else {
+                                     window.open(item.linkUrl, '_blank');
+                                   }
+                                 }}
+                               >
+                                 <ExternalLink className="w-3 h-3" />
+                               </Button>
+                             )}
                           </div>
                         </div>
                         <div className="flex items-center gap-4 text-xs text-muted-foreground">
@@ -289,6 +343,28 @@ export function OnboardingChecklist() {
           );
         })}
       </div>
+
+      {/* Compliance Training Dialog */}
+      <Dialog open={showComplianceTraining} onOpenChange={setShowComplianceTraining}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Compliance Training</DialogTitle>
+          </DialogHeader>
+          {selectedTemplateId && (
+            <ExternalTrainingFlow
+              templateId={selectedTemplateId}
+              onComplete={() => {
+                setShowComplianceTraining(false);
+                // Refresh the checklist to reflect completion
+                window.location.reload();
+              }}
+              onClose={() => setShowComplianceTraining(false)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
-}
+};
+
+export default OnboardingChecklist;

@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { 
   Plus, 
   PlusCircle, 
@@ -12,8 +13,10 @@ import {
   Download,
   TrendingUp,
   BookOpen,
-  PenTool
+  PenTool,
+  Shield
 } from 'lucide-react';
+import ComplianceTrainingTemplateManager from './ComplianceTrainingTemplateManager';
 
 interface ManagementPanelProps {
   onCreateCourse: () => void;
@@ -34,6 +37,7 @@ const ManagementPanel: React.FC<ManagementPanelProps> = ({
   onSettings,
   userRole
 }) => {
+  const [showComplianceManager, setShowComplianceManager] = useState(false);
   const quickActions = [
     {
       title: 'Create Course',
@@ -50,6 +54,14 @@ const ManagementPanel: React.FC<ManagementPanelProps> = ({
       onClick: onCreateQuiz,
       primary: false,
       color: 'from-accent to-accent/80'
+    },
+    {
+      title: 'Compliance Setup',
+      description: 'Configure external compliance training',
+      icon: Shield,
+      onClick: () => setShowComplianceManager(true),
+      primary: false,
+      color: 'from-amber-500 to-amber-400'
     },
     {
       title: 'Assign Training',

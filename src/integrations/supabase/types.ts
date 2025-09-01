@@ -382,6 +382,108 @@ export type Database = {
           },
         ]
       }
+      compliance_training_records: {
+        Row: {
+          certificate_url: string | null
+          completion_date: string | null
+          completion_notes: string | null
+          course_id: string | null
+          created_at: string
+          external_training_url: string | null
+          id: string
+          is_completed: boolean | null
+          language_selected: string
+          organization_id: string
+          role_classification: string
+          template_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          certificate_url?: string | null
+          completion_date?: string | null
+          completion_notes?: string | null
+          course_id?: string | null
+          created_at?: string
+          external_training_url?: string | null
+          id?: string
+          is_completed?: boolean | null
+          language_selected: string
+          organization_id: string
+          role_classification: string
+          template_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          certificate_url?: string | null
+          completion_date?: string | null
+          completion_notes?: string | null
+          course_id?: string | null
+          created_at?: string
+          external_training_url?: string | null
+          id?: string
+          is_completed?: boolean | null
+          language_selected?: string
+          organization_id?: string
+          role_classification?: string
+          template_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      compliance_training_templates: {
+        Row: {
+          completion_method: string
+          created_at: string
+          description: string | null
+          external_base_url: string
+          id: string
+          is_active: boolean | null
+          is_required: boolean | null
+          jurisdiction: string
+          language_options: string[] | null
+          organization_id: string
+          role_classifications: string[] | null
+          title: string
+          updated_at: string
+          url_parameters: Json | null
+        }
+        Insert: {
+          completion_method?: string
+          created_at?: string
+          description?: string | null
+          external_base_url: string
+          id?: string
+          is_active?: boolean | null
+          is_required?: boolean | null
+          jurisdiction: string
+          language_options?: string[] | null
+          organization_id: string
+          role_classifications?: string[] | null
+          title: string
+          updated_at?: string
+          url_parameters?: Json | null
+        }
+        Update: {
+          completion_method?: string
+          created_at?: string
+          description?: string | null
+          external_base_url?: string
+          id?: string
+          is_active?: boolean | null
+          is_required?: boolean | null
+          jurisdiction?: string
+          language_options?: string[] | null
+          organization_id?: string
+          role_classifications?: string[] | null
+          title?: string
+          updated_at?: string
+          url_parameters?: Json | null
+        }
+        Relationships: []
+      }
       daily_time_summaries: {
         Row: {
           approved_at: string | null
@@ -2373,46 +2475,61 @@ export type Database = {
       }
       training_courses: {
         Row: {
+          completion_method: string | null
+          compliance_template_id: string | null
           created_at: string
           created_by: string
           description: string | null
           difficulty_level: string | null
           estimated_duration_minutes: number | null
+          external_base_url: string | null
           id: string
           is_active: boolean | null
+          is_external: boolean | null
           organization_id: string
           tags: string[] | null
           thumbnail_url: string | null
           title: string
           updated_at: string
+          url_parameters: Json | null
         }
         Insert: {
+          completion_method?: string | null
+          compliance_template_id?: string | null
           created_at?: string
           created_by: string
           description?: string | null
           difficulty_level?: string | null
           estimated_duration_minutes?: number | null
+          external_base_url?: string | null
           id?: string
           is_active?: boolean | null
+          is_external?: boolean | null
           organization_id: string
           tags?: string[] | null
           thumbnail_url?: string | null
           title: string
           updated_at?: string
+          url_parameters?: Json | null
         }
         Update: {
+          completion_method?: string | null
+          compliance_template_id?: string | null
           created_at?: string
           created_by?: string
           description?: string | null
           difficulty_level?: string | null
           estimated_duration_minutes?: number | null
+          external_base_url?: string | null
           id?: string
           is_active?: boolean | null
+          is_external?: boolean | null
           organization_id?: string
           tags?: string[] | null
           thumbnail_url?: string | null
           title?: string
           updated_at?: string
+          url_parameters?: Json | null
         }
         Relationships: []
       }
