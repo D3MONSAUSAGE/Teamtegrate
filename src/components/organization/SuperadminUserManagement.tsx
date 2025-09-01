@@ -11,6 +11,7 @@ import CreateUserDialog from './CreateUserDialog';
 import EditUserDialog from './EditUserDialog';
 import SimpleDeleteUserDialog from './SimpleDeleteUserDialog';
 import SuperadminTransferDialog from './SuperadminTransferDialog';
+import ResetPasswordDialog from './ResetPasswordDialog';
 import ConnectionStatusIndicator from './ConnectionStatusIndicator';
 
 const SuperadminUserManagement: React.FC = () => {
@@ -37,12 +38,15 @@ const SuperadminUserManagement: React.FC = () => {
     setDeleteDialogOpen,
     transferDialogOpen,
     setTransferDialogOpen,
+    resetPasswordDialogOpen,
+    setResetPasswordDialogOpen,
     selectedUser,
     transferData,
     handleQuickRoleChange,
     handleSuperadminTransfer,
     handleEditUser,
     handleDeleteUser,
+    handleResetPassword,
     deleteUser,
     onUserCreated,
     onUserUpdated,
@@ -157,6 +161,7 @@ const SuperadminUserManagement: React.FC = () => {
               onRoleChange={handleQuickRoleChange}
               onEditUser={handleEditUser}
               onDeleteUser={handleDeleteUser}
+              onResetPassword={handleResetPassword}
             />
           </div>
         </CardContent>
@@ -190,6 +195,12 @@ const SuperadminUserManagement: React.FC = () => {
         transferData={transferData}
         onConfirm={handleSuperadminTransfer}
         isTransferring={isTransferring}
+      />
+
+      <ResetPasswordDialog
+        open={resetPasswordDialogOpen}
+        onOpenChange={setResetPasswordDialogOpen}
+        user={selectedUser}
       />
     </>
   );

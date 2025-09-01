@@ -16,11 +16,13 @@ import {
   DropdownMenuTrigger,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu"
-import { MoreVertical, Loader2, Edit, Trash2 } from 'lucide-react';
+import { MoreVertical, Loader2, Edit, Trash2, Key } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { User as UserType, UserRole } from '@/types';
 import { useNavigate } from 'react-router-dom';
 import { Eye, ExternalLink } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/components/ui/sonner';
 
 interface User {
   id: string;
@@ -40,6 +42,7 @@ interface UserListProps {
   onRoleChange: (userId: string, newRole: UserRole) => Promise<void>;
   onEditUser: (user: User) => void;
   onDeleteUser: (user: User) => void;
+  onResetPassword?: (user: User) => void;
 }
 
 const UserList: React.FC<UserListProps> = ({
@@ -47,7 +50,8 @@ const UserList: React.FC<UserListProps> = ({
   updatingUserId,
   onRoleChange,
   onEditUser,
-  onDeleteUser
+  onDeleteUser,
+  onResetPassword
 }) => {
   const { user: currentUser } = useAuth();
   const navigate = useNavigate();
@@ -91,6 +95,29 @@ const UserList: React.FC<UserListProps> = ({
 
   const handleViewDashboard = (userId: string) => {
     navigate(`/dashboard/organization/employee/${userId}`);
+  };
+
+  const handleResetPassword = async (user: User) => {
+    if (onResetPassword) {
+      onResetPassword(user);
+    } else {
+      // Fallback to basic implementation
+      try {
+        const { data, error } = await supabase.functions.invoke('admin-reset-password', {
+          body: {
+            email: user.email,
+            action: 'send_recovery_link'
+          }
+        });
+
+        if (error) throw error;
+
+        toast.success(`Password reset link sent to ${user.email}`);
+      } catch (error: any) {
+        console.error('Password reset failed:', error);
+        toast.error(error.message || 'Failed to send password reset link');
+      }
+    }
   };
 
   return (
@@ -170,6 +197,16 @@ const UserList: React.FC<UserListProps> = ({
                         <Edit className="h-4 w-4" />
                         Edit User
                       </DropdownMenuItem>
+                      
+                      {isAdmin && user.id !== currentUser?.id && (
+                        <DropdownMenuItem
+                          onClick={() => handleResetPassword(user)}
+                          className="flex items-center gap-2"
+                        >
+                          <Key className="h-4 w-4" />
+                          Reset Password
+                        </DropdownMenuItem>
+                      )}
                       
                       {user.id !== currentUser?.id && (
                         <DropdownMenuItem

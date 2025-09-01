@@ -21,6 +21,7 @@ export const useSuperadminUserManagement = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [transferDialogOpen, setTransferDialogOpen] = useState(false);
+  const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [transferData, setTransferData] = useState<any>(null);
 
@@ -113,6 +114,11 @@ export const useSuperadminUserManagement = () => {
     setDeleteDialogOpen(true);
   };
 
+  const handleResetPassword = (user: any) => {
+    setSelectedUser(user);
+    setResetPasswordDialogOpen(true);
+  };
+
   const deleteUser = async (userId: string, deletionReason?: string) => {
     try {
       const { data, error } = await supabase.functions.invoke('delete-user', {
@@ -186,6 +192,8 @@ export const useSuperadminUserManagement = () => {
     setDeleteDialogOpen,
     transferDialogOpen,
     setTransferDialogOpen,
+    resetPasswordDialogOpen,
+    setResetPasswordDialogOpen,
     selectedUser,
     transferData,
     
@@ -195,6 +203,7 @@ export const useSuperadminUserManagement = () => {
     handleSuperadminTransfer,
     handleEditUser,
     handleDeleteUser,
+    handleResetPassword,
     deleteUser,
     onUserCreated,
     onUserUpdated,
