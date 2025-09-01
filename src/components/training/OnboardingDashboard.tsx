@@ -187,4 +187,6 @@ export function OnboardingDashboard() {
       </Tabs>
     </div>
   );
-}
+};
+
+export default OnboardingDashboard;
