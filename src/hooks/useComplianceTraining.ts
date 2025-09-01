@@ -32,7 +32,7 @@ export interface ComplianceRecord {
   completion_notes?: string;
   created_at: string;
   updated_at: string;
-  template?: ComplianceTemplate;
+  template?: ComplianceTemplate | null;
 }
 
 export const useComplianceTraining = () => {
@@ -62,17 +62,40 @@ export const useComplianceTraining = () => {
     if (!user) return;
 
     try {
-      const { data, error } = await supabase
+      // First get the records
+      const { data: records, error: recordsError } = await supabase
         .from('compliance_training_records')
-        .select(`
-          *,
-          template:compliance_training_templates(*)
-        `)
+        .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setUserRecords(data as ComplianceRecord[] || []);
+      if (recordsError) throw recordsError;
+
+      // Then get templates separately and join them
+      const templateIds = records?.map(r => r.template_id).filter(Boolean) || [];
+      let templatesMap: Record<string, ComplianceTemplate> = {};
+
+      if (templateIds.length > 0) {
+        const { data: templates, error: templatesError } = await supabase
+          .from('compliance_training_templates')
+          .select('*')
+          .in('id', templateIds);
+
+        if (!templatesError && templates) {
+          templatesMap = templates.reduce((acc, template) => ({
+            ...acc,
+            [template.id]: template
+          }), {});
+        }
+      }
+
+      // Combine records with templates
+      const recordsWithTemplates: ComplianceRecord[] = (records || []).map(record => ({
+        ...record,
+        template: templatesMap[record.template_id] || null
+      }));
+
+      setUserRecords(recordsWithTemplates);
     } catch (err) {
       console.error('Error fetching user compliance records:', err);
       setError('Failed to load compliance training records');
@@ -81,17 +104,57 @@ export const useComplianceTraining = () => {
 
   const fetchAllRecords = async () => {
     try {
-      const { data, error } = await supabase
+      // Get all records
+      const { data: records, error: recordsError } = await supabase
         .from('compliance_training_records')
-        .select(`
-          *,
-          template:compliance_training_templates(*),
-          user:users(name, email)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return data || [];
+      if (recordsError) throw recordsError;
+
+      // Get templates and users separately
+      const templateIds = records?.map(r => r.template_id).filter(Boolean) || [];
+      const userIds = records?.map(r => r.user_id).filter(Boolean) || [];
+
+      let templatesMap: Record<string, ComplianceTemplate> = {};
+      let usersMap: Record<string, { name: string; email: string }> = {};
+
+      if (templateIds.length > 0) {
+        const { data: templates } = await supabase
+          .from('compliance_training_templates')
+          .select('*')
+          .in('id', templateIds);
+
+        if (templates) {
+          templatesMap = templates.reduce((acc, template) => ({
+            ...acc,
+            [template.id]: template
+          }), {});
+        }
+      }
+
+      if (userIds.length > 0) {
+        const { data: users } = await supabase
+          .from('users')
+          .select('id, name, email')
+          .in('id', userIds);
+
+        if (users) {
+          usersMap = users.reduce((acc, user) => ({
+            ...acc,
+            [user.id]: { name: user.name, email: user.email }
+          }), {});
+        }
+      }
+
+      // Combine data
+      const enrichedRecords = (records || []).map(record => ({
+        ...record,
+        template: templatesMap[record.template_id] || null,
+        user: usersMap[record.user_id] || null
+      }));
+
+      return enrichedRecords;
     } catch (err) {
       console.error('Error fetching all compliance records:', err);
       setError('Failed to load compliance training records');
