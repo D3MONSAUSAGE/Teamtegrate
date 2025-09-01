@@ -99,7 +99,7 @@ const ModernPageHeader: React.FC<ModernPageHeaderProps> = ({
           </div>
           
           {/* Right Section - Date/Time & Actions */}
-          <div className="flex-shrink-0 flex items-center gap-4">
+          <div className="flex-shrink-0 space-y-3">
             {/* Date and Time Display */}
             <div className="text-right space-y-1">
               <div className="text-sm text-muted-foreground">{formattedDate}</div>
@@ -111,7 +111,7 @@ const ModernPageHeader: React.FC<ModernPageHeaderProps> = ({
               <Button 
                 onClick={actionButton.onClick}
                 size="lg"
-                className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+                className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 w-full lg:w-auto"
                 disabled={actionButton.disabled}
               >
                 <div className="flex items-center gap-2">
