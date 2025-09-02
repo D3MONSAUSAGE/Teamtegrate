@@ -11,23 +11,38 @@ export const useOnboardingTemplates = () => {
   const templatesQuery = useQuery({
     queryKey: ['onboarding-templates', user?.organizationId],
     queryFn: async () => {
-      if (!user?.organizationId) throw new Error('No organization');
+      if (!user?.organizationId) {
+        console.log('useOnboardingTemplates: No organization ID');
+        throw new Error('No organization');
+      }
 
+      console.log('Fetching templates for organization:', user.organizationId);
+
+      // First, try a simple query without joins to see if basic templates work
       const { data, error } = await supabase
         .from('onboarding_templates')
-        .select(`
-          *,
-          onboarding_stages (
-            *,
-            onboarding_tasks (*)
-          )
-        `)
+        .select('*')
         .eq('organization_id', user.organizationId)
         .eq('is_active', true)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return data as OnboardingTemplate[];
+      if (error) {
+        console.error('Error fetching templates:', error);
+        throw error;
+      }
+
+      console.log('Templates fetched successfully:', data);
+      
+      // Filter out any templates with invalid IDs
+      const validTemplates = data?.filter(template => 
+        template.id && 
+        typeof template.id === 'string' && 
+        template.name && 
+        template.name.trim() !== ''
+      ) || [];
+      
+      console.log('Valid templates:', validTemplates);
+      return validTemplates as OnboardingTemplate[];
     },
     enabled: !!user?.organizationId,
   });

@@ -272,15 +272,26 @@ function LaunchInstanceForm({ templates, users, onSubmit, isSubmitting }: Launch
           <SelectTrigger>
             <SelectValue placeholder="Choose a template or create custom..." />
           </SelectTrigger>
-          <SelectContent className="z-50">
+          <SelectContent className="z-[100]">
             <SelectItem value="custom">Custom Onboarding</SelectItem>
-            {templates.map((template) => (
-              <SelectItem key={template.id} value={template.id}>
-                {template.name}
-              </SelectItem>
-            ))}
+            {templates.length === 0 ? (
+              <div className="px-2 py-1 text-sm text-muted-foreground">
+                No templates available
+              </div>
+            ) : (
+              templates.map((template) => (
+                <SelectItem key={template.id} value={template.id}>
+                  {template.name || 'Unnamed Template'}
+                </SelectItem>
+              ))
+            )}
           </SelectContent>
         </Select>
+        {templates.length === 0 && (
+          <p className="text-xs text-muted-foreground">
+            Create templates in the Templates tab to use them here.
+          </p>
+        )}
       </div>
 
       <div className="space-y-2">
