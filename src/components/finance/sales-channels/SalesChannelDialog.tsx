@@ -70,7 +70,7 @@ export const SalesChannelDialog: React.FC<SalesChannelDialogProps> = ({
       commission_type: 'percentage',
       commission_rate: 0.15, // Default 15%
       flat_fee_amount: 0,
-      team_id: '',
+      team_id: 'all',
     }
   });
 
@@ -84,7 +84,7 @@ export const SalesChannelDialog: React.FC<SalesChannelDialogProps> = ({
         commission_type: channel.commission_type,
         commission_rate: channel.commission_rate,
         flat_fee_amount: channel.flat_fee_amount || 0,
-        team_id: channel.team_id || '',
+        team_id: channel.team_id || 'all',
       });
     } else {
       form.reset({
@@ -93,7 +93,7 @@ export const SalesChannelDialog: React.FC<SalesChannelDialogProps> = ({
         commission_type: 'percentage',
         commission_rate: 0.15,
         flat_fee_amount: 0,
-        team_id: '',
+        team_id: 'all',
       });
     }
   }, [channel, form]);
@@ -107,7 +107,7 @@ export const SalesChannelDialog: React.FC<SalesChannelDialogProps> = ({
         commission_type: data.commission_type,
         commission_rate: data.commission_type === 'percentage' ? (data.commission_rate || 0) : 0,
         flat_fee_amount: data.commission_type === 'flat_fee' ? (data.flat_fee_amount || 0) : 0,
-        team_id: data.team_id || undefined,
+        team_id: data.team_id && data.team_id !== 'all' ? data.team_id : undefined,
       };
 
       let success = false;
@@ -261,7 +261,7 @@ export const SalesChannelDialog: React.FC<SalesChannelDialogProps> = ({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">All Teams</SelectItem>
+                      <SelectItem value="all">All Teams</SelectItem>
                       {teams.map((team) => (
                         <SelectItem key={team.id} value={team.id}>
                           {team.name}
