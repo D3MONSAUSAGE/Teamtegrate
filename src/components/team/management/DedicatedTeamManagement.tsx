@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/select";
 import { useAuth } from '@/contexts/AuthContext';
 import { useTeamManagement } from '@/hooks/organization/useTeamManagement';
+import { useRealTeamMembers, TeamMemberPerformanceData } from '@/hooks/team/useRealTeamMembers';
 import { Team } from '@/types/teams';
 import { toast } from '@/components/ui/sonner';
 
@@ -47,6 +48,9 @@ interface TeamMember {
   role: 'manager' | 'team_leader' | 'member';
   job_roles?: string[];
   joined_at: string;
+  totalTasks?: number;
+  completedTasks?: number;
+  completionRate?: number;
 }
 
 interface TeamWithMembers extends Team {
@@ -58,51 +62,35 @@ const DedicatedTeamManagement: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { teams, addTeamMember, removeTeamMember } = useTeamManagement();
+  const { teamMembers: realTeamMembers, isLoading: membersLoading, error } = useRealTeamMembers(teamId);
   
   const [team, setTeam] = useState<TeamWithMembers | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRole, setSelectedRole] = useState<string>('all');
-  const [isLoading, setIsLoading] = useState(true);
 
-  // Mock team members data - replace with actual API call
-  const mockMembers: TeamMember[] = [
-    {
-      id: '1',
-      name: 'John Doe',
-      email: 'john@example.com',
-      role: 'manager',
-      job_roles: ['Project Manager', 'Senior Developer'],
-      joined_at: '2024-01-15'
-    },
-    {
-      id: '2', 
-      name: 'Jane Smith',
-      email: 'jane@example.com',
-      role: 'team_leader',
-      job_roles: ['Team Lead', 'Frontend Developer'],
-      joined_at: '2024-02-01'
-    },
-    {
-      id: '3',
-      name: 'Bob Johnson',
-      email: 'bob@example.com', 
-      role: 'member',
-      job_roles: ['Backend Developer'],
-      joined_at: '2024-02-15'
-    }
-  ];
+  // Convert real team members to component format
+  const convertedMembers: TeamMember[] = realTeamMembers.map(member => ({
+    id: member.id,
+    name: member.name,
+    email: member.email,
+    avatar_url: member.avatar_url,
+    role: member.role === 'manager' ? 'manager' : 'member', // Convert from DB format
+    joined_at: member.joined_at,
+    totalTasks: member.totalTasks,
+    completedTasks: member.completedTasks,
+    completionRate: member.completionRate,
+  }));
 
   useEffect(() => {
     // Find the team and load its members
     const foundTeam = teams.find(t => t.id === teamId);
-    if (foundTeam) {
+    if (foundTeam && !membersLoading) {
       setTeam({
         ...foundTeam,
-        members: mockMembers // Replace with actual members fetch
+        members: convertedMembers
       });
     }
-    setIsLoading(false);
-  }, [teamId, teams]);
+  }, [teamId, teams, convertedMembers, membersLoading]);
 
   const canManageTeam = user && (
     ['superadmin', 'admin'].includes(user.role) || 
@@ -172,7 +160,7 @@ const DedicatedTeamManagement: React.FC = () => {
     navigate('/dashboard/chat?createTeamChat=true&teamId=' + teamId);
   };
 
-  if (isLoading) {
+  if (membersLoading) {
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-4">
@@ -301,13 +289,16 @@ const DedicatedTeamManagement: React.FC = () => {
                         </Badge>
                       </div>
                       <p className="text-sm text-muted-foreground">{member.email}</p>
-                      {member.job_roles && member.job_roles.length > 0 && (
+                      {member.totalTasks !== undefined && (
                         <div className="flex gap-1 mt-1">
-                          {member.job_roles.map((jobRole, index) => (
-                            <Badge key={index} variant="outline" className="text-xs">
-                              {jobRole}
+                          <Badge variant="outline" className="text-xs">
+                            Tasks: {member.completedTasks}/{member.totalTasks}
+                          </Badge>
+                          {member.completionRate !== undefined && (
+                            <Badge variant="outline" className="text-xs">
+                              {member.completionRate}% Complete
                             </Badge>
-                          ))}
+                          )}
                         </div>
                       )}
                     </div>
@@ -323,7 +314,6 @@ const DedicatedTeamManagement: React.FC = () => {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="team_leader">Team Leader</SelectItem>
                           <SelectItem value="member">Member</SelectItem>
                         </SelectContent>
                       </Select>
