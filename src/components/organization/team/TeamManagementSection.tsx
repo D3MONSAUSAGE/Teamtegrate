@@ -40,14 +40,19 @@ import { devLog } from '@/utils/devLogger';
 import { logger } from '@/utils/logger';
 import TeamMemberManagementDialog from './TeamMemberManagementDialog';
 import TeamMembersHorizontalList from './TeamMembersHorizontalList';
+import EditTeamDialog from './EditTeamDialog';
 
 interface Team {
   id: string;
   name: string;
   description?: string;
+  manager_id?: string;
   manager_name?: string;
   member_count: number;
   is_active: boolean;
+  organization_id?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 const TeamManagementSection = () => {
@@ -173,16 +178,12 @@ const TeamManagementSection = () => {
 
   const openEditDialog = (team: Team) => {
     setEditingTeam(team);
-    setTeamName(team.name);
-    setTeamDescription(team.description || '');
     setIsEditDialogOpen(true);
   };
 
   const closeEditDialog = () => {
     setIsEditDialogOpen(false);
     setEditingTeam(null);
-    setTeamName('');
-    setTeamDescription('');
   };
 
   const handleManageMembers = (team: Team) => {
@@ -387,56 +388,19 @@ const TeamManagementSection = () => {
         </CardContent>
       </Card>
 
-      {/* Edit Team Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={closeEditDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Team</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium">Team Name</label>
-              <Input
-                value={teamName}
-                onChange={(e) => setTeamName(e.target.value)}
-                placeholder="Enter team name"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium">Description (Optional)</label>
-              <Textarea
-                value={teamDescription}
-                onChange={(e) => setTeamDescription(e.target.value)}
-                placeholder="Describe the team's purpose"
-                rows={3}
-              />
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button 
-                variant="outline" 
-                onClick={closeEditDialog}
-                disabled={isSubmitting}
-              >
-                <X className="h-4 w-4 mr-2" />
-                Cancel
-              </Button>
-              <Button onClick={handleEditTeam} disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Save className="h-4 w-4 mr-2" />
-                    Save Changes
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Enhanced Edit Team Dialog */}
+      {editingTeam && (
+        <EditTeamDialog
+          team={{
+            ...editingTeam,
+            organization_id: editingTeam.organization_id || user?.organizationId || '',
+            created_at: editingTeam.created_at || new Date().toISOString(),
+            updated_at: editingTeam.updated_at || new Date().toISOString(),
+          }}
+          open={isEditDialogOpen}
+          onOpenChange={closeEditDialog}
+        />
+      )}
 
       {/* Team Member Management Dialog */}
       {selectedTeam && (

@@ -6,7 +6,7 @@ import { useTeamMemberOperations } from './team/useTeamMemberOperations';
 export const useTeamManagement = () => {
   const { teams, teamStats, isLoading, error } = useTeamQueries();
   const { isCreating, isUpdating, createTeam, updateTeam, deleteTeam, refetchTeams } = useTeamOperations();
-  const { addTeamMember, removeTeamMember } = useTeamMemberOperations();
+  const { addTeamMember, removeTeamMember, updateTeamMemberRole } = useTeamMemberOperations();
 
   return {
     teams,
@@ -20,6 +20,7 @@ export const useTeamManagement = () => {
     deleteTeam,
     addTeamMember,
     removeTeamMember,
+    updateTeamMemberRole,
     refetchTeams,
   };
 };
