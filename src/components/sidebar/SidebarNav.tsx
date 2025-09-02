@@ -19,6 +19,7 @@ import {
   User,
   Clock,
   GraduationCap,
+  AlertTriangle,
 } from 'lucide-react';
 
 interface NavItemProps {
@@ -35,26 +36,38 @@ interface SidebarNavProps {
 const SidebarNav: React.FC<SidebarNavProps> = memo(({ onNavigation, isCollapsed = false }) => {
   const location = useLocation();
   
-  const { user } = useAuth();
+  const { user, hasRoleAccess } = useAuth();
 
   // Memoize navigation items to prevent re-creation on every render
-  const navigation = useMemo(() => [
-    { name: 'Dashboard', href: '/dashboard', icon: Home },
-    { name: 'Tasks', href: '/dashboard/tasks', icon: CheckSquare },
-    { name: 'Projects', href: '/dashboard/projects', icon: Briefcase },
-    { name: 'Organization', href: '/dashboard/organization', icon: Users },
-    { name: 'Calendar', href: '/dashboard/calendar', icon: Calendar },
-    { name: 'Meetings', href: '/dashboard/meetings', icon: CalendarCheck },
-    { name: 'Training & Onboarding', href: '/dashboard/training', icon: GraduationCap },
-    { name: 'Focus', href: '/dashboard/focus', icon: Target },
-    { name: 'Reports', href: '/dashboard/reports', icon: BarChart3 },
-    { name: 'Chat', href: '/dashboard/chat', icon: MessageCircle },
-    { name: 'Documents', href: '/dashboard/documents', icon: FileText },
-    { name: 'Finance', href: '/dashboard/finance', icon: DollarSign },
-    { name: 'Notebook', href: '/dashboard/notebook', icon: NotebookPen },
-    { name: 'Time Clock', href: '/dashboard/time-tracking', icon: Clock },
-    { name: 'Profile', href: '/dashboard/profile', icon: User },
-  ], []);
+  const navigation = useMemo(() => {
+    const items = [
+      { name: 'Dashboard', href: '/dashboard', icon: Home },
+      { name: 'Tasks', href: '/dashboard/tasks', icon: CheckSquare },
+      { name: 'Projects', href: '/dashboard/projects', icon: Briefcase },
+      { name: 'Organization', href: '/dashboard/organization', icon: Users },
+    ];
+
+    // Add Employee Actions for managers and above
+    if (hasRoleAccess('manager')) {
+      items.push({ name: 'Employee Actions', href: '/dashboard/employee-actions', icon: AlertTriangle });
+    }
+
+    items.push(
+      { name: 'Calendar', href: '/dashboard/calendar', icon: Calendar },
+      { name: 'Meetings', href: '/dashboard/meetings', icon: CalendarCheck },
+      { name: 'Training & Onboarding', href: '/dashboard/training', icon: GraduationCap },
+      { name: 'Focus', href: '/dashboard/focus', icon: Target },
+      { name: 'Reports', href: '/dashboard/reports', icon: BarChart3 },
+      { name: 'Chat', href: '/dashboard/chat', icon: MessageCircle },
+      { name: 'Documents', href: '/dashboard/documents', icon: FileText },
+      { name: 'Finance', href: '/dashboard/finance', icon: DollarSign },
+      { name: 'Notebook', href: '/dashboard/notebook', icon: NotebookPen },
+      { name: 'Time Clock', href: '/dashboard/time-tracking', icon: Clock },
+      { name: 'Profile', href: '/dashboard/profile', icon: User },
+    );
+
+    return items;
+  }, [hasRoleAccess]);
 
   // Enhanced active route detection that handles nested routes
   const isActiveRoute = useCallback((itemHref: string, currentPath: string) => {
