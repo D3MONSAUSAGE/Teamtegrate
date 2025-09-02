@@ -23,6 +23,9 @@ import { useNavigate } from 'react-router-dom';
 import { Eye, ExternalLink } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
+import { useUserJobRoles } from '@/hooks/useUserJobRoles';
+import JobRoleBadge from '@/components/JobRoleBadge';
+import UserJobRolesCell from './UserJobRolesCell';
 
 interface User {
   id: string;
@@ -128,6 +131,7 @@ const UserList: React.FC<UserListProps> = ({
             <TableRow>
               <TableHead>User</TableHead>
               <TableHead>Role</TableHead>
+              <TableHead>Job Roles</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Joined</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -139,6 +143,9 @@ const UserList: React.FC<UserListProps> = ({
                 <TableCell className="font-medium">{user.name}</TableCell>
                 <TableCell>{user.email}</TableCell>
                 <TableCell>{user.role}</TableCell>
+                <TableCell>
+                  <UserJobRolesCell userId={user.id} />
+                </TableCell>
                 <TableCell>{user.created_at}</TableCell>
                 <TableCell className="text-right">
                   <DropdownMenu>

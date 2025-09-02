@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { TeamProvider } from '@/components/team/TeamProvider';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, AlertCircle, Loader2, BarChart3, Users, Settings, Activity } from 'lucide-react';
+import { Shield, AlertCircle, Loader2, BarChart3, Users, Settings, Activity, Briefcase } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
 import ProfessionalOrganizationHeader from '@/components/organization/professional/ProfessionalOrganizationHeader';
@@ -14,6 +14,7 @@ import RoleDistributionChart from '@/components/organization/RoleDistributionCha
 import OrganizationQuickActions from '@/components/organization/OrganizationQuickActions';
 import TeamOverviewDashboard from '@/components/team/overview/TeamOverviewDashboard';
 import InviteCodeDialog from '@/components/organization/InviteCodeDialog';
+import { RoleManager } from '@/components/organization/RoleManager';
 import UserProfileDialog from '@/components/organization/user-management/UserProfileDialog';
 import CreateUserDialog from '@/components/organization/CreateUserDialog';
 import ModernSectionCard from '@/components/dashboard/ModernSectionCard';
@@ -165,7 +166,7 @@ const OrganizationDashboard = () => {
           {/* Tabbed Interface */}
           <div className="animate-fade-in" style={{ animationDelay: '200ms' }}>
             <Tabs defaultValue="overview" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-4 lg:w-fit lg:grid-cols-4 bg-muted/60 backdrop-blur-sm border">
+              <TabsList className="grid w-full grid-cols-5 lg:w-fit lg:grid-cols-5 bg-muted/60 backdrop-blur-sm border">
                 <TabsTrigger value="overview" className="flex items-center gap-2">
                   <Activity className="h-4 w-4" />
                   <span className="hidden sm:inline">Overview</span>
@@ -177,6 +178,10 @@ const OrganizationDashboard = () => {
                 <TabsTrigger value="teams" className="flex items-center gap-2">
                   <Shield className="h-4 w-4" />
                   <span className="hidden sm:inline">Teams</span>
+                </TabsTrigger>
+                <TabsTrigger value="roles" className="flex items-center gap-2">
+                  <Briefcase className="h-4 w-4" />
+                  <span className="hidden sm:inline">Job Roles</span>
                 </TabsTrigger>
                 <TabsTrigger value="analytics" className="flex items-center gap-2">
                   <BarChart3 className="h-4 w-4" />
@@ -227,6 +232,18 @@ const OrganizationDashboard = () => {
               {/* Team Management Tab */}
               <TabsContent value="teams" className="space-y-6">
                 <TeamOverviewDashboard />
+              </TabsContent>
+
+              {/* Job Roles Tab */}
+              <TabsContent value="roles" className="space-y-6">
+                <ModernSectionCard
+                  title="Job Roles Management"
+                  subtitle="Create and manage organizational job roles"
+                  icon={Briefcase}
+                  gradient="from-purple-500/10 via-indigo-500/10 to-blue-500/10"
+                >
+                  <RoleManager />
+                </ModernSectionCard>
               </TabsContent>
 
               {/* Analytics Tab */}

@@ -16,11 +16,13 @@ import {
   Activity,
   Shield,
   Eye,
-  AlertTriangle 
+  AlertTriangle,
+  Briefcase
 } from 'lucide-react';
 import { useEmployeeOverview } from '@/hooks/admin/useEmployeeOverview';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
+import { UserJobRoleManager } from '@/components/organization/UserJobRoleManager';
 
 interface EnhancedEmployeeProfileDialogProps {
   userId: string | null;
@@ -100,8 +102,9 @@ const EnhancedEmployeeProfileDialog: React.FC<EnhancedEmployeeProfileDialogProps
           </Alert>
         ) : (
           <Tabs value={activeTab} onValueChange={handleTabChange} className="flex-1 overflow-hidden">
-            <TabsList className="grid w-full grid-cols-6">
+            <TabsList className="grid w-full grid-cols-7">
               <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="jobroles">Job Roles</TabsTrigger>
               <TabsTrigger value="tasks">Tasks</TabsTrigger>
               <TabsTrigger value="projects">Projects</TabsTrigger>
               <TabsTrigger value="journal">Journal</TabsTrigger>
@@ -199,6 +202,21 @@ const EnhancedEmployeeProfileDialog: React.FC<EnhancedEmployeeProfileDialogProps
                     You are viewing employee data as an administrator. This access is logged for compliance purposes.
                   </AlertDescription>
                 </Alert>
+              </TabsContent>
+
+              <TabsContent value="jobroles" className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <Briefcase className="h-5 w-5" />
+                    Job Role Management
+                  </h3>
+                </div>
+                
+                <Card>
+                  <CardContent className="pt-6">
+                    <UserJobRoleManager userId={userId || ''} userName={employee?.name || ''} />
+                  </CardContent>
+                </Card>
               </TabsContent>
 
               <TabsContent value="tasks" className="space-y-4">

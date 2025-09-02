@@ -33,6 +33,7 @@ import MeetingsPage from "@/pages/MeetingsPage";
 import TrainingPage from "@/pages/TrainingPage";
 import NotificationBootstrap from "@/components/NotificationBootstrap";
 import DedicatedTeamManagement from "@/components/team/management/DedicatedTeamManagement";
+import OrganizationRolesPage from "@/pages/OrganizationRolesPage";
 
 const queryClient = new QueryClient();
 
@@ -68,6 +69,7 @@ function App() {
                   <Route path="team/manage/:teamId" element={<ProtectedRoute><DedicatedTeamManagement /></ProtectedRoute>} />
                   <Route path="admin" element={<AdminPage />} />
                   <Route path="organization" element={<OrganizationDashboard />} />
+                  <Route path="organization/roles" element={<RoleProtectedRoute requiredRole="manager"><OrganizationRolesPage /></RoleProtectedRoute>} />
                   <Route path="focus" element={<FocusZonePage />} />
                   <Route path="reports" element={<RoleProtectedRoute requiredRole="manager"><ReportsPage /></RoleProtectedRoute>} />
                   <Route path="finance" element={<FinancePage />} />

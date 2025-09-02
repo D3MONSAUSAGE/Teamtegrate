@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, UserPlus, Settings, BarChart3, Zap, Sparkles } from 'lucide-react';
+import { Plus, UserPlus, Settings, BarChart3, Zap, Sparkles, Briefcase } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
 
@@ -11,6 +11,7 @@ const OrganizationQuickActions: React.FC = () => {
 
   const canCreateUsers = user && ['superadmin', 'admin'].includes(user.role);
   const canViewReports = user && ['superadmin', 'admin', 'manager'].includes(user.role);
+  const canManageJobRoles = user && ['superadmin', 'admin', 'manager'].includes(user.role);
 
   const actions = [
     {
@@ -28,6 +29,14 @@ const OrganizationQuickActions: React.FC = () => {
       gradient: "from-green-500 to-green-600",
       hoverGradient: "hover:from-green-600 hover:to-green-700",
       available: true
+    },
+    {
+      to: "/dashboard/organization/roles",
+      icon: Briefcase,
+      label: "Manage Job Roles",
+      gradient: "from-indigo-500 to-indigo-600",
+      hoverGradient: "hover:from-indigo-600 hover:to-indigo-700",
+      available: canManageJobRoles
     },
     {
       to: "/dashboard/reports",

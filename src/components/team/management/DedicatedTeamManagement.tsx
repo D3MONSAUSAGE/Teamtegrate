@@ -18,7 +18,8 @@ import {
   MoreVertical,
   MessageSquarePlus,
   Edit,
-  Trash2
+  Trash2,
+  Briefcase
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -40,6 +41,9 @@ import { useRealTeamMembers } from '@/hooks/team/useRealTeamMembers';
 import { useUnassignedUsers } from '@/hooks/team/useUnassignedUsers';
 import { Team } from '@/types/teams';
 import { toast } from '@/components/ui/sonner';
+import { useUserJobRoles } from '@/hooks/useUserJobRoles';
+import JobRoleBadge from '@/components/JobRoleBadge';
+import TeamMemberCard from './TeamMemberCard';
 
 interface TeamMember {
   id: string;
@@ -301,79 +305,17 @@ const DedicatedTeamManagement: React.FC = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               {filteredMembers.map((member) => (
-                <div key={member.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center gap-4">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={member.avatar_url} />
-                      <AvatarFallback>
-                        {member.name.split(' ').map(n => n[0]).join('')}
-                      </AvatarFallback>
-                    </Avatar>
-                    
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-medium">{member.name}</h3>
-                        <Badge variant={getRoleBadgeVariant(member.role)} className="text-xs">
-                          {getRoleIcon(member.role)}
-                          {member.role.replace('_', ' ')}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">{member.email}</p>
-                      {member.totalTasks !== undefined && (
-                        <div className="flex gap-1 mt-1">
-                          <Badge variant="outline" className="text-xs">
-                            Tasks: {member.completedTasks}/{member.totalTasks}
-                          </Badge>
-                          {member.completionRate !== undefined && (
-                            <Badge variant="outline" className="text-xs">
-                              {member.completionRate}% Complete
-                            </Badge>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    {canManageTeam && member.role !== 'manager' && (
-                      <Select
-                        value={member.role}
-                        onValueChange={(value) => handleRoleChange(member.id, value as any)}
-                      >
-                        <SelectTrigger className="w-32">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="member">Member</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    )}
-                    
-                    {canManageTeam && (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
-                            <Edit className="h-4 w-4 mr-2" />
-                            Edit Member
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem 
-                            className="text-destructive"
-                            onClick={() => handleRemoveMember(member.id)}
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Remove from Team
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    )}
-                  </div>
-                </div>
+                <TeamMemberCard
+                  key={member.id}
+                  member={{
+                    ...member,
+                    tasksCompleted: member.completedTasks,
+                    totalTasks: member.totalTasks
+                  }}
+                  canManage={canManageTeam}
+                  onRoleChange={handleRoleChange}
+                  onRemove={handleRemoveMember}
+                />
               ))}
             </CardContent>
           </Card>
