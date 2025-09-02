@@ -153,23 +153,38 @@ const BulletinPostCard = ({ post, canDelete, onDelete }: BulletinPostCardProps) 
   };
 
   return (
-    <Card className={post.is_pinned ? 'border-primary shadow-md' : ''}>
-      <CardHeader className="pb-3">
+    <Card className={`group transition-all duration-200 hover:shadow-lg ${
+      post.is_pinned ? 'border-primary/50 shadow-md bg-gradient-to-r from-primary/5 to-transparent' : 'hover:border-primary/20'
+    }`}>
+      <CardHeader className="pb-4">
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-3 mb-3">
               {post.is_pinned && (
-                <Pin className="h-4 w-4 text-primary" />
+                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 border border-primary/20">
+                  <Pin className="h-4 w-4 text-primary" fill="currentColor" />
+                </div>
               )}
-              <h3 className="font-semibold text-lg">{post.title}</h3>
+              <h3 className="font-bold text-xl text-foreground group-hover:text-primary transition-colors">
+                {post.title}
+              </h3>
             </div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <span>By {post.users?.name || 'Unknown'}</span>
-              <span>•</span>
-              <span>{format(new Date(post.created_at), 'MMM d, yyyy')}</span>
+            <div className="flex items-center gap-3 text-sm">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                  <span className="text-xs font-medium text-primary">
+                    {(post.users?.name || 'U').charAt(0).toUpperCase()}
+                  </span>
+                </div>
+                <span className="font-medium">{post.users?.name || 'Unknown'}</span>
+              </div>
+              <span className="text-muted-foreground">•</span>
+              <span className="text-muted-foreground">
+                {format(new Date(post.created_at), 'MMM d, yyyy')}
+              </span>
               <Badge 
                 variant="secondary" 
-                className={CATEGORY_COLORS[post.category] || 'bg-secondary'}
+                className={`${CATEGORY_COLORS[post.category] || 'bg-secondary'} border-0 font-medium`}
               >
                 {CATEGORY_LABELS[post.category] || post.category}
               </Badge>
@@ -181,7 +196,7 @@ const BulletinPostCard = ({ post, canDelete, onDelete }: BulletinPostCardProps) 
               variant="ghost"
               size="sm"
               onClick={handleDelete}
-              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+              className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10"
             >
               <Trash2 className="h-4 w-4" />
             </Button>
@@ -189,20 +204,22 @@ const BulletinPostCard = ({ post, canDelete, onDelete }: BulletinPostCardProps) 
         </div>
       </CardHeader>
       
-      <CardContent>
-        <div className="prose prose-sm max-w-none">
-          <p className="whitespace-pre-wrap text-foreground leading-relaxed">
+      <CardContent className="pt-0">
+        <div className="prose prose-sm max-w-none mb-4">
+          <p className="whitespace-pre-wrap text-foreground leading-relaxed text-base">
             {post.content}
           </p>
         </div>
         
         {post.documents && (
-          <div className="mt-4 p-3 bg-muted rounded-lg">
+          <div className="mt-6 p-4 bg-gradient-to-r from-muted/50 to-muted/30 rounded-xl border border-border/50">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <FileText className="h-4 w-4" />
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <FileText className="h-5 w-5 text-primary" />
+                </div>
                 <div>
-                  <p className="text-sm font-medium">{post.documents.title}</p>
+                  <p className="text-sm font-semibold text-foreground">{post.documents.title}</p>
                   <p className="text-xs text-muted-foreground">
                     {post.documents.file_type.split('/')[1]?.toUpperCase()} • {formatFileSize(post.documents.size_bytes)}
                   </p>
@@ -213,6 +230,7 @@ const BulletinPostCard = ({ post, canDelete, onDelete }: BulletinPostCardProps) 
                   variant="outline"
                   size="sm"
                   onClick={handleDocumentPreview}
+                  className="hover:bg-primary/10 hover:text-primary hover:border-primary/20"
                 >
                   <Eye className="h-4 w-4 mr-2" />
                   View
@@ -221,6 +239,7 @@ const BulletinPostCard = ({ post, canDelete, onDelete }: BulletinPostCardProps) 
                   variant="outline"
                   size="sm"
                   onClick={handleDocumentDownload}
+                  className="hover:bg-primary/10 hover:text-primary hover:border-primary/20"
                 >
                   <Download className="h-4 w-4 mr-2" />
                   Download

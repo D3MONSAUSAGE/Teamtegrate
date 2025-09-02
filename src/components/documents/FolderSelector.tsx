@@ -42,60 +42,72 @@ const FolderSelector: React.FC<FolderSelectorProps> = ({
 
   return (
     <>
-      <div className="mb-4 flex items-center flex-wrap gap-2">
-        <Button
-          variant={selectedFolder === "" ? "default" : "outline"}
-          size="sm"
-          onClick={() => onSelectFolder("")}
-          className="flex items-center gap-1"
-        >
+      <div className="mb-6">
+        <h2 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
           <Folder className="h-4 w-4" />
-          All
-        </Button>
-        
-        {folders.map((folder) => (
+          Folders
+        </h2>
+        <div className="flex items-center flex-wrap gap-2">
           <Button
-            key={folder}
-            variant={selectedFolder === folder ? "default" : "outline"}
+            variant={selectedFolder === "" ? "default" : "outline"}
             size="sm"
-            onClick={() => onSelectFolder(folder)}
-            className="flex items-center gap-1"
+            onClick={() => onSelectFolder("")}
+            className="flex items-center gap-2 transition-all duration-200 hover:scale-105"
           >
             <Folder className="h-4 w-4" />
-            {folder}
+            All Documents
           </Button>
-        ))}
-        
-        {creating ? (
-          <form
-            className="flex items-center gap-1"
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleCreate();
-            }}
-          >
-            <input
-              className="border border-gray-300 rounded px-2 py-1 text-sm w-24"
-              value={newFolder}
-              onChange={(e) => setNewFolder(e.target.value)}
-              placeholder="New folder"
-              autoFocus
-              maxLength={30}
-            />
-            <Button type="submit" size="icon" className="h-7 w-7" variant="ghost">
-              <FolderPlus className="h-4 w-4" />
+          
+          {folders.map((folder) => (
+            <Button
+              key={folder}
+              variant={selectedFolder === folder ? "default" : "outline"}
+              size="sm"
+              onClick={() => onSelectFolder(folder)}
+              className="flex items-center gap-2 transition-all duration-200 hover:scale-105"
+            >
+              <Folder className="h-4 w-4" />
+              {folder}
             </Button>
-          </form>
-        ) : (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setCreating(true)}
-            className="h-7 w-7"
-          >
-            <FolderPlus className="h-4 w-4" />
-          </Button>
-        )}
+          ))}
+          
+          {creating ? (
+            <form
+              className="flex items-center gap-2 animate-in fade-in-0 slide-in-from-left-2 duration-200"
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleCreate();
+              }}
+            >
+              <input
+                className="border border-input bg-background rounded-md px-3 py-1.5 text-sm w-32 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                value={newFolder}
+                onChange={(e) => setNewFolder(e.target.value)}
+                placeholder="Folder name"
+                autoFocus
+                maxLength={30}
+              />
+              <Button 
+                type="submit" 
+                size="sm" 
+                className="px-2"
+                disabled={!newFolder.trim() || folders.includes(newFolder.trim())}
+              >
+                <FolderPlus className="h-4 w-4" />
+              </Button>
+            </form>
+          ) : (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setCreating(true)}
+              className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors border-2 border-dashed border-muted-foreground/30 hover:border-primary/50"
+            >
+              <FolderPlus className="h-4 w-4" />
+              New Folder
+            </Button>
+          )}
+        </div>
       </div>
 
       <FolderShareDialog

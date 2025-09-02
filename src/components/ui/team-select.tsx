@@ -38,52 +38,72 @@ const TeamSelect: React.FC<TeamSelectProps> = ({
   });
 
   return (
-    <div className="space-y-2">
-      <Label className="flex items-center gap-2">
-        <Users className="h-4 w-4" />
-        Select Team {optional && <span className="text-muted-foreground">(Optional)</span>}
+    <div className="space-y-3">
+      <Label className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+        <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center">
+          <Users className="h-3 w-3 text-primary" />
+        </div>
+        Team Selection {optional && <span className="text-xs text-muted-foreground/70">(Optional)</span>}
       </Label>
       <Select 
         value={selectedTeam || ""} 
         onValueChange={onTeamChange}
         disabled={isLoading || disabled}
       >
-        <SelectTrigger>
+        <SelectTrigger className="h-11 bg-gradient-to-r from-background to-muted/20 border-border/50 hover:border-primary/30 transition-all duration-200">
           <SelectValue placeholder={
-            isLoading ? "Loading teams..." : 
+            isLoading ? (
+              <div className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                Loading teams...
+              </div>
+            ) : 
             disabled ? "Select organization first" :
             optional ? "All teams (or select specific team)" :
             "Choose a team"
           } />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="max-h-64">
           {isLoading ? (
-            <div className="flex items-center justify-center p-2">
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              Loading...
+            <div className="flex items-center justify-center p-4">
+              <Loader2 className="h-5 w-5 animate-spin mr-3 text-primary" />
+              <span className="text-sm text-muted-foreground">Loading teams...</span>
             </div>
           ) : (
             <>
               {optional && (
-                <SelectItem value="all">
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-gray-400" />
-                    All Teams
+                <SelectItem value="all" className="focus:bg-primary/10">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+                      <Users className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <span className="font-medium">All Teams</span>
+                      <p className="text-xs text-muted-foreground">View all team documents</p>
+                    </div>
                   </div>
                 </SelectItem>
               )}
               {safeTeams.length === 0 ? (
-                <div className="text-center p-2 text-muted-foreground">
-                  No teams found
+                <div className="text-center p-4 text-muted-foreground">
+                  <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No teams found</p>
                 </div>
               ) : (
                 safeTeams.map((team) => (
-                  <SelectItem key={team.id} value={team.id}>
-                    <div className="flex flex-col">
-                      <span>{team.name}</span>
-                      {team.description && (
-                        <span className="text-xs text-muted-foreground">{team.description}</span>
-                      )}
+                  <SelectItem key={team.id} value={team.id} className="focus:bg-primary/10 p-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+                        <span className="text-xs font-semibold text-primary">
+                          {team.name.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{team.name}</span>
+                        {team.description && (
+                          <span className="text-xs text-muted-foreground">{team.description}</span>
+                        )}
+                      </div>
                     </div>
                   </SelectItem>
                 ))

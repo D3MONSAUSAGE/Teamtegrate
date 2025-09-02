@@ -3,10 +3,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, MessageSquare } from 'lucide-react';
 import BulletinPostCard from './BulletinPostCard';
 import BulletinPostForm from './BulletinPostForm';
 import BulletinSearch from './BulletinSearch';
+import { BulletinPostSkeleton } from '@/components/ui/loading-skeleton';
 import { useRoleAccess } from '@/contexts/auth/hooks/useRoleAccess';
 
 interface BulletinPost {
@@ -156,55 +157,90 @@ const BulletinBoard = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <div className="text-muted-foreground">Loading bulletin posts...</div>
+      <div className="space-y-6">
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <span className="text-muted-foreground">Loading posts...</span>
+        </div>
+        <div className="space-y-6">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <BulletinPostSkeleton key={i} />
+          ))}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {canCreatePosts && (
-        <div className="flex justify-between items-center">
-          <h2 className="text-lg font-semibold">Company Bulletin Board</h2>
-          <Button onClick={() => setShowPostForm(true)}>
+    <div className="space-y-8">
+      {/* Header Section */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+            <MessageSquare className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-foreground">Company Bulletin Board</h2>
+            <p className="text-sm text-muted-foreground">Stay updated with company announcements and news</p>
+          </div>
+        </div>
+        {canCreatePosts && (
+          <Button onClick={() => setShowPostForm(true)} className="whitespace-nowrap">
             <Plus className="h-4 w-4 mr-2" />
             New Post
           </Button>
+        )}
+      </div>
+
+      {/* Post Form */}
+      {showPostForm && canCreatePosts && (
+        <div className="animate-in fade-in-0 slide-in-from-top-2 duration-300">
+          <BulletinPostForm
+            onPostCreated={handlePostCreated}
+            onCancel={() => setShowPostForm(false)}
+          />
         </div>
       )}
 
-      {!canCreatePosts && (
-        <h2 className="text-lg font-semibold">Company Bulletin Board</h2>
-      )}
-
-      {showPostForm && canCreatePosts && (
-        <BulletinPostForm
-          onPostCreated={handlePostCreated}
-          onCancel={() => setShowPostForm(false)}
-        />
-      )}
-
+      {/* Search */}
       <BulletinSearch 
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
       />
 
+      {/* Posts Content */}
       {filteredPosts.length === 0 ? (
-        <div className="text-center py-8 text-muted-foreground">
-          {searchQuery.trim() ? 'No posts found matching your search' : (
-            posts.length === 0 ? (
-              canCreatePosts ? 'No bulletin posts yet. Create the first post!' : 'Check back later for updates.'
-            ) : 'No posts match your search criteria'
+        <div className="text-center py-16">
+          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-muted/30 flex items-center justify-center">
+            <MessageSquare className="h-10 w-10 text-muted-foreground/50" />
+          </div>
+          <h3 className="text-lg font-semibold text-foreground mb-2">
+            {searchQuery.trim() ? 'No posts found' : 'No bulletin posts yet'}
+          </h3>
+          <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+            {searchQuery.trim() 
+              ? 'Try adjusting your search terms to find what you\'re looking for.' 
+              : posts.length === 0 
+                ? (canCreatePosts 
+                  ? 'Create the first post to get the conversation started!' 
+                  : 'Check back later for company updates and announcements.')
+                : 'No posts match your current search criteria.'
+            }
+          </p>
+          {canCreatePosts && !searchQuery.trim() && posts.length === 0 && (
+            <Button onClick={() => setShowPostForm(true)} size="lg">
+              <Plus className="h-4 w-4 mr-2" />
+              Create First Post
+            </Button>
           )}
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {filteredPosts.map((post) => (
             <BulletinPostCard
               key={post.id}
               post={post}
-              canDelete={canCreatePosts && post.author_id === user?.id}
+              canDelete={canCreatePosts || post.author_id === user?.id}
               onDelete={handlePostDeleted}
             />
           ))}
