@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { 
   Users, 
   Plus, 
@@ -13,62 +12,42 @@ import {
   Trash2, 
   Edit3,
   UserPlus,
-  Save,
-  X,
   Loader2,
-  UserCog
+  UserCog,
+  Copy,
+  Archive
 } from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useTeams } from '@/hooks/useTeams';
+import { useTeamManagement } from '@/hooks/organization/useTeamManagement';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
-import { devLog } from '@/utils/devLogger';
-import { logger } from '@/utils/logger';
 import TeamMemberManagementDialog from './TeamMemberManagementDialog';
 import TeamMembersHorizontalList from './TeamMembersHorizontalList';
 import EditTeamDialog from './EditTeamDialog';
-
-interface Team {
-  id: string;
-  name: string;
-  description?: string;
-  manager_id?: string;
-  manager_name?: string;
-  member_count: number;
-  is_active: boolean;
-  organization_id?: string;
-  created_at?: string;
-  updated_at?: string;
-}
+import CreateTeamDialog from './CreateTeamDialog';
+import DeleteTeamDialog from './DeleteTeamDialog';
+import { Team } from '@/types/teams';
 
 const TeamManagementSection = () => {
   const { user } = useAuth();
-  const { teams, isLoading, error, refetch } = useTeams();
+  const { teams, isLoading, error, deleteTeam, createTeam } = useTeamManagement();
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingTeam, setEditingTeam] = useState<Team | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [memberDialogOpen, setMemberDialogOpen] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // Form state
-  const [teamName, setTeamName] = useState('');
-  const [teamDescription, setTeamDescription] = useState('');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [teamToDelete, setTeamToDelete] = useState<Team | null>(null);
+  const [isDeletingTeam, setIsDeletingTeam] = useState(false);
+  const [selectedTeams, setSelectedTeams] = useState<Set<string>>(new Set());
 
   const canManageTeams = user && ['superadmin', 'admin'].includes(user.role);
 
@@ -77,102 +56,73 @@ const TeamManagementSection = () => {
     (team.description && team.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const handleCreateTeam = async () => {
-    if (!teamName.trim()) {
-      toast.error('Team name is required');
-      return;
-    }
+  const handleDeleteTeam = (team: Team) => {
+    setTeamToDelete(team);
+    setDeleteDialogOpen(true);
+  };
 
-    setIsSubmitting(true);
+  const confirmDeleteTeam = async () => {
+    if (!teamToDelete) return;
+    
+    setIsDeletingTeam(true);
     try {
-      devLog.userOperation('Creating team', { name: teamName, description: teamDescription });
-      
-      const { error } = await supabase
-        .from('teams')
-        .insert({
-          name: teamName.trim(),
-          description: teamDescription.trim() || null,
-          organization_id: user?.organizationId,
-          manager_id: user?.id,
-          is_active: true
-        });
-
-      if (error) throw error;
-
-      toast.success('Team created successfully');
-      logger.userAction('Team created', { teamName });
-      setIsCreateDialogOpen(false);
-      setTeamName('');
-      setTeamDescription('');
-      refetch();
+      await deleteTeam(teamToDelete.id);
+      setDeleteDialogOpen(false);
+      setTeamToDelete(null);
     } catch (error) {
-      logger.error('Error creating team', error);
-      toast.error('Failed to create team');
+      console.error('Error deleting team:', error);
     } finally {
-      setIsSubmitting(false);
+      setIsDeletingTeam(false);
     }
   };
 
-  const handleEditTeam = async () => {
-    if (!editingTeam || !teamName.trim()) {
-      toast.error('Team name is required');
-      return;
-    }
-
-    setIsSubmitting(true);
+  const handleDuplicateTeam = async (team: Team) => {
     try {
-      devLog.userOperation('Updating team', { 
-        teamId: editingTeam.id, 
-        name: teamName, 
-        description: teamDescription 
+      await createTeam({
+        name: `${team.name} (Copy)`,
+        description: team.description,
+        manager_id: team.manager_id,
       });
-      
-      const { error } = await supabase
-        .from('teams')
-        .update({
-          name: teamName.trim(),
-          description: teamDescription.trim() || null,
-        })
-        .eq('id', editingTeam.id);
-
-      if (error) throw error;
-
-      toast.success('Team updated successfully');
-      logger.userAction('Team updated', { teamId: editingTeam.id, teamName });
-      setIsEditDialogOpen(false);
-      setEditingTeam(null);
-      setTeamName('');
-      setTeamDescription('');
-      refetch();
+      toast.success('Team duplicated successfully');
     } catch (error) {
-      logger.error('Error updating team', error);
-      toast.error('Failed to update team');
-    } finally {
-      setIsSubmitting(false);
+      console.error('Error duplicating team:', error);
+      toast.error('Failed to duplicate team');
     }
   };
 
-  const handleDeleteTeam = async (team: Team) => {
-    if (!confirm(`Are you sure you want to delete the team "${team.name}"? This action cannot be undone.`)) {
+  const handleBulkDelete = async () => {
+    if (selectedTeams.size === 0) return;
+    
+    if (!confirm(`Are you sure you want to delete ${selectedTeams.size} team(s)? This action cannot be undone.`)) {
       return;
     }
 
     try {
-      devLog.userOperation('Deleting team', { teamId: team.id, teamName: team.name });
-      
-      const { error } = await supabase
-        .from('teams')
-        .update({ is_active: false })
-        .eq('id', team.id);
-
-      if (error) throw error;
-
-      toast.success('Team deleted successfully');
-      logger.userAction('Team deleted', { teamId: team.id, teamName: team.name });
-      refetch();
+      const deletePromises = Array.from(selectedTeams).map(teamId => deleteTeam(teamId));
+      await Promise.all(deletePromises);
+      setSelectedTeams(new Set());
+      toast.success(`${selectedTeams.size} teams deleted successfully`);
     } catch (error) {
-      logger.error('Error deleting team', error);
-      toast.error('Failed to delete team');
+      console.error('Error bulk deleting teams:', error);
+      toast.error('Failed to delete some teams');
+    }
+  };
+
+  const toggleTeamSelection = (teamId: string) => {
+    const newSelection = new Set(selectedTeams);
+    if (newSelection.has(teamId)) {
+      newSelection.delete(teamId);
+    } else {
+      newSelection.add(teamId);
+    }
+    setSelectedTeams(newSelection);
+  };
+
+  const selectAllTeams = () => {
+    if (selectedTeams.size === filteredTeams.length) {
+      setSelectedTeams(new Set());
+    } else {
+      setSelectedTeams(new Set(filteredTeams.map(team => team.id)));
     }
   };
 
@@ -222,7 +172,7 @@ const TeamManagementSection = () => {
         <CardContent>
           <Alert>
             <AlertDescription>
-              Failed to load teams: {error}
+              Failed to load teams: {String(error)}
             </AlertDescription>
           </Alert>
         </CardContent>
@@ -242,59 +192,33 @@ const TeamManagementSection = () => {
                 {filteredTeams.length} Teams
               </Badge>
             </CardTitle>
-            {canManageTeams && (
-              <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button size="sm">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Team
+            <div className="flex items-center gap-2">
+              {selectedTeams.size > 0 && canManageTeams && (
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={handleBulkDelete}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete Selected ({selectedTeams.size})
                   </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Create New Team</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-sm font-medium">Team Name</label>
-                      <Input
-                        value={teamName}
-                        onChange={(e) => setTeamName(e.target.value)}
-                        placeholder="Enter team name"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium">Description (Optional)</label>
-                      <Textarea
-                        value={teamDescription}
-                        onChange={(e) => setTeamDescription(e.target.value)}
-                        placeholder="Describe the team's purpose"
-                        rows={3}
-                      />
-                    </div>
-                    <div className="flex justify-end gap-2">
-                      <Button 
-                        variant="outline" 
-                        onClick={() => setIsCreateDialogOpen(false)}
-                        disabled={isSubmitting}
-                      >
-                        Cancel
-                      </Button>
-                      <Button onClick={handleCreateTeam} disabled={isSubmitting}>
-                        {isSubmitting ? (
-                          <>
-                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                            Creating...
-                          </>
-                        ) : (
-                          'Create Team'
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedTeams(new Set())}
+                  >
+                    Clear Selection
+                  </Button>
+                </div>
+              )}
+              {canManageTeams && (
+                <Button size="sm" onClick={() => setIsCreateDialogOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Team
+                </Button>
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-2 mt-4">
             <div className="relative flex-1">
@@ -306,6 +230,15 @@ const TeamManagementSection = () => {
                 className="pl-10"
               />
             </div>
+            {canManageTeams && filteredTeams.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={selectAllTeams}
+              >
+                {selectedTeams.size === filteredTeams.length ? 'Deselect All' : 'Select All'}
+              </Button>
+            )}
           </div>
         </CardHeader>
         <CardContent>
@@ -329,16 +262,31 @@ const TeamManagementSection = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredTeams.map((team: Team) => (
-                <Card key={team.id} className="hover:shadow-md transition-shadow">
+                <Card 
+                  key={team.id} 
+                  className={`hover:shadow-md transition-all ${
+                    selectedTeams.has(team.id) ? 'ring-2 ring-primary' : ''
+                  }`}
+                >
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between mb-3">
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-lg">{team.name}</h3>
-                        {team.description && (
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {team.description}
-                          </p>
+                      <div className="flex items-start gap-3 flex-1">
+                        {canManageTeams && (
+                          <input
+                            type="checkbox"
+                            checked={selectedTeams.has(team.id)}
+                            onChange={() => toggleTeamSelection(team.id)}
+                            className="mt-1"
+                          />
                         )}
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-lg">{team.name}</h3>
+                          {team.description && (
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {team.description}
+                            </p>
+                          )}
+                        </div>
                       </div>
                       {canManageTeams && (
                         <DropdownMenu>
@@ -356,6 +304,12 @@ const TeamManagementSection = () => {
                               <Edit3 className="h-4 w-4 mr-2" />
                               Edit Team
                             </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => handleDuplicateTeam(team)}>
+                              <Copy className="h-4 w-4 mr-2" />
+                              Duplicate Team
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
                             <DropdownMenuItem 
                               onClick={() => handleDeleteTeam(team)}
                               className="text-destructive"
@@ -388,6 +342,12 @@ const TeamManagementSection = () => {
         </CardContent>
       </Card>
 
+      {/* Enhanced Create Team Dialog */}
+      <CreateTeamDialog
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+      />
+
       {/* Enhanced Edit Team Dialog */}
       {editingTeam && (
         <EditTeamDialog
@@ -401,6 +361,15 @@ const TeamManagementSection = () => {
           onOpenChange={closeEditDialog}
         />
       )}
+
+      {/* Delete Team Confirmation Dialog */}
+      <DeleteTeamDialog
+        team={teamToDelete}
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={confirmDeleteTeam}
+        isDeleting={isDeletingTeam}
+      />
 
       {/* Team Member Management Dialog */}
       {selectedTeam && (
