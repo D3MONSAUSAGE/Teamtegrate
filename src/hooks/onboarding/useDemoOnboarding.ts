@@ -301,7 +301,7 @@ export const useDemoOnboarding = () => {
         if (stepsError) throw stepsError;
       }
 
-      // Create onboarding instance for current user
+      // Create onboarding instance for current user using proper assignment process
       const { data: instance, error: instanceError } = await supabase
         .from('onboarding_instances')
         .insert({
@@ -316,6 +316,37 @@ export const useDemoOnboarding = () => {
         .single();
 
       if (instanceError) throw instanceError;
+
+      // Create step progress records for the instance
+      const { data: templateSteps, error: stepsError } = await supabase
+        .from('onboarding_steps')
+        .select('*')
+        .eq('template_id', templateId)
+        .order('order_index');
+
+      if (stepsError) throw stepsError;
+
+      if (templateSteps && templateSteps.length > 0) {
+        // Create step progress records with proper initial statuses
+        const stepProgressRecords = templateSteps.map((step, index) => {
+          // First few steps are available, others are locked initially
+          const status = index < 2 ? 'available' : 'locked'; // Make first 2 steps available for demo
+
+          return {
+            instance_id: instance.id,
+            step_id: step.id,
+            employee_id: user.id,
+            organization_id: user.organizationId,
+            status,
+          };
+        });
+
+        const { error: insertError } = await supabase
+          .from('onboarding_instance_step_progress')
+          .insert(stepProgressRecords);
+
+        if (insertError) throw insertError;
+      }
 
       return instance;
     },

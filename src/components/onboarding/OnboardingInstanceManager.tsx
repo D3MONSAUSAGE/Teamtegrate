@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/auth/AuthProvider';
+import { useOnboardingInstances } from '@/hooks/onboarding/useOnboardingInstances';
+import { useOnboardingInstanceProgress } from '@/hooks/onboarding/useOnboardingInstanceProgress';
+import { useOnboardingTemplates } from '@/hooks/onboarding/useOnboardingTemplates';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,12 +11,11 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
-import { UserPlus, Calendar, Clock, CheckCircle, AlertTriangle, Users } from 'lucide-react';
-import { useOnboardingInstances } from '@/hooks/onboarding/useOnboardingInstances';
-import { useOnboardingTemplates } from '@/hooks/onboarding/useOnboardingTemplates';
+import { UserPlus, Calendar, Clock, CheckCircle, AlertTriangle, Users, User, Target, PlayCircle } from 'lucide-react';
 import { useUnifiedData } from '@/contexts/UnifiedDataContext';
 import { CreateOnboardingInstanceRequest, OnboardingInstanceStatus } from '@/types/onboarding';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 export function OnboardingInstanceManager() {
   const { user } = useAuth();
@@ -162,64 +164,13 @@ export function OnboardingInstanceManager() {
           </Card>
         ) : (
           filteredInstances.map((instance) => (
-            <Card key={instance.id}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <div className="space-y-1">
-                  <CardTitle className="text-base">
-                    {instance.employee?.name || 'Unknown Employee'}
-                  </CardTitle>
-                  <CardDescription>
-                    {instance.template?.name || 'Custom Onboarding'} • Started {format(new Date(instance.start_date), 'MMM d, yyyy')}
-                  </CardDescription>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge 
-                    variant="secondary" 
-                    className={`${getStatusColor(instance.status)} text-white`}
-                  >
-                    <span className="flex items-center gap-1">
-                      {getStatusIcon(instance.status)}
-                      {instance.status.replace('_', ' ').toUpperCase()}
-                    </span>
-                  </Badge>
-                  <Select 
-                    value={instance.status} 
-                    onValueChange={(status) => handleUpdateStatus(instance.id, status as OnboardingInstanceStatus)}
-                  >
-                    <SelectTrigger className="w-32">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="on_hold">On Hold</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                      <SelectItem value="cancelled">Cancelled</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Progress</span>
-                    <span className="font-medium">
-                      {instance.tasks?.filter(t => t.status === 'completed').length || 0} / {instance.tasks?.length || 0} tasks
-                    </span>
-                  </div>
-                  <Progress 
-                    value={instance.tasks?.length ? 
-                      (instance.tasks.filter(t => t.status === 'completed').length / instance.tasks.length) * 100 
-                      : 0
-                    } 
-                    className="h-2" 
-                  />
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>{instance.employee?.email}</span>
-                    <span>Role: {instance.employee?.role || 'Unknown'}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <OnboardingInstanceCard 
+              key={instance.id} 
+              instance={instance}
+              onUpdateStatus={handleUpdateStatus}
+              getStatusColor={getStatusColor}
+              getStatusIcon={getStatusIcon}
+            />
           ))
         )}
       </div>
@@ -241,9 +192,20 @@ function LaunchInstanceForm({ templates, users, onSubmit, isSubmitting }: Launch
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!employeeId) {
+      toast.error('Please select an employee');
+      return;
+    }
+    
+    if (!templateId || templateId === 'custom') {
+      toast.error('Please select a template');
+      return;
+    }
+    
     onSubmit({
       employee_id: employeeId,
-      template_id: templateId || undefined,
+      template_id: templateId,
       start_date: startDate,
     });
   };
@@ -267,13 +229,12 @@ function LaunchInstanceForm({ templates, users, onSubmit, isSubmitting }: Launch
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="template">Template (Optional)</Label>
-        <Select value={templateId} onValueChange={setTemplateId}>
+        <Label htmlFor="template">Template</Label>
+        <Select value={templateId} onValueChange={setTemplateId} required>
           <SelectTrigger>
-            <SelectValue placeholder="Choose a template or create custom..." />
+            <SelectValue placeholder="Choose a template..." />
           </SelectTrigger>
           <SelectContent className="z-[100]">
-            <SelectItem value="custom">Custom Onboarding</SelectItem>
             {templates.length === 0 ? (
               <div className="px-2 py-1 text-sm text-muted-foreground">
                 No templates available
@@ -306,11 +267,149 @@ function LaunchInstanceForm({ templates, users, onSubmit, isSubmitting }: Launch
       </div>
 
       <div className="flex justify-end gap-2">
-        <Button type="submit" disabled={isSubmitting}>
+        <Button type="submit" disabled={isSubmitting || !employeeId || !templateId}>
           {isSubmitting ? 'Launching...' : 'Launch Onboarding'}
         </Button>
       </div>
     </form>
+  );
+}
+
+interface OnboardingInstanceCardProps {
+  instance: any;
+  onUpdateStatus: (instanceId: string, status: OnboardingInstanceStatus) => void;
+  getStatusColor: (status: OnboardingInstanceStatus) => string;
+  getStatusIcon: (status: OnboardingInstanceStatus) => React.ReactNode;
+}
+
+function OnboardingInstanceCard({ instance, onUpdateStatus, getStatusColor, getStatusIcon }: OnboardingInstanceCardProps) {
+  const { data: progress, isLoading: progressLoading } = useOnboardingInstanceProgress(instance.id);
+
+  if (progressLoading) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="animate-pulse space-y-4">
+            <div className="h-4 bg-muted rounded w-3/4"></div>
+            <div className="h-3 bg-muted rounded w-1/2"></div>
+            <div className="h-2 bg-muted rounded w-full"></div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const completionPercentage = progress?.completionPercentage || 0;
+  const isCompleted = completionPercentage === 100;
+  
+  return (
+    <Card className={`transition-all hover:shadow-md ${isCompleted ? 'border-green-200 bg-green-50/50' : ''}`}>
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between">
+          <div className="space-y-1">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <User className="w-4 h-4 text-muted-foreground" />
+              {instance.users?.name || 'Unknown Employee'}
+              {isCompleted && <CheckCircle className="w-4 h-4 text-green-600" />}
+            </CardTitle>
+            <CardDescription className="flex items-center gap-4 text-sm">
+              <span className="flex items-center gap-1">
+                <Calendar className="w-3 h-3" />
+                Started {format(new Date(instance.start_date), 'MMM d, yyyy')}
+              </span>
+              <span className="flex items-center gap-1">
+                <Target className="w-3 h-3" />
+                {instance.onboarding_templates?.name || 'Custom Onboarding'}
+              </span>
+            </CardDescription>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge 
+              variant="secondary" 
+              className={`${getStatusColor(instance.status)} text-white`}
+            >
+              <span className="flex items-center gap-1">
+                {getStatusIcon(instance.status)}
+                {isCompleted ? 'Completed' : instance.status.replace('_', ' ').toUpperCase()}
+              </span>
+            </Badge>
+            <Select 
+              value={instance.status} 
+              onValueChange={(status) => onUpdateStatus(instance.id, status as OnboardingInstanceStatus)}
+            >
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="on_hold">On Hold</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="pt-0">
+        <div className="space-y-4">
+          {/* Progress Bar */}
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">
+                {progress?.isStepBased ? 'Step Progress' : 'Task Progress'}
+              </span>
+              <span className="font-medium">{Math.round(completionPercentage)}%</span>
+            </div>
+            <Progress 
+              value={completionPercentage} 
+              className={`h-2 ${isCompleted ? '[&>div]:bg-green-500' : ''}`}
+            />
+          </div>
+
+          {/* Statistics */}
+          <div className="grid grid-cols-3 gap-4 text-center">
+            <div className="space-y-1">
+              <div className="text-lg font-semibold text-green-600">
+                {progress?.completedSteps || 0}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {progress?.isStepBased ? 'Steps' : 'Tasks'} Completed
+              </div>
+            </div>
+            <div className="space-y-1">
+              <div className="text-lg font-semibold text-blue-600">
+                {progress?.totalSteps || 0}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Total {progress?.isStepBased ? 'Steps' : 'Tasks'}
+              </div>
+            </div>
+            <div className="space-y-1">
+              <div className="text-lg font-semibold text-orange-600">
+                {progress?.availableSteps || 0}
+              </div>
+              <div className="text-xs text-muted-foreground">Available</div>
+            </div>
+          </div>
+
+          {/* Employee Info */}
+          <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t">
+            <span>{instance.users?.email || 'No email'}</span>
+            <span>Role: {instance.users?.role || 'Unknown'}</span>
+          </div>
+
+          {/* Completion Message */}
+          {isCompleted && (
+            <div className="pt-2 border-t border-green-200">
+              <div className="flex items-center gap-2 text-sm text-green-700">
+                <CheckCircle className="w-4 h-4" />
+                Onboarding completed successfully!
+              </div>
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 

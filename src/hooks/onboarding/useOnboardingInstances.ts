@@ -69,9 +69,9 @@ export const useOnboardingInstances = () => {
         if (templateSteps && templateSteps.length > 0) {
           // Create rich journey structure
           const stepProgressRecords = templateSteps.map(step => {
-            // First step is available, others are locked initially
-            const isFirstStep = step.order_index === 0;
-            const status = isFirstStep ? 'available' : 'locked';
+            // Steps with no prerequisites are available initially, others are locked
+            const hasPrerequisites = step.prerequisites && Array.isArray(step.prerequisites) && step.prerequisites.length > 0;
+            const status = hasPrerequisites ? 'locked' : 'available';
 
             return {
               instance_id: instance.id,
@@ -214,40 +214,68 @@ export const useOnboardingProgress = (instanceId: string) => {
         .from('onboarding_instances')
         .select(`
           *,
-          onboarding_templates (*),
-          onboarding_instance_tasks (*),
-          onboarding_feedback_checkpoints (*)
+          onboarding_templates (*)
         `)
         .eq('id', instanceId)
         .single();
 
       if (instanceError) throw instanceError;
 
-      const tasks = instance.onboarding_instance_tasks || [];
-      const completedTasks = tasks.filter((task: any) => task.status === 'completed').length;
-      const totalTasks = tasks.length;
-      
-      const now = new Date();
-      const upcomingTasks = tasks.filter((task: any) => 
-        task.status === 'pending' && 
-        task.due_date && 
-        new Date(task.due_date) > now
-      );
-      
-      const overdueTasks = tasks.filter((task: any) => 
-        task.status !== 'completed' && 
-        task.due_date && 
-        new Date(task.due_date) < now
-      );
+      // Check if this is a step-based onboarding (modern system)
+      const { data: stepProgress } = await supabase
+        .from('onboarding_instance_step_progress')
+        .select('status')
+        .eq('instance_id', instanceId);
 
-      return {
-        instance,
-        completedTasks,
-        totalTasks,
-        completionRate: totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0,
-        upcomingTasks,
-        overdueTasks,
-      } as OnboardingProgress;
+      if (stepProgress && stepProgress.length > 0) {
+        // Step-based system
+        const totalSteps = stepProgress.length;
+        const completedSteps = stepProgress.filter(step => step.status === 'completed').length;
+        const availableSteps = stepProgress.filter(step => step.status === 'available' || step.status === 'in_progress').length;
+        
+        return {
+          instance,
+          completedTasks: completedSteps,
+          totalTasks: totalSteps,
+          completionRate: totalSteps > 0 ? (completedSteps / totalSteps) * 100 : 0,
+          upcomingTasks: [], // Steps don't have due dates in the same way
+          overdueTasks: [],
+          isStepBased: true,
+        } as OnboardingProgress & { isStepBased: boolean };
+      } else {
+        // Legacy task-based system
+        const { data: tasks } = await supabase
+          .from('onboarding_instance_tasks')
+          .select('*')
+          .eq('instance_id', instanceId);
+
+        const instanceTasks = tasks || [];
+        const completedTasks = instanceTasks.filter((task: any) => task.status === 'completed').length;
+        const totalTasks = instanceTasks.length;
+        
+        const now = new Date();
+        const upcomingTasks = instanceTasks.filter((task: any) => 
+          task.status === 'pending' && 
+          task.due_date && 
+          new Date(task.due_date) > now
+        );
+        
+        const overdueTasks = instanceTasks.filter((task: any) => 
+          task.status !== 'completed' && 
+          task.due_date && 
+          new Date(task.due_date) < now
+        );
+
+        return {
+          instance,
+          completedTasks,
+          totalTasks,
+          completionRate: totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0,
+          upcomingTasks,
+          overdueTasks,
+          isStepBased: false,
+        } as OnboardingProgress & { isStepBased: boolean };
+      }
     },
     enabled: !!instanceId,
   });
