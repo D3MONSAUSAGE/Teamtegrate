@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +16,8 @@ import {
   Loader2,
   UserCog,
   Copy,
-  Archive
+  Archive,
+  Eye
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -37,6 +39,7 @@ import { Team } from '@/types/teams';
 
 const TeamManagementSection = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { teams, isLoading, error, deleteTeam, createTeam } = useTeamManagement();
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -296,6 +299,11 @@ const TeamManagementSection = () => {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => navigate(`/dashboard/team/${team.id}`)}>
+                              <Eye className="h-4 w-4 mr-2" />
+                              View Team Details
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => handleManageMembers(team)}>
                               <UserCog className="h-4 w-4 mr-2" />
                               Manage Members
