@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { FolderPlus, Share2, Settings, MoreVertical } from 'lucide-react';
+import { FolderPlus, Share2, Settings, MoreVertical, Edit, Trash2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useFolders } from '@/hooks/documents/useFolders';
 import { FolderManagementModal } from './FolderManagementModal';
 import FolderShareDialog from './FolderShareDialog';
+import { toast } from '@/hooks/use-toast';
 
 interface FolderSelectorProps {
   folders: string[];
@@ -31,8 +33,11 @@ const FolderSelector = ({
   const [folderToShare, setFolderToShare] = useState<string | null>(null);
   const [isManagementModalOpen, setIsManagementModalOpen] = useState(false);
   const [isMigrating, setIsMigrating] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [folderToDelete, setFolderToDelete] = useState<{ id: string; name: string } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   
-  const { folders: dbFolders, migrateLegacyFolders } = useFolders(selectedTeamId);
+  const { folders: dbFolders, migrateLegacyFolders, deleteFolder } = useFolders(selectedTeamId);
 
   const handleCreate = () => {
     const trimmed = newFolderName.trim();
@@ -57,6 +62,34 @@ const FolderSelector = ({
       console.error('Migration failed:', error);
     } finally {
       setIsMigrating(false);
+    }
+  };
+
+  const handleDeleteFolder = (folderId: string, folderName: string) => {
+    setFolderToDelete({ id: folderId, name: folderName });
+    setDeleteConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!folderToDelete) return;
+    
+    setIsDeleting(true);
+    try {
+      await deleteFolder(folderToDelete.id);
+      toast({
+        title: "Success",
+        description: `Folder "${folderToDelete.name}" has been deleted.`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete folder.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+      setDeleteConfirmOpen(false);
+      setFolderToDelete(null);
     }
   };
 
@@ -156,14 +189,27 @@ const FolderSelector = ({
               >
                 {folder.name}
               </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => handleShareFolder(folder.name)}
-                className="shrink-0"
-              >
-                <Share2 className="h-4 w-4" />
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" variant="ghost" className="shrink-0">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="bg-background">
+                  <DropdownMenuItem onClick={() => handleShareFolder(folder.name)}>
+                    <Share2 className="h-4 w-4 mr-2" />
+                    Share
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                    onClick={() => handleDeleteFolder(folder.id, folder.name)}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           ))}
           
@@ -179,14 +225,19 @@ const FolderSelector = ({
                 📂 {folder}
               </Button>
               <Badge variant="outline" className="text-xs px-2 py-1">Legacy</Badge>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => handleShareFolder(folder)}
-                className="shrink-0"
-              >
-                <Share2 className="h-4 w-4" />
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" variant="ghost" className="shrink-0">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="bg-background">
+                  <DropdownMenuItem onClick={() => handleShareFolder(folder)}>
+                    <Share2 className="h-4 w-4 mr-2" />
+                    Share
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           ))}
         </div>
@@ -221,6 +272,28 @@ const FolderSelector = ({
           onClose={() => setIsManagementModalOpen(false)}
           selectedTeamId={selectedTeamId}
         />
+
+        <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Folder</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete "{folderToDelete?.name}"? This action cannot be undone.
+                All documents in this folder will be moved to "All Documents".
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={confirmDelete}
+                disabled={isDeleting}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {isDeleting ? "Deleting..." : "Delete"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </CardContent>
     </Card>
   );
