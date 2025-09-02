@@ -69,11 +69,11 @@ const UserList: React.FC<UserListProps> = ({
     // Superadmin can manage everyone except other superadmins
     if (currentRole === 'superadmin' && targetRole !== 'superadmin') return true;
     
-    // Admin can manage managers and users
-    if (currentRole === 'admin' && ['manager', 'user'].includes(targetRole)) return true;
+    // Admin can manage managers, team_leaders and users
+    if (currentRole === 'admin' && ['manager', 'team_leader', 'user'].includes(targetRole)) return true;
     
-    // Manager can manage users only
-    if (currentRole === 'manager' && targetRole === 'user') return true;
+    // Manager can manage team_leaders and users
+    if (currentRole === 'manager' && ['team_leader', 'user'].includes(targetRole)) return true;
     
     return false;
   };
@@ -85,11 +85,11 @@ const UserList: React.FC<UserListProps> = ({
     let roles: UserRole[] = [];
     
     if (userRole === 'superadmin') {
-      roles = ['superadmin', 'admin', 'manager', 'user'];
+      roles = ['superadmin', 'admin', 'manager', 'team_leader', 'user'];
     } else if (userRole === 'admin') {
-      roles = ['manager', 'user'];
+      roles = ['manager', 'team_leader', 'user'];
     } else if (userRole === 'manager') {
-      roles = currentRole === 'user' ? ['user'] : [];
+      roles = ['team_leader', 'user'];
     }
     
     // Exclude the target's current role to avoid redundant action

@@ -57,6 +57,8 @@ const getRoleIcon = (role: UserRole) => {
       return <Shield className="h-4 w-4 text-orange-500" />;
     case 'manager':
       return <UserCheck className="h-4 w-4 text-blue-500" />;
+    case 'team_leader':
+      return <UserCheck className="h-4 w-4 text-purple-500" />;
     case 'user':
       return <User className="h-4 w-4 text-green-500" />;
     default:
@@ -71,6 +73,8 @@ const getRoleBadgeVariant = (role: UserRole): "destructive" | "default" | "secon
     case 'admin':
       return 'default';
     case 'manager':
+      return 'secondary';
+    case 'team_leader':
       return 'secondary';
     case 'user':
       return 'outline';
@@ -93,11 +97,11 @@ const UserRoleManagement: React.FC = () => {
     // Superadmin can manage everyone except other superadmins
     if (currentRole === 'superadmin' && targetRole !== 'superadmin') return true;
     
-    // Admin can manage managers and users
-    if (currentRole === 'admin' && ['manager', 'user'].includes(targetRole)) return true;
+    // Admin can manage managers, team_leaders and users
+    if (currentRole === 'admin' && ['manager', 'team_leader', 'user'].includes(targetRole)) return true;
     
-    // Manager can manage users only
-    if (currentRole === 'manager' && targetRole === 'user') return true;
+    // Manager can manage team_leaders and users
+    if (currentRole === 'manager' && ['team_leader', 'user'].includes(targetRole)) return true;
     
     return false;
   };
@@ -108,15 +112,15 @@ const UserRoleManagement: React.FC = () => {
     const userRole = currentUser.role;
     
     if (userRole === 'superadmin') {
-      return currentRole === 'superadmin' ? [] : ['admin', 'manager', 'user'];
+      return currentRole === 'superadmin' ? [] : ['admin', 'manager', 'team_leader', 'user'];
     }
     
     if (userRole === 'admin') {
-      return ['manager', 'user'];
+      return ['manager', 'team_leader', 'user'];
     }
     
     if (userRole === 'manager') {
-      return currentRole === 'user' ? ['user'] : [];
+      return ['team_leader', 'user'];
     }
     
     return [];

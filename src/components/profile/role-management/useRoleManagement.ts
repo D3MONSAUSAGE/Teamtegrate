@@ -31,9 +31,9 @@ export const useRoleManagement = ({ targetUser, onRoleChanged }: UseRoleManageme
       return true;
     }
     
-    // Admin can manage managers and users (but not superadmins or other admins)
+    // Admin can manage managers, team_leaders and users (but not superadmins or other admins)
     if (currentUser.role === 'admin' && 
-        ['manager', 'user'].includes(currentTargetRole) && 
+        ['manager', 'team_leader', 'user'].includes(currentTargetRole) && 
         targetUser.id !== currentUser.id) {
       return true;
     }
@@ -49,10 +49,10 @@ export const useRoleManagement = ({ targetUser, onRoleChanged }: UseRoleManageme
     
     if (currentUser.role === 'superadmin') {
       // Superadmin can assign any role except to themselves
-      roles.push('user', 'manager', 'admin', 'superadmin');
+      roles.push('user', 'team_leader', 'manager', 'admin', 'superadmin');
     } else if (currentUser.role === 'admin') {
-      // Admin can only assign user and manager roles
-      roles.push('user', 'manager');
+      // Admin can only assign user, team_leader and manager roles
+      roles.push('user', 'team_leader', 'manager');
     }
     
     return roles.filter(role => role !== currentTargetRole);
