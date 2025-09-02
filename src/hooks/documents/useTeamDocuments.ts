@@ -79,11 +79,16 @@ export const useTeamDocuments = (selectedTeamId?: string) => {
         : [];
       setFolders(uniqueFolders);
 
-    } catch (err) {
-      logger.error('Error fetching team documents', err);
+    } catch (err: any) {
+      logger.error('Error fetching team documents', {
+        error: err,
+        selectedTeamId,
+        organizationId: user?.organizationId,
+        isAdmin
+      });
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch documents';
       // Provide user-friendly error messages
-      if (errorMessage.includes('uuid')) {
+      if (String(errorMessage).toLowerCase().includes('uuid')) {
         setError('Unable to load documents. Please try refreshing the page.');
       } else {
         setError(errorMessage);

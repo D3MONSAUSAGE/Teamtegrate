@@ -119,7 +119,7 @@ export const DocumentsPage = () => {
           </div>
           <DocumentUploader 
             folder={selectedFolder === 'All' ? undefined : selectedFolder}
-            teamId={selectedTeamId}
+            teamId={selectedTeamId === 'all' ? undefined : selectedTeamId}
             onUploadComplete={refetch}
           />
         </div>

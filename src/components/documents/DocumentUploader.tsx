@@ -34,7 +34,8 @@ export const DocumentUploader = ({ folder, teamId, onUploadComplete }: DocumentU
         .from('documents')
         .upload(filePath, file, {
           cacheControl: '3600',
-          upsert: false
+          upsert: false,
+          contentType: file.type
         });
 
       if (storageError) {
@@ -51,7 +52,7 @@ export const DocumentUploader = ({ folder, teamId, onUploadComplete }: DocumentU
           file_type: file.type,
           size_bytes: file.size,
           folder: folder,
-          team_id: teamId,
+          team_id: (teamId && teamId !== 'all') ? teamId : null,
           storage_id: filePath,
           user_id: user!.id,
           organization_id: user!.organizationId
@@ -64,9 +65,12 @@ export const DocumentUploader = ({ folder, teamId, onUploadComplete }: DocumentU
 
       toast.success(`${file.name} uploaded successfully.`);
       onUploadComplete?.();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Upload error:', error);
-      toast.error('Failed to upload document');
+      const msg = (error?.code === '22P02' || String(error?.message || '').toLowerCase().includes('uuid'))
+        ? 'Invalid team selection. Please choose a specific team or “All Teams” and try again.'
+        : 'Failed to upload document';
+      toast.error(msg);
     } finally {
       setUploading(false);
     }
