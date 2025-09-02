@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Loader2, Download, ExternalLink, ZoomIn, ZoomOut, RotateCw } from 'lucide-react';
+import { Loader2, Download, ExternalLink, ZoomIn, ZoomOut, RotateCw, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { isEdge, supportsBlobUrls, getFileTypeCategory } from '@/lib/browser';
+import { supportsBlobUrls, supportsInlinePDFs, getFileTypeCategory } from '@/lib/browser';
 
 interface DocumentViewerProps {
   documentPath: string;
@@ -19,9 +19,10 @@ export const DocumentViewer = ({ documentPath, documentName, children }: Documen
   const [fileContent, setFileContent] = useState<string | null>(null);
   const [zoom, setZoom] = useState(100);
   const [rotation, setRotation] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+  const [viewingStrategy, setViewingStrategy] = useState<'blob' | 'signed' | 'google' | 'download'>('blob');
 
   const fileType = getFileTypeCategory(documentName);
-  const canViewInline = supportsBlobUrls() && !isEdge();
 
   useEffect(() => {
     if (isOpen && !fileUrl && !fileContent) {
@@ -31,44 +32,78 @@ export const DocumentViewer = ({ documentPath, documentName, children }: Documen
 
   const loadDocument = async () => {
     setIsLoading(true);
+    setError(null);
+    
     try {
       if (fileType === 'text') {
-        // For text files, download and show content
+        await loadTextContent();
+      } else {
+        await loadFileWithStrategies();
+      }
+    } catch (error) {
+      console.error('Error loading document:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load document';
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadTextContent = async () => {
+    const { data, error } = await supabase.storage
+      .from('documents')
+      .download(documentPath);
+
+    if (error) throw new Error(`Failed to download text file: ${error.message}`);
+
+    const text = await data.text();
+    setFileContent(text);
+  };
+
+  const loadFileWithStrategies = async () => {
+    // Strategy 1: Try blob URL (works in most browsers)
+    if (supportsBlobUrls()) {
+      try {
         const { data, error } = await supabase.storage
           .from('documents')
           .download(documentPath);
 
         if (error) throw error;
 
-        const text = await data.text();
-        setFileContent(text);
-      } else {
-        // For other files, get a URL
-        if (canViewInline) {
-          const { data, error } = await supabase.storage
-            .from('documents')
-            .download(documentPath);
-
-          if (error) throw error;
-
-          const url = URL.createObjectURL(data);
-          setFileUrl(url);
-        } else {
-          // Fallback to signed URL for browsers that don't support blob URLs
-          const { data, error } = await supabase.storage
-            .from('documents')
-            .createSignedUrl(documentPath, 3600);
-
-          if (error) throw error;
-          setFileUrl(data.signedUrl);
-        }
+        const url = URL.createObjectURL(data);
+        setFileUrl(url);
+        setViewingStrategy('blob');
+        return;
+      } catch (error) {
+        console.warn('Blob URL strategy failed:', error);
       }
-    } catch (error) {
-      console.error('Error loading document:', error);
-      toast.error('Failed to load document');
-    } finally {
-      setIsLoading(false);
     }
+
+    // Strategy 2: Try signed URL
+    try {
+      const { data, error } = await supabase.storage
+        .from('documents')
+        .createSignedUrl(documentPath, 3600);
+
+      if (error) throw error;
+
+      setFileUrl(data.signedUrl);
+      setViewingStrategy('signed');
+      return;
+    } catch (error) {
+      console.warn('Signed URL strategy failed:', error);
+    }
+
+    // Strategy 3: Fallback to Google Docs viewer for documents/PDFs
+    if (fileType === 'pdf' || fileType === 'document') {
+      setViewingStrategy('google');
+      return;
+    }
+
+    // Strategy 4: Download only
+    setViewingStrategy('download');
+    throw new Error('Cannot preview this file type. Download is available.');
   };
 
   const handleDownload = async () => {
@@ -100,6 +135,10 @@ export const DocumentViewer = ({ documentPath, documentName, children }: Documen
   };
 
   const getGoogleDocsUrl = () => {
+    if (viewingStrategy === 'google') {
+      // Use signed URL for Google Docs viewer
+      return `https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl || '')}&embedded=true`;
+    }
     if (!fileUrl) return null;
     if (fileType === 'pdf' || fileType === 'document') {
       return `https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`;
@@ -113,6 +152,22 @@ export const DocumentViewer = ({ documentPath, documentName, children }: Documen
         <div className="flex items-center justify-center h-[600px]">
           <Loader2 className="h-8 w-8 animate-spin" />
           <span className="ml-2">Loading document...</span>
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div className="flex flex-col items-center justify-center h-[600px] text-center space-y-4">
+          <AlertCircle className="h-12 w-12 text-destructive" />
+          <div>
+            <div className="text-lg font-medium mb-2">Cannot preview document</div>
+            <div className="text-muted-foreground text-sm mb-4">{error}</div>
+          </div>
+          <Button onClick={handleDownload} variant="outline">
+            <Download className="h-4 w-4 mr-2" />
+            Download File Instead
+          </Button>
         </div>
       );
     }
@@ -143,29 +198,33 @@ export const DocumentViewer = ({ documentPath, documentName, children }: Documen
       );
     }
 
-    if (fileType === 'pdf' && fileUrl) {
+    if (fileType === 'pdf' && (fileUrl || viewingStrategy === 'google')) {
       const googleDocsUrl = getGoogleDocsUrl();
       
-      if (googleDocsUrl && (!canViewInline || isEdge())) {
+      // Use Google Docs viewer if strategy is 'google' or if inline PDFs aren't supported
+      if (viewingStrategy === 'google' || (googleDocsUrl && !supportsInlinePDFs())) {
         return (
           <iframe
             src={googleDocsUrl}
             className="w-full h-[600px] border-0"
             title={documentName}
+            onError={() => setError('Failed to load PDF preview')}
           />
         );
       }
 
+      // Try direct PDF viewing
       return (
         <iframe
           src={fileUrl}
           className="w-full h-[600px] border-0"
           title={documentName}
+          onError={() => setError('Failed to load PDF. Try downloading instead.')}
         />
       );
     }
 
-    if (fileType === 'document' && fileUrl) {
+    if (fileType === 'document' && (fileUrl || viewingStrategy === 'google')) {
       const googleDocsUrl = getGoogleDocsUrl();
       
       if (googleDocsUrl) {
@@ -174,6 +233,7 @@ export const DocumentViewer = ({ documentPath, documentName, children }: Documen
             src={googleDocsUrl}
             className="w-full h-[600px] border-0"
             title={documentName}
+            onError={() => setError('Failed to load document preview')}
           />
         );
       }

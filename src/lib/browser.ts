@@ -40,11 +40,19 @@ export const isEdge = (): boolean => {
   return /Edge/.test(userAgent) || /Edg/.test(userAgent);
 };
 
+export const isChrome = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  
+  const userAgent = window.navigator.userAgent;
+  
+  // Check for Chrome (but not Edge which also contains Chrome)
+  return /Chrome/.test(userAgent) && !/Edge|Edg/.test(userAgent);
+};
+
 export const supportsBlobUrls = (): boolean => {
   if (typeof window === 'undefined') return false;
   
-  // Some browsers block blob URLs for security reasons
-  // Check if blob URLs are supported and not blocked
+  // Test if blob URLs work properly
   try {
     const blob = new Blob(['test'], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
@@ -53,6 +61,14 @@ export const supportsBlobUrls = (): boolean => {
   } catch (error) {
     return false;
   }
+};
+
+export const supportsInlinePDFs = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  
+  // Chrome and modern browsers generally support PDF viewing
+  // Safari may have issues, older browsers definitely will
+  return isChrome() || (!isSafari() && !isEdge());
 };
 
 export const getFileTypeCategory = (fileName: string): 'image' | 'pdf' | 'document' | 'text' | 'other' => {
