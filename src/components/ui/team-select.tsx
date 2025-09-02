@@ -11,10 +11,10 @@ interface Team {
 }
 
 interface TeamSelectProps {
-  teams: Team[];
+  teams: Team[] | undefined;
   isLoading: boolean;
   selectedTeam?: string;
-  onTeamChange: (teamId: string) => void;
+  onTeamChange: (teamId: string | undefined) => void;
   disabled?: boolean;
   optional?: boolean;
 }
@@ -43,7 +43,7 @@ const TeamSelect: React.FC<TeamSelectProps> = ({
         <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center">
           <Users className="h-3 w-3 text-primary" />
         </div>
-        Team Selection {optional && <span className="text-xs text-muted-foreground/70">(Optional)</span>}
+        Team Selection {!optional && <span className="text-destructive text-xs">*</span>}
       </Label>
       <Select 
         value={selectedTeam || ""} 
@@ -59,8 +59,8 @@ const TeamSelect: React.FC<TeamSelectProps> = ({
               </div>
             ) : 
             disabled ? "Select organization first" :
-            optional ? "All teams (or select specific team)" :
-            "Choose a team"
+            optional ? "Select team (optional)" :
+            "Select a team to continue"
           } />
         </SelectTrigger>
         <SelectContent className="max-h-64">
