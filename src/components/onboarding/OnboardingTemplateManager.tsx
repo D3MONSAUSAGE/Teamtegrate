@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Plus, Edit, Trash2, Users, Calendar, CheckCircle, UserPlus, Wand2, Play, BarChart3, Clock, Target } from 'lucide-react';
 import { OnboardingTemplateWizard } from './wizard/OnboardingTemplateWizard';
 import { AssignmentDialog } from './AssignmentDialog';
+import { EmployeeJourneyPreview } from './EmployeeJourneyPreview';
 import { useOnboardingTemplates } from '@/hooks/onboarding/useOnboardingTemplates';
 import { useJobRoles } from '@/hooks/useJobRoles';
 import { OnboardingTemplate, CreateOnboardingTemplateRequest } from '@/types/onboarding';
@@ -22,6 +23,7 @@ export function OnboardingTemplateManager() {
   const [wizardOpen, setWizardOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<OnboardingTemplate | null>(null);
   const [assigningTemplate, setAssigningTemplate] = useState<OnboardingTemplate | null>(null);
+  const [previewingTemplate, setPreviewingTemplate] = useState<OnboardingTemplate | null>(null);
 
   const canManageTemplates = user?.role === 'admin' || user?.role === 'superadmin' || user?.role === 'manager';
 
@@ -225,7 +227,7 @@ export function OnboardingTemplateManager() {
                       variant="outline"
                       size="sm"
                       className="text-xs"
-                      onClick={() => toast.info('Preview feature coming soon!')}
+                      onClick={() => setPreviewingTemplate(template)}
                     >
                       <Play className="w-3 h-3 mr-1" />
                       Preview
@@ -287,6 +289,17 @@ export function OnboardingTemplateManager() {
           open={!!assigningTemplate}
           onClose={() => setAssigningTemplate(null)}
         />
+      )}
+
+      {previewingTemplate && (
+        <Dialog open={!!previewingTemplate} onOpenChange={() => setPreviewingTemplate(null)}>
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden p-0">
+            <EmployeeJourneyPreview
+              template={previewingTemplate}
+              onClose={() => setPreviewingTemplate(null)}
+            />
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );
