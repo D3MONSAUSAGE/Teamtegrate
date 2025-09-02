@@ -1,11 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import ModernRoomList from './ModernRoomList';
 import ModernMessageArea from './ModernMessageArea';
 import RoomMembersPanel from './RoomMembersPanel';
 import UserSearchDialog from './UserSearchDialog';
 import RoomSettingsDialog from './RoomSettingsDialog';
+import EnhancedCreateRoomDialog from './EnhancedCreateRoomDialog';
 import { ChatErrorBoundary } from './ChatErrorBoundary';
 import { useRooms } from '@/hooks/useRooms';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -20,12 +22,20 @@ import { ChatRoom } from '@/types/chat';
 const ModernChatContainer: React.FC = () => {
   const { user } = useAuth();
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [showMembers, setShowMembers] = useState(!isMobile);
   const [showAddMember, setShowAddMember] = useState(false);
   const [showRoomSettings, setShowRoomSettings] = useState(false);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
   
-  const { rooms } = useRooms();
+  // Extract URL parameters
+  const shouldCreateTeamChat = searchParams.get('createTeamChat') === 'true';
+  const teamId = searchParams.get('teamId');
+  
+  const { rooms, createRoom } = useRooms();
   const { canManageRoom } = usePermissions(selectedRoomId);
   const { canCreateChatRoom, canInviteToChat } = useChatRoomPermissions();
   
@@ -44,6 +54,18 @@ const ModernChatContainer: React.FC = () => {
       }
     };
   }, [user, startTracking, stopTracking, isTracking]);
+
+  // Handle URL parameters for team chat creation
+  useEffect(() => {
+    if (shouldCreateTeamChat && teamId) {
+      setShowCreateDialog(true);
+      // Clean up URL parameters after opening dialog
+      const newSearchParams = new URLSearchParams(searchParams);
+      newSearchParams.delete('createTeamChat');
+      newSearchParams.delete('teamId');
+      setSearchParams(newSearchParams, { replace: true });
+    }
+  }, [shouldCreateTeamChat, teamId, searchParams, setSearchParams]);
 
   // Get selected room details
   const { data: selectedRoom } = useQuery({
@@ -67,6 +89,26 @@ const ModernChatContainer: React.FC = () => {
     setSelectedRoomId(room.id);
   };
 
+  const handleCreateRoom = async (name: string, description?: string, isPublic = false, selectedTeamId?: string) => {
+    try {
+      const room = await createRoom(name, description, isPublic);
+      setShowCreateDialog(false);
+      if (room) {
+        setSelectedRoomId(room.id);
+      }
+    } catch (error) {
+      console.error('Failed to create room:', error);
+    }
+  };
+
+  const handleBackToRooms = () => {
+    if (isMobile) {
+      setSelectedRoomId(null);
+    } else {
+      navigate('/dashboard/team');
+    }
+  };
+
   const handleRoomDeleted = () => {
     setSelectedRoomId(null);
   };
@@ -79,16 +121,18 @@ const ModernChatContainer: React.FC = () => {
             <ModernRoomList
               selectedRoom={selectedRoom}
               onRoomSelect={handleRoomSelect}
+              showCreateDialog={showCreateDialog}
+              onShowCreateDialog={setShowCreateDialog}
             />
           ) : selectedRoom ? (
-            <ModernMessageArea
-              room={selectedRoom}
-              onBack={() => setSelectedRoomId(null)}
-              onToggleMembers={() => setShowMembers(!showMembers)}
-              onShowSettings={() => setShowRoomSettings(true)}
-              onAddMember={() => setShowAddMember(true)}
-              onRoomDeleted={handleRoomDeleted}
-            />
+              <ModernMessageArea
+                room={selectedRoom}
+                onBack={handleBackToRooms}
+                onToggleMembers={() => setShowMembers(!showMembers)}
+                onShowSettings={() => setShowRoomSettings(true)}
+                onAddMember={() => setShowAddMember(true)}
+                onRoomDeleted={handleRoomDeleted}
+              />
           ) : null}
           
           {selectedRoom && (
@@ -107,6 +151,14 @@ const ModernChatContainer: React.FC = () => {
               />
             </>
           )}
+
+          {/* Enhanced Create Room Dialog for mobile */}
+          <EnhancedCreateRoomDialog
+            open={showCreateDialog}
+            onOpenChange={setShowCreateDialog}
+            onCreateRoom={handleCreateRoom}
+            preselectedTeamId={teamId || undefined}
+          />
         </div>
       </ChatErrorBoundary>
     );
@@ -119,10 +171,12 @@ const ModernChatContainer: React.FC = () => {
           {/* Room List */}
           <ResizablePanel defaultSize={25} minSize={20} maxSize={35}>
             <div className="h-full p-4">
-              <ModernRoomList
-                selectedRoom={selectedRoom}
-                onRoomSelect={handleRoomSelect}
-              />
+            <ModernRoomList
+              selectedRoom={selectedRoom}
+              onRoomSelect={handleRoomSelect}
+              showCreateDialog={showCreateDialog}
+              onShowCreateDialog={setShowCreateDialog}
+            />
             </div>
           </ResizablePanel>
           
@@ -134,6 +188,7 @@ const ModernChatContainer: React.FC = () => {
               {selectedRoomId && selectedRoom ? (
                 <ModernMessageArea
                   room={selectedRoom}
+                  onBack={handleBackToRooms}
                   onToggleMembers={() => setShowMembers(!showMembers)}
                   onShowSettings={() => setShowRoomSettings(true)}
                   onAddMember={() => setShowAddMember(true)}
@@ -194,6 +249,14 @@ const ModernChatContainer: React.FC = () => {
               />
             </>
           )}
+
+          {/* Enhanced Create Room Dialog */}
+          <EnhancedCreateRoomDialog
+            open={showCreateDialog}
+            onOpenChange={setShowCreateDialog}
+            onCreateRoom={handleCreateRoom}
+            preselectedTeamId={teamId || undefined}
+          />
         </ResizablePanelGroup>
       </div>
     </ChatErrorBoundary>

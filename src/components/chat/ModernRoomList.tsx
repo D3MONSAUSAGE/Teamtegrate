@@ -15,16 +15,24 @@ import CreateRoomDialog from './CreateRoomDialog';
 interface ModernRoomListProps {
   selectedRoom: ChatRoom | null;
   onRoomSelect: (room: ChatRoom) => void;
+  showCreateDialog?: boolean;
+  onShowCreateDialog?: (show: boolean) => void;
 }
 
 const ModernRoomList: React.FC<ModernRoomListProps> = ({
   selectedRoom,
-  onRoomSelect
+  onRoomSelect,
+  showCreateDialog: externalShowCreateDialog,
+  onShowCreateDialog
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [internalShowCreateDialog, setInternalShowCreateDialog] = useState(false);
   const { rooms, loading, createRoom } = useRooms();
   const { user } = useAuth();
+
+  // Use external dialog state if provided, otherwise use internal state
+  const showCreateDialog = externalShowCreateDialog !== undefined ? externalShowCreateDialog : internalShowCreateDialog;
+  const setShowCreateDialog = onShowCreateDialog || setInternalShowCreateDialog;
 
   const filteredRooms = rooms.filter(room =>
     room.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -153,11 +161,14 @@ const ModernRoomList: React.FC<ModernRoomListProps> = ({
         </ScrollArea>
       </CardContent>
 
-      <CreateRoomDialog
-        open={showCreateDialog}
-        onOpenChange={setShowCreateDialog}
-        onCreateRoom={handleCreateRoom}
-      />
+      {/* Only show internal CreateRoomDialog if no external dialog handler is provided */}
+      {!onShowCreateDialog && (
+        <CreateRoomDialog
+          open={showCreateDialog}
+          onOpenChange={setShowCreateDialog}
+          onCreateRoom={handleCreateRoom}
+        />
+      )}
     </Card>
   );
 };
