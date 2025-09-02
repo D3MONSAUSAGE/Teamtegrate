@@ -63,7 +63,7 @@ export const useTaskDetailHelpers = (task: Task | null) => {
   return {
     getStatusColor,
     getPriorityColor,
-    isOverdue: isTaskOverdue(task),
+    isOverdue: task ? isTaskOverdue(task) : false,
     formatDate,
     formatTime,
     getAssignedToName,
