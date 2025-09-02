@@ -10,6 +10,7 @@ import { ChatErrorBoundary } from './ChatErrorBoundary';
 import { useRooms } from '@/hooks/useRooms';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useUserPresence } from '@/hooks/useUserPresence';
+import { useChatRoomPermissions } from './hooks/useChatRoomPermissions';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,6 +27,7 @@ const ModernChatContainer: React.FC = () => {
   
   const { rooms } = useRooms();
   const { canManageRoom } = usePermissions(selectedRoomId);
+  const { canCreateChatRoom, canInviteToChat } = useChatRoomPermissions();
   
   // Initialize presence tracking
   const { startTracking, stopTracking, isTracking } = useUserPresence(selectedRoomId || undefined);

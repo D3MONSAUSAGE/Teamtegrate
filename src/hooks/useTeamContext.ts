@@ -7,6 +7,8 @@ interface TeamContextType {
   userTeams: Team[];
   canManageTeam: (teamId: string) => boolean;
   isTeamMember: (teamId: string) => boolean;
+  getUserManagedTeams?: () => Team[];
+  canUserInviteToTeamChat?: (teamId: string, targetUserId: string) => boolean;
 }
 
 export const TeamContext = createContext<TeamContextType | null>(null);

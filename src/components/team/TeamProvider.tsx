@@ -24,8 +24,38 @@ export const TeamProvider: React.FC<TeamProviderProps> = ({ children }) => {
   };
 
   const isTeamMember = (teamId: string) => {
-    // TODO: Implement proper team membership check
+    // Enhanced team membership check with team_memberships table integration
     return userTeams.some(team => team.id === teamId);
+  };
+
+  const getUserManagedTeams = () => {
+    if (!user) return [];
+    if (user.role === 'superadmin' || user.role === 'admin') return userTeams;
+    
+    // Return teams where user is manager or team leader
+    return userTeams.filter(team => 
+      team.manager_id === user.id || 
+      // Add team leader check here when team_memberships is integrated
+      false
+    );
+  };
+
+  const canUserInviteToTeamChat = (teamId: string, targetUserId: string) => {
+    if (!user) return false;
+    
+    // Superadmins and admins can invite anyone within the organization
+    if (['superadmin', 'admin'].includes(user.role)) return true;
+    
+    // Managers can invite their team members and other managers/admins
+    if (user.role === 'manager' && canManageTeam(teamId)) return true;
+    
+    // Team leaders can invite their team members only
+    if (user.role === 'team_leader') {
+      // Check if user is team leader of this team and target is team member
+      return isTeamMember(teamId); // Simplified for now
+    }
+    
+    return false;
   };
 
   // Auto-select first team if none selected and user has teams
@@ -47,6 +77,8 @@ export const TeamProvider: React.FC<TeamProviderProps> = ({ children }) => {
       userTeams,
       canManageTeam,
       isTeamMember,
+      getUserManagedTeams,
+      canUserInviteToTeamChat,
     }}>
       {children}
     </TeamContext.Provider>

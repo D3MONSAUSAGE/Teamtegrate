@@ -11,6 +11,7 @@ import TeamDebugPanel from '@/components/team/TeamDebugPanel';
 import OrganizationHeader from '@/components/team/OrganizationHeader';
 import useTeamMembers from '@/hooks/useTeamMembers';
 import { useAuth } from '@/contexts/AuthContext';
+import TeamOverviewDashboard from '@/components/team/overview/TeamOverviewDashboard';
 
 const TeamPage = () => {
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
@@ -61,51 +62,8 @@ const TeamPage = () => {
   
   return (
     <div className="p-3 sm:p-6">
-      <OrganizationHeader />
-      
-      <TeamPageHeader
-        onAddMember={() => setIsAddMemberOpen(true)}
-        onRefresh={handleRefresh}
-        isLoading={isTeamMembersLoading}
-      />
-      
-      <TeamStatsCards 
-        teamMembersCount={teamMembersCount}
-        totalTasks={totalTasksAssigned}
-        completedTasks={totalTasksCompleted}
-        projectsCount={projectsCount}
-        teamTasksAssigned={teamTasksAssigned}
-        managerTasksAssigned={managerTasksAssigned}
-        unassignedTasksCount={unassignedTasksCount}
-      />
-
-      <TeamDebugPanel
-        showDebug={showDebug}
-        onToggleDebug={() => setShowDebug(!showDebug)}
-        teamMembersCount={teamMembersCount}
-        totalTasksAssigned={totalTasksAssigned}
-        totalTasksCompleted={totalTasksCompleted}
-        projectsCount={projectsCount}
-        teamMembersPerformance={teamMembersPerformance}
-      />
-      
-      <TeamPageContent
-        managerPerformance={managerPerformance}
-        teamMembersPerformance={teamMembersPerformance}
-        teamMembersCount={teamMembersCount}
-        unassignedTasks={unassignedTasks}
-        isTeamMembersLoading={isTeamMembersLoading}
-        removingMemberId={removingMemberId}
-        onRemoveMember={handleRemoveMember}
-        onAddMember={() => setIsAddMemberOpen(true)}
-        onReassignTask={handleReassignTask}
-      />
-      
-      <AddTeamMemberDialog 
-        open={isAddMemberOpen}
-        onOpenChange={setIsAddMemberOpen}
-        onTeamMemberAdded={refreshTeamMembers}
-      />
+        {/* Replace the existing TeamPage content with TeamOverviewDashboard */}
+        <TeamOverviewDashboard />
     </div>
   );
 };
