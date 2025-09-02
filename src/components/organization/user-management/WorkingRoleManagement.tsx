@@ -104,7 +104,7 @@ const WorkingRoleManagement: React.FC<WorkingRoleManagementProps> = ({
       try {
         console.log('Checking if superadmin transfer is required');
         const { data, error } = await supabase.rpc('can_change_user_role', {
-          manager_user_id: currentUser?.id,
+          requester_id: currentUser?.id,
           target_user_id: targetUser.id,
           new_role: role
         });

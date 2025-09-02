@@ -121,7 +121,7 @@ export const useRoleManagement = (users: any[], refetchUsers: () => void) => {
 
     const { data, error } = await supabase
       .rpc('can_change_user_role', { 
-        manager_user_id: currentUser.id,
+        requester_id: currentUser.id,
         target_user_id: userId,
         new_role: newRole
       });
