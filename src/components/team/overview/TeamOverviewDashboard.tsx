@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Users, 
   Search, 
@@ -18,6 +19,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTeamManagement } from '@/hooks/organization/useTeamManagement';
 import { useAuth } from '@/contexts/AuthContext';
 import { Team } from '@/types/teams';
+import TeamManagementTab from '../management/TeamManagementTab';
 
 interface TeamMemberWithRole {
   id: string;
@@ -36,6 +38,8 @@ const TeamOverviewDashboard: React.FC = () => {
   const { user } = useAuth();
   const { teams, teamStats, isLoading, error } = useTeamManagement();
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
+  const [activeTab, setActiveTab] = useState('overview');
 
   const canManageTeams = user && ['superadmin', 'admin'].includes(user.role);
 
@@ -44,8 +48,9 @@ const TeamOverviewDashboard: React.FC = () => {
     (team.description && team.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const handleTeamClick = (teamId: string) => {
-    navigate(`/dashboard/team/manage/${teamId}`);
+  const handleTeamClick = (team: Team) => {
+    setSelectedTeam(team);
+    setActiveTab('manage');
   };
 
   const getRoleIcon = (role: string) => {
@@ -109,6 +114,16 @@ const TeamOverviewDashboard: React.FC = () => {
           </Button>
         )}
       </div>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="manage" disabled={!selectedTeam}>
+            {selectedTeam ? `Manage ${selectedTeam.name}` : 'Manage Team'}
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-6">
 
       {/* Team Statistics */}
       {teamStats && (
@@ -209,7 +224,7 @@ const TeamOverviewDashboard: React.FC = () => {
                 <Card 
                   key={team.id} 
                   className="hover:shadow-md transition-all cursor-pointer border-l-4 border-l-primary/20 hover:border-l-primary"
-                  onClick={() => handleTeamClick(team.id)}
+                  onClick={() => handleTeamClick(team)}
                 >
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between mb-4">
@@ -264,10 +279,24 @@ const TeamOverviewDashboard: React.FC = () => {
                   </CardContent>
                 </Card>
               ))}
-            </div>
-          )}
+        </div>
+      )}
         </CardContent>
       </Card>
+        </TabsContent>
+
+        <TabsContent value="manage">
+          {selectedTeam ? (
+            <TeamManagementTab selectedTeam={selectedTeam} />
+          ) : (
+            <Card>
+              <CardContent className="p-6 text-center">
+                <p className="text-muted-foreground">Select a team to manage</p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
