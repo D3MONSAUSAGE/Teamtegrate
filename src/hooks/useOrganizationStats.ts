@@ -13,6 +13,7 @@ interface OrganizationStats {
   active_projects: number;
   total_tasks: number;
   completed_tasks: number;
+  total_teams: number;
 }
 
 export const useOrganizationStats = () => {
@@ -23,26 +24,36 @@ export const useOrganizationStats = () => {
       throw new Error('User must belong to an organization');
     }
 
-    const { data, error } = await supabase
-      .rpc('get_organization_stats', { org_id: user.organizationId });
+    // Fetch both organization stats and team stats
+    const [orgStatsResponse, teamStatsResponse] = await Promise.all([
+      supabase.rpc('get_organization_stats', { org_id: user.organizationId }),
+      supabase.rpc('get_team_stats', { org_id: user.organizationId })
+    ]);
 
-    if (error) {
-      console.error('Error fetching organization stats:', error);
-      throw new Error(error.message);
+    if (orgStatsResponse.error) {
+      console.error('Error fetching organization stats:', orgStatsResponse.error);
+      throw new Error(orgStatsResponse.error.message);
     }
 
-    // Parse the JSON response and ensure it matches our interface
-    const parsedData = typeof data === 'string' ? JSON.parse(data) : data;
+    if (teamStatsResponse.error) {
+      console.error('Error fetching team stats:', teamStatsResponse.error);
+      throw new Error(teamStatsResponse.error.message);
+    }
+
+    // Parse the JSON responses
+    const orgData = typeof orgStatsResponse.data === 'string' ? JSON.parse(orgStatsResponse.data) : orgStatsResponse.data;
+    const teamData = typeof teamStatsResponse.data === 'string' ? JSON.parse(teamStatsResponse.data) : teamStatsResponse.data;
     
     return {
-      total_users: parsedData.total_users || 0,
-      superadmins: parsedData.superadmins || 0,
-      admins: parsedData.admins || 0,
-      managers: parsedData.managers || 0,
-      users: parsedData.users || 0,
-      active_projects: parsedData.active_projects || 0,
-      total_tasks: parsedData.total_tasks || 0,
-      completed_tasks: parsedData.completed_tasks || 0,
+      total_users: orgData.total_users || 0,
+      superadmins: orgData.superadmins || 0,
+      admins: orgData.admins || 0,
+      managers: orgData.managers || 0,
+      users: orgData.users || 0,
+      active_projects: orgData.active_projects || 0,
+      total_tasks: orgData.total_tasks || 0,
+      completed_tasks: orgData.completed_tasks || 0,
+      total_teams: teamData.total_teams || 0,
     } as OrganizationStats;
   };
 

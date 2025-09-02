@@ -78,12 +78,18 @@ const ProfessionalOrganizationHeader: React.FC<ProfessionalOrganizationHeaderPro
               </div>
 
               {/* Quick Stats */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
                 <div className="group cursor-pointer">
                   <div className="text-3xl lg:text-4xl font-bold text-primary group-hover:scale-110 transition-transform duration-200">
                     {stats?.total_users || 0}
                   </div>
                   <div className="text-sm text-muted-foreground font-medium">Team Members</div>
+                </div>
+                <div className="group cursor-pointer">
+                  <div className="text-3xl lg:text-4xl font-bold text-amber-600 group-hover:scale-110 transition-transform duration-200">
+                    {stats?.total_teams || 0}
+                  </div>
+                  <div className="text-sm text-muted-foreground font-medium">Total Teams</div>
                 </div>
                 <div className="group cursor-pointer">
                   <div className="text-3xl lg:text-4xl font-bold text-purple-600 group-hover:scale-110 transition-transform duration-200">
