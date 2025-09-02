@@ -41,6 +41,7 @@ const MeetingsPage = lazy(() => {
 const ChatPage = lazy(() => import('@/pages/ChatPage'));
 const TeamPage = lazy(() => import('@/pages/TeamPage'));
 const TeamDetailPage = lazy(() => import('@/pages/TeamDetailPage'));
+const DedicatedTeamManagement = lazy(() => import('@/components/team/management/DedicatedTeamManagement'));
 const ProfilePage = lazy(() => import('@/pages/ProfilePage'));
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'));
 const ReportsPage = lazy(() => import('@/pages/ReportsPage'));
@@ -205,6 +206,11 @@ const OptimizedRouter = () => {
             <Route path="team/:teamId" element={
               <PageWrapper>
                 <TeamDetailPage />
+              </PageWrapper>
+            } />
+            <Route path="team/manage/:teamId" element={
+              <PageWrapper>
+                <DedicatedTeamManagement />
               </PageWrapper>
             } />
             <Route path="profile" element={
