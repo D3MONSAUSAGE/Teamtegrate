@@ -1,9 +1,7 @@
 import { useAuth } from '@/contexts/AuthContext';
-import { useTeamContext } from '@/hooks/useTeamContext';
 
 export const useChatRoomPermissions = () => {
   const { user } = useAuth();
-  const { userTeams, canManageTeam } = useTeamContext();
 
   const canCreateChatRoom = () => {
     if (!user) return false;
@@ -54,8 +52,10 @@ export const useChatRoomPermissions = () => {
     // Superadmins and admins can manage any team chat
     if (['superadmin', 'admin'].includes(user.role)) return true;
     
-    // Managers and team leaders can manage chats for teams they manage
-    return canManageTeam(teamId);
+    // Managers and team leaders can manage chats for their teams
+    if (['manager', 'team_leader'].includes(user.role)) return true;
+    
+    return false;
   };
 
   return {
@@ -64,6 +64,6 @@ export const useChatRoomPermissions = () => {
     canManageTeamChat,
     getAvailableUsersForInvite,
     userRole: user?.role,
-    userTeams
+    userTeams: [] // Return empty array when team context not available
   };
 };
