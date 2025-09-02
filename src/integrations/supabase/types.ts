@@ -3075,6 +3075,104 @@ export type Database = {
           },
         ]
       }
+      sales_channel_transactions: {
+        Row: {
+          channel_id: string
+          commission_fee: number
+          created_at: string
+          date: string
+          gross_sales: number
+          id: string
+          location: string
+          net_sales: number
+          order_count: number | null
+          organization_id: string
+          sales_data_id: string
+          updated_at: string
+        }
+        Insert: {
+          channel_id: string
+          commission_fee?: number
+          created_at?: string
+          date: string
+          gross_sales?: number
+          id?: string
+          location: string
+          net_sales?: number
+          order_count?: number | null
+          organization_id: string
+          sales_data_id: string
+          updated_at?: string
+        }
+        Update: {
+          channel_id?: string
+          commission_fee?: number
+          created_at?: string
+          date?: string
+          gross_sales?: number
+          id?: string
+          location?: string
+          net_sales?: number
+          order_count?: number | null
+          organization_id?: string
+          sales_data_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_channel_transactions_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "sales_channels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sales_channels: {
+        Row: {
+          commission_rate: number
+          commission_type: string
+          created_at: string
+          created_by: string
+          description: string | null
+          flat_fee_amount: number | null
+          id: string
+          is_active: boolean
+          location: string | null
+          name: string
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          commission_rate?: number
+          commission_type?: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          flat_fee_amount?: number | null
+          id?: string
+          is_active?: boolean
+          location?: string | null
+          name: string
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          commission_rate?: number
+          commission_type?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          flat_fee_amount?: number | null
+          id?: string
+          is_active?: boolean
+          location?: string | null
+          name?: string
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       sales_data: {
         Row: {
           calculated_cash: number
