@@ -14,7 +14,8 @@ import {
   TrendingUp,
   BookOpen,
   PenTool,
-  Shield
+  Shield,
+  MapPin
 } from 'lucide-react';
 import ComplianceTrainingTemplateManager from './ComplianceTrainingTemplateManager';
 
@@ -23,6 +24,7 @@ interface ManagementPanelProps {
   onCreateQuiz: () => void;
   onAssignContent: () => void;
   onViewAnalytics: () => void;
+  onStartOnboarding?: () => void;
   onExportData?: () => void;
   onSettings?: () => void;
   userRole: string;
@@ -33,6 +35,7 @@ const ManagementPanel: React.FC<ManagementPanelProps> = ({
   onCreateQuiz,
   onAssignContent,
   onViewAnalytics,
+  onStartOnboarding,
   onExportData,
   onSettings,
   userRole
@@ -78,7 +81,15 @@ const ManagementPanel: React.FC<ManagementPanelProps> = ({
       onClick: onViewAnalytics,
       primary: false,
       color: 'from-purple-500 to-purple-400'
-    }
+    },
+    ...(onStartOnboarding ? [{
+      title: 'Start Onboarding',
+      description: 'Complete your setup step-by-step',
+      icon: MapPin,
+      onClick: onStartOnboarding,
+      primary: true,
+      color: 'from-emerald-500 to-emerald-400'
+    }] : [])
   ];
 
   return (

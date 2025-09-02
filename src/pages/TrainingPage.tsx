@@ -16,6 +16,9 @@ import UserAssignment from '@/components/training/UserAssignment';
 import MyAssignments from '@/components/training/MyAssignments';
 import EmployeeProgressDashboard from '@/components/training/EmployeeProgressDashboard';
 import { OnboardingDashboard } from '@/components/training/OnboardingDashboard';
+import { NewEmployeeWizard } from '@/components/onboarding/wizard/NewEmployeeWizard';
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { useMyOnboarding } from '@/hooks/onboarding/useOnboardingInstances';
 import { useTrainingCourses, useQuizzes, useTrainingAssignments } from '@/hooks/useTrainingData';
 
 const TrainingPage = () => {
@@ -28,12 +31,14 @@ const TrainingPage = () => {
   const [isUserAssignmentOpen, setIsUserAssignmentOpen] = useState(false);
   const [isMyAssignmentsOpen, setIsMyAssignmentsOpen] = useState(false);
   const [isEmployeeProgressOpen, setIsEmployeeProgressOpen] = useState(false);
+  const [isOnboardingWizardOpen, setIsOnboardingWizardOpen] = useState(false);
   const [selectedQuiz, setSelectedQuiz] = useState<any>(null);
   const [selectedCourse, setSelectedCourse] = useState<any>(null);
   
   const { data: courses = [], isLoading: coursesLoading } = useTrainingCourses();
   const { data: allQuizzes = [], isLoading: quizzesLoading } = useQuizzes();
   const { data: assignments = [] } = useTrainingAssignments();
+  const { data: onboardingInstance } = useMyOnboarding();
 
   const canManageContent = user && ['superadmin', 'admin', 'manager'].includes(user.role);
 
@@ -103,6 +108,10 @@ const TrainingPage = () => {
     console.log('Viewing assignment:', assignment);
   };
 
+  const handleStartOnboarding = () => {
+    setIsOnboardingWizardOpen(true);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
@@ -136,13 +145,14 @@ const TrainingPage = () => {
               {/* Management Panel - First for Managers/Admins */}
               {canManageContent && (
                 <div className="animate-fade-in">
-                  <ManagementPanel
-                    onCreateCourse={handleCreateCourse}
-                    onCreateQuiz={handleCreateQuiz}
-                    onAssignContent={handleAssignContent}
-                    onViewAnalytics={() => setIsEmployeeProgressOpen(true)}
-                    userRole={user.role}
-                  />
+                   <ManagementPanel
+                     onCreateCourse={handleCreateCourse}
+                     onCreateQuiz={handleCreateQuiz}
+                     onAssignContent={handleAssignContent}
+                     onViewAnalytics={() => setIsEmployeeProgressOpen(true)}
+                     onStartOnboarding={onboardingInstance ? handleStartOnboarding : undefined}
+                     userRole={user.role}
+                   />
                 </div>
               )}
 
@@ -245,10 +255,17 @@ const TrainingPage = () => {
         onOpenChange={setIsMyAssignmentsOpen}
       />
 
-      <EmployeeProgressDashboard
-        open={isEmployeeProgressOpen}
-        onOpenChange={setIsEmployeeProgressOpen}
-      />
+       <EmployeeProgressDashboard
+         open={isEmployeeProgressOpen}
+         onOpenChange={setIsEmployeeProgressOpen}
+       />
+
+       {/* Onboarding Wizard Dialog */}
+       <Dialog open={isOnboardingWizardOpen} onOpenChange={setIsOnboardingWizardOpen}>
+         <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-0">
+           <NewEmployeeWizard onClose={() => setIsOnboardingWizardOpen(false)} />
+         </DialogContent>
+       </Dialog>
     </div>
   );
 };
