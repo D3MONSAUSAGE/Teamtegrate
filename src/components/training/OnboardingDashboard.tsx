@@ -5,22 +5,56 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { UserPlus, CheckCircle, Clock, Users, FileText, Calendar, Settings } from 'lucide-react';
+import { UserPlus, CheckCircle, Clock, Users, FileText, Calendar, Settings, MessageSquare } from 'lucide-react';
 import { OnboardingTemplateManager } from '@/components/onboarding/OnboardingTemplateManager';
 import { OnboardingInstanceManager } from '@/components/onboarding/OnboardingInstanceManager';
 import { MyOnboarding } from '@/components/onboarding/MyOnboarding';
+import { MyFeedbackCheckpoints } from '@/components/onboarding/MyFeedbackCheckpoints';
+import { FeedbackDashboard } from '@/components/onboarding/FeedbackDashboard';
+import { useMyOnboarding } from '@/hooks/onboarding/useOnboardingInstances';
+import { useMyPendingFeedback } from '@/hooks/onboarding/useOnboardingFeedback';
 
 export function OnboardingDashboard() {
   const { user } = useAuth();
   const [activeView, setActiveView] = useState('overview');
+  const { data: myOnboarding } = useMyOnboarding();
+  const { data: pendingFeedback } = useMyPendingFeedback();
   
   const canManageOnboarding = user?.role === 'admin' || user?.role === 'superadmin' || user?.role === 'manager';
+  const hasActiveOnboarding = myOnboarding?.status === 'active';
+  const pendingFeedbackCount = pendingFeedback?.length || 0;
 
-  // If user is a regular employee, show their personal onboarding
+  // If user is a regular employee, show their personal onboarding and feedback
   if (user?.role === 'user') {
     return (
       <div className="space-y-6">
-        <MyOnboarding />
+        <Tabs defaultValue={hasActiveOnboarding ? "onboarding" : pendingFeedbackCount > 0 ? "feedback" : "onboarding"}>
+          <TabsList>
+            <TabsTrigger value="onboarding" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              My Onboarding
+            </TabsTrigger>
+            {pendingFeedbackCount > 0 && (
+              <TabsTrigger value="feedback" className="flex items-center gap-2">
+                <MessageSquare className="h-4 w-4" />
+                Feedback
+                <Badge variant="destructive" className="ml-1 h-5 text-xs">
+                  {pendingFeedbackCount}
+                </Badge>
+              </TabsTrigger>
+            )}
+          </TabsList>
+
+          <TabsContent value="onboarding">
+            <MyOnboarding />
+          </TabsContent>
+
+          {pendingFeedbackCount > 0 && (
+            <TabsContent value="feedback">
+              <MyFeedbackCheckpoints />
+            </TabsContent>
+          )}
+        </Tabs>
       </div>
     );
   }
@@ -40,6 +74,10 @@ export function OnboardingDashboard() {
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="instances">Active Instances</TabsTrigger>
           <TabsTrigger value="templates">Templates</TabsTrigger>
+          <TabsTrigger value="feedback" className="flex items-center gap-2">
+            <MessageSquare className="h-4 w-4" />
+            Feedback
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
@@ -52,6 +90,10 @@ export function OnboardingDashboard() {
 
         <TabsContent value="templates">
           <OnboardingTemplateManager />
+        </TabsContent>
+
+        <TabsContent value="feedback">
+          <FeedbackDashboard />
         </TabsContent>
       </Tabs>
     </div>
