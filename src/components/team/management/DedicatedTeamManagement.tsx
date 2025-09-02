@@ -195,7 +195,7 @@ const DedicatedTeamManagement: React.FC = () => {
   const handleBackClick = () => {
     console.log('Back button clicked');
     try {
-      navigate('/dashboard/team');
+      navigate('/dashboard/organization');
       toast.success('Navigating back to team overview');
     } catch (error) {
       console.error('Navigation error:', error);
