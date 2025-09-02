@@ -99,53 +99,6 @@ export type Database = {
           },
         ]
       }
-      bulletin_posts: {
-        Row: {
-          author_id: string
-          category: string
-          content: string
-          created_at: string
-          document_id: string | null
-          id: string
-          is_pinned: boolean
-          organization_id: string
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          author_id: string
-          category?: string
-          content: string
-          created_at?: string
-          document_id?: string | null
-          id?: string
-          is_pinned?: boolean
-          organization_id: string
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          author_id?: string
-          category?: string
-          content?: string
-          created_at?: string
-          document_id?: string | null
-          id?: string
-          is_pinned?: boolean
-          organization_id?: string
-          title?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "bulletin_posts_document_id_fkey"
-            columns: ["document_id"]
-            isOneToOne: false
-            referencedRelation: "documents"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       chat_attachments: {
         Row: {
           created_at: string

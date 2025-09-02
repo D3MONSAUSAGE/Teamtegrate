@@ -24,7 +24,6 @@ interface DocumentListProps {
   onDocumentUpdated?: () => void;
   isLoading?: boolean;
   currentFolder?: string;
-  onBulletinPostCreated?: () => void;
 }
 
 const DocumentList: React.FC<DocumentListProps> = ({
@@ -33,14 +32,10 @@ const DocumentList: React.FC<DocumentListProps> = ({
   onDocumentUpdated,
   isLoading = false,
   currentFolder = "",
-  onBulletinPostCreated,
 }) => {
-  const [showPinDialog, setShowPinDialog] = React.useState(false);
-  const [documentToPin, setDocumentToPin] = React.useState<DocumentItem | null>(null);
   const { user } = useAuth();
   const { hasRoleAccess } = useRoleAccess(user);
   
-  const canPinToBulletin = hasRoleAccess('manager');
   const canPinDocuments = hasRoleAccess('manager');
 
   // Sort documents: pinned first, then by creation date
@@ -54,19 +49,6 @@ const DocumentList: React.FC<DocumentListProps> = ({
     });
   }, [documents]);
 
-  const handlePinToBulletin = (document: DocumentItem) => {
-    setDocumentToPin(document);
-    setShowPinDialog(true);
-  };
-
-  const handlePinDialogClose = () => {
-    setShowPinDialog(false);
-    setDocumentToPin(null);
-  };
-
-  const handlePostCreated = () => {
-    onBulletinPostCreated?.();
-  };
 
   if (isLoading) {
     return (
@@ -124,9 +106,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
             document={document}
             onDocumentDeleted={onDocumentDeleted}
             onDocumentUpdated={onDocumentUpdated}
-            onPinToBulletin={canPinToBulletin ? handlePinToBulletin : undefined}
             canPin={canPinDocuments}
-            canPinToBulletin={canPinToBulletin}
           />
         ))}
       </div>
