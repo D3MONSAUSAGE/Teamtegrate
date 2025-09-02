@@ -364,11 +364,13 @@ function TemplateForm({ template, onSubmit, isSubmitting }: TemplateFormProps) {
             } />
           </SelectTrigger>
           <SelectContent>
-            {jobRoles.map((role) => (
-              <SelectItem key={role.id} value={role.id}>
-                {role.name}
-              </SelectItem>
-            ))}
+            {jobRoles
+              .filter((role) => role.id && role.id.trim() !== '')
+              .map((role) => (
+                <SelectItem key={role.id} value={role.id}>
+                  {role.name}
+                </SelectItem>
+              ))}
           </SelectContent>
         </Select>
       </div>
