@@ -7,8 +7,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Edit, Trash2, MoreVertical, FolderPlus, Palette } from 'lucide-react';
+import { Edit, Trash2, MoreVertical, FolderPlus, Palette, Users } from 'lucide-react';
 import { useFolders, type Folder } from '@/hooks/documents/useFolders';
+import { useTeams } from '@/hooks/useTeams';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRoleAccess } from '@/contexts/auth/hooks/useRoleAccess';
+import TeamSelect from '@/components/ui/team-select';
 import { toast } from 'sonner';
 
 interface FolderManagementModalProps {
@@ -29,14 +33,21 @@ const colorOptions = [
 ];
 
 export const FolderManagementModal = ({ isOpen, onClose, selectedTeamId }: FolderManagementModalProps) => {
+  const { user } = useAuth();
+  const { hasRoleAccess } = useRoleAccess(user);
+  const { teams, isLoading: teamsLoading } = useTeams();
   const { folders, createFolder, updateFolder, deleteFolder } = useFolders(selectedTeamId);
   const [isCreating, setIsCreating] = useState(false);
   const [editingFolder, setEditingFolder] = useState<Folder | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    color: '#6366f1'
+    color: '#6366f1',
+    teamId: selectedTeamId || ''
   });
+
+  // Determine if user can assign folders to teams
+  const canAssignToTeams = hasRoleAccess('team_leader');
 
   const handleCreateFolder = async () => {
     if (!formData.name.trim()) {
@@ -45,8 +56,9 @@ export const FolderManagementModal = ({ isOpen, onClose, selectedTeamId }: Folde
     }
 
     try {
-      await createFolder(formData.name, formData.description, formData.color, selectedTeamId);
-      setFormData({ name: '', description: '', color: '#6366f1' });
+      const teamIdToUse = formData.teamId === 'all' ? undefined : formData.teamId || undefined;
+      await createFolder(formData.name, formData.description, formData.color, teamIdToUse);
+      setFormData({ name: '', description: '', color: '#6366f1', teamId: selectedTeamId || '' });
       setIsCreating(false);
     } catch (error) {
       // Error already handled in hook
@@ -66,7 +78,7 @@ export const FolderManagementModal = ({ isOpen, onClose, selectedTeamId }: Folde
         color: formData.color
       });
       setEditingFolder(null);
-      setFormData({ name: '', description: '', color: '#6366f1' });
+      setFormData({ name: '', description: '', color: '#6366f1', teamId: selectedTeamId || '' });
     } catch (error) {
       // Error already handled in hook
     }
@@ -87,7 +99,8 @@ export const FolderManagementModal = ({ isOpen, onClose, selectedTeamId }: Folde
     setFormData({
       name: folder.name,
       description: folder.description || '',
-      color: folder.color
+      color: folder.color,
+      teamId: folder.team_id || ''
     });
     setIsCreating(false);
   };
@@ -95,7 +108,14 @@ export const FolderManagementModal = ({ isOpen, onClose, selectedTeamId }: Folde
   const cancelEditing = () => {
     setEditingFolder(null);
     setIsCreating(false);
-    setFormData({ name: '', description: '', color: '#6366f1' });
+    setFormData({ name: '', description: '', color: '#6366f1', teamId: selectedTeamId || '' });
+  };
+
+  // Get team name for display
+  const getTeamName = (teamId?: string) => {
+    if (!teamId) return 'Organization-wide';
+    const team = teams.find(t => t.id === teamId);
+    return team?.name || 'Unknown Team';
   };
 
   return (
@@ -135,6 +155,22 @@ export const FolderManagementModal = ({ isOpen, onClose, selectedTeamId }: Folde
                     rows={2}
                   />
                 </div>
+
+                {/* Team Selection */}
+                {canAssignToTeams && (
+                  <div>
+                    <Label>Team Assignment</Label>
+                    <div className="mt-2">
+                      <TeamSelect
+                        teams={teams}
+                        isLoading={teamsLoading}
+                        selectedTeam={formData.teamId}
+                        onTeamChange={(teamId) => setFormData(prev => ({ ...prev, teamId }))}
+                        optional={true}
+                      />
+                    </div>
+                  </div>
+                )}
 
                 <div>
                   <Label>Color</Label>
@@ -188,8 +224,14 @@ export const FolderManagementModal = ({ isOpen, onClose, selectedTeamId }: Folde
                         className="w-4 h-4 rounded-full"
                         style={{ backgroundColor: folder.color }}
                       />
-                      <div>
-                        <h4 className="font-medium">{folder.name}</h4>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-medium">{folder.name}</h4>
+                          <Badge variant="secondary" className="text-xs">
+                            <Users className="h-3 w-3 mr-1" />
+                            {getTeamName(folder.team_id)}
+                          </Badge>
+                        </div>
                         {folder.description && (
                           <p className="text-sm text-muted-foreground">{folder.description}</p>
                         )}
