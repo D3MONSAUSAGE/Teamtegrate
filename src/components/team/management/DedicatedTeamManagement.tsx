@@ -36,7 +36,8 @@ import {
 } from "@/components/ui/select";
 import { useAuth } from '@/contexts/AuthContext';
 import { useTeamManagement } from '@/hooks/organization/useTeamManagement';
-import { useRealTeamMembers, TeamMemberPerformanceData } from '@/hooks/team/useRealTeamMembers';
+import { useRealTeamMembers } from '@/hooks/team/useRealTeamMembers';
+import { useUnassignedUsers } from '@/hooks/team/useUnassignedUsers';
 import { Team } from '@/types/teams';
 import { toast } from '@/components/ui/sonner';
 
@@ -62,7 +63,8 @@ const DedicatedTeamManagement: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { teams, addTeamMember, removeTeamMember } = useTeamManagement();
-  const { teamMembers: realTeamMembers, isLoading: membersLoading, error } = useRealTeamMembers(teamId);
+  const { teamMembers: realTeamMembers, isLoading: membersLoading } = useRealTeamMembers(teamId);
+  const { unassignedUsers, isLoading: unassignedLoading } = useUnassignedUsers();
   
   const [team, setTeam] = useState<TeamWithMembers | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -74,7 +76,7 @@ const DedicatedTeamManagement: React.FC = () => {
     name: member.name,
     email: member.email,
     avatar_url: member.avatar_url,
-    role: member.role === 'manager' ? 'manager' : 'member', // Convert from DB format
+    role: member.role === 'manager' ? 'manager' : 'member', // DB has no team_leader
     joined_at: member.joined_at,
     totalTasks: member.totalTasks,
     completedTasks: member.completedTasks,
@@ -158,6 +160,34 @@ const DedicatedTeamManagement: React.FC = () => {
   const handleCreateTeamChat = () => {
     // Navigate to chat creation with team context
     navigate('/dashboard/chat?createTeamChat=true&teamId=' + teamId);
+  };
+
+  const handleAddUnassignedToTeam = async (userId: string) => {
+    if (!teamId) return;
+    try {
+      await addTeamMember(teamId, userId, 'member');
+      // Optimistically update UI
+      const userToAdd = unassignedUsers.find(u => u.id === userId);
+      if (team && userToAdd) {
+        setTeam({
+          ...team,
+          members: [
+            ...team.members,
+            {
+              id: userToAdd.id,
+              name: userToAdd.name,
+              email: userToAdd.email,
+              avatar_url: userToAdd.avatar_url || undefined,
+              role: 'member',
+              joined_at: new Date().toISOString(),
+            }
+          ]
+        });
+      }
+      toast.success('User added to team');
+    } catch (e) {
+      toast.error('Failed to add user to team');
+    }
   };
 
   if (membersLoading) {
@@ -387,6 +417,39 @@ const DedicatedTeamManagement: React.FC = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Unassigned People */}
+          {canManageTeam && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Unassigned People</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {unassignedLoading ? (
+                  <p className="text-sm text-muted-foreground">Loading…</p>
+                ) : unassignedUsers.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Everyone is assigned to a team.</p>
+                ) : (
+                  <>
+                    <p className="text-sm text-muted-foreground">{unassignedUsers.length} not in any team</p>
+                    <div className="space-y-2">
+                      {unassignedUsers.slice(0, 5).map(u => (
+                        <div key={u.id} className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium">{u.name}</p>
+                            <p className="text-xs text-muted-foreground">{u.email}</p>
+                          </div>
+                          <Button size="sm" variant="outline" onClick={() => handleAddUnassignedToTeam(u.id)}>
+                            <UserPlus className="h-4 w-4 mr-1" /> Add
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           {/* Quick Actions */}
           {canManageTeam && (
