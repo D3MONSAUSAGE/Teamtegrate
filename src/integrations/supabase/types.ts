@@ -1166,6 +1166,268 @@ export type Database = {
           },
         ]
       }
+      onboarding_approvals: {
+        Row: {
+          approval_status: string
+          approved_at: string | null
+          approver_id: string
+          created_at: string | null
+          id: string
+          notes: string | null
+          organization_id: string
+          submission_id: string
+        }
+        Insert: {
+          approval_status: string
+          approved_at?: string | null
+          approver_id: string
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          organization_id: string
+          submission_id: string
+        }
+        Update: {
+          approval_status?: string
+          approved_at?: string | null
+          approver_id?: string
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          submission_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_approvals_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_approvals_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_document_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_compliance_items: {
+        Row: {
+          completed_by: string | null
+          completed_date: string | null
+          compliance_type: string
+          created_at: string | null
+          due_date: string | null
+          id: string
+          instance_id: string
+          notes: string | null
+          organization_id: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          completed_by?: string | null
+          completed_date?: string | null
+          compliance_type: string
+          created_at?: string | null
+          due_date?: string | null
+          id?: string
+          instance_id: string
+          notes?: string | null
+          organization_id: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          completed_by?: string | null
+          completed_date?: string | null
+          compliance_type?: string
+          created_at?: string | null
+          due_date?: string | null
+          id?: string
+          instance_id?: string
+          notes?: string | null
+          organization_id?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_compliance_items_instance_id_fkey"
+            columns: ["instance_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_instances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_compliance_items_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_document_requirements: {
+        Row: {
+          allowed_file_types: string[] | null
+          approver_roles: string[] | null
+          created_at: string | null
+          created_by: string
+          description: string | null
+          document_type: string
+          due_days_after_start: number | null
+          id: string
+          instructions: string | null
+          is_required: boolean
+          max_file_size_mb: number | null
+          name: string
+          organization_id: string
+          requires_approval: boolean | null
+          template_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          allowed_file_types?: string[] | null
+          approver_roles?: string[] | null
+          created_at?: string | null
+          created_by: string
+          description?: string | null
+          document_type: string
+          due_days_after_start?: number | null
+          id?: string
+          instructions?: string | null
+          is_required?: boolean
+          max_file_size_mb?: number | null
+          name: string
+          organization_id: string
+          requires_approval?: boolean | null
+          template_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          allowed_file_types?: string[] | null
+          approver_roles?: string[] | null
+          created_at?: string | null
+          created_by?: string
+          description?: string | null
+          document_type?: string
+          due_days_after_start?: number | null
+          id?: string
+          instructions?: string | null
+          is_required?: boolean
+          max_file_size_mb?: number | null
+          name?: string
+          organization_id?: string
+          requires_approval?: boolean | null
+          template_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_document_requirements_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_document_requirements_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_document_submissions: {
+        Row: {
+          created_at: string | null
+          due_date: string | null
+          employee_id: string
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string
+          id: string
+          instance_id: string
+          organization_id: string
+          rejection_reason: string | null
+          requirement_id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          reviewer_notes: string | null
+          submission_status: string
+          submitted_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          due_date?: string | null
+          employee_id: string
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string
+          id?: string
+          instance_id: string
+          organization_id: string
+          rejection_reason?: string | null
+          requirement_id: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reviewer_notes?: string | null
+          submission_status?: string
+          submitted_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          due_date?: string | null
+          employee_id?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          file_type?: string
+          id?: string
+          instance_id?: string
+          organization_id?: string
+          rejection_reason?: string | null
+          requirement_id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reviewer_notes?: string | null
+          submission_status?: string
+          submitted_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_document_submissions_instance_id_fkey"
+            columns: ["instance_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_instances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_document_submissions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_document_submissions_requirement_id_fkey"
+            columns: ["requirement_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_document_requirements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       onboarding_feedback_checkpoints: {
         Row: {
           checkpoint_label: string | null
