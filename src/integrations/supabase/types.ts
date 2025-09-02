@@ -3497,11 +3497,7 @@ export type Database = {
         Returns: undefined
       }
       can_change_user_role: {
-        Args: {
-          manager_user_id: string
-          new_role: string
-          target_user_id: string
-        }
+        Args: { new_role: string; requester_id: string; target_user_id: string }
         Returns: Json
       }
       can_manage_user_role: {
