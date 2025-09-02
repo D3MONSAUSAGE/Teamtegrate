@@ -9,7 +9,6 @@ interface FolderSelectorProps {
   selectedFolder: string;
   onSelectFolder: (folder: string) => void;
   onCreateFolder: (folder: string) => void;
-  sharedFolders?: string[];
   onFolderShared?: () => void;
 }
 
@@ -18,7 +17,6 @@ const FolderSelector: React.FC<FolderSelectorProps> = ({
   selectedFolder,
   onSelectFolder,
   onCreateFolder,
-  sharedFolders = [],
   onFolderShared,
 }) => {
   const [newFolder, setNewFolder] = useState("");
@@ -40,9 +38,7 @@ const FolderSelector: React.FC<FolderSelectorProps> = ({
     setShareDialogOpen(true);
   };
 
-  const isSharedFolder = (folderName: string) => {
-    return sharedFolders.includes(folderName);
-  };
+  // Remove shared folder functionality for now as it's replaced by team-based access
 
   return (
     <>
@@ -58,36 +54,16 @@ const FolderSelector: React.FC<FolderSelectorProps> = ({
         </Button>
         
         {folders.map((folder) => (
-          <div key={folder} className="flex items-center gap-1">
-            <Button
-              variant={selectedFolder === folder ? "default" : "outline"}
-              size="sm"
-              onClick={() => onSelectFolder(folder)}
-              className="flex items-center gap-1"
-            >
-              {isSharedFolder(folder) ? (
-                <Users className="h-4 w-4" />
-              ) : (
-                <Folder className="h-4 w-4" />
-              )}
-              {folder}
-              {isSharedFolder(folder) && (
-                <span className="text-xs opacity-75">(shared)</span>
-              )}
-            </Button>
-            
-            {!isSharedFolder(folder) && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleShareFolder(folder)}
-                className="h-7 w-7 p-0"
-                title={`Share "${folder}" folder`}
-              >
-                <Share2 className="h-3 w-3" />
-              </Button>
-            )}
-          </div>
+          <Button
+            key={folder}
+            variant={selectedFolder === folder ? "default" : "outline"}
+            size="sm"
+            onClick={() => onSelectFolder(folder)}
+            className="flex items-center gap-1"
+          >
+            <Folder className="h-4 w-4" />
+            {folder}
+          </Button>
         ))}
         
         {creating ? (

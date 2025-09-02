@@ -11,10 +11,11 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface DocumentUploaderProps {
   folder?: string;
+  teamId?: string;
   onUploadComplete?: () => void;
 }
 
-const DocumentUploader: React.FC<DocumentUploaderProps> = ({ folder, onUploadComplete }) => {
+export const DocumentUploader = ({ folder, teamId, onUploadComplete }: DocumentUploaderProps) => {
   const [uploading, setUploading] = useState(false);
   const { user } = useAuth();
 
@@ -41,6 +42,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({ folder, onUploadCom
         throw storageError;
       }
       
+      // Save document metadata to database
       const { error: dbError } = await supabase
         .from('documents')
         .insert({
@@ -48,10 +50,11 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({ folder, onUploadCom
           file_path: filePath,
           file_type: file.type,
           size_bytes: file.size,
-          user_id: user.id,
-          folder: folder || null,
+          folder: folder,
+          team_id: teamId,
           storage_id: filePath,
-          organization_id: user.organizationId
+          user_id: user!.id,
+          organization_id: user!.organizationId
         });
 
       if (dbError) {
@@ -67,7 +70,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({ folder, onUploadCom
     } finally {
       setUploading(false);
     }
-  }, [user?.organizationId, folder, onUploadComplete, user?.id]);
+  }, [user?.organizationId, folder, teamId, onUploadComplete, user?.id]);
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     if (acceptedFiles.length === 0) return;
