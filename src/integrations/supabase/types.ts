@@ -571,6 +571,51 @@ export type Database = {
           },
         ]
       }
+      emergency_contacts: {
+        Row: {
+          address: string | null
+          created_at: string
+          email: string | null
+          id: string
+          is_primary: boolean | null
+          name: string
+          organization_id: string
+          phone_primary: string
+          phone_secondary: string | null
+          relationship: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_primary?: boolean | null
+          name: string
+          organization_id: string
+          phone_primary: string
+          phone_secondary?: string | null
+          relationship: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_primary?: boolean | null
+          name?: string
+          organization_id?: string
+          phone_primary?: string
+          phone_secondary?: string | null
+          relationship?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       employee_availability: {
         Row: {
           created_at: string
@@ -4297,40 +4342,67 @@ export type Database = {
       }
       users: {
         Row: {
+          address: string | null
           avatar_url: string | null
           created_at: string
           daily_email_enabled: boolean | null
           daily_email_time: string | null
+          department: string | null
           email: string
+          emergency_contact_needed: boolean | null
+          employee_id: string | null
+          hire_date: string | null
           id: string
+          job_title: string | null
+          manager_id: string | null
           name: string
           organization_id: string
+          phone: string | null
+          preferred_name: string | null
           push_token: string | null
           role: string
           timezone: string | null
         }
         Insert: {
+          address?: string | null
           avatar_url?: string | null
           created_at?: string
           daily_email_enabled?: boolean | null
           daily_email_time?: string | null
+          department?: string | null
           email: string
+          emergency_contact_needed?: boolean | null
+          employee_id?: string | null
+          hire_date?: string | null
           id: string
+          job_title?: string | null
+          manager_id?: string | null
           name: string
           organization_id: string
+          phone?: string | null
+          preferred_name?: string | null
           push_token?: string | null
           role: string
           timezone?: string | null
         }
         Update: {
+          address?: string | null
           avatar_url?: string | null
           created_at?: string
           daily_email_enabled?: boolean | null
           daily_email_time?: string | null
+          department?: string | null
           email?: string
+          emergency_contact_needed?: boolean | null
+          employee_id?: string | null
+          hire_date?: string | null
           id?: string
+          job_title?: string | null
+          manager_id?: string | null
           name?: string
           organization_id?: string
+          phone?: string | null
+          preferred_name?: string | null
           push_token?: string | null
           role?: string
           timezone?: string | null
