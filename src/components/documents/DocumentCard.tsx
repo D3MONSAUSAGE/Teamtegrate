@@ -162,7 +162,7 @@ const DocumentCard: React.FC<DocumentCardProps> = ({
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-foreground truncate group-hover:text-primary transition-colors">
+              <h3 className="font-semibold text-foreground break-words group-hover:text-primary transition-colors leading-snug">
                 {document.title}
               </h3>
               <div className="flex items-center gap-2 mt-1">

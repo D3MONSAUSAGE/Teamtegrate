@@ -242,23 +242,6 @@ const FolderSelector = ({
           ))}
         </div>
 
-        {/* Create New Folder */}
-        <div className="flex gap-2">
-          <Input
-            placeholder="New folder name"
-            value={newFolderName}
-            onChange={(e) => setNewFolderName(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
-            className="flex-1"
-          />
-          <Button 
-            onClick={handleCreate} 
-            size="sm"
-            disabled={!newFolderName.trim()}
-          >
-            <FolderPlus className="h-4 w-4" />
-          </Button>
-        </div>
 
         <FolderShareDialog
           open={isShareDialogOpen}
