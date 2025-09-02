@@ -52,6 +52,7 @@ const CourseEditor: React.FC<CourseEditorProps> = ({ open, onOpenChange, course 
 
   useEffect(() => {
     if (course && open) {
+      console.log('CourseEditor: Loading course data', course);
       setFormData({
         title: course.title || '',
         description: course.description || '',
@@ -61,13 +62,15 @@ const CourseEditor: React.FC<CourseEditorProps> = ({ open, onOpenChange, course 
       });
       
       // Load existing modules with smart content type inference
-      setModules(course.training_modules?.map((mod: any, index: number) => {
+      const loadedModules = course.training_modules?.map((mod: any, index: number) => {
+        console.log(`CourseEditor: Processing module ${index}`, mod);
+        
         // Intelligently infer content_type if missing
         let contentType = mod.content_type;
-        if (!contentType) {
-          const hasVideo = mod.youtube_video_id && mod.youtube_video_id.trim() !== '';
-          const hasText = mod.text_content && mod.text_content.trim() !== '';
-          
+        const hasVideo = mod.youtube_video_id && mod.youtube_video_id.trim() !== '';
+        const hasText = mod.text_content && mod.text_content.trim() !== '';
+        
+        if (!contentType || !['text', 'video', 'mixed'].includes(contentType)) {
           if (hasVideo && hasText) {
             contentType = 'mixed';
           } else if (hasVideo) {
@@ -75,18 +78,28 @@ const CourseEditor: React.FC<CourseEditorProps> = ({ open, onOpenChange, course 
           } else {
             contentType = 'text';
           }
+          console.log(`CourseEditor: Inferred content_type: ${contentType} for module ${index}`);
         }
         
-        return {
+        // For existing modules with video URLs, preserve the full URL in the input
+        const videoValue = mod.youtube_video_id || '';
+        
+        const moduleData = {
           id: mod.id,
           title: mod.title || '',
           description: mod.description || '',
           module_order: mod.module_order || index + 1,
           content: mod.text_content || '',
-          content_type: contentType,
-          youtube_video_id: mod.youtube_video_id || ''
+          content_type: contentType as 'text' | 'video' | 'mixed',
+          youtube_video_id: videoValue
         };
-      }) || []);
+        
+        console.log(`CourseEditor: Final module data for ${index}`, moduleData);
+        return moduleData;
+      }) || [];
+      
+      console.log('CourseEditor: Setting modules', loadedModules);
+      setModules(loadedModules);
     }
   }, [course, open]);
 
