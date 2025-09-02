@@ -11,6 +11,7 @@ import { useTask } from '@/contexts/task';
 import { toast } from '@/components/ui/sonner';
 import TaskTimerDialog from '@/components/task/TaskTimerDialog';
 import { useTaskDetailHelpers } from '@/components/task/hooks/useTaskDetailHelpers';
+import TaskDetailComments from './task-detail/TaskDetailComments';
 
 interface TaskDetailDialogProps {
   open: boolean;
@@ -29,7 +30,6 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
 }) => {
   const { updateTaskStatus, deleteTask } = useTask();
   const [isUpdating, setIsUpdating] = useState(false);
-  const [newComment, setNewComment] = useState('');
   
   if (!task) return null;
 
@@ -196,40 +196,10 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
           )}
 
           {/* Comments Section */}
-          <div className="border-t pt-4">
-            <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-              <MessageSquare className="h-5 w-5" />
-              Comments
-            </h3>
-            
-            <div className="space-y-4">
-              <div className="flex gap-2">
-                <Textarea
-                  placeholder="Add a comment..."
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  className="flex-1"
-                  rows={3}
-                />
-                <Button
-                  onClick={() => {
-                    if (newComment.trim()) {
-                      // TODO: Add comment functionality
-                      setNewComment('');
-                      toast.success('Comment added');
-                    }
-                  }}
-                  disabled={!newComment.trim() || isUpdating}
-                >
-                  Add
-                </Button>
-              </div>
-              
-              <div className="text-sm text-muted-foreground">
-                No comments yet. Be the first to add one!
-              </div>
-            </div>
-          </div>
+          <TaskDetailComments 
+            taskId={task.id} 
+            comments={task.comments} 
+          />
         </div>
       </DialogContent>
     </Dialog>
