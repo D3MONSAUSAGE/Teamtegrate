@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import ProtectedRoute from '@/routes/ProtectedRoute';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { TaskProvider } from '@/contexts/task';
+import { UnifiedDataProvider } from '@/contexts/UnifiedDataContext';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
@@ -70,20 +71,22 @@ const AppLayout = memo(() => {
 
   return (
     <TooltipProvider>
-      <TaskProvider>
-        <SidebarProvider defaultOpen={defaultSidebarOpen}>
-          <div className="min-h-screen-mobile bg-background w-full flex overflow-hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-            <Sidebar />
-            <MainContent>
-              {(() => {
-                console.log('🎯 AppLayout: Rendering Outlet for:', location.pathname);
-                return null;
-              })()}
-              <Outlet />
-            </MainContent>
-          </div>
-        </SidebarProvider>
-      </TaskProvider>
+      <UnifiedDataProvider>
+        <TaskProvider>
+          <SidebarProvider defaultOpen={defaultSidebarOpen}>
+            <div className="min-h-screen-mobile bg-background w-full flex overflow-hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+              <Sidebar />
+              <MainContent>
+                {(() => {
+                  console.log('🎯 AppLayout: Rendering Outlet for:', location.pathname);
+                  return null;
+                })()}
+                <Outlet />
+              </MainContent>
+            </div>
+          </SidebarProvider>
+        </TaskProvider>
+      </UnifiedDataProvider>
     </TooltipProvider>
   );
 });
