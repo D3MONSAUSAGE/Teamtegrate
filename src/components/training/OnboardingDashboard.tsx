@@ -5,12 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { UserPlus, CheckCircle, Clock, Users, FileText, Calendar, Settings, MessageSquare } from 'lucide-react';
+import { UserPlus, CheckCircle, Clock, Users, FileText, Calendar, Settings, MessageSquare, BarChart3 } from 'lucide-react';
 import { OnboardingTemplateManager } from '@/components/onboarding/OnboardingTemplateManager';
 import { OnboardingInstanceManager } from '@/components/onboarding/OnboardingInstanceManager';
 import { MyOnboarding } from '@/components/onboarding/MyOnboarding';
 import { MyFeedbackCheckpoints } from '@/components/onboarding/MyFeedbackCheckpoints';
 import { FeedbackDashboard } from '@/components/onboarding/FeedbackDashboard';
+import { OnboardingAnalyticsDashboard } from '@/components/onboarding/analytics/OnboardingAnalyticsDashboard';
 import { useMyOnboarding } from '@/hooks/onboarding/useOnboardingInstances';
 import { useMyPendingFeedback } from '@/hooks/onboarding/useOnboardingFeedback';
 
@@ -78,6 +79,10 @@ export function OnboardingDashboard() {
             <MessageSquare className="h-4 w-4" />
             Feedback
           </TabsTrigger>
+          <TabsTrigger value="analytics" className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Analytics
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
@@ -94,6 +99,10 @@ export function OnboardingDashboard() {
 
         <TabsContent value="feedback">
           <FeedbackDashboard />
+        </TabsContent>
+
+        <TabsContent value="analytics">
+          <OnboardingAnalyticsDashboard />
         </TabsContent>
       </Tabs>
     </div>
