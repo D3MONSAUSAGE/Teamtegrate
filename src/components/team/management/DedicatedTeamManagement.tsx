@@ -45,6 +45,7 @@ import { toast } from '@/components/ui/sonner';
 import { useUserJobRoles } from '@/hooks/useUserJobRoles';
 import JobRoleBadge from '@/components/JobRoleBadge';
 import TeamMemberCard from './TeamMemberCard';
+import AddTeamMemberDialog from '@/components/AddTeamMemberDialog';
 
 interface TeamMember {
   id: string;
@@ -76,6 +77,7 @@ const DedicatedTeamManagement: React.FC = () => {
   const [selectedRole, setSelectedRole] = useState<string>('all');
   const [isCreatingChat, setIsCreatingChat] = useState(false);
   const [isAddingMember, setIsAddingMember] = useState(false);
+  const [showAddMemberDialog, setShowAddMemberDialog] = useState(false);
 
   // Convert real team members to component format
   const convertedMembers: TeamMember[] = realTeamMembers.map(member => ({
@@ -181,10 +183,7 @@ const DedicatedTeamManagement: React.FC = () => {
 
   const handleAddMember = () => {
     console.log('Add member clicked for team:', teamId);
-    setIsAddingMember(true);
-    // TODO: Open add member dialog
-    toast.success('Add member dialog will open here');
-    setIsAddingMember(false);
+    setShowAddMemberDialog(true);
   };
 
   const handleBulkAddMembers = () => {
@@ -201,7 +200,13 @@ const DedicatedTeamManagement: React.FC = () => {
 
   const handleBackClick = () => {
     console.log('Back button clicked');
-    navigate('/dashboard/team');
+    try {
+      navigate('/dashboard/team');
+      toast.success('Navigating back to team overview');
+    } catch (error) {
+      console.error('Navigation error:', error);
+      toast.error('Failed to navigate back');
+    }
   };
 
   const handleAddUnassignedToTeam = async (userId: string) => {
@@ -306,13 +311,8 @@ const DedicatedTeamManagement: React.FC = () => {
               </Button>
               <Button 
                 onClick={handleAddMember}
-                disabled={isAddingMember}
               >
-                {isAddingMember ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <UserPlus className="h-4 w-4 mr-2" />
-                )}
+                <UserPlus className="h-4 w-4 mr-2" />
                 Add Member
               </Button>
             </>
@@ -487,6 +487,19 @@ const DedicatedTeamManagement: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Add Member Dialog */}
+      <AddTeamMemberDialog
+        open={showAddMemberDialog}
+        onOpenChange={setShowAddMemberDialog}
+        onTeamMemberAdded={() => {
+          setShowAddMemberDialog(false);
+          // Refresh team data or handle success
+          toast.success('Team member added successfully');
+          // You could refetch team members here if needed
+        }}
+        teamId={teamId}
+      />
     </div>
   );
 };

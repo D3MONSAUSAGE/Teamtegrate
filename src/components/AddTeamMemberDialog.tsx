@@ -6,6 +6,7 @@ interface AddTeamMemberDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onTeamMemberAdded: () => void;
+  teamId?: string;
 }
 
 const AddTeamMemberDialog: React.FC<AddTeamMemberDialogProps> = (props) => {
