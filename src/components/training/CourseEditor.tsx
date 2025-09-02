@@ -60,16 +60,33 @@ const CourseEditor: React.FC<CourseEditorProps> = ({ open, onOpenChange, course 
         is_active: course.is_active ?? true
       });
       
-      // Load existing modules
-      setModules(course.training_modules?.map((mod: any, index: number) => ({
-        id: mod.id,
-        title: mod.title || '',
-        description: mod.description || '',
-        module_order: mod.module_order || index + 1,
-        content: mod.text_content || '',
-        content_type: mod.content_type || 'text',
-        youtube_video_id: mod.youtube_video_id || ''
-      })) || []);
+      // Load existing modules with smart content type inference
+      setModules(course.training_modules?.map((mod: any, index: number) => {
+        // Intelligently infer content_type if missing
+        let contentType = mod.content_type;
+        if (!contentType) {
+          const hasVideo = mod.youtube_video_id && mod.youtube_video_id.trim() !== '';
+          const hasText = mod.text_content && mod.text_content.trim() !== '';
+          
+          if (hasVideo && hasText) {
+            contentType = 'mixed';
+          } else if (hasVideo) {
+            contentType = 'video';
+          } else {
+            contentType = 'text';
+          }
+        }
+        
+        return {
+          id: mod.id,
+          title: mod.title || '',
+          description: mod.description || '',
+          module_order: mod.module_order || index + 1,
+          content: mod.text_content || '',
+          content_type: contentType,
+          youtube_video_id: mod.youtube_video_id || ''
+        };
+      }) || []);
     }
   }, [course, open]);
 
@@ -288,10 +305,10 @@ const CourseEditor: React.FC<CourseEditorProps> = ({ open, onOpenChange, course 
                      
                      <div className="space-y-1">
                        <Label>Content Type</Label>
-                       <Select
-                         value={module.content_type || 'text'}
-                         onValueChange={(value: 'text' | 'video' | 'mixed') => updateModule(index, 'content_type', value)}
-                       >
+                        <Select
+                          value={module.content_type}
+                          onValueChange={(value: 'text' | 'video' | 'mixed') => updateModule(index, 'content_type', value)}
+                        >
                          <SelectTrigger>
                            <SelectValue placeholder="Select content type" />
                          </SelectTrigger>
