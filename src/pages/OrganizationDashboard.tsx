@@ -12,7 +12,7 @@ import SuperadminUserManagement from '@/components/organization/SuperadminUserMa
 import OrganizationStatsCards from '@/components/organization/OrganizationStatsCards';
 import RoleDistributionChart from '@/components/organization/RoleDistributionChart';
 import OrganizationQuickActions from '@/components/organization/OrganizationQuickActions';
-import TeamOverviewDashboard from '@/components/team/overview/TeamOverviewDashboard';
+import TeamManagementSection from '@/components/organization/team/TeamManagementSection';
 import InviteCodeDialog from '@/components/organization/InviteCodeDialog';
 import { RoleManager } from '@/components/organization/RoleManager';
 import UserProfileDialog from '@/components/organization/user-management/UserProfileDialog';
@@ -236,7 +236,7 @@ const OrganizationDashboard = () => {
 
               {/* Team Management Tab */}
               <TabsContent value="teams" className="space-y-6">
-                <TeamOverviewDashboard />
+                <TeamManagementSection />
               </TabsContent>
 
               {/* Job Roles Tab */}
