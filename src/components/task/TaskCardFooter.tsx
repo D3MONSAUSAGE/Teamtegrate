@@ -135,29 +135,34 @@ const TaskCardFooter: React.FC<TaskCardFooterProps> = ({
         </SelectContent>
       </Select>
 
-      {/* Enhanced Comments Button with hover effects */}
-      {commentCount > 0 && (
-        <button
-          onClick={onShowComments}
-          className={cn(
-            "group flex items-center gap-2 px-3 py-1.5 rounded-lg",
-            "bg-background/90 border border-border/50 shadow-sm",
-            "text-sm text-muted-foreground",
-            "hover:text-primary hover:bg-primary/5 hover:border-primary/30",
-            "hover:scale-105 active:scale-95 hover:shadow-md",
-            "transition-all duration-300"
-          )}
-        >
-          <div className="relative">
-            <MessageCircle className="h-4 w-4 flex-shrink-0 transition-transform duration-300 group-hover:scale-110" />
+      {/* Enhanced Comments Button - always visible */}
+      <button
+        onClick={onShowComments}
+        title={commentCount > 0 ? `View ${commentCount} comment${commentCount === 1 ? '' : 's'}` : 'Add comment'}
+        className={cn(
+          "group flex items-center gap-2 px-3 py-1.5 rounded-lg",
+          "bg-background/90 border border-border/50 shadow-sm",
+          "text-sm text-muted-foreground",
+          "hover:text-primary hover:bg-primary/5 hover:border-primary/30",
+          "hover:scale-105 active:scale-95 hover:shadow-md",
+          "transition-all duration-300"
+        )}
+      >
+        <div className="relative">
+          <MessageCircle className="h-4 w-4 flex-shrink-0 transition-transform duration-300 group-hover:scale-110" />
+          {commentCount > 0 && (
             <div className="absolute inset-0 bg-primary/20 rounded-full blur-sm opacity-0 group-hover:opacity-100 group-hover:animate-ping" />
-          </div>
-          <span className="text-xs font-medium">
-            {commentCount}
-          </span>
-          <Sparkles className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-all duration-300 text-primary" />
-        </button>
-      )}
+          )}
+        </div>
+        {commentCount > 0 && (
+          <>
+            <span className="text-xs font-medium">
+              {commentCount}
+            </span>
+            <Sparkles className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-all duration-300 text-primary" />
+          </>
+        )}
+      </button>
     </div>
   );
 };

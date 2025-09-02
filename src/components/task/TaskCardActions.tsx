@@ -45,7 +45,7 @@ const TaskCardActions: React.FC<TaskCardActionsProps> = ({
           </DropdownMenuItem>
         )}
         <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onShowComments(); }}>
-          View Details
+          View Comments
         </DropdownMenuItem>
         <DropdownMenuItem 
           className="text-red-500" 
