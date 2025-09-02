@@ -11,16 +11,23 @@ export const useTeamMemberOperations = () => {
     queryClient.invalidateQueries({ queryKey: ['team-stats'] });
   };
 
-  // Add team member
-  const addTeamMember = async (teamId: string, userId: string, role: 'manager' | 'member' = 'member') => {
+  // Add team member with optional team leader role
+  const addTeamMember = async (teamId: string, userId: string, role: 'manager' | 'member' = 'member', systemRoleOverride?: string) => {
     try {
+      const membershipData: any = {
+        team_id: teamId,
+        user_id: userId,
+        role,
+      };
+
+      // Add system role override for team leaders
+      if (systemRoleOverride) {
+        membershipData.system_role_override = systemRoleOverride;
+      }
+
       const { error } = await supabase
         .from('team_memberships')
-        .insert({
-          team_id: teamId,
-          user_id: userId,
-          role,
-        });
+        .insert(membershipData);
 
       if (error) throw error;
 
@@ -29,6 +36,31 @@ export const useTeamMemberOperations = () => {
     } catch (error) {
       console.error('Error adding team member:', error);
       toast.error('Failed to add team member');
+      throw error;
+    }
+  };
+
+  // Bulk add team members with different roles
+  const bulkAddTeamMembers = async (teamId: string, members: Array<{userId: string, role: 'manager' | 'member', systemRoleOverride?: string}>) => {
+    try {
+      const memberships = members.map(member => ({
+        team_id: teamId,
+        user_id: member.userId,
+        role: member.role,
+        ...(member.systemRoleOverride && { system_role_override: member.systemRoleOverride })
+      }));
+
+      const { error } = await supabase
+        .from('team_memberships')
+        .insert(memberships);
+
+      if (error) throw error;
+
+      invalidateTeamQueries();
+      toast.success(`${members.length} team members added successfully`);
+    } catch (error) {
+      console.error('Error bulk adding team members:', error);
+      toast.error('Failed to add team members');
       throw error;
     }
   };
@@ -164,6 +196,7 @@ export const useTeamMemberOperations = () => {
 
   return {
     addTeamMember,
+    bulkAddTeamMembers,
     removeTeamMember,
     updateTeamMemberRole,
     transferTeamMember,

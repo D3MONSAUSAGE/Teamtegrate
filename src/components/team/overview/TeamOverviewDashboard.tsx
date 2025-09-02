@@ -20,6 +20,7 @@ import { useTeamManagement } from '@/hooks/organization/useTeamManagement';
 import { useAuth } from '@/contexts/AuthContext';
 import { Team } from '@/types/teams';
 import TeamManagementTab from '../management/TeamManagementTab';
+import CreateTeamDialog from '@/components/organization/team/CreateTeamDialog';
 
 interface TeamMemberWithRole {
   id: string;
@@ -40,6 +41,7 @@ const TeamOverviewDashboard: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
+  const [showCreateTeamDialog, setShowCreateTeamDialog] = useState(false);
 
   const canManageTeams = user && ['superadmin', 'admin'].includes(user.role);
 
@@ -108,7 +110,7 @@ const TeamOverviewDashboard: React.FC = () => {
           <p className="text-muted-foreground">Manage your organization's teams and members</p>
         </div>
         {canManageTeams && (
-          <Button onClick={() => navigate('/dashboard/team/create')}>
+          <Button onClick={() => setShowCreateTeamDialog(true)}>
             <UserPlus className="h-4 w-4 mr-2" />
             Create Team
           </Button>
@@ -209,7 +211,7 @@ const TeamOverviewDashboard: React.FC = () => {
               </p>
               {canManageTeams && !searchTerm && (
                 <Button 
-                  onClick={() => navigate('/dashboard/team/create')}
+                  onClick={() => setShowCreateTeamDialog(true)}
                   className="mt-4"
                   variant="outline"
                 >
@@ -297,6 +299,12 @@ const TeamOverviewDashboard: React.FC = () => {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Create Team Dialog */}
+      <CreateTeamDialog
+        open={showCreateTeamDialog}
+        onOpenChange={setShowCreateTeamDialog}
+      />
     </div>
   );
 };
