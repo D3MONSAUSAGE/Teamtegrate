@@ -14,6 +14,157 @@ export type Database = {
   }
   public: {
     Tables: {
+      action_follow_ups: {
+        Row: {
+          action_id: string
+          conducted_by: string
+          created_at: string
+          follow_up_date: string
+          id: string
+          is_improvement_shown: boolean | null
+          next_follow_up_date: string | null
+          next_steps: string | null
+          organization_id: string
+          progress_notes: string
+          progress_rating: number | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          action_id: string
+          conducted_by: string
+          created_at?: string
+          follow_up_date: string
+          id?: string
+          is_improvement_shown?: boolean | null
+          next_follow_up_date?: string | null
+          next_steps?: string | null
+          organization_id: string
+          progress_notes: string
+          progress_rating?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          action_id?: string
+          conducted_by?: string
+          created_at?: string
+          follow_up_date?: string
+          id?: string
+          is_improvement_shown?: boolean | null
+          next_follow_up_date?: string | null
+          next_steps?: string | null
+          organization_id?: string
+          progress_notes?: string
+          progress_rating?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "action_follow_ups_action_id_fkey"
+            columns: ["action_id"]
+            isOneToOne: false
+            referencedRelation: "employee_actions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      action_participants: {
+        Row: {
+          action_id: string
+          created_at: string
+          id: string
+          notes: string | null
+          organization_id: string
+          participant_type: string
+          signature_status: string | null
+          signed_at: string | null
+          user_id: string
+        }
+        Insert: {
+          action_id: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          organization_id: string
+          participant_type: string
+          signature_status?: string | null
+          signed_at?: string | null
+          user_id: string
+        }
+        Update: {
+          action_id?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          participant_type?: string
+          signature_status?: string | null
+          signed_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "action_participants_action_id_fkey"
+            columns: ["action_id"]
+            isOneToOne: false
+            referencedRelation: "employee_actions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      action_templates: {
+        Row: {
+          action_type: string
+          category: string
+          created_at: string
+          created_by: string
+          description_template: string
+          expected_outcomes_template: string | null
+          id: string
+          improvement_plan_template: string | null
+          is_active: boolean
+          organization_id: string
+          template_name: string
+          title_template: string
+          updated_at: string
+          usage_count: number | null
+        }
+        Insert: {
+          action_type: string
+          category: string
+          created_at?: string
+          created_by: string
+          description_template: string
+          expected_outcomes_template?: string | null
+          id?: string
+          improvement_plan_template?: string | null
+          is_active?: boolean
+          organization_id: string
+          template_name: string
+          title_template: string
+          updated_at?: string
+          usage_count?: number | null
+        }
+        Update: {
+          action_type?: string
+          category?: string
+          created_at?: string
+          created_by?: string
+          description_template?: string
+          expected_outcomes_template?: string | null
+          id?: string
+          improvement_plan_template?: string | null
+          is_active?: boolean
+          organization_id?: string
+          template_name?: string
+          title_template?: string
+          updated_at?: string
+          usage_count?: number | null
+        }
+        Relationships: []
+      }
       admin_access_audit: {
         Row: {
           access_type: string
@@ -613,6 +764,84 @@ export type Database = {
           relationship?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      employee_actions: {
+        Row: {
+          action_type: string
+          appeal_reason: string | null
+          appeal_submitted_at: string | null
+          category: string
+          completed_at: string | null
+          created_at: string
+          description: string
+          due_date: string | null
+          escalation_count: number | null
+          expected_outcomes: string | null
+          follow_up_date: string | null
+          id: string
+          improvement_plan: string | null
+          is_confidential: boolean
+          issued_by: string
+          job_role_context: Json | null
+          organization_id: string
+          recipient_id: string
+          severity: string
+          status: string
+          team_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          action_type: string
+          appeal_reason?: string | null
+          appeal_submitted_at?: string | null
+          category: string
+          completed_at?: string | null
+          created_at?: string
+          description: string
+          due_date?: string | null
+          escalation_count?: number | null
+          expected_outcomes?: string | null
+          follow_up_date?: string | null
+          id?: string
+          improvement_plan?: string | null
+          is_confidential?: boolean
+          issued_by: string
+          job_role_context?: Json | null
+          organization_id: string
+          recipient_id: string
+          severity?: string
+          status?: string
+          team_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          action_type?: string
+          appeal_reason?: string | null
+          appeal_submitted_at?: string | null
+          category?: string
+          completed_at?: string | null
+          created_at?: string
+          description?: string
+          due_date?: string | null
+          escalation_count?: number | null
+          expected_outcomes?: string | null
+          follow_up_date?: string | null
+          id?: string
+          improvement_plan?: string | null
+          is_confidential?: boolean
+          issued_by?: string
+          job_role_context?: Json | null
+          organization_id?: string
+          recipient_id?: string
+          severity?: string
+          status?: string
+          team_id?: string | null
+          title?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -4516,6 +4745,14 @@ export type Database = {
       }
       can_user_access_team_data: {
         Args: { team_id_param: string; user_id_param: string }
+        Returns: boolean
+      }
+      can_user_issue_action_to_recipient: {
+        Args: {
+          issuer_id: string
+          organization_id: string
+          recipient_id: string
+        }
         Returns: boolean
       }
       check_and_create_retraining_assignments: {
