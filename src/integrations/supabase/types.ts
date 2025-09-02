@@ -4701,6 +4701,10 @@ export type Database = {
           | { operation: string; table_name: string; user_id: string }
         Returns: undefined
       }
+      migrate_legacy_folders_to_database: {
+        Args: { target_organization_id: string }
+        Returns: Json
+      }
       pause_time_entry: {
         Args: { p_task_id?: string; p_user_id: string }
         Returns: Json

@@ -129,6 +129,31 @@ export const useFolders = (selectedTeamId?: string) => {
     }
   };
 
+  const migrateLegacyFolders = async () => {
+    if (!user?.organizationId) throw new Error('No organization');
+
+    try {
+      const { data, error } = await supabase.rpc('migrate_legacy_folders_to_database', {
+        target_organization_id: user.organizationId
+      });
+
+      if (error) throw error;
+
+      console.log('Migration results:', data);
+      const results = data as { migrated_folders: number; updated_documents: number };
+      toast.success(`Migration completed: ${results.migrated_folders} folders migrated, ${results.updated_documents} documents updated`);
+      
+      // Refresh folders after migration
+      await fetchFolders();
+      
+      return results;
+    } catch (err) {
+      console.error('Error migrating legacy folders:', err);
+      toast.error('Failed to migrate legacy folders');
+      throw err;
+    }
+  };
+
   useEffect(() => {
     fetchFolders();
   }, [user?.organizationId, selectedTeamId]);
@@ -141,5 +166,6 @@ export const useFolders = (selectedTeamId?: string) => {
     createFolder,
     updateFolder,
     deleteFolder,
+    migrateLegacyFolders,
   };
 };

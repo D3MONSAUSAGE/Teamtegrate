@@ -30,8 +30,9 @@ const FolderSelector = ({
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const [folderToShare, setFolderToShare] = useState<string | null>(null);
   const [isManagementModalOpen, setIsManagementModalOpen] = useState(false);
+  const [isMigrating, setIsMigrating] = useState(false);
   
-  const { folders: dbFolders } = useFolders(selectedTeamId);
+  const { folders: dbFolders, migrateLegacyFolders } = useFolders(selectedTeamId);
 
   const handleCreate = () => {
     const trimmed = newFolderName.trim();
@@ -46,6 +47,24 @@ const FolderSelector = ({
     setIsShareDialogOpen(true);
   };
 
+  const handleMigration = async () => {
+    setIsMigrating(true);
+    try {
+      await migrateLegacyFolders();
+      // Force refresh after migration
+      window.location.reload();
+    } catch (error) {
+      console.error('Migration failed:', error);
+    } finally {
+      setIsMigrating(false);
+    }
+  };
+
+  // Check if we have legacy folders but no database folders  
+  const hasLegacyFolders = folders && folders.length > 0;
+  const hasDbFolders = dbFolders && dbFolders.length > 0;
+  const shouldShowMigration = hasLegacyFolders && !hasDbFolders;
+
   // Combine legacy string folders with new database folders
   const allFolders = [...folders, ...dbFolders.map(f => f.name)];
   const uniqueFolders = [...new Set(allFolders)];
@@ -59,6 +78,24 @@ const FolderSelector = ({
             <Badge variant="secondary" className="text-xs">
               {uniqueFolders.length} folders
             </Badge>
+            {shouldShowMigration && (
+              <Button
+                onClick={handleMigration}
+                disabled={isMigrating}
+                variant="default"
+                size="sm"
+                className="gap-2"
+              >
+                {isMigrating ? (
+                  <>
+                    <div className="w-4 h-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    Migrating...
+                  </>
+                ) : (
+                  'Migrate Folders'
+                )}
+              </Button>
+            )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm">
@@ -86,6 +123,26 @@ const FolderSelector = ({
 
         {/* Folder List */}
         <div className="space-y-2 mb-4">
+          {shouldShowMigration && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4 dark:bg-yellow-950/20 dark:border-yellow-800">
+              <div className="flex items-center gap-2 text-yellow-800 dark:text-yellow-200 text-sm font-medium mb-2">
+                <div className="w-4 h-4 rounded-full bg-yellow-400" />
+                Legacy Folders Detected
+              </div>
+              <p className="text-xs text-yellow-700 dark:text-yellow-300 mb-3">
+                You have {folders?.length} legacy folders that need to be migrated to the new system for better organization and features.
+              </p>
+              <Button
+                onClick={handleMigration}
+                disabled={isMigrating}
+                size="sm"
+                className="w-full"
+              >
+                {isMigrating ? 'Migrating...' : 'Migrate Now'}
+              </Button>
+            </div>
+          )}
+
           {dbFolders.map((folder) => (
             <div key={folder.id} className="flex items-center gap-2">
               <div
@@ -110,9 +167,10 @@ const FolderSelector = ({
             </div>
           ))}
           
-          {/* Legacy string folders */}
-          {folders.filter(f => !dbFolders.some(df => df.name === f)).map((folder) => (
+          {/* Legacy string folders (only show if migration not available or alongside) */}
+          {(!shouldShowMigration || shouldShowMigration) && folders.filter(f => !dbFolders.some(df => df.name === f)).map((folder) => (
             <div key={folder} className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-gray-400 shrink-0" />
               <Button
                 variant={selectedFolder === folder ? 'default' : 'ghost'}
                 className="flex-1 justify-start"
@@ -120,6 +178,7 @@ const FolderSelector = ({
               >
                 📂 {folder}
               </Button>
+              <Badge variant="outline" className="text-xs px-2 py-1">Legacy</Badge>
               <Button
                 size="sm"
                 variant="ghost"
