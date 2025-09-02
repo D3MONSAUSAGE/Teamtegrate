@@ -3,7 +3,7 @@ import { Task } from "@/types";
 import { format } from "date-fns";
 import { isTaskOverdue } from "@/utils/taskUtils";
 
-export const useTaskDetailHelpers = (task: Task) => {
+export const useTaskDetailHelpers = (task: Task | null) => {
   const getStatusColor = (status: string): string => {
     switch (status) {
       case 'To Do':
@@ -41,6 +41,8 @@ export const useTaskDetailHelpers = (task: Task) => {
   };
 
   const getAssignedToName = (): string => {
+    if (!task) return "Unassigned";
+    
     // Check for multiple assignees first
     if (task.assignedToNames && task.assignedToNames.length > 0) {
       if (task.assignedToNames.length === 1) {

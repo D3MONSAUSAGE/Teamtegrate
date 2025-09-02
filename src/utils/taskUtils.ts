@@ -4,8 +4,8 @@ import { Task } from '@/types';
 /**
  * Checks if a task is overdue (deadline is in the past)
  */
-export const isTaskOverdue = (task: Task): boolean => {
-  if (!task.deadline) return false;
+export const isTaskOverdue = (task: Task | null): boolean => {
+  if (!task || !task.deadline) return false;
   
   const now = new Date();
   const deadline = new Date(task.deadline);
@@ -19,8 +19,8 @@ export const isTaskOverdue = (task: Task): boolean => {
 /**
  * Checks if a task is in its warning period (approaching deadline)
  */
-export const isTaskInWarningPeriod = (task: Task): boolean => {
-  if (!task.deadline || task.status === 'Completed') return false;
+export const isTaskInWarningPeriod = (task: Task | null): boolean => {
+  if (!task || !task.deadline || task.status === 'Completed') return false;
   
   const now = new Date();
   const deadline = new Date(task.deadline);
@@ -39,6 +39,6 @@ export const isTaskInWarningPeriod = (task: Task): boolean => {
 /**
  * Checks if a task is approaching its deadline (alias for isTaskInWarningPeriod)
  */
-export const isTaskApproachingDeadline = (task: Task): boolean => {
+export const isTaskApproachingDeadline = (task: Task | null): boolean => {
   return isTaskInWarningPeriod(task);
 };

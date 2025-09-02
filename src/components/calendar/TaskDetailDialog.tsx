@@ -30,9 +30,10 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
   const { updateTaskStatus, deleteTask } = useTask();
   const [isUpdating, setIsUpdating] = useState(false);
   const [newComment, setNewComment] = useState('');
-  const { getAssignedToName } = useTaskDetailHelpers(task!);
-
+  
   if (!task) return null;
+
+  const { getAssignedToName } = useTaskDetailHelpers(task);
 
   const getStatusColor = (status: TaskStatus) => {
     switch (status) {

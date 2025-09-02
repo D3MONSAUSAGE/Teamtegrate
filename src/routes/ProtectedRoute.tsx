@@ -4,7 +4,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, loading } = useAuth();
+  try {
+    const { isAuthenticated, loading } = useAuth();
 
   console.log('🔒 PROTECTED ROUTE: Checking auth state:', { 
     isAuthenticated, 
@@ -24,4 +25,9 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
 
   console.log('🔒 PROTECTED ROUTE: Authenticated - rendering children');
   return <>{children}</>;
+  } catch (error) {
+    console.error('🔒 PROTECTED ROUTE: AuthProvider error:', error);
+    // Fallback - redirect to login if auth context is not available
+    return <Navigate to="/login" replace />;
+  }
 }
