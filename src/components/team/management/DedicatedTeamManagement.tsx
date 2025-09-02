@@ -46,6 +46,8 @@ import { useUserJobRoles } from '@/hooks/useUserJobRoles';
 import JobRoleBadge from '@/components/JobRoleBadge';
 import TeamMemberCard from './TeamMemberCard';
 import AddTeamMemberDialog from '@/components/AddTeamMemberDialog';
+import EnhancedCreateRoomDialog from '@/components/chat/EnhancedCreateRoomDialog';
+import { useRooms } from '@/hooks/useRooms';
 
 interface TeamMember {
   id: string;
@@ -71,6 +73,7 @@ const DedicatedTeamManagement: React.FC = () => {
   const { teams, addTeamMember, removeTeamMember } = useTeamManagement();
   const { teamMembers: realTeamMembers, isLoading: membersLoading } = useRealTeamMembers(teamId);
   const { unassignedUsers, isLoading: unassignedLoading } = useUnassignedUsers();
+  const { createRoom } = useRooms();
   
   const [team, setTeam] = useState<TeamWithMembers | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -78,6 +81,7 @@ const DedicatedTeamManagement: React.FC = () => {
   const [isCreatingChat, setIsCreatingChat] = useState(false);
   const [isAddingMember, setIsAddingMember] = useState(false);
   const [showAddMemberDialog, setShowAddMemberDialog] = useState(false);
+  const [showCreateChatDialog, setShowCreateChatDialog] = useState(false);
 
   // Convert real team members to component format
   const convertedMembers: TeamMember[] = realTeamMembers.map(member => ({
@@ -166,19 +170,9 @@ const DedicatedTeamManagement: React.FC = () => {
     }
   };
 
-  const handleCreateTeamChat = async () => {
+  const handleCreateTeamChat = () => {
     console.log('Creating team chat for team:', teamId);
-    setIsCreatingChat(true);
-    try {
-      // Navigate to chat creation with team context
-      navigate(`/dashboard/chat?createTeamChat=true&teamId=${teamId}&teamName=${encodeURIComponent(team?.name || '')}`);
-      toast.success('Redirecting to create team chat...');
-    } catch (error) {
-      console.error('Error navigating to chat creation:', error);
-      toast.error('Failed to navigate to chat creation');
-    } finally {
-      setIsCreatingChat(false);
-    }
+    setShowCreateChatDialog(true);
   };
 
   const handleAddMember = () => {
@@ -206,6 +200,21 @@ const DedicatedTeamManagement: React.FC = () => {
     } catch (error) {
       console.error('Navigation error:', error);
       toast.error('Failed to navigate back');
+    }
+  };
+
+  const handleCreateRoom = async (name: string, description?: string, isPublic = false, selectedTeamId?: string) => {
+    try {
+      const room = await createRoom(name, description, isPublic);
+      setShowCreateChatDialog(false);
+      if (room) {
+        toast.success('Team chat room created successfully!');
+        // Navigate to the chat page with the new room selected
+        navigate(`/dashboard/chat`);
+      }
+    } catch (error) {
+      console.error('Failed to create room:', error);
+      toast.error('Failed to create team chat room');
     }
   };
 
@@ -300,13 +309,8 @@ const DedicatedTeamManagement: React.FC = () => {
               <Button 
                 variant="outline" 
                 onClick={handleCreateTeamChat}
-                disabled={isCreatingChat}
               >
-                {isCreatingChat ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <MessageSquarePlus className="h-4 w-4 mr-2" />
-                )}
+                <MessageSquarePlus className="h-4 w-4 mr-2" />
                 Create Team Chat
               </Button>
               <Button 
@@ -465,13 +469,8 @@ const DedicatedTeamManagement: React.FC = () => {
                   variant="outline" 
                   className="w-full justify-start"
                   onClick={handleCreateTeamChat}
-                  disabled={isCreatingChat}
                 >
-                  {isCreatingChat ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <MessageSquarePlus className="h-4 w-4 mr-2" />
-                  )}
+                  <MessageSquarePlus className="h-4 w-4 mr-2" />
                   Create Team Chat
                 </Button>
                 <Button 
@@ -499,6 +498,14 @@ const DedicatedTeamManagement: React.FC = () => {
           // You could refetch team members here if needed
         }}
         teamId={teamId}
+      />
+      
+      {/* Create Team Chat Dialog */}
+      <EnhancedCreateRoomDialog
+        open={showCreateChatDialog}
+        onOpenChange={setShowCreateChatDialog}
+        onCreateRoom={handleCreateRoom}
+        preselectedTeamId={teamId}
       />
     </div>
   );

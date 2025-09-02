@@ -55,17 +55,13 @@ const ModernChatContainer: React.FC = () => {
     };
   }, [user, startTracking, stopTracking, isTracking]);
 
-  // Handle URL parameters for team chat creation
+  // Handle URL parameters for team chat creation - Remove the immediate cleanup that breaks navigation
   useEffect(() => {
     if (shouldCreateTeamChat && teamId) {
       setShowCreateDialog(true);
-      // Clean up URL parameters after opening dialog
-      const newSearchParams = new URLSearchParams(searchParams);
-      newSearchParams.delete('createTeamChat');
-      newSearchParams.delete('teamId');
-      setSearchParams(newSearchParams, { replace: true });
+      // Don't clean up URL parameters immediately - let user complete the action first
     }
-  }, [shouldCreateTeamChat, teamId, searchParams, setSearchParams]);
+  }, [shouldCreateTeamChat, teamId]);
 
   // Get selected room details
   const { data: selectedRoom } = useQuery({
