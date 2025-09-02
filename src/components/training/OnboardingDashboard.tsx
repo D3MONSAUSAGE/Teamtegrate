@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { UserPlus, CheckCircle, Clock, Users, FileText, Calendar, Settings, MessageSquare, BarChart3, Library } from 'lucide-react';
+import { UserPlus, CheckCircle, Clock, Users, FileText, Calendar, Settings, MessageSquare, BarChart3, Library, FileCheck, AlertTriangle } from 'lucide-react';
 import { OnboardingTemplateManager } from '@/components/onboarding/OnboardingTemplateManager';
 import { OnboardingInstanceManager } from '@/components/onboarding/OnboardingInstanceManager';
 import { MyOnboarding } from '@/components/onboarding/MyOnboarding';
@@ -13,8 +13,11 @@ import { MyFeedbackCheckpoints } from '@/components/onboarding/MyFeedbackCheckpo
 import { FeedbackDashboard } from '@/components/onboarding/FeedbackDashboard';
 import { OnboardingAnalyticsDashboard } from '@/components/onboarding/analytics/OnboardingAnalyticsDashboard';
 import { ResourceManager } from '@/components/onboarding/resources/ResourceManager';
+import { EmployeeDocumentPortal } from '@/components/onboarding/employee/EmployeeDocumentPortal';
+import { OnboardingAdminDashboard } from '@/components/onboarding/admin/OnboardingAdminDashboard';
 import { useMyOnboarding } from '@/hooks/onboarding/useOnboardingInstances';
 import { useMyPendingFeedback } from '@/hooks/onboarding/useOnboardingFeedback';
+import { useOnboardingDashboard } from '@/hooks/onboarding/useOnboardingDocuments';
 
 export function OnboardingDashboard() {
   const { user } = useAuth();
@@ -36,6 +39,10 @@ export function OnboardingDashboard() {
               <Users className="h-4 w-4" />
               My Onboarding
             </TabsTrigger>
+            <TabsTrigger value="documents" className="flex items-center gap-2">
+              <FileCheck className="h-4 w-4" />
+              Documents
+            </TabsTrigger>
             {pendingFeedbackCount > 0 && (
               <TabsTrigger value="feedback" className="flex items-center gap-2">
                 <MessageSquare className="h-4 w-4" />
@@ -49,6 +56,10 @@ export function OnboardingDashboard() {
 
           <TabsContent value="onboarding">
             <MyOnboarding />
+          </TabsContent>
+
+          <TabsContent value="documents">
+            <EmployeeDocumentPortal />
           </TabsContent>
 
           {pendingFeedbackCount > 0 && (
@@ -76,6 +87,10 @@ export function OnboardingDashboard() {
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="instances">Active Instances</TabsTrigger>
           <TabsTrigger value="templates">Templates</TabsTrigger>
+          <TabsTrigger value="documents" className="flex items-center gap-2">
+            <FileCheck className="h-4 w-4" />
+            Documents
+          </TabsTrigger>
           <TabsTrigger value="resources" className="flex items-center gap-2">
             <Library className="h-4 w-4" />
             Resources
@@ -102,6 +117,10 @@ export function OnboardingDashboard() {
           <OnboardingTemplateManager />
         </TabsContent>
 
+        <TabsContent value="documents">
+          <OnboardingAdminDashboard />
+        </TabsContent>
+
         <TabsContent value="resources">
           <ResourceManager />
         </TabsContent>
@@ -119,7 +138,9 @@ export function OnboardingDashboard() {
 }
 
 function OnboardingOverview() {
-  // Mock data - in a real app, this would come from your data hooks
+  const { data: dashboardData, isLoading } = useOnboardingDashboard();
+
+  // Mock data for onboarding instances (to be replaced with real data)
   const stats = {
     activeInstances: 5,
     completedThisMonth: 12,
@@ -154,10 +175,25 @@ function OnboardingOverview() {
     },
   ];
 
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[...Array(6)].map((_, i) => (
+          <Card key={i} className="animate-pulse">
+            <CardContent className="p-6">
+              <div className="h-4 bg-muted rounded w-3/4 mb-4"></div>
+              <div className="h-8 bg-muted rounded w-1/2"></div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <>
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active Instances</CardTitle>
@@ -199,6 +235,28 @@ function OnboardingOverview() {
           <CardContent>
             <div className="text-2xl font-bold">{stats.templatesCount}</div>
             <p className="text-xs text-muted-foreground">Active templates</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pending Submissions</CardTitle>
+            <FileCheck className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{dashboardData?.submission_stats?.pending_review || 0}</div>
+            <p className="text-xs text-muted-foreground">Awaiting review</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Overdue Items</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-destructive" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-destructive">{dashboardData?.submission_stats?.overdue || 0}</div>
+            <p className="text-xs text-muted-foreground">Need attention</p>
           </CardContent>
         </Card>
       </div>
