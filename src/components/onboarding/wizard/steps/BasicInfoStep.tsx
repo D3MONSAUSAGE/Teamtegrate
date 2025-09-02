@@ -65,8 +65,8 @@ export function BasicInfoStep({ data, onChange }: BasicInfoStepProps) {
           <div className="space-y-2">
             <Label htmlFor="role">Target Job Role (Optional)</Label>
             <Select 
-              value={data.role_id || ''} 
-              onValueChange={(value) => updateField('role_id', value || undefined)}
+              value={data.role_id || 'none'} 
+              onValueChange={(value) => updateField('role_id', value === 'none' ? undefined : value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder={
@@ -78,17 +78,19 @@ export function BasicInfoStep({ data, onChange }: BasicInfoStepProps) {
                 } />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No specific role</SelectItem>
-                {jobRoles.map((role) => (
-                  <SelectItem key={role.id} value={role.id}>
-                    {role.name}
-                    {role.description && (
-                      <span className="text-muted-foreground ml-2">
-                        - {role.description}
-                      </span>
-                    )}
-                  </SelectItem>
-                ))}
+                <SelectItem value="none">No specific role</SelectItem>
+                {jobRoles
+                  .filter((role) => role.id && role.id.trim() !== '')
+                  .map((role) => (
+                    <SelectItem key={role.id} value={role.id}>
+                      {role.name}
+                      {role.description && (
+                        <span className="text-muted-foreground ml-2">
+                          - {role.description}
+                        </span>
+                      )}
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
             {jobRoles.length === 0 && !isLoadingRoles && (
