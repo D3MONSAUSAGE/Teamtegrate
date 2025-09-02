@@ -55,41 +55,74 @@ export const useOnboardingInstances = () => {
 
       if (instanceError) throw instanceError;
 
-      // If template provided, copy tasks from template
+      // If template provided, create rich journey structure with steps
       if (instanceData.template_id) {
-        const { data: templateTasks, error: tasksError } = await supabase
-          .from('onboarding_tasks')
+        // First check if template has rich journey structure (steps)
+        const { data: templateSteps, error: stepsError } = await supabase
+          .from('onboarding_steps')
           .select('*')
-          .eq('template_id', instanceData.template_id);
+          .eq('template_id', instanceData.template_id)
+          .order('order_index');
 
-        if (tasksError) throw tasksError;
+        if (stepsError) throw stepsError;
 
-        if (templateTasks && templateTasks.length > 0) {
-          const instanceTasks = templateTasks.map(task => {
-            const dueDate = task.due_offset_days 
-              ? new Date(Date.now() + task.due_offset_days * 24 * 60 * 60 * 1000).toISOString()
-              : null;
+        if (templateSteps && templateSteps.length > 0) {
+          // Create rich journey structure
+          const stepProgressRecords = templateSteps.map(step => {
+            // First step is available, others are locked initially
+            const isFirstStep = step.order_index === 0;
+            const status = isFirstStep ? 'available' : 'locked';
 
             return {
               instance_id: instance.id,
-              template_task_id: task.id,
-              organization_id: user.organizationId,
+              step_id: step.id,
               employee_id: instanceData.employee_id,
-              title: task.title,
-              description: task.description,
-              category: task.category,
-              owner_type: task.owner_type,
-              due_date: dueDate,
-              resource_links: task.resource_links,
-              status: 'pending' as const,
+              organization_id: user.organizationId,
+              status,
             };
           });
 
           const { error: insertError } = await supabase
-            .from('onboarding_instance_tasks')
-            .insert(instanceTasks);
+            .from('onboarding_instance_step_progress')
+            .insert(stepProgressRecords);
 
           if (insertError) throw insertError;
+        } else {
+          // Fallback to legacy task system if no steps found
+          const { data: templateTasks, error: tasksError } = await supabase
+            .from('onboarding_tasks')
+            .select('*')
+            .eq('template_id', instanceData.template_id);
+
+          if (tasksError) throw tasksError;
+
+          if (templateTasks && templateTasks.length > 0) {
+            const instanceTasks = templateTasks.map(task => {
+              const dueDate = task.due_offset_days 
+                ? new Date(Date.now() + task.due_offset_days * 24 * 60 * 60 * 1000).toISOString()
+                : null;
+
+              return {
+                instance_id: instance.id,
+                template_task_id: task.id,
+                organization_id: user.organizationId,
+                employee_id: instanceData.employee_id,
+                title: task.title,
+                description: task.description,
+                category: task.category,
+                owner_type: task.owner_type,
+                due_date: dueDate,
+                resource_links: task.resource_links,
+                status: 'pending' as const,
+              };
+            });
+
+            const { error: insertError } = await supabase
+              .from('onboarding_instance_tasks')
+              .insert(instanceTasks);
+
+            if (insertError) throw insertError;
+          }
         }
       }
 

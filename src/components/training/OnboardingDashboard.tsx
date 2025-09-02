@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UserPlus, CheckCircle, Clock, Users, FileText, Calendar, Settings, MessageSquare, BarChart3, Library, FileCheck, AlertTriangle } from 'lucide-react';
 import { OnboardingTemplateManager } from '@/components/onboarding/OnboardingTemplateManager';
 import { OnboardingInstanceManager } from '@/components/onboarding/OnboardingInstanceManager';
-import { MyOnboarding } from '@/components/onboarding/MyOnboarding';
+import { OnboardingEmployeeView } from '@/components/onboarding/OnboardingEmployeeView';
 import { MyFeedbackCheckpoints } from '@/components/onboarding/MyFeedbackCheckpoints';
 import { FeedbackDashboard } from '@/components/onboarding/FeedbackDashboard';
 import { OnboardingAnalyticsDashboard } from '@/components/onboarding/analytics/OnboardingAnalyticsDashboard';
@@ -55,7 +55,7 @@ export function OnboardingDashboard() {
           </TabsList>
 
           <TabsContent value="onboarding">
-            <MyOnboarding />
+            <OnboardingEmployeeView />
           </TabsContent>
 
           <TabsContent value="documents">
