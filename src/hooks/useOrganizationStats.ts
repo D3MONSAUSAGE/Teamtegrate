@@ -42,18 +42,51 @@ export const useOrganizationStats = () => {
 
     // Parse the JSON responses
     const orgData = typeof orgStatsResponse.data === 'string' ? JSON.parse(orgStatsResponse.data) : orgStatsResponse.data;
-    const teamData = typeof teamStatsResponse.data === 'string' ? JSON.parse(teamStatsResponse.data) : teamStatsResponse.data;
+    const teamDataRaw = typeof teamStatsResponse.data === 'string' ? JSON.parse(teamStatsResponse.data) : teamStatsResponse.data;
+    
+    // Extract total teams robustly from various possible shapes
+    const extractTotalTeams = (input: any): number => {
+      try {
+        if (input == null) return 0;
+        // If it's already a number
+        if (typeof input === 'number') return input;
+        // If it's an array, use first element
+        if (Array.isArray(input)) {
+          const first = input[0] ?? {};
+          const val = (first.total_teams ?? first.count ?? first.total ?? 0);
+          return Number(val) || 0;
+        }
+        // If it's an object
+        if (typeof input === 'object') {
+          if (typeof (input as any).total_teams !== 'undefined') return Number((input as any).total_teams) || 0;
+          if ((input as any).get_team_stats && typeof (input as any).get_team_stats === 'object') {
+            const val = (input as any).get_team_stats.total_teams;
+            return Number(val) || 0;
+          }
+        }
+        // As a last resort, try to coerce
+        return Number(input) || 0;
+      } catch {
+        return 0;
+      }
+    };
+
+    const totalTeams = extractTotalTeams(teamDataRaw);
+
+    // Debug shapes to ensure correct parsing in different environments
+    console.debug?.('useOrganizationStats: orgStats raw', orgStatsResponse.data);
+    console.debug?.('useOrganizationStats: teamStats raw', teamStatsResponse.data, '=> totalTeams', totalTeams);
     
     return {
-      total_users: orgData.total_users || 0,
-      superadmins: orgData.superadmins || 0,
-      admins: orgData.admins || 0,
-      managers: orgData.managers || 0,
-      users: orgData.users || 0,
-      active_projects: orgData.active_projects || 0,
-      total_tasks: orgData.total_tasks || 0,
-      completed_tasks: orgData.completed_tasks || 0,
-      total_teams: teamData.total_teams || 0,
+      total_users: orgData?.total_users || 0,
+      superadmins: orgData?.superadmins || 0,
+      admins: orgData?.admins || 0,
+      managers: orgData?.managers || 0,
+      users: orgData?.users || 0,
+      active_projects: orgData?.active_projects || 0,
+      total_tasks: orgData?.total_tasks || 0,
+      completed_tasks: orgData?.completed_tasks || 0,
+      total_teams: totalTeams,
     } as OrganizationStats;
   };
 
