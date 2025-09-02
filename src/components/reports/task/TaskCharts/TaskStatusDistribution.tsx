@@ -15,9 +15,10 @@ const TaskStatusDistribution: React.FC<TaskStatusDistributionProps> = ({ statusC
   const isMobile = useIsMobile();
   const COLORS = ['#0088FE', '#00C49F', '#FF8042'];
 
-  const renderPieChartLabel = ({ name, percent }: { name: string; percent: number }) => {
-    if (!isMobile || percent > 0.15) {
-      return `${(percent * 100).toFixed(0)}%`;
+  const renderPieChartLabel = (props: any) => {
+    const { percent } = props;
+    if (!isMobile || (percent && percent > 0.15)) {
+      return `${((percent || 0) * 100).toFixed(0)}%`;
     }
     return null;
   };
