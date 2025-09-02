@@ -1484,6 +1484,51 @@ export type Database = {
           },
         ]
       }
+      onboarding_instance_step_progress: {
+        Row: {
+          completed_at: string | null
+          completion_data: Json | null
+          created_at: string
+          employee_id: string
+          id: string
+          instance_id: string
+          notes: string | null
+          organization_id: string
+          started_at: string | null
+          status: string
+          step_id: string
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          completion_data?: Json | null
+          created_at?: string
+          employee_id: string
+          id?: string
+          instance_id: string
+          notes?: string | null
+          organization_id: string
+          started_at?: string | null
+          status?: string
+          step_id: string
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          completion_data?: Json | null
+          created_at?: string
+          employee_id?: string
+          id?: string
+          instance_id?: string
+          notes?: string | null
+          organization_id?: string
+          started_at?: string | null
+          status?: string
+          step_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       onboarding_instance_tasks: {
         Row: {
           assigned_to_user_id: string | null
@@ -1712,6 +1757,126 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      onboarding_step_content: {
+        Row: {
+          content_data: Json
+          content_type: string
+          created_at: string
+          id: string
+          order_index: number
+          organization_id: string
+          step_id: string
+          updated_at: string
+        }
+        Insert: {
+          content_data: Json
+          content_type: string
+          created_at?: string
+          id?: string
+          order_index: number
+          organization_id: string
+          step_id: string
+          updated_at?: string
+        }
+        Update: {
+          content_data?: Json
+          content_type?: string
+          created_at?: string
+          id?: string
+          order_index?: number
+          organization_id?: string
+          step_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      onboarding_step_requirements: {
+        Row: {
+          created_at: string
+          id: string
+          is_required: boolean
+          organization_id: string
+          requirement_data: Json | null
+          requirement_id: string | null
+          requirement_type: string
+          step_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_required?: boolean
+          organization_id: string
+          requirement_data?: Json | null
+          requirement_id?: string | null
+          requirement_type: string
+          step_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_required?: boolean
+          organization_id?: string
+          requirement_data?: Json | null
+          requirement_id?: string | null
+          requirement_type?: string
+          step_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      onboarding_steps: {
+        Row: {
+          created_at: string
+          description: string | null
+          due_offset_days: number | null
+          estimated_duration_minutes: number | null
+          id: string
+          is_required: boolean
+          order_index: number
+          organization_id: string
+          prerequisites: Json | null
+          stage_id: string | null
+          step_type: string
+          template_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          due_offset_days?: number | null
+          estimated_duration_minutes?: number | null
+          id?: string
+          is_required?: boolean
+          order_index: number
+          organization_id: string
+          prerequisites?: Json | null
+          stage_id?: string | null
+          step_type: string
+          template_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          due_offset_days?: number | null
+          estimated_duration_minutes?: number | null
+          id?: string
+          is_required?: boolean
+          order_index?: number
+          organization_id?: string
+          prerequisites?: Json | null
+          stage_id?: string | null
+          step_type?: string
+          template_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       onboarding_task_resources: {
         Row: {
