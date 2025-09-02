@@ -5,15 +5,19 @@ import DocumentUploader from '@/components/documents/DocumentUploader';
 import DocumentList from '@/components/documents/DocumentList';
 import FolderSelector from '@/components/documents/FolderSelector';
 import DocumentSearch from '@/components/documents/DocumentSearch';
+import { CreateFolderModal } from '@/components/documents/CreateFolderModal';
 import { useTeamManagement } from '@/hooks/organization/useTeamManagement';
 import { useTeamDocuments } from '@/hooks/documents/useTeamDocuments';
 import TeamSelect from '@/components/ui/team-select';
+import { Button } from '@/components/ui/button';
+import { FolderPlus } from 'lucide-react';
 
 export const DocumentsPage = () => {
   const { user } = useAuth();
   const [selectedFolder, setSelectedFolder] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTeamId, setSelectedTeamId] = useState<string | undefined>();
+  const [isCreateFolderModalOpen, setIsCreateFolderModalOpen] = useState(false);
 
   const canAccessDocuments = hasRoleAccess(user?.role, 'user');
   const canPinDocuments = hasRoleAccess(user?.role, 'manager');
@@ -27,6 +31,10 @@ export const DocumentsPage = () => {
   };
 
   const handleFolderShared = () => {
+    refetch();
+  };
+
+  const handleFolderCreated = () => {
     refetch();
   };
 
@@ -69,7 +77,16 @@ export const DocumentsPage = () => {
 
   return (
     <div className="container mx-auto p-6 max-w-5xl">
-      <h1 className="text-2xl font-bold mb-6">Documents</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">Documents</h1>
+        <Button 
+          onClick={() => setIsCreateFolderModalOpen(true)}
+          className="gap-2"
+        >
+          <FolderPlus className="h-4 w-4" />
+          Create Folder
+        </Button>
+      </div>
       
       <div className="space-y-6">
         {isAdmin && (
@@ -120,6 +137,13 @@ export const DocumentsPage = () => {
             {error}
           </div>
         )}
+
+        <CreateFolderModal
+          isOpen={isCreateFolderModalOpen}
+          onClose={() => setIsCreateFolderModalOpen(false)}
+          selectedTeamId={selectedTeamId}
+          onFolderCreated={handleFolderCreated}
+        />
       </div>
     </div>
   );
