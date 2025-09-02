@@ -20,7 +20,7 @@ export const DocumentViewer = ({ documentPath, documentName, children }: Documen
   const [zoom, setZoom] = useState(100);
   const [rotation, setRotation] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [viewingStrategy, setViewingStrategy] = useState<'blob' | 'signed' | 'google' | 'download'>('blob');
+  const [viewingStrategy, setViewingStrategy] = useState<'public' | 'blob' | 'signed' | 'google' | 'download'>('public');
 
   const fileType = getFileTypeCategory(documentName);
 
@@ -43,8 +43,19 @@ export const DocumentViewer = ({ documentPath, documentName, children }: Documen
     } catch (error) {
       console.error('Error loading document:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to load document';
-      setError(errorMessage);
-      toast.error(errorMessage);
+      
+      // Provide user-friendly error messages
+      let userMessage = errorMessage;
+      if (errorMessage.includes('404') || errorMessage.includes('not found')) {
+        userMessage = 'Document not found. It may have been moved or deleted.';
+      } else if (errorMessage.includes('403') || errorMessage.includes('unauthorized')) {
+        userMessage = 'You do not have permission to view this document.';
+      } else if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
+        userMessage = 'Network error. Please check your connection and try again.';
+      }
+      
+      setError(userMessage);
+      toast.error(userMessage);
     } finally {
       setIsLoading(false);
     }
@@ -68,7 +79,25 @@ export const DocumentViewer = ({ documentPath, documentName, children }: Documen
     // Handle both storage_id and file_path formats - normalize path
     const path = documentPath.startsWith('/') ? documentPath.slice(1) : documentPath;
     
-    // Strategy 1: Try blob URL (works in most browsers)
+    console.log('Loading document with path:', path);
+    
+    // Strategy 1: Try public URL first (documents bucket is public)
+    try {
+      const { data } = supabase.storage
+        .from('documents')
+        .getPublicUrl(path);
+
+      if (data.publicUrl) {
+        console.log('Using public URL strategy:', data.publicUrl);
+        setFileUrl(data.publicUrl);
+        setViewingStrategy('public');
+        return;
+      }
+    } catch (error) {
+      console.warn('Public URL strategy failed:', error);
+    }
+
+    // Strategy 2: Try blob URL (fallback for better security if needed)
     if (supportsBlobUrls()) {
       try {
         const { data, error } = await supabase.storage
@@ -78,6 +107,7 @@ export const DocumentViewer = ({ documentPath, documentName, children }: Documen
         if (error) throw error;
 
         const url = URL.createObjectURL(data);
+        console.log('Using blob URL strategy');
         setFileUrl(url);
         setViewingStrategy('blob');
         return;
@@ -86,7 +116,7 @@ export const DocumentViewer = ({ documentPath, documentName, children }: Documen
       }
     }
 
-    // Strategy 2: Try signed URL
+    // Strategy 3: Try signed URL
     try {
       const { data, error } = await supabase.storage
         .from('documents')
@@ -94,6 +124,7 @@ export const DocumentViewer = ({ documentPath, documentName, children }: Documen
 
       if (error) throw error;
 
+      console.log('Using signed URL strategy');
       setFileUrl(data.signedUrl);
       setViewingStrategy('signed');
       return;
@@ -101,16 +132,17 @@ export const DocumentViewer = ({ documentPath, documentName, children }: Documen
       console.warn('Signed URL strategy failed:', error);
     }
 
-    // Strategy 3: For Google Docs viewer, we need a publicly accessible URL
+    // Strategy 4: For Google Docs viewer fallback
     if (fileType === 'pdf' || fileType === 'document') {
       try {
-        // Try to get a signed URL for Google Docs viewer
-        const { data, error } = await supabase.storage
+        // Use public URL for Google Docs viewer since bucket is public
+        const { data } = supabase.storage
           .from('documents')
-          .createSignedUrl(path, 3600);
+          .getPublicUrl(path);
 
-        if (!error && data.signedUrl) {
-          setFileUrl(data.signedUrl);
+        if (data.publicUrl) {
+          console.log('Using Google Docs viewer strategy with public URL');
+          setFileUrl(data.publicUrl);
           setViewingStrategy('google');
           return;
         }
@@ -119,7 +151,8 @@ export const DocumentViewer = ({ documentPath, documentName, children }: Documen
       }
     }
 
-    // Strategy 4: Download only
+    // Strategy 5: Download only
+    console.log('All viewing strategies failed, download only');
     setViewingStrategy('download');
     throw new Error('Cannot preview this file type. Download is available.');
   };
@@ -156,13 +189,14 @@ export const DocumentViewer = ({ documentPath, documentName, children }: Documen
   };
 
   const getGoogleDocsUrl = () => {
-    if (viewingStrategy === 'google') {
-      // Use signed URL for Google Docs viewer
-      return `https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl || '')}&embedded=true`;
-    }
     if (!fileUrl) return null;
-    if (fileType === 'pdf' || fileType === 'document') {
-      return `https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`;
+    
+    if (viewingStrategy === 'google' || fileType === 'pdf' || fileType === 'document') {
+      // Properly encode the URL for Google Docs viewer
+      const encodedUrl = encodeURIComponent(fileUrl);
+      const googleDocsUrl = `https://docs.google.com/viewer?url=${encodedUrl}&embedded=true`;
+      console.log('Google Docs URL:', googleDocsUrl);
+      return googleDocsUrl;
     }
     return null;
   };
