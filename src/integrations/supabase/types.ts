@@ -1166,6 +1166,344 @@ export type Database = {
           },
         ]
       }
+      onboarding_feedback_checkpoints: {
+        Row: {
+          checkpoint_label: string | null
+          completed_at: string | null
+          created_at: string
+          days_offset: number
+          employee_id: string
+          id: string
+          instance_id: string
+          notes: string | null
+          organization_id: string
+          rating: number | null
+          reviewer_id: string | null
+          status: Database["public"]["Enums"]["onboarding_feedback_status"]
+          updated_at: string
+        }
+        Insert: {
+          checkpoint_label?: string | null
+          completed_at?: string | null
+          created_at?: string
+          days_offset: number
+          employee_id: string
+          id?: string
+          instance_id: string
+          notes?: string | null
+          organization_id: string
+          rating?: number | null
+          reviewer_id?: string | null
+          status?: Database["public"]["Enums"]["onboarding_feedback_status"]
+          updated_at?: string
+        }
+        Update: {
+          checkpoint_label?: string | null
+          completed_at?: string | null
+          created_at?: string
+          days_offset?: number
+          employee_id?: string
+          id?: string
+          instance_id?: string
+          notes?: string | null
+          organization_id?: string
+          rating?: number | null
+          reviewer_id?: string | null
+          status?: Database["public"]["Enums"]["onboarding_feedback_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_feedback_checkpoints_instance_id_fkey"
+            columns: ["instance_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_instances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_instance_tasks: {
+        Row: {
+          assigned_to_user_id: string | null
+          category:
+            | Database["public"]["Enums"]["onboarding_task_category"]
+            | null
+          completed_at: string | null
+          created_at: string
+          description: string | null
+          due_date: string | null
+          employee_id: string
+          id: string
+          instance_id: string
+          notes: string | null
+          organization_id: string
+          owner_type: Database["public"]["Enums"]["onboarding_owner_type"]
+          resource_links: Json
+          started_at: string | null
+          status: Database["public"]["Enums"]["onboarding_task_status"]
+          template_task_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to_user_id?: string | null
+          category?:
+            | Database["public"]["Enums"]["onboarding_task_category"]
+            | null
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          employee_id: string
+          id?: string
+          instance_id: string
+          notes?: string | null
+          organization_id: string
+          owner_type: Database["public"]["Enums"]["onboarding_owner_type"]
+          resource_links?: Json
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["onboarding_task_status"]
+          template_task_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to_user_id?: string | null
+          category?:
+            | Database["public"]["Enums"]["onboarding_task_category"]
+            | null
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          employee_id?: string
+          id?: string
+          instance_id?: string
+          notes?: string | null
+          organization_id?: string
+          owner_type?: Database["public"]["Enums"]["onboarding_owner_type"]
+          resource_links?: Json
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["onboarding_task_status"]
+          template_task_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_instance_tasks_instance_id_fkey"
+            columns: ["instance_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_instances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_instance_tasks_template_task_id_fkey"
+            columns: ["template_task_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_instances: {
+        Row: {
+          created_at: string
+          created_by: string
+          employee_id: string
+          id: string
+          organization_id: string
+          start_date: string
+          status: Database["public"]["Enums"]["onboarding_instance_status"]
+          template_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          employee_id: string
+          id?: string
+          organization_id: string
+          start_date?: string
+          status?: Database["public"]["Enums"]["onboarding_instance_status"]
+          template_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          employee_id?: string
+          id?: string
+          organization_id?: string
+          start_date?: string
+          status?: Database["public"]["Enums"]["onboarding_instance_status"]
+          template_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_instances_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_stages: {
+        Row: {
+          created_at: string
+          description: string | null
+          due_offset_days: number | null
+          id: string
+          order_index: number
+          organization_id: string
+          template_id: string
+          timeframe_label: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          due_offset_days?: number | null
+          id?: string
+          order_index?: number
+          organization_id: string
+          template_id: string
+          timeframe_label?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          due_offset_days?: number | null
+          id?: string
+          order_index?: number
+          organization_id?: string
+          template_id?: string
+          timeframe_label?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_stages_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_tasks: {
+        Row: {
+          category: Database["public"]["Enums"]["onboarding_task_category"]
+          created_at: string
+          description: string | null
+          due_offset_days: number | null
+          id: string
+          organization_id: string
+          owner_type: Database["public"]["Enums"]["onboarding_owner_type"]
+          resource_links: Json
+          stage_id: string | null
+          template_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["onboarding_task_category"]
+          created_at?: string
+          description?: string | null
+          due_offset_days?: number | null
+          id?: string
+          organization_id: string
+          owner_type: Database["public"]["Enums"]["onboarding_owner_type"]
+          resource_links?: Json
+          stage_id?: string | null
+          template_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["onboarding_task_category"]
+          created_at?: string
+          description?: string | null
+          due_offset_days?: number | null
+          id?: string
+          organization_id?: string
+          owner_type?: Database["public"]["Enums"]["onboarding_owner_type"]
+          resource_links?: Json
+          stage_id?: string | null
+          template_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_tasks_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_tasks_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_templates: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          organization_id: string
+          role_id: string | null
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          organization_id: string
+          role_id?: string | null
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          organization_id?: string
+          role_id?: string | null
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_templates_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "job_roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_invites: {
         Row: {
           created_at: string
@@ -3799,6 +4137,23 @@ export type Database = {
     }
     Enums: {
       message_type: "text" | "system"
+      onboarding_feedback_status: "pending" | "completed"
+      onboarding_instance_status:
+        | "active"
+        | "completed"
+        | "on_hold"
+        | "cancelled"
+      onboarding_owner_type: "hr" | "manager" | "employee"
+      onboarding_task_category:
+        | "hr_documentation"
+        | "compliance_training"
+        | "job_specific_training"
+        | "culture_engagement"
+      onboarding_task_status:
+        | "pending"
+        | "in_progress"
+        | "completed"
+        | "blocked"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3927,6 +4282,26 @@ export const Constants = {
   public: {
     Enums: {
       message_type: ["text", "system"],
+      onboarding_feedback_status: ["pending", "completed"],
+      onboarding_instance_status: [
+        "active",
+        "completed",
+        "on_hold",
+        "cancelled",
+      ],
+      onboarding_owner_type: ["hr", "manager", "employee"],
+      onboarding_task_category: [
+        "hr_documentation",
+        "compliance_training",
+        "job_specific_training",
+        "culture_engagement",
+      ],
+      onboarding_task_status: [
+        "pending",
+        "in_progress",
+        "completed",
+        "blocked",
+      ],
     },
   },
 } as const
