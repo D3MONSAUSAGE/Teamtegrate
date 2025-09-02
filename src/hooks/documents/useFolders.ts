@@ -33,7 +33,8 @@ export const useFolders = (selectedTeamId?: string) => {
         .eq('organization_id', user.organizationId)
         .order('name');
 
-      if (selectedTeamId) {
+      // Only filter by team if selectedTeamId is a valid UUID (not "all")
+      if (selectedTeamId && selectedTeamId !== "all") {
         query = query.eq('team_id', selectedTeamId);
       }
 

@@ -41,10 +41,10 @@ export const useTeamDocuments = (selectedTeamId?: string) => {
         .eq('organization_id', user.organizationId)
         .order('created_at', { ascending: false });
 
-      // If a specific team is selected, filter by that team
-      if (selectedTeamId) {
+      // If a specific team is selected (and not "all"), filter by that team
+      if (selectedTeamId && selectedTeamId !== "all") {
         query = query.eq('team_id', selectedTeamId);
-      } else if (!isAdmin) {
+      } else if (!isAdmin && selectedTeamId !== "all") {
         // For non-admins, show documents from their teams + unassigned documents
         const { data: userTeams } = await supabase
           .from('team_memberships')
@@ -81,7 +81,13 @@ export const useTeamDocuments = (selectedTeamId?: string) => {
 
     } catch (err) {
       logger.error('Error fetching team documents', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch documents');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch documents';
+      // Provide user-friendly error messages
+      if (errorMessage.includes('uuid')) {
+        setError('Unable to load documents. Please try refreshing the page.');
+      } else {
+        setError(errorMessage);
+      }
     } finally {
       setIsLoading(false);
     }
