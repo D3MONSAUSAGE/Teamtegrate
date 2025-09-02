@@ -96,6 +96,7 @@ export const useEnhancedProfile = (userId?: string) => {
         .select(`
           role,
           team_id,
+          joined_at,
           teams:team_id (
             id,
             name,
@@ -112,7 +113,7 @@ export const useEnhancedProfile = (userId?: string) => {
         name: tm.teams?.name || '',
         role: tm.role,
         manager_name: tm.teams?.users?.name,
-        joined_at: undefined, // team_memberships doesn't have created_at
+        joined_at: tm.joined_at,
       })) || [];
 
       // Fetch training assignments
