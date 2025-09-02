@@ -99,7 +99,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         {sortedDocuments.map((document) => (
           <DocumentCard
             key={document.id}
