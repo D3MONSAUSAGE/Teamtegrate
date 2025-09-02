@@ -108,7 +108,10 @@ export function OnboardingInstanceManager() {
           <p className="text-muted-foreground">Monitor and manage active onboarding processes</p>
         </div>
         <div className="flex items-center gap-2">
-          <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+          <Select 
+            value={selectedStatus} 
+            onValueChange={(value) => setSelectedStatus(value as OnboardingInstanceStatus | 'all')}
+          >
             <SelectTrigger className="w-40">
               <SelectValue />
             </SelectTrigger>
@@ -181,7 +184,7 @@ export function OnboardingInstanceManager() {
                   </Badge>
                   <Select 
                     value={instance.status} 
-                    onValueChange={(status: OnboardingInstanceStatus) => handleUpdateStatus(instance.id, status)}
+                    onValueChange={(status) => handleUpdateStatus(instance.id, status as OnboardingInstanceStatus)}
                   >
                     <SelectTrigger className="w-32">
                       <SelectValue />
