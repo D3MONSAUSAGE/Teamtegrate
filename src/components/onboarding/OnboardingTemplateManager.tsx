@@ -231,22 +231,22 @@ function TemplateForm({ template, onSubmit, isSubmitting }: TemplateFormProps) {
 
       <div className="space-y-2">
         <Label htmlFor="role">Target Job Role (Optional)</Label>
-        <Select value={roleId} onValueChange={setRoleId} disabled={isLoadingRoles}>
+        <Select value={roleId} onValueChange={setRoleId} disabled={isLoadingRoles || jobRoles.length === 0}>
           <SelectTrigger>
-            <SelectValue placeholder={isLoadingRoles ? "Loading roles..." : "Select a job role..."} />
+            <SelectValue placeholder={
+              isLoadingRoles 
+                ? "Loading roles..." 
+                : jobRoles.length === 0 
+                ? "No job roles available" 
+                : "Select a job role..."
+            } />
           </SelectTrigger>
           <SelectContent>
-            {jobRoles.length === 0 ? (
-              <SelectItem value="" disabled>
-                No job roles available
+            {jobRoles.map((role) => (
+              <SelectItem key={role.id} value={role.id}>
+                {role.name}
               </SelectItem>
-            ) : (
-              jobRoles.map((role) => (
-                <SelectItem key={role.id} value={role.id}>
-                  {role.name}
-                </SelectItem>
-              ))
-            )}
+            ))}
           </SelectContent>
         </Select>
       </div>
