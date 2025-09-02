@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { hasRoleAccess } from '@/contexts/auth/roleUtils';
 import DocumentUploader from '@/components/documents/DocumentUploader';
 import DocumentList from '@/components/documents/DocumentList';
@@ -18,7 +17,6 @@ export const DocumentsPage = () => {
 
   const canAccessDocuments = hasRoleAccess(user?.role, 'user');
   const canPinDocuments = hasRoleAccess(user?.role, 'manager');
-  const canPinToBulletin = hasRoleAccess(user?.role, 'manager');
   const isAdmin = hasRoleAccess(user?.role, 'admin');
 
   const { teams, isLoading: teamsLoading } = useTeamManagement();
@@ -58,86 +56,71 @@ export const DocumentsPage = () => {
     });
   }, [documents, selectedFolder, searchQuery]);
 
-  const handleBulletinPostCreated = () => {
-    refetch();
-  };
+
+  if (!canAccessDocuments) {
+    return (
+      <div className="container mx-auto p-6 max-w-5xl">
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">You don't have access to documents.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-6 max-w-5xl">
-      <h1 className="text-2xl font-bold mb-6">
-        {canAccessDocuments ? "Documents & Bulletin Board" : "Bulletin Board"}
-      </h1>
+      <h1 className="text-2xl font-bold mb-6">Documents</h1>
       
-      <Tabs defaultValue="bulletin" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="bulletin">Bulletin Board</TabsTrigger>
-          {canAccessDocuments && (
-            <TabsTrigger value="documents">Documents</TabsTrigger>
-          )}
-        </TabsList>
-
-        <TabsContent value="bulletin" className="mt-6">
-          <div className="p-4 bg-muted rounded-lg">
-            <p className="text-muted-foreground">Bulletin Board functionality coming soon...</p>
+      <div className="space-y-6">
+        {isAdmin && (
+          <div className="mb-4">
+            <TeamSelect
+              teams={teams}
+              isLoading={teamsLoading}
+              selectedTeam={selectedTeamId}
+              onTeamChange={setSelectedTeamId}
+              optional
+            />
           </div>
-        </TabsContent>
-
-        {canAccessDocuments && (
-          <TabsContent value="documents" className="space-y-6">
-            <div className="space-y-6">
-              {isAdmin && (
-                <div className="mb-4">
-                  <TeamSelect
-                    teams={teams}
-                    isLoading={teamsLoading}
-                    selectedTeam={selectedTeamId}
-                    onTeamChange={setSelectedTeamId}
-                    optional
-                  />
-                </div>
-              )}
-              
-              <FolderSelector
-                folders={folders}
-                selectedFolder={selectedFolder}
-                onSelectFolder={setSelectedFolder}
-                onCreateFolder={handleCreateFolder}
-                onFolderShared={handleFolderShared}
-                selectedTeamId={selectedTeamId}
-              />
-              
-              <div className="flex gap-4">
-                <div className="flex-1">
-                  <DocumentSearch 
-                    searchQuery={searchQuery}
-                    onSearchChange={setSearchQuery}
-                  />
-                </div>
-                <DocumentUploader 
-                  folder={selectedFolder === 'All' ? undefined : selectedFolder}
-                  teamId={selectedTeamId}
-                  onUploadComplete={refetch}
-                />
-              </div>
-
-              <DocumentList 
-                documents={filteredDocs}
-                onDocumentDeleted={refetch}
-                onDocumentUpdated={refetch}
-                isLoading={documentsLoading}
-                currentFolder={selectedFolder}
-                onBulletinPostCreated={handleBulletinPostCreated}
-              />
-              
-              {error && (
-                <div className="text-destructive p-4 bg-destructive/10 rounded-md">
-                  {error}
-                </div>
-              )}
-            </div>
-          </TabsContent>
         )}
-      </Tabs>
+        
+        <FolderSelector
+          folders={folders}
+          selectedFolder={selectedFolder}
+          onSelectFolder={setSelectedFolder}
+          onCreateFolder={handleCreateFolder}
+          onFolderShared={handleFolderShared}
+          selectedTeamId={selectedTeamId}
+        />
+        
+        <div className="flex gap-4">
+          <div className="flex-1">
+            <DocumentSearch 
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+            />
+          </div>
+          <DocumentUploader 
+            folder={selectedFolder === 'All' ? undefined : selectedFolder}
+            teamId={selectedTeamId}
+            onUploadComplete={refetch}
+          />
+        </div>
+
+        <DocumentList 
+          documents={filteredDocs}
+          onDocumentDeleted={refetch}
+          onDocumentUpdated={refetch}
+          isLoading={documentsLoading}
+          currentFolder={selectedFolder}
+        />
+        
+        {error && (
+          <div className="text-destructive p-4 bg-destructive/10 rounded-md">
+            {error}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

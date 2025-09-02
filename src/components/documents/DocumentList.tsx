@@ -2,7 +2,6 @@
 import React from 'react';
 import { Loader2, FolderOpen } from 'lucide-react';
 import DocumentCard from './DocumentCard';
-import PinToBulletinDialog from './PinToBulletinDialog';
 import { DocumentCardSkeleton } from '@/components/ui/loading-skeleton';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRoleAccess } from '@/contexts/auth/hooks/useRoleAccess';
@@ -132,12 +131,6 @@ const DocumentList: React.FC<DocumentListProps> = ({
         ))}
       </div>
 
-      <PinToBulletinDialog
-        isOpen={showPinDialog}
-        onClose={handlePinDialogClose}
-        document={documentToPin}
-        onPostCreated={handlePostCreated}
-      />
     </>
   );
 };

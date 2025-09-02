@@ -1,5 +1,5 @@
 import React from 'react';
-import { FileText, Download, Trash2, Eye, Pin, PinOff, Image, File, FileSpreadsheet, Calendar, HardDrive, ExternalLink } from 'lucide-react';
+import { FileText, Download, Trash2, Eye, Pin, PinOff, Image, File, FileSpreadsheet, Calendar, HardDrive } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -25,18 +25,14 @@ interface DocumentCardProps {
   document: DocumentItem;
   onDocumentDeleted: () => void;
   onDocumentUpdated?: () => void;
-  onPinToBulletin?: (document: DocumentItem) => void;
   canPin?: boolean;
-  canPinToBulletin?: boolean;
 }
 
 const DocumentCard: React.FC<DocumentCardProps> = ({
   document,
   onDocumentDeleted,
   onDocumentUpdated,
-  onPinToBulletin,
   canPin = false,
-  canPinToBulletin = false,
 }) => {
   const formatFileSize = (bytes: number) => {
     const units = ['B', 'KB', 'MB', 'GB'];
@@ -218,17 +214,6 @@ const DocumentCard: React.FC<DocumentCardProps> = ({
             </Button>
           )}
 
-          {canPinToBulletin && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onPinToBulletin?.(document)}
-              className="hover:text-primary hover:border-primary/50"
-              title="Pin to Bulletin Board"
-            >
-              <ExternalLink className="h-4 w-4" />
-            </Button>
-          )}
 
           <DocumentViewer
             documentPath={document.storage_id || document.file_path}
