@@ -12,7 +12,7 @@ import SuperadminUserManagement from '@/components/organization/SuperadminUserMa
 import OrganizationStatsCards from '@/components/organization/OrganizationStatsCards';
 import RoleDistributionChart from '@/components/organization/RoleDistributionChart';
 import OrganizationQuickActions from '@/components/organization/OrganizationQuickActions';
-import TeamManagementSection from '@/components/organization/team/TeamManagementSection';
+import TeamOverviewDashboard from '@/components/team/overview/TeamOverviewDashboard';
 import InviteCodeDialog from '@/components/organization/InviteCodeDialog';
 import UserProfileDialog from '@/components/organization/user-management/UserProfileDialog';
 import CreateUserDialog from '@/components/organization/CreateUserDialog';
@@ -226,14 +226,7 @@ const OrganizationDashboard = () => {
 
               {/* Team Management Tab */}
               <TabsContent value="teams" className="space-y-6">
-                <ModernSectionCard
-                  title="Team Management"
-                  subtitle="Organize and manage your teams"
-                  icon={Shield}
-                  gradient="from-cyan-500/10 via-sky-500/10 to-blue-500/10"
-                >
-                  <TeamManagementSection />
-                </ModernSectionCard>
+                <TeamOverviewDashboard />
               </TabsContent>
 
               {/* Analytics Tab */}
