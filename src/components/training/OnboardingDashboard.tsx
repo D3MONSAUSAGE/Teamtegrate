@@ -5,13 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { UserPlus, CheckCircle, Clock, Users, FileText, Calendar, Settings, MessageSquare, BarChart3 } from 'lucide-react';
+import { UserPlus, CheckCircle, Clock, Users, FileText, Calendar, Settings, MessageSquare, BarChart3, Library } from 'lucide-react';
 import { OnboardingTemplateManager } from '@/components/onboarding/OnboardingTemplateManager';
 import { OnboardingInstanceManager } from '@/components/onboarding/OnboardingInstanceManager';
 import { MyOnboarding } from '@/components/onboarding/MyOnboarding';
 import { MyFeedbackCheckpoints } from '@/components/onboarding/MyFeedbackCheckpoints';
 import { FeedbackDashboard } from '@/components/onboarding/FeedbackDashboard';
 import { OnboardingAnalyticsDashboard } from '@/components/onboarding/analytics/OnboardingAnalyticsDashboard';
+import { ResourceManager } from '@/components/onboarding/resources/ResourceManager';
 import { useMyOnboarding } from '@/hooks/onboarding/useOnboardingInstances';
 import { useMyPendingFeedback } from '@/hooks/onboarding/useOnboardingFeedback';
 
@@ -75,6 +76,10 @@ export function OnboardingDashboard() {
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="instances">Active Instances</TabsTrigger>
           <TabsTrigger value="templates">Templates</TabsTrigger>
+          <TabsTrigger value="resources" className="flex items-center gap-2">
+            <Library className="h-4 w-4" />
+            Resources
+          </TabsTrigger>
           <TabsTrigger value="feedback" className="flex items-center gap-2">
             <MessageSquare className="h-4 w-4" />
             Feedback
@@ -95,6 +100,10 @@ export function OnboardingDashboard() {
 
         <TabsContent value="templates">
           <OnboardingTemplateManager />
+        </TabsContent>
+
+        <TabsContent value="resources">
+          <ResourceManager />
         </TabsContent>
 
         <TabsContent value="feedback">

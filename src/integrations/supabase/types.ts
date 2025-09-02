@@ -1350,6 +1350,60 @@ export type Database = {
           },
         ]
       }
+      onboarding_resources: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string
+          description: string | null
+          external_url: string | null
+          file_path: string | null
+          file_size: number | null
+          file_type: string | null
+          id: string
+          is_public: boolean | null
+          organization_id: string
+          resource_type: string
+          tags: string[] | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          external_url?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          is_public?: boolean | null
+          organization_id: string
+          resource_type: string
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          external_url?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          is_public?: boolean | null
+          organization_id?: string
+          resource_type?: string
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       onboarding_stages: {
         Row: {
           created_at: string
@@ -1396,6 +1450,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      onboarding_task_resources: {
+        Row: {
+          created_at: string
+          id: string
+          is_required: boolean | null
+          resource_id: string
+          task_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_required?: boolean | null
+          resource_id: string
+          task_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_required?: boolean | null
+          resource_id?: string
+          task_id?: string
+        }
+        Relationships: []
       }
       onboarding_tasks: {
         Row: {
