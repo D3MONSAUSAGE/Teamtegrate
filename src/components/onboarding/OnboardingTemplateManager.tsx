@@ -8,7 +8,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Edit, Trash2, Users, Calendar, CheckCircle } from 'lucide-react';
+import { Plus, Edit, Trash2, Users, Calendar, CheckCircle, UserPlus, Wand2 } from 'lucide-react';
+import { OnboardingTemplateWizard } from './wizard/OnboardingTemplateWizard';
+import { AssignmentDialog } from './AssignmentDialog';
 import { useOnboardingTemplates } from '@/hooks/onboarding/useOnboardingTemplates';
 import { useJobRoles } from '@/hooks/useJobRoles';
 import { OnboardingTemplate, CreateOnboardingTemplateRequest } from '@/types/onboarding';
@@ -17,15 +19,16 @@ import { toast } from 'sonner';
 export function OnboardingTemplateManager() {
   const { user } = useAuth();
   const { templates, isLoading, createTemplate, updateTemplate, deleteTemplate } = useOnboardingTemplates();
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [wizardOpen, setWizardOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<OnboardingTemplate | null>(null);
+  const [assigningTemplate, setAssigningTemplate] = useState<OnboardingTemplate | null>(null);
 
   const canManageTemplates = user?.role === 'admin' || user?.role === 'superadmin' || user?.role === 'manager';
 
   const handleCreateTemplate = async (data: CreateOnboardingTemplateRequest) => {
     try {
       await createTemplate.mutateAsync(data);
-      setCreateDialogOpen(false);
+      setWizardOpen(false);
     } catch (error) {
       // Error handled by mutation
     }
@@ -80,23 +83,10 @@ export function OnboardingTemplateManager() {
           <h2 className="text-2xl font-bold">Onboarding Templates</h2>
           <p className="text-muted-foreground">Create and manage onboarding workflows for different roles</p>
         </div>
-        <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              New Template
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create Onboarding Template</DialogTitle>
-            </DialogHeader>
-            <TemplateForm
-              onSubmit={handleCreateTemplate}
-              isSubmitting={createTemplate.isPending}
-            />
-          </DialogContent>
-        </Dialog>
+        <Button onClick={() => setWizardOpen(true)}>
+          <Wand2 className="w-4 h-4 mr-2" />
+          Create Template
+        </Button>
       </div>
 
       <div className="grid gap-4">
@@ -106,10 +96,10 @@ export function OnboardingTemplateManager() {
               <Users className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
               <h3 className="text-lg font-semibold mb-2">No Templates Yet</h3>
               <p className="text-muted-foreground mb-4">
-                Create your first onboarding template to get started
+                Create your first onboarding template with our step-by-step wizard
               </p>
-              <Button onClick={() => setCreateDialogOpen(true)}>
-                <Plus className="w-4 h-4 mr-2" />
+              <Button onClick={() => setWizardOpen(true)}>
+                <Wand2 className="w-4 h-4 mr-2" />
                 Create Template
               </Button>
             </CardContent>
@@ -128,6 +118,14 @@ export function OnboardingTemplateManager() {
                   <Badge variant={template.is_active ? 'default' : 'secondary'}>
                     {template.is_active ? 'Active' : 'Inactive'}
                   </Badge>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setAssigningTemplate(template)}
+                  >
+                    <UserPlus className="w-4 h-4 mr-1" />
+                    Assign
+                  </Button>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -165,6 +163,11 @@ export function OnboardingTemplateManager() {
         )}
       </div>
 
+      <OnboardingTemplateWizard
+        open={wizardOpen}
+        onClose={() => setWizardOpen(false)}
+      />
+
       {editingTemplate && (
         <Dialog open={!!editingTemplate} onOpenChange={() => setEditingTemplate(null)}>
           <DialogContent>
@@ -178,6 +181,14 @@ export function OnboardingTemplateManager() {
             />
           </DialogContent>
         </Dialog>
+      )}
+
+      {assigningTemplate && (
+        <AssignmentDialog
+          template={assigningTemplate}
+          open={!!assigningTemplate}
+          onClose={() => setAssigningTemplate(null)}
+        />
       )}
     </div>
   );
