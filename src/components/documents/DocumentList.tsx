@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { FileText, Download, Trash2, Eye, Folder, Pin, PinOff, ExternalLink } from 'lucide-react';
+import { FileText, Download, Trash2, Eye, Folder, Pin, PinOff, ExternalLink, Image, File, FileSpreadsheet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -8,6 +8,8 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useRoleAccess } from '@/contexts/auth/hooks/useRoleAccess';
 import { useAuth } from '@/contexts/AuthContext';
 import PinToBulletinDialog from './PinToBulletinDialog';
+import { DocumentViewer } from './DocumentViewer';
+import { getFileTypeCategory } from '@/lib/browser';
 import {
   Table,
   TableBody,
@@ -16,12 +18,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 
 interface DocumentItem {
   id: string;
@@ -52,8 +48,6 @@ const DocumentList: React.FC<DocumentListProps> = ({
   onBulletinPostCreated,
 }) => {
   const { toast } = useToast();
-  const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
-  const [selectedDocument, setSelectedDocument] = React.useState<DocumentItem | null>(null);
   const [showPinDialog, setShowPinDialog] = React.useState(false);
   const [documentToPin, setDocumentToPin] = React.useState<DocumentItem | null>(null);
   const isMobile = useIsMobile();
@@ -85,39 +79,21 @@ const DocumentList: React.FC<DocumentListProps> = ({
     return `${size.toFixed(1)} ${units[unitIndex]}`;
   };
 
-  const handlePreview = async (documentItem: DocumentItem) => {
-    try {
-      const { data, error } = await supabase.storage
-        .from('documents')
-        .download(documentItem.file_path);
-
-      if (error) throw error;
-
-      const url = window.URL.createObjectURL(data);
-      const link = document.createElement('a');
-      link.href = url;
-      link.target = '_blank';
-      link.rel = 'noopener noreferrer';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      toast({
-        title: "Opening Document",
-        description: "Document is opening in a new tab"
-      });
-      
-      // Clean up the URL after a delay
-      setTimeout(() => {
-        window.URL.revokeObjectURL(url);
-      }, 1000);
-    } catch (error) {
-      console.error('Preview error:', error);
-      toast({
-        title: "Error",
-        description: "Failed to open document preview",
-        variant: "destructive"
-      });
+  const getFileIcon = (fileName: string) => {
+    const fileType = getFileTypeCategory(fileName);
+    const iconClass = "h-4 w-4";
+    
+    switch (fileType) {
+      case 'image':
+        return <Image className={iconClass} />;
+      case 'pdf':
+        return <FileText className={iconClass} />;
+      case 'document':
+        return <FileSpreadsheet className={iconClass} />;
+      case 'text':
+        return <FileText className={iconClass} />;
+      default:
+        return <File className={iconClass} />;
     }
   };
 
@@ -258,7 +234,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                 className={document.is_pinned ? "bg-primary/5 border-primary/20" : ""}
               >
                 <TableCell className="flex items-center gap-2">
-                  <FileText className="h-4 w-4" />
+                  {getFileIcon(document.title)}
                   {document.is_pinned && <Pin className="h-3 w-3 text-primary" />}
                   <span className="line-clamp-1">{document.title}</span>
                   {document.is_pinned && (
@@ -290,16 +266,18 @@ const DocumentList: React.FC<DocumentListProps> = ({
                       <Pin className="h-4 w-4" />
                     </Button>
                   )}
-                  {document.file_type === 'application/pdf' && (
+                  <DocumentViewer
+                    documentPath={document.file_path}
+                    documentName={document.title}
+                  >
                     <Button
                       variant="outline"
                       size="icon"
-                      onClick={() => handlePreview(document)}
-                      title="Open in New Tab"
+                      title="View Document"
                     >
-                      <ExternalLink className="h-4 w-4" />
+                      <Eye className="h-4 w-4" />
                     </Button>
-                  )}
+                  </DocumentViewer>
                   <Button
                     variant="outline"
                     size="icon"
