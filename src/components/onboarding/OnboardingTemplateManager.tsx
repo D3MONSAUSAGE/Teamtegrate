@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Edit, Trash2, Users, Calendar, CheckCircle } from 'lucide-react';
 import { useOnboardingTemplates } from '@/hooks/onboarding/useOnboardingTemplates';
+import { useJobRoles } from '@/hooks/useJobRoles';
 import { OnboardingTemplate, CreateOnboardingTemplateRequest } from '@/types/onboarding';
 import { toast } from 'sonner';
 
@@ -192,6 +193,8 @@ function TemplateForm({ template, onSubmit, isSubmitting }: TemplateFormProps) {
   const [name, setName] = useState(template?.name || '');
   const [description, setDescription] = useState(template?.description || '');
   const [roleId, setRoleId] = useState(template?.role_id || '');
+  
+  const { jobRoles, isLoading: isLoadingRoles } = useJobRoles();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -227,22 +230,29 @@ function TemplateForm({ template, onSubmit, isSubmitting }: TemplateFormProps) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="role">Target Role (Optional)</Label>
-        <Select value={roleId} onValueChange={setRoleId}>
+        <Label htmlFor="role">Target Job Role (Optional)</Label>
+        <Select value={roleId} onValueChange={setRoleId} disabled={isLoadingRoles}>
           <SelectTrigger>
-            <SelectValue placeholder="Select a role..." />
+            <SelectValue placeholder={isLoadingRoles ? "Loading roles..." : "Select a job role..."} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="user">Team Member</SelectItem>
-            <SelectItem value="team_leader">Team Leader</SelectItem>
-            <SelectItem value="manager">Manager</SelectItem>
-            <SelectItem value="admin">Admin</SelectItem>
+            {jobRoles.length === 0 ? (
+              <SelectItem value="" disabled>
+                No job roles available
+              </SelectItem>
+            ) : (
+              jobRoles.map((role) => (
+                <SelectItem key={role.id} value={role.id}>
+                  {role.name}
+                </SelectItem>
+              ))
+            )}
           </SelectContent>
         </Select>
       </div>
 
       <div className="flex justify-end gap-2">
-        <Button type="submit" disabled={isSubmitting}>
+        <Button type="submit" disabled={isSubmitting || isLoadingRoles}>
           {isSubmitting ? 'Saving...' : template ? 'Update' : 'Create'}
         </Button>
       </div>
