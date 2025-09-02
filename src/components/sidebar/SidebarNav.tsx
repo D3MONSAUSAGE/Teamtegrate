@@ -47,9 +47,9 @@ const SidebarNav: React.FC<SidebarNavProps> = memo(({ onNavigation, isCollapsed 
       { name: 'Organization', href: '/dashboard/organization', icon: Users },
     ];
 
-    // Add Employee Actions for managers and above
+    // Add HR Management for managers and above
     if (hasRoleAccess('manager')) {
-      items.push({ name: 'Employee Actions', href: '/dashboard/employee-actions', icon: AlertTriangle });
+      items.push({ name: 'HR Management', href: '/dashboard/employee-actions', icon: AlertTriangle });
     }
 
     items.push(

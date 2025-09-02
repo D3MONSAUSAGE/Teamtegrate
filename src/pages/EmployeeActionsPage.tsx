@@ -7,7 +7,7 @@ const EmployeeActionsPage: React.FC = () => {
   const { user, isAuthenticated } = useAuth();
 
   if (!isAuthenticated) {
-    return <Navigate to="/auth" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   // Allow access to all authenticated users - they can at least view their own actions
