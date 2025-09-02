@@ -8,10 +8,12 @@ interface DocumentItem {
   id: string;
   title: string;
   file_path: string;
+  storage_id?: string;
   file_type: string;
   created_at: string;
-  size_bytes: number; // Changed from file_size to match database
-  folder?: string;
+  size_bytes: number;
+  folder?: string; // Legacy folder name
+  folder_id?: string; // New folder ID reference
   is_pinned: boolean;
   team_id?: string;
   user_id: string;

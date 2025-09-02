@@ -103,6 +103,7 @@ export const DocumentsPage = () => {
                 onSelectFolder={setSelectedFolder}
                 onCreateFolder={handleCreateFolder}
                 onFolderShared={handleFolderShared}
+                selectedTeamId={selectedTeamId}
               />
               
               <div className="flex gap-4">

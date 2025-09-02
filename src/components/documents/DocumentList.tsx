@@ -11,6 +11,7 @@ interface DocumentItem {
   id: string;
   title: string;
   file_path: string;
+  storage_id?: string;
   file_type: string;
   created_at: string;
   size_bytes: number;

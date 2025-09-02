@@ -545,6 +545,7 @@ export type Database = {
           file_path: string
           file_type: string
           folder: string | null
+          folder_id: string | null
           id: string
           is_pinned: boolean | null
           organization_id: string
@@ -560,6 +561,7 @@ export type Database = {
           file_path: string
           file_type: string
           folder?: string | null
+          folder_id?: string | null
           id?: string
           is_pinned?: boolean | null
           organization_id: string
@@ -575,6 +577,7 @@ export type Database = {
           file_path?: string
           file_type?: string
           folder?: string | null
+          folder_id?: string | null
           id?: string
           is_pinned?: boolean | null
           organization_id?: string
@@ -585,6 +588,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "documents_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "folders"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "documents_organization_id_fkey"
             columns: ["organization_id"]
@@ -800,6 +810,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      folders: {
+        Row: {
+          color: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          name: string
+          organization_id: string
+          team_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          name: string
+          organization_id: string
+          team_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          name?: string
+          organization_id?: string
+          team_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       invoices: {
         Row: {

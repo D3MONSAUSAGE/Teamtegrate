@@ -51,9 +51,12 @@ export const DocumentViewer = ({ documentPath, documentName, children }: Documen
   };
 
   const loadTextContent = async () => {
+    // Handle both storage_id and file_path formats
+    const path = documentPath.startsWith('/') ? documentPath.slice(1) : documentPath;
+    
     const { data, error } = await supabase.storage
       .from('documents')
-      .download(documentPath);
+      .download(path);
 
     if (error) throw new Error(`Failed to download text file: ${error.message}`);
 
@@ -62,12 +65,15 @@ export const DocumentViewer = ({ documentPath, documentName, children }: Documen
   };
 
   const loadFileWithStrategies = async () => {
+    // Handle both storage_id and file_path formats - normalize path
+    const path = documentPath.startsWith('/') ? documentPath.slice(1) : documentPath;
+    
     // Strategy 1: Try blob URL (works in most browsers)
     if (supportsBlobUrls()) {
       try {
         const { data, error } = await supabase.storage
           .from('documents')
-          .download(documentPath);
+          .download(path);
 
         if (error) throw error;
 
@@ -84,7 +90,7 @@ export const DocumentViewer = ({ documentPath, documentName, children }: Documen
     try {
       const { data, error } = await supabase.storage
         .from('documents')
-        .createSignedUrl(documentPath, 3600);
+        .createSignedUrl(path, 3600);
 
       if (error) throw error;
 
@@ -95,10 +101,22 @@ export const DocumentViewer = ({ documentPath, documentName, children }: Documen
       console.warn('Signed URL strategy failed:', error);
     }
 
-    // Strategy 3: Fallback to Google Docs viewer for documents/PDFs
+    // Strategy 3: For Google Docs viewer, we need a publicly accessible URL
     if (fileType === 'pdf' || fileType === 'document') {
-      setViewingStrategy('google');
-      return;
+      try {
+        // Try to get a signed URL for Google Docs viewer
+        const { data, error } = await supabase.storage
+          .from('documents')
+          .createSignedUrl(path, 3600);
+
+        if (!error && data.signedUrl) {
+          setFileUrl(data.signedUrl);
+          setViewingStrategy('google');
+          return;
+        }
+      } catch (error) {
+        console.warn('Google Docs strategy failed:', error);
+      }
     }
 
     // Strategy 4: Download only
@@ -108,9 +126,12 @@ export const DocumentViewer = ({ documentPath, documentName, children }: Documen
 
   const handleDownload = async () => {
     try {
+      // Handle both storage_id and file_path formats
+      const path = documentPath.startsWith('/') ? documentPath.slice(1) : documentPath;
+      
       const { data, error } = await supabase.storage
         .from('documents')
-        .download(documentPath);
+        .download(path);
 
       if (error) throw error;
 

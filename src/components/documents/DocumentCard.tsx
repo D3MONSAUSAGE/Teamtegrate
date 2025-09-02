@@ -13,6 +13,7 @@ interface DocumentItem {
   id: string;
   title: string;
   file_path: string;
+  storage_id?: string;
   file_type: string;
   created_at: string;
   size_bytes: number;
@@ -92,9 +93,12 @@ const DocumentCard: React.FC<DocumentCardProps> = ({
 
   const handleDownload = async () => {
     try {
+      // Use storage_id if available, otherwise fall back to file_path
+      const pathToUse = document.storage_id || document.file_path;
+      
       const { data, error } = await supabase.storage
         .from('documents')
-        .download(document.file_path);
+        .download(pathToUse);
 
       if (error) throw error;
 
@@ -120,9 +124,12 @@ const DocumentCard: React.FC<DocumentCardProps> = ({
     }
 
     try {
+      // Use storage_id if available, otherwise fall back to file_path
+      const pathToUse = document.storage_id || document.file_path;
+      
       const { error: storageError } = await supabase.storage
         .from('documents')
-        .remove([document.file_path]);
+        .remove([pathToUse]);
 
       if (storageError) throw storageError;
 
@@ -224,7 +231,7 @@ const DocumentCard: React.FC<DocumentCardProps> = ({
           )}
 
           <DocumentViewer
-            documentPath={document.file_path}
+            documentPath={document.storage_id || document.file_path}
             documentName={document.title}
           >
             <Button
