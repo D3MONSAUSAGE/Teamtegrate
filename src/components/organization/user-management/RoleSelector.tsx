@@ -26,6 +26,7 @@ const RoleSelector: React.FC<RoleSelectorProps> = ({
       case 'superadmin': return <Crown className="h-3 w-3" />;
       case 'admin': return <Shield className="h-3 w-3" />;
       case 'manager': return <Users className="h-3 w-3" />;
+      case 'team_leader': return <Users className="h-3 w-3 text-purple-500" />;
       default: return <Users className="h-3 w-3" />;
     }
   };

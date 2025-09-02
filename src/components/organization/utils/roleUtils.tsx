@@ -11,6 +11,8 @@ export const getRoleIcon = (role: UserRole) => {
       return <Shield className="h-4 w-4 text-orange-500" />;
     case 'manager':
       return <UserCheck className="h-4 w-4 text-blue-500" />;
+    case 'team_leader':
+      return <UserCheck className="h-4 w-4 text-purple-500" />;
     case 'user':
       return <User className="h-4 w-4 text-green-500" />;
     default:
@@ -26,6 +28,8 @@ export const getRoleBadgeVariant = (role: UserRole) => {
       return 'destructive';
     case 'manager':
       return 'secondary';
+    case 'team_leader':
+      return 'outline';
     case 'user':
       return 'outline';
     default:

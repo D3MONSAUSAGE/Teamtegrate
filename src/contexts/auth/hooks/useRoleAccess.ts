@@ -8,6 +8,7 @@ export const useRoleAccess = (user: AppUser | null) => {
     
     const roleHierarchy: Record<UserRole, number> = {
       'user': 1,
+      'team_leader': 2.5,
       'manager': 2,
       'admin': 3,
       'superadmin': 4
@@ -23,8 +24,9 @@ export const useRoleAccess = (user: AppUser | null) => {
     if (!user) return false;
     
     if (user.role === 'superadmin') return true;
-    if (user.role === 'admin' && ['manager', 'user'].includes(targetRole)) return true;
-    if (user.role === 'manager' && targetRole === 'user') return true;
+    if (user.role === 'admin' && ['manager', 'team_leader', 'user'].includes(targetRole)) return true;
+    if (user.role === 'manager' && ['team_leader', 'user'].includes(targetRole)) return true;
+    if (user.role === 'team_leader' && targetRole === 'user') return true;
     
     return false;
   };

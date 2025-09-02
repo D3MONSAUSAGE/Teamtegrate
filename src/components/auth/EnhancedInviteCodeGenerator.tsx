@@ -154,6 +154,7 @@ const EnhancedInviteCodeGenerator: React.FC = () => {
 
   const roleOptions: { value: UserRole; label: string; description: string }[] = [
     { value: 'user', label: 'User', description: 'Basic user with limited permissions' },
+    { value: 'team_leader', label: 'Team Leader', description: 'Can lead teams and manage team members' },
     { value: 'manager', label: 'Manager', description: 'Can manage projects and team members' },
     { value: 'admin', label: 'Admin', description: 'Can manage users and organization settings' }
   ];

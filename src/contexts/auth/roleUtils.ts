@@ -5,6 +5,7 @@ export const ROLE_HIERARCHY: Record<UserRole, number> = {
   'superadmin': 4,
   'admin': 3,
   'manager': 2,
+  'team_leader': 2.5,
   'user': 1
 };
 
