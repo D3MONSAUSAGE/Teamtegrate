@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { useMyOnboarding, useOnboardingProgress } from '@/hooks/onboarding/useOnboardingInstances';
 import { useOnboardingInstanceTasks } from '@/hooks/onboarding/useOnboardingTasks';
+import { useDemoOnboarding } from '@/hooks/onboarding/useDemoOnboarding';
 import { OnboardingTaskCategory, OnboardingTaskStatus } from '@/types/onboarding';
 import { format, differenceInDays } from 'date-fns';
 import { toast } from 'sonner';
@@ -35,6 +36,7 @@ export function MyOnboarding() {
     onboardingInstance?.id || ''
   );
   const { data: progress } = useOnboardingProgress(onboardingInstance?.id || '');
+  const { createDemo, isCreating } = useDemoOnboarding();
 
   const [selectedTask, setSelectedTask] = useState<string | null>(null);
   const [taskNote, setTaskNote] = useState('');
@@ -59,8 +61,19 @@ export function MyOnboarding() {
         <CardContent className="p-8 text-center">
           <Users className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
           <h3 className="text-lg font-semibold mb-2">No Active Onboarding</h3>
-          <p className="text-muted-foreground">
-            You don't have an active onboarding process. Contact your manager if you believe this is an error.
+          <p className="text-muted-foreground mb-4">
+            You don't have an active onboarding process. Want to try our demo?
+          </p>
+          <Button 
+            onClick={() => createDemo()} 
+            disabled={isCreating}
+            className="bg-primary hover:bg-primary/90"
+          >
+            <Play className="w-4 h-4 mr-2" />
+            {isCreating ? 'Creating Demo...' : 'Create Demo Onboarding'}
+          </Button>
+          <p className="text-xs text-muted-foreground mt-2">
+            This will create a sample onboarding experience for you to explore
           </p>
         </CardContent>
       </Card>

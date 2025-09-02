@@ -272,8 +272,8 @@ function LaunchInstanceForm({ templates, users, onSubmit, isSubmitting }: Launch
           <SelectTrigger>
             <SelectValue placeholder="Choose a template or create custom..." />
           </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="">Custom Onboarding</SelectItem>
+          <SelectContent className="z-50">
+            <SelectItem value="custom">Custom Onboarding</SelectItem>
             {templates.map((template) => (
               <SelectItem key={template.id} value={template.id}>
                 {template.name}

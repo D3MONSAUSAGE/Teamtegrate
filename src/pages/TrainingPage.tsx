@@ -19,6 +19,7 @@ import { OnboardingDashboard } from '@/components/training/OnboardingDashboard';
 import { NewEmployeeWizard } from '@/components/onboarding/wizard/NewEmployeeWizard';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useMyOnboarding } from '@/hooks/onboarding/useOnboardingInstances';
+import { useDemoOnboarding } from '@/hooks/onboarding/useDemoOnboarding';
 import { useTrainingCourses, useQuizzes, useTrainingAssignments } from '@/hooks/useTrainingData';
 
 const TrainingPage = () => {
@@ -39,6 +40,7 @@ const TrainingPage = () => {
   const { data: allQuizzes = [], isLoading: quizzesLoading } = useQuizzes();
   const { data: assignments = [] } = useTrainingAssignments();
   const { data: onboardingInstance } = useMyOnboarding();
+  const { createDemo, isCreating } = useDemoOnboarding();
 
   const canManageContent = user && ['superadmin', 'admin', 'manager'].includes(user.role);
 
