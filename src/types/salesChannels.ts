@@ -7,7 +7,8 @@ export interface SalesChannel {
   commission_type: 'percentage' | 'flat_fee';
   flat_fee_amount?: number;
   is_active: boolean;
-  location?: string;
+  team_id?: string;
+  location?: string; // Deprecated, use team_id
   created_at: string;
   updated_at: string;
   created_by: string;
@@ -18,7 +19,8 @@ export interface SalesChannelTransaction {
   organization_id: string;
   sales_data_id: string;
   channel_id: string;
-  location: string;
+  team_id?: string;
+  location?: string; // Deprecated, use team_id
   date: string;
   gross_sales: number;
   commission_fee: number;
@@ -35,7 +37,7 @@ export interface CreateSalesChannelData {
   commission_rate: number;
   commission_type: 'percentage' | 'flat_fee';
   flat_fee_amount?: number;
-  location?: string;
+  team_id?: string;
 }
 
 export interface SalesChannelSummary {

@@ -22,7 +22,9 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useSalesChannels } from '@/hooks/useSalesChannels';
+import { useTeams } from '@/hooks/useTeams';
 import type { SalesChannel } from '@/types/salesChannels';
 
 const salesChannelSchema = z.object({
@@ -31,7 +33,7 @@ const salesChannelSchema = z.object({
   commission_type: z.enum(['percentage', 'flat_fee']),
   commission_rate: z.number().min(0).max(1).optional(),
   flat_fee_amount: z.number().min(0).optional(),
-  location: z.string().optional(),
+  team_id: z.string().optional(),
 }).refine((data) => {
   if (data.commission_type === 'percentage') {
     return data.commission_rate !== undefined && data.commission_rate > 0;
@@ -57,6 +59,7 @@ export const SalesChannelDialog: React.FC<SalesChannelDialogProps> = ({
   channel
 }) => {
   const { createChannel, updateChannel } = useSalesChannels();
+  const { teams, isLoading: teamsLoading } = useTeams();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<FormData>({
@@ -67,7 +70,7 @@ export const SalesChannelDialog: React.FC<SalesChannelDialogProps> = ({
       commission_type: 'percentage',
       commission_rate: 0.15, // Default 15%
       flat_fee_amount: 0,
-      location: '',
+      team_id: '',
     }
   });
 
@@ -81,7 +84,7 @@ export const SalesChannelDialog: React.FC<SalesChannelDialogProps> = ({
         commission_type: channel.commission_type,
         commission_rate: channel.commission_rate,
         flat_fee_amount: channel.flat_fee_amount || 0,
-        location: channel.location || '',
+        team_id: channel.team_id || '',
       });
     } else {
       form.reset({
@@ -90,7 +93,7 @@ export const SalesChannelDialog: React.FC<SalesChannelDialogProps> = ({
         commission_type: 'percentage',
         commission_rate: 0.15,
         flat_fee_amount: 0,
-        location: '',
+        team_id: '',
       });
     }
   }, [channel, form]);
@@ -104,7 +107,7 @@ export const SalesChannelDialog: React.FC<SalesChannelDialogProps> = ({
         commission_type: data.commission_type,
         commission_rate: data.commission_type === 'percentage' ? (data.commission_rate || 0) : 0,
         flat_fee_amount: data.commission_type === 'flat_fee' ? (data.flat_fee_amount || 0) : 0,
-        location: data.location,
+        team_id: data.team_id || undefined,
       };
 
       let success = false;
@@ -247,15 +250,27 @@ export const SalesChannelDialog: React.FC<SalesChannelDialogProps> = ({
 
             <FormField
               control={form.control}
-              name="location"
+              name="team_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Location (Optional)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Leave blank for all locations" {...field} />
-                  </FormControl>
+                  <FormLabel>Team (Optional)</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={teamsLoading ? "Loading teams..." : "Select a team or leave blank for all teams"} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="">All Teams</SelectItem>
+                      {teams.map((team) => (
+                        <SelectItem key={team.id} value={team.id}>
+                          {team.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormDescription>
-                    Restrict this channel to a specific location
+                    Restrict this channel to a specific team, or leave blank for all teams
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

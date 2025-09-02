@@ -19,12 +19,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useSalesChannels } from '@/hooks/useSalesChannels';
+import { useTeams } from '@/hooks/useTeams';
 import { useAuth } from '@/contexts/AuthContext';
 import { SalesChannelDialog } from './SalesChannelDialog';
 import type { SalesChannel } from '@/types/salesChannels';
 
 export const SalesChannelsManager: React.FC = () => {
   const { channels, isLoading, toggleChannelStatus, deleteChannel } = useSalesChannels();
+  const { teams } = useTeams();
   const { hasRoleAccess } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingChannel, setEditingChannel] = useState<SalesChannel | null>(null);
@@ -57,6 +59,12 @@ export const SalesChannelsManager: React.FC = () => {
     } else {
       return `$${channel.flat_fee_amount?.toFixed(2) || '0.00'}`;
     }
+  };
+
+  const getTeamName = (teamId?: string) => {
+    if (!teamId) return 'All Teams';
+    const team = teams.find(t => t.id === teamId);
+    return team?.name || 'Unknown Team';
   };
 
   if (isLoading) {
@@ -105,7 +113,7 @@ export const SalesChannelsManager: React.FC = () => {
                 <TableRow>
                   <TableHead>Channel</TableHead>
                   <TableHead>Commission</TableHead>
-                  <TableHead>Location</TableHead>
+                  <TableHead>Team</TableHead>
                   <TableHead>Status</TableHead>
                   {canManage && <TableHead className="w-[50px]"></TableHead>}
                 </TableRow>
@@ -134,9 +142,9 @@ export const SalesChannelsManager: React.FC = () => {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {channel.location || (
-                        <span className="text-muted-foreground">All locations</span>
-                      )}
+                      <span className="text-muted-foreground">
+                        {getTeamName(channel.team_id)}
+                      </span>
                     </TableCell>
                     <TableCell>
                       <Badge variant={channel.is_active ? 'default' : 'secondary'}>

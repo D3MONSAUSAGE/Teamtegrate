@@ -3088,6 +3088,7 @@ export type Database = {
           order_count: number | null
           organization_id: string
           sales_data_id: string
+          team_id: string | null
           updated_at: string
         }
         Insert: {
@@ -3102,6 +3103,7 @@ export type Database = {
           order_count?: number | null
           organization_id: string
           sales_data_id: string
+          team_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -3116,6 +3118,7 @@ export type Database = {
           order_count?: number | null
           organization_id?: string
           sales_data_id?: string
+          team_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -3124,6 +3127,20 @@ export type Database = {
             columns: ["channel_id"]
             isOneToOne: false
             referencedRelation: "sales_channels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_channel_transactions_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "team_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_channel_transactions_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
             referencedColumns: ["id"]
           },
         ]
@@ -3141,6 +3158,7 @@ export type Database = {
           location: string | null
           name: string
           organization_id: string
+          team_id: string | null
           updated_at: string
         }
         Insert: {
@@ -3155,6 +3173,7 @@ export type Database = {
           location?: string | null
           name: string
           organization_id: string
+          team_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -3169,9 +3188,25 @@ export type Database = {
           location?: string | null
           name?: string
           organization_id?: string
+          team_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "sales_channels_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "team_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_channels_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sales_data: {
         Row: {
