@@ -65,94 +65,240 @@ export const useDemoOnboarding = () => {
         if (templateError) throw templateError;
         templateId = template.id;
 
-        // Create demo stages and tasks
-        const { data: stage1, error: stage1Error } = await supabase
-          .from('onboarding_stages')
-          .insert({
-            template_id: templateId,
-            title: 'Getting Started',
-            description: 'Essential first steps for new employees',
-            order_index: 1,
-            organization_id: user.organizationId,
-          })
-          .select('id')
-          .single();
-
-        if (stage1Error) throw stage1Error;
-
-        const { data: stage2, error: stage2Error } = await supabase
-          .from('onboarding_stages')
-          .insert({
-            template_id: templateId,
-            title: 'Training & Development',
-            description: 'Complete required training modules',
-            order_index: 2,
-            organization_id: user.organizationId,
-          })
-          .select('id')
-          .single();
-
-        if (stage2Error) throw stage2Error;
-
-        // Create demo tasks
-        const demoTasks = [
+        // Create comprehensive demo stages
+        const stages = [
           {
             template_id: templateId,
-            organization_id: user.organizationId,
-            title: 'Complete Profile Setup',
-            description: 'Fill out your employee profile and emergency contacts',
-            category: 'hr_documentation' as const,
-            owner_type: 'employee' as const,
-            due_offset_days: 1,
+            title: 'Week 1: Welcome & Setup',
+            description: 'Get oriented and complete essential setup tasks',
             order_index: 1,
+            organization_id: user.organizationId,
           },
           {
             template_id: templateId,
-            organization_id: user.organizationId,
-            title: 'Review Employee Handbook',
-            description: 'Read through the company policies and procedures',
-            category: 'hr_documentation' as const,
-            owner_type: 'employee' as const,
-            due_offset_days: 3,
+            title: 'Week 2: Core Training',
+            description: 'Complete fundamental training modules and assessments',
             order_index: 2,
+            organization_id: user.organizationId,
           },
           {
             template_id: templateId,
-            organization_id: user.organizationId,
-            title: 'Meet with Direct Manager',
-            description: 'Schedule and complete your first one-on-one meeting',
-            category: 'culture_engagement' as const,
-            owner_type: 'manager' as const,
-            due_offset_days: 2,
+            title: 'Week 3: Role Integration',
+            description: 'Job-specific training and team integration',
             order_index: 3,
+            organization_id: user.organizationId,
           },
           {
             template_id: templateId,
-            organization_id: user.organizationId,
-            title: 'Complete Compliance Training',
-            description: 'Finish all required compliance and safety training modules',
-            category: 'compliance_training' as const,
-            owner_type: 'employee' as const,
-            due_offset_days: 5,
+            title: 'Week 4: Final Steps',
+            description: 'Complete certification and feedback sessions',
             order_index: 4,
-          },
-          {
-            template_id: templateId,
             organization_id: user.organizationId,
-            title: 'Job-Specific Training',
-            description: 'Complete role-specific training materials and assessments',
-            category: 'job_specific_training' as const,
-            owner_type: 'employee' as const,
-            due_offset_days: 7,
-            order_index: 5,
-          },
+          }
         ];
 
-        const { error: tasksError } = await supabase
-          .from('onboarding_tasks')
-          .insert(demoTasks);
+        const { data: createdStages, error: stagesError } = await supabase
+          .from('onboarding_stages')
+          .insert(stages)
+          .select('id, order_index');
 
-        if (tasksError) throw tasksError;
+        if (stagesError) throw stagesError;
+
+        // Create comprehensive demo steps for each stage
+        const allSteps = [];
+
+        // Week 1 Steps
+        const week1Steps = [
+          {
+            template_id: templateId,
+            stage_id: createdStages.find(s => s.order_index === 1)?.id,
+            organization_id: user.organizationId,
+            title: 'Complete Digital Profile',
+            description: 'Set up your employee profile with photo, contact details, and emergency contacts',
+            step_type: 'document',
+            order_index: 1,
+            is_required: true,
+            estimated_duration_minutes: 15,
+            due_offset_days: 1,
+            prerequisites: [],
+          },
+          {
+            template_id: templateId,
+            stage_id: createdStages.find(s => s.order_index === 1)?.id,
+            organization_id: user.organizationId,
+            title: 'Watch Welcome Video',
+            description: 'Watch our company welcome video to learn about our culture and values',
+            step_type: 'video',
+            order_index: 2,
+            is_required: true,
+            estimated_duration_minutes: 10,
+            due_offset_days: 1,
+            prerequisites: [],
+          },
+          {
+            template_id: templateId,
+            stage_id: createdStages.find(s => s.order_index === 1)?.id,
+            organization_id: user.organizationId,
+            title: 'Review Employee Handbook',
+            description: 'Read through company policies, procedures, and code of conduct',
+            step_type: 'document',
+            order_index: 3,
+            is_required: true,
+            estimated_duration_minutes: 45,
+            due_offset_days: 3,
+            prerequisites: [],
+          },
+          {
+            template_id: templateId,
+            stage_id: createdStages.find(s => s.order_index === 1)?.id,
+            organization_id: user.organizationId,
+            title: 'Meet Your Manager',
+            description: 'Schedule and complete your initial one-on-one meeting with your direct manager',
+            step_type: 'meeting',
+            order_index: 4,
+            is_required: true,
+            estimated_duration_minutes: 60,
+            due_offset_days: 2,
+            prerequisites: [],
+          }
+        ];
+
+        // Week 2 Steps
+        const week2Steps = [
+          {
+            template_id: templateId,
+            stage_id: createdStages.find(s => s.order_index === 2)?.id,
+            organization_id: user.organizationId,
+            title: 'Complete Safety Training Course',
+            description: 'Take the mandatory workplace safety training course and pass the assessment',
+            step_type: 'course',
+            order_index: 1,
+            is_required: true,
+            estimated_duration_minutes: 90,
+            due_offset_days: 7,
+            prerequisites: [],
+          },
+          {
+            template_id: templateId,
+            stage_id: createdStages.find(s => s.order_index === 2)?.id,
+            organization_id: user.organizationId,
+            title: 'Diversity & Inclusion Training',
+            description: 'Complete our comprehensive D&I training module',
+            step_type: 'course',
+            order_index: 2,
+            is_required: true,
+            estimated_duration_minutes: 60,
+            due_offset_days: 10,
+            prerequisites: [],
+          },
+          {
+            template_id: templateId,
+            stage_id: createdStages.find(s => s.order_index === 2)?.id,
+            organization_id: user.organizationId,
+            title: 'Knowledge Check Quiz',
+            description: 'Take a quiz covering company policies and safety procedures',
+            step_type: 'quiz',
+            order_index: 3,
+            is_required: true,
+            estimated_duration_minutes: 20,
+            due_offset_days: 12,
+            prerequisites: [],
+          }
+        ];
+
+        // Week 3 Steps
+        const week3Steps = [
+          {
+            template_id: templateId,
+            stage_id: createdStages.find(s => s.order_index === 3)?.id,
+            organization_id: user.organizationId,
+            title: 'Role-Specific Training',
+            description: 'Complete training modules specific to your job role and responsibilities',
+            step_type: 'course',
+            order_index: 1,
+            is_required: true,
+            estimated_duration_minutes: 120,
+            due_offset_days: 14,
+            prerequisites: [],
+          },
+          {
+            template_id: templateId,
+            stage_id: createdStages.find(s => s.order_index === 3)?.id,
+            organization_id: user.organizationId,
+            title: 'Team Introduction Sessions',
+            description: 'Meet with key team members and understand your role within the team',
+            step_type: 'meeting',
+            order_index: 2,
+            is_required: true,
+            estimated_duration_minutes: 90,
+            due_offset_days: 16,
+            prerequisites: [],
+          },
+          {
+            template_id: templateId,
+            stage_id: createdStages.find(s => s.order_index === 3)?.id,
+            organization_id: user.organizationId,
+            title: 'Submit Required Documents',
+            description: 'Upload necessary documentation including certifications and references',
+            step_type: 'document',
+            order_index: 3,
+            is_required: true,
+            estimated_duration_minutes: 30,
+            due_offset_days: 18,
+            prerequisites: [],
+          }
+        ];
+
+        // Week 4 Steps
+        const week4Steps = [
+          {
+            template_id: templateId,
+            stage_id: createdStages.find(s => s.order_index === 4)?.id,
+            organization_id: user.organizationId,
+            title: 'Final Assessment',
+            description: 'Complete the comprehensive onboarding assessment covering all training modules',
+            step_type: 'quiz',
+            order_index: 1,
+            is_required: true,
+            estimated_duration_minutes: 45,
+            due_offset_days: 21,
+            prerequisites: [],
+          },
+          {
+            template_id: templateId,
+            stage_id: createdStages.find(s => s.order_index === 4)?.id,
+            organization_id: user.organizationId,
+            title: '30-Day Check-in Meeting',
+            description: 'Meet with HR and your manager for a comprehensive progress review',
+            step_type: 'meeting',
+            order_index: 2,
+            is_required: true,
+            estimated_duration_minutes: 60,
+            due_offset_days: 23,
+            prerequisites: [],
+          },
+          {
+            template_id: templateId,
+            stage_id: createdStages.find(s => s.order_index === 4)?.id,
+            organization_id: user.organizationId,
+            title: 'Complete Feedback Survey',
+            description: 'Provide feedback on your onboarding experience to help us improve',
+            step_type: 'task',
+            order_index: 3,
+            is_required: false,
+            estimated_duration_minutes: 15,
+            due_offset_days: 25,
+            prerequisites: [],
+          }
+        ];
+
+        allSteps.push(...week1Steps, ...week2Steps, ...week3Steps, ...week4Steps);
+
+        const { error: stepsError } = await supabase
+          .from('onboarding_steps')
+          .insert(allSteps);
+
+        if (stepsError) throw stepsError;
       }
 
       // Create onboarding instance for current user
