@@ -19,7 +19,8 @@ import {
   MessageSquarePlus,
   Edit,
   Trash2,
-  Briefcase
+  Briefcase,
+  Loader2
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -73,6 +74,8 @@ const DedicatedTeamManagement: React.FC = () => {
   const [team, setTeam] = useState<TeamWithMembers | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRole, setSelectedRole] = useState<string>('all');
+  const [isCreatingChat, setIsCreatingChat] = useState(false);
+  const [isAddingMember, setIsAddingMember] = useState(false);
 
   // Convert real team members to component format
   const convertedMembers: TeamMember[] = realTeamMembers.map(member => ({
@@ -161,9 +164,44 @@ const DedicatedTeamManagement: React.FC = () => {
     }
   };
 
-  const handleCreateTeamChat = () => {
-    // Navigate to chat creation with team context
-    navigate('/dashboard/chat?createTeamChat=true&teamId=' + teamId);
+  const handleCreateTeamChat = async () => {
+    console.log('Creating team chat for team:', teamId);
+    setIsCreatingChat(true);
+    try {
+      // Navigate to chat creation with team context
+      navigate(`/dashboard/chat?createTeamChat=true&teamId=${teamId}&teamName=${encodeURIComponent(team?.name || '')}`);
+      toast.success('Redirecting to create team chat...');
+    } catch (error) {
+      console.error('Error navigating to chat creation:', error);
+      toast.error('Failed to navigate to chat creation');
+    } finally {
+      setIsCreatingChat(false);
+    }
+  };
+
+  const handleAddMember = () => {
+    console.log('Add member clicked for team:', teamId);
+    setIsAddingMember(true);
+    // TODO: Open add member dialog
+    toast.success('Add member dialog will open here');
+    setIsAddingMember(false);
+  };
+
+  const handleBulkAddMembers = () => {
+    console.log('Bulk add members clicked for team:', teamId);
+    // TODO: Open bulk add dialog
+    toast.success('Bulk add members feature coming soon');
+  };
+
+  const handleTeamSettings = () => {
+    console.log('Team settings clicked for team:', teamId);
+    // TODO: Navigate to team settings
+    toast.success('Team settings feature coming soon');
+  };
+
+  const handleBackClick = () => {
+    console.log('Back button clicked');
+    navigate('/dashboard/team');
   };
 
   const handleAddUnassignedToTeam = async (userId: string) => {
@@ -222,7 +260,7 @@ const DedicatedTeamManagement: React.FC = () => {
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard/team')}>
+          <Button variant="ghost" size="sm" onClick={handleBackClick}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
@@ -241,7 +279,7 @@ const DedicatedTeamManagement: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard/team')}>
+          <Button variant="ghost" size="sm" onClick={handleBackClick}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
@@ -254,12 +292,27 @@ const DedicatedTeamManagement: React.FC = () => {
         <div className="flex items-center gap-2">
           {canManageTeam && (
             <>
-              <Button variant="outline" onClick={handleCreateTeamChat}>
-                <MessageSquarePlus className="h-4 w-4 mr-2" />
+              <Button 
+                variant="outline" 
+                onClick={handleCreateTeamChat}
+                disabled={isCreatingChat}
+              >
+                {isCreatingChat ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <MessageSquarePlus className="h-4 w-4 mr-2" />
+                )}
                 Create Team Chat
               </Button>
-              <Button>
-                <UserPlus className="h-4 w-4 mr-2" />
+              <Button 
+                onClick={handleAddMember}
+                disabled={isAddingMember}
+              >
+                {isAddingMember ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <UserPlus className="h-4 w-4 mr-2" />
+                )}
                 Add Member
               </Button>
             </>
@@ -400,15 +453,32 @@ const DedicatedTeamManagement: React.FC = () => {
                 <CardTitle className="text-lg">Quick Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <Button variant="outline" className="w-full justify-start">
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={handleBulkAddMembers}
+                >
                   <UserPlus className="h-4 w-4 mr-2" />
                   Bulk Add Members
                 </Button>
-                <Button variant="outline" className="w-full justify-start">
-                  <MessageSquarePlus className="h-4 w-4 mr-2" />
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={handleCreateTeamChat}
+                  disabled={isCreatingChat}
+                >
+                  {isCreatingChat ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <MessageSquarePlus className="h-4 w-4 mr-2" />
+                  )}
                   Create Team Chat
                 </Button>
-                <Button variant="outline" className="w-full justify-start">
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={handleTeamSettings}
+                >
                   <Settings className="h-4 w-4 mr-2" />
                   Team Settings
                 </Button>
