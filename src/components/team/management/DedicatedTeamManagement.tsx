@@ -83,17 +83,6 @@ const DedicatedTeamManagement: React.FC = () => {
   const [showAddMemberDialog, setShowAddMemberDialog] = useState(false);
   const [showCreateChatDialog, setShowCreateChatDialog] = useState(false);
 
-  // Ensure only one dialog is open at a time and clean up on navigation
-  useEffect(() => {
-    const closeAllDialogs = () => {
-      setShowAddMemberDialog(false);
-      setShowCreateChatDialog(false);
-    };
-
-    // Close dialogs when route changes or on cleanup
-    return closeAllDialogs;
-  }, [teamId]);
-
   // Convert real team members to component format
   const convertedMembers: TeamMember[] = realTeamMembers.map(member => ({
     id: member.id,
@@ -183,33 +172,12 @@ const DedicatedTeamManagement: React.FC = () => {
 
   const handleCreateTeamChat = () => {
     console.log('Creating team chat for team:', teamId);
-    // Close other dialogs first
-    setShowAddMemberDialog(false);
     setShowCreateChatDialog(true);
   };
 
   const handleAddMember = () => {
     console.log('Add member clicked for team:', teamId);
-    // Close other dialogs first
-    setShowCreateChatDialog(false);
     setShowAddMemberDialog(true);
-  };
-
-  // Safe dialog close handlers that ensure proper cleanup
-  const handleAddMemberDialogChange = (open: boolean) => {
-    setShowAddMemberDialog(open);
-    if (!open) {
-      // Additional cleanup when closing
-      setIsAddingMember(false);
-    }
-  };
-
-  const handleCreateChatDialogChange = (open: boolean) => {
-    setShowCreateChatDialog(open);
-    if (!open) {
-      // Additional cleanup when closing
-      setIsCreatingChat(false);
-    }
   };
 
   const handleBulkAddMembers = () => {
@@ -226,12 +194,6 @@ const DedicatedTeamManagement: React.FC = () => {
 
   const handleBackClick = () => {
     console.log('Back button clicked');
-    // Close any open dialogs before navigating
-    setShowAddMemberDialog(false);
-    setShowCreateChatDialog(false);
-    setIsAddingMember(false);
-    setIsCreatingChat(false);
-    
     try {
       navigate('/dashboard/team');
       toast.success('Navigating back to team overview');
@@ -528,7 +490,7 @@ const DedicatedTeamManagement: React.FC = () => {
       {/* Add Member Dialog */}
       <AddTeamMemberDialog
         open={showAddMemberDialog}
-        onOpenChange={handleAddMemberDialogChange}
+        onOpenChange={setShowAddMemberDialog}
         onTeamMemberAdded={() => {
           setShowAddMemberDialog(false);
           // Refresh team data or handle success
@@ -541,7 +503,7 @@ const DedicatedTeamManagement: React.FC = () => {
       {/* Create Team Chat Dialog */}
       <EnhancedCreateRoomDialog
         open={showCreateChatDialog}
-        onOpenChange={handleCreateChatDialogChange}
+        onOpenChange={setShowCreateChatDialog}
         onCreateRoom={handleCreateRoom}
         preselectedTeamId={teamId}
       />
