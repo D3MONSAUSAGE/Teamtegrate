@@ -871,6 +871,68 @@ export type Database = {
           },
         ]
       }
+      job_role_permissions: {
+        Row: {
+          action_id: string
+          created_at: string
+          granted: boolean
+          id: string
+          job_role_id: string
+          module_id: string
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          action_id: string
+          created_at?: string
+          granted?: boolean
+          id?: string
+          job_role_id: string
+          module_id: string
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          action_id?: string
+          created_at?: string
+          granted?: boolean
+          id?: string
+          job_role_id?: string
+          module_id?: string
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_role_permissions_action_id_fkey"
+            columns: ["action_id"]
+            isOneToOne: false
+            referencedRelation: "permission_actions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_role_permissions_job_role_id_fkey"
+            columns: ["job_role_id"]
+            isOneToOne: false
+            referencedRelation: "job_roles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_role_permissions_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "permission_modules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_role_permissions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_roles: {
         Row: {
           created_at: string
@@ -1199,6 +1261,173 @@ export type Database = {
           created_at?: string
           created_by?: string
           id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      permission_actions: {
+        Row: {
+          created_at: string
+          description: string | null
+          display_name: string
+          id: string
+          is_active: boolean
+          module_id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          display_name: string
+          id?: string
+          is_active?: boolean
+          module_id: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          display_name?: string
+          id?: string
+          is_active?: boolean
+          module_id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "permission_actions_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "permission_modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      permission_audit_log: {
+        Row: {
+          action_id: string
+          change_type: string
+          changed_by: string
+          created_at: string
+          id: string
+          module_id: string
+          new_value: boolean
+          old_value: boolean | null
+          organization_id: string
+          target_job_role_id: string | null
+          target_role: string | null
+          target_user_id: string | null
+        }
+        Insert: {
+          action_id: string
+          change_type: string
+          changed_by: string
+          created_at?: string
+          id?: string
+          module_id: string
+          new_value: boolean
+          old_value?: boolean | null
+          organization_id: string
+          target_job_role_id?: string | null
+          target_role?: string | null
+          target_user_id?: string | null
+        }
+        Update: {
+          action_id?: string
+          change_type?: string
+          changed_by?: string
+          created_at?: string
+          id?: string
+          module_id?: string
+          new_value?: boolean
+          old_value?: boolean | null
+          organization_id?: string
+          target_job_role_id?: string | null
+          target_role?: string | null
+          target_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "permission_audit_log_action_id_fkey"
+            columns: ["action_id"]
+            isOneToOne: false
+            referencedRelation: "permission_actions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permission_audit_log_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permission_audit_log_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permission_audit_log_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "permission_modules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permission_audit_log_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permission_audit_log_target_job_role_id_fkey"
+            columns: ["target_job_role_id"]
+            isOneToOne: false
+            referencedRelation: "job_roles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permission_audit_log_target_user_id_fkey"
+            columns: ["target_user_id"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permission_audit_log_target_user_id_fkey"
+            columns: ["target_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      permission_modules: {
+        Row: {
+          created_at: string
+          description: string | null
+          display_name: string
+          id: string
+          is_active: boolean
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          display_name: string
+          id?: string
+          is_active?: boolean
+          name: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          display_name?: string
+          id?: string
+          is_active?: boolean
           name?: string
         }
         Relationships: []
@@ -1668,6 +1897,61 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "transaction_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      role_permissions: {
+        Row: {
+          action_id: string
+          created_at: string
+          granted: boolean
+          id: string
+          module_id: string
+          organization_id: string
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          action_id: string
+          created_at?: string
+          granted?: boolean
+          id?: string
+          module_id: string
+          organization_id: string
+          role: string
+          updated_at?: string
+        }
+        Update: {
+          action_id?: string
+          created_at?: string
+          granted?: boolean
+          id?: string
+          module_id?: string
+          organization_id?: string
+          role?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_permissions_action_id_fkey"
+            columns: ["action_id"]
+            isOneToOne: false
+            referencedRelation: "permission_actions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "role_permissions_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "permission_modules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "role_permissions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -2950,6 +3234,92 @@ export type Database = {
           user_agent?: string | null
         }
         Relationships: []
+      }
+      user_permission_overrides: {
+        Row: {
+          action_id: string
+          created_at: string
+          granted: boolean
+          granted_by: string
+          id: string
+          module_id: string
+          organization_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          action_id: string
+          created_at?: string
+          granted?: boolean
+          granted_by: string
+          id?: string
+          module_id: string
+          organization_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          action_id?: string
+          created_at?: string
+          granted?: boolean
+          granted_by?: string
+          id?: string
+          module_id?: string
+          organization_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_permission_overrides_action_id_fkey"
+            columns: ["action_id"]
+            isOneToOne: false
+            referencedRelation: "permission_actions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_permission_overrides_granted_by_fkey"
+            columns: ["granted_by"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_permission_overrides_granted_by_fkey"
+            columns: ["granted_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_permission_overrides_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "permission_modules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_permission_overrides_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_permission_overrides_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_permission_overrides_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_training_progress: {
         Row: {
