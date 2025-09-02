@@ -64,17 +64,25 @@ export const useTeamOperations = () => {
   const updateTeam = async (teamId: string, updates: Partial<CreateTeamData>) => {
     setIsUpdating(true);
     try {
-      const { error } = await supabase
+      console.log('useTeamOperations: Updating team with data:', { teamId, updates });
+      
+      const { data, error } = await supabase
         .from('teams')
         .update(updates)
-        .eq('id', teamId);
+        .eq('id', teamId)
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('useTeamOperations: Supabase error:', error);
+        throw error;
+      }
 
+      console.log('useTeamOperations: Team updated successfully:', data);
       invalidateTeamQueries();
       toast.success('Team updated successfully');
     } catch (error) {
-      console.error('Error updating team:', error);
+      console.error('useTeamOperations: Error updating team:', error);
       toast.error('Failed to update team');
       throw error;
     } finally {

@@ -161,10 +161,8 @@ const EditTeamDialog: React.FC<EditTeamDialogProps> = ({
     }
   };
 
-  // Filter users who can be managers
-  const potentialManagers = users.filter(user => 
-    ['admin', 'manager', 'superadmin'].includes(user.role)
-  );
+  // Allow any organization user to be a manager (not just admin/manager roles)
+  const potentialManagers = users;
 
   // Filter available users for member selection (excluding selected manager and existing members)
   const availableUsers = users.filter(user => {
@@ -218,6 +216,12 @@ const EditTeamDialog: React.FC<EditTeamDialogProps> = ({
     setSelectedMembers(selectedMembers.map(member =>
       member.user.id === userId ? { ...member, role } : member
     ));
+    
+    // Auto-sync manager_id when someone is set as manager
+    if (role === 'manager') {
+      console.log('EditTeamDialog: Auto-syncing manager_id to:', userId);
+      setFormData(prev => ({ ...prev, manager_id: userId }));
+    }
   };
 
   const handleTeamLeaderToggle = (userId: string) => {
@@ -230,12 +234,21 @@ const EditTeamDialog: React.FC<EditTeamDialogProps> = ({
     if (!formData.name.trim()) return;
 
     try {
-      // Update basic team info
-      await updateTeam(team.id, {
+      console.log('EditTeamDialog: Submitting team update with:', {
+        teamId: team.id,
         name: formData.name,
         description: formData.description,
-        manager_id: formData.manager_id === 'none' ? undefined : formData.manager_id || undefined,
+        manager_id: formData.manager_id === 'none' ? null : formData.manager_id || null,
       });
+
+      // Update basic team info - explicitly handle manager_id
+      const updateData = {
+        name: formData.name,
+        description: formData.description,
+        manager_id: formData.manager_id === 'none' ? null : formData.manager_id || null,
+      };
+
+      await updateTeam(team.id, updateData);
 
       // Process member changes
       const memberPromises: Promise<any>[] = [];
