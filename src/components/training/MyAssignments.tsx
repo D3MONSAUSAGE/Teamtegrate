@@ -16,7 +16,7 @@ import {
   User,
   Target
 } from 'lucide-react';
-import { useTrainingAssignments, useUpdateAssignmentStatus } from '@/hooks/useTrainingData';
+import { useTrainingAssignments, useUpdateAssignmentStatus, useQuizAttempts } from '@/hooks/useTrainingData';
 import { format, isAfter, parseISO } from 'date-fns';
 import QuizTaker from './QuizTaker';
 import CourseAssignmentViewer from './CourseAssignmentViewer';
@@ -39,6 +39,12 @@ const MyAssignments: React.FC<MyAssignmentsProps> = ({ open, onOpenChange }) => 
   const { data: allQuizzes = [] } = useQuizzes();
   const updateStatus = useUpdateAssignmentStatus();
   const queryClient = useQueryClient();
+
+  // Fetch quiz attempts for the selected quiz
+  const { data: quizAttempts = [] } = useQuizAttempts(
+    selectedQuiz?.id, 
+    undefined // We want attempts for current user, hook will handle this
+  );
 
   // Filter assignments by status
   const pendingAssignments = assignments.filter(a => a.status === 'pending');
@@ -103,6 +109,11 @@ const MyAssignments: React.FC<MyAssignmentsProps> = ({ open, onOpenChange }) => 
   const handleQuizExit = () => {
     setIsQuizTakerOpen(false);
     setSelectedQuiz(null);
+  };
+
+  const handleRetakeQuiz = () => {
+    // Simply keep quiz open for retake
+    setIsQuizTakerOpen(true);
   };
 
   const handleCourseComplete = () => {
@@ -361,6 +372,9 @@ const MyAssignments: React.FC<MyAssignmentsProps> = ({ open, onOpenChange }) => 
               quiz={selectedQuiz}
               onComplete={handleQuizComplete}
               onExit={handleQuizExit}
+              currentAttempts={quizAttempts.length}
+              hasNextModule={false} // Standalone quizzes don't have next modules
+              onRetakeQuiz={handleRetakeQuiz}
             />
           </DialogContent>
         </Dialog>

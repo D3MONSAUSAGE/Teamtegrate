@@ -23,6 +23,7 @@ import ModuleViewer from './ModuleViewer';
 import VideoToQuizFlow from './VideoToQuizFlow';
 import QuizTaker from './QuizTaker';
 import { useQueryClient } from '@tanstack/react-query';
+import { useQuizAttempts } from '@/hooks/useTrainingData';
 
 interface CourseAssignmentViewerProps {
   open: boolean;
@@ -83,6 +84,12 @@ const CourseAssignmentViewer: React.FC<CourseAssignmentViewerProps> = ({
   const [viewMode, setViewMode] = useState<'overview' | 'module' | 'quiz'>('overview');
   const [selectedModule, setSelectedModule] = useState<CourseModule | null>(null);
   const [selectedQuiz, setSelectedQuiz] = useState<any>(null);
+  
+  // Fetch quiz attempts for the current quiz
+  const { data: quizAttempts = [] } = useQuizAttempts(
+    selectedQuiz?.id, 
+    user?.id
+  );
 
   useEffect(() => {
     if (open && assignment && user?.id) {
@@ -360,6 +367,11 @@ const CourseAssignmentViewer: React.FC<CourseAssignmentViewerProps> = ({
     setSelectedQuiz(null);
   };
 
+  const handleRetakeQuiz = () => {
+    // Simply restart the quiz with the same quiz data
+    setViewMode('quiz');
+  };
+
   const renderOverview = () => {
     const overallProgress = getOverallProgress();
     
@@ -565,6 +577,9 @@ const CourseAssignmentViewer: React.FC<CourseAssignmentViewerProps> = ({
               quiz={selectedQuiz}
               onComplete={handleQuizComplete}
               onExit={handleQuizExit}
+              currentAttempts={quizAttempts.length}
+              hasNextModule={currentModuleIndex < modules.length - 1}
+              onRetakeQuiz={handleRetakeQuiz}
             />
           </DialogContent>
         </Dialog>

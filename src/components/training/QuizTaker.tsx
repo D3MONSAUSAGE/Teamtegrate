@@ -31,6 +31,9 @@ interface QuizTakerProps {
   };
   onComplete: (results: QuizResults) => void;
   onExit: () => void;
+  currentAttempts?: number;
+  hasNextModule?: boolean;
+  onRetakeQuiz?: () => void;
 }
 
 interface QuizResults {
@@ -41,7 +44,14 @@ interface QuizResults {
   timeSpent: number;
 }
 
-const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onComplete, onExit }) => {
+const QuizTaker: React.FC<QuizTakerProps> = ({ 
+  quiz, 
+  onComplete, 
+  onExit, 
+  currentAttempts = 0,
+  hasNextModule = true,
+  onRetakeQuiz
+}) => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [timeRemaining, setTimeRemaining] = useState<number | null>(
@@ -266,6 +276,9 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onComplete, onExit }) => {
   };
 
   if (showResults && results) {
+    const remainingAttempts = quiz.maxAttempts - currentAttempts;
+    const canRetake = remainingAttempts > 0;
+
     return (
       <Card className="max-w-2xl mx-auto">
         <CardHeader className="text-center">
@@ -282,7 +295,9 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onComplete, onExit }) => {
           <CardDescription>
             {results.passed 
               ? 'You have successfully passed the quiz!'
-              : 'You did not meet the passing score. You can try again.'
+              : canRetake 
+                ? `You did not meet the passing score. You have ${remainingAttempts} attempts remaining.`
+                : 'You did not meet the passing score. No more attempts available.'
             }
           </CardDescription>
         </CardHeader>
@@ -313,11 +328,11 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onComplete, onExit }) => {
           <div className="flex justify-center gap-3">
             {results.passed ? (
               <>
-                <Button variant="outline" onClick={onExit}>
-                  View Course Progress
+                <Button variant="outline" onClick={canRetake && onRetakeQuiz ? onRetakeQuiz : onExit}>
+                  {canRetake && onRetakeQuiz ? 'Retake Course' : 'Return to Course'}
                 </Button>
                 <Button onClick={handleResultsComplete}>
-                  Continue to Next Module
+                  {hasNextModule ? 'Continue to Next Module' : 'Close Course'}
                 </Button>
               </>
             ) : (
@@ -325,8 +340,11 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onComplete, onExit }) => {
                 <Button variant="outline" onClick={onExit}>
                   Return to Course
                 </Button>
-                <Button onClick={handleResultsComplete}>
-                  Try Again
+                <Button 
+                  onClick={handleResultsComplete} 
+                  disabled={!canRetake}
+                >
+                  {canRetake ? 'Try Again' : 'No Attempts Left'}
                 </Button>
               </>
             )}
