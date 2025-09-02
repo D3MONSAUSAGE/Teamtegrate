@@ -316,22 +316,22 @@ const CourseEditor: React.FC<CourseEditorProps> = ({ open, onOpenChange, course 
                        </div>
                      </div>
                      
-                     <div className="space-y-1">
-                       <Label>Content Type</Label>
-                        <Select
-                          value={module.content_type}
-                          onValueChange={(value: 'text' | 'video' | 'mixed') => updateModule(index, 'content_type', value)}
-                        >
-                         <SelectTrigger>
-                           <SelectValue placeholder="Select content type" />
-                         </SelectTrigger>
-                         <SelectContent>
-                           <SelectItem value="text">Text Only</SelectItem>
-                           <SelectItem value="video">Video Only</SelectItem>
-                           <SelectItem value="mixed">Text + Video</SelectItem>
-                         </SelectContent>
-                       </Select>
-                     </div>
+                      <div className="space-y-1">
+                        <Label>Content Type</Label>
+                         <Select
+                           value={module.content_type || 'text'}
+                           onValueChange={(value: 'text' | 'video' | 'mixed') => updateModule(index, 'content_type', value)}
+                         >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select content type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="text">Text Only</SelectItem>
+                            <SelectItem value="video">Video Only</SelectItem>
+                            <SelectItem value="mixed">Text + Video</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                      
                      {(module.content_type === 'video' || module.content_type === 'mixed') && (
                        <div className="space-y-1">

@@ -3654,8 +3654,11 @@ export type Database = {
           created_at: string
           due_date: string | null
           id: string
+          is_retraining: boolean | null
+          next_retraining_due: string | null
           notes: string | null
           organization_id: string
+          original_assignment_id: string | null
           priority: string | null
           started_at: string | null
           status: string
@@ -3673,8 +3676,11 @@ export type Database = {
           created_at?: string
           due_date?: string | null
           id?: string
+          is_retraining?: boolean | null
+          next_retraining_due?: string | null
           notes?: string | null
           organization_id: string
+          original_assignment_id?: string | null
           priority?: string | null
           started_at?: string | null
           status?: string
@@ -3692,8 +3698,11 @@ export type Database = {
           created_at?: string
           due_date?: string | null
           id?: string
+          is_retraining?: boolean | null
+          next_retraining_due?: string | null
           notes?: string | null
           organization_id?: string
+          original_assignment_id?: string | null
           priority?: string | null
           started_at?: string | null
           status?: string
@@ -3807,6 +3816,78 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      training_retraining_notifications: {
+        Row: {
+          assignment_id: string | null
+          course_id: string
+          created_at: string
+          escalation_level: number | null
+          id: string
+          notification_type: string
+          organization_id: string
+          sent_at: string
+          user_id: string
+        }
+        Insert: {
+          assignment_id?: string | null
+          course_id: string
+          created_at?: string
+          escalation_level?: number | null
+          id?: string
+          notification_type: string
+          organization_id: string
+          sent_at?: string
+          user_id: string
+        }
+        Update: {
+          assignment_id?: string | null
+          course_id?: string
+          created_at?: string
+          escalation_level?: number | null
+          id?: string
+          notification_type?: string
+          organization_id?: string
+          sent_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      training_retraining_settings: {
+        Row: {
+          course_id: string
+          created_at: string
+          created_by: string
+          id: string
+          is_active: boolean
+          organization_id: string
+          retraining_interval_months: number
+          updated_at: string
+          warning_period_days: number
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          created_by: string
+          id?: string
+          is_active?: boolean
+          organization_id: string
+          retraining_interval_months?: number
+          updated_at?: string
+          warning_period_days?: number
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          is_active?: boolean
+          organization_id?: string
+          retraining_interval_months?: number
+          updated_at?: string
+          warning_period_days?: number
+        }
+        Relationships: []
       }
       transaction_categories: {
         Row: {
@@ -4362,6 +4443,10 @@ export type Database = {
       can_user_access_team_data: {
         Args: { team_id_param: string; user_id_param: string }
         Returns: boolean
+      }
+      check_and_create_retraining_assignments: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       create_get_all_projects_function: {
         Args: Record<PropertyKey, never>

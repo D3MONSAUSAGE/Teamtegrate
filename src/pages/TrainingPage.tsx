@@ -15,6 +15,7 @@ import QuizResults from '@/components/training/QuizResults';
 import UserAssignment from '@/components/training/UserAssignment';
 import MyAssignments from '@/components/training/MyAssignments';
 import EmployeeProgressDashboard from '@/components/training/EmployeeProgressDashboard';
+import RetrainingSettings from '@/components/training/RetrainingSettings';
 import { OnboardingDashboard } from '@/components/training/OnboardingDashboard';
 import { NewEmployeeWizard } from '@/components/onboarding/wizard/NewEmployeeWizard';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -33,6 +34,7 @@ const TrainingPage = () => {
   const [isMyAssignmentsOpen, setIsMyAssignmentsOpen] = useState(false);
   const [isEmployeeProgressOpen, setIsEmployeeProgressOpen] = useState(false);
   const [isOnboardingWizardOpen, setIsOnboardingWizardOpen] = useState(false);
+  const [isRetrainingSettingsOpen, setIsRetrainingSettingsOpen] = useState(false);
   const [selectedQuiz, setSelectedQuiz] = useState<any>(null);
   const [selectedCourse, setSelectedCourse] = useState<any>(null);
   
@@ -168,6 +170,7 @@ const TrainingPage = () => {
                      onAssignContent={handleAssignContent}
                      onViewAnalytics={() => setIsEmployeeProgressOpen(true)}
                      onStartOnboarding={handleStartOnboarding}
+                     onRetrainingSettings={() => setIsRetrainingSettingsOpen(true)}
                      userRole={user.role}
                    />
                 </div>
@@ -278,11 +281,17 @@ const TrainingPage = () => {
        />
 
        {/* Onboarding Wizard Dialog */}
-       <Dialog open={isOnboardingWizardOpen} onOpenChange={setIsOnboardingWizardOpen}>
-         <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-0">
-           <NewEmployeeWizard onClose={() => setIsOnboardingWizardOpen(false)} />
-         </DialogContent>
-       </Dialog>
+        <Dialog open={isOnboardingWizardOpen} onOpenChange={setIsOnboardingWizardOpen}>
+          <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-0">
+            <NewEmployeeWizard onClose={() => setIsOnboardingWizardOpen(false)} />
+          </DialogContent>
+        </Dialog>
+
+        {/* Retraining Settings Dialog */}
+        <RetrainingSettings 
+          open={isRetrainingSettingsOpen}
+          onOpenChange={setIsRetrainingSettingsOpen}
+        />
     </div>
   );
 };

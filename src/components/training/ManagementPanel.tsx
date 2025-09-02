@@ -27,6 +27,7 @@ interface ManagementPanelProps {
   onStartOnboarding?: () => void;
   onExportData?: () => void;
   onSettings?: () => void;
+  onRetrainingSettings?: () => void;
   userRole: string;
   showOnlyOnboarding?: boolean;
 }
@@ -39,6 +40,7 @@ const ManagementPanel: React.FC<ManagementPanelProps> = ({
   onStartOnboarding,
   onExportData,
   onSettings,
+  onRetrainingSettings,
   userRole,
   showOnlyOnboarding = false
 }) => {
@@ -85,6 +87,14 @@ const ManagementPanel: React.FC<ManagementPanelProps> = ({
       primary: false,
       color: 'from-purple-500 to-purple-400'
     },
+    ...(onRetrainingSettings ? [{
+      title: 'Retraining Settings',
+      description: 'Configure automatic course retraining',
+      icon: Settings,
+      onClick: onRetrainingSettings,
+      primary: false,
+      color: 'from-orange-500 to-orange-400'
+    }] : []),
     ...(onStartOnboarding ? [{
       title: 'Start Onboarding',
       description: 'Complete your setup step-by-step',
