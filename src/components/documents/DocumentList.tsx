@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { FileText, Download, Trash2, Eye, Folder, Pin } from 'lucide-react';
+import { FileText, Download, Trash2, Eye, Folder, Pin, PinOff, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -31,11 +31,13 @@ interface DocumentItem {
   created_at: string;
   size_bytes: number;
   folder?: string | null;
+  is_pinned?: boolean;
 }
 
 interface DocumentListProps {
   documents: DocumentItem[];
   onDocumentDeleted: () => void;
+  onDocumentUpdated?: () => void;
   isLoading?: boolean;
   currentFolder?: string;
   onBulletinPostCreated?: () => void;
@@ -44,6 +46,7 @@ interface DocumentListProps {
 const DocumentList: React.FC<DocumentListProps> = ({
   documents,
   onDocumentDeleted,
+  onDocumentUpdated,
   isLoading = false,
   currentFolder = "",
   onBulletinPostCreated,
@@ -58,6 +61,18 @@ const DocumentList: React.FC<DocumentListProps> = ({
   const { hasRoleAccess } = useRoleAccess(user);
   
   const canPinToBulletin = hasRoleAccess('manager');
+  const canPinDocuments = hasRoleAccess('manager');
+
+  // Sort documents: pinned first, then by creation date
+  const sortedDocuments = React.useMemo(() => {
+    return [...documents].sort((a, b) => {
+      // First sort by pinned status (pinned first)
+      if (a.is_pinned && !b.is_pinned) return -1;
+      if (!a.is_pinned && b.is_pinned) return 1;
+      // Then by creation date (newest first)
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+  }, [documents]);
 
   const formatFileSize = (bytes: number) => {
     const units = ['B', 'KB', 'MB', 'GB'];
@@ -79,25 +94,59 @@ const DocumentList: React.FC<DocumentListProps> = ({
       if (error) throw error;
 
       const url = window.URL.createObjectURL(data);
-      setPreviewUrl(url);
-      setSelectedDocument(documentItem);
+      const link = document.createElement('a');
+      link.href = url;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast({
+        title: "Opening Document",
+        description: "Document is opening in a new tab"
+      });
+      
+      // Clean up the URL after a delay
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+      }, 1000);
     } catch (error) {
       console.error('Preview error:', error);
       toast({
         title: "Error",
-        description: "Failed to load document preview",
+        description: "Failed to open document preview",
         variant: "destructive"
       });
     }
   };
 
-  React.useEffect(() => {
-    return () => {
-      if (previewUrl) {
-        window.URL.revokeObjectURL(previewUrl);
-      }
-    };
-  }, [previewUrl]);
+  const handleTogglePin = async (documentItem: DocumentItem) => {
+    try {
+      const newPinStatus = !documentItem.is_pinned;
+      
+      const { error } = await supabase
+        .from('documents')
+        .update({ is_pinned: newPinStatus })
+        .eq('id', documentItem.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `Document ${newPinStatus ? 'pinned' : 'unpinned'} successfully`
+      });
+      
+      onDocumentUpdated?.();
+    } catch (error) {
+      console.error('Pin toggle error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update document pin status",
+        variant: "destructive"
+      });
+    }
+  };
 
   const handleDownload = async (documentItem: DocumentItem) => {
     try {
@@ -203,16 +252,34 @@ const DocumentList: React.FC<DocumentListProps> = ({
               </TableCell>
             </TableRow>
           ) : (
-            documents.map((document) => (
-              <TableRow key={document.id}>
+            sortedDocuments.map((document) => (
+              <TableRow 
+                key={document.id}
+                className={document.is_pinned ? "bg-primary/5 border-primary/20" : ""}
+              >
                 <TableCell className="flex items-center gap-2">
                   <FileText className="h-4 w-4" />
+                  {document.is_pinned && <Pin className="h-3 w-3 text-primary" />}
                   <span className="line-clamp-1">{document.title}</span>
+                  {document.is_pinned && (
+                    <span className="text-xs bg-primary/10 text-primary px-1 rounded">Pinned</span>
+                  )}
                 </TableCell>
                 <TableCell className={isMobile ? "hidden" : ""}>{document.file_type.split('/')[1]?.toUpperCase?.() || "-"}</TableCell>
                 <TableCell className={isMobile ? "hidden" : ""}>{formatFileSize(document.size_bytes)}</TableCell>
                 <TableCell className={isMobile ? "hidden" : ""}>{new Date(document.created_at).toLocaleDateString()}</TableCell>
                 <TableCell className="text-right space-x-1">
+                  {canPinDocuments && (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => handleTogglePin(document)}
+                      title={document.is_pinned ? "Unpin Document" : "Pin Document"}
+                      className={document.is_pinned ? "text-primary border-primary" : ""}
+                    >
+                      {document.is_pinned ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
+                    </Button>
+                  )}
                   {canPinToBulletin && (
                     <Button
                       variant="outline"
@@ -228,8 +295,9 @@ const DocumentList: React.FC<DocumentListProps> = ({
                       variant="outline"
                       size="icon"
                       onClick={() => handlePreview(document)}
+                      title="Open in New Tab"
                     >
-                      <Eye className="h-4 w-4" />
+                      <ExternalLink className="h-4 w-4" />
                     </Button>
                   )}
                   <Button
@@ -253,28 +321,6 @@ const DocumentList: React.FC<DocumentListProps> = ({
         </TableBody>
       </Table>
 
-      <Dialog open={!!previewUrl} onOpenChange={() => setPreviewUrl(null)}>
-        <DialogContent className={`
-          w-full max-h-screen p-0 overflow-hidden
-          ${isMobile ? 'max-w-full h-full' : 'max-w-[90vw] w-[900px] max-h-[90vh]'}
-        `}>
-          <DialogHeader className="px-4 py-3 border-b">
-            <DialogTitle className="text-sm sm:text-base line-clamp-1">
-              {selectedDocument?.title}
-            </DialogTitle>
-          </DialogHeader>
-          {previewUrl && (
-            <div className={`w-full ${isMobile ? 'h-[calc(100vh-60px)]' : 'h-[80vh]'}`}>
-              <iframe
-                src={previewUrl}
-                className="w-full h-full border-0"
-                title="Document Preview"
-                aria-label={`Preview of ${selectedDocument?.title}`}
-              />
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
 
       <PinToBulletinDialog
         isOpen={showPinDialog}

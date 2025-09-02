@@ -546,6 +546,7 @@ export type Database = {
           file_type: string
           folder: string | null
           id: string
+          is_pinned: boolean | null
           organization_id: string
           size_bytes: number
           storage_id: string
@@ -560,6 +561,7 @@ export type Database = {
           file_type: string
           folder?: string | null
           id?: string
+          is_pinned?: boolean | null
           organization_id: string
           size_bytes: number
           storage_id: string
@@ -574,6 +576,7 @@ export type Database = {
           file_type?: string
           folder?: string | null
           id?: string
+          is_pinned?: boolean | null
           organization_id?: string
           size_bytes?: number
           storage_id?: string

@@ -19,6 +19,7 @@ interface DocumentItem {
   created_at: string;
   size_bytes: number;
   folder?: string | null;
+  is_pinned?: boolean;
 }
 
 const DocumentsPage = () => {
@@ -162,6 +163,15 @@ const DocumentsPage = () => {
       );
     }
 
+    // Sort documents: pinned first, then by creation date
+    baseDocuments.sort((a, b) => {
+      // First sort by pinned status (pinned first)
+      if (a.is_pinned && !b.is_pinned) return -1;
+      if (!a.is_pinned && b.is_pinned) return 1;
+      // Then by creation date (newest first)
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+
     return baseDocuments;
   }, [documents, selectedFolder, sharedFolders, searchQuery]);
 
@@ -226,9 +236,10 @@ const DocumentsPage = () => {
                 folder={selectedFolder}
               />
               
-               <DocumentList 
+              <DocumentList 
                 documents={displayDocuments} 
                 onDocumentDeleted={fetchDocuments}
+                onDocumentUpdated={fetchDocuments}
                 isLoading={isLoading}
                 currentFolder={selectedFolder}
                 onBulletinPostCreated={() => {
