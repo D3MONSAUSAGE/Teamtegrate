@@ -142,6 +142,21 @@ const TrainingPage = () => {
                 </div>
               )}
 
+              {/* Onboarding Panel - Available for All Users */}
+              {!canManageContent && (
+                <div className="animate-fade-in" style={{ animationDelay: '100ms' }}>
+                   <ManagementPanel
+                     onCreateCourse={() => {}}
+                     onCreateQuiz={() => {}}
+                     onAssignContent={() => {}}
+                     onViewAnalytics={() => {}}
+                     onStartOnboarding={handleStartOnboarding}
+                     userRole={user.role}
+                     showOnlyOnboarding={true}
+                   />
+                </div>
+              )}
+
               {/* Management Panel - First for Managers/Admins */}
               {canManageContent && (
                 <div className="animate-fade-in">
@@ -150,7 +165,7 @@ const TrainingPage = () => {
                      onCreateQuiz={handleCreateQuiz}
                      onAssignContent={handleAssignContent}
                      onViewAnalytics={() => setIsEmployeeProgressOpen(true)}
-                     onStartOnboarding={onboardingInstance ? handleStartOnboarding : undefined}
+                     onStartOnboarding={handleStartOnboarding}
                      userRole={user.role}
                    />
                 </div>

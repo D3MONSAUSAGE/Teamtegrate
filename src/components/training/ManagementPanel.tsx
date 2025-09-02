@@ -28,6 +28,7 @@ interface ManagementPanelProps {
   onExportData?: () => void;
   onSettings?: () => void;
   userRole: string;
+  showOnlyOnboarding?: boolean;
 }
 
 const ManagementPanel: React.FC<ManagementPanelProps> = ({
@@ -38,10 +39,12 @@ const ManagementPanel: React.FC<ManagementPanelProps> = ({
   onStartOnboarding,
   onExportData,
   onSettings,
-  userRole
+  userRole,
+  showOnlyOnboarding = false
 }) => {
   const [showComplianceManager, setShowComplianceManager] = useState(false);
-  const quickActions = [
+  
+  const allQuickActions = [
     {
       title: 'Create Course',
       description: 'Build new training modules',
@@ -92,6 +95,10 @@ const ManagementPanel: React.FC<ManagementPanelProps> = ({
     }] : [])
   ];
 
+  const quickActions = showOnlyOnboarding 
+    ? allQuickActions.filter(action => action.title === 'Start Onboarding')
+    : allQuickActions;
+
   return (
     <>
       <Card className="bg-gradient-to-br from-muted/30 to-muted/10">
@@ -99,9 +106,13 @@ const ManagementPanel: React.FC<ManagementPanelProps> = ({
           {/* Header */}
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-              <h3 className="text-xl font-semibold">Management Center</h3>
+              <h3 className="text-xl font-semibold">
+                {showOnlyOnboarding ? 'Welcome to Your Journey' : 'Management Center'}
+              </h3>
               <div className="flex items-center gap-2">
-                <p className="text-sm text-muted-foreground">Training administration</p>
+                <p className="text-sm text-muted-foreground">
+                  {showOnlyOnboarding ? 'Get started with your onboarding' : 'Training administration'}
+                </p>
                 <Badge variant="secondary" className="text-xs">
                   {userRole}
                 </Badge>
