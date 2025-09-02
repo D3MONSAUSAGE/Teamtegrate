@@ -142,15 +142,15 @@ export const CreateFolderModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
+      <DialogContent className="max-w-lg max-h-[85vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <FolderPlus className="h-5 w-5 text-primary" />
             Create New Folder
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="flex-1 overflow-y-auto space-y-6 pr-1">
           {/* Quick Templates */}
           <div>
             <Label className="text-sm font-medium text-muted-foreground">Quick Templates</Label>
@@ -201,7 +201,7 @@ export const CreateFolderModal = ({
             {canAssignToTeams && (
               <div>
                 <Label>Visibility</Label>
-                <div className="mt-2 space-y-2">
+                <div className="mt-2 max-h-48 overflow-y-auto space-y-2 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
                   {/* Organization-wide option */}
                   <Button
                     type="button"
@@ -279,33 +279,34 @@ export const CreateFolderModal = ({
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-3 pt-4">
-            <Button 
-              onClick={handleCreateFolder} 
-              disabled={!formData.name.trim() || isCreating}
-              className="flex-1"
-            >
-              {isCreating ? (
-                <>
-                  <div className="w-4 h-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
-                  Creating...
-                </>
-              ) : (
-                <>
-                  <FolderPlus className="h-4 w-4 mr-2" />
-                  Create Folder
-                </>
-              )}
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={handleClose}
-              disabled={isCreating}
-            >
-              Cancel
-            </Button>
-          </div>
+        </div>
+        
+        {/* Action Buttons - Fixed at bottom */}
+        <div className="flex gap-3 pt-4 border-t flex-shrink-0">
+          <Button 
+            onClick={handleCreateFolder} 
+            disabled={!formData.name.trim() || isCreating}
+            className="flex-1"
+          >
+            {isCreating ? (
+              <>
+                <div className="w-4 h-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
+                Creating...
+              </>
+            ) : (
+              <>
+                <FolderPlus className="h-4 w-4 mr-2" />
+                Create Folder
+              </>
+            )}
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={handleClose}
+            disabled={isCreating}
+          >
+            Cancel
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
