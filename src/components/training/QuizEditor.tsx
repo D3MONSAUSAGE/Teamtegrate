@@ -51,12 +51,25 @@ const QuizEditor: React.FC<QuizEditorProps> = ({ open, onOpenChange, quiz }) => 
   const updateQuizMutation = useUpdateQuiz();
   const deleteQuizMutation = useDeleteQuiz();
   
-  // Get course ID from quiz to fetch modules
+  // Debug logging to understand quiz structure
+  useEffect(() => {
+    if (quiz && open) {
+      console.log('🔍 QuizEditor: Quiz data structure:', {
+        quiz,
+        training_modules: quiz.training_modules,
+        course_id_path: quiz?.training_modules?.course_id,
+        module_id: quiz.module_id
+      });
+    }
+  }, [quiz, open]);
+  
+  // Get course ID from quiz to fetch modules - Fixed path
   const courseId = quiz?.training_modules?.course_id;
   const { data: modules = [] } = useTrainingModules(courseId);
 
   useEffect(() => {
     if (quiz && open) {
+      console.log('📝 QuizEditor: Loading form data for quiz:', quiz.id);
       setFormData({
         title: quiz.title || '',
         description: quiz.description || '',
