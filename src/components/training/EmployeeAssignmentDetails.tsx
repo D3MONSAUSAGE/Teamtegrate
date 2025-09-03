@@ -72,7 +72,7 @@ const EmployeeAssignmentDetails: React.FC<EmployeeAssignmentDetailsProps> = ({
   const exportAssignmentData = () => {
     const csvData = assignments.map(assignment => ({
       'Type': assignment.assignment_type,
-      'Content ID': assignment.content_id,
+      'Content': assignment.content_title || assignment.content_id || 'Unknown',
       'Status': assignment.status,
       'Assigned Date': format(new Date(assignment.assigned_at), 'yyyy-MM-dd'),
       'Due Date': assignment.due_date ? format(new Date(assignment.due_date), 'yyyy-MM-dd') : 'No due date',
@@ -154,8 +154,8 @@ const EmployeeAssignmentDetails: React.FC<EmployeeAssignmentDetailsProps> = ({
                               }
                             </div>
                             <div>
-                              <p className="font-medium">{assignment.assignment_type === 'course' ? 'Course' : 'Quiz'}</p>
-                              <p className="text-sm text-muted-foreground">ID: {assignment.content_id}</p>
+                              <p className="font-medium">{assignment.content_title || assignment.content_id || 'Unknown Content'}</p>
+                              <p className="text-sm text-muted-foreground">{assignment.assignment_type === 'course' ? 'Course' : 'Quiz'}</p>
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
@@ -229,8 +229,8 @@ const EmployeeAssignmentDetails: React.FC<EmployeeAssignmentDetailsProps> = ({
                               <BookOpen className="h-4 w-4 text-blue-600" />
                             </div>
                             <div>
-                              <p className="font-medium">Course Assignment</p>
-                              <p className="text-sm text-muted-foreground">Course ID: {assignment.content_id}</p>
+                              <p className="font-medium">{assignment.content_title || assignment.content_id || 'Unknown Course'}</p>
+                              <p className="text-sm text-muted-foreground">Course</p>
                             </div>
                           </div>
                           <Badge variant="outline" className={getStatusColor(assignment.status)}>
@@ -279,8 +279,8 @@ const EmployeeAssignmentDetails: React.FC<EmployeeAssignmentDetailsProps> = ({
                               <Brain className="h-4 w-4 text-purple-600" />
                             </div>
                             <div>
-                              <p className="font-medium">Quiz Assignment</p>
-                              <p className="text-sm text-muted-foreground">Quiz ID: {assignment.content_id}</p>
+                              <p className="font-medium">{assignment.content_title || assignment.content_id || 'Unknown Quiz'}</p>
+                              <p className="text-sm text-muted-foreground">Quiz</p>
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
