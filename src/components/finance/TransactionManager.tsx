@@ -12,14 +12,14 @@ import { useTransactions } from '@/hooks/useTransactions';
 
 interface TransactionManagerProps {
   selectedWeek: Date;
-  selectedLocation?: string;
-  locations: string[];
+  selectedTeam?: string;
+  teams: Array<{id: string; name: string}>;
 }
 
 const TransactionManager: React.FC<TransactionManagerProps> = ({
   selectedWeek,
-  selectedLocation,
-  locations
+  selectedTeam,
+  teams
 }) => {
   const [showTransactionForm, setShowTransactionForm] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<any>(null);
@@ -32,7 +32,7 @@ const TransactionManager: React.FC<TransactionManagerProps> = ({
     updateTransaction,
     deleteTransaction,
     getTransactionSummary
-  } = useTransactions(selectedWeek, selectedLocation);
+  } = useTransactions(selectedWeek, selectedTeam);
 
   const summary = getTransactionSummary();
 
@@ -121,7 +121,7 @@ const TransactionManager: React.FC<TransactionManagerProps> = ({
           <CardTitle>Financial Transactions</CardTitle>
           <CardDescription>
             Week of {format(selectedWeek, 'MMM d, yyyy')} 
-            {selectedLocation && selectedLocation !== 'all' && ` • ${selectedLocation}`}
+            {selectedTeam && selectedTeam !== 'all' && ` • ${teams.find(t => t.id === selectedTeam)?.name}`}
           </CardDescription>
         </CardHeader>
       </Card>
@@ -158,7 +158,7 @@ const TransactionManager: React.FC<TransactionManagerProps> = ({
           {showTransactionForm && (
             <TransactionForm
               categories={categories}
-              locations={locations}
+              teams={teams}
               editingTransaction={editingTransaction}
               onSubmit={editingTransaction ? handleEditTransaction : handleAddTransaction}
               onCancel={() => {
@@ -183,12 +183,12 @@ const TransactionManager: React.FC<TransactionManagerProps> = ({
         <TabsContent value="recurring" className="space-y-4">
           <RecurringTransactionManager 
             categories={categories}
-            locations={locations}
+            teams={teams}
           />
         </TabsContent>
 
         <TabsContent value="petty-cash" className="space-y-4">
-          <PettyCashManager locations={locations} />
+          <PettyCashManager teams={teams} />
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-4">

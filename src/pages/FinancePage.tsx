@@ -23,11 +23,11 @@ const FinancePage: React.FC = () => {
   const isMobile = useIsMobile();
   
   
-  // Get sales data for locations and week selection
   const {
     selectedWeek,
-    selectedLocation,
-    locations,
+    selectedTeam,
+    setSelectedTeam,
+    teams,
     weeksWithData
   } = useSalesManager();
 
@@ -60,8 +60,8 @@ const FinancePage: React.FC = () => {
         <TabsContent value="transactions" className="space-y-4">
           <TransactionManager
             selectedWeek={selectedWeek}
-            selectedLocation={selectedLocation}
-            locations={locations}
+            selectedTeam={selectedTeam}
+            teams={teams}
           />
         </TabsContent>
       </Tabs>

@@ -13,7 +13,7 @@ import { TransactionCategory, Transaction } from '@/types/transactions';
 
 interface TransactionFormProps {
   categories: TransactionCategory[];
-  locations: string[];
+  teams: Array<{id: string; name: string}>;
   editingTransaction?: Transaction | null;
   onSubmit: (transaction: any) => Promise<void>;
   onCancel: () => void;
@@ -21,7 +21,7 @@ interface TransactionFormProps {
 
 const TransactionForm: React.FC<TransactionFormProps> = ({
   categories,
-  locations,
+  teams,
   editingTransaction,
   onSubmit,
   onCancel
@@ -32,7 +32,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
     amount: '',
     description: '',
     date: new Date(),
-    location: '',
+    team_id: '',
     vendor_name: '',
     notes: '',
     tags: [] as string[]
@@ -51,7 +51,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
         amount: editingTransaction.amount.toString(),
         description: editingTransaction.description,
         date: new Date(editingTransaction.date),
-        location: editingTransaction.location === 'none' ? '' : editingTransaction.location || '',
+        team_id: editingTransaction.team_id || '',
         vendor_name: editingTransaction.vendor_name || '',
         notes: editingTransaction.notes || '',
         tags: editingTransaction.tags || []
@@ -78,7 +78,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
         ...formData,
         amount: parseFloat(formData.amount),
         date: format(formData.date, 'yyyy-MM-dd'),
-        location: formData.location === 'none' ? null : formData.location || null,
+        team_id: formData.team_id === 'none' ? null : formData.team_id || null,
         tags: formData.tags.length > 0 ? formData.tags : null
       });
     } catch (error) {
@@ -222,22 +222,22 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
             </div>
           </div>
 
-          {/* Location and Vendor */}
+          {/* Team and Vendor */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="location">Location (Optional)</Label>
+              <Label htmlFor="team">Team (Optional)</Label>
               <Select
-                value={formData.location}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, location: value }))}
+                value={formData.team_id}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, team_id: value }))}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select location" />
+                  <SelectValue placeholder="Select team" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">No specific location</SelectItem>
-                  {locations.map((location) => (
-                    <SelectItem key={location} value={location}>
-                      {location}
+                  <SelectItem value="none">No specific team</SelectItem>
+                  {teams.map((team) => (
+                    <SelectItem key={team.id} value={team.id}>
+                      {team.name}
                     </SelectItem>
                   ))}
                 </SelectContent>

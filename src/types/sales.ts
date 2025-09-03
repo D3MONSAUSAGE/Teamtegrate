@@ -30,6 +30,7 @@ export interface SalesData {
   id: string;
   date: string;
   location: string;
+  team_id?: string;
   grossSales: number;
   netSales: number;
   orderCount: number;
@@ -109,6 +110,7 @@ export interface WeeklySalesData {
 
 export interface ParsedSalesData extends Omit<SalesData, 'date'> {
   date: Date;
+  team_id?: string;
 }
 
 // Removed sample data - now using real data from Supabase

@@ -3,6 +3,7 @@ import { SalesData, WeeklySalesData } from '@/types/sales';
 import { salesDataService, SalesDataFilters } from '@/services/SalesDataService';
 import { startOfWeek, endOfWeek, format, parseISO, isSameWeek } from 'date-fns';
 import { toast } from '@/components/ui/sonner';
+import { useTeams } from '@/hooks/useTeams';
 
 interface UseSalesManagerReturn {
   // Data
@@ -18,15 +19,15 @@ interface UseSalesManagerReturn {
   setSelectedWeek: (week: Date) => void;
   weeksWithData: Date[];
   
-  // Location filtering
-  selectedLocation: string;
-  setSelectedLocation: (location: string) => void;
-  locations: string[];
+  // Team filtering  
+  selectedTeam: string;
+  setSelectedTeam: (team: string) => void;
+  teams: Array<{id: string; name: string}>;
   
   // Data operations
   addSalesData: (data: SalesData, replaceExisting?: boolean) => Promise<void>;
   deleteSalesData: (id: string) => Promise<void>;
-  deleteSalesDataByDate: (date: string, location: string) => Promise<void>;
+  deleteSalesDataByDate: (date: string, teamId: string) => Promise<void>;
   refreshData: () => Promise<void>;
   
   // Statistics
@@ -44,15 +45,18 @@ export const useSalesManager = (initialFilters: SalesDataFilters = {}): UseSales
   const [error, setError] = useState<string | null>(null);
   
   // Filtering state
-  const [selectedLocation, setSelectedLocation] = useState<string>('all');
+  const [selectedTeam, setSelectedTeam] = useState<string>('all');
   const [selectedWeek, setSelectedWeek] = useState<Date>(() => new Date());
   const [filters, setFilters] = useState<SalesDataFilters>(initialFilters);
 
+  // Get teams data
+  const { teams: teamsData } = useTeams();
+
   // Derived data
-  const locations = useMemo(() => {
-    const uniqueLocations = [...new Set(salesData.map(item => item.location))];
-    return ['all', ...uniqueLocations];
-  }, [salesData]);
+  const teams = useMemo(() => {
+    const allOption = { id: 'all', name: 'All Teams' };
+    return [allOption, ...(teamsData || [])];
+  }, [teamsData]);
 
   const weeksWithData = useMemo(() => {
     const weeks = new Map<string, Date>();
@@ -72,9 +76,9 @@ export const useSalesManager = (initialFilters: SalesDataFilters = {}): UseSales
       ...item,
       date: parseISO(item.date)
     })).filter(item => 
-      selectedLocation === 'all' || item.location === selectedLocation
+      selectedTeam === 'all' || item.team_id === selectedTeam
     );
-  }, [salesData, selectedLocation]);
+  }, [salesData, selectedTeam]);
 
   // Weekly data calculation
   const weeklyData = useMemo((): WeeklySalesData | null => {
@@ -88,10 +92,12 @@ export const useSalesManager = (initialFilters: SalesDataFilters = {}): UseSales
     );
     
     if (weekSales.length === 0) {
+      const selectedTeamName = selectedTeam === 'all' ? 'All Teams' : 
+        teams.find(t => t.id === selectedTeam)?.name || selectedTeam;
       return {
         weekStart,
         weekEnd,
-        location: selectedLocation === 'all' ? 'All Locations' : selectedLocation,
+        location: selectedTeamName,
         dailySales: [],
         totals: {
           nonCash: 0,
@@ -145,14 +151,16 @@ export const useSalesManager = (initialFilters: SalesDataFilters = {}): UseSales
       date: format(sale.date, 'yyyy-MM-dd')
     }));
     
+    const selectedTeamName = selectedTeam === 'all' ? 'All Teams' : 
+      teams.find(t => t.id === selectedTeam)?.name || selectedTeam;
     return {
       weekStart,
       weekEnd,
-      location: selectedLocation === 'all' ? 'All Locations' : selectedLocation,
+      location: selectedTeamName,
       dailySales: dailySalesWithStringDates,
       totals
     };
-  }, [filteredSalesData, selectedWeek, selectedLocation]);
+  }, [filteredSalesData, selectedWeek, selectedTeam, teams]);
 
   // Data fetching
   const fetchData = useCallback(async (showLoadingState = true) => {
@@ -163,7 +171,7 @@ export const useSalesManager = (initialFilters: SalesDataFilters = {}): UseSales
       console.log('[useSalesManager] Fetching sales data with filters:', filters);
       const data = await salesDataService.fetchSalesData({
         ...filters,
-        location: selectedLocation !== 'all' ? selectedLocation : undefined
+        team_id: selectedTeam !== 'all' ? selectedTeam : undefined
       });
       
       setSalesData(data);
@@ -182,7 +190,7 @@ export const useSalesManager = (initialFilters: SalesDataFilters = {}): UseSales
     } finally {
       setIsLoading(false);
     }
-  }, [filters, selectedLocation, weeksWithData.length]);
+  }, [filters, selectedTeam, weeksWithData.length]);
 
   // CRUD operations
   const addSalesData = useCallback(async (newData: SalesData, replaceExisting: boolean = false) => {
@@ -216,11 +224,11 @@ export const useSalesManager = (initialFilters: SalesDataFilters = {}): UseSales
     }
   }, [fetchData]);
 
-  const deleteSalesDataByDate = useCallback(async (date: string, location: string) => {
+  const deleteSalesDataByDate = useCallback(async (date: string, teamId: string) => {
     setError(null);
     
     try {
-      await salesDataService.deleteSalesDataByDate(date, location);
+      await salesDataService.deleteSalesDataByDate(date, teamId);
       // Refresh data after successful deletion
       await fetchData(false);
     } catch (err) {
@@ -285,10 +293,10 @@ export const useSalesManager = (initialFilters: SalesDataFilters = {}): UseSales
     setSelectedWeek,
     weeksWithData,
     
-    // Location filtering
-    selectedLocation,
-    setSelectedLocation,
-    locations,
+    // Team filtering
+    selectedTeam,
+    setSelectedTeam,
+    teams,
     
     // Data operations
     addSalesData,

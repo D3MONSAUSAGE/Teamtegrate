@@ -19,15 +19,15 @@ const DailySalesManager: React.FC = () => {
     isUploading,
     selectedWeek,
     setSelectedWeek,
-    selectedLocation,
-    setSelectedLocation,
-    locations,
     weeksWithData,
-    totalRecords,
+    selectedTeam,
+    setSelectedTeam,
+    teams,
     addSalesData,
     deleteSalesData,
     deleteSalesDataByDate,
     refreshData,
+    totalRecords,
     error
   } = useSalesManager();
 
@@ -103,32 +103,32 @@ const DailySalesManager: React.FC = () => {
             </TabsList>
             
             <TabsContent value="weekly" className="mt-6">
-              <WeeklySalesView
-                weeklyData={weeklyData}
-                selectedWeek={selectedWeek}
-                setSelectedWeek={setSelectedWeek}
-                selectedLocation={selectedLocation}
-                setSelectedLocation={setSelectedLocation}
-                locations={locations}
-                weeksWithData={weeksWithData}
-                totalRecords={totalRecords}
-                isLoading={isLoading}
-                onDeleteDay={deleteSalesDataByDate}
-              />
+          <WeeklySalesView
+            weeklyData={weeklyData}
+            selectedWeek={selectedWeek}
+            setSelectedWeek={setSelectedWeek}
+            selectedTeam={selectedTeam}
+            setSelectedTeam={setSelectedTeam}
+            teams={teams}
+            weeksWithData={weeksWithData}
+            totalRecords={totalRecords}
+            isLoading={isLoading}
+            onDeleteDay={deleteSalesDataByDate}
+          />
             </TabsContent>
             
             <TabsContent value="report" className="mt-6">
-              <WeeklyDetailedReport
-                weeklyData={weeklyData}
-                selectedWeek={selectedWeek}
-                setSelectedWeek={setSelectedWeek}
-                selectedLocation={selectedLocation}
-                setSelectedLocation={setSelectedLocation}
-                locations={locations}
-                weeksWithData={weeksWithData}
-                salesData={parsedSalesData}
-                isLoading={isLoading}
-              />
+          <WeeklyDetailedReport
+            weeklyData={weeklyData}
+            selectedWeek={selectedWeek}
+            setSelectedWeek={setSelectedWeek}
+            selectedTeam={selectedTeam}
+            setSelectedTeam={setSelectedTeam}
+            teams={teams}
+            weeksWithData={weeksWithData}
+            salesData={parsedSalesData}
+            isLoading={isLoading}
+          />
             </TabsContent>
             
             <TabsContent value="upload" className="mt-6">

@@ -26,12 +26,12 @@ import { format, addDays, addWeeks, addMonths, addYears } from 'date-fns';
 
 interface RecurringTransactionManagerProps {
   categories: TransactionCategory[];
-  locations: string[];
+  teams: Array<{id: string; name: string}>;
 }
 
 const RecurringTransactionManager: React.FC<RecurringTransactionManagerProps> = ({
   categories,
-  locations
+  teams
 }) => {
   const [recurringTransactions, setRecurringTransactions] = useState<RecurringTransaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,7 +48,7 @@ const RecurringTransactionManager: React.FC<RecurringTransactionManagerProps> = 
     frequency: 'monthly' as 'daily' | 'weekly' | 'monthly' | 'yearly',
     start_date: new Date(),
     end_date: null as Date | null,
-    location: '',
+    team_id: '',
     vendor_name: '',
     is_active: true
   });
@@ -119,7 +119,7 @@ const RecurringTransactionManager: React.FC<RecurringTransactionManagerProps> = 
         end_date: hasEndDate && formData.end_date ? format(formData.end_date, 'yyyy-MM-dd') : null,
         next_generation_date: format(nextGenDate, 'yyyy-MM-dd'),
         vendor_name: formData.vendor_name || null,
-        location: formData.location === 'none' ? '' : formData.location || null
+        team_id: formData.team_id === 'none' ? null : formData.team_id || null
       };
 
       if (editingTransaction) {
@@ -183,7 +183,7 @@ const RecurringTransactionManager: React.FC<RecurringTransactionManagerProps> = 
       frequency: 'monthly',
       start_date: new Date(),
       end_date: null,
-      location: '',
+      team_id: '',
       vendor_name: '',
       is_active: true
     });
@@ -201,7 +201,7 @@ const RecurringTransactionManager: React.FC<RecurringTransactionManagerProps> = 
       frequency: transaction.frequency,
       start_date: new Date(transaction.start_date),
       end_date: transaction.end_date ? new Date(transaction.end_date) : null,
-      location: transaction.location || '',
+      team_id: transaction.team_id || '',
       vendor_name: transaction.vendor_name || '',
       is_active: transaction.is_active
     });
@@ -276,7 +276,7 @@ const RecurringTransactionManager: React.FC<RecurringTransactionManagerProps> = 
           amount: recurring.amount,
           description: `${recurring.description} (Auto-generated)`,
           date: format(new Date(), 'yyyy-MM-dd'),
-          location: recurring.location || null,
+          team_id: recurring.team_id || null,
           vendor_name: recurring.vendor_name || null,
           is_recurring: true,
           recurring_template_id: recurring.id
@@ -582,25 +582,25 @@ const RecurringTransactionManager: React.FC<RecurringTransactionManagerProps> = 
 
               {/* Optional Fields */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="location">Location (Optional)</Label>
-                  <Select
-                    value={formData.location}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, location: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select location" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">No specific location</SelectItem>
-                      {locations.map((location) => (
-                        <SelectItem key={location} value={location}>
-                          {location}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div>
+                <Label htmlFor="team">Team (Optional)</Label>
+                <Select
+                  value={formData.team_id}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, team_id: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select team" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No specific team</SelectItem>
+                    {teams.map((team) => (
+                      <SelectItem key={team.id} value={team.id}>
+                        {team.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
                 <div>
                   <Label htmlFor="vendor">Vendor/Supplier (Optional)</Label>
@@ -679,7 +679,9 @@ const RecurringTransactionManager: React.FC<RecurringTransactionManagerProps> = 
                             {transaction.end_date && (
                               <span>Ends {format(new Date(transaction.end_date), 'MMM d, yyyy')}</span>
                             )}
-                            {transaction.location && <span>{transaction.location}</span>}
+                            {transaction.team_id && teams.find(t => t.id === transaction.team_id)?.name && (
+                              <span>{teams.find(t => t.id === transaction.team_id)?.name}</span>
+                            )}
                           </div>
 
                           {transaction.next_generation_date && transaction.is_active && (

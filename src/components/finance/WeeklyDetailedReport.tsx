@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { CalendarDays, ChevronLeft, ChevronRight, TrendingUp, MapPin, Download } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, TrendingUp, Users, Download, Calendar, BarChart3 } from "lucide-react";
 import { format, startOfWeek, parseISO } from 'date-fns';
 import { WeeklySalesData, ParsedSalesData } from '@/types/sales';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
@@ -14,9 +14,9 @@ interface WeeklyDetailedReportProps {
   weeklyData: WeeklySalesData | null;
   selectedWeek: Date;
   setSelectedWeek: (week: Date) => void;
-  selectedLocation: string;
-  setSelectedLocation: (location: string) => void;
-  locations: string[];
+  selectedTeam: string;
+  setSelectedTeam: (team: string) => void;
+  teams: Array<{id: string; name: string}>;
   weeksWithData: Date[];
   salesData: ParsedSalesData[];
   isLoading: boolean;
@@ -26,9 +26,9 @@ const WeeklyDetailedReport: React.FC<WeeklyDetailedReportProps> = ({
   weeklyData,
   selectedWeek,
   setSelectedWeek,
-  selectedLocation,
-  setSelectedLocation,
-  locations,
+  selectedTeam,
+  setSelectedTeam,
+  teams,
   weeksWithData,
   salesData,
   isLoading
@@ -47,8 +47,8 @@ const WeeklyDetailedReport: React.FC<WeeklyDetailedReportProps> = ({
   
   const filteredWeekData = salesData.filter(item => {
     const itemDate = typeof item.date === 'string' ? parseISO(item.date) : item.date;
-    const locationMatch = selectedLocation === 'all' || item.location === selectedLocation;
-    return itemDate >= weekStart && itemDate <= weekEnd && locationMatch;
+    const teamMatch = selectedTeam === 'all' || item.team_id === selectedTeam;
+    return itemDate >= weekStart && itemDate <= weekEnd && teamMatch;
   });
 
   // Aggregate data for different views
@@ -205,8 +205,8 @@ const WeeklyDetailedReport: React.FC<WeeklyDetailedReportProps> = ({
   console.log('WeeklyDetailedReport Debug:', {
     selectedWeek: format(selectedWeek, 'yyyy-MM-dd'),
     weeksWithData: weeksWithData.map(w => format(w, 'yyyy-MM-dd')),
-    selectedLocation,
-    locations,
+    selectedTeam,
+    teams,
     weeklyData: weeklyData ? 'exists' : 'null',
     salesDataCount: salesData.length
   });
@@ -217,7 +217,7 @@ const WeeklyDetailedReport: React.FC<WeeklyDetailedReportProps> = ({
     const csvData = [
       ['Weekly Detailed Sales Report'],
       [`Week: ${format(selectedWeek, 'MMM dd, yyyy')} - ${format(weekEnd, 'MMM dd, yyyy')}`],
-      [`Location: ${selectedLocation === 'all' ? 'All Locations' : selectedLocation}`],
+      [`Team: ${selectedTeam === 'all' ? 'All Teams' : teams.find(t => t.id === selectedTeam)?.name || selectedTeam}`],
       [''],
       ['Summary'],
       ['Metric', 'Value'],
@@ -361,15 +361,15 @@ const WeeklyDetailedReport: React.FC<WeeklyDetailedReportProps> = ({
             </div>
 
             <div className="flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-muted-foreground" />
-              <Select value={selectedLocation} onValueChange={setSelectedLocation}>
+              <Users className="w-4 h-4 text-muted-foreground" />
+              <Select value={selectedTeam} onValueChange={setSelectedTeam}>
                 <SelectTrigger className="w-[140px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {locations.map((location) => (
-                    <SelectItem key={location} value={location}>
-                      {location === 'all' ? 'All Locations' : location}
+                  {teams.map((team) => (
+                    <SelectItem key={team.id} value={team.id}>
+                      {team.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -446,20 +446,83 @@ const WeeklyDetailedReport: React.FC<WeeklyDetailedReportProps> = ({
             </TabsList>
 
             <TabsContent value="daily" className="mt-6">
-              <div className="space-y-4">
-                <h4 className="text-lg font-semibold">Daily Sales Trend</h4>
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={dailyData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
-                      <YAxis />
-                      <Tooltip formatter={(value) => formatCurrency(value as number)} />
-                      <Bar dataKey="netSales" fill="hsl(var(--chart-1))" name="Net Sales" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
+              <Card className="bg-gradient-to-br from-background to-muted/20">
+                <CardHeader className="pb-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <BarChart3 className="h-5 w-5 text-primary" />
+                      <CardTitle className="text-lg">Daily Sales Performance</CardTitle>
+                    </div>
+                    <Badge variant="outline" className="text-xs">
+                      Week of {format(selectedWeek, 'MMM dd')}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={dailyData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                        <defs>
+                          <linearGradient id="salesGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8}/>
+                            <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.2}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                        <XAxis 
+                          dataKey="date" 
+                          className="text-xs"
+                          tick={{ fontSize: 12 }}
+                        />
+                        <YAxis 
+                          className="text-xs"
+                          tick={{ fontSize: 12 }}
+                          tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                        />
+                        <Tooltip 
+                          formatter={(value, name) => [formatCurrency(value as number), name]}
+                          contentStyle={{
+                            backgroundColor: 'hsl(var(--background))',
+                            border: '1px solid hsl(var(--border))',
+                            borderRadius: '8px',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+                          }}
+                        />
+                        <Bar 
+                          dataKey="netSales" 
+                          fill="url(#salesGradient)" 
+                          name="Net Sales"
+                          radius={[4, 4, 0, 0]}
+                          className="hover:opacity-80 transition-opacity"
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                  
+                  {/* Daily Totals Summary */}
+                  <div className="mt-6 pt-4 border-t">
+                    <h5 className="text-sm font-medium mb-3 flex items-center gap-2">
+                      <Calendar className="h-4 w-4" />
+                      Daily Breakdown
+                    </h5>
+                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
+                      {dailyData.map((day, index) => (
+                        <div key={index} className="text-center p-2 rounded-lg bg-muted/30">
+                          <div className="text-xs font-medium text-muted-foreground mb-1">
+                            {day.date}
+                          </div>
+                          <div className="text-sm font-semibold text-primary">
+                            {formatCurrency(day.netSales)}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {day.orders} orders
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </TabsContent>
 
             <TabsContent value="destinations" className="mt-6">

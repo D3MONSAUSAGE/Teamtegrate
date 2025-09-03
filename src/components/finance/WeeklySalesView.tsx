@@ -10,7 +10,7 @@ import {
   ChevronLeft, 
   ChevronRight, 
   TrendingUp,
-  MapPin,
+  Users,
   CalendarDays
 } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
@@ -22,22 +22,22 @@ interface WeeklySalesViewProps {
   weeklyData: WeeklySalesData | null;
   selectedWeek: Date;
   setSelectedWeek: (week: Date) => void;
-  selectedLocation: string;
-  setSelectedLocation: (location: string) => void;
-  locations: string[];
+  selectedTeam: string;
+  setSelectedTeam: (team: string) => void;
+  teams: Array<{id: string; name: string}>;
   weeksWithData: Date[];
   totalRecords: number;
   isLoading: boolean;
-  onDeleteDay?: (date: string, location: string) => Promise<void>;
+  onDeleteDay?: (date: string, teamId: string) => Promise<void>;
 }
 
 const WeeklySalesView: React.FC<WeeklySalesViewProps> = ({
   weeklyData,
   selectedWeek,
   setSelectedWeek,
-  selectedLocation,
-  setSelectedLocation,
-  locations,
+  selectedTeam,
+  setSelectedTeam,
+  teams,
   weeksWithData,
   totalRecords,
   isLoading,
@@ -156,7 +156,7 @@ const WeeklySalesView: React.FC<WeeklySalesViewProps> = ({
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-primary" />
+                <Users className="h-4 w-4 text-primary" />
                 <span className="font-medium">Weeks with Data:</span>
                 <Badge variant="outline">{weeksWithData.length}</Badge>
               </div>
@@ -215,16 +215,16 @@ const WeeklySalesView: React.FC<WeeklySalesViewProps> = ({
             </Select>
           )}
           
-          {/* Location Filter */}
-          <Select value={selectedLocation} onValueChange={setSelectedLocation}>
+          {/* Team Filter */}
+          <Select value={selectedTeam} onValueChange={setSelectedTeam}>
             <SelectTrigger className="w-48">
-              <MapPin className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="Select location" />
+              <Users className="h-4 w-4 mr-2" />
+              <SelectValue placeholder="Select team" />
             </SelectTrigger>
             <SelectContent>
-              {locations.map(location => (
-                <SelectItem key={location} value={location}>
-                  {location === 'all' ? 'All Locations' : location}
+              {teams.map(team => (
+                <SelectItem key={team.id} value={team.id}>
+                  {team.name}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -260,7 +260,7 @@ const WeeklySalesView: React.FC<WeeklySalesViewProps> = ({
                 <h3 className="text-lg font-medium">No Sales Data Found</h3>
                 <p className="text-muted-foreground">
                   No sales data found for {format(selectedWeek, 'MMM dd')} - {format(endOfWeek(selectedWeek, { weekStartsOn: 1 }), 'MMM dd, yyyy')}
-                  {selectedLocation !== 'all' && ` at ${selectedLocation}`}
+                  {selectedTeam !== 'all' && ` for ${teams.find(t => t.id === selectedTeam)?.name}`}
                 </p>
               </div>
               

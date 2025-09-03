@@ -14,10 +14,10 @@ import { PettyCashBox, PettyCashTransaction } from '@/types/transactions';
 import { format } from 'date-fns';
 
 interface PettyCashManagerProps {
-  locations: string[];
+  teams: Array<{id: string; name: string}>;
 }
 
-const PettyCashManager: React.FC<PettyCashManagerProps> = ({ locations }) => {
+const PettyCashManager: React.FC<PettyCashManagerProps> = ({ teams }) => {
   const [cashBoxes, setCashBoxes] = useState<PettyCashBox[]>([]);
   const [transactions, setTransactions] = useState<PettyCashTransaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,7 +29,7 @@ const PettyCashManager: React.FC<PettyCashManagerProps> = ({ locations }) => {
 
   const [newBoxForm, setNewBoxForm] = useState({
     name: '',
-    location: '',
+    team_id: '',
     initial_amount: ''
   });
 
@@ -87,7 +87,7 @@ const PettyCashManager: React.FC<PettyCashManagerProps> = ({ locations }) => {
   const createCashBox = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!newBoxForm.name || !newBoxForm.location || !newBoxForm.initial_amount) {
+    if (!newBoxForm.name || !newBoxForm.team_id || !newBoxForm.initial_amount) {
       toast({
         title: "Error",
         description: "Please fill in all required fields",
@@ -103,7 +103,7 @@ const PettyCashManager: React.FC<PettyCashManagerProps> = ({ locations }) => {
         .from('petty_cash_boxes')
         .insert({
           name: newBoxForm.name,
-          location: newBoxForm.location,
+          team_id: newBoxForm.team_id,
           initial_amount: initialAmount,
           current_balance: initialAmount
         } as any)
@@ -113,7 +113,7 @@ const PettyCashManager: React.FC<PettyCashManagerProps> = ({ locations }) => {
       if (error) throw error;
 
       setCashBoxes(prev => [data, ...prev]);
-      setNewBoxForm({ name: '', location: '', initial_amount: '' });
+      setNewBoxForm({ name: '', team_id: '', initial_amount: '' });
       setShowNewBoxForm(false);
       
       toast({
@@ -587,18 +587,18 @@ const PettyCashManager: React.FC<PettyCashManagerProps> = ({ locations }) => {
                     </div>
 
                     <div>
-                      <Label htmlFor="location">Location</Label>
+                      <Label htmlFor="team">Team</Label>
                       <Select
-                        value={newBoxForm.location}
-                        onValueChange={(value) => setNewBoxForm(prev => ({ ...prev, location: value }))}
+                        value={newBoxForm.team_id}
+                        onValueChange={(value) => setNewBoxForm(prev => ({ ...prev, team_id: value }))}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select location" />
+                          <SelectValue placeholder="Select team" />
                         </SelectTrigger>
                         <SelectContent>
-                          {locations.map((location) => (
-                            <SelectItem key={location} value={location}>
-                              {location}
+                          {teams.map((team) => (
+                            <SelectItem key={team.id} value={team.id}>
+                              {team.name}
                             </SelectItem>
                           ))}
                         </SelectContent>

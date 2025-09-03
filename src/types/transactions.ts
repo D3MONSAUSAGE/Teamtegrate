@@ -20,6 +20,7 @@ export interface Transaction {
   description: string;
   date: string;
   location?: string;
+  team_id?: string;
   receipt_url?: string;
   vendor_name?: string;
   is_recurring: boolean;
@@ -43,6 +44,7 @@ export interface RecurringTransaction {
   start_date: string;
   end_date?: string;
   location?: string;
+  team_id?: string;
   vendor_name?: string;
   is_active: boolean;
   next_generation_date?: string;

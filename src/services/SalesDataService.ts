@@ -6,6 +6,7 @@ export interface SalesDataFilters {
   organization_id?: string;
   user_id?: string;
   location?: string;
+  team_id?: string;
   date_from?: string;
   date_to?: string;
 }

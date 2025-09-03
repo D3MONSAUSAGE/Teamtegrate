@@ -48,7 +48,7 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>('idle');
   const [uploadProgress, setUploadProgress] = useState(0);
   const [salesDate, setSalesDate] = useState<Date | undefined>(new Date());
-  const [location, setLocation] = useState('Santa Clarita');
+  const [teamId, setTeamId] = useState('');
   const [files, setFiles] = useState<FileWithPreview[]>([]);
   const [error, setError] = useState<string>('');
   const [isDateExtracted, setIsDateExtracted] = useState(false);
@@ -152,12 +152,12 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
       if (!replaceExisting) {
         const existingCheck = await salesDataService.checkForExistingSalesData(
           salesDate.toISOString().split('T')[0], 
-          location
+          teamId
         );
         
         if (existingCheck.exists) {
           // Parse the PDF first to show comparison
-          const parseResult = await parseBrinkPOSReport(files[0], location, salesDate);
+          const parseResult = await parseBrinkPOSReport(files[0], teamId, salesDate);
           if (parseResult.success && parseResult.data) {
             setExistingData(existingCheck.data);
             setPendingUpload(parseResult.data);
@@ -180,7 +180,7 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
       }, 300);
       
       // Parse the PDF
-      const parseResult = await parseBrinkPOSReport(files[0], location, salesDate);
+      const parseResult = await parseBrinkPOSReport(files[0], teamId, salesDate);
       
       clearInterval(progressInterval);
       setUploadProgress(90);
@@ -336,11 +336,11 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
         </div>
         
         <div className="space-y-2">
-          <label className="text-sm font-medium">Location</label>
+          <label className="text-sm font-medium">Team</label>
           <Input
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            placeholder="Enter location"
+            value={teamId}
+            onChange={(e) => setTeamId(e.target.value)}
+            placeholder="Enter team ID"
           />
         </div>
       </div>
@@ -473,7 +473,7 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
               Duplicate Sales Data Detected
             </DialogTitle>
             <DialogDescription>
-              Sales data for {salesDate && format(salesDate, "PPP")} at {location} already exists. 
+              Sales data for {salesDate && format(salesDate, "PPP")} for this team already exists. 
               Would you like to replace it with the new data?
             </DialogDescription>
           </DialogHeader>
