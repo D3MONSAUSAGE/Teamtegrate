@@ -164,12 +164,12 @@ const TimeTrackingPage = () => {
             </Card>
           ) : (
             <>
-              {/* Personal Schedule for all users */}
-              <ScheduleEmployeeDashboard />
+              {/* Personal Schedule for non-managers or when no team selected */}
+              {(!canManageTeams || !selectedTeamId) && <ScheduleEmployeeDashboard />}
               
               {/* Manager Schedule Management */}
               {canManageTeams && (
-                <div className="mt-6">
+                <div className={!selectedTeamId ? "mt-6" : ""}>
                   <h3 className="text-lg font-semibold mb-4">Schedule Management</h3>
                   <ScheduleManagerDashboard />
                 </div>

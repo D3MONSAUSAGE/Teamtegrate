@@ -120,17 +120,16 @@ export const TeamMembersGridView: React.FC<TeamMembersGridViewProps> = ({
   // Convert team members to display format with real stats
   const memberStats: TeamMemberStats[] = teamMembers.map(member => {
     const userData = userTimeData.get(member.id);
-    const stats = teamStats.find(s => s.userId === member.id);
     
     return {
       userId: member.id,
       name: member.name,
       email: member.email,
       totalHours: userData?.totalHours || 0,
-      scheduledHours: userData?.scheduledHours || 40,
+      scheduledHours: userData?.completedShifts || 0, // Show completed shifts count instead
       isActive: userData?.isActive || false,
       lastClockIn: userData?.lastClockIn,
-      complianceIssues: stats?.complianceIssues || 0,
+      complianceIssues: (userData?.overtimeHours || 0) > 5 ? 1 : 0,
       overtimeHours: userData?.overtimeHours || 0
     };
   });
@@ -222,8 +221,8 @@ export const TeamMembersGridView: React.FC<TeamMembersGridViewProps> = ({
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-blue-500" />
                   <div>
-                    <p className="font-medium">{member.scheduledHours}h</p>
-                    <p className="text-xs text-muted-foreground">Scheduled</p>
+                    <p className="font-medium">{member.scheduledHours}</p>
+                    <p className="text-xs text-muted-foreground">Completed</p>
                   </div>
                 </div>
 
@@ -241,9 +240,9 @@ export const TeamMembersGridView: React.FC<TeamMembersGridViewProps> = ({
                   </div>
                   <div>
                     <p className="font-medium">
-                      {((member.totalHours / member.scheduledHours) * 100).toFixed(0)}%
+                      {member.scheduledHours > 0 ? Math.round((member.totalHours / (member.scheduledHours * 8)) * 100) : 0}%
                     </p>
-                    <p className="text-xs text-muted-foreground">Complete</p>
+                    <p className="text-xs text-muted-foreground">Efficiency</p>
                   </div>
                 </div>
               </div>

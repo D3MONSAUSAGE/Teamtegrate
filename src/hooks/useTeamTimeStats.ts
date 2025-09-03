@@ -80,6 +80,10 @@ export const useTeamTimeStats = (weekDate: Date, selectedTeamId?: string | null)
         teamMembersMap.set(team.id, memberIds);
       });
 
+      console.log('Teams data:', teams);
+      console.log('Team members map:', teamMembersMap);
+      console.log('Time entries:', timeEntries);
+
       // Process data to create team stats
       const statsMap = new Map<string, TeamTimeStats>();
 
@@ -101,6 +105,7 @@ export const useTeamTimeStats = (weekDate: Date, selectedTeamId?: string | null)
 
       // Process time entries to calculate real stats
       const teamActiveMembers = new Map<string, Set<string>>();
+      const teamCompletedShifts = new Map<string, number>();
       
       timeEntries?.forEach(entry => {
         if (entry.duration_minutes && entry.user_id) {
@@ -120,6 +125,10 @@ export const useTeamTimeStats = (weekDate: Date, selectedTeamId?: string | null)
                 }
                 teamActiveMembers.get(teamId)!.add(userId);
                 
+                // Count completed shifts (each time entry is a shift)
+                const currentShifts = teamCompletedShifts.get(teamId) || 0;
+                teamCompletedShifts.set(teamId, currentShifts + 1);
+                
                 // Calculate overtime (hours > 8 per day)
                 if (hours > 8) {
                   teamStats.overtimeHours += (hours - 8);
@@ -131,10 +140,16 @@ export const useTeamTimeStats = (weekDate: Date, selectedTeamId?: string | null)
         }
       });
 
-      // Set active members count
+      console.log('Team completed shifts:', teamCompletedShifts);
+
+      // Set active members count and completed shifts
       statsMap.forEach((stats, teamId) => {
         const activeSet = teamActiveMembers.get(teamId);
         stats.activeMembers = activeSet ? activeSet.size : 0;
+        
+        // Set scheduled hours to completed shifts count for display
+        const completedShifts = teamCompletedShifts.get(teamId) || 0;
+        stats.scheduledHours = completedShifts;
       });
 
 

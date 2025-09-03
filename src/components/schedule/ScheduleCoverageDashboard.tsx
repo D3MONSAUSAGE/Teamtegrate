@@ -7,6 +7,7 @@ import { WeekPicker } from '@/components/ui/week-picker';
 import { ChevronLeft, ChevronRight, Users, Clock, TrendingUp, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import { useScheduleCoverageData } from '@/hooks/useScheduleCoverageData';
+import { useTeamTimeStats } from '@/hooks/useTeamTimeStats';
 import { useCoverageCalculations, HourCoverage } from '@/hooks/useCoverageCalculations';
 import { Skeleton } from '@/components/ui/skeleton';
 import ErrorBoundary from '@/components/ui/error-boundary';
@@ -108,7 +109,32 @@ const ScheduleCoverageDashboard: React.FC<ScheduleCoverageDashboardProps> = ({
   const [selectedHour, setSelectedHour] = useState<{ hour: HourCoverage; day: string } | null>(null);
   
   const { coverageData, isLoading, error, fetchCoverageData } = useScheduleCoverageData();
+  const { teamStats, isLoading: teamStatsLoading } = useTeamTimeStats(selectedWeek, selectedTeamId);
   const weekCoverage = useCoverageCalculations(coverageData, selectedWeek);
+
+  // Calculate summary metrics from team stats
+  const summaryMetrics = React.useMemo(() => {
+    if (!teamStats || teamStats.length === 0) {
+      return {
+        totalShifts: 0,
+        totalHours: 0,
+        activeTeams: 0,
+        coverageRate: 0
+      };
+    }
+
+    const totalShifts = teamStats.reduce((sum, stat) => sum + (stat.scheduledHours || 0), 0);
+    const totalHours = Math.round(teamStats.reduce((sum, stat) => sum + (stat.totalHours || 0), 0));
+    const activeTeams = teamStats.filter(stat => stat.activeMembers > 0).length;
+    const coverageRate = totalShifts > 0 ? Math.round((totalHours / (totalShifts * 8)) * 100) : 0;
+
+    return {
+      totalShifts,
+      totalHours,
+      activeTeams,
+      coverageRate
+    };
+  }, [teamStats]);
 
   useEffect(() => {
     fetchCoverageData(selectedWeek, selectedTeamId || undefined);
@@ -138,56 +164,75 @@ const ScheduleCoverageDashboard: React.FC<ScheduleCoverageDashboardProps> = ({
     );
   }
 
+  if (isLoading || teamStatsLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Card key={i} className="p-4 animate-pulse">
+              <div className="space-y-2">
+                <div className="h-4 bg-muted rounded w-1/2"></div>
+                <div className="h-8 bg-muted rounded w-3/4"></div>
+                <div className="h-3 bg-muted rounded w-full"></div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <ErrorBoundary>
       <div className="space-y-6">
-        {/* Summary Cards */}
+        {/* Summary Cards - Using Real Team Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Projected Hours</CardTitle>
+              <CardTitle className="text-sm font-medium">This Week Shifts</CardTitle>
               <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-success">{weekCoverage.totalProjected}h</div>
-              <p className="text-xs text-muted-foreground">Scheduled this week</p>
+              <div className="text-2xl font-bold text-primary">{summaryMetrics.totalShifts}</div>
+              <p className="text-xs text-muted-foreground">Completed shifts</p>
             </CardContent>
           </Card>
           
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Actual Hours</CardTitle>
+              <CardTitle className="text-sm font-medium">Active Teams</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-success">{summaryMetrics.activeTeams}</div>
+              <p className="text-xs text-muted-foreground">Teams with activity</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Hours</CardTitle>
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-primary">{weekCoverage.totalActual}h</div>
+              <div className="text-2xl font-bold text-accent">{summaryMetrics.totalHours}h</div>
               <p className="text-xs text-muted-foreground">Worked this week</p>
             </CardContent>
           </Card>
           
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Variance</CardTitle>
+              <CardTitle className="text-sm font-medium">Coverage Rate</CardTitle>
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className={`text-2xl font-bold ${
-                weekCoverage.totalVariance >= 0 ? 'text-success' : 'text-destructive'
+                summaryMetrics.coverageRate >= 80 ? 'text-success' : 
+                summaryMetrics.coverageRate >= 60 ? 'text-warning' : 'text-destructive'
               }`}>
-                {weekCoverage.totalVariance > 0 ? '+' : ''}{weekCoverage.totalVariance}h
+                {summaryMetrics.coverageRate}%
               </div>
-              <p className="text-xs text-muted-foreground">vs projected</p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Coverage</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{weekCoverage.averageCoverage}%</div>
-              <p className="text-xs text-muted-foreground">{weekCoverage.uniqueEmployees} employees</p>
+              <p className="text-xs text-muted-foreground">Efficiency rate</p>
             </CardContent>
           </Card>
         </div>
@@ -204,7 +249,7 @@ const ScheduleCoverageDashboard: React.FC<ScheduleCoverageDashboardProps> = ({
             </div>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
+            {isLoading || teamStatsLoading ? (
               <div className="space-y-4">
                 <Skeleton className="h-8 w-full" />
                 <div className="grid grid-cols-7 gap-2">
