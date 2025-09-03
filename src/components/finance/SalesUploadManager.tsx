@@ -1,7 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,8 +23,11 @@ import {
 } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 import { SalesData } from '@/types/sales';
+import { Team } from '@/types/teams';
 import { parseBrinkPOSReport } from '@/utils/pdfParser';
 import { salesDataService } from '@/services/SalesDataService';
+import { TeamScheduleSelector } from '@/components/schedule/TeamScheduleSelector';
+import { useTeamQueries } from '@/hooks/organization/team/useTeamQueries';
 
 interface SalesUploadManagerProps {
   onUpload: (data: SalesData, replaceExisting?: boolean) => Promise<void>;
@@ -48,13 +50,16 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>('idle');
   const [uploadProgress, setUploadProgress] = useState(0);
   const [salesDate, setSalesDate] = useState<Date | undefined>(new Date());
-  const [teamId, setTeamId] = useState('');
+  const [teamId, setTeamId] = useState<string | null>(null);
   const [files, setFiles] = useState<FileWithPreview[]>([]);
   const [error, setError] = useState<string>('');
   const [isDateExtracted, setIsDateExtracted] = useState(false);
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
   const [existingData, setExistingData] = useState<any>(null);
   const [pendingUpload, setPendingUpload] = useState<SalesData | null>(null);
+  
+  // Fetch teams data
+  const { teams, isLoading: teamsLoading, error: teamsError } = useTeamQueries();
   
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const newFiles: FileWithPreview[] = acceptedFiles.map(file => 
@@ -137,6 +142,12 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
       return;
     }
     
+    if (!teamId) {
+      setError('Please select a team');
+      toast.error("Please select a team");
+      return;
+    }
+    
     if (files.length === 0) {
       setError('Please select a PDF file');
       toast.error("Please select a PDF file");
@@ -195,6 +206,7 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
         // Reset form after success
         setTimeout(() => {
           setSalesDate(new Date());
+          setTeamId(null);
           setFiles([]);
           setUploadProgress(0);
           setUploadStatus('idle');
@@ -232,6 +244,7 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
         
         // Reset form
         setSalesDate(new Date());
+        setTeamId(null);
         setFiles([]);
         setIsDateExtracted(false);
         setExistingData(null);
@@ -337,11 +350,16 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
         
         <div className="space-y-2">
           <label className="text-sm font-medium">Team</label>
-          <Input
-            value={teamId}
-            onChange={(e) => setTeamId(e.target.value)}
-            placeholder="Enter team ID"
+          <TeamScheduleSelector
+            teams={teams}
+            selectedTeamId={teamId}
+            onTeamChange={setTeamId}
+            disabled={teamsLoading || uploadStatus === 'processing'}
+            showAllOption={false}
           />
+          {teamsError && (
+            <p className="text-sm text-red-500">Failed to load teams</p>
+          )}
         </div>
       </div>
       
@@ -447,7 +465,7 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
       <div className="flex justify-end">
         <Button 
           onClick={() => handleUpload()} 
-          disabled={!salesDate || files.length === 0 || uploadStatus === 'processing' || isUploading}
+          disabled={!salesDate || !teamId || files.length === 0 || uploadStatus === 'processing' || isUploading || teamsLoading}
           size="lg"
         >
           {uploadStatus === 'processing' || isUploading ? (
