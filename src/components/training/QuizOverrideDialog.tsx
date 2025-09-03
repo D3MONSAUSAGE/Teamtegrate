@@ -86,7 +86,7 @@ const QuizOverrideDialog: React.FC<QuizOverrideDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center gap-2">
             <div className="p-2 rounded-lg bg-orange-100">
@@ -103,46 +103,43 @@ const QuizOverrideDialog: React.FC<QuizOverrideDialogProps> = ({
           </div>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Warning Banner */}
-          <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-            <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
-            <div className="text-sm">
-              <p className="font-medium text-amber-800 mb-1">Manual Intervention Required</p>
-              <p className="text-amber-700">
-                This will override the automatic scoring system. Please provide a clear justification for this change.
-              </p>
-            </div>
+          <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+            <AlertTriangle className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
+            <p className="text-xs text-amber-700">
+              Manual override will replace automatic scoring. Justification required.
+            </p>
           </div>
 
           {/* Question Context */}
           <div className="space-y-3">
             <div>
               <Label className="text-sm font-medium">Question</Label>
-              <p className="text-sm bg-gray-50 p-3 rounded border">
+              <p className="text-sm bg-gray-50 p-2 rounded border">
                 {question.question_text}
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-3">
               <div>
                 <Label className="text-sm font-medium">Student's Answer</Label>
-                <p className="text-sm bg-red-50 p-3 rounded border border-red-200">
+                <p className="text-sm bg-red-50 p-2 rounded border border-red-200">
                   {userAnswer?.answer || 'No answer provided'}
                 </p>
               </div>
               <div>
                 <Label className="text-sm font-medium">Correct Answer</Label>
-                <p className="text-sm bg-green-50 p-3 rounded border border-green-200">
+                <p className="text-sm bg-green-50 p-2 rounded border border-green-200">
                   {question.correct_answer}
                 </p>
               </div>
             </div>
 
             {/* Current Scoring */}
-            <div className="flex items-center gap-4 p-3 bg-gray-50 rounded border">
+            <div className="flex items-center gap-4 p-2 bg-gray-50 rounded border">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">Current Score:</span>
+                <span className="text-sm font-medium">Current:</span>
                 <Badge variant={originalScore > 0 ? "default" : "destructive"}>
                   {originalScore} / {maxPoints} pts
                 </Badge>
@@ -156,7 +153,7 @@ const QuizOverrideDialog: React.FC<QuizOverrideDialogProps> = ({
                 <div className="flex items-center gap-2">
                   <Shield className="h-4 w-4 text-orange-600" />
                   <span className="text-sm font-medium text-orange-700">
-                    Override Active: {existingOverride.override_score} / {maxPoints} pts
+                    Override: {existingOverride.override_score} / {maxPoints} pts
                   </span>
                 </div>
               )}
@@ -164,7 +161,7 @@ const QuizOverrideDialog: React.FC<QuizOverrideDialogProps> = ({
           </div>
 
           {/* Override Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-3">
             <div>
               <Label htmlFor="override-score">
                 New Score (0 - {maxPoints} points)
@@ -179,9 +176,6 @@ const QuizOverrideDialog: React.FC<QuizOverrideDialogProps> = ({
                 placeholder="Enter new score"
                 required
               />
-              <p className="text-xs text-muted-foreground mt-1">
-                Award partial or full credit based on your evaluation
-              </p>
             </div>
 
             <div>
@@ -193,12 +187,9 @@ const QuizOverrideDialog: React.FC<QuizOverrideDialogProps> = ({
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 placeholder="Explain why you're overriding the automatic score..."
-                rows={3}
+                rows={2}
                 required
               />
-              <p className="text-xs text-muted-foreground mt-1">
-                This will be recorded in the audit trail
-              </p>
             </div>
 
             <DialogFooter className="gap-2">
