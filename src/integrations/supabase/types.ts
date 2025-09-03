@@ -2825,6 +2825,48 @@ export type Database = {
           },
         ]
       }
+      quiz_answer_overrides: {
+        Row: {
+          created_at: string | null
+          id: string
+          organization_id: string
+          original_score: number
+          overridden_at: string | null
+          overridden_by: string
+          override_score: number
+          question_id: string
+          quiz_attempt_id: string
+          reason: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          organization_id: string
+          original_score: number
+          overridden_at?: string | null
+          overridden_by: string
+          override_score: number
+          question_id: string
+          quiz_attempt_id: string
+          reason: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          organization_id?: string
+          original_score?: number
+          overridden_at?: string | null
+          overridden_by?: string
+          override_score?: number
+          question_id?: string
+          quiz_attempt_id?: string
+          reason?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       quiz_attempts: {
         Row: {
           answers: Json
@@ -5107,6 +5149,10 @@ export type Database = {
       purge_sales_data: {
         Args: { p_date_from?: string; p_date_to?: string; p_location?: string }
         Returns: Json
+      }
+      recalculate_attempt_score: {
+        Args: { p_quiz_attempt_id: string }
+        Returns: undefined
       }
       resume_time_entry: {
         Args: { p_task_id?: string; p_user_id: string }

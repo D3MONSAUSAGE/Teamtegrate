@@ -18,12 +18,17 @@ import {
   User,
   Target,
   AlertCircle,
-  MousePointer
+  MousePointer,
+  Shield,
+  Edit3
 } from 'lucide-react';
 import { useQuizAttempts, useQuizzes } from '@/hooks/useTrainingData';
+import { useQuizOverrides, useDeleteQuizOverride } from '@/hooks/useQuizOverrides';
+import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
 import jsPDF from 'jspdf';
 import { evaluateShortAnswer } from '@/utils/quiz/evaluateShortAnswer';
+import QuizOverrideDialog from './QuizOverrideDialog';
 
 interface QuizAttemptViewerProps {
   open: boolean;
@@ -41,6 +46,15 @@ const QuizAttemptViewer: React.FC<QuizAttemptViewerProps> = ({
   quizData 
 }) => {
   const [selectedAttempt, setSelectedAttempt] = useState<any>(null);
+  const [overrideDialog, setOverrideDialog] = useState<{
+    open: boolean;
+    question?: any;
+    userAnswer?: any;
+    existingOverride?: any;
+  }>({ open: false });
+
+  const { user } = useAuth();
+  const isAdmin = user && ['admin', 'superadmin', 'manager'].includes(user.role);
   
   const { data: attempts = [], isLoading: attemptsLoading } = useQuizAttempts(
     quizData?.quizId, 
@@ -49,6 +63,10 @@ const QuizAttemptViewer: React.FC<QuizAttemptViewerProps> = ({
   
   const { data: quizzes = [] } = useQuizzes();
   const quiz = quizzes.find(q => q.id === quizData?.quizId);
+  
+  // Fetch overrides for the selected attempt
+  const { data: overrides = [] } = useQuizOverrides(selectedAttempt?.id);
+  const deleteOverrideMutation = useDeleteQuizOverride();
 
   // Auto-select the most recent attempt when attempts load
   useEffect(() => {
@@ -58,6 +76,28 @@ const QuizAttemptViewer: React.FC<QuizAttemptViewerProps> = ({
       setSelectedAttempt(mostRecentAttempt);
     }
   }, [attempts, selectedAttempt]);
+
+  // Get the final score for a question (considering overrides)
+  const getQuestionScore = (question: any, userAnswer: any) => {
+    const override = overrides.find(o => o.question_id === question.id);
+    if (override) {
+      return {
+        score: override.override_score,
+        isOverridden: true,
+        override: override,
+        originalScore: override.original_score
+      };
+    }
+
+    // Calculate original score
+    const isCorrect = getAnswerStatus(userAnswer?.answer || '', question);
+    return {
+      score: isCorrect ? question.points : 0,
+      isOverridden: false,
+      override: null,
+      originalScore: isCorrect ? question.points : 0
+    };
+  };
 
   const getAnswerStatus = (userAnswer: string, question: any) => {
     if (!question) return false;
@@ -86,6 +126,24 @@ const QuizAttemptViewer: React.FC<QuizAttemptViewerProps> = ({
     
     // For multiple choice and true/false, use exact matching
     return (userAnswer || '') === correctAnswer;
+  };
+
+  const handleOverrideClick = (question: any, userAnswer: any) => {
+    const existingOverride = overrides.find(o => o.question_id === question.id);
+    setOverrideDialog({
+      open: true,
+      question,
+      userAnswer,
+      existingOverride
+    });
+  };
+
+  const handleRemoveOverride = async (overrideId: string) => {
+    try {
+      await deleteOverrideMutation.mutateAsync(overrideId);
+    } catch (error) {
+      console.error('Error removing override:', error);
+    }
   };
 
   const exportAttemptToPDF = (attempt: any) => {
@@ -445,11 +503,12 @@ const QuizAttemptViewer: React.FC<QuizAttemptViewerProps> = ({
                     </CardContent>
                   </Card>
 
-                  {/* Question-by-Question Breakdown */}
+                   {/* Question-by-Question Breakdown */}
                   <div className="space-y-4">
                     {quiz.quiz_questions.map((question: any, index: number) => {
                       const userAnswer = selectedAttempt.answers?.find((a: any) => a.question_id === question.id);
                       const isCorrect = getAnswerStatus(userAnswer?.answer || '', question);
+                      const scoreInfo = getQuestionScore(question, userAnswer);
                       
                       console.log('🔍 Question Analysis - Q' + (index + 1) + ':', {
                         questionId: question.id,
@@ -457,29 +516,96 @@ const QuizAttemptViewer: React.FC<QuizAttemptViewerProps> = ({
                         userAnswer: userAnswer?.answer || 'No answer provided',
                         correctAnswer: question.correct_answer || question.correctAnswer,
                         isCorrect,
-                        points: question.points
+                        points: question.points,
+                        override: scoreInfo.override
                       });
                       
                       return (
                         <Card key={question.id} className={`border-l-4 ${
-                          isCorrect ? 'border-l-green-500 bg-green-50/50' : 'border-l-red-500 bg-red-50/50'
+                          scoreInfo.isOverridden 
+                            ? 'border-l-orange-500 bg-orange-50/50' 
+                            : isCorrect 
+                              ? 'border-l-green-500 bg-green-50/50' 
+                              : 'border-l-red-500 bg-red-50/50'
                         }`}>
                           <CardHeader className="pb-3">
                             <div className="flex items-start justify-between">
-                              <CardTitle className="text-base">
+                              <CardTitle className="text-base flex items-center gap-2">
                                 Question {index + 1} of {quiz.quiz_questions.length}
+                                {scoreInfo.isOverridden && (
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger>
+                                        <Shield className="h-4 w-4 text-orange-600" />
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Manually overridden by admin</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                )}
                               </CardTitle>
                               <div className="flex items-center gap-2">
-                                <Badge variant={isCorrect ? 'default' : 'destructive'}>
-                                  {isCorrect ? `+${question.points}` : '0'} / {question.points} pts
-                                </Badge>
-                                {isCorrect ? (
+                                {scoreInfo.isOverridden ? (
+                                  <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-300">
+                                    Override: +{scoreInfo.score} / {question.points} pts
+                                  </Badge>
+                                ) : (
+                                  <Badge variant={isCorrect ? 'default' : 'destructive'}>
+                                    {isCorrect ? `+${question.points}` : '0'} / {question.points} pts
+                                  </Badge>
+                                )}
+                                
+                                {/* Admin Override Controls */}
+                                {isAdmin && (
+                                  <div className="flex gap-1">
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => handleOverrideClick(question, userAnswer)}
+                                    >
+                                      <Edit3 className="h-3 w-3" />
+                                    </Button>
+                                    {scoreInfo.isOverridden && (
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => handleRemoveOverride(scoreInfo.override.id)}
+                                        disabled={deleteOverrideMutation.isPending}
+                                      >
+                                        <XCircle className="h-3 w-3" />
+                                      </Button>
+                                    )}
+                                  </div>
+                                )}
+
+                                {scoreInfo.isOverridden ? (
+                                  <Shield className="h-5 w-5 text-orange-600" />
+                                ) : isCorrect ? (
                                   <CheckCircle className="h-5 w-5 text-green-600" />
                                 ) : (
                                   <XCircle className="h-5 w-5 text-red-600" />
                                 )}
                               </div>
                             </div>
+
+                            {/* Override Information */}
+                            {scoreInfo.isOverridden && (
+                              <div className="mt-2 p-2 bg-orange-50 border border-orange-200 rounded text-sm">
+                                <div className="flex items-start gap-2">
+                                  <Shield className="h-4 w-4 text-orange-600 flex-shrink-0 mt-0.5" />
+                                  <div>
+                                    <p className="font-medium text-orange-800">Manual Override Applied</p>
+                                    <p className="text-orange-700 mt-1">
+                                      <span className="font-medium">Reason:</span> {scoreInfo.override.reason}
+                                    </p>
+                                    <p className="text-orange-600 text-xs mt-1">
+                                      Original: {scoreInfo.originalScore}/{question.points} → Override: {scoreInfo.score}/{question.points}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
                           </CardHeader>
                           <CardContent className="space-y-4">
                             <div>
@@ -565,6 +691,16 @@ const QuizAttemptViewer: React.FC<QuizAttemptViewerProps> = ({
           </TabsContent>
         </Tabs>
       </DialogContent>
+
+      {/* Override Dialog */}
+      <QuizOverrideDialog
+        open={overrideDialog.open}
+        onOpenChange={(open) => setOverrideDialog(prev => ({ ...prev, open }))}
+        question={overrideDialog.question}
+        userAnswer={overrideDialog.userAnswer}
+        quizAttemptId={selectedAttempt?.id}
+        existingOverride={overrideDialog.existingOverride}
+      />
     </Dialog>
   );
 };
