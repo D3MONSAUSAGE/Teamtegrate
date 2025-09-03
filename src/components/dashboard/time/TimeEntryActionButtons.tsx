@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Edit3, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { TimeEntryCorrectionRequestForm } from '@/components/time-entries/TimeEntryCorrectionRequestForm';
-import { useTimeEntryCorrectionRequests } from '@/hooks/useTimeEntryCorrectionRequests';
+import { useTimeEntryCorrectionRequests, type CreateCorrectionRequest } from '@/hooks/useTimeEntryCorrectionRequests';
 import { TimeEntryRow } from '@/hooks/useTimeEntriesAdmin';
 
 interface TimeEntryActionButtonsProps {
@@ -88,11 +88,8 @@ const TimeEntryActionButtons: React.FC<TimeEntryActionButtonsProps> = ({ entry }
   const canRequest = !existingRequest || existingRequest.status === 'rejected';
   const isApproved = existingRequest?.status === 'approved';
 
-  const handleCorrectionSubmit = async (correctionData: any) => {
-    await createCorrectionRequest({
-      employee_reason: correctionData.reason,
-      corrections: correctionData.corrections
-    });
+  const handleCorrectionSubmit = async (correctionData: CreateCorrectionRequest) => {
+    await createCorrectionRequest(correctionData);
     setShowCorrectionForm(false);
   };
 
