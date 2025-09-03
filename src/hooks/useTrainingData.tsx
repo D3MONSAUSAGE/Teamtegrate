@@ -186,7 +186,7 @@ export const useEmployeeProgress = () => {
   });
 };
 
-// Quiz Results with User Names Hook
+// Quiz Results with User Names Hook (Enhanced with Overrides)
 export const useQuizResultsWithNames = (quizId?: string) => {
   const { user } = useAuth();
   
@@ -219,11 +219,54 @@ export const useQuizResultsWithNames = (quizId?: string) => {
       
       if (usersError) throw usersError;
       
-      // Combine attempts with user data
-      const attemptsWithUsers = attempts.map(attempt => ({
-        ...attempt,
-        users: users?.find(u => u.id === attempt.user_id) || null
-      }));
+      // Get attempt IDs for override lookup
+      const attemptIds = attempts.map(attempt => attempt.id);
+      
+      // Get quiz answer overrides for all attempts
+      const { data: overrides, error: overridesError } = await supabase
+        .from('quiz_answer_overrides')
+        .select('*')
+        .in('quiz_attempt_id', attemptIds)
+        .eq('organization_id', user.organizationId);
+      
+      if (overridesError) throw overridesError;
+      
+      // Group overrides by attempt ID
+      const overridesMap = (overrides || []).reduce((acc, override) => {
+        if (!acc[override.quiz_attempt_id]) {
+          acc[override.quiz_attempt_id] = [];
+        }
+        acc[override.quiz_attempt_id].push(override);
+        return acc;
+      }, {} as Record<string, any[]>);
+      
+      // Get quiz data to determine passing score
+      const { data: quizData } = await supabase
+        .from('quizzes')
+        .select('passing_score')
+        .eq('id', quizId)
+        .single();
+      
+      const passingScore = quizData?.passing_score || 70;
+      
+      // Combine attempts with user data and calculate adjusted scores
+      const attemptsWithUsers = attempts.map(attempt => {
+        const attemptOverrides = overridesMap[attempt.id] || [];
+        const adjustedScore = attemptOverrides.reduce((score, override) => {
+          return score + (override.override_score - override.original_score);
+        }, attempt.score);
+        
+        const adjustedPassed = (adjustedScore / attempt.max_score * 100) >= passingScore;
+        
+        return {
+          ...attempt,
+          users: users?.find(u => u.id === attempt.user_id) || null,
+          overrides: attemptOverrides,
+          adjusted_score: Math.max(0, adjustedScore),
+          adjusted_passed: adjustedPassed,
+          has_overrides: attemptOverrides.length > 0
+        };
+      });
       
       return attemptsWithUsers;
     },

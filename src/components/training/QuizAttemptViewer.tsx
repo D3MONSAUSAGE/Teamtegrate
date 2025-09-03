@@ -236,15 +236,27 @@ const QuizAttemptViewer: React.FC<QuizAttemptViewerProps> = ({
   const exportAttemptToCSV = (attempt: any) => {
     if (!quiz?.quiz_questions || !attempt.answers) return;
 
+    // Get overrides for this attempt 
+    const overrides = attempt.overrides || [];
+    const overrideMap = overrides.reduce((acc: any, override: any) => {
+      acc[override.question_id] = override;
+      return acc;
+    }, {});
+
     const csvData = quiz.quiz_questions.map((question: any, index: number) => {
       const userAnswer = attempt.answers.find((a: any) => a.question_id === question.id);
-      const isCorrect = getAnswerStatus(userAnswer?.answer || '', question);
+      const originalCorrect = getAnswerStatus(userAnswer?.answer || '', question);
+      const override = overrideMap[question.id];
+      const finalCorrect = override ? override.override_score > 0 : originalCorrect;
+      
       console.log('🔍 CSV Export - Question', index + 1, ':', {
         questionId: question.id,
         userAnswer: userAnswer?.answer,
         correctAnswer: question.correct_answer,
         questionType: question.question_type,
-        isCorrect
+        originalCorrect,
+        hasOverride: !!override,
+        finalCorrect
       });
       
       return {
@@ -253,11 +265,36 @@ const QuizAttemptViewer: React.FC<QuizAttemptViewerProps> = ({
         'Question Type': question.question_type,
         'Your Answer': userAnswer?.answer || 'No answer provided',
         'Correct Answer': question.correct_answer,
-        'Status': isCorrect ? 'Correct' : 'Incorrect',
-        'Points Earned': isCorrect ? question.points : 0,
+        'Original Status': originalCorrect ? 'Correct' : 'Incorrect',
+        'Final Status': finalCorrect ? 'Correct' : 'Incorrect',
+        'Original Points': originalCorrect ? question.points : 0,
+        'Final Points': override ? override.override_score : (originalCorrect ? question.points : 0),
         'Points Possible': question.points,
+        'Manual Override': override ? 'Yes' : 'No',
+        'Override Reason': override ? override.reason : 'N/A',
         'Explanation': question.explanation || 'No explanation provided'
       };
+    });
+    
+    // Add summary row
+    const totalOriginalPoints = csvData.reduce((sum, row) => sum + row['Original Points'], 0);
+    const totalFinalPoints = csvData.reduce((sum, row) => sum + row['Final Points'], 0);
+    const totalPossiblePoints = csvData.reduce((sum, row) => sum + row['Points Possible'], 0);
+    
+    csvData.push({
+      'Question Number': 'SUMMARY' as any,
+      'Question Text': `Total Score: ${totalFinalPoints}/${totalPossiblePoints} (${Math.round((totalFinalPoints/totalPossiblePoints)*100)}%)`,
+      'Question Type': attempt.has_overrides ? `Original: ${totalOriginalPoints}/${totalPossiblePoints}` : '',
+      'Your Answer': '',
+      'Correct Answer': '',
+      'Original Status': '',
+      'Final Status': '',
+      'Original Points': totalOriginalPoints,
+      'Final Points': totalFinalPoints,
+      'Points Possible': totalPossiblePoints,
+      'Manual Override': attempt.has_overrides ? 'Yes' : 'No',
+      'Override Reason': '',
+      'Explanation': ''
     });
 
     const csvContent = [

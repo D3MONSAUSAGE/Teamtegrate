@@ -39,48 +39,74 @@ const QuizResults: React.FC<QuizResultsProps> = ({
 
   if (!quizId) return null;
 
-  // Calculate statistics
+  // Calculate statistics (using adjusted scores when available)
   const totalAttempts = attempts.length;
-  const passedAttempts = attempts.filter(attempt => attempt.passed).length;
+  const passedAttempts = attempts.filter(attempt => 
+    attempt.has_overrides ? attempt.adjusted_passed : attempt.passed
+  ).length;
   const failedAttempts = totalAttempts - passedAttempts;
   const averageScore = totalAttempts > 0 
-    ? Math.round(attempts.reduce((sum, attempt) => sum + (attempt.score / attempt.max_score * 100), 0) / totalAttempts)
+    ? Math.round(attempts.reduce((sum, attempt) => {
+        const score = attempt.has_overrides ? attempt.adjusted_score : attempt.score;
+        return sum + (score / attempt.max_score * 100);
+      }, 0) / totalAttempts)
     : 0;
   const passRate = totalAttempts > 0 ? Math.round((passedAttempts / totalAttempts) * 100) : 0;
+  
+  // Count attempts with manual overrides
+  const attemptsWithOverrides = attempts.filter(attempt => attempt.has_overrides).length;
 
-  // Get unique users
+  // Get unique users (using adjusted scores when available)
   const uniqueUsers = Array.from(new Set(attempts.map(attempt => attempt.user_id)));
   const userStats = uniqueUsers.map(userId => {
     const userAttempts = attempts.filter(attempt => attempt.user_id === userId);
-    const bestAttempt = userAttempts.reduce((best, current) => 
-      (current.score / current.max_score) > (best.score / best.max_score) ? current : best
-    );
+    
+    const bestAttempt = userAttempts.reduce((best, current) => {
+      const currentScore = current.has_overrides ? current.adjusted_score : current.score;
+      const bestScore = best.has_overrides ? best.adjusted_score : best.score;
+      return (currentScore / current.max_score) > (bestScore / best.max_score) ? current : best;
+    });
+    
     const latestAttempt = userAttempts.sort((a, b) => 
       new Date(b.started_at).getTime() - new Date(a.started_at).getTime()
     )[0];
     
+    const bestScore = bestAttempt.has_overrides ? bestAttempt.adjusted_score : bestAttempt.score;
+    const latestScore = latestAttempt.has_overrides ? latestAttempt.adjusted_score : latestAttempt.score;
+    const passed = latestAttempt.has_overrides ? latestAttempt.adjusted_passed : latestAttempt.passed;
+    
     return {
       userId,
       attempts: userAttempts.length,
-      bestScore: Math.round((bestAttempt.score / bestAttempt.max_score) * 100),
-      latestScore: Math.round((latestAttempt.score / latestAttempt.max_score) * 100),
-      passed: latestAttempt.passed,
-      lastAttempt: latestAttempt.started_at
+      bestScore: Math.round((bestScore / bestAttempt.max_score) * 100),
+      latestScore: Math.round((latestScore / latestAttempt.max_score) * 100),
+      passed,
+      lastAttempt: latestAttempt.started_at,
+      hasOverrides: userAttempts.some(attempt => attempt.has_overrides)
     };
   });
 
   const exportResults = () => {
-    const csvData = attempts.map(attempt => ({
-      'Employee Name': attempt.users?.name || 'Unknown',
-      'Email': attempt.users?.email || 'N/A',
-      'Role': attempt.users?.role || 'N/A',
-      'Score': `${attempt.score}/${attempt.max_score}`,
-      'Percentage': `${Math.round((attempt.score / attempt.max_score) * 100)}%`,
-      'Passed': attempt.passed ? 'Yes' : 'No',
-      'Started At': format(new Date(attempt.started_at), 'yyyy-MM-dd HH:mm:ss'),
-      'Completed At': attempt.completed_at ? format(new Date(attempt.completed_at), 'yyyy-MM-dd HH:mm:ss') : 'Incomplete',
-      'Attempt Number': attempt.attempt_number
-    }));
+    const csvData = attempts.map(attempt => {
+      const finalScore = attempt.has_overrides ? attempt.adjusted_score : attempt.score;
+      const finalPassed = attempt.has_overrides ? attempt.adjusted_passed : attempt.passed;
+      const scorePercentage = Math.round((finalScore / attempt.max_score) * 100);
+      
+      return {
+        'Employee Name': attempt.users?.name || 'Unknown',
+        'Email': attempt.users?.email || 'N/A',
+        'Role': attempt.users?.role || 'N/A',
+        'Original Score': `${attempt.score}/${attempt.max_score}`,
+        'Final Score': `${finalScore}/${attempt.max_score}`,
+        'Percentage': `${scorePercentage}%`,
+        'Passed': finalPassed ? 'Yes' : 'No',
+        'Has Manual Adjustments': attempt.has_overrides ? 'Yes' : 'No',
+        'Override Count': attempt.overrides?.length || 0,
+        'Started At': format(new Date(attempt.started_at), 'yyyy-MM-dd HH:mm:ss'),
+        'Completed At': attempt.completed_at ? format(new Date(attempt.completed_at), 'yyyy-MM-dd HH:mm:ss') : 'Incomplete',
+        'Attempt Number': attempt.attempt_number
+      };
+    });
     
     const csvContent = [
       Object.keys(csvData[0]).join(','),
@@ -125,7 +151,7 @@ const QuizResults: React.FC<QuizResultsProps> = ({
 
           <TabsContent value="overview" className="space-y-6">
             {/* Stats Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <Card>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
@@ -168,7 +194,7 @@ const QuizResults: React.FC<QuizResultsProps> = ({
                 </CardContent>
               </Card>
 
-              <Card>
+                <Card>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
                     <div className="p-2 rounded-lg bg-purple-100">
@@ -177,6 +203,20 @@ const QuizResults: React.FC<QuizResultsProps> = ({
                     <div>
                       <p className="text-2xl font-bold">{averageScore}%</p>
                       <p className="text-sm text-muted-foreground">Avg Score</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-orange-100">
+                      <Trophy className="h-5 w-5 text-orange-600" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold">{attemptsWithOverrides}</p>
+                      <p className="text-sm text-muted-foreground">Manual Overrides</p>
                     </div>
                   </div>
                 </CardContent>
@@ -241,10 +281,13 @@ const QuizResults: React.FC<QuizResultsProps> = ({
                               </p>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <Badge variant={attempt.passed ? "default" : "destructive"}>
-                              {Math.round((attempt.score / attempt.max_score) * 100)}%
+                          <div className="text-right flex flex-col items-end gap-1">
+                            <Badge variant={(attempt.has_overrides ? attempt.adjusted_passed : attempt.passed) ? "default" : "destructive"}>
+                              {Math.round(((attempt.has_overrides ? attempt.adjusted_score : attempt.score) / attempt.max_score) * 100)}%
                             </Badge>
+                            {attempt.has_overrides && (
+                              <span className="text-xs text-orange-600 font-medium">Adjusted</span>
+                            )}
                           </div>
                         </div>
                       ))}
@@ -276,9 +319,14 @@ const QuizResults: React.FC<QuizResultsProps> = ({
                               </p>
                             </div>
                           </div>
-                          <Badge variant={user.passed ? "default" : "destructive"}>
-                            {user.passed ? 'Passed' : 'Failed'}
-                          </Badge>
+                          <div className="flex flex-col items-end gap-1">
+                            <Badge variant={user.passed ? "default" : "destructive"}>
+                              {user.passed ? 'Passed' : 'Failed'}
+                            </Badge>
+                            {user.hasOverrides && (
+                              <span className="text-xs text-orange-600 font-medium">Has Overrides</span>
+                            )}
+                          </div>
                         </div>
                         
                         <div className="grid grid-cols-3 gap-4 text-sm">
@@ -316,14 +364,28 @@ const QuizResults: React.FC<QuizResultsProps> = ({
                       .map((attempt, index) => (
                         <div key={index} className="p-4 rounded-lg border bg-card">
                           <div className="flex items-center justify-between mb-2">
-                            <span className="font-medium">Attempt #{attempt.attempt_number}</span>
                             <div className="flex items-center gap-2">
-                              <Badge variant={attempt.passed ? "default" : "destructive"}>
-                                {Math.round((attempt.score / attempt.max_score) * 100)}%
+                              <span className="font-medium">Attempt #{attempt.attempt_number}</span>
+                              {attempt.has_overrides && (
+                                <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full">
+                                  {attempt.overrides?.length} override{(attempt.overrides?.length || 0) !== 1 ? 's' : ''}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Badge variant={(attempt.has_overrides ? attempt.adjusted_passed : attempt.passed) ? "default" : "destructive"}>
+                                {Math.round(((attempt.has_overrides ? attempt.adjusted_score : attempt.score) / attempt.max_score) * 100)}%
                               </Badge>
-                              <span className="text-sm text-muted-foreground">
-                                {attempt.score}/{attempt.max_score} points
-                              </span>
+                              <div className="text-sm text-muted-foreground text-right">
+                                {attempt.has_overrides ? (
+                                  <div>
+                                    <div>Final: {attempt.adjusted_score}/{attempt.max_score}</div>
+                                    <div className="text-xs">Original: {attempt.score}/{attempt.max_score}</div>
+                                  </div>
+                                ) : (
+                                  <div>{attempt.score}/{attempt.max_score} points</div>
+                                )}
+                              </div>
                             </div>
                           </div>
                           
