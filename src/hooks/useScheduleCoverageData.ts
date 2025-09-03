@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { format, startOfWeek, endOfWeek } from 'date-fns';
+import { useDebounce } from '@/utils/performanceUtils';
 
 export interface ScheduleEntry {
   id: string;
@@ -57,9 +58,18 @@ export const useScheduleCoverageData = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const lastRangeRef = useRef<{ start: string; end: string; teamId?: string } | null>(null);
+  const lastFetchRef = useRef<number>(0);
+  const FETCH_COOLDOWN = 1000; // Prevent fetches more frequent than 1 second
 
   const fetchCoverageData = useCallback(async (selectedWeek: Date, teamId?: string) => {
     if (!user) return;
+    
+    // Prevent rapid successive calls
+    const now = Date.now();
+    if (now - lastFetchRef.current < FETCH_COOLDOWN) {
+      return;
+    }
+    lastFetchRef.current = now;
 
     try {
       setIsLoading(true);
@@ -164,6 +174,14 @@ export const useScheduleCoverageData = () => {
     }
   }, [user]);
 
+  // Debounced version for real-time updates
+  const debouncedRefetch = useDebounce(() => {
+    const last = lastRangeRef.current;
+    if (last) {
+      fetchCoverageData(new Date(last.start), last.teamId);
+    }
+  }, 500);
+
   // Real-time subscription for both schedules and time entries
   useEffect(() => {
     if (!user) return;
@@ -173,31 +191,22 @@ export const useScheduleCoverageData = () => {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'employee_schedules' },
-        () => {
-          const last = lastRangeRef.current;
-          if (last) {
-            fetchCoverageData(new Date(last.start), last.teamId);
-          }
-        }
+        debouncedRefetch
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'time_entries' },
-        () => {
-          const last = lastRangeRef.current;
-          if (last) {
-            fetchCoverageData(new Date(last.start), last.teamId);
-          }
-        }
+        debouncedRefetch
       )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, fetchCoverageData]);
+  }, [user, debouncedRefetch]);
 
-  return {
+  // Memoize return value to prevent unnecessary re-renders
+  const memoizedReturn = useMemo(() => ({
     coverageData,
     isLoading,
     error,
@@ -208,5 +217,7 @@ export const useScheduleCoverageData = () => {
         fetchCoverageData(new Date(last.start), last.teamId);
       }
     }
-  };
+  }), [coverageData, isLoading, error, fetchCoverageData]);
+
+  return memoizedReturn;
 };
