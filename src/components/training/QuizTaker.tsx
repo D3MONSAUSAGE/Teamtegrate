@@ -8,12 +8,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { useSubmitQuizAttempt } from '@/hooks/useTrainingData';
+import { evaluateShortAnswer } from '@/utils/quiz/evaluateShortAnswer';
 
 interface QuizQuestion {
   id: string;
   questionText: string;
   questionType: 'multiple_choice' | 'true_false' | 'short_answer';
-  options?: string[];
+  options?: any; // For multiple_choice: string[]; for short_answer: ShortAnswerOptions JSON
   correctAnswer: string;
   points: number;
   explanation?: string;
@@ -168,8 +169,29 @@ const QuizTaker: React.FC<QuizTakerProps> = ({
 
     quiz.questions.forEach(question => {
       if (!question) return;
-      const userAnswer = answers[question.id];
-      if (userAnswer === question.correctAnswer) {
+      const userAnswer = answers[question.id] ?? '';
+
+      let isCorrect = false;
+      switch (question.questionType) {
+        case 'short_answer': {
+          const opts = (question as any).options || {};
+          // Merge primary correctAnswer into acceptedAnswers implicitly
+          const mergedOpts = {
+            ...opts,
+            acceptedAnswers: Array.isArray(opts?.acceptedAnswers)
+              ? opts.acceptedAnswers
+              : [],
+          };
+          isCorrect = evaluateShortAnswer(userAnswer, question.correctAnswer, mergedOpts);
+          break;
+        }
+        case 'true_false':
+        case 'multiple_choice':
+        default:
+          isCorrect = userAnswer === question.correctAnswer;
+      }
+
+      if (isCorrect) {
         score += question.points || 0;
       }
     });

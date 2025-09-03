@@ -23,6 +23,7 @@ import {
 import { useQuizAttempts, useQuizzes } from '@/hooks/useTrainingData';
 import { format } from 'date-fns';
 import jsPDF from 'jspdf';
+import { evaluateShortAnswer } from '@/utils/quiz/evaluateShortAnswer';
 
 interface QuizAttemptViewerProps {
   open: boolean;
@@ -58,8 +59,12 @@ const QuizAttemptViewer: React.FC<QuizAttemptViewerProps> = ({
     }
   }, [attempts, selectedAttempt]);
 
-  const getAnswerStatus = (userAnswer: string, correctAnswer: string) => {
-    return userAnswer === correctAnswer;
+  const getAnswerStatus = (userAnswer: string, question: any) => {
+    if (!question) return false;
+    if (question.question_type === 'short_answer') {
+      return evaluateShortAnswer(userAnswer || '', question.correct_answer || '', question.options || {});
+    }
+    return (userAnswer || '') === (question.correct_answer || '');
   };
 
   const exportAttemptToPDF = (attempt: any) => {
