@@ -112,13 +112,7 @@ export const useScheduleCoverageData = () => {
           clock_out,
           duration_minutes,
           notes,
-          team_id,
-          users!user_id (
-            id,
-            name,
-            email,
-            avatar_url
-          )
+          team_id
         `)
         .gte('clock_in', `${weekStart}T00:00:00Z`)
         .lte('clock_in', `${weekEnd}T23:59:59Z`)
@@ -137,9 +131,28 @@ export const useScheduleCoverageData = () => {
       if (schedulesResult.error) throw schedulesResult.error;
       if (timeEntriesResult.error) throw timeEntriesResult.error;
 
+      // Enrich time entries with user data (manual join to avoid FK to auth.users)
+      const rawTimeEntries = (timeEntriesResult.data || []) as TimeEntryData[];
+      const userIds = Array.from(new Set(rawTimeEntries.map(te => te.user_id).filter(Boolean)));
+
+      let usersById: Record<string, { id: string; name: string; email: string; avatar_url?: string }> = {};
+      if (userIds.length > 0) {
+        const usersResult = await supabase
+          .from('users')
+          .select('id, name, email, avatar_url')
+          .in('id', userIds);
+        if (usersResult.error) throw usersResult.error;
+        usersById = Object.fromEntries((usersResult.data || []).map(u => [u.id, u]));
+      }
+
+      const enrichedTimeEntries: TimeEntryData[] = rawTimeEntries.map(te => ({
+        ...te,
+        user: usersById[te.user_id] || undefined
+      }));
+
       setCoverageData({
         schedules: schedulesResult.data || [],
-        timeEntries: timeEntriesResult.data || [],
+        timeEntries: enrichedTimeEntries,
         lastUpdated: new Date()
       });
 
