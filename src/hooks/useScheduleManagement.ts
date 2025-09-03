@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTeamQueries } from '@/hooks/organization/team/useTeamQueries';
+import { useDebounce } from '@/utils/performanceUtils';
 import { toast } from 'sonner';
 
 export interface ScheduleTemplate {
@@ -67,6 +68,9 @@ export const useScheduleManagement = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const lastRangeRef = useRef<{ start: string; end: string; includeAll: boolean; teamId?: string } | null>(null);
+  const lastFetchRef = useRef<number>(0);
+  const errorCountRef = useRef<number>(0);
+  const FETCH_COOLDOWN = 1000; // Prevent fetches more frequent than 1 second
   // Fetch schedule templates
   const fetchScheduleTemplates = async () => {
     try {
@@ -87,9 +91,16 @@ export const useScheduleManagement = () => {
   };
 
 
-  // Fetch employee schedules for a date range
-  const fetchEmployeeSchedules = async (startDate: string, endDate: string, includeAll: boolean = false, teamId?: string) => {
+  // Fetch employee schedules for a date range - memoized to prevent infinite loops
+  const fetchEmployeeSchedules = useCallback(async (startDate: string, endDate: string, includeAll: boolean = false, teamId?: string) => {
     if (!user) return;
+
+    // Prevent rapid successive calls
+    const now = Date.now();
+    if (now - lastFetchRef.current < FETCH_COOLDOWN) {
+      return;
+    }
+    lastFetchRef.current = now;
 
     try {
       setIsLoading(true);
@@ -127,7 +138,6 @@ export const useScheduleManagement = () => {
       if (error) {
         console.error('Database error:', error);
         console.error('Error details:', JSON.stringify(error, null, 2));
-        toast.error(`Database error: ${error.message}`);
         throw error;
       }
       
@@ -137,11 +147,16 @@ export const useScheduleManagement = () => {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch employee schedules';
       console.error('Detailed fetch error:', errorMessage);
       setError(errorMessage);
-      toast.error(`Failed to fetch schedules: ${errorMessage}`);
+      
+      // Only show toast for the first few errors to avoid spam
+      errorCountRef.current += 1;
+      if (errorCountRef.current <= 3) {
+        toast.error(`Failed to fetch schedules: ${errorMessage}`);
+      }
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user]);
 
   // Fetch employee availability
   const fetchEmployeeAvailability = async (employeeId?: string) => {
@@ -323,6 +338,14 @@ export const useScheduleManagement = () => {
     }
   }, [user]);
 
+  // Debounced refetch for real-time updates
+  const debouncedRefetch = useDebounce(() => {
+    const last = lastRangeRef.current;
+    if (last) {
+      fetchEmployeeSchedules(last.start, last.end, last.includeAll, last.teamId);
+    }
+  }, 1000);
+
   // Realtime refresh for schedules within last requested range
   useEffect(() => {
     if (!user) return;
@@ -332,19 +355,14 @@ export const useScheduleManagement = () => {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'employee_schedules' },
-        () => {
-          const last = lastRangeRef.current;
-          if (last) {
-            fetchEmployeeSchedules(last.start, last.end, last.includeAll, last.teamId);
-          }
-        }
+        debouncedRefetch
       )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user, debouncedRefetch]);
 
   // Team-specific query functions
   const fetchTeamSchedules = async (teamId: string, startDate: string, endDate: string) => {

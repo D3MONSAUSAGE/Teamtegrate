@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -81,12 +81,12 @@ const ScheduleManagerDashboard: React.FC = () => {
       false,
       selectedTeamId || undefined
     );
-  }, [selectedTeamId, fetchEmployeeSchedules]);
+  }, [selectedTeamId]); // Removed fetchEmployeeSchedules from dependencies to prevent infinite loop
 
   const showTeamSelector = user && (user.role === 'admin' || user.role === 'superadmin' || user.role === 'manager') && teams.length > 0;
 
-  // Generate sample trend data (replace with real data)
-  const trendData = [
+  // Memoized trend data to prevent unnecessary re-renders
+  const trendData = useMemo(() => [
     { day: 'Mon', scheduled: 32, completed: 28, planned: 35 },
     { day: 'Tue', scheduled: 28, completed: 26, planned: 30 },
     { day: 'Wed', scheduled: 35, completed: 32, planned: 38 },
@@ -94,7 +94,7 @@ const ScheduleManagerDashboard: React.FC = () => {
     { day: 'Fri', scheduled: 38, completed: 36, planned: 40 },
     { day: 'Sat', scheduled: 25, completed: 22, planned: 28 },
     { day: 'Sun', scheduled: 20, completed: 18, planned: 22 }
-  ];
+  ], []); // Empty dependency array since this is static sample data
 
   const selectedTeamName = selectedTeamId && teams.find(t => t.id === selectedTeamId)?.name;
 
