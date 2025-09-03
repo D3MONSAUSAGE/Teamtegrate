@@ -63,6 +63,20 @@ const QuizTaker: React.FC<QuizTakerProps> = ({
   const [results, setResults] = useState<QuizResults | null>(null);
   const submitAttempt = useSubmitQuizAttempt();
 
+  // Initialize answers with empty strings for all questions
+  useEffect(() => {
+    if (quiz.questions && quiz.questions.length > 0) {
+      const initialAnswers: Record<string, string> = {};
+      quiz.questions.forEach(question => {
+        if (question?.id) {
+          initialAnswers[question.id] = '';
+        }
+      });
+      setAnswers(initialAnswers);
+      console.log('🎯 QuizTaker: Initialized answers for all questions:', initialAnswers);
+    }
+  }, [quiz.questions]);
+
   // Safety checks for quiz data
   if (!quiz.questions || quiz.questions.length === 0) {
     return (
@@ -214,11 +228,21 @@ const QuizTaker: React.FC<QuizTakerProps> = ({
     setShowResults(true);
     
     try {
+      // Ensure all questions have entries (even empty ones)
+      const completeAnswers: Record<string, string> = {};
+      quiz.questions.forEach(question => {
+        if (question?.id) {
+          completeAnswers[question.id] = answers[question.id] || '';
+        }
+      });
+      
       // Transform answers to array format for database
       const transformedAnswers = quiz.questions.map(question => ({
         question_id: question.id,
-        answer: answers[question.id] || ''
+        answer: completeAnswers[question.id] || ''
       }));
+      
+      console.log('📤 QuizTaker: Submitting complete answers:', transformedAnswers);
       
       await submitAttempt.mutateAsync({
         quizId: quiz.id,
@@ -398,7 +422,14 @@ const QuizTaker: React.FC<QuizTakerProps> = ({
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span>Question {currentQuestion + 1} of {quiz.questions.length}</span>
-              <span>{Math.round(progress)}% complete</span>
+              <div className="flex items-center gap-2">
+                <span>{Math.round(progress)}% complete</span>
+                {answers[currentQ.id] && answers[currentQ.id].trim() !== '' ? (
+                  <Badge variant="default" className="text-xs px-2 py-0">Answered</Badge>
+                ) : (
+                  <Badge variant="outline" className="text-xs px-2 py-0">Unanswered</Badge>
+                )}
+              </div>
             </div>
             <Progress value={progress} className="h-2" />
           </div>
@@ -452,7 +483,6 @@ const QuizTaker: React.FC<QuizTakerProps> = ({
           ) : (
             <Button
               onClick={nextQuestion}
-              disabled={!answers[currentQ.id]}
               className="gap-2"
             >
               Next
